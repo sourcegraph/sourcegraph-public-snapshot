@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -171,12 +172,12 @@ func NewSquirrel(readFile ReadFileFunc) *Squirrel {
 func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error) {
 	parser := sitter.NewParser()
 
-	var bindingsExpr expr
+	var queryString string
 	var lang *sitter.Language
 	ext := filepath.Ext(location.Path)
 	switch ext {
 	case ".go":
-		bindingsExpr = goBindings
+		queryString = goQueries
 		lang = golang.GetLanguage()
 	default:
 		return nil, nil, fmt.Errorf("unrecognized file extension %s", ext)
@@ -204,8 +205,15 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 		return nil, nil, errors.New("node is nil")
 	}
 
-	if startNode.Type() != "identifier" {
-		return nil, nil, errors.Newf("can't find definition of %s", startNode.Type(), location)
+	typeOk := false
+	for _, identifier := range goIdentifiers {
+		if startNode.Type() == identifier {
+			typeOk = true
+			break
+		}
+	}
+	if !typeOk {
+		return nil, nil, errors.Newf("can't find definition of %s", startNode.Type())
 	}
 
 	breadcrumbs := []Breadcrumb{{
@@ -214,31 +222,78 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 		message:  "start",
 	}}
 
-	for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
-		captures := bindingsExpr.captures(currentNode)
-		for _, capture := range captures {
+	// Execute the query
+	query, err := sitter.NewQuery([]byte(queryString), lang)
+	if err != nil {
+		return nil, breadcrumbs, errors.Newf("failed to parse query: %s\n%s", err, queryString)
+	}
+	cursor := sitter.NewQueryCursor()
+	cursor.Exec(query, root)
+
+	// Collect all definitions into scopes
+	scopes := map[string][]*sitter.Node{}
+	match, _, hasCapture := cursor.NextCapture()
+	for hasCapture {
+		for _, capture := range match.Captures {
+			name := query.CaptureNameForId(capture.Index)
+
+			// Add to breadcrumbs
+			length := 1
+			if capture.Node.EndPoint().Row == capture.Node.StartPoint().Row {
+				length = int(capture.Node.EndPoint().Column - capture.Node.StartPoint().Column)
+			}
 			breadcrumbs = append(breadcrumbs, Breadcrumb{
 				Location: Location{
 					RepoCommitPath: location.RepoCommitPath,
-					Row:            capture.StartPoint().Row,
-					Column:         capture.StartPoint().Column,
+					Row:            capture.Node.StartPoint().Row,
+					Column:         capture.Node.StartPoint().Column,
 				},
-				length:  int(capture.EndPoint().Column - capture.StartPoint().Column),
-				message: "binding",
+				length:  length,
+				message: fmt.Sprintf("%s: %s", name, capture.Node.Type()),
 			})
 
-			var found *Location
-			if capture.Content(input) == startNode.Content(input) {
-				found = &Location{
-					RepoCommitPath: location.RepoCommitPath,
-					Row:            capture.StartPoint().Row,
-					Column:         capture.StartPoint().Column,
+			// Add definition to nearest scope
+			if strings.Contains(name, "definition") {
+				for cur := capture.Node; cur != nil; cur = cur.Parent() {
+					id := getId(cur)
+					_, ok := scopes[id]
+					if !ok {
+						continue
+					}
+					scopes[id] = append(scopes[id], capture.Node)
+					break
 				}
+
+				continue
 			}
 
-			if found != nil {
-				breadcrumbs[len(breadcrumbs)-1].message = "found"
-				return found, breadcrumbs, nil
+			// Record the scope
+			if strings.Contains(name, "scope") {
+				scopes[getId(capture.Node)] = []*sitter.Node{}
+				continue
+			}
+		}
+
+		// Next capture
+		match, _, hasCapture = cursor.NextCapture()
+	}
+
+	// Walk up the tree to find the nearest definition
+	for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
+		scope, ok := scopes[getId(currentNode)]
+		if !ok {
+			// This node isn't a scope, continue.
+			continue
+		}
+
+		// Check if the scope contains the definition
+		for _, def := range scope {
+			if def.Content(input) == startNode.Content(input) {
+				return &Location{
+					RepoCommitPath: location.RepoCommitPath,
+					Row:            def.StartPoint().Row,
+					Column:         def.StartPoint().Column,
+				}, breadcrumbs, nil
 			}
 		}
 	}
@@ -246,33 +301,89 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 	return nil, breadcrumbs, errors.New("could not find definition")
 }
 
-var goBindings expr = eOr(
-	eAnd(eType("function_declaration"), eField("name", eCapture(eType("identifier"))), eField("parameters", goBindingsParameters)),
-	eAnd(eType("func_literal"), eField("parameters", goBindingsParameters)),
-	eAnd(eType("block"), eChildren(eOr(
-		eAnd(eType("short_var_declaration"), eField("left", eAnd(eType("expression_list"), eChildren(eCapture(eType("identifier")))))),
-		goBindingsConstDeclaration,
-	))),
-	eAnd(eType("source_file"), eChildren(goBindingsConstDeclaration)),
+var goIdentifiers = []string{"identifier", "type_identifier"}
+
+var goQueries = `
+(
+    (function_declaration
+        name: (identifier) @definition.function) ;@function
 )
 
-var goBindingsConstDeclaration expr = eAnd(eType("const_declaration"), eChildren(eAnd(eType("const_spec"), eField("name", eCapture(eType("identifier"))))))
-
-var goBindingsParameters expr = eAnd(
-	eType("parameter_list"),
-	eChildren(
-		eOr(
-			eAnd(
-				eType("parameter_declaration"),
-				eField("name", eCapture(eType("identifier"))),
-			),
-			eAnd(
-				eType("variadic_parameter_declaration"),
-				eField("name", eCapture(eType("identifier"))),
-			),
-		),
-	),
+(
+    (method_declaration
+        name: (field_identifier) @definition.method); @method
 )
+
+(short_var_declaration
+  left: (expression_list
+          (identifier) @definition.var))
+
+(var_spec
+  name: (identifier) @definition.var)
+
+(parameter_declaration (identifier) @definition.var)
+(variadic_parameter_declaration (identifier) @definition.var)
+
+(for_statement
+ (range_clause
+   left: (expression_list
+           (identifier) @definition.var)))
+
+(const_declaration
+ (const_spec
+  name: (identifier) @definition.var))
+
+(type_declaration
+  (type_spec
+    name: (type_identifier) @definition.type))
+
+;; reference
+(identifier) @reference
+(type_identifier) @reference
+(field_identifier) @reference
+((package_identifier) @reference
+  (set! reference.kind "namespace"))
+
+(package_clause
+   (package_identifier) @definition.namespace)
+
+(import_spec_list
+  (import_spec
+    name: (package_identifier) @definition.namespace))
+
+;; Call references
+((call_expression
+   function: (identifier) @reference)
+ (set! reference.kind "call" ))
+
+((call_expression
+    function: (selector_expression
+                field: (field_identifier) @reference))
+ (set! reference.kind "call" ))
+
+
+((call_expression
+    function: (parenthesized_expression
+                (identifier) @reference))
+ (set! reference.kind "call" ))
+
+((call_expression
+   function: (parenthesized_expression
+               (selector_expression
+                 field: (field_identifier) @reference)))
+ (set! reference.kind "call" ))
+
+;; Scopes
+
+(func_literal) @scope
+(source_file) @scope
+(function_declaration) @scope
+(if_statement) @scope
+(block) @scope
+(expression_switch_statement) @scope
+(for_statement) @scope
+(method_declaration) @scope
+`
 
 type Breadcrumb struct {
 	Location
@@ -280,124 +391,7 @@ type Breadcrumb struct {
 	message string
 }
 
-type expr interface {
-	captures(node *sitter.Node) []*sitter.Node
-}
-
-// Match node type
-type exprType struct{ typeName string }
-
-func eType(typeName string) expr {
-	return exprType{typeName: typeName}
-}
-
-func (e exprType) captures(node *sitter.Node) []*sitter.Node {
-	if node.Type() != e.typeName {
-		return nil
-	}
-	return []*sitter.Node{}
-}
-
-// Capture nodes
-type exprCapture struct {
-	inner expr
-}
-
-func eCapture(inner expr) exprCapture {
-	return exprCapture{inner: inner}
-}
-
-func (e exprCapture) captures(node *sitter.Node) []*sitter.Node {
-	innerCaptures := e.inner.captures(node)
-	if innerCaptures == nil {
-		return nil
-	}
-	return append(innerCaptures, node)
-}
-
-// Match field
-type exprField struct {
-	field string
-	expr  expr
-}
-
-func eField(field string, expr expr) exprField {
-	return exprField{field: field, expr: expr}
-}
-
-func (e exprField) captures(node *sitter.Node) []*sitter.Node {
-	child := node.ChildByFieldName(e.field)
-	if child == nil {
-		return nil
-	}
-	return e.expr.captures(child)
-}
-
-// Conjunction of expressions
-type exprAnd struct {
-	conjuncts []expr
-}
-
-func eAnd(conjuncts ...expr) exprAnd {
-	return exprAnd{conjuncts: conjuncts}
-}
-
-func (e exprAnd) captures(node *sitter.Node) []*sitter.Node {
-	captures := []*sitter.Node{}
-	for _, conjunct := range e.conjuncts {
-		innerCaptures := conjunct.captures(node)
-		if innerCaptures == nil {
-			return nil
-		}
-		captures = append(captures, innerCaptures...)
-	}
-	return captures
-}
-
-// Disjunction of expressions
-type exprOr struct {
-	disjuncts []expr
-}
-
-func eOr(disjuncts ...expr) exprOr {
-	return exprOr{disjuncts: disjuncts}
-}
-
-func (e exprOr) captures(node *sitter.Node) []*sitter.Node {
-	var captures []*sitter.Node
-	for _, disjunct := range e.disjuncts {
-		innerCaptures := disjunct.captures(node)
-		if innerCaptures == nil {
-			continue
-		}
-		if captures == nil {
-			captures = []*sitter.Node{}
-		}
-		captures = append(captures, innerCaptures...)
-	}
-	return captures
-}
-
-// Match children
-type exprChildren struct {
-	inner expr
-}
-
-func eChildren(inner expr) exprChildren {
-	return exprChildren{inner: inner}
-}
-
-func (e exprChildren) captures(node *sitter.Node) []*sitter.Node {
-	var captures []*sitter.Node
-	for i := 0; i < int(node.ChildCount()); i++ {
-		innerCaptures := e.inner.captures(node.Child(i))
-		if innerCaptures == nil {
-			continue
-		}
-		if captures == nil {
-			captures = []*sitter.Node{}
-		}
-		captures = append(captures, innerCaptures...)
-	}
-	return captures
+// IDs are <startByte>-<endByte> as a proxy for node ID
+func getId(node *sitter.Node) string {
+	return fmt.Sprintf("%d-%d", node.StartByte(), node.EndByte())
 }

@@ -22,20 +22,9 @@ func foo(x int, y int) {
 	g := f  // < "g" simple-foo-g def
 	g(1, 2) // < "g" simple-foo-g ref
 
-	//    vv simple-foo-c4 def
-	const c4 = 4 // 💥
+	//    vv simple-c1 def
+	const c1 = 4 // 💥
 
 	//          vv simple-c1 ref
-	//          ||  vv simple-c2 ref
-	//          ||  ||  vv simple-c3 ref
-	//          ||  ||  ||  vv simple-foo-c4 ref
-	fmt.Println(c1, c2, c3, c4)
+	fmt.Println(c1)
 }
-
-//    vv simple-c1 def
-//    ||  vv simple-c2 def
-const c1, c2 = 4, 4
-
-const (
-	c3 int = 4 // < "c3" simple-c3 def
-)
