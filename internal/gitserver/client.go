@@ -906,7 +906,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		}(op{req: req})
 	}
 
-	err := new(errors.MultiError)
+	var err error
 	res := protocol.RepoCloneProgressResponse{
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
 	}
@@ -924,7 +924,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		}
 	}
 
-	return &res, err.ErrorOrNil()
+	return &res, err
 }
 
 func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
@@ -976,7 +976,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		}(op{req: req})
 	}
 
-	err := new(errors.MultiError)
+	var err error
 	res := protocol.RepoInfoResponse{
 		Results: make(map[api.RepoName]*protocol.RepoInfo),
 	}
@@ -994,7 +994,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		}
 	}
 
-	return &res, err.ErrorOrNil()
+	return &res, err
 }
 
 func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
@@ -1074,6 +1074,7 @@ func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
+//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 // do performs a request to a gitserver instance based on the address in the uri argument.
 func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)

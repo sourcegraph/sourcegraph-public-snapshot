@@ -1,16 +1,17 @@
 import { Meta, Story } from '@storybook/react'
 import React from 'react'
+import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
+import { SupportedInsightSubject } from '../../../core/types/subjects'
 import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
 
 import { InsightsDashboardCreationPage as InsightsDashboardCreationPageComponent } from './InsightsDashboardCreationPage'
 
-export default {
+const defaultStory: Meta = {
     title: 'web/insights/InsightsDashboardCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -19,19 +20,18 @@ export default {
             disableSnapshot: false,
         },
     },
-} as Meta
-
-const PLATFORM_CONTEXT = {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    updateSettings: async (...args: any[]) => {
-        console.log('PLATFORM CONTEXT update settings with', { ...args })
-    },
 }
 
-const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE_MOCK, PLATFORM_CONTEXT)
+export default defaultStory
+
+const subjects = SETTINGS_CASCADE_MOCK.subjects.map(({ subject }) => subject) as SupportedInsightSubject[]
+
+const codeInsightsBackend = {
+    getDashboardSubjects: () => of(subjects),
+}
 
 export const InsightsDashboardCreationPage: Story = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <InsightsDashboardCreationPageComponent telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendContext.Provider>
+    </CodeInsightsBackendStoryMock>
 )

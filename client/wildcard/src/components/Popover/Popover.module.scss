@@ -1,13 +1,20 @@
-.dropdown-menu-tail {
-    &::before {
-        border-left-color: transparent;
-        border-top-color: var(--border-color);
-        border-right-color: transparent;
+.dropdown-menu {
+    &-container {
+        // We need this to fix top/bottom white spaces from .dropdown-menu class
+        padding: 0;
     }
 
-    &::after {
-        border-left-color: transparent;
-        border-top-color: var(--white);
-        border-right-color: transparent;
+    &-tail {
+        &::before {
+            border-left-color: transparent;
+            border-top-color: var(--border-color);
+            border-right-color: transparent;
+        }
+
+        &::after {
+            border-left-color: transparent;
+            border-top-color: var(--white);
+            border-right-color: transparent;
+        }
     }
 }

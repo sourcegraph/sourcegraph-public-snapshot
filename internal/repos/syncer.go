@@ -247,23 +247,32 @@ func (d Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
 }
 
-// SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
-// because we don't sync our "cloud_default" code hosts in the background
-// since there are too many repos. Instead we use an incremental approach where we check for
-// changes everytime a user browses a repo. The "background" boolean flag indicates that we should run this
+// SyncRepo syncs a single repository by name and associates it with an external service.
+//
+// It works for repos from:
+// 1. Public "cloud_default" code hosts since we don't sync them in the background
+//    (which would delete lazy synced repos).
+// 2. Any package hosts (i.e. NPM, Maven, etc) since callers are expected to store
+//    repos in the `lsif_dependency_repos` table which is used as the source of truth
+//    for the next full sync, so lazy added repos don't get wiped.
+//
+// The "background" boolean flag indicates that we should run this
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
-	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
-	if codehost == nil {
-		return nil, &database.RepoNotFoundErr{Name: name}
-	}
-
 	repo, err = s.Store.RepoStore.GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
+	}
+
+	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	if codehost == nil {
+		if repo != nil {
+			return repo, nil
+		}
+		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 
 	if repo != nil {
@@ -315,8 +324,13 @@ func (s *Syncer) syncRepo(
 	defer func() { save(svc, err) }()
 
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-		Kinds:            []string{extsvc.TypeToKind(codehost.ServiceType)},
-		OnlyCloudDefault: true,
+		Kinds: []string{extsvc.TypeToKind(codehost.ServiceType)},
+		// Since package host external services have the set of repositories to sync in
+		// the lsif_dependency_repos table, we can lazy-sync individual repos wihout wiping them
+		// out in the next full background sync as long as we add them to that table.
+		//
+		// This permits lazy-syncing of package repos in on-prem instances as well as in cloud.
+		OnlyCloudDefault: !codehost.IsPackageHost(),
 		LimitOffset:      &database.LimitOffset{Limit: 1},
 	})
 	if err != nil {
@@ -339,7 +353,10 @@ func (s *Syncer) syncRepo(
 
 	rg, ok := src.(RepoGetter)
 	if !ok {
-		return nil, errors.Errorf("can't source repo %q", name)
+		return nil, errors.Wrapf(
+			&database.RepoNotFoundErr{Name: name},
+			"can't get repo metadata for service of type %q", codehost.ServiceType,
+		)
 	}
 
 	path := strings.TrimPrefix(string(name), strings.TrimPrefix(codehost.ServiceID, "https://"))
@@ -506,7 +523,7 @@ func (s *Syncer) SyncExternalService(
 
 	modified := false
 	seen := make(map[api.RepoID]struct{})
-	errs := new(errors.MultiError)
+	var errs error
 	fatal := func(err error) bool {
 		return errcode.IsUnauthorized(err) ||
 			errcode.IsForbidden(err) ||
@@ -520,7 +537,7 @@ func (s *Syncer) SyncExternalService(
 			s.log().Error("syncer: error from codehost",
 				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
 
-			errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
+			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
 
 			if fatal(err) {
 				// Delete all external service repos of this external service
@@ -539,7 +556,7 @@ func (s *Syncer) SyncExternalService(
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
-			errors.Append(errs, err)
+			errs = errors.Append(errs, err)
 
 			// Stop syncing this external service as soon as we know repository limits for user or
 			// site level has been exceeded. We want to avoid generating spurious errors here
@@ -567,7 +584,7 @@ func (s *Syncer) SyncExternalService(
 	// Site-level external services can own lots of repos and are managed by site admins.
 	// It's preferable to have them fix any invalidated token manually rather than deleting the repos automatically.
 	deleted := 0
-	if err = errs.ErrorOrNil(); err == nil || (!svc.IsSiteOwned() && fatal(err)) {
+	if errs == nil || (!svc.IsSiteOwned() && fatal(errs)) {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
@@ -581,7 +598,7 @@ func (s *Syncer) SyncExternalService(
 			s.log().Warn("syncer: failed to delete some repos",
 				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", deletedErr, "deleted", deleted)
 
-			errors.Append(errs, errors.Wrap(deletedErr, "some repos couldn't be deleted"))
+			errs = errors.Append(errs, errors.Wrap(deletedErr, "some repos couldn't be deleted"))
 		}
 
 		if deleted > 0 {
@@ -592,7 +609,7 @@ func (s *Syncer) SyncExternalService(
 
 	now := s.Now()
 	modified = modified || deleted > 0
-	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs.ErrorOrNil())
+	interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, errs)
 
 	s.log().Debug("Synced external service", "id", externalServiceID, "backoff duration", interval)
 	svc.NextSyncAt = now.Add(interval)
@@ -600,10 +617,10 @@ func (s *Syncer) SyncExternalService(
 
 	err = s.Store.ExternalServiceStore.Upsert(ctx, svc)
 	if err != nil {
-		errors.Append(errs, errors.Wrap(err, "upserting external service"))
+		errs = errors.Append(errs, errors.Wrap(err, "upserting external service"))
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (s *Syncer) userReposMaxPerSite() uint64 {

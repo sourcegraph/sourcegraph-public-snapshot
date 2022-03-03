@@ -16,6 +16,8 @@
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
   - [How to enable continuous profiling in production](profiling_continuous.md)
+- [GraphQL](../background-information/graphql_api.md)
+  - [How to add a GraphQL query](../how-to/add_graphql_query.md)
 
 ## Local Environment
 
@@ -27,7 +29,7 @@
 ## Testing Sourcegraph & CI
 
 - [How to run tests](testing.md)
-   - See also [Testing Principles](../background-information/testing_principles.md) and [Continuous Integration](../background-information/continuous_integration.md)
+   - See also [Testing Principles](../background-information/testing_principles.md) and [Continuous Integration](../background-information/ci/index.md)
 - [Configure a test instance of Phabricator and Gitolite](configure_phabricator_gitolite.md)
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
 - [How to test changes in dogfood](testing_in_dogfood.md)

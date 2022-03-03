@@ -11,15 +11,15 @@ import (
 // Resolve will populate the relationship fields of the registered issues and pull
 // requests objects.
 func Resolve(trackingIssues, issues []*Issue, pullRequests []*PullRequest) error {
-	linkPullRequestsAndIssues(trackingIssues, issues, pullRequests)
+	linkPullRequestsAndIssues(issues, pullRequests)
 	linkTrackingIssues(trackingIssues, issues, pullRequests)
-	return checkForCycles(trackingIssues, issues, pullRequests)
+	return checkForCycles(issues)
 }
 
 // linkPullRequestsAndIssues populates the LinkedPullRequests and LinkedIssues fields of
 // each resolved issue and pull request value. A pull request and an issue are linked if
 // the pull request body contains a reference to the issue number.
-func linkPullRequestsAndIssues(trackingIssues, issues []*Issue, pullRequests []*PullRequest) {
+func linkPullRequestsAndIssues(issues []*Issue, pullRequests []*PullRequest) {
 	for _, issue := range issues {
 		patterns := []*regexp.Regexp{
 			// TODO(efritz) - should probably match repository as well
@@ -70,7 +70,7 @@ func linkTrackingIssues(trackingIssues, issues []*Issue, pullRequests []*PullReq
 // checkForCycles checks for a cycle over the tracked issues relationship in the set of resolved
 // issues. We currently check this condition because the rendering pass does not check for cycles
 // and can create an infinite loop.
-func checkForCycles(trackingIssues, issues []*Issue, pullRequests []*PullRequest) error {
+func checkForCycles(issues []*Issue) error {
 	for _, issue := range issues {
 		if !visitNode(issue, map[string]struct{}{}) {
 			// TODO(efritz) - we should try to proactively cut cycles

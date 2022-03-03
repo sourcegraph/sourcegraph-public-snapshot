@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestInstrumentHandler(t *testing.T) {
+func TestInstrumentHandler(_ *testing.T) {
 	h := http.Handler(nil)
 	instrumentHandler(prometheus.DefaultRegisterer, h)
 }

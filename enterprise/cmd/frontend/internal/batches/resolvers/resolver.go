@@ -443,7 +443,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 }
 
 func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
-	var errs *errors.MultiError
+	var errs error
 
 	if in != nil && *in != nil {
 		for _, state := range *in {
@@ -459,7 +459,7 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -681,7 +681,19 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if err != nil {
 		return nil, err
 	}
-	opts.State = state
+	if state != "" {
+		opts.States = []btypes.BatchChangeState{state}
+	}
+
+	// If multiple `states` are provided, prefer them over `state`.
+	if args.States != nil {
+		states, err := parseBatchChangeStates(args.States)
+		if err != nil {
+			return nil, err
+		}
+		opts.States = states
+	}
+
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -1459,6 +1471,7 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
+		NewestFirst: true,
 	}
 
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include
@@ -1794,6 +1807,23 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
+}
+
+func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
+	states := []btypes.BatchChangeState{}
+	if ss == nil || len(*ss) == 0 {
+		return states, nil
+	}
+	for _, s := range *ss {
+		state, err := parseBatchChangeState(&s)
+		if err != nil {
+			return nil, err
+		}
+		if state != "" {
+			states = append(states, state)
+		}
+	}
+	return states, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

@@ -62,7 +62,7 @@ func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot strin
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(context.Background(), file, "", getChildrenFunc)
+	bundle, err := Correlate(ctx, file, "", getChildrenFunc)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
 	}
@@ -99,7 +99,7 @@ func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*prec
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(context.Background(), file, relRoot, getChildrenFunc)
+	bundle, err := Correlate(ctx, file, relRoot, getChildrenFunc)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
 	}
@@ -156,6 +156,7 @@ type wrappedState struct {
 	*State
 	dumpRoot            string
 	unsupportedVertices *datastructures.IDSet
+	rangeToDoc          map[int]int
 }
 
 func newWrappedState(dumpRoot string) *wrappedState {
@@ -163,6 +164,7 @@ func newWrappedState(dumpRoot string) *wrappedState {
 		State:               newState(),
 		dumpRoot:            dumpRoot,
 		unsupportedVertices: datastructures.NewIDSet(),
+		rangeToDoc:          map[int]int{},
 	}
 }
 
@@ -178,7 +180,9 @@ func correlateElement(state *wrappedState, element Element) error {
 	return errors.Errorf("unknown element type %s", element.Type)
 }
 
-var vertexHandlers = map[string]func(state *wrappedState, element Element) error{
+type vertexHandler func(state *wrappedState, element Element) error
+
+var vertexHandlers = map[string]vertexHandler{
 	"metaData":             correlateMetaData,
 	"document":             correlateDocument,
 	"range":                correlateRange,
@@ -374,6 +378,9 @@ func correlateContainsEdge(state *wrappedState, id int, edge Edge) error {
 		if _, ok := state.RangeData[inV]; !ok {
 			return malformedDump(id, inV, "range")
 		}
+		if doc, ok := state.rangeToDoc[inV]; ok && doc != edge.OutV {
+			return errors.Newf("validate: range %d is contained in document %d, but linked to a different document %d", inV, edge.OutV, doc)
+		}
 		state.Contains.AddID(edge.OutV, inV)
 	}
 	return nil
@@ -407,6 +414,10 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 
 			// Link definition data to defining range
 			documentMap.AddID(edge.Document, inV)
+			if doc, ok := state.rangeToDoc[inV]; ok && doc != edge.Document {
+				return errors.Newf("at item edge %d, range %d can't be linked to document %d because it's already linked to %d by a previous item edge", id, inV, edge.Document, doc)
+			}
+			state.rangeToDoc[inV] = edge.Document
 		}
 
 		return nil
@@ -424,6 +435,10 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 
 				// Link reference data to a reference range
 				documentMap.AddID(edge.Document, inV)
+				if doc, ok := state.rangeToDoc[inV]; ok && doc != edge.Document {
+					return errors.Newf("at item edge %d, range %d can't be linked to document %d because it's already linked to %d by a previous item edge", id, inV, edge.Document, doc)
+				}
+				state.rangeToDoc[inV] = edge.Document
 			}
 		}
 

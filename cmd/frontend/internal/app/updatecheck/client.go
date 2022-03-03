@@ -141,6 +141,16 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ j
 	return json.Marshal(growthStatistics)
 }
 
+func getAndMarshalCTAUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCTAUsageJSON")(&err)
+
+	ctaUsage, err := usagestats.GetCTAUsage(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(ctaUsage)
+}
+
 func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
 
@@ -259,7 +269,18 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (
 	return json.Marshal(codeMonitoringUsage)
 }
 
-func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
+
+	codeHostIntegrationUsage, err := usagestats.GetCodeHostIntegrationUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codeHostIntegrationUsage)
+}
+
+func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()
@@ -337,23 +358,25 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	}
 
 	r := &pingRequest{
-		ClientSiteID:        siteid.Get(),
-		DeployType:          deploy.Type(),
-		ClientVersionString: version.Version(),
-		LicenseKey:          conf.Get().LicenseKey,
-		CodeIntelUsage:      []byte("{}"),
-		NewCodeIntelUsage:   []byte("{}"),
-		SearchUsage:         []byte("{}"),
-		BatchChangesUsage:   []byte("{}"),
-		GrowthStatistics:    []byte("{}"),
-		SavedSearches:       []byte("{}"),
-		HomepagePanels:      []byte("{}"),
-		Repositories:        []byte("{}"),
-		RetentionStatistics: []byte("{}"),
-		SearchOnboarding:    []byte("{}"),
-		ExtensionsUsage:     []byte("{}"),
-		CodeInsightsUsage:   []byte("{}"),
-		CodeMonitoringUsage: []byte("{}"),
+		ClientSiteID:             siteid.Get(),
+		DeployType:               deploy.Type(),
+		ClientVersionString:      version.Version(),
+		LicenseKey:               conf.Get().LicenseKey,
+		CodeIntelUsage:           []byte("{}"),
+		NewCodeIntelUsage:        []byte("{}"),
+		SearchUsage:              []byte("{}"),
+		BatchChangesUsage:        []byte("{}"),
+		GrowthStatistics:         []byte("{}"),
+		CTAUsage:                 []byte("{}"),
+		SavedSearches:            []byte("{}"),
+		HomepagePanels:           []byte("{}"),
+		Repositories:             []byte("{}"),
+		RetentionStatistics:      []byte("{}"),
+		SearchOnboarding:         []byte("{}"),
+		ExtensionsUsage:          []byte("{}"),
+		CodeInsightsUsage:        []byte("{}"),
+		CodeMonitoringUsage:      []byte("{}"),
+		CodeHostIntegrationUsage: []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -413,6 +436,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
 		}
 
+		r.CTAUsage, err = getAndMarshalCTAUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCTAUsageJSON failed", "error", err)
+		}
+
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
@@ -449,6 +477,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
+		}
+
+		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}

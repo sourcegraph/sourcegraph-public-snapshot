@@ -299,7 +299,7 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 			return errors.Wrap(err, "unmarshal response body to errors")
 		}
 		if len(errResp.Errors) > 0 {
-			var errs *errors.MultiError
+			var errs error
 			for _, err := range errResp.Errors {
 				errs = errors.Append(errs, errors.New(err.Message))
 			}
@@ -320,12 +320,23 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 
 // Get performs a GET request to the URL with authenticated user.
 func (c *Client) Get(url string) (*http.Response, error) {
+	return c.GetWithHeaders(url, nil)
+}
+
+// GetWithHeaders performs a GET request to the URL with authenticated user and provided headers.
+func (c *Client) GetWithHeaders(url string, header http.Header) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	c.addCookies(req)
+
+	for name, values := range header {
+		for _, value := range values {
+			req.Header.Add(name, value)
+		}
+	}
 
 	return http.DefaultClient.Do(req)
 }

@@ -119,7 +119,7 @@ func (s *AWSCodeCommitSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo, error) {
+func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) *types.Repo {
 	urn := s.svc.URN()
 	serviceID := awscodecommit.ServiceID(s.awsPartition, s.awsRegion, r.AccountID)
 
@@ -135,7 +135,7 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo
 			},
 		},
 		Metadata: r,
-	}, nil
+	}
 }
 
 func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan SourceResult) {
@@ -149,11 +149,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 
 		for _, r := range batch {
 			if !s.excludes(r) {
-				repo, err := s.makeRepo(r)
-				if err != nil {
-					results <- SourceResult{Source: s, Err: err}
-					return
-				}
+				repo := s.makeRepo(r)
 				results <- SourceResult{Source: s, Repo: repo}
 			}
 		}

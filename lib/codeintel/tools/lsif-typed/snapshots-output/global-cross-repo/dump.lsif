@@ -1,4 +1,4 @@
-{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"repro_lang","version":"1.0.0"},"type":"vertex","label":"metaData"}
+{"id":1,"version":"0.4.3","projectRoot":"file:/root","positionEncoding":"utf-8","toolInfo":{"name":"reprolang","version":"1.0.0"},"type":"vertex","label":"metaData"}
 {"id":2,"type":"vertex","label":"document","uri":"file:/root/reference.repro"}
 {"id":3,"type":"vertex","label":"range","start":{"line":1,"character":10},"end":{"line":1,"character":54}}
 {"id":4,"type":"vertex","label":"resultSet"}

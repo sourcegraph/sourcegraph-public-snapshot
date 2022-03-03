@@ -13,6 +13,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -27,6 +28,7 @@ const (
 	DefaultIndexPageSize                   = 50
 	DefaultConfigurationPolicyPageSize     = 50
 	DefaultRepositoryFilterPreviewPageSize = 50
+	DefaultRetentionPolicyMatchesPageSize  = 50
 )
 
 var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
@@ -37,15 +39,17 @@ var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-index
 // in the parent package.
 type Resolver struct {
 	db                 database.DB
+	gitserver          policies.GitserverClient
 	resolver           resolvers.Resolver
 	locationResolver   *CachedLocationResolver
 	observationContext *operations
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
+func NewResolver(db database.DB, gitserver policies.GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
 	return &Resolver{
 		db:                 db,
+		gitserver:          gitserver,
 		resolver:           resolver,
 		locationResolver:   NewCachedLocationResolver(db),
 		observationContext: newOperations(observationContext),
@@ -91,7 +95,7 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSI
 		return nil, err
 	}
 
-	return NewUploadResolver(r.db, r.resolver, upload, prefetcher, r.locationResolver, traceErrs), nil
+	return NewUploadResolver(r.db, r.gitserver, r.resolver, upload, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
@@ -110,7 +114,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	opts, err := makeGetUploadsOptions(ctx, args)
+	opts, err := makeGetUploadsOptions(args)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +123,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewUploadConnectionResolver(r.db, r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	return NewUploadConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -172,7 +176,7 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ gql.LSIF
 		return nil, err
 	}
 
-	return NewIndexResolver(r.db, r.resolver, index, prefetcher, r.locationResolver, traceErrs), nil
+	return NewIndexResolver(r.db, r.gitserver, r.resolver, index, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
@@ -199,7 +203,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	opts, err := makeGetIndexesOptions(ctx, args)
+	opts, err := makeGetIndexesOptions(args)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +212,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewIndexConnectionResolver(r.db, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
+	return NewIndexConnectionResolver(r.db, r.gitserver, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
@@ -292,7 +296,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, indexes[i], prefetcher, r.locationResolver, traceErrs))
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.gitserver, r.resolver, indexes[i], prefetcher, r.locationResolver, traceErrs))
 	}
 	return resolvers, nil
 }
@@ -307,7 +311,14 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 		return nil, err
 	}
 
-	return NewQueryResolver(resolver, r.locationResolver, errTracer), nil
+	return NewQueryResolver(r.gitserver, resolver, r.resolver, r.locationResolver, errTracer), nil
+}
+
+func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *gql.GitBlobCodeIntelInfoArgs) (_ gql.CodeIntelSupportResolver, err error) {
+	ctx, errTracer, endObservation := r.observationContext.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	return NewCodeIntelSupportResolver(r.resolver, args, errTracer), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicyByID
@@ -605,8 +616,8 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetUploadsOptions, error) {
-	repositoryID, err := resolveRepositoryID(ctx, args.RepositoryID)
+func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetUploadsOptions, error) {
+	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -647,8 +658,8 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
-	repositoryID, err := resolveRepositoryID(ctx, args.RepositoryID)
+func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
+	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}
@@ -668,7 +679,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 }
 
 // resolveRepositoryByID gets a repository's internal identifier from a GraphQL identifier.
-func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
+func resolveRepositoryID(id graphql.ID) (int, error) {
 	if id == "" {
 		return 0, nil
 	}

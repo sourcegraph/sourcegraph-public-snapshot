@@ -116,11 +116,10 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 	var errs errors.MultiError
 	for i := 0; i < cap(ch); i++ {
-		errors.Append(&errs, <-ch)
+		errs = errors.Append(errs, <-ch)
 	}
-
-	if err := errs.ErrorOrNil(); err != nil {
-		return err
+	if errs != nil {
+		return errs
 	}
 
 	resultQueue.FlushAll(streamer)

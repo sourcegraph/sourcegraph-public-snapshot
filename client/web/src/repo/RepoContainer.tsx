@@ -49,7 +49,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GlobalCoolCodeIntelProps } from '../global/CoolCodeIntel'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
@@ -93,8 +92,7 @@ export interface RepoContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         ExtensionAlertProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -136,8 +134,7 @@ interface RepoContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -451,9 +448,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                     useActionItemsBar={useActionItemsBar}
-                                    // Experimental ref panel
-                                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
-                                    onTokenClick={props.onTokenClick}
                                 />
                             )}
                         />

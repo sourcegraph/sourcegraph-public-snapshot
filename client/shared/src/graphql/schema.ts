@@ -10509,12 +10509,6 @@ export interface ISearchResults {
     matchCount: number
 
     /**
-     * DEPRECATED: Renamed to 'matchCount' for less ambiguity.
-     * @deprecated "renamed to matchCount for less ambiguity"
-     */
-    resultCount: number
-
-    /**
      * The approximate number of results. This is like the length of the results
      * array, except it can indicate the number of results regardless of whether
      * or not the limit was hit. Currently, this is represented as e.g. "5+"

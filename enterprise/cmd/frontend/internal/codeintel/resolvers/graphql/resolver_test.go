@@ -32,7 +32,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
+	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -50,7 +50,7 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
+	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", backend.ErrNotAuthenticated, err)
 	}
 }
@@ -65,7 +65,7 @@ func TestDeleteLSIFIndex(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
+	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
@@ -83,13 +83,13 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()
 
-	if _, err := NewResolver(db, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
+	if _, err := NewResolver(db, nil, mockResolver, &observation.TestContext).DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", backend.ErrNotAuthenticated, err)
 	}
 }
 
 func TestMakeGetUploadsOptions(t *testing.T) {
-	opts, err := makeGetUploadsOptions(context.Background(), &gql.LSIFRepositoryUploadsQueryArgs{
+	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{
 			ConnectionArgs: graphqlutil.ConnectionArgs{
 				First: intPtr(5),
@@ -120,7 +120,7 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 }
 
 func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
-	opts, err := makeGetUploadsOptions(context.Background(), &gql.LSIFRepositoryUploadsQueryArgs{
+	opts, err := makeGetUploadsOptions(&gql.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: &gql.LSIFUploadsQueryArgs{},
 	})
 	if err != nil {
@@ -142,7 +142,7 @@ func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
 }
 
 func TestMakeGetIndexesOptions(t *testing.T) {
-	opts, err := makeGetIndexesOptions(context.Background(), &gql.LSIFRepositoryIndexesQueryArgs{
+	opts, err := makeGetIndexesOptions(&gql.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{
 			ConnectionArgs: graphqlutil.ConnectionArgs{
 				First: intPtr(5),
@@ -170,7 +170,7 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 }
 
 func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
-	opts, err := makeGetIndexesOptions(context.Background(), &gql.LSIFRepositoryIndexesQueryArgs{
+	opts, err := makeGetIndexesOptions(&gql.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: &gql.LSIFIndexesQueryArgs{},
 	})
 	if err != nil {

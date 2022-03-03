@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -34,6 +33,11 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
+	Gitserver            gitserverSearcher `json:"-"`
+}
+
+type gitserverSearcher interface {
+	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
@@ -99,7 +103,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		}
 
 		bounded.Go(func() error {
-			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
+			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
@@ -127,12 +131,6 @@ func (j *CommitSearch) Tags() []log.Field {
 		log.Bool("diff", j.Diff),
 		log.Bool("hasTimeFilter", j.HasTimeFilter),
 		log.Int("limit", j.Limit),
-		log.Int64("codeMonitorID", func() int64 {
-			if j.CodeMonitorID != nil {
-				return *j.CodeMonitorID
-			}
-			return 0
-		}()),
 		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 	}
 }
