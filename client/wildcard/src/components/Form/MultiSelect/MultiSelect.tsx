@@ -29,7 +29,7 @@ import styles from './MultiSelect.module.scss'
  * @param OptionValue The type of the value of the option, i.e. a union set of all
  * possible values.
  */
-export interface Option<OptionValue = unknown> {
+export interface MultiSelectOption<OptionValue = unknown> {
     value: OptionValue
     label: string
 }
@@ -40,7 +40,7 @@ export interface Option<OptionValue = unknown> {
  * @param OptionValue The type of the value of the option, i.e. a union set of all
  * possible values.
  */
-export type MultiSelectState<OptionValue = unknown> = readonly Option<OptionValue>[]
+export type MultiSelectState<OptionValue = unknown> = readonly MultiSelectOption<OptionValue>[]
 
 // We use module augmentation to make TS aware of custom props available from `Select`
 // custom components, styles, theme, etc.
@@ -75,7 +75,7 @@ export const MultiSelect = <OptionValue extends unknown = unknown>({
     message,
     options,
     ...props
-}: MultiSelectProps<Option<OptionValue>>): ReactElement => (
+}: MultiSelectProps<MultiSelectOption<OptionValue>>): ReactElement => (
     <div className={classNames('form-group', className)}>
         {'label' in props && (
             <FormFieldLabel
@@ -85,12 +85,12 @@ export const MultiSelect = <OptionValue extends unknown = unknown>({
                 {props.label}
             </FormFieldLabel>
         )}
-        <Select<Option<OptionValue>, true, GroupBase<Option<OptionValue>>>
+        <Select<MultiSelectOption<OptionValue>, true, GroupBase<MultiSelectOption<OptionValue>>>
             isMulti={true}
             className={classNames(styles.multiSelect, getValidStyle(props.isValid))}
             options={options}
             theme={THEME}
-            styles={STYLES as StylesConfig<Option<OptionValue>>}
+            styles={STYLES as StylesConfig<MultiSelectOption<OptionValue>>}
             hideSelectedOptions={false}
             components={{
                 ClearIndicator,
@@ -254,7 +254,7 @@ const STYLES: StylesConfig = {
 
 // Overwrite the clear indicator with `CloseIcon`
 const ClearIndicator = <OptionValue extends unknown = unknown>(
-    props: ClearIndicatorProps<Option<OptionValue>, true>
+    props: ClearIndicatorProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.ClearIndicator {...props}>
         <CloseIcon className={styles.clearIcon} />
@@ -263,7 +263,7 @@ const ClearIndicator = <OptionValue extends unknown = unknown>(
 
 // Overwrite the dropdown indicator with `ChevronDownIcon`
 const DropdownIndicator = <OptionValue extends unknown = unknown>(
-    props: DropdownIndicatorProps<Option<OptionValue>, true>
+    props: DropdownIndicatorProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.DropdownIndicator {...props}>
         <ChevronDownIcon className={styles.dropdownIcon} />
@@ -275,7 +275,7 @@ const MultiValueContainer = <OptionValue extends unknown = unknown>({
     innerProps: _innerProps,
     selectProps: _selectProps,
     ...props
-}: MultiValueGenericProps<Option<OptionValue>, true>): ReactElement => (
+}: MultiValueGenericProps<MultiSelectOption<OptionValue>, true>): ReactElement => (
     <Badge variant="secondary" className={styles.multiValueContainer} {...props} />
 )
 
@@ -284,11 +284,11 @@ const MultiValueLabel = <OptionValue extends unknown = unknown>({
     innerProps: _innerProps,
     selectProps: _selectProps,
     ...props
-}: MultiValueGenericProps<Option<OptionValue>, true>): ReactElement => <span {...props} />
+}: MultiValueGenericProps<MultiSelectOption<OptionValue>, true>): ReactElement => <span {...props} />
 
 // Overwrite the multi value remove indicator with `CloseIcon`
 const MultiValueRemove = <OptionValue extends unknown = unknown>(
-    props: MultiValueRemoveProps<Option<OptionValue>, true>
+    props: MultiValueRemoveProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.MultiValueRemove {...props}>
         <CloseIcon className={styles.removeIcon} />
