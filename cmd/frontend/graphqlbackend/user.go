@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -237,6 +238,19 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if args.Username != nil {
 		if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(*args.Username); err != nil {
 			return nil, err
+		}
+	}
+
+	if args.AvatarURL != nil {
+		if len(*args.AvatarURL) > 3000 {
+			return nil, errors.New("avatar URL exceeded 3000 characters")
+		}
+
+		u, err := url.Parse(*args.AvatarURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse avatar URL")
+		} else if u.Scheme != "http" && u.Scheme != "https" {
+			return nil, errors.New("avatar URL must be an HTTP or HTTPS URL")
 		}
 	}
 
