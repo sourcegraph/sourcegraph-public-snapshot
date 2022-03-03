@@ -86,7 +86,12 @@ export const MonitorLogNode: React.FunctionComponent<{
             {expanded && (
                 <div className={styles.expandedRow}>
                     {monitor.trigger.events.nodes.map(triggerEvent => (
-                        <TriggerEvent key={triggerEvent.id} triggerEvent={triggerEvent} startOpen={startOpen} />
+                        <TriggerEvent
+                            key={triggerEvent.id}
+                            triggerEvent={triggerEvent}
+                            startOpen={startOpen}
+                            now={now}
+                        />
                     ))}
 
                     {monitor.trigger.events.nodes.length === 0 && <div>This code monitor has not been run yet.</div>}
