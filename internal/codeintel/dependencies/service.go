@@ -88,7 +88,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 	if err != nil {
 		return nil, err
 	}
-	if err := s.syncNew(ctx, newDependencies, repoNamesByDependency); err != nil {
+	if err := s.sync(ctx, newDependencies, repoNamesByDependency); err != nil {
 		return nil, err
 	}
 
