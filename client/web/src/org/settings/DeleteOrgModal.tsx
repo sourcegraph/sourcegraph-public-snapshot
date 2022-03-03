@@ -1,5 +1,4 @@
 
-import { gql, useMutation } from '@apollo/client'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router'
@@ -7,6 +6,7 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { Button, Input, Modal } from '@sourcegraph/wildcard'
 
+import { deleteOrganization } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -15,19 +15,10 @@ interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> 
     toggleDeleteModal: () => void
 }
 
-const DELETE_ORG_MUTATION = gql`
-mutation DeleteOrganization($organization: ID!) {
-    deleteOrganization(organization: $organization) {
-      alwaysNil
-    }
-}
-`
-
 export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
     const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
-    const [deleteOrganization] = useMutation(DELETE_ORG_MUTATION)
     const [isOrgNameValid, setIsOrgNameValid] = useState<boolean>()
     const history = useHistory()
 
@@ -41,11 +32,7 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
     const deleteOrg = useCallback(
         async() => {
             try {
-                await deleteOrganization({
-                    variables: {
-                        organization: org.id,
-                    },
-                })
+                await deleteOrganization(org.id, true)
                 history.push({
                     pathname: '/settings',
                 })
@@ -53,9 +40,8 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             } catch(error)   {
                 eventLogger.log('OrgDeletionFailed', error)
             }
-
         },
-        [org, deleteOrganization, history])
+        [org.id, history])
 
     return (
         <Modal
