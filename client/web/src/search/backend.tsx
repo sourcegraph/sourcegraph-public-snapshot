@@ -278,7 +278,7 @@ export function fetchCollaborators(userId: Scalars['ID']): Observable<InvitableC
         return of([])
     }
 
-    // @todo Change this API to use the new backend added as part of #31777
+    // @todo(#32125) Change this API to use the new backend added as part of #31777
     const result = requestGraphQL<ExternalServicesWithCollaboratorsResult, ExternalServicesWithCollaboratorsVariables>(
         EXTERNAL_SERVICES_WITH_COLLABORATORS,
         { namespace: userId, first: null, after: null }

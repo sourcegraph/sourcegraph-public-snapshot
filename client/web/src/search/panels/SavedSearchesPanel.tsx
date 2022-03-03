@@ -20,7 +20,7 @@ interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
-    hideTitle?: boolean
+    insideTabPanel?: boolean
 }
 
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
@@ -28,7 +28,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     fetchSavedSearches,
     className,
     telemetryService,
-    hideTitle,
+    insideTabPanel,
 }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
@@ -168,9 +168,9 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     )
     return (
         <PanelContainer
-            hideTitle={hideTitle}
+            insideTabPanel={insideTabPanel}
             title="Saved searches"
-            className={classNames(className, 'saved-searches-panel', { 'h-100': hideTitle })}
+            className={classNames(className, { 'h-100': insideTabPanel })}
             state={savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}

@@ -148,7 +148,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
         <PanelContainer
             className={classNames(className, 'h-100')}
             title="Invite your colleagues"
-            hideTitle={true}
+            insideTabPanel={true}
             state={collaborators === undefined ? 'loading' : 'populated'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
