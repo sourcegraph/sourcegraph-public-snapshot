@@ -11,11 +11,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -47,7 +47,7 @@ type CodeMonitorStore interface {
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results cmtypes.CommitSearchResults) error
+	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)

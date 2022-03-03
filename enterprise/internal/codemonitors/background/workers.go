@@ -12,8 +12,8 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -164,47 +164,34 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
 	// SECURITY: set the actor to the user that owns the code monitor.
 	// For all downstream actions (specifically executing searches),
 	// we should run as the user who owns the code monitor.
 	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 
-	flags, err := r.db.FeatureFlags().GetUserFlags(ctx, m.UserID)
+	settings, err := settings(ctx)
 	if err != nil {
-		return errors.Wrap(err, "fetch feature flags for user")
+		return errors.Wrap(err, "query settings")
 	}
 
-	hasRepoAware := featureflag.FlagSet(flags).GetBoolOr("cc-repo-aware-code-monitors", false)
-
-	var (
-		results  *searchResults
-		newQuery string
-	)
-	if hasRepoAware {
-		newQuery = q.QueryString
-		results, err = search(ctx, newQuery, &m.ID)
-	} else {
-		newQuery = newQueryWithAfterFilter(q)
-		results, err = search(ctx, newQuery, nil)
-	}
-	if err != nil {
-		return errors.Wrap(err, "run search")
-	}
+	newQuery := newQueryWithAfterFilter(q)
+	results, searchErr := doSearch(ctx, r.db, newQuery, settings)
 
 	// Log next_run and latest_result to table cm_queries.
-	newLatestResult := latestResultTime(q.LatestResult, results, err)
+	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
 	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}
 
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results.Results)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
 
-	if len(results.Results) > 0 {
+	if len(results) > 0 {
 		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
 			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
@@ -401,8 +388,8 @@ func newQueryWithAfterFilter(q *edb.QueryTrigger) string {
 	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 
-func latestResultTime(previousLastResult *time.Time, v *searchResults, searchErr error) time.Time {
-	if searchErr != nil || len(v.Results) == 0 {
+func latestResultTime(previousLastResult *time.Time, results []*result.CommitMatch, searchErr error) time.Time {
+	if searchErr != nil || len(results) == 0 {
 		// Error performing the search, or there were no results. Assume the
 		// previous info's result time.
 		if previousLastResult != nil {
@@ -411,11 +398,8 @@ func latestResultTime(previousLastResult *time.Time, v *searchResults, searchErr
 		return time.Now()
 	}
 
-	// Results are ordered chronologically, so first result is the latest.
-	t, err := extractTime(v.Results[0])
-	if err != nil {
-		// Error already logged by extractTime.
-		return time.Now()
+	if results[0].Commit.Committer != nil {
+		return results[0].Commit.Committer.Date
 	}
-	return t
+	return time.Now()
 }
