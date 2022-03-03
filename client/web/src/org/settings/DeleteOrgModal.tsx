@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Input, Modal } from '@sourcegraph/wildcard'
+import { asError } from '@sourcegraph/common'
+import { Button, Input, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
 import { deleteOrganization } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -20,6 +21,8 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
     const [isOrgNameValid, setIsOrgNameValid] = useState<boolean>()
+    const [loading, setLoading] = useState<boolean | Error>(false)
+
     const history = useHistory()
 
     useEffect(() => { setOrgNameInput(orgNameInput) }, [setOrgNameInput, orgNameInput])
@@ -31,14 +34,18 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
 
     const deleteOrg = useCallback(
         async() => {
+            setLoading(true)
+
             try {
                 await deleteOrganization(org.id, true)
+                setLoading(false)
                 history.push({
                     pathname: '/settings',
                 })
 
             } catch(error)   {
-                eventLogger.log('OrgDeletionFailed', error)
+                setLoading(asError(error))
+                eventLogger.log('OrgDeletionFailed')
             }
         },
         [org.id, history])
@@ -78,7 +85,8 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     type="button"
                     variant="danger"
                     onClick={deleteOrg}
-                    disabled={!isOrgNameValid}>
+                    disabled={!isOrgNameValid || loading === true}>
+                    {loading === true && <LoadingSpinner />}
                     Delete this organization
                 </Button>
             </div>
