@@ -130,7 +130,7 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 
 	squirrel := NewSquirrel(readFile)
 
-	result, err := squirrel.definition(Location{
+	result, _, err := squirrel.definition(Location{
 		RepoCommitPath: RepoCommitPath{
 			Repo:   repo,
 			Commit: commit,
@@ -168,7 +168,7 @@ func NewSquirrel(readFile ReadFileFunc) *Squirrel {
 	return &Squirrel{readFile: readFile}
 }
 
-func (s *Squirrel) definition(location Location) (*Location, error) {
+func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error) {
 	parser := sitter.NewParser()
 
 	var bindingsExpr expr
@@ -179,19 +179,19 @@ func (s *Squirrel) definition(location Location) (*Location, error) {
 		bindingsExpr = goBindings
 		lang = golang.GetLanguage()
 	default:
-		return nil, fmt.Errorf("unrecognized file extension %s", ext)
+		return nil, nil, fmt.Errorf("unrecognized file extension %s", ext)
 	}
 
 	parser.SetLanguage(lang)
 
 	input, err := s.readFile(location.RepoCommitPath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	tree, err := parser.ParseCtx(context.Background(), nil, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse file contents: %s", err)
+		return nil, nil, fmt.Errorf("failed to parse file contents: %s", err)
 	}
 	root := tree.RootNode()
 
@@ -201,34 +201,62 @@ func (s *Squirrel) definition(location Location) (*Location, error) {
 	)
 
 	if startNode == nil {
-		return nil, errors.New("node is nil")
+		return nil, nil, errors.New("node is nil")
 	}
 
 	if startNode.Type() != "identifier" {
-		return nil, errors.Newf("can't find definition of %s", startNode.Type(), location)
+		return nil, nil, errors.Newf("can't find definition of %s", startNode.Type(), location)
 	}
+
+	breadcrumbs := []Breadcrumb{{
+		Location: location,
+		length:   1,
+		message:  "start",
+	}}
 
 	for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
 		captures := bindingsExpr.captures(currentNode)
 		for _, capture := range captures {
-			if capture.Content(input) == startNode.Content(input) {
-				return &Location{
+			breadcrumbs = append(breadcrumbs, Breadcrumb{
+				Location: Location{
 					RepoCommitPath: location.RepoCommitPath,
 					Row:            capture.StartPoint().Row,
 					Column:         capture.StartPoint().Column,
-				}, nil
+				},
+				length:  int(capture.EndPoint().Column - capture.StartPoint().Column),
+				message: "binding",
+			})
+
+			var found *Location
+			if capture.Content(input) == startNode.Content(input) {
+				found = &Location{
+					RepoCommitPath: location.RepoCommitPath,
+					Row:            capture.StartPoint().Row,
+					Column:         capture.StartPoint().Column,
+				}
+			}
+
+			if found != nil {
+				breadcrumbs[len(breadcrumbs)-1].message = "found"
+				return found, breadcrumbs, nil
 			}
 		}
 	}
 
-	return nil, errors.New("could not find definition")
+	return nil, breadcrumbs, errors.New("could not find definition")
 }
 
 var goBindings expr = eOr(
 	eAnd(eType("function_declaration"), eField("name", eCapture(eType("identifier"))), eField("parameters", goBindingsParameters)),
 	eAnd(eType("func_literal"), eField("parameters", goBindingsParameters)),
-	eAnd(eType("block"), eChildren(eAnd(eType("short_var_declaration"), eField("left", eAnd(eType("expression_list"), eChildren(eCapture(eType("identifier")))))))),
+	eAnd(eType("block"), eChildren(eOr(
+		eAnd(eType("short_var_declaration"), eField("left", eAnd(eType("expression_list"), eChildren(eCapture(eType("identifier")))))),
+		goBindingsConstDeclaration,
+	))),
+	eAnd(eType("source_file"), eChildren(goBindingsConstDeclaration)),
 )
+
+var goBindingsConstDeclaration expr = eAnd(eType("const_declaration"), eChildren(eAnd(eType("const_spec"), eField("name", eCapture(eType("identifier"))))))
 
 var goBindingsParameters expr = eAnd(
 	eType("parameter_list"),
@@ -245,6 +273,12 @@ var goBindingsParameters expr = eAnd(
 		),
 	),
 )
+
+type Breadcrumb struct {
+	Location
+	length  int
+	message string
+}
 
 type expr interface {
 	captures(node *sitter.Node) []*sitter.Node
