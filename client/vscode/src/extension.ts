@@ -8,6 +8,7 @@ import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { logEvent } from './backend/eventLogger'
+import { initializeInstantVersionNumber } from './backend/instanceVersion'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
@@ -61,6 +62,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
+    const eventSourceType = initializeInstantVersionNumber({ localStorageService })
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
@@ -127,6 +129,7 @@ export function activate(context: vscode.ExtensionContext): void {
         getLocalStorageItem: key => localStorageService.getValue(key),
         setLocalStorageItem: (key: string, value: string) => localStorageService.setValue(key, value),
         logEvents: (variables: Event) => logEvent(variables),
+        getEventSource: eventSourceType,
     }
 
     // Also initializes code intel.
