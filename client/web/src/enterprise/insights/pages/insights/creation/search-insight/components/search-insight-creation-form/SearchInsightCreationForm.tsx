@@ -1,7 +1,7 @@
-import React, { FormEventHandler, RefObject } from 'react'
+import React, { FormEventHandler, RefObject, useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import {
@@ -13,6 +13,7 @@ import { FormInput } from '../../../../../../components/form/form-input/FormInpu
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -87,6 +88,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         onFormReset,
     } = props
 
+    const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
+    const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
+
+    const dataSeriesSubscriptionTitle = isLicensed
+        ? 'Add any number of data series to your chart'
+        : 'Add up to 3 data series to your chart'
+
     const isEditMode = mode === 'edit'
 
     return (
@@ -141,7 +149,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             <FormGroup
                 name="data series group"
                 title="Data series"
-                subtitle="Add any number of data series to your chart"
+                subtitle={dataSeriesSubscriptionTitle}
                 error={series.meta.touched && series.meta.error}
                 innerRef={series.input.ref}
             >
@@ -154,6 +162,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     onEditSeriesCommit={onEditSeriesCommit}
                     onEditSeriesCancel={onEditSeriesCancel}
                     onSeriesRemove={onSeriesRemove}
+                    isLicensed={isLicensed}
                 />
             </FormGroup>
 

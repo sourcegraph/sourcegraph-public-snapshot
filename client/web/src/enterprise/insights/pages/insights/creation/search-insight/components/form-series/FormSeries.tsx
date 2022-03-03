@@ -55,6 +55,11 @@ export interface FormSeriesProps {
      * series card.
      */
     onSeriesRemove: (seriesId: string) => void
+
+    /**
+     * Whether user has a paid license for Code Insights
+     */
+    isLicensed?: boolean
 }
 
 /**
@@ -70,6 +75,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         onEditSeriesCancel,
         onSeriesRemove,
         onLiveChange,
+        isLicensed,
     } = props
 
     return (
@@ -102,15 +108,17 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 )
             )}
 
-            <Button
-                data-testid="add-series-button"
-                type="button"
-                onClick={() => onEditSeriesRequest()}
-                variant="link"
-                className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
-            >
-                + Add another data series
-            </Button>
+            {(isLicensed || series.length < 3) && (
+                <Button
+                    data-testid="add-series-button"
+                    type="button"
+                    onClick={() => onEditSeriesRequest()}
+                    variant="link"
+                    className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
+                >
+                    + Add another data series
+                </Button>
+            )}
         </ul>
     )
 }
