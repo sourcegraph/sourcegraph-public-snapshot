@@ -703,7 +703,7 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 	var restRepos []restRepository
 	if res, err := c.get(ctx, requestURI, &restRepos); err != nil {
 		link := res.headers.Get("Link")
-		// if we've reached beyond the last page then GitHub API returns 404 with link to the first page, but does NOT contain link to the next page
+		// If we've reached beyond the last page then GitHub API returns 404 with link to the first page, but does NOT contain link to the next page.
 		// link to the next page is typically included in 200 response Link header
 		if res.statusCode == 404 && strings.Contains(link, `rel="first"`) && !strings.Contains(link, `rel="next"`) {
 			return []*Repository{}, nil
