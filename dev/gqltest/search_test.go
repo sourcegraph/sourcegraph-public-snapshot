@@ -331,12 +331,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 			t.Fatal(err)
 		}
 
+		oldConfig := *cfg
+
 		if cfg.ExperimentalFeatures == nil {
 			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 		}
 
-		cfg.ExperimentalFeatures.NpmPackages = "enabled"
-		cfg.ExperimentalFeatures.DependenciesSearch = true
+		if cfg.ExperimentalFeatures.NpmPackages != "enabled" {
+			cfg.ExperimentalFeatures.NpmPackages = "enabled"
+		}
+
+		if !cfg.ExperimentalFeatures.DependenciesSearch {
+			cfg.ExperimentalFeatures.DependenciesSearch = true
+		}
 
 		if err = client.UpdateSiteConfiguration(cfg); err != nil {
 			t.Fatal(err)
@@ -358,6 +365,31 @@ func testSearchClient(t *testing.T, client searchClient) {
 			if err := client.DeleteExternalService(npmExtSvcID); err != nil {
 				t.Fatal(err)
 			}
+
+			if err := client.UpdateSiteConfiguration(&oldConfig); err != nil {
+				t.Fatal(err)
+			}
+
+			// Make sure all npm repos are gone before letting other tests run,
+			// since they assume only the GitHub repositories set-up before exist
+			// in the instance. Deleting the external service above is only the first
+			// step — repo-updater, gitserver and zoekt need to then do their own deletions
+			// asynchronously.
+			for {
+				results, err := client.SearchRepositories(`r:^npm`)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(results) == 0 {
+					break
+				}
+
+				t.Logf("still waiting for %d npm repos to be deleted", len(results))
+
+				time.Sleep(time.Second)
+			}
+
 		})
 
 		_, err = client.Repository("github.com/sgtest/sourcegraph-typescript")
