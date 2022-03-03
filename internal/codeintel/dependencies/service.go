@@ -60,12 +60,16 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
+	hash := func(dep store.DependencyRepo) string {
+		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
+	}
+
 	// Populate return value map from the given information. In the same pass, populate
 	// auxiliary data structures that can be used to feed the upsert and sync operations
 	// below.
 	dependencyRevs = make(map[api.RepoName]types.RevSpecSet, len(repoRevs))
 	dependencies := []store.DependencyRepo{}
-	repoNamesByDependency := map[store.DependencyRepo]api.RepoName{}
+	repoNamesByDependency := map[string]api.RepoName{}
 
 	for _, dep := range deps {
 		repo := dep.RepoName()
@@ -79,17 +83,27 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		}
 		dependencyRevs[repo][rev] = struct{}{}
 
-		dependencyRepo := store.DependencyRepo{Scheme: scheme, Name: name, Version: version}
-		dependencies = append(dependencies, dependencyRepo)
-		repoNamesByDependency[dependencyRepo] = repo
+		dep := store.DependencyRepo{Scheme: scheme, Name: name, Version: version}
+		dependencies = append(dependencies, dep)
+		repoNamesByDependency[hash(dep)] = repo
 	}
 
-	// Write depenencies to database and sync all of the ones that were newly inserted
+	// Write dependencies to database
 	newDependencies, err := s.dependenciesStore.UpsertDependencyRepos(ctx, dependencies)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.sync(ctx, newDependencies, repoNamesByDependency); err != nil {
+
+	// Determine the set of repo names that were recently inserted. Package and repository
+	// names are generally distinct, so we need to re-translate the dependency scheme, name,
+	// and version back to the repository name.
+	newRepos := make([]api.RepoName, 0, len(newDependencies))
+	for _, dep := range newDependencies {
+		newRepos = append(newRepos, repoNamesByDependency[hash(dep)])
+	}
+
+	// Lazily sync all the repos that were newly added
+	if err := s.sync(ctx, newRepos); err != nil {
 		return nil, err
 	}
 
@@ -153,14 +167,12 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 	return deps, nil
 }
 
-// sync calls sync on every repo in the supplied slice. It is assumed that for every value in the
-// slice there is an associated value in the given map correlating a DependencyRepo struct to a repo
-// name usable by the syncer.
-func (s *Service) sync(ctx context.Context, newDependencies []store.DependencyRepo, repoNamesByDependency map[store.DependencyRepo]api.RepoName) error {
+// sync invokes the Syncer for every repo in the supplied slice.
+func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, dep := range newDependencies {
+	for _, repo := range repos {
 		// Capture outside of goroutine below
-		repo := repoNamesByDependency[dep]
+		repo := repo
 
 		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
 		// of concurrent _routines_, whether they are actively syncing repo sources or not. Any
