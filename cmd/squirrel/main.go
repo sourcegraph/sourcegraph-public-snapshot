@@ -171,37 +171,254 @@ func NewSquirrel(readFile ReadFileFunc) *Squirrel {
 func (s *Squirrel) definition(location Location) (*Location, error) {
 	parser := sitter.NewParser()
 
+	var queryString string
+	var bindingsExpr expr
+	var lang *sitter.Language
 	ext := filepath.Ext(location.Path)
 	switch ext {
 	case ".go":
-		parser.SetLanguage(golang.GetLanguage())
+		queryString = goQuery
+		bindingsExpr = goBindings
+		lang = golang.GetLanguage()
 	default:
 		return nil, fmt.Errorf("unrecognized file extension %s", ext)
 	}
 
-	contents, err := s.readFile(location.RepoCommitPath)
+	parser.SetLanguage(lang)
+
+	input, err := s.readFile(location.RepoCommitPath)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := parser.ParseCtx(context.Background(), nil, contents)
+	tree, err := parser.ParseCtx(context.Background(), nil, input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse file contents: %s", err)
 	}
 	root := tree.RootNode()
 
-	node := root.NamedDescendantForPointRange(
+	startNode := root.NamedDescendantForPointRange(
 		sitter.Point{Row: location.Row, Column: location.Column},
 		sitter.Point{Row: location.Row, Column: location.Column},
 	)
 
-	if node == nil {
+	if startNode == nil {
 		return nil, errors.New("node is nil")
 	}
 
-	if node.Type() != "identifier" {
-		return nil, errors.Newf("can't find definition of %s at location %+v", node.Type(), location)
+	if startNode.Type() != "identifier" {
+		return nil, errors.Newf("can't find definition of %s", startNode.Type(), location)
 	}
 
-	return nil, errors.New("not implemented")
+	fmt.Println()
+	fmt.Println("querying...")
+	if false {
+		// ❌ This doesn't work because tree-sitter queries don't check if the current node matches, but ALL
+		// subnodes. That's not what we want. We want to check exactly each current node as we walk up the tree.
+		for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
+			query, err := sitter.NewQuery([]byte(queryString), lang)
+			if err != nil {
+				return nil, errors.Newf("failed to parse query: %s\n%s", err, queryString)
+			}
+			cursor := sitter.NewQueryCursor()
+			cursor.Exec(query, currentNode)
+			match, _, ok := cursor.NextCapture()
+			fmt.Println("currentNode:", currentNode.Type())
+			if !ok {
+				fmt.Println("no match")
+				continue
+			}
+			for _, capture := range match.Captures {
+				fmt.Println("capture", capture.Node.Content(input))
+				if capture.Node.Content(input) == startNode.Content(input) {
+					return &Location{
+						RepoCommitPath: location.RepoCommitPath,
+						Row:            capture.Node.StartPoint().Row,
+						Column:         capture.Node.StartPoint().Column,
+					}, nil
+				}
+			}
+		}
+	} else {
+		for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
+			fmt.Println("currentNode:", currentNode.Type())
+			captures := bindingsExpr.captures(currentNode)
+			for _, capture := range captures {
+				fmt.Println("capture:", currentNode.Type())
+				if capture.Content(input) == startNode.Content(input) {
+					return &Location{
+						RepoCommitPath: location.RepoCommitPath,
+						Row:            capture.StartPoint().Row,
+						Column:         capture.StartPoint().Column,
+					}, nil
+				}
+			}
+		}
+	}
+
+	return nil, errors.New("could not find definition")
+}
+
+const goQuery = `
+(function_declaration
+	name: (identifier) @binding
+	parameters: (parameter_list
+		[
+			(parameter_declaration
+				name: (identifier)* @binding)
+			(variadic_parameter_declaration
+				name: (identifier) @binding)
+		]))
+
+(func_literal
+	parameters: (parameter_list
+		[
+			(parameter_declaration
+				name: (identifier)* @binding)
+			(variadic_parameter_declaration
+				name: (identifier) @binding)
+		]))
+`
+
+var goBindings expr = eOr(
+	eAnd(eType("function_declaration"), eField("name", eCapture(eType("identifier"))), eField("parameters", goBindingsParameters)),
+	eAnd(eType("func_literal"), eField("parameters", goBindingsParameters)),
+)
+
+var goBindingsParameters expr = eAnd(
+	eType("parameter_list"),
+	eChildren(
+		eOr(
+			eAnd(
+				eType("parameter_declaration"),
+				eField("name", eCapture(eType("identifier"))),
+			),
+			eAnd(
+				eType("variadic_parameter_declaration"),
+				eField("name", eCapture(eType("identifier"))),
+			),
+		),
+	),
+)
+
+type expr interface {
+	captures(node *sitter.Node) []*sitter.Node
+}
+
+// Match node type
+type exprType struct{ typeName string }
+
+func eType(typeName string) expr {
+	return exprType{typeName: typeName}
+}
+
+func (e exprType) captures(node *sitter.Node) []*sitter.Node {
+	if node.Type() != e.typeName {
+		return nil
+	}
+	return []*sitter.Node{}
+}
+
+// Capture nodes
+type exprCapture struct {
+	inner expr
+}
+
+func eCapture(inner expr) exprCapture {
+	return exprCapture{inner: inner}
+}
+
+func (e exprCapture) captures(node *sitter.Node) []*sitter.Node {
+	innerCaptures := e.inner.captures(node)
+	if innerCaptures == nil {
+		return nil
+	}
+	return append(innerCaptures, node)
+}
+
+// Match field
+type exprField struct {
+	field string
+	expr  expr
+}
+
+func eField(field string, expr expr) exprField {
+	return exprField{field: field, expr: expr}
+}
+
+func (e exprField) captures(node *sitter.Node) []*sitter.Node {
+	child := node.ChildByFieldName(e.field)
+	if child == nil {
+		return nil
+	}
+	return e.expr.captures(child)
+}
+
+// Conjunction of expressions
+type exprAnd struct {
+	conjuncts []expr
+}
+
+func eAnd(conjuncts ...expr) exprAnd {
+	return exprAnd{conjuncts: conjuncts}
+}
+
+func (e exprAnd) captures(node *sitter.Node) []*sitter.Node {
+	captures := []*sitter.Node{}
+	for _, conjunct := range e.conjuncts {
+		innerCaptures := conjunct.captures(node)
+		if innerCaptures == nil {
+			return nil
+		}
+		captures = append(captures, innerCaptures...)
+	}
+	return captures
+}
+
+// Disjunction of expressions
+type exprOr struct {
+	disjuncts []expr
+}
+
+func eOr(disjuncts ...expr) exprOr {
+	return exprOr{disjuncts: disjuncts}
+}
+
+func (e exprOr) captures(node *sitter.Node) []*sitter.Node {
+	var captures []*sitter.Node
+	for _, disjunct := range e.disjuncts {
+		innerCaptures := disjunct.captures(node)
+		if innerCaptures == nil {
+			continue
+		}
+		if captures == nil {
+			captures = []*sitter.Node{}
+		}
+		captures = append(captures, innerCaptures...)
+	}
+	return captures
+}
+
+// Match children
+type exprChildren struct {
+	inner expr
+}
+
+func eChildren(inner expr) exprChildren {
+	return exprChildren{inner: inner}
+}
+
+func (e exprChildren) captures(node *sitter.Node) []*sitter.Node {
+	var captures []*sitter.Node
+	for i := 0; i < int(node.ChildCount()); i++ {
+		innerCaptures := e.inner.captures(node.Child(i))
+		if innerCaptures == nil {
+			continue
+		}
+		if captures == nil {
+			captures = []*sitter.Node{}
+		}
+		captures = append(captures, innerCaptures...)
+	}
+	return captures
 }

@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestFixturesAreValid(t *testing.T) {
@@ -35,7 +37,9 @@ func TestDefinition(t *testing.T) {
 			return prevContents, nil
 		}
 		prevPath = path.Path
-		return os.ReadFile(path.Path)
+		contents, err := os.ReadFile(path.Path)
+		prevContents = contents
+		return contents, err
 	}
 
 	squirrel := NewSquirrel(readFile)
@@ -46,16 +50,38 @@ func TestDefinition(t *testing.T) {
 	nextAnnotation:
 		for _, annotation := range annotations {
 			if annotation.kind == "ref" {
-				result, err := squirrel.definition(annotation.location)
-				fatalIfError(t, err)
+				var want *Location
 				for _, ann := range symbolToAnnotations[annotation.symbol] {
-					if ann.kind == "def" && ann.location == *result {
+					if ann.kind == "def" {
+						annCopy := ann // avoid capturing the loop variable
+						want = &annCopy.location
+						break
+					}
+				}
+
+				if want == nil {
+					t.Fatalf("tests are missing a definition for %s", annotation.symbol)
+					continue
+				}
+
+				got, err := squirrel.definition(annotation.location)
+				fatalIfError(t, err)
+
+				if got == nil {
+					t.Fatalf("definition(%+v) returned nil", annotation.location)
+				}
+
+				for _, ann := range symbolToAnnotations[annotation.symbol] {
+					if ann.kind == "def" && ann.location == *got {
 						// ✅ Found the definition.
 						continue nextAnnotation
 					}
 				}
+
 				// ❌ Could not find the definition.
-				t.Fatalf("Could not find definition for %s", annotation.symbol)
+				if diff := cmp.Diff(want, *got); diff != "" {
+					t.Fatalf("definition(%+v) returned an incorrect location, -got +want:\n\n%s", annotation.location, diff)
+				}
 			}
 		}
 	}
@@ -83,25 +109,33 @@ func collectAnnotations(t *testing.T) []annotation {
 		fatalIfError(t, err)
 
 		lines := strings.Split(strings.TrimSpace(string(contents)), "\n")
-		for i, line := range lines {
-			matches := regexp.MustCompile(`([^^]*)(\^+) ([a-zA-Z0-9_.]+) (def|ref)`).FindStringSubmatch(line)
-			if matches == nil {
-				continue
-			}
+	nextSourceLine:
+		for sourceLine := 0; ; {
+			for annLine := sourceLine + 1; ; annLine++ {
+				if annLine >= len(lines) {
+					break nextSourceLine
+				}
 
-			annotations = append(annotations, annotation{
-				location: Location{
-					RepoCommitPath: RepoCommitPath{
-						Repo:   "foo",
-						Commit: "bar",
-						Path:   path,
+				matches := regexp.MustCompile(`([^^]*)(\^+) ([a-zA-Z0-9_.]+) (def|ref)`).FindStringSubmatch(lines[annLine])
+				if matches == nil {
+					sourceLine = annLine
+					continue nextSourceLine
+				}
+
+				annotations = append(annotations, annotation{
+					location: Location{
+						RepoCommitPath: RepoCommitPath{
+							Repo:   "foo",
+							Commit: "bar",
+							Path:   path,
+						},
+						Row:    uint32(sourceLine),
+						Column: uint32(spacesToColumn(lines[sourceLine], lengthInSpaces(matches[1]))),
 					},
-					Row:    uint32(i - 1),
-					Column: uint32(spacesToColumn(lines[i-1], measureSpaces(matches[1]))),
-				},
-				symbol: matches[3],
-				kind:   matches[4],
-			})
+					symbol: matches[3],
+					kind:   matches[4],
+				})
+			}
 		}
 
 		return nil
@@ -126,7 +160,7 @@ func groupAnnotationsBysymbol(annotations []annotation) map[string][]annotation 
 	return symbolToAnnotations
 }
 
-func measureSpaces(s string) int {
+func lengthInSpaces(s string) int {
 	total := 0
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\t' {
