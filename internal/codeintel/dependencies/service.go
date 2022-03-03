@@ -59,7 +59,7 @@ func (s *Service) Dependencies(ctx context.Context, repoRevs map[api.RepoName]ty
 		return nil, err
 	}
 
-	// Populate return value map from the given information. In teh same pass, populate
+	// Populate return value map from the given information. In the same pass, populate
 	// auxiliary data structures that can be used to feed the upsert and sync operations
 	// below.
 	dependencyRevs = make(map[api.RepoName]types.RevSpecSet, len(repoRevs))
