@@ -324,7 +324,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 if (kind !== ExternalServiceKind.GITHUB || !isGitHubAppEnabled) {
                     defaultNavigateToAuthProvider(kind)
                 } else if (owner.type === 'org') {
-                    const secondRedirectURI = `/.auth/github/install-app?redirect=${encodeURIComponent(
+                    const secondRedirectURI = `/.auth/github/install-github-app?redirect=${encodeURIComponent(
                         `https://github.com/apps/${
                             window.context.githubAppCloudSlug
                         }/installations/new?state=${encodeURIComponent(owner.id)}`

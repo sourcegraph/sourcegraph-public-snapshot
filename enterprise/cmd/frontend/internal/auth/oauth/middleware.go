@@ -96,7 +96,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
-	mux.Handle("/install-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		dotcomConfig := conf.SiteConfig().Dotcom
 		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
 		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
