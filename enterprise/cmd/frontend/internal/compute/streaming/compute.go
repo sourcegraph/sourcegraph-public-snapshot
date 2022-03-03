@@ -53,8 +53,8 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 	}
 
 	patternType := "regexp"
-	searchClient := client.NewSearchClient(search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, db, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	inputs, err := searchClient.Plan(ctx, "", &patternType, searchQuery, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
 		return eventsC, func() error { return err }
@@ -68,7 +68,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 		defer close(final)
 		defer close(eventsC)
 
-		_, err := searchClient.Execute(ctx, db, stream, inputs)
+		_, err := searchClient.Execute(ctx, stream, inputs)
 		final <- finalResult{err: err}
 	}()
 

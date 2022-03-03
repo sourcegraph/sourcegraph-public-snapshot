@@ -43,7 +43,7 @@ import (
 func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
-		searchClient:        client.NewSearchClient(search.Indexed(), search.SearcherURLs()),
+		searchClient:        client.NewSearchClient(db, search.Indexed(), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -296,7 +296,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 		}
 	}
 
-	inputs, err := h.searchClient.Plan(ctx, h.db, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := h.searchClient.Plan(ctx, a.Version, strPtr(a.PatternType), a.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		close(eventsC)
 		var queryErr *run.QueryError
@@ -320,7 +320,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (<-chan stream
 		defer close(eventsC)
 		defer batchedStream.Done()
 
-		alert, err := h.searchClient.Execute(ctx, h.db, batchedStream, inputs)
+		alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
 		final <- finalResult{alert: alert, err: err}
 	}()
 
