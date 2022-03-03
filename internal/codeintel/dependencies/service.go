@@ -153,10 +153,10 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 	return deps, nil
 }
 
-// syncNew calls sync on every repo in the supplied slice. It is assumed that for every value in the
+// sync calls sync on every repo in the supplied slice. It is assumed that for every value in the
 // slice there is an associated value in the given map correlating a DependencyRepo struct to a repo
 // name usable by the syncer.
-func (s *Service) syncNew(ctx context.Context, newDependencies []store.DependencyRepo, repoNamesByDependency map[store.DependencyRepo]api.RepoName) error {
+func (s *Service) sync(ctx context.Context, newDependencies []store.DependencyRepo, repoNamesByDependency map[store.DependencyRepo]api.RepoName) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, dep := range newDependencies {
 		// Capture outside of goroutine below
