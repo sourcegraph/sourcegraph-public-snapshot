@@ -87,6 +87,10 @@ $input-font-size-sm: (11/14) + em;
     line-height: 1rem;
 }
 
+:root {
+    --input-font-size-sm: #{$input-font-size-sm};
+}
+
 // Label / Base
 label,
 %label-base {

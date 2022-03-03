@@ -10,6 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
+func init() {
+	checkBatchInserterInvariants = true
+}
+
 func TestBatchInserter(t *testing.T) {
 	db := dbtest.NewDB(t)
 	setupTestTable(t, db)

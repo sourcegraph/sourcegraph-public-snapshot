@@ -681,7 +681,19 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if err != nil {
 		return nil, err
 	}
-	opts.State = state
+	if state != "" {
+		opts.States = []btypes.BatchChangeState{state}
+	}
+
+	// If multiple `states` are provided, prefer them over `state`.
+	if args.States != nil {
+		states, err := parseBatchChangeStates(args.States)
+		if err != nil {
+			return nil, err
+		}
+		opts.States = states
+	}
+
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -1795,6 +1807,23 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
+}
+
+func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
+	states := []btypes.BatchChangeState{}
+	if ss == nil || len(*ss) == 0 {
+		return states, nil
+	}
+	for _, s := range *ss {
+		state, err := parseBatchChangeState(&s)
+		if err != nil {
+			return nil, err
+		}
+		if state != "" {
+			states = append(states, state)
+		}
+	}
+	return states, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
