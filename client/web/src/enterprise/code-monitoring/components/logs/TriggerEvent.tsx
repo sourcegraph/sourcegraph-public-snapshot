@@ -58,7 +58,7 @@ export const TriggerEvent: React.FunctionComponent<{
                 {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline mr-2')} /> : <span />}
 
                 <span>
-                    Run <Timestamp date={triggerEvent.timestamp} now={now} />
+                    Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
                 </span>
             </Button>
 
