@@ -6,7 +6,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Grid } from '../../Grid/Grid'
 
-import { MultiSelect, MultiSelectProps, MultiSelectState, Option } from './MultiSelect'
+import { MultiSelect, MultiSelectProps, MultiSelectState, MultiSelectOption } from '.'
 
 const config: Meta = {
     title: 'wildcard/MultiSelect',
@@ -22,7 +22,7 @@ export default config
 
 type OptionValue = 'chocolate' | 'strawberry' | 'vanilla' | 'green tea' | 'rocky road' | 'really long'
 
-const OPTIONS: Option<OptionValue>[] = [
+const OPTIONS: MultiSelectOption<OptionValue>[] = [
     { value: 'chocolate', label: 'Chocolate' },
     { value: 'strawberry', label: 'Strawberry' },
     { value: 'vanilla', label: 'Vanilla' },

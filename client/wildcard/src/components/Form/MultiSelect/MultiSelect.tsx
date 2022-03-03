@@ -1,56 +1,22 @@
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { ReactElement } from 'react'
-import Select, {
-    components,
-    Props as SelectProps,
-    StylesConfig,
-    ClearIndicatorProps,
-    DropdownIndicatorProps,
-    MultiValueGenericProps,
-    MultiValueRemoveProps,
-    GroupBase,
-} from 'react-select'
+import Select, { Props as SelectProps, StylesConfig, GroupBase } from 'react-select'
 
-import { Badge } from '../..'
 import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 import selectStyles from '../Select/Select.module.scss'
 
+import { ClearIndicator } from './ClearIndicator'
+import { DropdownIndicator } from './DropdownIndicator'
 import styles from './MultiSelect.module.scss'
+import { MultiValueContainer } from './MultiValueContainer'
+import { MultiValueLabel } from './MultiValueLabel'
+import { MultiValueRemove } from './MultiValueRemove'
 import { STYLES } from './styles'
 import { THEME } from './theme'
-
-/**
- * Generic type for an option to be listed from the `MultiSelect` dropdown.
- *
- * @param OptionValue The type of the value of the option, i.e. a union set of all
- * possible values.
- */
-export interface MultiSelectOption<OptionValue = unknown> {
-    value: OptionValue
-    label: string
-}
-
-/**
- * Generic type for the state a consumer of `MultiSelect` should expect to manage.
- *
- * @param OptionValue The type of the value of the option, i.e. a union set of all
- * possible values.
- */
-export type MultiSelectState<OptionValue = unknown> = readonly MultiSelectOption<OptionValue>[]
-
-// We use module augmentation to make TS aware of custom props available from `Select`
-// custom components, styles, theme, etc.
-// See: https://react-select.com/typescript#custom-select-props
-declare module 'react-select/dist/declarations/src/Select' {
-    export interface Props<Option, IsMulti extends boolean, Group extends GroupBase<Option>> {
-        isValid?: AccessibleFieldProps<{}>['isValid']
-    }
-}
+import { MultiSelectOption } from './types'
 
 export type MultiSelectProps<Option = unknown> = AccessibleFieldProps<
     SelectProps<Option, true> & {
@@ -104,47 +70,4 @@ export const MultiSelect = <OptionValue extends unknown = unknown>({
         />
         {message && <FormFieldMessage isValid={props.isValid}>{message}</FormFieldMessage>}
     </div>
-)
-
-// Overwrite the clear indicator with `CloseIcon`
-const ClearIndicator = <OptionValue extends unknown = unknown>(
-    props: ClearIndicatorProps<MultiSelectOption<OptionValue>, true>
-): ReactElement => (
-    <components.ClearIndicator {...props}>
-        <CloseIcon className={styles.clearIcon} />
-    </components.ClearIndicator>
-)
-
-// Overwrite the dropdown indicator with `ChevronDownIcon`
-const DropdownIndicator = <OptionValue extends unknown = unknown>(
-    props: DropdownIndicatorProps<MultiSelectOption<OptionValue>, true>
-): ReactElement => (
-    <components.DropdownIndicator {...props}>
-        <ChevronDownIcon className={styles.dropdownIcon} />
-    </components.DropdownIndicator>
-)
-
-// Overwrite the multi value container with Wildcard `Badge`
-const MultiValueContainer = <OptionValue extends unknown = unknown>({
-    innerProps: _innerProps,
-    selectProps: _selectProps,
-    ...props
-}: MultiValueGenericProps<MultiSelectOption<OptionValue>, true>): ReactElement => (
-    <Badge variant="secondary" className={styles.multiValueContainer} {...props} />
-)
-
-// Remove extra wrappers around multi value label
-const MultiValueLabel = <OptionValue extends unknown = unknown>({
-    innerProps: _innerProps,
-    selectProps: _selectProps,
-    ...props
-}: MultiValueGenericProps<MultiSelectOption<OptionValue>, true>): ReactElement => <span {...props} />
-
-// Overwrite the multi value remove indicator with `CloseIcon`
-const MultiValueRemove = <OptionValue extends unknown = unknown>(
-    props: MultiValueRemoveProps<MultiSelectOption<OptionValue>, true>
-): ReactElement => (
-    <components.MultiValueRemove {...props}>
-        <CloseIcon className={styles.removeIcon} />
-    </components.MultiValueRemove>
 )
