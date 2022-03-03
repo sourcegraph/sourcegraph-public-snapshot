@@ -196,6 +196,7 @@ export const ReferencesList: React.FunctionComponent<
     // the memory history for the code blob on the right, so it will jump to &
     // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
+        console.log('onReferenceClick', location)
         if (location) {
             blobMemoryHistory.push(location.url)
         }
@@ -212,7 +213,9 @@ export const ReferencesList: React.FunctionComponent<
     // That will cause the panel to show the references of the clicked token,
     // but not navigate the main web app to it.
     const onBlobNav = (url: string): void => {
-        panelHistory.push(url + toViewStateHash('references'))
+        const parsedURL = new URL(url, window.location.href)
+        parsedURL.searchParams.set('jumpToFirst', 'true')
+        panelHistory.push(parsedURL.pathname + parsedURL.search + toViewStateHash('references'))
     }
 
     return (
@@ -286,6 +289,13 @@ interface ReferencesComponentProps extends CoolCodeIntelProps {
 }
 
 export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
+    // const { search } = useLocation()
+    // const searchParameters = new URLSearchParams(search)
+    // if (props.activeLocation === undefined && searchParameters.get('jumpToFirst') === 'true' && references.length > 0) {
+    //     props.setActiveLocation(references[0])
+    //     return null
+    // }
+
     const {
         lsifData,
         error,
@@ -313,6 +323,10 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
         },
     })
 
+    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
+    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
+    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
+
     if (loading) {
         return (
             <>
@@ -339,50 +353,6 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
         return <>Nothing found</>
     }
 
-    const references = lsifData.references.nodes
-    const definitions = lsifData.definitions.nodes
-    const implementations = lsifData.implementations.nodes
-
-    return (
-        <SideReferencesLists
-            {...props}
-            definitions={definitions}
-            references={references}
-            referencesHasNextPage={referencesHasNextPage}
-            implementationsHasNextPage={implementationsHasNextPage}
-            implementations={implementations}
-            fetchMoreImplementations={fetchMoreImplementations}
-            fetchMoreReferences={fetchMoreReferences}
-            fetchMoreReferencesLoading={fetchMoreReferencesLoading}
-            fetchMoreImplementationsLoading={fetchMoreImplementationsLoading}
-        />
-    )
-}
-
-interface SideReferencesListsProps extends CoolCodeIntelProps {
-    token: Token
-    setActiveLocation: (location: Location | undefined) => void
-    activeLocation: Location | undefined
-    filter: string | undefined
-
-    definitions: LocationFields[]
-
-    references: LocationFields[]
-    referencesHasNextPage: boolean
-    fetchMoreReferences: () => void
-    fetchMoreReferencesLoading: boolean
-
-    implementations: LocationFields[]
-    implementationsHasNextPage: boolean
-    fetchMoreImplementations: () => void
-    fetchMoreImplementationsLoading: boolean
-}
-
-const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
-    const references = useMemo(() => props.references.map(buildLocation), [props.references])
-    const definitions = useMemo(() => props.definitions.map(buildLocation), [props.definitions])
-    const implementations = useMemo(() => props.implementations.map(buildLocation), [props.implementations])
-
     return (
         <>
             <CollapsibleLocationList
@@ -396,18 +366,18 @@ const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = p
                 {...props}
                 name="references"
                 locations={references}
-                hasMore={props.referencesHasNextPage}
-                fetchMore={props.fetchMoreReferences}
-                loadingMore={props.fetchMoreReferencesLoading}
+                hasMore={referencesHasNextPage}
+                fetchMore={fetchMoreReferences}
+                loadingMore={fetchMoreReferencesLoading}
             />
             {implementations.length > 0 && (
                 <CollapsibleLocationList
                     {...props}
                     name="implementations"
                     locations={implementations}
-                    hasMore={props.implementationsHasNextPage}
-                    fetchMore={props.fetchMoreImplementations}
-                    loadingMore={props.fetchMoreImplementationsLoading}
+                    hasMore={implementationsHasNextPage}
+                    fetchMore={fetchMoreImplementations}
+                    loadingMore={fetchMoreImplementationsLoading}
                 />
             )}
         </>
@@ -842,6 +812,7 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> =
     const location = useLocation()
 
     const { hash, pathname, search } = location
+    console.log('search', search)
     const { line, character, viewState } = parseQueryAndHash(search, hash)
     const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
 
@@ -886,3 +857,6 @@ export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
 
     return <ResizableCoolCodeIntelPanel {...props} token={token} />
 }
+
+const addJumpToFirstQueryParameter = (searchParameters: URLSearchParams): URLSearchParams =>
+    new URLSearchParams([['jumpToFirst', 'reference'], ...searchParameters.entries()])
