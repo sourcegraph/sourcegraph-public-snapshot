@@ -129,7 +129,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 	p.Filepath = normalizeFilepath(p.Filepath)
 
 	filetypeQuery := DetectSyntaxHighlightingFiletype(p.Filepath, string(p.Content))
-	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetypeQuery.Filetype)
+	// TODO: Remove TreeSitterEnabled from this statement
+	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetypeQuery.Filetype) && filetypeQuery.Engine == EngineTreeSitter
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),

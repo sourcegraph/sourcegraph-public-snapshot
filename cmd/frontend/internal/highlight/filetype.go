@@ -54,7 +54,8 @@ var highlightConfig = syntaxHighlightConfig{}
 
 var engineConfig = syntaxEngineConfig{
 	// This sets the default syntax engine for the sourcegraph server.
-	Default: EngineSyntect,
+	Default:   EngineSyntect,
+	Overrides: map[string]EngineType{},
 }
 
 func init() {
@@ -91,6 +92,13 @@ func init() {
 
 			if defaultEngine, ok := engineNameToEngineType(config.Highlights.Engine.Default); ok {
 				engineConfig.Default = defaultEngine
+			}
+
+			engineConfig.Overrides = map[string]EngineType{}
+			for name, engine := range config.Highlights.Engine.Overrides {
+				if overrideEngine, ok := engineNameToEngineType(engine); ok {
+					engineConfig.Overrides[name] = overrideEngine
+				}
 			}
 
 			highlightConfig.Extensions = config.Highlights.Filetypes.Extensions
