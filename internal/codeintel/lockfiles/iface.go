@@ -34,5 +34,5 @@ func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-	return git.ArchiveReader(ctx, repo, opts)
+	return git.ArchiveReader(ctx, nil, repo, opts)
 }

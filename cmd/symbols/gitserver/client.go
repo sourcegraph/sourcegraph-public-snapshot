@@ -55,7 +55,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 		Paths:   paths,
 	}
 
-	return git.ArchiveReader(ctx, repo, opts)
+	return git.ArchiveReader(ctx, nil, repo, opts)
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {

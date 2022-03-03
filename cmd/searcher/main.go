@@ -71,7 +71,7 @@ func main() {
 	service := &search.Service{
 		Store: &store.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
 			},
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
