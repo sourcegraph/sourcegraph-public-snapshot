@@ -1,10 +1,13 @@
 import { Menu as ReachMenu, MenuProps as ReachMenuProps } from '@reach/menu-button'
 import { isFunction, noop } from 'lodash'
-import React from 'react'
+import React, { ComponentType, forwardRef } from 'react'
 
+import { ForwardReferenceComponent } from '../..'
 import { Popover } from '../Popover'
 
-export type MenuProps = ReachMenuProps
+export type MenuProps = ReachMenuProps & {
+    as?: ComponentType
+}
 
 /**
  * A Menu component.
@@ -15,12 +18,16 @@ export type MenuProps = ReachMenuProps
  * @see — Building accessible menus: https://www.w3.org/TR/wai-aria-practices/examples/menu-button/menu-button-links.html
  * @see — Docs https://reach.tech/menu-button#menu
  */
-export const Menu: React.FunctionComponent<ReachMenuProps> = ({ children, ...props }) => (
-    <ReachMenu {...props}>
-        {({ isExpanded }) => (
-            <Popover isOpen={isExpanded} onOpenChange={noop}>
-                {isFunction(children) ? children({ isExpanded, isOpen: isExpanded }) : children}
-            </Popover>
-        )}
-    </ReachMenu>
-)
+export const Menu = forwardRef((props, reference) => {
+    const { children, as: Component, ...rest } = props
+
+    return (
+        <ReachMenu as={Component} ref={reference} {...rest}>
+            {({ isExpanded }) => (
+                <Popover isOpen={isExpanded} onOpenChange={noop}>
+                    {isFunction(children) ? children({ isExpanded, isOpen: isExpanded }) : children}
+                </Popover>
+            )}
+        </ReachMenu>
+    )
+}) as ForwardReferenceComponent<'div', MenuProps>

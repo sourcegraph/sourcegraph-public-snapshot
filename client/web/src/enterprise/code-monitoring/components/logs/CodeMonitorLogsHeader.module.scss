@@ -1,0 +1,8 @@
+$chevron-width: 1.5rem;
+$chevron-padding: 0.5rem;
+$alert-icon-width: 1rem;
+$alert-icon-padding: 0.25rem;
+
+.name-column {
+    margin-left: $chevron-width + $chevron-padding + $alert-icon-width + $alert-icon-padding;
+}

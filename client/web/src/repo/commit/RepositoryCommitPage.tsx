@@ -7,7 +7,15 @@ import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLate
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    createAggregateError,
+    ErrorLike,
+    isErrorLike,
+    isDefined,
+    memoizeObservable,
+    property,
+} from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
@@ -19,8 +27,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,
@@ -79,7 +85,26 @@ const queryCommit = memoizeObservable(
                     throw new Error(`Node is a ${data.node.__typename}, not a Repository`)
                 }
                 if (!data.node.commit) {
-                    throw createAggregateError(errors || [new Error('Commit not found')])
+                    // Filter out any revision not found errors, they usually come in multiples when searching for a commit, we want to replace all of them with 1 "Commit not found" error
+                    const errorsWithoutRevisionError = errors?.filter(
+                        error => !error.message.includes('revision not found')
+                    )
+
+                    const revisionErrorsFiltered =
+                        errors && errorsWithoutRevisionError && errorsWithoutRevisionError.length < errors?.length
+
+                    // If there are no other errors left (or there wasn't any errors to begin with throw out a Commit not found error
+                    if (!errorsWithoutRevisionError || errorsWithoutRevisionError.length === 0) {
+                        throw new Error('Commit not found')
+                    }
+
+                    // if we found at least 1 "revision nor found error" add "Commit not found" to the errors
+                    if (revisionErrorsFiltered) {
+                        throw createAggregateError([new Error('Commit not found'), ...errorsWithoutRevisionError])
+                    }
+
+                    // no "revision not found" errors, throw the other errors
+                    throw createAggregateError(errorsWithoutRevisionError)
                 }
                 return data.node.commit
             })
@@ -120,7 +145,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private repositoryCommitPageElements = new Subject<HTMLElement | null>()
     private nextRepositoryCommitPageElement = (element: HTMLElement | null): void =>
         this.repositoryCommitPageElements.next(element)
-
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,

@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ authz.Provider = (*Provider)(nil)
@@ -331,7 +331,7 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) Validate() (problems []string) {
+func (p *Provider) ValidateConnection(ctx context.Context) (problems []string) {
 	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
 	rc, _, err := p.p4Execer.P4Exec(context.Background(), p.host, p.user, p.password, "protects", "-u", p.user)
 	if err == nil {

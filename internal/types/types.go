@@ -661,6 +661,15 @@ type User struct {
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
+	Searchable            bool
+}
+
+type OrgMemberAutocompleteSearchItem struct {
+	ID          int32
+	Username    string
+	DisplayName string
+	AvatarURL   string
+	InOrg       int32
 }
 
 type Org struct {
@@ -1035,6 +1044,56 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
+// CodeHostIntegrationUsage represents the daily, weekly and monthly
+// number of unique users and events for code host integration usage
+// and inbound traffic from code host integration to Sourcegraph instance
+type CodeHostIntegrationUsage struct {
+	Month CodeHostIntegrationUsagePeriod
+	Week  CodeHostIntegrationUsagePeriod
+	Day   CodeHostIntegrationUsagePeriod
+}
+
+type CodeHostIntegrationUsagePeriod struct {
+	StartTime         time.Time
+	BrowserExtension  CodeHostIntegrationUsageType
+	NativeIntegration CodeHostIntegrationUsageType
+}
+
+type CodeHostIntegrationUsageType struct {
+	UniquesCount        int32
+	TotalCount          int32
+	InboundTrafficToWeb CodeHostIntegrationUsageInboundTrafficToWeb
+}
+
+type CodeHostIntegrationUsageInboundTrafficToWeb struct {
+	UniquesCount int32
+	TotalCount   int32
+}
+
+// UserAndEventCount represents the number of events triggered in a given
+// time frame per user and overall.
+type UserAndEventCount struct {
+	UserCount  int32
+	EventCount int32
+}
+
+// FileAndSearchPageUserAndEventCounts represents the number of events triggered
+// on the "search result" and "file" pages in a given time frame.
+type FileAndSearchPageUserAndEventCounts struct {
+	StartTime             time.Time
+	DisplayedOnFilePage   UserAndEventCount
+	DisplayedOnSearchPage UserAndEventCount
+	ClickedOnFilePage     UserAndEventCount
+	ClickedOnSearchPage   UserAndEventCount
+}
+
+// CTAUsage represents the total number of CTAs displayed and clicked
+// on the "search result" and "file" pages over the current month.
+type CTAUsage struct {
+	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
+	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
+}
+
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
@@ -1116,18 +1175,26 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
-	WeeklyInsightsPageViews        *int32
-	WeeklyInsightsUniquePageViews  *int32
-	WeeklyInsightConfigureClick    *int32
-	WeeklyInsightAddMoreClick      *int32
-	WeekStart                      time.Time
-	WeeklyInsightCreators          *int32
-	WeeklyFirstTimeInsightCreators *int32
-	WeeklyAggregatedUsage          []AggregatedPingStats
-	InsightTimeIntervals           []InsightTimeIntervalPing
-	InsightOrgVisible              []OrgVisibleInsightPing
-	InsightTotalCounts             InsightTotalCounts
+	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
+	WeeklyInsightsPageViews                 *int32
+	WeeklyInsightsGetStartedPageViews       *int32
+	WeeklyInsightsUniquePageViews           *int32
+	WeeklyInsightsGetStartedUniquePageViews *int32
+	WeeklyInsightConfigureClick             *int32
+	WeeklyInsightAddMoreClick               *int32
+	WeekStart                               time.Time
+	WeeklyInsightCreators                   *int32
+	WeeklyFirstTimeInsightCreators          *int32
+	WeeklyAggregatedUsage                   []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
+	InsightTimeIntervals                    []InsightTimeIntervalPing
+	InsightOrgVisible                       []OrgVisibleInsightPing
+	InsightTotalCounts                      InsightTotalCounts
+}
+
+type CodeInsightsCriticalTelemetry struct {
+	TotalInsights int32
 }
 
 // Usage statistics for a type of code insight
@@ -1174,6 +1241,11 @@ type InsightViewSeriesCountPing struct {
 	GenerationType string
 	ViewType       string
 	TotalCount     int
+}
+
+type InsightGetStartedTabClickPing struct {
+	TabName    string
+	TotalCount int
 }
 
 type InsightTotalCounts struct {

@@ -4,11 +4,11 @@ import (
 	"container/heap"
 	"context"
 	"math/rand"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -29,7 +29,7 @@ type schedulerConfig struct {
 }
 
 // RunScheduler runs the worker that schedules git fetches of synced repositories in git-server.
-func RunScheduler(ctx context.Context, scheduler *updateScheduler) {
+func RunScheduler(ctx context.Context, scheduler *UpdateScheduler) {
 	var (
 		have schedulerConfig
 		stop context.CancelFunc
@@ -86,7 +86,7 @@ const (
 	maxDelay = 8 * time.Hour
 )
 
-// updateScheduler schedules repo update (or clone) requests to gitserver.
+// UpdateScheduler schedules repo update (or clone) requests to gitserver.
 //
 // Repository metadata is synced from configured code hosts and added to the scheduler.
 //
@@ -104,7 +104,7 @@ const (
 //
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
 // is limited by the gitMaxConcurrentClones site configuration.
-type updateScheduler struct {
+type UpdateScheduler struct {
 	updateQueue *updateQueue
 	schedule    *schedule
 }
@@ -123,8 +123,8 @@ type configuredRepo struct {
 const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
-func NewUpdateScheduler() *updateScheduler {
-	return &updateScheduler{
+func NewUpdateScheduler() *UpdateScheduler {
+	return &UpdateScheduler{
 		updateQueue: &updateQueue{
 			index:         make(map[api.RepoID]*repoUpdate),
 			notifyEnqueue: make(chan struct{}, notifyChanBuffer),
@@ -138,7 +138,7 @@ func NewUpdateScheduler() *updateScheduler {
 }
 
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
-func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
+func (s *UpdateScheduler) runScheduleLoop(ctx context.Context) {
 	for {
 		select {
 		case <-s.schedule.wakeup:
@@ -152,7 +152,7 @@ func (s *updateScheduler) runScheduleLoop(ctx context.Context) {
 	}
 }
 
-func (s *updateScheduler) runSchedule() {
+func (s *UpdateScheduler) runSchedule() {
 	s.schedule.mu.Lock()
 	defer s.schedule.mu.Unlock()
 	defer s.schedule.rescheduleTimer()
@@ -171,7 +171,7 @@ func (s *updateScheduler) runSchedule() {
 }
 
 // runUpdateLoop sends repo update requests to gitserver.
-func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
+func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 	limiter := configuredLimiter()
 
 	for {
@@ -199,6 +199,10 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
+				// This is a blocking call since the repo will be cloned synchronously by gitserver
+				// if it doesn't exist or update it if it does. The timeout of this request depends
+				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
+				// deadline shorter than the value of this config.
 				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
@@ -207,16 +211,20 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 					schedError.WithLabelValues("repoUpdateResponse").Inc()
 					log15.Error("runUpdateLoop: error updating repo", "uri", repo.Name, "err", resp.Error)
 				}
+
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
-				} else if err != nil || (resp != nil && resp.Error != "") {
+					return
+				}
+
+				if err != nil || (resp != nil && resp.Error != "") {
 					// On error we will double the current interval so that we back off and don't
 					// get stuck with problematic repos with low intervals.
 					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {
 						s.schedule.updateInterval(repo, currentInterval*2)
 					}
 				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
-					// This is the heuristic that is described in the updateScheduler documentation.
+					// This is the heuristic that is described in the UpdateScheduler documentation.
 					// Update that documentation if you update this logic.
 					interval := resp.LastFetched.Sub(*resp.LastChanged) / 2
 					s.schedule.updateInterval(repo, interval)
@@ -277,7 +285,7 @@ var configuredLimiter = func() *mutablelimiter.Limiter {
 //                commits. Enqueue for asap clone (or fetch).
 //   Unmodified - we likely already have this cloned. Just rely on
 //                the scheduler and do not enqueue.
-func (s *updateScheduler) UpdateFromDiff(diff Diff) {
+func (s *UpdateScheduler) UpdateFromDiff(diff Diff) {
 	for _, r := range diff.Deleted {
 		s.remove(r)
 	}
@@ -306,17 +314,17 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 //
 // This method should be called periodically with the list of all repositories
 // managed by the scheduler that are not cloned on gitserver.
-func (s *updateScheduler) PrioritiseUncloned(names []string) {
+func (s *UpdateScheduler) PrioritiseUncloned(names []string) {
 	s.schedule.prioritiseUncloned(names)
 }
 
 // EnsureScheduled ensures that all repos in repos exist in the scheduler.
-func (s *updateScheduler) EnsureScheduled(repos []types.MinimalRepo) {
+func (s *UpdateScheduler) EnsureScheduled(repos []types.MinimalRepo) {
 	s.schedule.insertNew(repos)
 }
 
 // ListRepos list all repos managed by the scheduler
-func (s *updateScheduler) ListRepos() []string {
+func (s *UpdateScheduler) ListRepos() []string {
 	s.schedule.mu.Lock()
 	defer s.schedule.mu.Unlock()
 
@@ -332,7 +340,7 @@ func (s *updateScheduler) ListRepos() []string {
 //
 // If enqueue is true then r is also enqueued to the update queue for a git
 // fetch/clone soon.
-func (s *updateScheduler) upsert(r *types.Repo, enqueue bool) {
+func (s *UpdateScheduler) upsert(r *types.Repo, enqueue bool) {
 	repo := configuredRepoFromRepo(r)
 
 	updated := s.schedule.upsert(repo)
@@ -345,7 +353,7 @@ func (s *updateScheduler) upsert(r *types.Repo, enqueue bool) {
 	log15.Debug("scheduler.updateQueue.enqueued", "repo", r.Name, "updated", updated)
 }
 
-func (s *updateScheduler) remove(r *types.Repo) {
+func (s *UpdateScheduler) remove(r *types.Repo) {
 	repo := configuredRepoFromRepo(r)
 
 	if s.schedule.remove(repo) {
@@ -368,7 +376,7 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
-func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
+func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
@@ -378,7 +386,7 @@ func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
-func (s *updateScheduler) DebugDump(ctx context.Context, db dbutil.DB) interface{} {
+func (s *UpdateScheduler) DebugDump(ctx context.Context, db dbutil.DB) interface{} {
 	data := struct {
 		Name        string
 		UpdateQueue []*repoUpdate
@@ -436,7 +444,7 @@ func (s *updateScheduler) DebugDump(ctx context.Context, db dbutil.DB) interface
 }
 
 // ScheduleInfo returns the current schedule info for a repo.
-func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
+func (s *UpdateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	var result protocol.RepoUpdateSchedulerInfoResult
 
 	s.schedule.mu.Lock()
@@ -456,6 +464,7 @@ func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedu
 			Index:    update.Index,
 			Total:    len(s.updateQueue.index),
 			Updating: update.Updating,
+			Priority: int(update.Priority),
 		}
 	}
 	s.updateQueue.mu.Unlock()
@@ -789,12 +798,10 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 			update.Interval = interval
 		}
 
-		if conf.ExperimentalFeatures().EnableRepoUpdateIntervalJitter {
-			// Add a jitter of 5% on either side of the interval to avoid
-			// repos getting updated at the same time.
-			delta := int64(update.Interval) / 20
-			update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
-		}
+		// Add a jitter of 5% on either side of the interval to avoid
+		// repos getting updated at the same time.
+		delta := int64(update.Interval) / 20
+		update.Interval = update.Interval + time.Duration(s.randGenerator.Int63n(2*delta)-delta)
 
 		update.Due = timeNow().Add(update.Interval)
 		log15.Debug("updated repo", "repo", repo.Name, "due", update.Due.Sub(timeNow()))

@@ -32,6 +32,7 @@ type ListBatchChangesArgs struct {
 	First               int32
 	After               *string
 	State               *string
+	States              *[]string
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
@@ -94,6 +95,8 @@ type ReplaceBatchSpecInputArgs struct {
 	Execute          bool
 	NoCache          bool
 }
+
+type UpsertBatchSpecInputArgs = CreateBatchSpecFromRawArgs
 
 type DeleteBatchSpecArgs struct {
 	BatchSpec graphql.ID
@@ -244,6 +247,7 @@ type BatchChangesResolver interface {
 	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
 	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
+	UpsertBatchSpecInput(ctx context.Context, args *UpsertBatchSpecInputArgs) (BatchSpecResolver, error)
 	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)
 	ExecuteBatchSpec(ctx context.Context, args *ExecuteBatchSpecArgs) (BatchSpecResolver, error)
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
@@ -575,6 +579,7 @@ type ListWorkspacesArgs struct {
 	After   *string
 	OrderBy *string
 	Search  *string
+	State   *string
 }
 
 type ListRecentlyCompletedWorkspacesArgs struct {

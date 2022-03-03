@@ -32,10 +32,11 @@ func (p *fakeProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acco
 	return p.extAcct, nil
 }
 
-func (p *fakeProvider) ServiceType() string           { return p.codeHost.ServiceType }
-func (p *fakeProvider) ServiceID() string             { return p.codeHost.ServiceID }
-func (p *fakeProvider) URN() string                   { return extsvc.URN(p.codeHost.ServiceType, 0) }
-func (p *fakeProvider) Validate() (problems []string) { return nil }
+func (p *fakeProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *fakeProvider) ServiceID() string   { return p.codeHost.ServiceID }
+func (p *fakeProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
+
+func (p *fakeProvider) ValidateConnection(context.Context) (problems []string) { return nil }
 
 func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, nil
@@ -114,7 +115,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		},
 		{
 			name: "authenticated user is a site admin",
-			setup: func(t *testing.T) (context.Context, DB) {
+			setup: func(_ *testing.T) (context.Context, DB) {
 				users := NewMockUserStoreFrom(db.Users())
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 				mockDB := NewMockDBFrom(db)
@@ -140,7 +141,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		},
 		{
 			name: "authenticated user is not a site admin",
-			setup: func(t *testing.T) (context.Context, DB) {
+			setup: func(_ *testing.T) (context.Context, DB) {
 				users := NewMockUserStoreFrom(db.Users())
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				mockDB := NewMockDBFrom(db)

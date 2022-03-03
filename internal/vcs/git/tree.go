@@ -8,15 +8,14 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
+	"github.com/grafana/regexp"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Stat returns a FileInfo describing the named file at commit.
@@ -96,7 +96,7 @@ func ReadDir(
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...string) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -106,6 +106,12 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 		"--with-tree",
 		string(commit),
 	}
+
+	if len(pathspecs) > 0 {
+		args = append(args, "--")
+		args = append(args, pathspecs...)
+	}
+
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)

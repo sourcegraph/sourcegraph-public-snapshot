@@ -5,10 +5,10 @@ import (
 	"flag"
 	"net/url"
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 )

@@ -107,13 +107,13 @@ exports[`GlobalNavbar default 1`] = `
               tabindex="-1"
             >
               <a
-                class="dropdown-item showOnTouchScreen"
+                class="anchorLink dropdown-item showOnTouchScreen"
                 href="/search"
               >
                 Search home
               </a>
               <a
-                class="dropdown-item"
+                class="anchorLink dropdown-item"
                 href="/contexts"
                 role="menuitem"
               >
@@ -207,7 +207,7 @@ exports[`GlobalNavbar default 1`] = `
         class="action"
       >
         <a
-          class="link"
+          class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
           About 
@@ -223,13 +223,13 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="btn btnOutlineSecondary btnSm mr-1"
+            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
             href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btnSm signUp"
+            class="anchorLink btn btnSm signUp"
             href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >
@@ -370,13 +370,13 @@ exports[`GlobalNavbar low-profile 1`] = `
               tabindex="-1"
             >
               <a
-                class="dropdown-item showOnTouchScreen"
+                class="anchorLink dropdown-item showOnTouchScreen"
                 href="/search"
               >
                 Search home
               </a>
               <a
-                class="dropdown-item"
+                class="anchorLink dropdown-item"
                 href="/contexts"
                 role="menuitem"
               >
@@ -470,7 +470,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="action"
       >
         <a
-          class="link"
+          class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
           About 
@@ -486,13 +486,13 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="btn btnOutlineSecondary btnSm mr-1"
+            class="anchorLink btn btnOutlineSecondary btnSm mr-1"
             href="/sign-in"
           >
             Log in
           </a>
           <a
-            class="btn btnSm signUp"
+            class="anchorLink btn btnSm signUp"
             href="https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >

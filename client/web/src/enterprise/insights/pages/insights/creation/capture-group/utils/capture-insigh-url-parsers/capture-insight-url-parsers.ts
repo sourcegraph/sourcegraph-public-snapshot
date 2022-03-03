@@ -23,7 +23,7 @@ export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>
     return parameters.toString()
 }
 
-export function decodeCaptureInsightURL(queryParameters: string): CaptureGroupFormFields | null {
+export function decodeCaptureInsightURL(queryParameters: string): Partial<CaptureGroupFormFields> | null {
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
@@ -38,8 +38,6 @@ export function decodeCaptureInsightURL(queryParameters: string): CaptureGroupFo
                 repositories: repositories ?? '',
                 allRepos: !!allRepos,
                 groupSearchQuery: groupSearchQuery ?? '',
-                step: 'days',
-                stepValue: '8',
             }
         }
 

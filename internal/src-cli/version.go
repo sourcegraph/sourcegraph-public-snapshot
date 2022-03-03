@@ -8,8 +8,9 @@ import (
 	"sort"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/tomnomnom/linkheader"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type releaseMeta struct {

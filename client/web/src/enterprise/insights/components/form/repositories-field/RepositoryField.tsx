@@ -3,7 +3,7 @@ import React, { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from
 
 import { FlexTextArea } from '@sourcegraph/wildcard'
 
-import { getSanitizedRepositories } from '../../creation-ui-kit/sanitizers/repositories'
+import { getSanitizedRepositories } from '../../creation-ui-kit'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'

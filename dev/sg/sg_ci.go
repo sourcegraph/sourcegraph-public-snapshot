@@ -2,18 +2,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
+
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/cockroachdb/errors"
 	"github.com/gen2brain/beeep"
+	"github.com/grafana/regexp"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -21,11 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
-	ciLogsOutStdout = "stdout"
+	ciLogsOutTerminal = "terminal"
+	ciLogsOutSimple   = "simple"
+	ciLogsOutJSON     = "json"
 )
 
 var (
@@ -37,16 +42,18 @@ var (
 	ciLogsJobOverwriteStateFlag = ciLogsFlagSet.String("overwrite-state", "", "State to overwrite the job state metadata")
 	ciLogsJobQueryFlag          = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
 	ciLogsBuildFlag             = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
-	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutStdout,
-		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutTerminal,
+		fmt.Sprintf("Output format: either 'terminal', 'simple', 'json', or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 	ciStatusBuildFlag  = ciStatusFlagSet.String("build", "", "Override branch detection with a specific build number")
+	ciStatusViewFlag   = ciStatusFlagSet.Bool("view", false, "Open build page in browser")
 
-	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
-	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
+	ciBuildFlagSet       = flag.NewFlagSet("sg ci build", flag.ExitOnError)
+	ciBuildCommitFlag    = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
+	ciBuildForcePushFlag = ciBuildFlagSet.Bool("force", false, "force push to any remote branches")
 )
 
 // get branch from flag or git
@@ -67,7 +74,7 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 var (
 	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build|logs]",
+		ShortUsage: "sg ci [preview|status|build|logs|docs]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
@@ -99,8 +106,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				stdout.Out.Write(out)
-				return nil
+				return writePrettyMarkdown(out)
 			},
 		}, {
 			Name:      "status",
@@ -128,6 +134,12 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 				// Print a high level overview
 				printBuildOverview(build)
+
+				if *ciStatusViewFlag {
+					if err := open.URL(*build.WebURL); err != nil {
+						writeWarningLinef("failed to open build in browser: %s", err)
+					}
+				}
 
 				if *ciStatusWaitFlag && build.FinishedAt == nil {
 					pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
@@ -194,10 +206,26 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				return nil
 			},
 		}, {
-			Name:      "build",
-			FlagSet:   ciBuildFlagSet,
-			ShortHelp: "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks)",
-			LongHelp:  "Manually request a Buildkite build for the currently checked out commit and branch. This is most useful when triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)",
+			Name:       "build",
+			FlagSet:    ciBuildFlagSet,
+			ShortUsage: "sg ci build [runtype]",
+			ShortHelp:  "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types).",
+			LongHelp: fmt.Sprintf(`Manually request a Buildkite build for the currently checked out commit and branch. Optionally provide a run type to build with.
+
+This is useful when:
+
+- you want to trigger a build with a particular run type, such as 'main-dry-run'
+- triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)
+
+Supported run types when providing an argument for 'sg ci build [runtype]':
+
+  %s
+
+For run types that require branch arguments, you will be prompted for an argument, or you
+can provide it directly (for example, 'sg ci build [runtype] [argument]').
+
+Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
+				strings.Join(getAllowedBuildTypeArgs(), "\n  ")),
 			Exec: func(ctx context.Context, args []string) error {
 				client, err := bk.NewClient(ctx, stdout.Out)
 				if err != nil {
@@ -208,7 +236,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-
 				commit := *ciBuildCommitFlag
 				if commit == "" {
 					commit, err = run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
@@ -217,10 +244,9 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 				}
 
-				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
-
-				// simple check to see if commit is in origin, this is non blocking but
-				// we ask for confirmation to double check.
+				// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
+				// non blocking but we ask for confirmation to double check that the user
+				// is aware that potentially unknown code is going to get run on our infra.
 				remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
 				if err != nil || len(remoteBranches) == 0 || !allLinesPrefixed(strings.Split(remoteBranches, "\n"), "origin/") {
 					stdout.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
@@ -235,10 +261,73 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 				}
 
-				build, err := client.TriggerBuild(ctx, "sourcegraph", branch, commit)
-				if err != nil {
-					return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+				var rt runtype.RunType
+				if len(args) == 0 {
+					rt = runtype.PullRequest
+				} else {
+					rt = runtype.Compute("", fmt.Sprintf("%s/%s", args[0], branch), nil)
+					// If a special runtype is not detected then the argument was invalid
+					if rt == runtype.PullRequest {
+						writeFailureLinef("Unsupported runtype %q", args[0])
+						stdout.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
+						os.Exit(1)
+					}
 				}
+				if rt != runtype.PullRequest {
+					m := rt.Matcher()
+					if m.BranchArgumentRequired {
+						var branchArg string
+						if len(args) >= 2 {
+							branchArg = args[1]
+						} else {
+							stdout.Out.Write("This run type requires a branch path argument.")
+							branchArg, err = open.Prompt("Enter your argument input:")
+							if err != nil {
+								return err
+							}
+						}
+						branch = fmt.Sprintf("%s/%s", branchArg, branch)
+					}
+
+					branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
+					block := stdout.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, branch)))
+					gitArgs := []string{"push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch)}
+					if *ciBuildForcePushFlag {
+						gitArgs = append(gitArgs, "--force")
+					}
+					gitOutput, err := run.GitCmd(gitArgs...)
+					if err != nil {
+						return err
+					}
+					block.WriteLine(output.Line("", output.StyleSuggestion, strings.TrimSpace(gitOutput)))
+					block.Close()
+				}
+
+				pipeline := "sourcegraph"
+				var build *buildkite.Build
+				if rt != runtype.PullRequest {
+					updateTicker := time.NewTicker(1 * time.Second)
+					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
+					for i := 0; i < 30; i++ {
+						// attempt to fetch the new build - it might take some time for the hooks so we will
+						// retry up to 30 times (roughly 30 seconds)
+						if build != nil && build.Commit != nil && *build.Commit == commit {
+							break
+						}
+						<-updateTicker.C
+						build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
+						if err != nil {
+							return errors.Wrap(err, "GetMostRecentBuild")
+						}
+					}
+				} else {
+					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
+					build, err = client.TriggerBuild(ctx, pipeline, branch, commit)
+					if err != nil {
+						return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+					}
+				}
+
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
 			},
@@ -292,16 +381,37 @@ From there, you can start exploring logs with the Grafana explore panel.
 				}
 
 				switch *ciLogsOutFlag {
-				case ciLogsOutStdout:
+				case ciLogsOutTerminal, ciLogsOutSimple:
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
 					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
 						block := stdout.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 							*log.JobMeta.Name))
-						block.Write(bkTimestamp.ReplaceAllString(*log.Content, ""))
+						content := bkTimestamp.ReplaceAllString(*log.Content, "")
+						if *ciLogsOutFlag == ciLogsOutSimple {
+							content = bk.CleanANSI(content)
+						}
+						block.Write(content)
 						block.Close()
 					}
 					stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+
+				case ciLogsOutJSON:
+					for _, log := range logs {
+						if *ciLogsJobOverwriteStateFlag != "" {
+							failed := *ciLogsJobOverwriteStateFlag
+							log.JobMeta.State = &failed
+						}
+						stream, err := loki.NewStreamFromJobLogs(log)
+						if err != nil {
+							return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						b, err := json.MarshalIndent(stream, "", "\t")
+						if err != nil {
+							return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						stdout.Out.Write(string(b))
+					}
 
 				default:
 					lokiURL, err := url.Parse(*ciLogsOutFlag)
@@ -371,9 +481,32 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 				return nil
 			},
-		}},
+		}, {
+			Name:      "docs",
+			ShortHelp: "Render reference documentation for build pipeline types.",
+			LongHelp:  "Render reference documentation for build pipeline types. An online version of this is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
+			Exec: func(ctx context.Context, args []string) error {
+				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+				out, err := run.InRoot(cmd)
+				if err != nil {
+					return err
+				}
+				return writePrettyMarkdown(out)
+			},
+		},
+		},
 	}
 )
+
+func getAllowedBuildTypeArgs() []string {
+	var results []string
+	for _, rt := range runtype.RunTypes() {
+		if rt.Matcher().IsBranchPrefixMatcher() {
+			results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
+		}
+	}
+	return results
+}
 
 func allLinesPrefixed(lines []string, match string) bool {
 	for _, l := range lines {

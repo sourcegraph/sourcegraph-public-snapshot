@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -236,7 +236,7 @@ func TestGetIndexOptions(t *testing.T) {
 		})
 	}
 
-	getRepoIndexOptions := func(repo int32) (*RepoIndexOptions, error) {
+	var getRepoIndexOptions getRepoIndexOptsFn = func(repo int32) (*RepoIndexOptions, error) {
 		var priority float64
 		if repo == PRIORITY {
 			priority = 10

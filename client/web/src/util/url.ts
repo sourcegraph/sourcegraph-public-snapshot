@@ -1,13 +1,11 @@
+import { LineOrPositionOrRange, lprToRange, toPositionHashComponent } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import {
     encodeRepoRevision,
-    LineOrPositionOrRange,
-    lprToRange,
     ParsedRepoURI,
     parseQueryAndHash,
     RepoDocumentation,
     RepoFile,
-    toPositionHashComponent,
 } from '@sourcegraph/shared/src/util/url'
 
 export function toTreeURL(target: RepoFile): string {

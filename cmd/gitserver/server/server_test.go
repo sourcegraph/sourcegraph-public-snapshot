@@ -18,31 +18,41 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Test struct {
-	Name             string
-	Request          *http.Request
-	ExpectedCode     int
-	ExpectedBody     string
-	ExpectedTrailers http.Header
+	Name                             string
+	Request                          *http.Request
+	ExpectedCode                     int
+	ExpectedBody                     string
+	ExpectedTrailers                 http.Header
+	EnableGitServerCommandExecFilter bool
 }
 
 func TestRequest(t *testing.T) {
 	tests := []Test{
+		{
+			Name:         "HTTP GET",
+			Request:      httptest.NewRequest("GET", "/exec", strings.NewReader("{}")),
+			ExpectedCode: http.StatusMethodNotAllowed,
+			ExpectedBody: "",
+		},
+
 		{
 			Name:         "Command",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
@@ -111,6 +121,26 @@ func TestRequest(t *testing.T) {
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
+		{
+			Name:                             "EmptyInput/EnableGitServerCommandExecFilter",
+			Request:                          httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
+			ExpectedCode:                     http.StatusBadRequest,
+			ExpectedBody:                     "invalid command",
+			EnableGitServerCommandExecFilter: true,
+		},
+		{
+			Name:         "BadCommand",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: `{"cloneInProgress":false}`,
+		},
+		{
+			Name:                             "BadCommand/EnableGitServerCommandExecFilter",
+			Request:                          httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			ExpectedCode:                     http.StatusBadRequest,
+			ExpectedBody:                     "invalid command",
+			EnableGitServerCommandExecFilter: true,
+		},
 	}
 
 	s := &Server{
@@ -154,6 +184,14 @@ func TestRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						EnableGitServerCommandExecFilter: test.EnableGitServerCommandExecFilter,
+					},
+				},
+			})
+
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
@@ -724,9 +762,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		var (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) string {
+			cmd      = func(name string, arg ...string) {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				runCmd(t, remote, name, arg...)
 			}
 		)
 
@@ -742,9 +780,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		var (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) string {
+			cmd      = func(name string, arg ...string) {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				runCmd(t, remote, name, arg...)
 			}
 		)
 
@@ -902,9 +940,9 @@ func TestSyncRepoState(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	remoteDir := t.TempDir()
 
-	cmd := func(name string, arg ...string) string {
+	cmd := func(name string, arg ...string) {
 		t.Helper()
-		return runCmd(t, remoteDir, name, arg...)
+		runCmd(t, remoteDir, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can see if we can clone it.

@@ -16,7 +16,7 @@ import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
-} from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+} from './components/InsightsDashboardCreationContent'
 import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}
@@ -82,7 +82,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 alwaysShowLabel={true}
                                 data-testid="insight-save-button"
                                 loading={formAPI.submitting}
-                                label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
+                                label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
                                 type="submit"
                                 disabled={formAPI.submitting}
                                 className="ml-2 mb-2"

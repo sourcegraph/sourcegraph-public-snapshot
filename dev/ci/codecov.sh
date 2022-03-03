@@ -11,7 +11,7 @@
 # Last updated 2021-04-19
 
 # Buildkite log separator
-echo "--- codecov"
+echo "~~~ codecov"
 
 # SOURCEGRAPH_END
 

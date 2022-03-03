@@ -6,13 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
@@ -173,13 +172,11 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return user
 	}
 
-	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) *types.OrgMembership {
-		member, err := OrgMembers(db).Create(ctx, orgID, userID)
+	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) {
+		_, err := OrgMembers(db).Create(ctx, orgID, userID)
 		if err != nil {
 			t.Fatal(err)
-			return nil
 		}
-		return member
 	}
 
 	t.Parallel()

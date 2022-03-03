@@ -2,10 +2,11 @@ package compute
 
 import (
 	"encoding/json"
-	"regexp"
 	"testing"
 
+	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 

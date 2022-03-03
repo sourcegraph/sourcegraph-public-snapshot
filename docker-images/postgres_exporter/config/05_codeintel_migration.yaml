@@ -3,10 +3,23 @@
 # | name                   | type    | description                                |
 # | ---------------------- | ------- | ------------------------------------------ |
 # | pg_sg_migration_status | GAUGE   | Whether the migration applied successfully |
-# |                        |         | This only applies to the code-intel db     |
+# |                        |         | This only applies to the code-intel db.    |
 
-pg_sg_migration:
-  query: 'SELECT dirty::int as status FROM codeintel_schema_migrations'
+pg_sg_codeintel_migration:
+  query: |
+    WITH ranked_migration_logs AS (
+      SELECT
+        migration_logs.*,
+        ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+      FROM migration_logs
+      WHERE schema = 'codeintel_schema_migrations'
+    )
+    SELECT EXISTS (
+      SELECT 1
+      FROM ranked_migration_logs
+      WHERE row_number = 1
+      AND NOT success
+    )::int;
   master: true
   metrics:
     - status:

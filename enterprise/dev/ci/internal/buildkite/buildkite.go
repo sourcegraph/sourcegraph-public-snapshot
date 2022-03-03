@@ -11,11 +11,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type featureFlags struct {
@@ -39,6 +41,34 @@ type Pipeline struct {
 	// Group, if provided, indicates this Pipeline is actually a group of steps.
 	// See: https://buildkite.com/docs/pipelines/group-step
 	Group
+
+	// BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
+	// Plugins.
+	BeforeEveryStepOpts []StepOpt `json:"-"`
+
+	// AfterEveryStepOpts are e.g. that are run at the end of every AddStep, helpful for
+	// post-processing
+	AfterEveryStepOpts []StepOpt `json:"-"`
+}
+
+var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+
+func (p *Pipeline) EnsureUniqueKeys() error {
+	occurences := map[string]int{}
+	for _, step := range p.Steps {
+		if s, ok := step.(*Step); ok {
+			if s.Key == "" {
+				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
+			}
+			occurences[s.Key] += 1
+		}
+	}
+	for k, count := range occurences {
+		if count > 1 {
+			return errors.Newf("non unique key on step with key %q", k)
+		}
+	}
+	return nil
 }
 
 type Group struct {
@@ -107,15 +137,6 @@ type Step struct {
 	If                     string                   `json:"if,omitempty"`
 }
 
-var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
-
-// GenerateKey will automatically generate a key based on the
-// step label, and return it.
-func (s *Step) GenerateKey() string {
-	s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
-	return s.Key
-}
-
 type RetryOptions struct {
 	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
 	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
@@ -130,56 +151,33 @@ type ManualRetryOptions struct {
 	Reason  string `json:"reason,omitempty"`
 }
 
-// BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
-// Plugins.
-var BeforeEveryStepOpts []StepOpt
-
-// AfterEveryStepOpts are e.g. that are run at the end of every AddStep, helpful for
-// post-processing
-var AfterEveryStepOpts []StepOpt
-
 func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	step := &Step{
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: make([]map[string]interface{}, 0, 0),
+		Plugins: make([]map[string]interface{}, 0),
 	}
-	for _, opt := range BeforeEveryStepOpts {
+	for _, opt := range p.BeforeEveryStepOpts {
 		opt(step)
 	}
 	for _, opt := range opts {
 		opt(step)
 	}
-	for _, opt := range AfterEveryStepOpts {
+	for _, opt := range p.AfterEveryStepOpts {
 		opt(step)
-	}
-
-	if step.Key == "" {
-		step.GenerateKey()
-	}
-
-	// Set a default agent queue to assign this job to
-	if len(step.Agents) == 0 {
-		if FeatureFlags.StatelessBuild {
-			step.Agents["queue"] = "job"
-		} else {
-			step.Agents["queue"] = "standard"
-		}
 	}
 
 	p.Steps = append(p.Steps, step)
 }
 
-func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
+func (p *Pipeline) AddTrigger(label string, pipeline string, opts ...StepOpt) {
 	step := &Step{
-		Label: label,
+		Label:   label,
+		Trigger: pipeline,
 	}
 	for _, opt := range opts {
 		opt(step)
-	}
-	if step.Key == "" {
-		step.GenerateKey()
 	}
 	p.Steps = append(p.Steps, step)
 }
@@ -217,7 +215,7 @@ func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := w.Write([]byte(output))
+	n, err := w.Write(output)
 	return int64(n), err
 }
 
@@ -226,7 +224,7 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, err := w.Write([]byte(output))
+	n, err := w.Write(output)
 	return int64(n), err
 }
 
@@ -240,21 +238,144 @@ func RawCmd(command string) StepOpt {
 	}
 }
 
-// Cmd adds a command step with added instrumentation for testing purposes.
-func Cmd(command string) StepOpt {
-	return func(step *Step) {
-		// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
-		// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
-		// see the underlying command even if prefixed by the tracing script.
-		tracedCmd := fmt.Sprintf("./tr %s", command)
-		step.Command = append(step.Command, tracedCmd)
-	}
+func tracedCmd(command string) string {
+	// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+	// see the underlying command even if prefixed by the tracing script.
+	return fmt.Sprintf("./tr %s", command)
 }
 
-func Trigger(pipeline string) StepOpt {
-	return func(step *Step) {
-		step.Trigger = pipeline
+// Cmd adds a command step with added instrumentation for testing purposes.
+func Cmd(command string) StepOpt {
+	return RawCmd(tracedCmd(command))
+}
+
+type AnnotationType string
+
+const (
+	// We opt not to allow 'success' and 'info' type annotations for now to encourage
+	// steps to only provide annotations that help debug failure cases. In the future
+	// we can revisit this if there is a need.
+	// AnnotationTypeSuccess AnnotationType = "success"
+	// AnnotationTypeInfo    AnnotationType = "info"
+	AnnotationTypeWarning AnnotationType = "warning"
+	AnnotationTypeError   AnnotationType = "error"
+)
+
+type AnnotationOpts struct {
+	// Type indicates the type annotations from this command should be uploaded as.
+	// Commands that upload annotations of different levels will create separate
+	// annotations.
+	//
+	// If no annotation type is provided, the annotation is created as an error annotation.
+	Type AnnotationType
+
+	// IncludeNames indicates whether the file names of found annotations should be
+	// included in the Buildkite annotation as section titles. For example, if enabled the
+	// contents of the following files:
+	//
+	//  - './annotations/Job log.md'
+	//  - './annotations/shfmt'
+	//
+	// Will be included in the annotation with section titles 'Job log' and 'shfmt'.
+	IncludeNames bool
+
+	// MultiJobContext indicates that this annotation will accept input from multiple jobs
+	// under this context name.
+	MultiJobContext string
+}
+
+type TestReportOpts struct {
+	// TestSuiteKeyVariableName is the name of the variable in gcloud secrets that holds
+	// the test suite key to upload to.
+	//
+	// TODO: This is not finalized, see https://github.com/sourcegraph/sourcegraph/issues/31971
+	TestSuiteKeyVariableName string
+}
+
+// AnnotatedCmdOpts declares options for AnnotatedCmd.
+type AnnotatedCmdOpts struct {
+	// AnnotationOpts configures how AnnotatedCmd picks up files left in the
+	// `./annotations` directory and appends them to a shared annotation for this job.
+	// If nil, AnnotatedCmd will not look for annotations.
+	//
+	// To get started, generate an annotation file when you want to publish an annotation,
+	// typically on error, in the './annotations' directory:
+	//
+	//	if [ $EXIT_CODE -ne 0 ]; then
+	//		echo -e "$OUT" >./annotations/shfmt
+	//		echo "^^^ +++"
+	//	fi
+	//
+	// Make sure it has a sufficiently unique name, so as to avoid conflicts if multiple
+	// annotations are generated in a single job.
+	//
+	// Annotations can be formatted based on file extensions, for example:
+	//
+	// - './annotations/Job log.md' will have its contents appended as markdown
+	// - './annotations/shfmt' will have its contents formatted as terminal output
+	//
+	// Please be considerate about what generating annotations, since they can cause a lot
+	// of visual clutter in the Buildkite UI. When creating annotations:
+	//
+	// - keep them concise and short, to minimze the space they take up
+	// - ensure they are actionable: an annotation should enable you, the CI user, to
+	//    know where to go and what to do next.
+	//
+	// DO NOT use 'buildkite-agent annotate' or 'annotate.sh' directly in scripts.
+	Annotations *AnnotationOpts
+
+	// TestReports configures how AnnotatedCmd picks up files left in the `./test-reports`
+	// directory and uploads them to Buildkite Analytics. If nil, AnnotatedCmd will not
+	// look for test reports.
+	//
+	// To get started, generate a JUnit XML report for your tests in the './test-reports'
+	// directory. Make sure it has a sufficiently unique name, so as to avoid conflicts if
+	// multiple reports are generated in a single job. Consult your language's test
+	// tooling for more details.
+	//
+	// Use TestReportOpts to configure where to publish reports too. For more details,
+	// see https://buildkite.com/organizations/sourcegraph/analytics.
+	//
+	// DO NOT post directly to the Buildkite API or use 'upload-test-report.sh' directly
+	// in scripts.
+	TestReports *TestReportOpts
+}
+
+// AnnotatedCmd runs the given command and picks up annotations generated by the command:
+//
+// - annotations in `./annotations`
+// - test reports in `./test-reports`
+//
+// To learn more, see the AnnotatedCmdOpts docstrings.
+func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
+	// Options for annotations
+	var annotateOpts string
+	if opts.Annotations != nil {
+		if opts.Annotations.Type == "" {
+			annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
+		} else {
+			annotateOpts += fmt.Sprintf(" -t %s", opts.Annotations.Type)
+		}
+		if opts.Annotations.MultiJobContext != "" {
+			annotateOpts += fmt.Sprintf(" -c %q", opts.Annotations.MultiJobContext)
+		}
+		annotateOpts = fmt.Sprintf("%v %s", opts.Annotations.IncludeNames, strings.TrimSpace(annotateOpts))
 	}
+
+	// Options for test reports
+	var testReportOpts string
+	if opts.TestReports != nil {
+		testReportOpts += opts.TestReports.TestSuiteKeyVariableName
+	}
+
+	// ./an is a symbolic link created by the .buildkite/hooks/post-checkout hook.
+	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
+	// see the underlying command even if prefixed by the annotation scraper.
+	annotatedCmd := fmt.Sprintf("./an %q", tracedCmd(command))
+	return flattenStepOpts(RawCmd(annotatedCmd),
+		Env("ANNOTATE_OPTS", annotateOpts),
+		Env("TEST_REPORT_OPTS", testReportOpts))
 }
 
 func Async(async bool) StepOpt {

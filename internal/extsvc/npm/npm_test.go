@@ -13,12 +13,12 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -86,35 +86,36 @@ func TestCredentials(t *testing.T) {
 	absentDep, err := reposource.ParseNPMDependency("left-pad@1.3.1")
 	require.Nil(t, err)
 
-	exists, err := client.DoesDependencyExist(ctx, *presentDep)
+	exists, err := client.DoesDependencyExist(ctx, presentDep)
 	require.Nil(t, err)
 	require.True(t, exists)
 
-	exists, _ = client.DoesDependencyExist(ctx, *absentDep)
+	exists, _ = client.DoesDependencyExist(ctx, absentDep)
 	require.False(t, exists)
 
 	// Check that using the wrong credentials doesn't work
 	client.credentials = "incorrect_credentials"
 
-	_, err = client.DoesDependencyExist(ctx, *presentDep)
+	_, err = client.DoesDependencyExist(ctx, presentDep)
 	var npmErr1 npmError
 	require.True(t, errors.As(err, &npmErr1) && npmErr1.statusCode == http.StatusUnauthorized)
 
-	_, err = client.DoesDependencyExist(ctx, *absentDep)
+	_, err = client.DoesDependencyExist(ctx, absentDep)
 	var npmErr2 npmError
 	require.True(t, errors.As(err, &npmErr2) && npmErr2.statusCode == http.StatusUnauthorized)
 }
 
-func TestAvailablePackageVersions(t *testing.T) {
+func TestGetPackage(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
 	pkg, err := reposource.ParseNPMPackageFromPackageSyntax("is-sorted")
 	require.Nil(t, err)
-	versionMap, err := client.AvailablePackageVersions(ctx, *pkg)
+	info, err := client.GetPackageInfo(ctx, pkg)
 	require.Nil(t, err)
+	require.Equal(t, info.Description, "A small module to check if an Array is sorted")
 	versions := []string{}
-	for v := range versionMap {
+	for v := range info.Versions {
 		versions = append(versions, v)
 	}
 	sort.Strings(versions)
@@ -127,12 +128,12 @@ func TestDoesDependencyExist(t *testing.T) {
 	defer stop()
 	dep, err := reposource.ParseNPMDependency("left-pad@1.3.0")
 	require.Nil(t, err)
-	exists, err := client.DoesDependencyExist(ctx, *dep)
+	exists, err := client.DoesDependencyExist(ctx, dep)
 	require.Nil(t, err)
 	require.True(t, exists)
 	dep, err = reposource.ParseNPMDependency("left-pad@1.3.1")
 	require.Nil(t, err)
-	exists, _ = client.DoesDependencyExist(ctx, *dep)
+	exists, _ = client.DoesDependencyExist(ctx, dep)
 	require.False(t, exists)
 }
 
@@ -142,7 +143,7 @@ func TestFetchSources(t *testing.T) {
 	defer stop()
 	dep, err := reposource.ParseNPMDependency("is-sorted@1.0.0")
 	require.Nil(t, err)
-	readSeekCloser, err := client.FetchTarball(ctx, *dep)
+	readSeekCloser, err := client.FetchTarball(ctx, dep)
 	require.Nil(t, err)
 	defer readSeekCloser.Close()
 	gzipReader, err := gzip.NewReader(readSeekCloser)
@@ -177,6 +178,6 @@ func TestNoPanicOnNonexistentRegistry(t *testing.T) {
 	client.registryURL = "http://not-an-npm-registry.sourcegraph.com"
 	dep, err := reposource.ParseNPMDependency("left-pad@1.3.0")
 	require.Nil(t, err)
-	_, err = client.DoesDependencyExist(ctx, *dep)
+	_, err = client.DoesDependencyExist(ctx, dep)
 	require.NotNil(t, err)
 }

@@ -7,12 +7,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Inserter allows for bulk updates to a single Postgres table.
@@ -26,6 +27,8 @@ type Inserter struct {
 	onConflictSuffix string
 	returningSuffix  string
 	returningScanner ReturningScanner
+	operations       *operations
+	commonLogFields  []log.Field
 }
 
 type ReturningScanner func(rows *sql.Rows) error
@@ -97,7 +100,7 @@ func WithInserterWithReturn(
 func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			err = errors.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
 		}
 	}()
 
@@ -143,6 +146,13 @@ func NewInserterWithReturn(
 		onConflictSuffix: onConflictSuffix,
 		returningSuffix:  returningSuffix,
 		returningScanner: returningScanner,
+		operations:       getOperations(),
+		commonLogFields: []log.Field{
+			log.String("tableName", tableName),
+			log.String("columnNames", strings.Join(columnNames, ",")),
+			log.Int("numColumns", numColumns),
+			log.Int("maxBatchSize", maxBatchSize),
+		},
 	}
 }
 
@@ -165,20 +175,30 @@ func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
 // of insertion to ensure that all records are flushed to the underlying Execable.
 func (i *Inserter) Flush(ctx context.Context) (err error) {
-	if batch := i.pop(); len(batch) != 0 {
-		// Create a query with enough placeholders to match the current batch size. This should
-		// generally be the full querySuffix string, except for the last call to Flush which
-		// may be a partial batch.
-		rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
-		if err != nil {
-			return err
-		}
-		defer func() { err = basestore.CloseRows(rows, err) }()
+	batch := i.pop()
+	if len(batch) == 0 {
+		return nil
+	}
 
-		for rows.Next() {
-			if err := i.returningScanner(rows); err != nil {
-				return err
-			}
+	operationlogFields := []log.Field{
+		log.Int("batchSize", len(batch)),
+	}
+	combinedLogFields := append(operationlogFields, i.commonLogFields...)
+	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
+	defer endObservation(1, observation.Args{})
+
+	// Create a query with enough placeholders to match the current batch size. This should
+	// generally be the full querySuffix string, except for the last call to Flush which
+	// may be a partial batch.
+	rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := i.returningScanner(rows); err != nil {
+			return err
 		}
 	}
 

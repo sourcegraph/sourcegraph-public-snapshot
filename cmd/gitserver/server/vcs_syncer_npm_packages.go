@@ -11,25 +11,25 @@ import (
 	"path"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
-	placeholderNPMDependency = reposource.NPMDependency{
-		Package: func() reposource.NPMPackage {
+	placeholderNPMDependency = &reposource.NPMDependency{
+		NPMPackage: func() *reposource.NPMPackage {
 			pkg, err := reposource.NewNPMPackage("sourcegraph", "placeholder")
 			if err != nil {
 				panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 			}
-			return *pkg
+			return pkg
 		}(),
 		Version: "1.0.0",
 	}
@@ -38,7 +38,7 @@ var (
 type NPMPackagesSyncer struct {
 	// Configuration object describing the connection to the NPM registry.
 	connection schema.NPMPackagesConnection
-	dbStore    repos.NPMPackagesRepoStore
+	depsStore  repos.DependenciesStore
 	// The client to use for making queries against NPM.
 	client npm.Client
 }
@@ -47,7 +47,7 @@ type NPMPackagesSyncer struct {
 // for the syncer is configured based on the connection parameter.
 func NewNPMPackagesSyncer(
 	connection schema.NPMPackagesConnection,
-	dbStore repos.NPMPackagesRepoStore,
+	dbStore repos.DependenciesStore,
 	customClient npm.Client,
 ) *NPMPackagesSyncer {
 	var client = customClient
@@ -161,32 +161,31 @@ func (s *NPMPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 //
 // For example, if the URL path represents pkg@1, and our configuration has
 // [otherPkg@1, pkg@2, pkg@3], we will return [pkg@3, pkg@2].
-func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (matchingDependencies []reposource.NPMDependency, err error) {
+func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath string) (matchingDependencies []*reposource.NPMDependency, err error) {
 	repoPackage, err := reposource.ParseNPMPackageFromRepoURL(repoUrlPath)
 	if err != nil {
 		return nil, err
 	}
 
 	var (
-		timedout []reposource.NPMDependency
+		timedout []*reposource.NPMDependency
 	)
 	for _, configDependencyString := range s.npmDependencies() {
 		if repoPackage.MatchesDependencyString(configDependencyString) {
-			depPtr, err := reposource.ParseNPMDependency(configDependencyString)
+			dep, err := reposource.ParseNPMDependency(configDependencyString)
 			if err != nil {
 				return nil, err
 			}
-			configDependency := *depPtr
 
-			if err := npm.Exists(ctx, s.client, configDependency); err != nil {
+			if err := npm.Exists(ctx, s.client, dep); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
-					timedout = append(timedout, configDependency)
+					timedout = append(timedout, dep)
 					continue
 				} else {
 					return nil, err
 				}
 			}
-			matchingDependencies = append(matchingDependencies, configDependency)
+			matchingDependencies = append(matchingDependencies, dep)
 			// Silently ignore non-existent dependencies because
 			// they are already logged out in the `GetRepo` method
 			// in internal/repos/jvm_packages.go.
@@ -201,23 +200,24 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	if err != nil {
 		return nil, err
 	}
-	dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-		ArtifactName: parsedPackage.PackageSyntax(),
+	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+		Scheme: dependenciesStore.NPMPackagesScheme,
+		Name:   parsedPackage.PackageSyntax(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get npm dependencies from dbStore")
 	}
 
 	for _, dbDep := range dbDeps {
-		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Package)
+		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Name)
 		if err != nil {
-			log15.Error("failed to parse npm package", "package", dbDep.Package, "message", err)
+			log15.Error("failed to parse npm package", "package", dbDep.Name, "message", err)
 			continue
 		}
-		if *repoPackage == *parsedDbPackage {
-			matchingDependencies = append(matchingDependencies, reposource.NPMDependency{
-				Package: *parsedDbPackage,
-				Version: dbDep.Version,
+		if repoPackage.Equal(parsedDbPackage) {
+			matchingDependencies = append(matchingDependencies, &reposource.NPMDependency{
+				NPMPackage: parsedDbPackage,
+				Version:    dbDep.Version,
 			})
 		}
 	}
@@ -244,7 +244,7 @@ func (s *NPMPackagesSyncer) npmDependencies() []string {
 // tag points to a commit that adds all sources of given dependency. When
 // isLatestVersion is true, the HEAD of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.NPMDependency, isLatestVersion bool) error {
+func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency *reposource.NPMDependency, isLatestVersion bool) error {
 	tmpDirectory, err := os.MkdirTemp("", "npm-")
 	if err != nil {
 		return err
@@ -295,7 +295,7 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 // commitTgz creates a git commit in the given working directory that adds all
 // the file contents of the given tgz file.
-func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency reposource.NPMDependency,
+func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposource.NPMDependency,
 	workingDirectory string, tgzReadSeeker io.ReadSeeker) error {
 	namedReadSeeker := namedReadSeeker{dependency.PackageManagerSyntax(), tgzReadSeeker}
 	if err := decompressTgz(namedReadSeeker, workingDirectory); err != nil {
@@ -330,17 +330,15 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency reposource
 // so that the action argument can focus on reading the tarball.
 func withTgz(tgzReadSeeker namedReadSeeker, action func(*tar.Reader) error) (err error) {
 	gzipReader, err := gzip.NewReader(tgzReadSeeker.value)
-	defer func() {
-		errClose := gzipReader.Close()
-		if err != nil {
-			err = errClose
-		}
-	}()
 	if err != nil {
 		return errors.Wrapf(err, "unable to decompress tar.gz (label=%s) with package source", tgzReadSeeker.name)
 	}
-	tarReader := tar.NewReader(gzipReader)
 
+	defer func() {
+		err = errors.Append(err, gzipReader.Close())
+	}()
+
+	tarReader := tar.NewReader(gzipReader)
 	return action(tarReader)
 }
 
@@ -411,9 +409,7 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 
 	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
 		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
-		count := 0
-		tarballFileLimit := 10000
-		for count < tarballFileLimit {
+		for {
 			header, err := tarReader.Next()
 			if err == io.EOF {
 				return nil
@@ -434,12 +430,10 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 				if err != nil {
 					return err
 				}
-				count++
 			default:
 				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
 			}
 		}
-		return errors.Errorf("number of files in tarball for %s exceeded limit (10000)", tgzReadSeeker.name)
 	})
 }
 
@@ -450,11 +444,16 @@ func copyTarFileEntry(header *tar.Header, tarReader *tar.Reader, outputPath stri
 	}
 	// For reference, "pathological" code like SQLite's amalgamation file is
 	// about 7.9 MiB. So a 15 MiB limit seems good enough.
-	const sizeLimitMiB = 15
-	if header.Size >= (sizeLimitMiB * 1024 * 1024) {
-		return errors.Errorf("file size for %s (%d bytes) exceeded limit (%d MiB)",
-			path.Base(outputPath), header.Size, sizeLimitMiB)
+	const sizeLimit = 15 * 1024 * 1024
+	if header.Size >= sizeLimit {
+		log15.Warn("skipping large file in npm package",
+			"path", outputPath,
+			"size", header.Size,
+			"limit", sizeLimit,
+		)
+		return nil
 	}
+
 	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
 		return err
 	}

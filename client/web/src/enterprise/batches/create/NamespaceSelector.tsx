@@ -1,9 +1,7 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-
-import styles from './NamespaceSelector.module.scss'
+import { Select } from '@sourcegraph/wildcard'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -19,11 +17,13 @@ const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 interface NamespaceSelectorProps {
     namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
     selectedNamespace: string
+    disabled?: boolean
     onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
 }
 
 export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
     namespaces,
+    disabled,
     selectedNamespace,
     onSelect,
 }) => {
@@ -39,22 +39,19 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
     )
 
     return (
-        <div className="form-group">
-            <label className="text-nowrap mb-2" htmlFor={NAMESPACE_SELECTOR_ID}>
-                <strong>Namespace:</strong>
-            </label>
-            <select
-                className={classNames(styles.namespaceSelector, 'form-control')}
-                id={NAMESPACE_SELECTOR_ID}
-                value={selectedNamespace}
-                onChange={onSelectNamespace}
-            >
-                {namespaces.map(namespace => (
-                    <option key={namespace.id} value={namespace.id}>
-                        {getNamespaceDisplayName(namespace)}
-                    </option>
-                ))}
-            </select>
-        </div>
+        <Select
+            label={<strong className="text-nowrap mb-2">Namespace</strong>}
+            selectClassName="form-control"
+            id={NAMESPACE_SELECTOR_ID}
+            value={selectedNamespace}
+            onChange={onSelectNamespace}
+            disabled={disabled}
+        >
+            {namespaces.map(namespace => (
+                <option key={namespace.id} value={namespace.id}>
+                    {getNamespaceDisplayName(namespace)}
+                </option>
+            ))}
+        </Select>
     )
 }

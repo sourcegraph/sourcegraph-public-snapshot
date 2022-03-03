@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
-func nameToColor(s string, v ...interface{}) output.Style {
+func nameToColor(s string) output.Style {
 	h := fnv.New32()
 	h.Write([]byte(s))
 	// We don't use 256 colors because some of those are too dark/bright and hard to read
@@ -20,11 +20,10 @@ func newCmdLogger(ctx context.Context, name string, out *output.Output) *process
 	color := nameToColor(name)
 
 	sink := func(data string) {
-		// TODO: This always adds a newline, which is not always what we want. When
+		// NOTE: This always adds a newline, which is not always what we want. When
 		// we flush partial lines, we don't want to add a newline character. What
 		// we need to do: extend the `*output.Output` type to have a
 		// `WritefNoNewline` (yes, bad name) method.
-		//
 		out.Writef("%s%s[%s]%s %s", output.StyleBold, color, name, output.StyleReset, data)
 	}
 

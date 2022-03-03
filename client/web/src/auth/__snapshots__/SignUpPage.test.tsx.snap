@@ -42,7 +42,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
               class="d-flex align-items-center"
             >
               <span
-                class="productStatusBadge text-uppercase mr-1"
+                class="badge info productStatusBadge text-uppercase mr-1"
                 status="beta"
               >
                 beta
@@ -82,7 +82,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           Or, 
           <a
-            class=""
+            class="anchorLink"
             href="/?showEmail=true"
           >
             continue with email
@@ -93,7 +93,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           By registering, you agree to our 
           <a
-            class=""
+            class="anchorLink"
             href="https://about.sourcegraph.com/terms"
             rel="noopener"
             target="_blank"
@@ -102,7 +102,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           </a>
            and 
           <a
-            class=""
+            class="anchorLink"
             href="https://about.sourcegraph.com/privacy"
             rel="noopener"
             target="_blank"
@@ -117,7 +117,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         <div>
           Already have an account? 
           <a
-            class=""
+            class="anchorLink"
             href="/sign-in"
           >
             Log in
@@ -276,7 +276,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             >
               By signing up, you agree to our 
               <a
-                class=""
+                class="anchorLink"
                 href="https://about.sourcegraph.com/terms"
                 rel="noopener"
                 target="_blank"
@@ -285,7 +285,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               </a>
                and 
               <a
-                class=""
+                class="anchorLink"
                 href="https://about.sourcegraph.com/privacy"
                 rel="noopener"
                 target="_blank"
@@ -301,7 +301,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
         >
           Already have an account? 
           <a
-            class=""
+            class="anchorLink"
             href="/sign-in"
           >
             Sign in

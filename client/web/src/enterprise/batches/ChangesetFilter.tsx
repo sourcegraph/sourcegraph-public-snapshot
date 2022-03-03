@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
 import React, { useCallback } from 'react'
 
+import { Select } from '@sourcegraph/wildcard'
+
 export interface ChangesetFilterProps<T extends string> {
     label: string
     values: T[]
@@ -26,8 +28,11 @@ export const ChangesetFilter = <T extends string>({
 
     return (
         <>
-            <select
-                className={classNames('form-control changeset-filter__dropdown', className)}
+            <Select
+                aria-label=""
+                id=""
+                selectClassName={classNames('form-control changeset-filter__dropdown', className)}
+                className="mb-0"
                 value={selected}
                 onChange={innerOnChange}
             >
@@ -37,7 +42,7 @@ export const ChangesetFilter = <T extends string>({
                         {upperFirst(lowerCase(state))}
                     </option>
                 ))}
-            </select>
+            </Select>
         </>
     )
 }

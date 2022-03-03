@@ -4,10 +4,9 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 
+import { subtypeOf } from '@sourcegraph/common'
 import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Link } from '@sourcegraph/wildcard'
-
-import { subtypeOf } from '../../util/types'
 
 import { Activation } from './Activation'
 import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
@@ -80,7 +79,7 @@ export const _04Completed: Story = () => (
     />
 )
 
-_04Completed.storyName = '0/4 completed'
+_04Completed.storyName = 'Progress 0/4 completed'
 
 export const _14Completed: Story = () => (
     <ActivationDropdown
@@ -97,4 +96,10 @@ export const _14Completed: Story = () => (
     />
 )
 
-_14Completed.storyName = '1/4 completed'
+_14Completed.storyName = 'Progress 1/4 completed'
+_14Completed.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

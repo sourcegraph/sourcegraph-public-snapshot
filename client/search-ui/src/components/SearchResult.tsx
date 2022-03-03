@@ -4,6 +4,7 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
@@ -11,7 +12,6 @@ import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContai
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
@@ -22,9 +22,17 @@ interface Props extends PlatformContextProps<'requestGraphQL'> {
     repoName: string
     icon: React.ComponentType<{ className?: string }>
     onSelect: () => void
+    openInNewTab?: boolean
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, platformContext, onSelect }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({
+    result,
+    icon,
+    repoName,
+    platformContext,
+    onSelect,
+    openInNewTab,
+}) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
@@ -118,7 +126,14 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             )
         }
 
-        return <CommitSearchResultMatch key={result.url} item={result} platformContext={platformContext} />
+        return (
+            <CommitSearchResultMatch
+                key={result.url}
+                item={result}
+                platformContext={platformContext}
+                openInNewTab={openInNewTab}
+            />
+        )
     }
 
     return (

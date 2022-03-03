@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Config struct {
@@ -71,14 +71,13 @@ func (c *Config) Validate() error {
 
 func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
-		VMPrefix:             c.VMPrefix,
-		QueueName:            c.QueueName,
-		WorkerOptions:        c.WorkerOptions(),
-		FirecrackerOptions:   c.FirecrackerOptions(),
-		ResourceOptions:      c.ResourceOptions(),
-		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
-		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(telemetryOptions),
+		VMPrefix:           c.VMPrefix,
+		QueueName:          c.QueueName,
+		WorkerOptions:      c.WorkerOptions(),
+		FirecrackerOptions: c.FirecrackerOptions(),
+		ResourceOptions:    c.ResourceOptions(),
+		GitServicePath:     "/.executors/git",
+		ClientOptions:      c.ClientOptions(telemetryOptions),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -89,14 +88,15 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 
 func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 	return workerutil.WorkerOptions{
-		Name:              fmt.Sprintf("executor_%s_worker", c.QueueName),
-		NumHandlers:       c.MaximumNumJobs,
-		Interval:          c.QueuePollInterval,
-		HeartbeatInterval: 5 * time.Second,
-		Metrics:           makeWorkerMetrics(c.QueueName),
-		NumTotalJobs:      c.NumTotalJobs,
-		MaxActiveTime:     c.MaxActiveTime,
-		WorkerHostname:    c.WorkerHostname,
+		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
+		NumHandlers:          c.MaximumNumJobs,
+		Interval:             c.QueuePollInterval,
+		HeartbeatInterval:    5 * time.Second,
+		Metrics:              makeWorkerMetrics(c.QueueName),
+		NumTotalJobs:         c.NumTotalJobs,
+		MaxActiveTime:        c.MaxActiveTime,
+		WorkerHostname:       c.WorkerHostname,
+		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 	}
 }
 

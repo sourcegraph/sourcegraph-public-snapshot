@@ -3,11 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -36,7 +38,8 @@ func (a *ActionJob) RecordID() int {
 type ActionJobMetadata struct {
 	Description string
 	MonitorID   int64
-	NumResults  *int
+	Results     []*result.CommitMatch
+	OwnerName   string
 
 	// The query with after: filter.
 	Query string
@@ -225,18 +228,29 @@ SELECT
 	cm.description,
 	ctj.query_string,
 	cm.id AS monitorID,
-	jsonb_array_length(ctj.search_results)
+	ctj.search_results,
+	CASE WHEN LENGTH(users.display_name) > 0 THEN users.display_name ELSE users.username END
 FROM cm_action_jobs caj
 INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
 INNER JOIN cm_queries cq on cq.id = ctj.query
 INNER JOIN cm_monitors cm on cm.id = cq.monitor
+INNER JOIN users on cm.namespace_user_id = users.id
 WHERE caj.id = %s
 `
 
+// GetActionJobMetada returns the set of fields needed to execute all action jobs
 func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error) {
 	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, jobID))
+	var resultsJSON []byte
 	m := &ActionJobMetadata{}
-	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
+	err := row.Scan(&m.Description, &m.Query, &m.MonitorID, &resultsJSON, &m.OwnerName)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(resultsJSON, &m.Results); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 const actionJobForIDFmtStr = `

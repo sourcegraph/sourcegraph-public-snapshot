@@ -1,11 +1,9 @@
 package service
 
 import (
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UiPublicationStates takes the publicationStates input from the
@@ -65,14 +63,14 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 	// Handle the specs. We'll drain ps.rand while we add entries to ps.id,
 	// which means we can ensure that all the given changeset spec IDs mapped to
 	// a changeset spec.
-	var errs *multierror.Error
+	var errs error
 	ps.id = map[int64]*btypes.ChangesetUiPublicationState{}
 	for rid, pv := range ps.rand {
 		if spec, ok := specs[rid]; ok {
 			if !spec.Spec.Published.Nil() {
 				// If the changeset spec has an explicit published field, we cannot
 				// override the publication state in the UI.
-				errs = multierror.Append(errs, errors.Newf("changeset spec %q has the published field set in its spec", rid))
+				errs = errors.Append(errs, errors.Newf("changeset spec %q has the published field set in its spec", rid))
 			} else {
 				ps.id[spec.ID] = btypes.ChangesetUiPublicationStateFromPublishedValue(pv)
 				delete(ps.rand, spec.RandID)
@@ -83,8 +81,8 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 	// If there are any changeset spec IDs remaining, let's turn them into
 	// errors.
 	for rid := range ps.rand {
-		errs = multierror.Append(errs, errors.Newf("changeset spec %q not found", rid))
+		errs = errors.Append(errs, errors.Newf("changeset spec %q not found", rid))
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }

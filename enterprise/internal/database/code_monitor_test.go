@@ -16,21 +16,23 @@ type testFixtures struct {
 	recipients [2]*Recipient
 }
 
-func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*testFixtures, error) {
+func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) *testFixtures {
 	t.Helper()
 
 	fixtures := testFixtures{}
 
 	actions := []*EmailActionArgs{
 		{
-			Enabled:  true,
-			Priority: "NORMAL",
-			Header:   "test header 1",
+			Enabled:        true,
+			IncludeResults: false,
+			Priority:       "NORMAL",
+			Header:         "test header 1",
 		},
 		{
-			Enabled:  true,
-			Priority: "CRITICAL",
-			Header:   "test header 2",
+			Enabled:        true,
+			IncludeResults: false,
+			Priority:       "CRITICAL",
+			Header:         "test header 2",
 		},
 	}
 	// Create monitor.
@@ -49,9 +51,10 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 
 	for i, a := range actions {
 		fixtures.emails[i], err = s.CreateEmailAction(ctx, fixtures.monitor.ID, &EmailActionArgs{
-			Enabled:  a.Enabled,
-			Priority: a.Priority,
-			Header:   a.Header,
+			Enabled:        a.Enabled,
+			IncludeResults: a.IncludeResults,
+			Priority:       a.Priority,
+			Header:         a.Header,
 		})
 		require.NoError(t, err)
 
@@ -59,5 +62,5 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 		require.NoError(t, err)
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
-	return &fixtures, nil
+	return &fixtures
 }

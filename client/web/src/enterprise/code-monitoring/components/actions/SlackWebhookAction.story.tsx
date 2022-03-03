@@ -3,6 +3,7 @@ import React from 'react'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../../components/WebStory'
+import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { SlackWebhookAction } from './SlackWebhookAction'
@@ -16,6 +17,7 @@ const defaultProps: ActionProps = {
     setAction: sinon.fake(),
     disabled: false,
     monitorName: 'Example code monitor',
+    authenticatedUser: mockAuthenticatedUser,
 }
 
 const action: ActionProps['action'] = {
@@ -23,6 +25,7 @@ const action: ActionProps['action'] = {
     id: 'id1',
     url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
     enabled: true,
+    includeResults: false,
 }
 
 add('SlackWebhookAction', () => (

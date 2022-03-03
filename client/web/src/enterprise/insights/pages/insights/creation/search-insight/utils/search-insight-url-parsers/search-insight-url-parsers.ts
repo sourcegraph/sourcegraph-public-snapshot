@@ -2,14 +2,14 @@ import { SearchBasedInsightSeries } from '../../../../../../core/types'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { CreateInsightFormFields } from '../../types'
 
-export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFormFields | null {
+export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateInsightFormFields> | null {
     try {
         const searchParameter = new URLSearchParams(decodeURIComponent(queryParameters))
 
         const repositories = searchParameter.get('repositories')
         const title = searchParameter.get('title')
         const rawSeries = JSON.parse(searchParameter.get('series') ?? '[]') as SearchBasedInsightSeries[]
-        const editableSeries = rawSeries.map(series => createDefaultEditSeries({ ...series, edit: false }))
+        const editableSeries = rawSeries.map(series => createDefaultEditSeries({ ...series, edit: false, valid: true }))
         const allRepos = searchParameter.get('allRepos')
 
         if (repositories || title || editableSeries.length > 0 || allRepos) {
@@ -18,9 +18,6 @@ export function decodeSearchInsightUrl(queryParameters: string): CreateInsightFo
                 repositories: repositories ?? '',
                 allRepos: !!allRepos,
                 series: editableSeries,
-                visibility: '',
-                step: 'days',
-                stepValue: '8',
             }
         }
 

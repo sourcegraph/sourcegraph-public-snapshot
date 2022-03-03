@@ -17,13 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type TypeParameters interface {
-	typeParametersValue()
-}
-
-func (SymbolsParameters) typeParametersValue() {}
-func (TextParameters) typeParametersValue()    {}
-
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
 	Repo api.RepoName `json:"repo"`
@@ -144,9 +137,7 @@ type TextParameters struct {
 
 	Repos []*RepositoryRevisions
 
-	// perf: For global queries, we only resolve private repos.
-	UserPrivateRepos []types.MinimalRepo
-	Mode             GlobalSearchMode
+	Mode GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
@@ -269,6 +260,7 @@ type Features struct {
 type RepoOptions struct {
 	RepoFilters              []string
 	MinusRepoFilters         []string
+	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 	UserSettings             *schema.Settings

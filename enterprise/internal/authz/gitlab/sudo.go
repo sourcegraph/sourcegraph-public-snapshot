@@ -7,14 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SudoProvider is an implementation of AuthzProvider that provides repository permissions as
@@ -76,8 +75,8 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	}
 }
 
-func (p *SudoProvider) Validate() (problems []string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func (p *SudoProvider) ValidateConnection(ctx context.Context) (problems []string) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	if _, _, err := p.clientProvider.GetPATClient(p.sudoToken, "1").ListProjects(ctx, "projects"); err != nil {
 		if err == ctx.Err() {

@@ -6,7 +6,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { useLocalStorage, AlertProps } from '@sourcegraph/wildcard'
+import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
@@ -20,9 +20,12 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-export const WebHoverOverlay: React.FunctionComponent<
-    HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
-> = props => {
+interface Props extends HoverOverlayProps, HoverThresholdProps {
+    hoveredTokenElement?: HTMLElement
+    nav?: (url: string) => void
+}
+
+export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -96,15 +99,26 @@ export const WebHoverOverlay: React.FunctionComponent<
             .subscribe()
 
         return () => subscription.unsubscribe()
-    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav, props.telemetryService])
+    }, [
+        props.actionsOrError,
+        props.hoveredTokenElement,
+        props.location.hash,
+        props.nav,
+        props.telemetryService,
+        hoveredToken,
+    ])
 
     return (
         <HoverOverlay
             {...propsToUse}
             className={styles.webHoverOverlay}
-            actionItemClassName="btn btn-sm btn-secondary border-0"
+            actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}
+            actionItemStyleProps={{
+                actionItemSize: 'sm',
+                actionItemVariant: 'secondary',
+            }}
         />
     )
 }

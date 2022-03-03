@@ -42,6 +42,8 @@ Referenced by:
  last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_unique_org_id" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL
+    "batch_changes_unique_user_id" UNIQUE, btree (name, namespace_user_id) WHERE namespace_user_id IS NOT NULL
     "batch_changes_namespace_org_id" btree (namespace_org_id)
     "batch_changes_namespace_user_id" btree (namespace_user_id)
 Check constraints:
@@ -166,19 +168,15 @@ Foreign-key constraints:
  path                 | text                     |           | not null | 
  file_matches         | text[]                   |           | not null | 
  only_fetch_workspace | boolean                  |           | not null | false
- steps                | jsonb                    |           |          | '[]'::jsonb
  created_at           | timestamp with time zone |           | not null | now()
  updated_at           | timestamp with time zone |           | not null | now()
  ignored              | boolean                  |           | not null | false
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
  cached_result_found  | boolean                  |           | not null | false
- skipped_steps        | integer[]                |           | not null | '{}'::integer[]
  step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "batch_spec_workspaces_steps_check" CHECK (jsonb_typeof(steps) = 'array'::text)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
@@ -434,17 +432,18 @@ Foreign-key constraints:
 
 # Table "public.cm_emails"
 ```
-   Column   |           Type           | Collation | Nullable |                Default                
-------------+--------------------------+-----------+----------+---------------------------------------
- id         | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- enabled    | boolean                  |           | not null | 
- priority   | cm_email_priority        |           | not null | 
- header     | text                     |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                Default                
+-----------------+--------------------------+-----------+----------+---------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ priority        | cm_email_priority        |           | not null | 
+ header          | text                     |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_emails_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -530,16 +529,17 @@ Foreign-key constraints:
 
 # Table "public.cm_slack_webhooks"
 ```
-   Column   |           Type           | Collation | Nullable |                    Default                    
-------------+--------------------------+-----------+----------+-----------------------------------------------
- id         | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- url        | text                     |           | not null | 
- enabled    | boolean                  |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                    Default                    
+-----------------+--------------------------+-----------+----------+-----------------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ url             | text                     |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_slack_webhooks_pkey" PRIMARY KEY, btree (id)
     "cm_slack_webhooks_monitor" btree (monitor)
@@ -596,16 +596,17 @@ Referenced by:
 
 # Table "public.cm_webhooks"
 ```
-   Column   |           Type           | Collation | Nullable |                 Default                 
-------------+--------------------------+-----------+----------+-----------------------------------------
- id         | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
- monitor    | bigint                   |           | not null | 
- url        | text                     |           | not null | 
- enabled    | boolean                  |           | not null | 
- created_by | integer                  |           | not null | 
- created_at | timestamp with time zone |           | not null | now()
- changed_by | integer                  |           | not null | 
- changed_at | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |                 Default                 
+-----------------+--------------------------+-----------+----------+-----------------------------------------
+ id              | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
+ monitor         | bigint                   |           | not null | 
+ url             | text                     |           | not null | 
+ enabled         | boolean                  |           | not null | 
+ created_by      | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ changed_by      | integer                  |           | not null | 
+ changed_at      | timestamp with time zone |           | not null | now()
+ include_results | boolean                  |           | not null | false
 Indexes:
     "cm_webhooks_pkey" PRIMARY KEY, btree (id)
     "cm_webhooks_monitor" btree (monitor)
@@ -814,13 +815,14 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 # Table "public.external_service_repos"
 ```
-       Column        |  Type   | Collation | Nullable | Default 
----------------------+---------+-----------+----------+---------
- external_service_id | bigint  |           | not null | 
- repo_id             | integer |           | not null | 
- clone_url           | text    |           | not null | 
- user_id             | integer |           |          | 
- org_id              | integer |           |          | 
+       Column        |           Type           | Collation | Nullable |         Default         
+---------------------+--------------------------+-----------+----------+-------------------------
+ external_service_id | bigint                   |           | not null | 
+ repo_id             | integer                  |           | not null | 
+ clone_url           | text                     |           | not null | 
+ user_id             | integer                  |           |          | 
+ org_id              | integer                  |           |          | 
+ created_at          | timestamp with time zone |           | not null | transaction_timestamp()
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_clone_url_idx" btree (clone_url)
@@ -1644,7 +1646,7 @@ Referenced by:
  id                | bigint                   |           | not null | nextval('org_invitations_id_seq'::regclass)
  org_id            | integer                  |           | not null | 
  sender_user_id    | integer                  |           | not null | 
- recipient_user_id | integer                  |           | not null | 
+ recipient_user_id | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  notified_at       | timestamp with time zone |           |          | 
  responded_at      | timestamp with time zone |           |          | 
@@ -1655,12 +1657,12 @@ Referenced by:
  expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
-    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
     "org_invitations_org_id" btree (org_id) WHERE deleted_at IS NULL
     "org_invitations_recipient_user_id" btree (recipient_user_id) WHERE deleted_at IS NULL
 Check constraints:
     "check_atomic_response" CHECK ((responded_at IS NULL) = (response_type IS NULL))
     "check_single_use" CHECK (responded_at IS NULL AND response_type IS NULL OR revoked_at IS NULL)
+    "either_user_id_or_email_defined" CHECK ((recipient_user_id IS NULL) <> (recipient_email IS NULL))
 Foreign-key constraints:
     "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
@@ -2072,17 +2074,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.schema_migrations"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
 # Table "public.search_context_repos"
 ```
       Column       |  Type   | Collation | Nullable | Default 
@@ -2176,7 +2167,7 @@ Contains security-relevant events with a long time horizon for storage.
 ----------------+--------------------------+-----------+----------+--------------------------------------
  id             | integer                  |           | not null | nextval('settings_id_seq'::regclass)
  org_id         | integer                  |           |          | 
- contents       | text                     |           |          | 
+ contents       | text                     |           | not null | '{}'::text
  created_at     | timestamp with time zone |           | not null | now()
  user_id        | integer                  |           |          | 
  author_user_id | integer                  |           |          | 
@@ -2185,6 +2176,8 @@ Indexes:
     "settings_global_id" btree (id DESC) WHERE user_id IS NULL AND org_id IS NULL
     "settings_org_id_idx" btree (org_id)
     "settings_user_id_idx" btree (user_id)
+Check constraints:
+    "settings_no_empty_contents" CHECK (contents <> ''::text)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -2218,6 +2211,7 @@ Foreign-key constraints:
  updated_at    | timestamp with time zone |           | not null | now()
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
+    "sub_repo_perms_user_id" btree (user_id)
 Foreign-key constraints:
     "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -2407,6 +2401,7 @@ Foreign-key constraints:
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
+ searchable              | boolean                  |           | not null | true
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

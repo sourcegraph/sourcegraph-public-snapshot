@@ -8,14 +8,13 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Git formatting directives as described in man git-log (see PRETTY FORMATS)
@@ -153,7 +152,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = multierror.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String())).ErrorOrNil()
+			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String()))
 		}
 	}()
 
@@ -239,11 +238,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		return nil
 	}
 
-	var errors *multierror.Error
+	var errs error
 	for j := range jobs {
-		errors = multierror.Append(errors, runJob(j))
+		errs = errors.Append(errs, runJob(j))
 	}
-	return errors.ErrorOrNil()
+	return errs
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {

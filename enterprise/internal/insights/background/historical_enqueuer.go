@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // The historical enqueuer takes regular search insights like a search for `errorf` and runs them
@@ -262,6 +263,11 @@ type historicalEnqueuer struct {
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
+	// 🚨 SECURITY: This background process uses the internal actor to interact with Sourcegraph services. This background process
+	// is responsible for calculating the work needed to backfill an insight series _without_ a user context. Repository permissions
+	// are filtered at view time of an insight.
+	ctx = actor.WithInternalActor(ctx)
+
 	h.statistics = make(statistics)
 	// Discover all insights on the instance.
 	log15.Debug("Fetching data series for historical")
@@ -292,7 +298,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		sortedSeriesIDs = append(sortedSeriesIDs, seriesID)
 	}
 	if err := h.buildFrames(ctx, uniqueSeries, sortedSeriesIDs); err != nil {
-		multi = multierror.Append(multi, err)
+		multi = errors.Append(multi, err)
 	}
 	if err == nil {
 		// we successfully performed a full repo iteration without any "hard" errors, so we will update the metadata
@@ -371,7 +377,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				return nil // repository is empty
 			}
 			// soft error, repo may be in a bad state but others might be OK.
-			softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
+			softErr = errors.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
 			log15.Error("insights backfill repository skipped", "repo_id", id, "repo_name", repoName, "error", err)
 			return nil
 		}
@@ -410,12 +416,12 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 					series:          series,
 				})
 				if err != nil {
-					softErr = multierror.Append(softErr, err)
+					softErr = errors.Append(softErr, err)
 					h.statistics[seriesID].Errored += 1
 					continue
 				}
 				if hardErr != nil {
-					return multierror.Append(softErr, hardErr)
+					return errors.Append(softErr, hardErr)
 				}
 			}
 		}
@@ -502,7 +508,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 			return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 		}
-		softErr = multierror.Append(softErr, errors.Wrap(err, "FindNearestCommit"))
+		softErr = errors.Append(softErr, errors.Wrap(err, "FindNearestCommit"))
 		return
 	}
 	var nearestCommit *gitdomain.Commit

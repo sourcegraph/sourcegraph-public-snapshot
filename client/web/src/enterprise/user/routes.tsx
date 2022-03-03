@@ -7,13 +7,18 @@ import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
 import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
-import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
+import { ExecutionAreaProps, NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
 const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
     () => import('../batches/global/GlobalBatchChangesArea'),
     'NamespaceBatchChangesArea'
+)
+
+const ExecutionArea = lazyComponent<ExecutionAreaProps, 'ExecutionArea'>(
+    () => import('../batches/global/GlobalBatchChangesArea'),
+    'ExecutionArea'
 )
 
 const CreateOrEditBatchChangePage = lazyComponent<CreateOrEditBatchChangePageProps, 'CreateOrEditBatchChangePage'>(
@@ -56,6 +61,15 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 initialNamespaceID={props.user.id}
                 batchChangeName={match.params.batchChangeName}
             />
+        ),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+        fullPage: true,
+    },
+    {
+        path: '/batch-changes/:batchChangeName/executions/:batchSpecID',
+        render: (props: UserAreaRouteContext & RouteComponentProps<{ batchSpecID: string }>) => (
+            <ExecutionArea {...props} namespaceID={props.user.id} />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,

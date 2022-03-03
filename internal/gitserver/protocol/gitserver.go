@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchRequest struct {
@@ -96,6 +95,7 @@ type ExecRequest struct {
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
 	Opt            *RemoteOpts `json:"opt"`
+	NoTimeout      bool        `json:"noTimeout"`
 }
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.
@@ -208,6 +208,8 @@ type RepoInfo struct {
 	Cloned          bool       // whether the repository has been cloned successfully
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
 	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
+	LastError       string     // the most recent error seen while fetching or cloning the repo
+	ShardID         string     // the ID of the shard owning this repo
 
 	// CloneTime is the time the clone occurred. Note: Repositories may be
 	// re-cloned automatically, so this time is likely to move forward

@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"math"
 
-	"github.com/cockroachdb/errors"
-
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *QueryResolver) DocumentationPage(ctx context.Context, args *gql.LSIFDocumentationPageArgs) (gql.DocumentationPageResolver, error) {
-	page, err := r.resolver.DocumentationPage(ctx, args.PathID)
+	page, err := r.queryResolver.DocumentationPage(ctx, args.PathID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +34,7 @@ func (r *DocumentationPageResolver) Tree() gql.JSONValue {
 }
 
 func (r *QueryResolver) DocumentationPathInfo(ctx context.Context, args *gql.LSIFDocumentationPathInfoArgs) (gql.JSONValue, error) {
-	var maxDepth = 1
+	maxDepth := 1
 	if args.MaxDepth != nil {
 		maxDepth = int(*args.MaxDepth)
 		if maxDepth < 0 {
@@ -49,7 +48,7 @@ func (r *QueryResolver) DocumentationPathInfo(ctx context.Context, args *gql.LSI
 
 	var get func(pathID string, depth int) (*DocumentationPathInfoResult, error)
 	get = func(pathID string, depth int) (*DocumentationPathInfoResult, error) {
-		pathInfo, err := r.resolver.DocumentationPathInfo(ctx, pathID)
+		pathInfo, err := r.queryResolver.DocumentationPathInfo(ctx, pathID)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +107,7 @@ type DocumentationPathInfoResult struct {
 }
 
 func (r *QueryResolver) DocumentationDefinitions(ctx context.Context, args *gql.LSIFQueryDocumentationArgs) (gql.LocationConnectionResolver, error) {
-	locations, err := r.resolver.DocumentationDefinitions(ctx, args.PathID)
+	locations, err := r.queryResolver.DocumentationDefinitions(ctx, args.PathID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +125,7 @@ func (r *QueryResolver) DocumentationReferences(ctx context.Context, args *gql.L
 		return nil, err
 	}
 
-	locations, cursor, err := r.resolver.DocumentationReferences(ctx, args.PathID, limit, cursor)
+	locations, cursor, err := r.queryResolver.DocumentationReferences(ctx, args.PathID, limit, cursor)
 	if err != nil {
 		return nil, err
 	}

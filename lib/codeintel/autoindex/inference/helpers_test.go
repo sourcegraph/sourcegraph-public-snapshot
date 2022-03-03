@@ -2,9 +2,10 @@ package inference
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/grafana/regexp"
 )
 
 type PathTestCase = struct {

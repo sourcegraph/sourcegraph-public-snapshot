@@ -3,9 +3,8 @@ package gitdomain
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TODO: We should consistently make all the errors pointer receivers. By being

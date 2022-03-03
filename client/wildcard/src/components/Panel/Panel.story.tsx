@@ -20,6 +20,7 @@ const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => 
 
 const config: Meta = {
     title: 'wildcard/Panel',
+    component: Panel,
 
     decorators: [decorator],
 
@@ -27,12 +28,20 @@ const config: Meta = {
         component: Panel,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3008%3A502',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3008%3A501',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3008%3A3223',
+            },
+        ],
     },
 }
 

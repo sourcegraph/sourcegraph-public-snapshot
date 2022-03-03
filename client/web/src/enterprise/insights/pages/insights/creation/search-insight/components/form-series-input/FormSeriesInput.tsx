@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
@@ -23,19 +23,14 @@ interface FormSeriesInputProps {
     index: number
 
     /**
-     * This prop represents the case whenever the edit insight UI page
-     * deals with backend insight. We need to disable our search insight
-     * query field since our backend insight can't update BE data according
-     * to the latest insight configuration.
-     */
-    isSearchQueryDisabled: boolean
-
-    /**
      * Show all validation error of all fields within the form.
      */
     showValidationErrorsOnMount?: boolean
 
     series: EditableDataSeries
+
+    /** Code Insight repositories field string value - repo1, repo2, ... */
+    repositories: string
 
     /** Enable autofocus behavior of first input of form. */
     autofocus?: boolean
@@ -60,11 +55,11 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const {
         index,
         series,
-        isSearchQueryDisabled,
         showValidationErrorsOnMount = false,
         className,
         cancel = false,
         autofocus = true,
+        repositories,
         onCancel = noop,
         onSubmit = noop,
         onChange = noop,
@@ -113,7 +108,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         name: 'seriesQuery',
         formApi: formAPI,
         validators: { sync: validQuery },
-        disabled: isSearchQueryDisabled,
     })
 
     const colorField = useField({
@@ -138,9 +132,10 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 title="Search query"
                 required={true}
                 as={InsightQueryInput}
+                repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                description={<QueryFieldDescription isSearchQueryDisabled={isSearchQueryDisabled} />}
+                description={<QueryFieldDescription />}
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
                 className="mt-4"
@@ -175,28 +170,12 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     )
 }
 
-const QueryFieldDescription: React.FunctionComponent<{ isSearchQueryDisabled: boolean }> = props => (
+const QueryFieldDescription: React.FunctionComponent = () => (
     <span>
-        {!props.isSearchQueryDisabled ? (
-            <>
-                Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code>{' '}
-                will be added automatically.
-                <br />
-                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived
-                or forked repos.
-            </>
-        ) : (
-            <>
-                We don't yet allow editing queries for insights over all repos. To change the query, make a new insight.
-                This is a known{' '}
-                <Link
-                    to="/help/code_insights/explanations/current_limitations_of_code_insights"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    beta limitation
-                </Link>
-            </>
-        )}
+        Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code> will be
+        added automatically.
+        <br />
+        Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived or forked
+        repos.
     </span>
 )

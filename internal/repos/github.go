@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -168,9 +168,9 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 			return nil, errors.Wrap(err, "new authenticator with GitHub App")
 		}
 
-		apiURL, err := url.Parse("https://github.com")
+		apiURL, err := url.Parse("https://api.github.com")
 		if err != nil {
-			return nil, errors.Wrap(err, "parse github.com")
+			return nil, errors.Wrap(err, "parse api.github.com")
 		}
 		client := github.NewV3Client(apiURL, auther, nil)
 

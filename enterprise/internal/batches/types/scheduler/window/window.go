@@ -5,9 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -124,7 +122,7 @@ func parseWeekday(raw string) (time.Weekday, error) {
 
 func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 	w := Window{}
-	var errs *multierror.Error
+	var errs error
 
 	if raw == nil {
 		return w, errors.New("raw window cannot be nil")
@@ -133,7 +131,7 @@ func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 	w.days = newWeekdaySet()
 	for i := range raw.Days {
 		if day, err := parseWeekday(raw.Days[i]); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		} else {
 			w.days.add(day)
 		}
@@ -142,22 +140,22 @@ func parseWindow(raw *schema.BatchChangeRolloutWindow) (Window, error) {
 	var err error
 	w.start, err = parseWindowTime(raw.Start)
 	if err != nil {
-		errs = multierror.Append(errs, errors.Wrap(err, "start time"))
+		errs = errors.Append(errs, errors.Wrap(err, "start time"))
 	}
 	w.end, err = parseWindowTime(raw.End)
 	if err != nil {
-		errs = multierror.Append(errs, errors.Wrap(err, "end time"))
+		errs = errors.Append(errs, errors.Wrap(err, "end time"))
 	}
 	if (w.start != nil && w.end == nil) || (w.start == nil && w.end != nil) {
-		errs = multierror.Append(errs, errors.New("both start and end times must be provided"))
+		errs = errors.Append(errs, errors.New("both start and end times must be provided"))
 	} else if w.start != nil && w.end != nil && !w.start.before(*w.end) {
-		errs = multierror.Append(errs, errors.New("end time must be after the start time"))
+		errs = errors.Append(errs, errors.New("end time must be after the start time"))
 	}
 
 	w.rate, err = parseRate(raw.Rate)
 	if err != nil {
-		errs = multierror.Append(errs, err)
+		errs = errors.Append(errs, err)
 	}
 
-	return w, errs.ErrorOrNil()
+	return w, errs
 }

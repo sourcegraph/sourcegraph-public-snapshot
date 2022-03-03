@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const notebookFields = `
@@ -182,7 +182,7 @@ func TestSingleNotebookCRUD(t *testing.T) {
 	}
 
 	testGetNotebook(t, db, schema, user1)
-	testCreateNotebook(t, db, schema, user1, user2, org)
+	testCreateNotebook(t, schema, user1, user2, org)
 	testUpdateNotebook(t, db, schema, user1, user2, org)
 	testDeleteNotebook(t, db, schema, user1, user2, org)
 }
@@ -205,7 +205,7 @@ func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user 
 	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
 }
 
-func testCreateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
+func testCreateNotebook(t *testing.T, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
 	tests := []struct {
 		name            string
 		namespaceUserID int32
@@ -265,13 +265,15 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 	n := notebooks.Notebooks(db)
 
 	tests := []struct {
-		name            string
-		publicNotebook  bool
-		creator         *types.User
-		updater         *types.User
-		namespaceUserID int32
-		namespaceOrgID  int32
-		wantErr         string
+		name                   string
+		publicNotebook         bool
+		creator                *types.User
+		updater                *types.User
+		namespaceUserID        int32
+		namespaceOrgID         int32
+		updatedNamespaceUserID int32
+		updatedNamespaceOrgID  int32
+		wantErr                string
 	}{
 		{
 			name:            "user can update their own public notebook",
@@ -333,6 +335,22 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 			namespaceOrgID: org.ID,
 			wantErr:        "notebook not found",
 		},
+		{
+			name:                  "change notebook user namespace to org namespace",
+			publicNotebook:        true,
+			creator:               user1,
+			updater:               user1,
+			namespaceUserID:       user1.ID,
+			updatedNamespaceOrgID: org.ID,
+		},
+		{
+			name:                   "change notebook org namespace to user namespace",
+			publicNotebook:         true,
+			creator:                user1,
+			updater:                user1,
+			namespaceOrgID:         org.ID,
+			updatedNamespaceUserID: user1.ID,
+		},
 	}
 
 	for _, tt := range tests {
@@ -346,6 +364,10 @@ func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, us
 			updatedNotebook.Title = "Updated Title"
 			updatedNotebook.Public = !createdNotebook.Public
 			updatedNotebook.Blocks = createdNotebook.Blocks[:1]
+			if tt.updatedNamespaceUserID != 0 || tt.updatedNamespaceOrgID != 0 {
+				updatedNotebook.NamespaceUserID = tt.updatedNamespaceUserID
+				updatedNotebook.NamespaceOrgID = tt.updatedNamespaceOrgID
+			}
 
 			input := map[string]interface{}{"id": marshalNotebookID(createdNotebook.ID), "notebook": notebooksapitest.NotebookToAPIInput(updatedNotebook)}
 			var response struct{ UpdateNotebook notebooksapitest.Notebook }
@@ -484,19 +506,16 @@ func createNotebooks(t *testing.T, db *sql.DB, notebooksToCreate []*notebooks.No
 	return createdNotebooks
 }
 
-func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...int32) []*notebooks.NotebookStar {
+func createNotebookStars(t *testing.T, db *sql.DB, notebookID int64, userIDs ...int32) {
 	t.Helper()
 	n := notebooks.Notebooks(db)
 	internalCtx := actor.WithInternalActor(context.Background())
-	createdStars := make([]*notebooks.NotebookStar, 0, len(userIDs))
 	for _, userID := range userIDs {
-		createdStar, err := n.CreateNotebookStar(internalCtx, notebookID, userID)
+		_, err := n.CreateNotebookStar(internalCtx, notebookID, userID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		createdStars = append(createdStars, createdStar)
 	}
-	return createdStars
 }
 
 func TestListNotebooks(t *testing.T) {

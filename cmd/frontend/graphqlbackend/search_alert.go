@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 )
 
 type searchAlertResolver struct {
@@ -43,10 +42,6 @@ func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
 	return &proposedQueries
 }
 
-func alertToSearchResults(alert *search.Alert) *SearchResults {
-	return &SearchResults{Alert: alert}
-}
-
 func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
 	return &alertSearchImplementer{
 		db:    db,
@@ -62,10 +57,7 @@ type alertSearchImplementer struct {
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return &SearchResultsResolver{db: a.db, SearchResults: alertToSearchResults(a.alert.alert)}, nil
+	return &SearchResultsResolver{db: a.db, SearchAlert: a.alert.alert}, nil
 }
 
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
-func (alertSearchImplementer) Inputs() run.SearchInputs {
-	return run.SearchInputs{}
-}

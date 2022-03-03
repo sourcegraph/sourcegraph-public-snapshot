@@ -85,8 +85,8 @@ $table-border-color: var(--border-color);
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
-// Disable transitions
-$input-transition: none;
+// Disable all Bootstrap transitions
+$enable-transitions: false;
 
 // Spacer
 $spacer: 1rem;
@@ -102,7 +102,6 @@ $spacer: 1rem;
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
-@import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
@@ -110,10 +109,6 @@ $spacer: 1rem;
 // Modified in `./forms.scss`
 @import 'bootstrap/scss/forms';
 @import 'bootstrap/scss/custom-forms';
-@import 'bootstrap/scss/input-group';
-
-// Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/tabs/styles';
 
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
@@ -128,10 +123,12 @@ $spacer: 1rem;
 @import './code';
 @import './buttons';
 @import './button-group';
+@import './input-group';
 @import './forms';
 @import './highlight';
 @import './tabs';
 @import './progress';
+@import './collapse';
 
 * {
     box-sizing: border-box;

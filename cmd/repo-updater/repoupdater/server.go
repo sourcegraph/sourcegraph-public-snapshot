@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Server is a repoupdater server.
@@ -310,14 +310,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var repo *types.Repo
-	if s.SourcegraphDotComMode {
-		repo, err = s.Syncer.SyncRepo(ctx, args.Repo, true)
-	} else {
-		// TODO: Remove all call sites that RPC into repo-updater to just look-up
-		// a repo. They can simply ask the database instead.
-		repo, err = s.Store.RepoStore.GetByName(ctx, args.Repo)
-	}
+	repo, err := s.Syncer.SyncRepo(ctx, args.Repo, true)
 
 	switch {
 	case err == nil:
@@ -330,6 +323,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
 	default:
 		return nil, err
+	}
+
+	if s.Scheduler != nil && args.Update {
+		// Enqueue a high priority update for this repo.
+		s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 	}
 
 	repoInfo := protocol.NewRepoInfo(repo)

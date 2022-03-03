@@ -2,7 +2,8 @@ package main
 
 import (
 	"os"
-	"regexp"
+
+	"github.com/grafana/regexp"
 )
 
 var indexFilenamePattern = regexp.MustCompile(`^(.+)\.\d+\.([0-9A-Fa-f]{40})\.dump$`)
