@@ -10,8 +10,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -121,6 +121,13 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 	}
 
 	return symbolOrErrors, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {

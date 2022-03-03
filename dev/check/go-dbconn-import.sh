@@ -20,6 +20,7 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
   # Doesn't connect but uses db internals for use with sqlite
   github.com/sourcegraph/sourcegraph/cmd/symbols
   # Transitively depends on zoekt package which imports but does not use DB

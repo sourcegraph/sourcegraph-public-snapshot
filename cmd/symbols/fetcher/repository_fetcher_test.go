@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -29,16 +29,10 @@ func TestRepositoryFetcher(t *testing.T) {
 		tarContents[name] = content
 	}
 
-	// JSON is ignored
-	tarContents["ignored.json"] = "{}"
-
-	// Large files are ignored
-	tarContents["payloads.txt"] = strings.Repeat("oversized load", maxFileSize)
-
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
 
-	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext)
+	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 1000, &observation.TestContext)
 	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
 
 	t.Run("all paths", func(t *testing.T) {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"strings"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -47,7 +46,6 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 		log.String("repo", string(repo)),
 		log.String("commit", string(commit)),
 		log.Int("paths", len(paths)),
-		log.String("paths", strings.Join(paths, ":")),
 	}})
 	defer endObservation(1, observation.Args{})
 

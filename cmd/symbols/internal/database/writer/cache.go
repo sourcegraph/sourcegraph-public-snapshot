@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

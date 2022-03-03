@@ -6,3 +6,4 @@ Guidance and documentation about writing database interactions within the Source
 - High-performance guides
   - [Batch operations](batch_operations.md)
   - [Materialized cache](materialized_cache.md)
+- [Locking behavior](locking_behavior.md)

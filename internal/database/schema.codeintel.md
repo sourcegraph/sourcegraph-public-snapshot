@@ -742,3 +742,51 @@ Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
 
 ```
+
+# Table "public.rockskip_ancestry"
+```
+  Column   |         Type          | Collation | Nullable |                    Default                    
+-----------+-----------------------+-----------+----------+-----------------------------------------------
+ id        | integer               |           | not null | nextval('rockskip_ancestry_id_seq'::regclass)
+ repo_id   | integer               |           | not null | 
+ commit_id | character varying(40) |           | not null | 
+ height    | integer               |           | not null | 
+ ancestor  | integer               |           | not null | 
+Indexes:
+    "rockskip_ancestry_pkey" PRIMARY KEY, btree (id)
+    "rockskip_ancestry_repo_id_commit_id_key" UNIQUE CONSTRAINT, btree (repo_id, commit_id)
+    "rockskip_ancestry_repo_commit_id" btree (repo_id, commit_id)
+
+```
+
+# Table "public.rockskip_repos"
+```
+      Column      |           Type           | Collation | Nullable |                  Default                   
+------------------+--------------------------+-----------+----------+--------------------------------------------
+ id               | integer                  |           | not null | nextval('rockskip_repos_id_seq'::regclass)
+ repo             | text                     |           | not null | 
+ last_accessed_at | timestamp with time zone |           | not null | 
+Indexes:
+    "rockskip_repos_pkey" PRIMARY KEY, btree (id)
+    "rockskip_repos_repo_key" UNIQUE CONSTRAINT, btree (repo)
+    "rockskip_repos_last_accessed_at" btree (last_accessed_at)
+    "rockskip_repos_repo" btree (repo)
+
+```
+
+# Table "public.rockskip_symbols"
+```
+ Column  |   Type    | Collation | Nullable |                   Default                    
+---------+-----------+-----------+----------+----------------------------------------------
+ id      | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
+ added   | integer[] |           | not null | 
+ deleted | integer[] |           | not null | 
+ repo_id | integer   |           | not null | 
+ path    | text      |           | not null | 
+ name    | text      |           | not null | 
+Indexes:
+    "rockskip_symbols_pkey" PRIMARY KEY, btree (id)
+    "rockskip_symbols_gin" gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, singleton(path), path_prefixes(path), singleton(name), name gin_trgm_ops)
+    "rockskip_symbols_repo_id_path_name" btree (repo_id, path, name)
+
+```
