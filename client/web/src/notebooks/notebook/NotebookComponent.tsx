@@ -34,7 +34,6 @@ import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
-import { useExperimentalFeatures } from '../../stores'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
@@ -455,7 +454,6 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
     )
 
     const location = useLocation()
-    const coolCodeIntelEnabled = useExperimentalFeatures(features => features.coolCodeIntel)
 
     if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
         return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
@@ -528,7 +526,6 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     location={location}
                     telemetryService={props.telemetryService}
                     isLightTheme={props.isLightTheme}
-                    coolCodeIntelEnabled={!!coolCodeIntelEnabled}
                 />
             )}
         </div>

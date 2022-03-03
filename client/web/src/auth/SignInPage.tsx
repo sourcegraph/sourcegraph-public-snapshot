@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { partition } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 import React, { useEffect, useState } from 'react'
 import { Redirect } from 'react-router-dom'
 
@@ -79,9 +80,14 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                                 variant="secondary"
                                 as="a"
                             >
-                                {provider.displayName === 'GitHub' && (
+                                {provider.serviceType === 'github' && (
                                     <>
                                         <GithubIcon className="icon-inline" />{' '}
+                                    </>
+                                )}
+                                {provider.serviceType === 'gitlab' && (
+                                    <>
+                                        <GitlabIcon className="icon-inline" />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}
