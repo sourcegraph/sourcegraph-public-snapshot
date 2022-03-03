@@ -1,0 +1,1 @@
+ALTER TABLE external_services ADD COLUMN IF NOT EXISTS token_expires_at TIMESTAMP WITH TIME ZONE;

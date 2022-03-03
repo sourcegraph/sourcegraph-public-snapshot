@@ -32,6 +32,7 @@ type ListBatchChangesArgs struct {
 	First               int32
 	After               *string
 	State               *string
+	States              *[]string
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
