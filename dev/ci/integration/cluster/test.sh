@@ -104,4 +104,5 @@ function e2e() {
 cluster_setup
 test_setup
 set +o pipefail
-e2e
+# special exit code to capture e2e failures
+e2e || exit 123

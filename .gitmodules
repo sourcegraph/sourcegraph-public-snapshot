@@ -6,3 +6,7 @@
 	path = docker-images/syntax-highlighter/crates/sg-syntax/languages/tree-sitter-sql
 	url = https://github.com/m-novikov/tree-sitter-sql
 	shallow = true
+[submodule "tree-sitter-c_sharp"]
+	path = docker-images/syntax-highlighter/crates/sg-syntax/languages/tree-sitter-c_sharp
+	url = https://github.com/tree-sitter/tree-sitter-c-sharp
+	shallow = true

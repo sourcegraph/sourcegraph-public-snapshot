@@ -62,7 +62,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
         // Override onSubmit to pass type value
-        // to correctly set the grants property for graphql api
+        // to correctly set the grants' property for graphql api
         onSubmit: async (): Promise<SubmissionErrors> => {
             let type = 'organization'
             if (visibility.input.value === userSubjectID) {
@@ -113,6 +113,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 required={true}

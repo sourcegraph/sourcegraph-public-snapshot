@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
+import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -15,15 +15,18 @@ import {
     formatSearchParameters,
     isErrorLike,
     lprToRange,
-    renderMarkdown,
     toPositionOrRangeQueryParameter,
+    toViewStateHash,
 } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     RepoSpec,
     RevisionSpec,
@@ -52,12 +55,11 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
-    HoverFields,
     LocationFields,
-    Maybe,
 } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
-import { Blob, BlobProps } from '../repo/blob/Blob'
+import { Blob } from '../repo/blob/Blob'
+import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './CoolCodeIntel.module.scss'
@@ -66,14 +68,25 @@ import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
 export interface GlobalCoolCodeIntelProps {
     coolCodeIntelEnabled: boolean
-    onTokenClick?: (clickedToken: CoolClickedToken | undefined) => void
 }
 
-export type CoolClickedToken = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
+type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
 interface CoolCodeIntelProps
-    extends Omit<BlobProps, 'className' | 'wrapCode' | 'blobInfo' | 'disableStatusBar' | 'coolCodeIntelEnabled'> {
-    clickedToken?: CoolClickedToken
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        HoverThresholdProps,
+        ExtensionsControllerProps,
+        ThemeProps {
+    // The token for which to show references
+    token?: Token
+    /**
+     * The panel runs inside its own MemoryRouter, we keep track of externalHistory
+     * so that we're still able to actually navigate within the browser when required
+     */
+    externalHistory: H.History
+    externalLocation: H.Location
 }
 
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
@@ -88,7 +101,13 @@ export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props 
             </div>
         )}
     >
-        <CoolCodeIntelResizablePanel {...props} />
+        <MemoryRouter
+            // Force router to remount the Panel when external location changes
+            key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
+            initialEntries={[props.externalLocation]}
+        >
+            <CoolCodeIntelResizablePanel {...props} />
+        </MemoryRouter>
     </ErrorBoundary>
 )
 
@@ -103,11 +122,11 @@ interface CoolCodeIntelTab {
 }
 
 export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
-    if (!props.clickedToken) {
+    if (!props.token) {
         return null
     }
 
-    return <ReferencesList clickedToken={props.clickedToken} {...props} />
+    return <ReferencesList token={props.token} {...props} />
 }
 
 interface Location {
@@ -158,7 +177,7 @@ interface LocationGroup {
 
 export const ReferencesList: React.FunctionComponent<
     CoolCodeIntelProps & {
-        clickedToken: CoolClickedToken
+        token: Token
     }
 > = props => {
     const [activeLocation, setActiveLocation] = useState<Location>()
@@ -168,17 +187,32 @@ export const ReferencesList: React.FunctionComponent<
     useEffect(() => {
         setActiveLocation(undefined)
         setFilter(undefined)
-    }, [props.clickedToken])
+    }, [props.token])
 
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
-    const history = useMemo(() => H.createMemoryHistory(), [])
-
+    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+    // When a user clicks on an item in the list of references, we push it to
+    // the memory history for the code blob on the right, so it will jump to &
+    // highlight the correct line.
     const onReferenceClick = (location: Location | undefined): void => {
         if (location) {
-            history.push(location.url)
+            blobMemoryHistory.push(location.url)
         }
         setActiveLocation(location)
+    }
+
+    // This is the history of the panel, that is inside a memory router
+    const panelHistory = useHistory()
+    // When we user clicks on a token *inside* the code blob on the right, we
+    // update the history for the panel itself, which is inside a memory router.
+    //
+    // We also add '#tab=references' to the URL.
+    //
+    // That will cause the panel to show the references of the clicked token,
+    // but not navigate the main web app to it.
+    const onBlobNav = (url: string): void => {
+        panelHistory.push(url + toViewStateHash('references'))
     }
 
     return (
@@ -209,7 +243,13 @@ export const ReferencesList: React.FunctionComponent<
                         >
                             <h4>
                                 {activeLocation.resource.path}{' '}
-                                <Link to={activeLocation.url}>
+                                <Link
+                                    to={activeLocation.url}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        props.externalHistory.push(activeLocation.url)
+                                    }}
+                                >
                                     <OpenInAppIcon className="icon-inline" />
                                 </Link>
                             </h4>
@@ -226,8 +266,9 @@ export const ReferencesList: React.FunctionComponent<
                         </CardHeader>
                         <SideBlob
                             {...props}
-                            history={history}
-                            location={history.location}
+                            blobNav={onBlobNav}
+                            history={blobMemoryHistory}
+                            location={blobMemoryHistory.location}
                             activeLocation={activeLocation}
                         />
                     </div>
@@ -238,7 +279,7 @@ export const ReferencesList: React.FunctionComponent<
 }
 
 interface ReferencesComponentProps extends CoolCodeIntelProps {
-    clickedToken: CoolClickedToken
+    token: Token
     setActiveLocation: (location: Location | undefined) => void
     activeLocation: Location | undefined
     filter: string | undefined
@@ -257,13 +298,13 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
         fetchMoreImplementationsLoading,
     } = usePreciseCodeIntel({
         variables: {
-            repository: props.clickedToken.repoName,
-            commit: props.clickedToken.commitID,
-            path: props.clickedToken.filePath,
+            repository: props.token.repoName,
+            commit: props.token.commitID,
+            path: props.token.filePath,
             // On the backend the line/character are 0-indexed, but what we
             // get from hoverifier is 1-indexed.
-            line: props.clickedToken.line - 1,
-            character: props.clickedToken.character - 1,
+            line: props.token.line - 1,
+            character: props.token.character - 1,
             filter: props.filter || null,
             firstReferences: 100,
             afterReferences: null,
@@ -301,14 +342,12 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
     const references = lsifData.references.nodes
     const definitions = lsifData.definitions.nodes
     const implementations = lsifData.implementations.nodes
-    const hover = lsifData.hover
 
     return (
         <SideReferencesLists
             {...props}
             definitions={definitions}
             references={references}
-            hover={hover}
             referencesHasNextPage={referencesHasNextPage}
             implementationsHasNextPage={implementationsHasNextPage}
             implementations={implementations}
@@ -321,13 +360,12 @@ export const SideReferences: React.FunctionComponent<ReferencesComponentProps> =
 }
 
 interface SideReferencesListsProps extends CoolCodeIntelProps {
-    clickedToken: CoolClickedToken
+    token: Token
     setActiveLocation: (location: Location | undefined) => void
     activeLocation: Location | undefined
     filter: string | undefined
 
     definitions: LocationFields[]
-    hover: Maybe<HoverFields>
 
     references: LocationFields[]
     referencesHasNextPage: boolean
@@ -347,12 +385,6 @@ const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = p
 
     return (
         <>
-            {props.hover && (
-                <Markdown
-                    className={classNames('mb-0 card-body text-small', styles.hoverMarkdown)}
-                    dangerousInnerHTML={renderMarkdown(props.hover.markdown.text)}
-                />
-            )}
             <CollapsibleLocationList
                 {...props}
                 name="definitions"
@@ -463,6 +495,10 @@ const CollapsibleLocationList: React.FunctionComponent<{
 const SideBlob: React.FunctionComponent<
     CoolCodeIntelProps & {
         activeLocation: Location
+
+        location: H.Location
+        history: H.History
+        blobNav: (url: string) => void
     }
 > = props => {
     const { data, error, loading } = useQuery<
@@ -525,7 +561,9 @@ const SideBlob: React.FunctionComponent<
     return (
         <Blob
             {...props}
-            coolCodeIntelEnabled={true}
+            nav={props.blobNav}
+            history={props.history}
+            location={props.location}
             disableStatusBar={true}
             wrapCode={true}
             className={styles.referencesSideBlobCode}
@@ -727,21 +765,25 @@ const ReferenceGroup: React.FunctionComponent<{
 
 const TABS: CoolCodeIntelTab[] = [{ id: 'references', label: 'References', component: ReferencesPanel }]
 
-const ResizableCoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(
-    props => (
-        <Resizable
-            className={styles.resizablePanel}
-            handlePosition="top"
-            defaultSize={350}
-            storageKey="panel-size"
-            element={<CoolCodeIntelPanel {...props} />}
-        />
-    )
-)
+const ResizableCoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => (
+    <Resizable
+        className={styles.resizablePanel}
+        handlePosition="top"
+        defaultSize={350}
+        storageKey="panel-size"
+        element={<CoolCodeIntelPanel {...props} />}
+    />
+))
 
-const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (closed: boolean) => void }>(props => {
+const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+
+    const location = useLocation()
+    const handlePanelClose = useCallback(() => {
+        // We close the panel by removing the viewState in the external history
+        props.externalHistory.push(locationWithoutViewState(location))
+    }, [props.externalHistory, location])
 
     return (
         <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
@@ -761,7 +803,7 @@ const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps & { handlePanelClose: (
                 </TabList>
                 <div className="align-items-center d-flex">
                     <Button
-                        onClick={() => props.handlePanelClose(true)}
+                        onClick={handlePanelClose}
                         className={classNames('btn-icon ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
@@ -797,88 +839,36 @@ export function locationWithoutViewState(location: H.Location): H.LocationDescri
 }
 
 const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
-    let token = props.clickedToken
-
     const location = useLocation()
-
-    const [closed, close] = useState(false)
-    const handlePanelClose = useCallback(() => {
-        if (props.onTokenClick) {
-            props.onTokenClick(undefined)
-        }
-    }, [props])
-
-    useEffect(() => {
-        if (token) {
-            close(false)
-        }
-    }, [token])
-
-    if (closed) {
-        return null
-    }
 
     const { hash, pathname, search } = location
     const { line, character, viewState } = parseQueryAndHash(search, hash)
+    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
 
-    // If we don't have a token that someone clicked on and we don't have
-    // '#tab=...' in the URL, we don't need to show the panel.
-    if (!token && !viewState) {
+    // If we don't have enough information in the URL, we can't render the panel
+    if (!(line && character && filePath && viewState)) {
         return null
     }
 
-    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
+    const token = { repoName, line, character, filePath }
 
-    const tokenSameAsUrl =
-        token &&
-        token.repoName === repoName &&
-        token.line === line &&
-        token.character === character &&
-        token.filePath === filePath
-
-    const haveFileLocationAndViewState =
-        line &&
-        character &&
-        filePath &&
-        viewState &&
-        (viewState === 'references' || viewState.startsWith('implementations_'))
-
-    // If we have info in URL, no clicked token, or the clicked token is not the
-    // same as what's in the URL, we use what's in the URL as token
-    if (haveFileLocationAndViewState && (!token || !tokenSameAsUrl)) {
-        const urlBasedToken = {
-            repoName,
-            line,
-            character,
-            filePath,
-        }
-        if (commitID === undefined || revision === undefined) {
-            return <CoolCodeIntelPanelUrlBased {...props} {...urlBasedToken} handlePanelClose={handlePanelClose} />
-        }
-
-        token = { ...urlBasedToken, revision, commitID }
+    if (commitID === undefined || revision === undefined) {
+        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} />
     }
 
-    return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={handlePanelClose} />
+    return <ResizableCoolCodeIntelPanel {...props} token={{ ...token, revision, commitID }} />
 }
 
-export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<
+export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
     CoolCodeIntelProps & {
         repoName: string
         line: number
         character: number
         filePath: string
         revision?: string
-
-        handlePanelClose: (closed: boolean) => void
     }
 > = props => {
-    const resolvedRevision = useObservable(
-        useMemo(() => resolveRevision({ repoName: props.repoName, revision: props.revision }), [
-            props.repoName,
-            props.revision,
-        ])
-    )
+    const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
 
     if (!resolvedRevision) {
         return null
@@ -894,5 +884,5 @@ export const CoolCodeIntelPanelUrlBased: React.FunctionComponent<
         commitID: resolvedRevision.commitID,
     }
 
-    return <ResizableCoolCodeIntelPanel {...props} clickedToken={token} handlePanelClose={props.handlePanelClose} />
+    return <ResizableCoolCodeIntelPanel {...props} token={token} />
 }
