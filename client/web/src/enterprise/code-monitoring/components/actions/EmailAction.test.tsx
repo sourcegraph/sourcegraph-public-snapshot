@@ -1,26 +1,33 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
-import { NEVER, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
-import { mockAuthenticatedUser } from '../../testing/util'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
-import { EmailAction, EmailActionProps } from './EmailAction'
+import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
+import { mockAuthenticatedUser } from '../../testing/util'
+import { ActionProps } from '../FormActionArea'
+
+import { EmailAction, SEND_TEST_EMAIL } from './EmailAction'
 
 describe('EmailAction', () => {
-    const props: EmailActionProps = {
+    const props: ActionProps = {
         action: undefined,
         setAction: sinon.stub(),
         disabled: false,
         authenticatedUser: mockAuthenticatedUser,
         monitorName: 'Test',
-        triggerTestEmailAction: sinon.stub(),
     }
 
     test('open and submit', () => {
         const setActionSpy = sinon.spy()
-        const { getByTestId } = render(<EmailAction {...props} setAction={setActionSpy} />)
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <EmailAction {...props} setAction={setActionSpy} />
+            </MockedTestProvider>
+        )
 
         userEvent.click(getByTestId('form-action-toggle-email'))
         userEvent.click(getByTestId('submit-action-email'))
@@ -37,17 +44,19 @@ describe('EmailAction', () => {
     test('open and delete', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <EmailAction
-                {...props}
-                action={{
-                    __typename: 'MonitorEmail',
-                    enabled: true,
-                    includeResults: false,
-                    id: '',
-                    recipients: { nodes: [{ id: 'userID' }] },
-                }}
-                setAction={setActionSpy}
-            />
+            <MockedTestProvider>
+                <EmailAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorEmail',
+                        enabled: true,
+                        includeResults: false,
+                        id: '',
+                        recipients: { nodes: [{ id: 'userID' }] },
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         userEvent.click(getByTestId('form-action-toggle-email'))
@@ -59,17 +68,19 @@ describe('EmailAction', () => {
     test('enable and disable', () => {
         const setActionSpy = sinon.spy()
         const { getByTestId } = render(
-            <EmailAction
-                {...props}
-                action={{
-                    __typename: 'MonitorEmail',
-                    enabled: false,
-                    includeResults: false,
-                    id: '1',
-                    recipients: { nodes: [{ id: 'userID' }] },
-                }}
-                setAction={setActionSpy}
-            />
+            <MockedTestProvider>
+                <EmailAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorEmail',
+                        enabled: false,
+                        includeResults: false,
+                        id: '1',
+                        recipients: { nodes: [{ id: 'userID' }] },
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
         )
 
         expect(getByTestId('enable-action-toggle-collapsed-email')).not.toBeChecked()
@@ -98,24 +109,42 @@ describe('EmailAction', () => {
     })
 
     describe('Send test email', () => {
-        let clock: sinon.SinonFakeTimers
-        beforeEach(() => {
-            clock = sinon.useFakeTimers()
-        })
-        afterEach(() => {
-            clock.restore()
-        })
+        const mockedVars: SendTestEmailVariables = {
+            namespace: props.authenticatedUser.id,
+            description: props.monitorName,
+            email: {
+                enabled: true,
+                includeResults: false,
+                priority: MonitorEmailPriority.NORMAL,
+                recipients: [props.authenticatedUser.id],
+                header: '',
+            },
+        }
 
         test('disabled if no monitor name set', () => {
-            const { getByTestId } = render(<EmailAction {...props} monitorName="" />)
+            const { getByTestId } = render(
+                <MockedTestProvider>
+                    <EmailAction {...props} monitorName="" />
+                </MockedTestProvider>
+            )
 
             userEvent.click(getByTestId('form-action-toggle-email'))
             expect(getByTestId('send-test-email')).toBeDisabled()
         })
 
-        test('send test email, loading', () => {
+        test('send test email, success', async () => {
+            const mockedResponse: MockedResponse<SendTestEmailResult> = {
+                request: {
+                    query: SEND_TEST_EMAIL,
+                    variables: mockedVars,
+                },
+                result: { data: { triggerTestEmailAction: { alwaysNil: null } } },
+            }
+
             const { getByTestId, queryByTestId } = render(
-                <EmailAction {...props} triggerTestEmailAction={() => NEVER} />
+                <MockedTestProvider mocks={[mockedResponse]}>
+                    <EmailAction {...props} />
+                </MockedTestProvider>
             )
 
             userEvent.click(getByTestId('form-action-toggle-email'))
@@ -124,27 +153,7 @@ describe('EmailAction', () => {
             userEvent.click(getByTestId('send-test-email'))
             expect(getByTestId('send-test-email')).toHaveTextContent('Sending email...')
 
-            clock.tick(1000)
-
-            expect(getByTestId('send-test-email')).toHaveTextContent('Sending email...')
-            expect(getByTestId('send-test-email')).toBeDisabled()
-
-            expect(queryByTestId('send-test-email-again')).not.toBeInTheDocument()
-            expect(queryByTestId('test-email-error')).not.toBeInTheDocument()
-        })
-
-        test('send test email, success', () => {
-            const { getByTestId, queryByTestId } = render(
-                <EmailAction {...props} triggerTestEmailAction={() => of(undefined)} />
-            )
-
-            userEvent.click(getByTestId('form-action-toggle-email'))
-            expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
-
-            userEvent.click(getByTestId('send-test-email'))
-            expect(getByTestId('send-test-email')).toHaveTextContent('Sending email...')
-
-            clock.tick(1000)
+            await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Test email sent!')
             expect(getByTestId('send-test-email')).toBeDisabled()
@@ -153,18 +162,29 @@ describe('EmailAction', () => {
             expect(queryByTestId('test-email-error')).not.toBeInTheDocument()
         })
 
-        test('send test email, error', () => {
+        test('send test email, error', async () => {
+            const mockedResponse: MockedResponse<SendTestEmailResult> = {
+                request: {
+                    query: SEND_TEST_EMAIL,
+                    variables: mockedVars,
+                },
+                error: new Error('An error occurred'),
+            }
+
             const { getByTestId, queryByTestId } = render(
-                <EmailAction {...props} triggerTestEmailAction={() => throwError(new Error('error'))} />
+                <MockedTestProvider mocks={[mockedResponse]}>
+                    <EmailAction {...props} />
+                </MockedTestProvider>
             )
 
             userEvent.click(getByTestId('form-action-toggle-email'))
             expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
 
             userEvent.click(getByTestId('send-test-email'))
-            expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
 
-            clock.tick(1000)
+            await waitForNextApolloResponse()
+
+            expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
 
             expect(getByTestId('send-test-email')).toBeEnabled()
 

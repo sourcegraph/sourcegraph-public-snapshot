@@ -1,6 +1,7 @@
 import { noop } from 'lodash'
 import React, { useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
+import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -79,6 +80,8 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     platformContext={platformContext}
                     extensionsController={extensionsController}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
+                    // Copying is not supported in embedded notebooks
+                    onCopyNotebook={() => NEVER}
                     isEmbedded={true}
                 />
             )}

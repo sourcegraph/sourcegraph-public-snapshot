@@ -111,6 +111,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
 
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>
+            {/* eslint-disable-next-line react/forbid-elements */}
             <form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit} className={styles.chartSection}>
                 <SearchInsightLivePreview
                     title="In-line TODO statements"

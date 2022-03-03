@@ -114,7 +114,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	opts, err := makeGetUploadsOptions(ctx, args)
+	opts, err := makeGetUploadsOptions(args)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	opts, err := makeGetIndexesOptions(ctx, args)
+	opts, err := makeGetIndexesOptions(args)
 	if err != nil {
 		return nil, err
 	}
@@ -616,8 +616,8 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetUploadsOptions, error) {
-	repositoryID, err := resolveRepositoryID(ctx, args.RepositoryID)
+func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetUploadsOptions, error) {
+	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -658,8 +658,8 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
-	repositoryID, err := resolveRepositoryID(ctx, args.RepositoryID)
+func makeGetIndexesOptions(args *gql.LSIFRepositoryIndexesQueryArgs) (store.GetIndexesOptions, error) {
+	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}
@@ -679,7 +679,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 }
 
 // resolveRepositoryByID gets a repository's internal identifier from a GraphQL identifier.
-func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
+func resolveRepositoryID(id graphql.ID) (int, error) {
 	if id == "" {
 		return 0, nil
 	}

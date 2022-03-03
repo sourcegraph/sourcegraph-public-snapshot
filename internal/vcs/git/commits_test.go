@@ -427,7 +427,7 @@ func TestCommitExists(t *testing.T) {
 				t.Fatal("Should exist")
 			}
 
-			exists, err = CommitExists(ctx, repo, NonExistentCommitID, checker)
+			exists, err = CommitExists(ctx, repo, nonExistentCommitID, checker)
 			if err != nil {
 				t.Fatal(err)
 			}

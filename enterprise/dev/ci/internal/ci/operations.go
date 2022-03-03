@@ -121,7 +121,9 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{},
+		}))
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
@@ -136,7 +138,7 @@ func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
 		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
-			IncludeNames: true,
+			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
 }
 
@@ -200,7 +202,11 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/web"),
+		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+			TestReports: &bk.TestReportOpts{
+				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+			},
+		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
@@ -338,7 +344,11 @@ func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
-			bk.Cmd("./dev/ci/go-test.sh "+testSuffix),
+			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+				TestReports: &bk.TestReportOpts{
+					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
+				},
+			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
 		)
 	})
@@ -392,9 +402,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Docker checks",
-		bk.AnnotatedCmd("go run ./dev/sg check -annotations docker", bk.AnnotatedCmdOpts{
-			IncludeNames: true,
+	pipeline.AddStep(":docker: Docker linters",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations docker", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
 }
 
@@ -570,9 +580,6 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 func clusterQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
-
-			bk.Skip("flakey: https://github.com/sourcegraph/sourcegraph/issues/31342"),
-
 			bk.DependsOn(candidateImageStepKey("frontend")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
@@ -583,7 +590,10 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
+			// Flakey test we are running to collect more data:
+			// https://github.com/sourcegraph/sourcegraph/issues/31342
+			bk.SoftFail(123))
 	}
 }
 
@@ -666,8 +676,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.SoftFail(vulnerabilityExitCode),
 
 			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
-				Type:            bk.AnnotationTypeWarning,
-				MultiJobContext: "docker-security-scans",
+				Annotations: &bk.AnnotationOpts{
+					Type:            bk.AnnotationTypeWarning,
+					MultiJobContext: "docker-security-scans",
+				},
 			}))
 	}
 }

@@ -815,13 +815,14 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 # Table "public.external_service_repos"
 ```
-       Column        |  Type   | Collation | Nullable | Default 
----------------------+---------+-----------+----------+---------
- external_service_id | bigint  |           | not null | 
- repo_id             | integer |           | not null | 
- clone_url           | text    |           | not null | 
- user_id             | integer |           |          | 
- org_id              | integer |           |          | 
+       Column        |           Type           | Collation | Nullable |         Default         
+---------------------+--------------------------+-----------+----------+-------------------------
+ external_service_id | bigint                   |           | not null | 
+ repo_id             | integer                  |           | not null | 
+ clone_url           | text                     |           | not null | 
+ user_id             | integer                  |           |          | 
+ org_id              | integer                  |           |          | 
+ created_at          | timestamp with time zone |           | not null | transaction_timestamp()
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_clone_url_idx" btree (clone_url)
@@ -1656,7 +1657,6 @@ Referenced by:
  expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
-    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
     "org_invitations_org_id" btree (org_id) WHERE deleted_at IS NULL
     "org_invitations_recipient_user_id" btree (recipient_user_id) WHERE deleted_at IS NULL
 Check constraints:

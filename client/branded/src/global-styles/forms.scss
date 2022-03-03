@@ -15,7 +15,7 @@
     );
     --input-height-border: calc(var(--input-border-width) * 2);
     --input-height-inner: calc((var(--input-line-height) * 1em) + (var(--input-padding-y) * 2));
-    --input-height-inner-quater: calc((var(--input-line-height) * 0.25em) + (var(--input-padding-y) / 2));
+    --input-height-inner-quarter: calc((var(--input-line-height) * 0.25em) + (var(--input-padding-y) / 2));
     --input-height-inner-half: calc((var(--input-line-height) * 0.5em) + var(--input-padding-y));
     --input-font-weight: 400;
     --form-group-margin-bottom: 1rem;
@@ -152,7 +152,7 @@ textarea.form-control {
 
 textarea.form-control.is-valid {
     padding-right: var(--input-height-inner);
-    background-position: top var(--input-height-inner-quater) right var(--input-height-inner-quater);
+    background-position: top var(--input-height-inner-quarter) right var(--input-height-inner-quarter);
 }
 
 // Form groups

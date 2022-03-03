@@ -11,7 +11,7 @@ This page outlines how to accept a contribution to the [Sourcegraph repository](
 
 ## Buildkite
 
-To request a [Buildkite build](../background-information/continuous_integration.md#buildkite-pipelines) for a pull request from a fork, a build must be manually requested after reviewing the contributor's changes. A successful Buildkite build is required for a pull request to be merged.
+To request a [Buildkite build](../background-information/ci/index.md#buildkite-pipelines) for a pull request from a fork, a build must be manually requested after reviewing the contributor's changes. A successful Buildkite build is required for a pull request to be merged.
 
 > WARNING: Builds do not happen automatically for forks for security reasons - Buildkite build runs have access to a variety of secrets used in testing. When reviewing, ensure that there are no unexpected usages of secrets or attempts to expose secrets in logs or external services.
 

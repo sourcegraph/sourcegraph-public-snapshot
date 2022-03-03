@@ -16,11 +16,11 @@ func TestToSearchInputs(t *testing.T) {
 		q, _ := parser(input)
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
-				UserSettings: &schema.Settings{},
-				PatternType:  query.SearchTypeLiteral,
-				Protocol:     protocol,
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteral,
+				Protocol:            protocol,
+				OnSourcegraphDotCom: true,
 			},
-			OnSourcegraphDotCom: true,
 		}
 
 		j, _ := ToSearchJob(args, q)
@@ -155,11 +155,11 @@ func TestToEvaluateJob(t *testing.T) {
 		q, _ := query.ParseLiteral(input)
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
-				UserSettings: &schema.Settings{},
-				PatternType:  query.SearchTypeLiteral,
-				Protocol:     protocol,
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteral,
+				Protocol:            protocol,
+				OnSourcegraphDotCom: true,
 			},
-			OnSourcegraphDotCom: true,
 		}
 
 		b, _ := query.ToBasicQuery(q)

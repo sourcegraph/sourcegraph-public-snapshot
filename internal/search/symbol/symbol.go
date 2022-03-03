@@ -72,10 +72,14 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build file matches
-	symbolsByPath := make(map[string][]*result.Symbol)
+	return symbolsToMatches(symbols, repoRevs.Repo, commitID, inputRev), err
+}
+
+func symbolsToMatches(symbols []result.Symbol, repo types.MinimalRepo, commitID api.CommitID, inputRev string) result.Matches {
+	symbolsByPath := make(map[string][]result.Symbol)
 	for _, symbol := range symbols {
 		cur := symbolsByPath[symbol.Path]
-		symbolsByPath[symbol.Path] = append(cur, &symbol)
+		symbolsByPath[symbol.Path] = append(cur, symbol)
 	}
 
 	// Create file matches from partitioned symbols
@@ -83,7 +87,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
-			Repo:     repoRevs.Repo,
+			Repo:     repo,
 			CommitID: commitID,
 			InputRev: &inputRev,
 		}
@@ -92,7 +96,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 		for _, symbol := range symbols {
 			symbolMatches = append(symbolMatches, &result.SymbolMatch{
 				File:   &file,
-				Symbol: *symbol,
+				Symbol: symbol,
 			})
 		}
 
@@ -104,7 +108,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 
 	// Make the results deterministic
 	sort.Sort(matches)
-	return matches, err
+	return matches
 }
 
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
@@ -329,16 +333,17 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 
 	repos := searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
+		indexed, unindexed, err := zoektutil.PartitionRepos(
+			ctx,
+			page.RepoRevs,
+			s.ZoektArgs.Zoekt,
+			search.SymbolRequest,
+			s.UseIndex,
+			s.ContainsRefGlobs,
+			zoektutil.MissingRepoRevStatus(stream),
+		)
 		if err != nil {
 			return err
-		}
-
-		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
-			if err != nil {
-				return err
-			}
 		}
 
 		ctx, cancel := context.WithCancel(ctx)
@@ -347,10 +352,20 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 		run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
 		if s.NotSearcherOnly {
+			zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+				Repos:          indexed,
+				Query:          s.ZoektArgs.Query,
+				Typ:            search.SymbolRequest,
+				FileMatchLimit: s.ZoektArgs.FileMatchLimit,
+				Select:         s.ZoektArgs.Select,
+				Zoekt:          s.ZoektArgs.Zoekt,
+				Since:          nil,
+			}
+
 			run.Acquire()
 			goroutine.Go(func() {
 				defer run.Release()
-				err := request.Search(ctx, stream)
+				_, err := zoektJob.Run(ctx, db, stream)
 				if err != nil {
 					tr.LogFields(otlog.Error(err))
 					// Only record error if we haven't timed out.
@@ -362,7 +377,7 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, db database.DB, stream
 			})
 		}
 
-		for _, repoRevs := range request.UnindexedRepos() {
+		for _, repoRevs := range unindexed {
 			repoRevs := repoRevs
 			if ctx.Err() != nil {
 				break
@@ -421,10 +436,9 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stre
 	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
-	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = request.Search(ctx, stream)
+	err = zoektutil.DoZoektSearchGlobal(ctx, s.ZoektArgs, stream)
 	if err != nil {
 		tr.LogFields(otlog.Error(err))
 		// Only record error if we haven't timed out.

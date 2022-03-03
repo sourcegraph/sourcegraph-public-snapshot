@@ -347,7 +347,7 @@ func MustValidateDefaults() {
 }
 
 // mustValidate panics if the configuration does not pass validation.
-func mustValidate(name string, cfg conftypes.RawUnified) conftypes.RawUnified {
+func mustValidate(name string, cfg conftypes.RawUnified) {
 	problems, err := Validate(cfg)
 	if err != nil {
 		panic(fmt.Sprintf("Error with %q: %s", name, err))
@@ -355,5 +355,4 @@ func mustValidate(name string, cfg conftypes.RawUnified) conftypes.RawUnified {
 	if len(problems) > 0 {
 		panic(fmt.Sprintf("conf: problems with default configuration for %q:\n  %s", name, strings.Join(problems.Messages(), "\n  ")))
 	}
-	return cfg
 }

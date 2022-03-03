@@ -57,18 +57,19 @@ type searchRepos struct {
 	stream  streaming.Sender
 }
 
-func PartitionRepos(request zoektutil.IndexedSearchRequest, notSearcherOnly bool) ([]repoData, error) {
-	repoSets := []repoData{UnindexedList(request.UnindexedRepos())} // unindexed included by default
-	if notSearcherOnly {
-		repoSets = append(repoSets, IndexedMap(request.IndexedRepos()))
-	}
-	return repoSets, nil
-}
-
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		return searcher.SearchOverRepos(ctx, s.args, s.stream, s.repoSet.AsList(), s.repoSet.IsIndexed())
+		searcherJob := &searcher.Searcher{
+			PatternInfo:     s.args.PatternInfo,
+			Repos:           s.repoSet.AsList(),
+			Indexed:         s.repoSet.IsIndexed(),
+			SearcherURLs:    s.args.SearcherURLs,
+			UseFullDeadline: s.args.UseFullDeadline,
+		}
+
+		_, err := searcherJob.Run(ctx, nil, s.stream)
+		return err
 	}
 }
 
@@ -170,23 +171,26 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
+		indexed, unindexed, err := zoektutil.PartitionRepos(
+			ctx,
+			page.RepoRevs,
+			s.ZoektArgs.Zoekt,
+			search.TextRequest,
+			s.UseIndex,
+			s.ContainsRefGlobs,
+			zoektutil.MissingRepoRevStatus(stream),
+		)
 		if err != nil {
 			return err
 		}
-		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
-			if err != nil {
-				return err
+
+		repoSet := []repoData{UnindexedList(unindexed)}
+		if s.NotSearcherOnly {
+			if indexed != nil {
+				repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 			}
 		}
-
-		partitionedRepos, err := PartitionRepos(request, s.NotSearcherOnly)
-		if err != nil {
-			return err
-		}
-
-		return runStructuralSearch(ctx, s.SearcherArgs, partitionedRepos, stream)
+		return runStructuralSearch(ctx, s.SearcherArgs, repoSet, stream)
 	})
 }
 
