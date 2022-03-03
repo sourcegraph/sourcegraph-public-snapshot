@@ -57,6 +57,7 @@ func init() {
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
+// TODO(tjdevries): This doesn't make sense to be here, IMO
 func IsBinary(content []byte) bool {
 	// We first check if the file is valid UTF8, since we always consider that
 	// to be non-binary.
@@ -129,26 +130,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 	}
 
 	p.Filepath = normalizeFilepath(p.Filepath)
-
-	// TODO: Just needs a setting and then compile the regexes...
-	// Maybe if it's a site config, I can compile the regexes only once?
-
-	highlightConfig := conf.Get().SiteConfig().Highlights
-	if highlightConfig == nil {
-		highlightConfig = &schema.SyntaxHighlighting{}
-	}
-
-	patterns := []ftPattern{}
-	for _, pattern := range highlightConfig.Filetypes.Patterns {
-		if re, err := regexp.Compile(pattern.Pattern); err == nil {
-			patterns = append(patterns, ftPattern{pattern: re, filetype: pattern.Filetype})
-		}
-	}
-
-	filetype := DetectSyntaxHighlightingFiletype(ftConfig{
-		Extensions: highlightConfig.Filetypes.Extensions,
-		Patterns:   patterns,
-	}, ftQuery{p.Filepath, string(p.Content)})
+	filetype := DetectSyntaxHighlightingFiletype(p.Filepath, string(p.Content))
 	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{

@@ -11,11 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-type ftQuery struct {
-	path     string
-	contents string
-}
-
 type ftPattern struct {
 	pattern  *regexp.Regexp
 	filetype string
@@ -36,6 +31,8 @@ type ftConfig struct {
 	// Shebang
 }
 
+var highlightConfig = ftConfig{}
+
 func init() {
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		highlights := c.SiteConfig().Highlights
@@ -51,17 +48,38 @@ func init() {
 
 		return
 	})
+
+	go func() {
+		conf.Watch(func() {
+			config := conf.Get()
+			if config == nil {
+				return
+			}
+
+			if config.Highlights == nil {
+				return
+			}
+
+			highlightConfig.Extensions = config.Highlights.Filetypes.Extensions
+			highlightConfig.Patterns = []ftPattern{}
+			for _, pattern := range config.Highlights.Filetypes.Patterns {
+				if re, err := regexp.Compile(pattern.Pattern); err == nil {
+					highlightConfig.Patterns = append(highlightConfig.Patterns, ftPattern{pattern: re, filetype: pattern.Filetype})
+				}
+			}
+		})
+	}()
 }
 
 // Matches against config, otherwise uses enry to get default
-func matchConfig(config ftConfig, query ftQuery) (string, bool) {
-	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(query.path), "."))
-	if ft, ok := config.Extensions[extension]; ok {
+func matchConfig(path string) (string, bool) {
+	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
+	if ft, ok := highlightConfig.Extensions[extension]; ok {
 		return ft, true
 	}
 
-	for _, pattern := range config.Patterns {
-		if pattern.pattern != nil && pattern.pattern.MatchString(query.path) {
+	for _, pattern := range highlightConfig.Patterns {
+		if pattern.pattern != nil && pattern.pattern.MatchString(path) {
 			return pattern.filetype, true
 		}
 	}
@@ -69,8 +87,8 @@ func matchConfig(config ftConfig, query ftQuery) (string, bool) {
 	return "", false
 }
 
-func getFiletype(config ftConfig, query ftQuery) string {
-	ft, found := matchConfig(config, query)
+func getFiletype(path string, contents string) string {
+	ft, found := matchConfig(path)
 	if found {
 		return ft
 	}
@@ -79,6 +97,6 @@ func getFiletype(config ftConfig, query ftQuery) string {
 }
 
 // TODO: Expose as an endpoint so you can type in a path and get the result in the front end?
-func DetectSyntaxHighlightingFiletype(config ftConfig, query ftQuery) string {
-	return normalizeFilepath(getFiletype(config, query))
+func DetectSyntaxHighlightingFiletype(query ftQuery) string {
+	return normalizeFilepath(getFiletype(query))
 }
