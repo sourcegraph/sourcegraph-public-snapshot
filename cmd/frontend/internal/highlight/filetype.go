@@ -11,6 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
+type EngineType int64
+
+const (
+	EngineInvalid    EngineType = 0
+	EngineTreeSitter            = 1
+	EngineSyntect               = 2
+)
+
 type ftPattern struct {
 	pattern  *regexp.Regexp
 	filetype string
@@ -19,7 +27,7 @@ type ftPattern struct {
 // TODO: Decide on capitalization, cause it's a nightmare otherwise.
 // TODO: Validate that those are available filetypes, otherwise it's kind of
 //       also pointless (for example, how to tell them that C# is not OK, but c_sharp is?)
-type ftConfig struct {
+type syntaxHighlightConfig struct {
 	// Order does not matter. Evaluated before Patterns
 	Extensions map[string]string
 
@@ -31,7 +39,23 @@ type ftConfig struct {
 	// Shebang
 }
 
-var highlightConfig = ftConfig{}
+type syntaxEngineConfig struct {
+	Default   EngineType
+	Overrides map[string]EngineType
+}
+
+type SyntaxEngineQuery struct {
+	Engine           EngineType
+	Filetype         string
+	FiletypeOverride bool
+}
+
+var highlightConfig = syntaxHighlightConfig{}
+
+var engineConfig = syntaxEngineConfig{
+	// This sets the default syntax engine for the sourcegraph server.
+	Default: EngineSyntect,
+}
 
 func init() {
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
@@ -39,6 +63,11 @@ func init() {
 		if highlights == nil {
 			return
 		}
+
+		if _, ok := engineNameToEngineType(highlights.Engine.Default); !ok {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlights.Engine.Default)))
+		}
+		// TODO: Probably should validate the other ones?... but they are validated in schema
 
 		for _, pattern := range highlights.Filetypes.Patterns {
 			if _, err := regexp.Compile(pattern.Pattern); err != nil {
@@ -60,6 +89,10 @@ func init() {
 				return
 			}
 
+			if defaultEngine, ok := engineNameToEngineType(config.Highlights.Engine.Default); ok {
+				engineConfig.Default = defaultEngine
+			}
+
 			highlightConfig.Extensions = config.Highlights.Filetypes.Extensions
 			highlightConfig.Patterns = []ftPattern{}
 			for _, pattern := range config.Highlights.Filetypes.Patterns {
@@ -69,6 +102,17 @@ func init() {
 			}
 		})
 	}()
+}
+
+func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
+	switch engineName {
+	case "tree-sitter":
+		return EngineTreeSitter, true
+	case "syntect":
+		return EngineSyntect, true
+	default:
+		return EngineInvalid, false
+	}
 }
 
 // Matches against config, otherwise uses enry to get default
@@ -87,16 +131,27 @@ func matchConfig(path string) (string, bool) {
 	return "", false
 }
 
-func getFiletype(path string, contents string) string {
+func getFiletype(path string, contents string) (string, bool) {
 	ft, found := matchConfig(path)
 	if found {
-		return ft
+		return ft, true
 	}
 
-	return enry.GetLanguage(query.path, []byte(query.contents))
+	return enry.GetLanguage(path, []byte(contents)), false
 }
 
 // TODO: Expose as an endpoint so you can type in a path and get the result in the front end?
-func DetectSyntaxHighlightingFiletype(query ftQuery) string {
-	return normalizeFilepath(getFiletype(query))
+func DetectSyntaxHighlightingFiletype(path string, contents string) SyntaxEngineQuery {
+	ft, override := getFiletype(path, contents)
+
+	engine := engineConfig.Default
+	if overrideEngine, ok := engineConfig.Overrides[ft]; ok {
+		engine = overrideEngine
+	}
+
+	return SyntaxEngineQuery{
+		Filetype:         ft,
+		FiletypeOverride: override,
+		Engine:           engine,
+	}
 }

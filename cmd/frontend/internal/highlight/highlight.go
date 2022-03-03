@@ -13,7 +13,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,7 +21,6 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -30,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -130,8 +127,9 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 	}
 
 	p.Filepath = normalizeFilepath(p.Filepath)
-	filetype := DetectSyntaxHighlightingFiletype(p.Filepath, string(p.Content))
-	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
+
+	filetypeQuery := DetectSyntaxHighlightingFiletype(p.Filepath, string(p.Content))
+	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetypeQuery.Filetype)
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
@@ -199,21 +197,24 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		maxLineLength = 2000
 	}
 
-	resp, err := client.Highlight(ctx, &gosyntect.Query{
+	query := &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
-		Filetype:         filetype,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
-	}, useTreeSitter)
+	}
+	if filetypeQuery.FiletypeOverride || useTreeSitter {
+		query.Filetype = filetypeQuery.Filetype
+	}
+	resp, err := client.Highlight(ctx, query, useTreeSitter)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
 			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
 			"filepath", p.Filepath,
-			"filetype", filetype,
+			"filetype", query.Filetype,
 			"repo_name", p.Metadata.RepoName,
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
@@ -228,7 +229,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
 			"filepath", p.Filepath,
-			"filetype", filetype,
+			"filetype", query.Filetype,
 			"repo_name", p.Metadata.RepoName,
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
