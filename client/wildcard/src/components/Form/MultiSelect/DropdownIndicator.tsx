@@ -10,6 +10,6 @@ export const DropdownIndicator = <OptionValue extends unknown = unknown>(
     props: DropdownIndicatorProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.DropdownIndicator {...props}>
-        <ChevronDownIcon className={styles.dropdownIcon} />
+        <ChevronDownIcon className={props.isDisabled ? styles.dropdownIconDisabled : styles.dropdownIcon} />
     </components.DropdownIndicator>
 )
