@@ -10,14 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -34,14 +32,13 @@ func TestServeStream_empty(t *testing.T) {
 	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
 
+	mock := client.NewMockSearchClient()
+	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
+
 	ts := httptest.NewServer(&streamHandler{
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
-		newSearchClient: func(zoekt.Streamer, *endpoint.Map) client.SearchClient {
-			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
-			return mock
-		},
+		searchClient:        mock,
 	})
 	defer ts.Close()
 
@@ -150,9 +147,7 @@ func TestDisplayLimit(t *testing.T) {
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
-				newSearchClient: func(zoekt.Streamer, *endpoint.Map) client.SearchClient {
-					return mock
-				},
+				searchClient:        mock,
 			})
 			defer ts.Close()
 
