@@ -170,7 +170,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	factory, save := newClientFactory(t, fixtureName)
 	defer save(t)
 
-	githubSrc, err := NewGithubSource(service, factory)
+	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
