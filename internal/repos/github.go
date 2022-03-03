@@ -112,7 +112,7 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 		return token, nil
 	}
 
-	reqCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	reqCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
 	tok, err := client.CreateAppInstallationAccessToken(reqCtx, installationID)
