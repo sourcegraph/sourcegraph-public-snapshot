@@ -63,10 +63,7 @@ export function useCachedSearchResults(
             // some trailing events. This is a fundamental issue with throttleTime,
             // and is discussed extensively in github issues. Instead, we just manually
             // merge throttleTime with only leading values and the final value.
-            return merge(
-                stream.pipe(throttleTime(200)),
-                stream.pipe(last()),
-            )
+            return merge(stream.pipe(throttleTime(500)), stream.pipe(last()))
         }, [
             query,
             cachedResults?.query,
