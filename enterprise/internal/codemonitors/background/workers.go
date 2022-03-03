@@ -264,7 +264,23 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error 
 		return errors.Wrap(err, "ListRecipients")
 	}
 
-	data, err := NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, len(m.Results))
+	externalURL, err := getExternalURL(ctx)
+	if err != nil {
+		return err
+	}
+
+	args := actionArgs{
+		MonitorDescription: m.Description,
+		MonitorID:          m.MonitorID,
+		ExternalURL:        externalURL,
+		UTMSource:          utmSourceEmail,
+		Query:              m.Query,
+		MonitorOwnerName:   m.OwnerName,
+		Results:            m.Results,
+		IncludeResults:     e.IncludeResults,
+	}
+
+	data, err := NewTemplateDataForNewSearchResults(args, e)
 	if err != nil {
 		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
 	}
