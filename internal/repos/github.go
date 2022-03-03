@@ -108,7 +108,7 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 	// It is incorrect to have GitHub App installation access token without an
 	// expiration time, and being conservative to have 5-minute buffer in case the
 	// expiration time is close to the current time.
-	if token != "" && svc.TokenExpiresAt != nil && time.Now().Add(5*time.Minute).Before(*svc.TokenExpiresAt) {
+	if token != "" && svc.TokenExpiresAt != nil && time.Until(*svc.TokenExpiresAt) > 5*time.Minute {
 		return token, nil
 	}
 
