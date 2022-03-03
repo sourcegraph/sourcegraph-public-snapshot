@@ -61,7 +61,6 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {

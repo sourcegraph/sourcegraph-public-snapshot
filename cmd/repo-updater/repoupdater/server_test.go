@@ -350,6 +350,26 @@ func TestServer_RepoLookup(t *testing.T) {
 		},
 	}
 
+	npmRepository := &types.Repo{
+		Name: "npm/package",
+		URI:  "npm/package",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "npm/package",
+			ServiceType: extsvc.TypeNPMPackages,
+			ServiceID:   extsvc.TypeNPMPackages,
+		},
+		Sources: map[string]*types.SourceInfo{
+			npmSource.URN(): {
+				ID:       npmSource.URN(),
+				CloneURL: "npm/package",
+			},
+		},
+		Metadata: &npmpackages.Metadata{Package: func() *reposource.NPMPackage {
+			p, _ := reposource.NewNPMPackage("", "package")
+			return p
+		}()},
+	}
+
 	testCases := []struct {
 		name        string
 		args        protocol.RepoLookupArgs
@@ -401,41 +421,13 @@ func TestServer_RepoLookup(t *testing.T) {
 				Update: true,
 			},
 			stored: []*types.Repo{},
-			src: func() repos.Source {
-				s, err := repos.NewNPMPackagesSource(&npmSource)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return s
-			}(),
+			src:    repos.NewFakeSource(&npmSource, nil, npmRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "npm/package",
-					ServiceType: extsvc.TypeNPMPackages,
-					ServiceID:   extsvc.TypeNPMPackages,
-				},
-				Name: "npm/package",
-				VCS:  protocol.VCSInfo{URL: "npm/package"},
+				ExternalRepo: npmRepository.ExternalRepo,
+				Name:         npmRepository.Name,
+				VCS:          protocol.VCSInfo{URL: string(npmRepository.Name)},
 			}},
-			assert: typestest.Assert.ReposEqual(&types.Repo{
-				Name: "npm/package",
-				URI:  "npm/package",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "npm/package",
-					ServiceType: extsvc.TypeNPMPackages,
-					ServiceID:   extsvc.TypeNPMPackages,
-				},
-				Sources: map[string]*types.SourceInfo{
-					npmSource.URN(): {
-						ID:       npmSource.URN(),
-						CloneURL: "npm/package",
-					},
-				},
-				Metadata: &npmpackages.Metadata{Package: func() *reposource.NPMPackage {
-					p, _ := reposource.NewNPMPackage("", "package")
-					return p
-				}()},
-			}),
+			assert: typestest.Assert.ReposEqual(npmRepository),
 		},
 		{
 			name: "synced - github.com cloud default",

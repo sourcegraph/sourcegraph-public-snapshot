@@ -61,6 +61,7 @@ add('default', () => (
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
+                onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>
@@ -89,6 +90,7 @@ add('default read-only', () => (
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
+                onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>

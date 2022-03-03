@@ -152,7 +152,19 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	opts.State = state
+	if state != "" {
+		opts.States = []btypes.BatchChangeState{state}
+	}
+
+	// If multiple `states` are provided, prefer them over `state`.
+	if args.States != nil {
+		states, err := parseBatchChangeStates(args.States)
+		if err != nil {
+			return nil, err
+		}
+		opts.States = states
+	}
+
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}

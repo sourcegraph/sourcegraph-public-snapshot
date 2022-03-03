@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/graph-gophers/graphql-go/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -431,126 +429,5 @@ func TestUnmarshalOrgID(t *testing.T) {
 		namespaceOrgID := relay.MarshalID("User", id)
 		_, err := UnmarshalOrgID(namespaceOrgID)
 		assert.Error(t, err)
-	})
-}
-
-func TestRemoveOrganization(t *testing.T) {
-	orgs := database.NewMockOrgStore()
-
-	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgIDString := string(MarshalOrgID(mockedOrg.ID))
-
-	mockedFeatureFlag := featureflag.FeatureFlag{
-		Name:      "org-deletion",
-		Bool:      &featureflag.FeatureFlagBool{Value: false},
-		Rollout:   nil,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		DeletedAt: nil,
-	}
-	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag, nil)
-
-	db := database.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	orig := envvar.SourcegraphDotComMode()
-
-	t.Run("Returns an error when in DotComMode but feature flag is not enabled", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation RemoveOrganization($organization: ID!) {
-					removeOrganization(organization: $organization) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]interface{}{
-				"organization": orgIDString,
-			},
-			ExpectedResult: `
-				{
-					"removeOrganization": null
-				}
-				`,
-			ExpectedErrors: []*errors.QueryError{
-				{
-					Message: "hard deleting organization is not supported",
-					Path:    []interface{}{string("removeOrganization")},
-				},
-			},
-		})
-	})
-
-	t.Run("Returns an error when not in DotComMode", func(t *testing.T) {
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation RemoveOrganization($organization: ID!) {
-					removeOrganization(organization: $organization) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]interface{}{
-				"organization": orgIDString,
-			},
-			ExpectedResult: `
-				{
-					"removeOrganization": null
-				}
-				`,
-			ExpectedErrors: []*errors.QueryError{
-				{
-					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []interface{}{string("removeOrganization")},
-				},
-			},
-		})
-	})
-
-	t.Run("Delete organization", func(t *testing.T) {
-		mockedFeatureFlag2 := featureflag.FeatureFlag{
-			Name:      "org-deletion",
-			Bool:      &featureflag.FeatureFlagBool{Value: true},
-			Rollout:   nil,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			DeletedAt: nil,
-		}
-		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag2, nil)
-
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query: `
-				mutation RemoveOrganization($organization: ID!) {
-					removeOrganization(organization: $organization) {
-						alwaysNil
-					}
-				}
-				`,
-			Variables: map[string]interface{}{
-				"organization": orgIDString,
-			},
-			ExpectedResult: `
-				{
-					"removeOrganization": {
-						"alwaysNil": null
-					}
-				}
-				`,
-		})
 	})
 }

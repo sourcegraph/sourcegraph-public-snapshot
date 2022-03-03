@@ -196,6 +196,11 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 			return nil, nil
 		}
 		if err != nil {
+			// ignore expired invitations, otherwise error is returned
+			// for all users who have an expired invitation on record
+			if _, ok := err.(database.OrgInvitationExpiredErr); ok {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &organizationInvitationResolver{o.db, orgInvitation}, nil
@@ -281,35 +286,6 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	}
 
 	return &OrgResolver{db: r.db, org: updatedOrg}, nil
-}
-
-// RemoveOrganization removes an org and all resources associated to it.
-func (r *schemaResolver) RemoveOrganization(ctx context.Context, args *struct {
-	Organization graphql.ID
-}) (*EmptyResponse, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("hard deleting organization is only supported on Sourcegraph.com")
-	}
-
-	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
-	if err != nil {
-		return nil, err
-	}
-
-	if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
-		return nil, errors.New("hard deleting organization is not supported")
-	}
-
-	orgID, err := UnmarshalOrgID(args.Organization)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := r.db.Orgs().HardDelete(ctx, orgID); err != nil {
-		return nil, err
-	}
-
-	return &EmptyResponse{}, nil
 }
 
 func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {

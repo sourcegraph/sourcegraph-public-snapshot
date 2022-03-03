@@ -64,6 +64,7 @@ var (
 			lintCommand,
 			checkCommand, // TODO remove after a while
 			dbCommand,
+			updateCommand,
 		},
 	}
 )
@@ -105,12 +106,9 @@ func checkSgVersion() {
 		return
 	}
 
-	rev := BuildCommit
-	if strings.HasPrefix(BuildCommit, "dev-") {
-		rev = BuildCommit[len("dev-"):]
-	}
+	rev := strings.TrimPrefix(BuildCommit, "dev-")
 
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", rev), "./dev/sg")
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
 		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
 		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
@@ -120,7 +118,7 @@ func checkSgVersion() {
 	out = strings.TrimSpace(out)
 	if out != "" {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "  HEY! New version of sg available. Run './dev/sg/install.sh' to install it.  "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
 	}
@@ -162,6 +160,15 @@ func main() {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+// parseConfAndReset parses the config file, return it and resets the global config.
+// It doesn't use the flagset because it needs to be called before the command.
+func parseConfAndReset() *Config {
+	_, _ = parseConf(defaultConfigFile, defaultConfigOverwriteFile)
+	cfg := globalConf
+	globalConf = nil
+	return cfg
 }
 
 // parseConf parses the config file and the optional overwrite file.
