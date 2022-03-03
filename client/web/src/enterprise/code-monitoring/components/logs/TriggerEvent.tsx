@@ -15,7 +15,8 @@ import styles from './TriggerEvent.module.scss'
 export const TriggerEvent: React.FunctionComponent<{
     triggerEvent: MonitorTriggerEventWithActions
     startOpen?: boolean
-}> = ({ triggerEvent, startOpen = false }) => {
+    now?: () => Date
+}> = ({ triggerEvent, startOpen = false, now }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
@@ -57,7 +58,7 @@ export const TriggerEvent: React.FunctionComponent<{
                 {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline mr-2')} /> : <span />}
 
                 <span>
-                    Run <Timestamp date={triggerEvent.timestamp} />
+                    Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
                 </span>
             </Button>
 
