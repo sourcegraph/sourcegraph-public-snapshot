@@ -60,10 +60,6 @@ export type InsightExtensionBasedConfiguration = LangStatsInsightConfiguration |
 
 export type InsightConfiguration = SearchBasedInsightConfiguration | LangStatsInsightConfiguration
 
-export function isInsightSettingKey(key: string): boolean {
-    return isSearchBasedInsightId(key) || isLangStatsdInsightId(key)
-}
-
 /**
  * This function returns insight type based on insight settings id naming convention.
  * In the setting based API we store insights in setting cascade (which is jsonc file)

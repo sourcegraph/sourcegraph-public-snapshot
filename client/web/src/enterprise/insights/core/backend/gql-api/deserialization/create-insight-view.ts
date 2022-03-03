@@ -35,9 +35,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     repositories,
                     query,
                     step,
-                    // In gql api we don't have this concept as visibility on FE.
-                    // Insights have special system about visibility on BE only.
-                    visibility: '',
                     filters: {
                         includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
@@ -68,10 +65,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     title: insight.presentation.title,
                     series,
                     step,
-
-                    // In gql api we don't have this concept as visibility on FE.
-                    // Insights have special system about visibility on BE only.
-                    visibility: '',
                     filters: {
                         includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
@@ -88,10 +81,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 step,
                 repositories,
                 series,
-
-                // In gql api we don't have this concept as visibility on FE.
-                // Insights have special system about visibility on BE only.
-                visibility: '',
                 dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
@@ -109,10 +98,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 title: insight.presentation.title,
                 otherThreshold: insight.presentation.otherThreshold,
                 repository,
-
-                // In gql api we don't have this concept as visibility on FE.
-                // Insights have special system about visibility on BE only.
-                visibility: '',
                 dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
