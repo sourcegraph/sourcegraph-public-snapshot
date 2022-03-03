@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"strconv"
 
@@ -134,7 +133,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		changesetSpecInsertColumns,
 		"",
 		changesetSpecColumns,
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			i++
 			return scanChangesetSpec(cs[i], rows)
 		},
