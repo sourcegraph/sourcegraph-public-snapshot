@@ -171,13 +171,11 @@ func NewSquirrel(readFile ReadFileFunc) *Squirrel {
 func (s *Squirrel) definition(location Location) (*Location, error) {
 	parser := sitter.NewParser()
 
-	var queryString string
 	var bindingsExpr expr
 	var lang *sitter.Language
 	ext := filepath.Ext(location.Path)
 	switch ext {
 	case ".go":
-		queryString = goQuery
 		bindingsExpr = goBindings
 		lang = golang.GetLanguage()
 	default:
@@ -210,75 +208,21 @@ func (s *Squirrel) definition(location Location) (*Location, error) {
 		return nil, errors.Newf("can't find definition of %s", startNode.Type(), location)
 	}
 
-	fmt.Println()
-	fmt.Println("querying...")
-	if false {
-		// ❌ This doesn't work because tree-sitter queries don't check if the current node matches, but ALL
-		// subnodes. That's not what we want. We want to check exactly each current node as we walk up the tree.
-		for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
-			query, err := sitter.NewQuery([]byte(queryString), lang)
-			if err != nil {
-				return nil, errors.Newf("failed to parse query: %s\n%s", err, queryString)
-			}
-			cursor := sitter.NewQueryCursor()
-			cursor.Exec(query, currentNode)
-			match, _, ok := cursor.NextCapture()
-			fmt.Println("currentNode:", currentNode.Type())
-			if !ok {
-				fmt.Println("no match")
-				continue
-			}
-			for _, capture := range match.Captures {
-				fmt.Println("capture", capture.Node.Content(input))
-				if capture.Node.Content(input) == startNode.Content(input) {
-					return &Location{
-						RepoCommitPath: location.RepoCommitPath,
-						Row:            capture.Node.StartPoint().Row,
-						Column:         capture.Node.StartPoint().Column,
-					}, nil
-				}
-			}
-		}
-	} else {
-		for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
-			fmt.Println("currentNode:", currentNode.Type())
-			captures := bindingsExpr.captures(currentNode)
-			for _, capture := range captures {
-				fmt.Println("capture:", currentNode.Type())
-				if capture.Content(input) == startNode.Content(input) {
-					return &Location{
-						RepoCommitPath: location.RepoCommitPath,
-						Row:            capture.StartPoint().Row,
-						Column:         capture.StartPoint().Column,
-					}, nil
-				}
+	for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
+		captures := bindingsExpr.captures(currentNode)
+		for _, capture := range captures {
+			if capture.Content(input) == startNode.Content(input) {
+				return &Location{
+					RepoCommitPath: location.RepoCommitPath,
+					Row:            capture.StartPoint().Row,
+					Column:         capture.StartPoint().Column,
+				}, nil
 			}
 		}
 	}
 
 	return nil, errors.New("could not find definition")
 }
-
-const goQuery = `
-(function_declaration
-	name: (identifier) @binding
-	parameters: (parameter_list
-		[
-			(parameter_declaration
-				name: (identifier)* @binding)
-			(variadic_parameter_declaration
-				name: (identifier) @binding)
-		]))
-
-(func_literal
-	parameters: (parameter_list
-		[
-			(parameter_declaration
-				name: (identifier)* @binding)
-			(variadic_parameter_declaration
-				name: (identifier) @binding)
-		]))
-`
 
 var goBindings expr = eOr(
 	eAnd(eType("function_declaration"), eField("name", eCapture(eType("identifier"))), eField("parameters", goBindingsParameters)),
