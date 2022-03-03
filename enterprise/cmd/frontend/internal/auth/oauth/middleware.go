@@ -120,10 +120,6 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitLab: {"api"},
 }
 
-var extraOrgScopes = map[string][]string{
-	extsvc.TypeGitHub: {"read:org"},
-}
-
 func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op LoginStateOp) ([]string, error) {
 	// Extra scopes are only needed on Sourcegraph.com
 	if !envvar.SourcegraphDotComMode() {
@@ -137,13 +133,6 @@ func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op 
 	scopes, ok := extraScopes[serviceType]
 	if !ok {
 		return nil, nil
-	}
-
-	if op == LoginStateOpCreateOrgCodeHostConnection {
-		scopes, ok = extraOrgScopes[serviceType]
-		if !ok {
-			return nil, nil
-		}
 	}
 
 	mode, err := db.Users().CurrentUserAllowedExternalServices(ctx)
