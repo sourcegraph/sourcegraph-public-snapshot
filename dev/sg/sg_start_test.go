@@ -30,7 +30,6 @@ func TestStartCommandSet(t *testing.T) {
 		Commandsets: map[string]*Commandset{"test-set": commandSet},
 	}
 
-	globalConf = testConf
 	if err := startCommandSet(ctx, commandSet, testConf, false); err != nil {
 		t.Errorf("failed to start: %s", err)
 	}
