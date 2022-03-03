@@ -261,7 +261,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 		"--name", squasherContainerName,
 		"-p", fmt.Sprintf("%d:5432", squasherContainerExposedPort),
 		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
-		"postgres:12.6",
+		"postgres:12.7",
 	}
 	if _, err := run.DockerCmd(runArgs...); err != nil {
 		return nil, err
