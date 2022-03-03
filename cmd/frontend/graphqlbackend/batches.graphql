@@ -212,9 +212,13 @@ interface Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -282,9 +286,13 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -363,9 +371,13 @@ type ExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -1753,9 +1765,13 @@ extend type Query {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -2942,9 +2958,13 @@ extend type Org {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -2966,9 +2986,13 @@ extend type User {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -3012,9 +3036,13 @@ extend type Repository {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
