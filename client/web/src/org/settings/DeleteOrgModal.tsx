@@ -15,19 +15,19 @@ interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> 
     toggleDeleteModal: () => void
 }
 
-const REMOVE_ORG_MUTATION = gql`
-    mutation RemoveOrganization($organization: ID!) {
-        removeOrganization(organization: $organization) {
-            alwaysNil
-        }
+const DELETE_ORG_MUTATION = gql`
+mutation DeleteOrganization($organization: ID!) {
+    deleteOrganization(organization: $organization) {
+      alwaysNil
     }
+}
 `
 
 export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
     const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
-    const [removeOrganization] = useMutation(REMOVE_ORG_MUTATION)
+    const [deleteOrganization] = useMutation(DELETE_ORG_MUTATION)
     const [isOrgNameValid, setIsOrgNameValid] = useState<boolean>()
     const history = useHistory()
 
@@ -41,7 +41,7 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
     const deleteOrg = useCallback(
         async() => {
             try {
-                await removeOrganization({
+                await deleteOrganization({
                     variables: {
                         organization: org.id,
                     },
@@ -55,7 +55,7 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             }
 
         },
-        [org, removeOrganization, history])
+        [org, deleteOrganization, history])
 
     return (
         <Modal
