@@ -127,11 +127,9 @@
 
     &:focus {
         @at-root #{selector-append('.theme-light', &)} {
-            border: 10px solid cyan !important;
             box-shadow: var(--input-focus-box-shadow-invalid);
         }
         @at-root #{selector-append('.theme-dark', &)} {
-            border: 10px solid magenta !important;
             box-shadow: var(--input-focus-box-shadow-invalid);
         }
     }
