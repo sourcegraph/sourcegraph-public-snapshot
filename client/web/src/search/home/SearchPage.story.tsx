@@ -82,6 +82,16 @@ add('Cloud with panels', () => (
     </WebStory>
 ))
 
+add('Cloud with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
+    </WebStory>
+))
+
 add('Cloud marketing home', () => (
     <WebStory>
         {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
@@ -105,6 +115,16 @@ add('Server with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} />
+        }}
+    </WebStory>
+))
+
+add('Server with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return <SearchPage {...defaultProps(webProps)} />
         }}
     </WebStory>
