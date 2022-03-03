@@ -28,7 +28,7 @@ export const BrowserExtensionAlert: React.FunctionComponent<Props> = ({ classNam
             cta={{
                 label: 'Learn more about the extension',
                 href:
-                    'https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=inproduct-cta&utm_medium=direct_traffic&utm_source=search-results-cta&utm_term=null&utm_content=install-browser-exten',
+                    'https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=search-results-cta&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=install-browser-exten',
                 onClick: onBrowserExtensionClick,
             }}
             icon={<ExtensionRadialGradientIcon />}

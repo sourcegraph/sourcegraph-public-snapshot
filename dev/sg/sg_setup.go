@@ -56,7 +56,7 @@ func setupExec(ctx context.Context, args []string) error {
 	go func() {
 		for range c {
 			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(usershell.ShellPath(ctx)))
+			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: %s", filepath.Base(usershell.ShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()

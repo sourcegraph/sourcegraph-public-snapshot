@@ -350,6 +350,26 @@ func TestServer_RepoLookup(t *testing.T) {
 		},
 	}
 
+	npmRepository := &types.Repo{
+		Name: "npm/package",
+		URI:  "npm/package",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "npm/package",
+			ServiceType: extsvc.TypeNPMPackages,
+			ServiceID:   extsvc.TypeNPMPackages,
+		},
+		Sources: map[string]*types.SourceInfo{
+			npmSource.URN(): {
+				ID:       npmSource.URN(),
+				CloneURL: "npm/package",
+			},
+		},
+		Metadata: &npmpackages.Metadata{Package: func() *reposource.NPMPackage {
+			p, _ := reposource.NewNPMPackage("", "package")
+			return p
+		}()},
+	}
+
 	testCases := []struct {
 		name        string
 		args        protocol.RepoLookupArgs
@@ -396,43 +416,18 @@ func TestServer_RepoLookup(t *testing.T) {
 			name: "synced - npm package host",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("npm/package"),
+				// In order for new versions of package repos to be synced quickly, it's necessary to enqueue
+				// a high priority git update.
+				Update: true,
 			},
 			stored: []*types.Repo{},
-			src: func() repos.Source {
-				s, err := repos.NewNPMPackagesSource(&npmSource)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return s
-			}(),
+			src:    repos.NewFakeSource(&npmSource, nil, npmRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "npm/package",
-					ServiceType: extsvc.TypeNPMPackages,
-					ServiceID:   extsvc.TypeNPMPackages,
-				},
-				Name: "npm/package",
-				VCS:  protocol.VCSInfo{URL: "npm/package"},
+				ExternalRepo: npmRepository.ExternalRepo,
+				Name:         npmRepository.Name,
+				VCS:          protocol.VCSInfo{URL: string(npmRepository.Name)},
 			}},
-			assert: typestest.Assert.ReposEqual(&types.Repo{
-				Name: "npm/package",
-				URI:  "npm/package",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "npm/package",
-					ServiceType: extsvc.TypeNPMPackages,
-					ServiceID:   extsvc.TypeNPMPackages,
-				},
-				Sources: map[string]*types.SourceInfo{
-					npmSource.URN(): {
-						ID:       npmSource.URN(),
-						CloneURL: "npm/package",
-					},
-				},
-				Metadata: &npmpackages.Metadata{Package: func() *reposource.NPMPackage {
-					p, _ := reposource.NewNPMPackage("", "package")
-					return p
-				}()},
-			}),
+			assert: typestest.Assert.ReposEqual(npmRepository),
 		},
 		{
 			name: "synced - github.com cloud default",
@@ -627,7 +622,13 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
-			s := &Server{Syncer: syncer, Store: store}
+			scheduler := repos.NewUpdateScheduler()
+
+			s := &Server{
+				Syncer:    syncer,
+				Store:     store,
+				Scheduler: scheduler,
+			}
 
 			srv := httptest.NewServer(s.Handler())
 			defer srv.Close()
@@ -640,11 +641,18 @@ func TestServer_RepoLookup(t *testing.T) {
 
 			res, err := cli.RepoLookup(ctx, tc.args)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("have err: %q, want: %q", have, want)
+				t.Fatalf("have err: %q, want: %q", have, want)
 			}
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Errorf("response mismatch(-have, +want): %s", diff)
+				t.Fatalf("response mismatch(-have, +want): %s", diff)
+			}
+
+			if tc.args.Update {
+				scheduleInfo := scheduler.ScheduleInfo(res.Repo.ID)
+				if have, want := scheduleInfo.Queue.Priority, 1; have != want { // highPriority
+					t.Fatalf("scheduler update priority mismatch: have %d, want %d", have, want)
+				}
 			}
 
 			if tc.assert != nil {

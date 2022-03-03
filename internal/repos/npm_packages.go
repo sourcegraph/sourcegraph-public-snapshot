@@ -4,19 +4,16 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -27,7 +24,7 @@ import (
 type NPMPackagesSource struct {
 	svc        *types.ExternalService
 	connection schema.NPMPackagesConnection
-	dbStore    NPMPackagesRepoStore
+	depsStore  DependenciesStore
 	client     npm.Client
 }
 
@@ -59,23 +56,28 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		results <- SourceResult{Err: err}
 		return
 	}
+
 	for _, npmPackage := range npmPackages {
-		repo := s.makeRepo(npmPackage)
+		info, err := s.client.GetPackageInfo(ctx, npmPackage)
+		if err != nil {
+			results <- SourceResult{Err: err}
+			continue
+		}
+
+		repo := s.makeRepo(npmPackage, info.Description)
 		results <- SourceResult{
 			Source: s,
 			Repo:   repo,
 		}
 	}
-	if err != nil {
-		results <- SourceResult{Err: err}
-		return
-	}
+
 	totalDBFetched, totalDBResolved, lastID := 0, 0, 0
-	pkgVersions := map[string]map[string]struct{}{}
+	pkgVersions := map[string]*npm.PackageInfo{}
 	for {
-		dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
-			After: lastID,
-			Limit: 100,
+		dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
+			Scheme: dependenciesStore.NPMPackagesScheme,
+			After:  lastID,
+			Limit:  100,
 		})
 		if err != nil {
 			results <- SourceResult{Err: err}
@@ -87,31 +89,32 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 		totalDBFetched += len(dbDeps)
 		lastID = dbDeps[len(dbDeps)-1].ID
 		for _, dbDep := range dbDeps {
-			parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Package)
+			parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Name)
 			if err != nil {
-				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Package, "error", err)
+				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Name, "error", err)
 				continue
 			}
+
 			npmDependency := reposource.NPMDependency{NPMPackage: parsedDbPackage, Version: dbDep.Version}
 			pkgKey := npmDependency.PackageSyntax()
-			versions, found := pkgVersions[pkgKey]
-			if !found {
-				versions, err = s.client.AvailablePackageVersions(ctx, npmDependency.NPMPackage)
+			info := pkgVersions[pkgKey]
+			if info == nil {
+				info, err = s.client.GetPackageInfo(ctx, npmDependency.NPMPackage)
 				if err != nil {
-					pkgVersions[pkgKey] = map[string]struct{}{}
+					pkgVersions[pkgKey] = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
 					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
 					continue
 				}
-				pkgVersions[pkgKey] = versions
+				pkgVersions[pkgKey] = info
 			}
-			if _, hasVersion := versions[npmDependency.Version]; !hasVersion {
-				if len(versions) != 0 { // We must've already logged a package not found earlier if len is 0.
+			if _, hasVersion := info.Versions[npmDependency.Version]; !hasVersion {
+				if len(info.Versions) != 0 { // We must've already logged a package not found earlier if len is 0.
 					log15.Warn("npm dependency does not exist",
 						"dependency", npmDependency.PackageManagerSyntax())
 				}
 				continue
 			}
-			repo := s.makeRepo(npmDependency.NPMPackage)
+			repo := s.makeRepo(npmDependency.NPMPackage, info.Description)
 			totalDBResolved++
 			results <- SourceResult{Source: s, Repo: repo}
 		}
@@ -124,16 +127,23 @@ func (s *NPMPackagesSource) GetRepo(ctx context.Context, name string) (*types.Re
 	if err != nil {
 		return nil, err
 	}
-	return s.makeRepo(pkg), nil
+
+	info, err := s.client.GetPackageInfo(ctx, pkg)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.makeRepo(pkg, info.Description), nil
 }
 
-func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage) *types.Repo {
+func (s *NPMPackagesSource) makeRepo(npmPackage *reposource.NPMPackage, description string) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := npmPackage.CloneURL()
 	repoName := npmPackage.RepoName()
 	return &types.Repo{
-		Name: repoName,
-		URI:  string(repoName),
+		Name:        repoName,
+		Description: description,
+		URI:         string(repoName),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(repoName),
 			ServiceID:   extsvc.TypeNPMPackages,
@@ -158,15 +168,7 @@ func (s *NPMPackagesSource) ExternalServices() types.ExternalServices {
 }
 
 func (s *NPMPackagesSource) SetDB(db dbutil.DB) {
-	once.Do(func() {
-		observationContext = &observation.Context{
-			Logger:     log15.Root(),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-		operationMetrics = dbstore.NewREDMetrics(observationContext)
-	})
-	s.dbStore = dbstore.NewWithDB(db, observationContext, operationMetrics)
+	s.depsStore = dependenciesStore.GetStore(database.NewDB(db))
 }
 
 // npmPackages gets the list of applicable packages by de-duplicating dependencies
@@ -198,6 +200,6 @@ func npmDependencies(connection schema.NPMPackagesConnection) (dependencies []*r
 	return dependencies, nil
 }
 
-type NPMPackagesRepoStore interface {
-	GetNPMDependencyRepos(ctx context.Context, filter dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error)
+type DependenciesStore interface {
+	ListDependencyRepos(ctx context.Context, opts dependenciesStore.ListDependencyReposOpts) ([]dependenciesStore.DependencyRepo, error)
 }

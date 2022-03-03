@@ -11,6 +11,8 @@ type Definition struct {
 	Name                      string
 	UpQuery                   *sqlf.Query
 	DownQuery                 *sqlf.Query
+	Privileged                bool
+	NonIdempotent             bool
 	Parents                   []int
 	IsCreateIndexConcurrently bool
 	IndexMetadata             *IndexMetadata
@@ -305,7 +307,8 @@ func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition
 			}
 
 			for _, id := range next(definition) {
-				newFrontier = append(newFrontier, node{id, &n.id})
+				nodeID := n.id // avoid referencing the loop variable
+				newFrontier = append(newFrontier, node{id, &nodeID})
 			}
 		}
 

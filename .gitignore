@@ -165,4 +165,4 @@ sitemap_query.db
 annotations/
 
 # Buildkite analytics files
-jest-junit.xml
+test-reports/
