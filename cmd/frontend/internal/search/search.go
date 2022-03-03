@@ -142,6 +142,25 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer pingTicker.Stop()
 
 	filters := &streaming.SearchFilters{}
+	filtersFlush := func() {
+		if fs := filters.Compute(); len(fs) > 0 {
+			buf := make([]streamhttp.EventFilter, 0, len(fs))
+			for _, f := range fs {
+				buf = append(buf, streamhttp.EventFilter{
+					Value:    f.Value,
+					Label:    f.Label,
+					Count:    f.Count,
+					LimitHit: f.IsLimitHit,
+					Kind:     f.Kind,
+				})
+			}
+
+			if err := eventWriter.Event("filters", buf); err != nil {
+				// EOF
+				return
+			}
+		}
+	}
 
 	var wgLogLatency sync.WaitGroup
 	defer wgLogLatency.Wait()
@@ -181,6 +200,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if first && matchesBuf.Len() > 0 {
 			first = false
 			matchesFlush()
+			filtersFlush()
 
 			metricLatency.WithLabelValues(string(GuessSource(r))).
 				Observe(time.Since(start).Seconds())
@@ -198,32 +218,15 @@ LOOP:
 			}
 			handleEvent(event)
 		case <-flushTicker.C:
+			filtersFlush()
 			matchesFlush()
 		case <-pingTicker.C:
 			sendProgress()
 		}
 	}
 
+	filtersFlush()
 	matchesFlush()
-
-	// Send dynamic filters once.
-	if filters := filters.Compute(); len(filters) > 0 {
-		buf := make([]streamhttp.EventFilter, 0, len(filters))
-		for _, f := range filters {
-			buf = append(buf, streamhttp.EventFilter{
-				Value:    f.Value,
-				Label:    f.Label,
-				Count:    f.Count,
-				LimitHit: f.IsLimitHit,
-				Kind:     f.Kind,
-			})
-		}
-
-		if err := eventWriter.Event("filters", buf); err != nil {
-			// EOF
-			return
-		}
-	}
 
 	alert, err := results()
 	if err != nil {
