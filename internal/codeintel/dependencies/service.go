@@ -116,12 +116,15 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 			// Capture outside of goroutine below
 			repoName, rev := repoName, rev
 
+			// Acquire semaphore before spawning goroutine to ensure that we limit the total number
+			// of concurrent _routines_, whether they are actively processing lockfiles or not. Any
+			// non-nil returned from here is a context timeout error, so we are guaranteed to clean
+			// up the errgroup on exit.
+			if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
+				return nil, err
+			}
+
 			g.Go(func() error {
-				// Acquire the semaphore inside of the goroutine - we need to spawn all goroutines
-				// up front so that we can await the error group below
-				if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-					return err
-				}
 				defer s.lockfilesSemaphore.Release(1)
 
 				repoDeps, err := s.lockfilesSvc.ListDependencies(ctx, repoName, string(rev))
@@ -155,7 +158,10 @@ func (s *Service) syncNew(ctx context.Context, newDependencies []store.Dependenc
 		// Capture outside of goroutine below
 		repo := repoNamesByDependency[dep]
 
-		// Acquire the semaphore outside of the loop as we
+		// Acquire semaphore before spawning goroutine to ensure that we limit the total number
+		// of concurrent _routines_, whether they are actively syncing repo sources or not. Any
+		// non-nil returned from here is a context timeout error, so we are guaranteed to clean
+		// up the errgroup on exit.
 		if err := s.syncerSemaphore.Acquire(ctx, 1); err != nil {
 			return err
 		}
