@@ -162,6 +162,15 @@ func main() {
 	}
 }
 
+// parseConfAndReset parses the config file, return it and resets the global config.
+// It doesn't use the flagset because it needs to be called before the command.
+func parseConfAndReset() *Config {
+	_, _ = parseConf(defaultConfigFile, defaultConfigOverwriteFile)
+	cfg := globalConf
+	globalConf = nil
+	return cfg
+}
+
 // parseConf parses the config file and the optional overwrite file.
 // Iear the conf has already been parsed it's a noop.
 func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
