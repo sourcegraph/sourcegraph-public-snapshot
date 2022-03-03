@@ -184,7 +184,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             target={anchor?.current ?? targetElement}
             role={role}
             aria-modal={ariaModel}
-            className={classNames('dropdown-menu', styles.dropdownMenuContainer, otherProps.className)}
+            className={classNames('dropdown-menu', otherProps.className)}
             tailClassName={classNames(styles.dropdownMenuTail, otherProps.tailClassName)}
         >
             {focusLocked ? (

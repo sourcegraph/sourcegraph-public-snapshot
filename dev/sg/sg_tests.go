@@ -55,15 +55,15 @@ func constructTestCmdLongHelp() string {
 
 	// Attempt to parse config to list available testsuites, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+	cfg := parseConfAndReset()
 
-	if globalConf != nil {
+	if cfg != nil {
 		fmt.Fprintf(&out, "\n\n")
 		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s:\n", output.StyleBold, *configFlag, output.StyleReset)
 		fmt.Fprintf(&out, "\n")
 
 		var names []string
-		for name := range globalConf.Tests {
+		for name := range cfg.Tests {
 			names = append(names, name)
 		}
 		sort.Strings(names)

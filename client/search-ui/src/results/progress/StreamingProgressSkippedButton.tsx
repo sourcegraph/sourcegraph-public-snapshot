@@ -40,7 +40,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         aria-expanded={isOpen}
                     >
                         {skippedWithWarningOrError ? <AlertCircleIcon className="mr-2 icon-inline" /> : null}
-                        Some results excluded <ChevronDownIcon className="icon-inline" />
+                        Some results excluded <ChevronDownIcon data-caret={true} className="icon-inline mr-0" />
                     </PopoverTrigger>
                     <PopoverContent
                         position={Position.bottomStart}

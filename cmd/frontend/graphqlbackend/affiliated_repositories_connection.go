@@ -80,7 +80,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		)
 		for _, svc := range svcs {
 			svcsByID[svc.ID] = svc
-			src, err := repos.NewSource(svc, cf)
+			src, err := repos.NewSource(a.db.ExternalServices(), svc, cf)
 			if err != nil {
 				a.err = err
 				return

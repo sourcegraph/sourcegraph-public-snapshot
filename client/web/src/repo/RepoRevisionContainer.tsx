@@ -160,7 +160,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                     'HEAD'}
                 <RepoRevisionChevronDownIcon className="icon-inline" />
             </PopoverTrigger>
-            <PopoverContent position={Position.bottomStart}>
+            <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}

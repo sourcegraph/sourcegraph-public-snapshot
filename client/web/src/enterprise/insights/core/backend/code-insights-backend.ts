@@ -7,6 +7,7 @@ import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
+    AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
@@ -52,7 +53,7 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
-    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+    assignInsightsToDashboard: (input: AssignInsightsToDashboardInput) => Observable<unknown>
 
     /**
      * Return all accessible for a user insights that are filtered by ids param.

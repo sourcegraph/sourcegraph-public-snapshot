@@ -258,7 +258,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 <ChevronDownIcon className="icon-inline" />
                             </PopoverTrigger>
                         </ButtonGroup>
-                        <PopoverContent position={Position.bottomStart}>
+                        <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 telemetryService={props.telemetryService}

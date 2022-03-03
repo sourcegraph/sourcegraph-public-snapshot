@@ -1,9 +1,4 @@
 .dropdown-menu {
-    &-container {
-        // We need this to fix top/bottom white spaces from .dropdown-menu class
-        padding: 0;
-    }
-
     &-tail {
         &::before {
             border-left-color: transparent;

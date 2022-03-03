@@ -2,10 +2,19 @@ import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
-import { DropdownItem } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PopoverTrigger, PopoverContent, Popover, Button, Alert, Position, Link } from '@sourcegraph/wildcard'
+import {
+    PopoverTrigger,
+    PopoverContent,
+    Popover,
+    Button,
+    Alert,
+    Position,
+    Link,
+    MenuDivider,
+    MenuHeader,
+} from '@sourcegraph/wildcard'
 
 import styles from './SearchHelpDropdownButton.module.scss'
 
@@ -43,11 +52,11 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                 />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
-                <DropdownItem header={true}>
+                <MenuHeader>
                     <strong>Search reference</strong>
-                </DropdownItem>
-                <DropdownItem divider={true} />
-                <DropdownItem header={true}>Finding matches:</DropdownItem>
+                </MenuHeader>
+                <MenuDivider />
+                <MenuHeader>Finding matches:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <span className="text-muted small">Structural:</span>{' '}
@@ -68,8 +77,8 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         </code>
                     </li>
                 </ul>
-                <DropdownItem divider={true} />
-                <DropdownItem header={true}>Common search keywords:</DropdownItem>
+                <MenuDivider />
+                <MenuHeader>Common search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <code>
@@ -94,8 +103,8 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         </code>
                     </li>
                 </ul>
-                <DropdownItem divider={true} />
-                <DropdownItem header={true}>Diff/commit search keywords:</DropdownItem>
+                <MenuDivider />
+                <MenuHeader>Diff/commit search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <code>type:diff</code> <em className="text-muted small">or</em> <code>type:commit</code>
@@ -117,7 +126,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
-                <DropdownItem divider={true} className="mb-0" />
+                <MenuDivider className="mb-0" />
                 <Link
                     target="_blank"
                     rel="noopener"
