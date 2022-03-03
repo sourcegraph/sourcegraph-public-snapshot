@@ -1548,17 +1548,19 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(extensionsController)
 
-    const isTelemetryEnabled = combineLatest([
-        observeSendTelemetry(isExtension),
-        from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
-    ]).pipe(
-        map(
-            ([sendTelemetry, isPrivateRepo]) =>
-                sendTelemetry &&
-                /** Enable telemetry if: a) this is a self-hosted Sourcegraph instance; b) or public repository; */
-                (!isDefaultSourcegraphUrl(sourcegraphURL) || !isPrivateRepo)
+    const isTelemetryEnabled =
+        of(false) ||
+        combineLatest([
+            observeSendTelemetry(isExtension),
+            from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
+        ]).pipe(
+            map(
+                ([sendTelemetry, isPrivateRepo]) =>
+                    sendTelemetry &&
+                    /** Enable telemetry if: a) this is a self-hosted Sourcegraph instance; b) or public repository; */
+                    (!isDefaultSourcegraphUrl(sourcegraphURL) || !isPrivateRepo)
+            )
         )
-    )
 
     const innerTelemetryService = new EventLogger(requestGraphQL, sourcegraphURL)
     const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)

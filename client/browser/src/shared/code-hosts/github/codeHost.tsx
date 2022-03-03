@@ -674,6 +674,7 @@ export const githubCodeHost: GithubCodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
+    isPageLoaded: () => !!document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut'),
     getContext: async () => {
         const { repoName, rawRepoName, pageType } = parseURL()
 

@@ -1,5 +1,5 @@
 import { Observable, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, startWith, tap } from 'rxjs/operators'
 
 import { SourcegraphIntegrationURLs } from '../../platform/context'
 import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
@@ -33,7 +33,29 @@ export async function injectCodeIntelligence(
             childList: true,
             subtree: true,
         }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-        subscriptions.add(injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
+
+        let previousSubscription: Subscription
+
+        subscriptions.add(
+            mutations
+                .pipe(
+                    map(() => codeHost.isPageLoaded() && window.location.pathname),
+                    tap(v => console.log(`pathname: ${v}`)),
+                    filter(Boolean),
+                    distinctUntilChanged()
+                )
+                .subscribe(() => {
+                    if (previousSubscription) {
+                        console.log('unsubscribed')
+                        previousSubscription.unsubscribe()
+                    }
+
+                    previousSubscription = injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension)
+                    // subscriptions.add(subscription)
+                })
+        )
+
+        // subscriptions.add(injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
     }
     return subscriptions
 }
