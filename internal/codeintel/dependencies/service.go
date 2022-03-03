@@ -3,6 +3,7 @@ package dependencies
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
@@ -102,7 +103,12 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 	for _, revs := range repoRevs {
 		n += len(revs)
 	}
-	depsChan := make(chan []reposource.PackageDependency, n)
+	var (
+		closeOnce         sync.Once
+		depsChan          = make(chan []reposource.PackageDependency, n)
+		closeDepsChanOnce = func() { closeOnce.Do(func() { close(depsChan) }) }
+	)
+	defer closeDepsChanOnce()
 
 	g, ctx := errgroup.WithContext(ctx)
 	for repoName, revs := range repoRevs {
@@ -111,6 +117,8 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 			repoName, rev := repoName, rev
 
 			g.Go(func() error {
+				// Acquire the semaphore inside of the goroutine - we need to spawn all goroutines
+				// up front so that we can await the error group below
 				if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
 					return err
 				}
@@ -124,10 +132,11 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 	}
 
 	if err := g.Wait(); err != nil {
-		close(depsChan)
 		return nil, err
 	}
-	close(depsChan)
+
+	// Writers exited - close channel so we can consume it to completion below
+	closeDepsChanOnce()
 
 	var deps []reposource.PackageDependency
 	for batch := range depsChan {
@@ -146,6 +155,7 @@ func (s *Service) syncNew(ctx context.Context, newDependencies []store.Dependenc
 		// Capture outside of goroutine below
 		repo := repoNamesByDependency[dep]
 
+		// Acquire the semaphore outside of the loop as we
 		if err := s.syncerSemaphore.Acquire(ctx, 1); err != nil {
 			return err
 		}
@@ -161,7 +171,7 @@ func (s *Service) syncNew(ctx context.Context, newDependencies []store.Dependenc
 		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
 func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field {
