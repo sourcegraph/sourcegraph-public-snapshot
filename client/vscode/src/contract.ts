@@ -3,6 +3,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { Event } from '@sourcegraph/web/src/graphql-operations'
@@ -55,6 +56,9 @@ export interface ExtensionCoreAPI {
 
     // For Telemetry Service
     logEvents: (variables: Event) => void
+
+    // Get EventSource Type to use based on instance version
+    getEventSource: EventSource
 }
 
 export interface SearchPanelAPI {

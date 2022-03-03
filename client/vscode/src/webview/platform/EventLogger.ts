@@ -5,14 +5,14 @@ import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../../package.json'
 import { ExtensionCoreAPI } from '../../contract'
-import { INSTANCE_VERSION_NUMBER_KEY, ANONYMOUS_USER_ID_KEY } from '../../settings/LocalStorageService'
+import { ANONYMOUS_USER_ID_KEY } from '../../settings/LocalStorageService'
 
 import { VsceTelemetryService } from './telemetryService'
 
 // Event Logger for VS Code Extension
 export class EventLogger implements VsceTelemetryService {
     private anonymousUserID = ''
-    private instanceVersion = ''
+    private evenSourceType = EventSource.IDEEXTENSION
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private vsceAPI: Comlink.Remote<ExtensionCoreAPI>
@@ -30,8 +30,6 @@ export class EventLogger implements VsceTelemetryService {
      */
     public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true, url?: string): void {
         if (pageTitle) {
-            // Adding eventProperties when none is provided would break the search history sync to cloud
-
             this.tracker(
                 `View${pageTitle}`,
                 eventProperties ? { platform: 'vscode', version, ...eventProperties } : eventProperties,
@@ -84,14 +82,13 @@ export class EventLogger implements VsceTelemetryService {
      */
     private async initializeLogParameters(): Promise<void> {
         let anonymousUserID = await this.vsceAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY)
-        // instance version is set during the initial authenticating step
-        const instanceVersion = await this.vsceAPI.getLocalStorageItem(INSTANCE_VERSION_NUMBER_KEY)
+        const source = await this.vsceAPI.getEventSource
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             await this.vsceAPI.setLocalStorageItem(ANONYMOUS_USER_ID_KEY, anonymousUserID)
         }
         this.anonymousUserID = anonymousUserID
-        this.instanceVersion = instanceVersion
+        this.evenSourceType = source
     }
 
     /**
@@ -108,10 +105,7 @@ export class EventLogger implements VsceTelemetryService {
      * Insider version format: 134683_2022-03-02_5188fes0101
      */
     public getEventSourceType(): EventSource {
-        // assume instance version longer than 8 is using insider version
-        const flattenVersion = this.instanceVersion.length > 8 ? '999999' : this.instanceVersion.split('.').join()
-        // instances below 3.38.0 does not support EventSource.IDEEXTENSION
-        return flattenVersion > '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
+        return this.evenSourceType
     }
 
     /**
