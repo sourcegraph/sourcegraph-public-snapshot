@@ -18,17 +18,18 @@ import (
 
 // Inserter allows for bulk updates to a single Postgres table.
 type Inserter struct {
-	db               dbutil.DB
-	numColumns       int
-	maxBatchSize     int
-	batch            []interface{}
-	queryPrefix      string
-	querySuffix      string
-	onConflictSuffix string
-	returningSuffix  string
-	returningScanner ReturningScanner
-	operations       *operations
-	commonLogFields  []log.Field
+	db                   dbutil.DB
+	numColumns           int
+	maxBatchSize         int
+	batch                []interface{}
+	cumulativeValueSizes []int
+	queryPrefix          string
+	querySuffix          string
+	onConflictSuffix     string
+	returningSuffix      string
+	returningScanner     ReturningScanner
+	operations           *operations
+	commonLogFields      []log.Field
 }
 
 type ReturningScanner func(rows *sql.Rows) error
@@ -137,16 +138,17 @@ func NewInserterWithReturn(
 	returningSuffix := makeReturningSuffix(returningColumnNames)
 
 	return &Inserter{
-		db:               db,
-		numColumns:       numColumns,
-		maxBatchSize:     maxBatchSize,
-		batch:            make([]interface{}, 0, maxBatchSize),
-		queryPrefix:      queryPrefix,
-		querySuffix:      querySuffix,
-		onConflictSuffix: onConflictSuffix,
-		returningSuffix:  returningSuffix,
-		returningScanner: returningScanner,
-		operations:       getOperations(),
+		db:                   db,
+		numColumns:           numColumns,
+		maxBatchSize:         maxBatchSize,
+		batch:                make([]interface{}, 0, maxBatchSize),
+		cumulativeValueSizes: make([]int, 0, maxBatchSize),
+		queryPrefix:          queryPrefix,
+		querySuffix:          querySuffix,
+		onConflictSuffix:     onConflictSuffix,
+		returningSuffix:      returningSuffix,
+		returningScanner:     returningScanner,
+		operations:           getOperations(),
 		commonLogFields: []log.Field{
 			log.String("tableName", tableName),
 			log.String("columnNames", strings.Join(columnNames, ",")),
@@ -158,11 +160,32 @@ func NewInserterWithReturn(
 
 // Insert submits a single row of values to be inserted on the next flush.
 func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
+	i.checkInvariants()
+	defer i.checkInvariants()
+
 	if len(values) != i.numColumns {
 		return errors.Errorf("expected %d values, got %d", i.numColumns, len(values))
 	}
 
+	currentCumulativeValueSize := 0
+	if n := len(i.cumulativeValueSizes); n != 0 {
+		currentCumulativeValueSize = i.cumulativeValueSizes[n-1]
+	}
+
+	valueSizes := make([]int, 0, len(values))
+	for _, value := range values {
+		switch v := value.(type) {
+		case string:
+			currentCumulativeValueSize += len(v)
+		default:
+			currentCumulativeValueSize += 1
+		}
+
+		valueSizes = append(valueSizes, currentCumulativeValueSize)
+	}
+
 	i.batch = append(i.batch, values...)
+	i.cumulativeValueSizes = append(i.cumulativeValueSizes, valueSizes...)
 
 	if len(i.batch) >= i.maxBatchSize {
 		// Flush full batch
@@ -175,13 +198,17 @@ func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
 // of insertion to ensure that all records are flushed to the underlying Execable.
 func (i *Inserter) Flush(ctx context.Context) (err error) {
-	batch := i.pop()
+	i.checkInvariants()
+	defer i.checkInvariants()
+
+	batch, payloadSize := i.pop()
 	if len(batch) == 0 {
 		return nil
 	}
 
 	operationlogFields := []log.Field{
 		log.Int("batchSize", len(batch)),
+		log.Int("payloadSize", payloadSize),
 	}
 	combinedLogFields := append(operationlogFields, i.commonLogFields...)
 	ctx, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
@@ -205,16 +232,51 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 	return nil
 }
 
+// checkBatchInserterInvariants is set to true in tests to enable invariant detection
+// at the start and end of public methods. This ensures that the batch and payload size
+// lists remain equivalent size whenever the caller can initiate an operation.
+var checkBatchInserterInvariants = false
+
+func (i *Inserter) checkInvariants() {
+	if checkBatchInserterInvariants && len(i.batch) != len(i.cumulativeValueSizes) {
+		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.cumulativeValueSizes): %d != %d", len(i.batch), len(i.cumulativeValueSizes)))
+	}
+}
+
 // pop removes and returns as many values from the current batch that can be attached to a single
 // insert statement. The returned values are the oldest values submitted to the batch (in order).
-func (i *Inserter) pop() (batch []interface{}) {
-	if len(i.batch) < i.maxBatchSize {
-		batch, i.batch = i.batch, i.batch[:0]
-		return batch
+// This method additionally returns the total (approximate) size of the batch being inserted.
+func (i *Inserter) pop() (batch []interface{}, payloadSize int) {
+	if len(i.batch) == 0 {
+		return nil, 0
 	}
 
+	if len(i.batch) < i.maxBatchSize {
+		// Grab size before overwriting it
+		payloadSize = i.cumulativeValueSizes[len(i.cumulativeValueSizes)-1]
+
+		// Use entire batch. This allows us to cleanly reset the sizes we were tracking for value
+		// payloads by just cutting the length of the slice back to zero.
+		batch, i.batch = i.batch, i.batch[:0]
+		i.cumulativeValueSizes = i.cumulativeValueSizes[:0]
+		return batch, payloadSize
+	}
+
+	// Grab size before altering containing slice
+	payloadSize = i.cumulativeValueSizes[i.maxBatchSize-1]
+
+	// Extract partial batch along with the size tracking data for each elemetn
 	batch, i.batch = i.batch[:i.maxBatchSize], i.batch[i.maxBatchSize:]
-	return batch
+	i.cumulativeValueSizes = i.cumulativeValueSizes[i.maxBatchSize:]
+
+	for idx := range i.cumulativeValueSizes {
+		// Remove the size of the batch we've just extracted from every value remaining in the slice.
+		// This should generally only be a handful of elements and shouldn't be anywhere near a dominating
+		// loop.
+		i.cumulativeValueSizes[idx] -= payloadSize
+	}
+
+	return batch, payloadSize
 }
 
 // makeQuery returns a parameterized SQL query that has the given number of values worth of
