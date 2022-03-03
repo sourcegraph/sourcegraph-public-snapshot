@@ -73,6 +73,7 @@ export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
                     {props.label}
                 </FormFieldLabel>
             )}
+            {/* eslint-disable-next-line react/forbid-elements */}
             <select
                 ref={reference}
                 className={classNames(

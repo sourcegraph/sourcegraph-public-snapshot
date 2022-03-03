@@ -14,6 +14,7 @@ import (
 
 type SearchRepositoryResult struct {
 	Name string `json:"name"`
+	URL  string `json:"url"`
 }
 
 type SearchRepositoryResults []*SearchRepositoryResult
@@ -54,6 +55,7 @@ query Search($query: String!) {
 			results {
 				... on Repository {
 					name
+					url
 				}
 			}
 		}
@@ -551,9 +553,14 @@ func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryR
 				if !ok {
 					continue
 				}
-				results = append(results, &SearchRepositoryResult{
-					Name: r.Repository,
-				})
+
+				result := &SearchRepositoryResult{Name: r.Repository}
+
+				if len(r.Branches) > 0 {
+					result.URL = "/" + r.Repository + "@" + r.Branches[0]
+				}
+
+				results = append(results, result)
 			}
 		},
 		OnError: func(e *streamhttp.EventError) {

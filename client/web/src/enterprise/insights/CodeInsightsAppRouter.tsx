@@ -4,7 +4,6 @@ import React, { useContext, useMemo } from 'react'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,11 +13,9 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
-import { CodeInsightsContextProps } from '../../insights/types'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
-import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
@@ -41,11 +38,7 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * subcomponents withing app tree.
  */
-export interface CodeInsightsAppRouter
-    extends CodeInsightsContextProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        TelemetryProps {
+export interface CodeInsightsAppRouter extends SettingsCascadeProps<Settings>, TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appear
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -57,22 +50,15 @@ export interface CodeInsightsAppRouter
  * Main Insight routing component. Main entry point to code insights UI.
  */
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
-    const { isCodeInsightsGqlApiEnabled, platformContext, settingsCascade, telemetryService, authenticatedUser } = props
+    const { telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
     const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
-    const api = useMemo(
-        () =>
-            isCodeInsightsGqlApiEnabled
-                ? gqlApi
-                : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext),
-        [isCodeInsightsGqlApiEnabled, gqlApi, settingsCascade, platformContext]
-    )
 
     return (
-        <CodeInsightsBackendContext.Provider value={api}>
+        <CodeInsightsBackendContext.Provider value={gqlApi}>
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>

@@ -9,25 +9,25 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func TestActionRunner(t *testing.T) {
 	tests := []struct {
 		name               string
-		results            cmtypes.CommitSearchResults
+		results            []*result.CommitMatch
 		wantNumResultsText string
 	}{
 		{
 			name:               "5 results",
-			results:            make(cmtypes.CommitSearchResults, 5),
+			results:            make([]*result.CommitMatch, 5),
 			wantNumResultsText: "There were 5 new search results for your query",
 		},
 		{
 			name:               "1 result",
-			results:            make(cmtypes.CommitSearchResults, 1),
+			results:            make([]*result.CommitMatch, 1),
 			wantNumResultsText: "There was 1 new search result for your query",
 		},
 	}

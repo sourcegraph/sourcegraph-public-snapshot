@@ -61,6 +61,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
 
     useEffect(() => {
         const currentLink = linkReference.current!
+        const currentMenuButton = menuButtonReference.current!
         const handleTouchStart = (event: TouchEvent): void => {
             event.preventDefault()
 
@@ -70,9 +71,11 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
         // Have to add/remove `touchstart` manually like this to prevent
         // page navigation on touch screen (onTouchStart binding doesn't work)
         currentLink.addEventListener('touchstart', handleTouchStart)
+        currentMenuButton.addEventListener('touchstart', handleTouchStart)
 
         return () => {
             currentLink.removeEventListener('touchstart', handleTouchStart)
+            currentMenuButton.addEventListener('touchstart', handleTouchStart)
         }
     }, [])
 
@@ -80,7 +83,12 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     // and then use CSS @media queries to toggle between them.
     return (
         <>
-            <NavItem className="d-none d-md-flex">
+            {/* 
+                Add `position-relative` here for `absolute` position of `MenuButton` below
+                => `MenuButton` won't change its height when hovering + indicator
+                => `MenuList` won't change its position when opening
+            */}
+            <NavItem className="d-none d-md-flex position-relative">
                 <Menu>
                     {({ isExpanded }) => (
                         <>
@@ -95,7 +103,13 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                 onMouseEnter={() => setIsOverButton(true)}
                                 onMouseLeave={() => setIsOverButton(false)}
                             >
-                                <div className={classNames('h-100 d-flex', navItemStyles.linkContent)}>
+                                <div
+                                    className={classNames(
+                                        'h-100 d-flex',
+                                        navItemStyles.linkContent,
+                                        styles.navDropdownWrapper
+                                    )}
+                                >
                                     <Link
                                         to={toggleItem.path}
                                         className={classNames(styles.navDropdownLink, navItemStyles.itemFocusable)}
@@ -135,7 +149,8 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             </div>
 
                             <MenuList
-                                position={Position.bottomEnd}
+                                position={Position.bottomStart}
+                                className={styles.navDropdownContainer}
                                 onMouseEnter={() => setIsOverList(true)}
                                 onMouseLeave={() => setIsOverList(false)}
                             >

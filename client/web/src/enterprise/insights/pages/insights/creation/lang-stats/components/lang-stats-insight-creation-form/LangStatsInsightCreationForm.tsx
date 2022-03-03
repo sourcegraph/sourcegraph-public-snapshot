@@ -52,6 +52,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
     const isEditMode = mode === 'edit'
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form
             ref={innerRef}
             noValidate={true}

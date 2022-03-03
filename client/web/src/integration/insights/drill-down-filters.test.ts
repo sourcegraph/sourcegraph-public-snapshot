@@ -4,13 +4,14 @@ import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { InsightViewNode } from '../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 
-import { BACKEND_INSIGHTS } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
+import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from './fixtures/calculated-insights'
+import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'
+import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
 describe('Backend insight drill down filters', () => {
     let driver: Driver
@@ -20,48 +21,49 @@ describe('Backend insight drill down filters', () => {
         driver = await createDriverForTest()
     })
 
-    after(() => driver?.close())
-
     beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
+            customContext: {
+                // Enforce using a new gql API for code insights pages
+                codeInsightsGqlApiEnabled: true,
+            },
         })
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    after(() => driver?.close())
     afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
 
     it('should update user settings if drill-down filters have been persisted', async () => {
-        const userSubjectSettigns = {
-            'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {
-                    series: [],
-                },
-            },
-        }
-
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-            userSettings: userSubjectSettigns,
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
+                // Mock back-end insights with standard gql API handler
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
                     },
                 }),
 
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify(userSubjectSettigns),
-                        },
+                // Calculated insight mock
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
+
+                UpdateLineChartSearchInsight: () => ({
+                    __typename: 'Mutation',
+                    updateLineChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
                     },
                 }),
             },
@@ -85,56 +87,60 @@ describe('Backend insight drill down filters', () => {
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
-        }, 'Insights')
+        }, 'UpdateLineChartSearchInsight')
 
-        assert.deepStrictEqual(variables, {
-            ids: ['searchInsights.insight.backend_ID_001'],
-            includeRepoRegex: '',
-            excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+        assert.deepStrictEqual(variables.input.viewControls, {
+            filters: {
+                includeRepoRegex: '',
+                excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
+            },
         })
     })
 
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
-        const userSubjectSettigns = {
-            'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {
-                    title: 'Linear backend insight with filters',
-                    repositories: [],
-                    series: [
-                        {
-                            name: 'Series #1',
-                            query: 'test query string',
-                            stroke: 'var(--primary)',
-                        },
-                    ],
-                    filters: {
-                        includeRepoRegexp: '',
-                        excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
-                    },
-                },
+        const insightWithFilters: InsightViewNode = {
+            ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
+            appliedFilters: {
+                __typename: 'InsightViewFilters',
+                includeRepoRegex: '',
+                excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
         }
 
-        overrideGraphQLExtensions({
+        overrideInsightsGraphQLApi({
             testContext,
-            userSettings: userSubjectSettigns,
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse,
-                        },
+                // Mock back-end insights with standard gql API handler
+                GetInsights: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [insightWithFilters],
                     },
                 }),
 
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify(userSubjectSettigns),
-                        },
+                // Calculated insight mock
+                GetInsightView: () => ({
+                    __typename: 'Query',
+                    insightViews: {
+                        __typename: 'InsightViewConnection',
+                        nodes: [MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE],
+                    },
+                }),
+
+                FirstStepCreateSearchBasedInsight: () => ({
+                    __typename: 'Mutation',
+                    createLineChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
+                    },
+                }),
+
+                UpdateLineChartSearchInsight: () => ({
+                    __typename: 'Mutation',
+                    updateLineChartSearchInsight: {
+                        __typename: 'InsightViewPayload',
+                        view: createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' }),
                     },
                 }),
             },
@@ -157,42 +163,52 @@ describe('Backend insight drill down filters', () => {
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
-        }, 'OverwriteSettings')
+        }, 'UpdateLineChartSearchInsight')
 
-        assert.deepStrictEqual(JSON.parse(variables.contents), {
-            'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {
-                    title: 'Linear backend insight with filters',
-                    repositories: [],
-                    series: [
-                        {
-                            name: 'Series #1',
-                            query: 'test query string',
-                            stroke: 'var(--primary)',
+        assert.deepStrictEqual(variables.input, {
+            dataSeries: [
+                {
+                    seriesId: '001',
+                    query: 'patternType:regex case:yes \\*\\sas\\sGQL',
+                    options: {
+                        label: 'Imports of old GQL.* types',
+                        lineColor: 'var(--oc-red-7)',
+                    },
+                    repositoryScope: {
+                        repositories: [],
+                    },
+                    timeScope: {
+                        stepInterval: {
+                            unit: 'WEEK',
+                            value: 6,
                         },
-                    ],
-                    filters: {
-                        includeRepoRegexp: '',
-                        excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
                     },
                 },
-                'searchInsights.insight.insightWithFilters': {
-                    title: 'Insight with filters',
-                    repositories: [],
-                    series: [
-                        {
-                            name: 'Series #1',
-                            query: 'test query string',
-                            stroke: 'var(--primary)',
+                {
+                    seriesId: '002',
+                    query: "patternType:regexp case:yes /graphql-operations'",
+                    options: {
+                        label: 'Imports of new graphql-operations types',
+                        lineColor: 'var(--oc-blue-7)',
+                    },
+                    repositoryScope: {
+                        repositories: [],
+                    },
+                    timeScope: {
+                        stepInterval: {
+                            unit: 'WEEK',
+                            value: 6,
                         },
-                    ],
-                    step: {
-                        months: 1,
                     },
-                    filters: {
-                        includeRepoRegexp: '',
-                        excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
-                    },
+                },
+            ],
+            presentationOptions: {
+                title: 'Migration to new GraphQL TS types',
+            },
+            viewControls: {
+                filters: {
+                    includeRepoRegex: '',
+                    excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                 },
             },
         })

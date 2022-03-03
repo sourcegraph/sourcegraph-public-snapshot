@@ -57,13 +57,13 @@ exports[`GlobalNavbar default 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-md-flex"
+          class="item d-none d-md-flex position-relative"
         >
           <div
             class="link d-flex align-items-center p-0"
           >
             <div
-              class="h-100 d-flex linkContent"
+              class="h-100 d-flex linkContent navDropdownWrapper"
             >
               <a
                 class="anchorLink navDropdownLink itemFocusable"
@@ -315,13 +315,13 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-md-flex"
+          class="item d-none d-md-flex position-relative"
         >
           <div
             class="link d-flex align-items-center p-0"
           >
             <div
-              class="h-100 d-flex linkContent"
+              class="h-100 d-flex linkContent navDropdownWrapper"
             >
               <a
                 class="anchorLink navDropdownLink itemFocusable"
