@@ -104,10 +104,14 @@ func Combine(path string, opt Options) error {
 				remoteToTree[remote] = commit.TreeHash
 				break
 			}
-			commit, err = commit.Parent(0)
-			if err != nil {
+			nextCommit, err := commit.Parent(0)
+			if err == plumbing.ErrObjectNotFound {
+				remoteToTree[remote] = commit.TreeHash
+				break
+			} else if err != nil {
 				return err
 			}
+			commit = nextCommit
 		}
 	}
 
