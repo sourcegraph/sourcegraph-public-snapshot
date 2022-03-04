@@ -59,10 +59,9 @@ import { focusSearchPanel, registerWebviews } from './webview/commands'
 export function activate(context: vscode.ExtensionContext): void {
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
-
     invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
-    const eventSourceType = initializeInstantVersionNumber({ localStorageService })
+    const eventSourceType = initializeInstantVersionNumber(localStorageService)
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
@@ -88,7 +87,6 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     )
-
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
@@ -141,5 +139,5 @@ export function activate(context: vscode.ExtensionContext): void {
         fs,
         instanceURL: initialInstanceURL,
     })
-    initializeCodeSharingCommands(context, extensionCoreAPI)
+    initializeCodeSharingCommands(context, eventSourceType, localStorageService)
 }

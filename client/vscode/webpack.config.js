@@ -2,8 +2,9 @@
 
 'use strict'
 const path = require('path')
-const webpack = require('webpack')
+
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const webpack = require('webpack')
 
 const {
   getMonacoWebpackPlugin,
@@ -28,11 +29,14 @@ function getExtensionCoreConfiguration(targetType) {
     mode,
     name: `extension:${targetType}`,
     target: targetType,
-    entry: path.resolve(__dirname, 'src', 'extension.ts'), // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+    entry: {
+      extension: path.resolve(__dirname, 'src', 'extension.ts'),
+      uninstall: path.resolve(__dirname, 'src', 'uninstall.ts')
+    }, // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
-      filename: 'extension.js',
+      filename: '[name].js',
       library: {
         type: 'umd',
       },
