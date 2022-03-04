@@ -24,7 +24,7 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
     return createNotebook({
         notebook: {
             title,
-            blocks: blocks.map(blockToGQLInput),
+            blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])),
             namespace,
             public: false,
         },

@@ -28,7 +28,6 @@ const dashboard: CustomInsightDashboard = {
     type: InsightsDashboardType.Custom,
     scope: InsightsDashboardScope.Personal,
     id: '001',
-    settingsKey: 'testDashboard',
     title: 'Test dashboard',
     insightIds: [],
     owner: {

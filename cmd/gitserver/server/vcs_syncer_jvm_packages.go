@@ -208,8 +208,9 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	}
 
 	dbDeps, err := s.DepsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme: dependenciesStore.JVMPackagesScheme,
-		Name:   repoUrlPath,
+		Scheme:      dependenciesStore.JVMPackagesScheme,
+		Name:        repoUrlPath,
+		NewestFirst: true,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get JVM dependency repos from database", "repoPath", repoUrlPath)

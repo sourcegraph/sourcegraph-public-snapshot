@@ -19,7 +19,6 @@ import (
 type SearchClient interface {
 	Plan(
 		ctx context.Context,
-		db database.DB,
 		version string,
 		patternType *string,
 		searchQuery string,
@@ -30,27 +29,27 @@ type SearchClient interface {
 
 	Execute(
 		ctx context.Context,
-		db database.DB,
 		stream streaming.Sender,
 		inputs *run.SearchInputs,
 	) (_ *search.Alert, err error)
 }
 
-func NewSearchClient(zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
 	return &searchClient{
+		db:           db,
 		zoekt:        zoektStreamer,
 		searcherURLs: searcherURLs,
 	}
 }
 
 type searchClient struct {
+	db           database.DB
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
 }
 
 func (s *searchClient) Plan(
 	ctx context.Context,
-	db database.DB,
 	version string,
 	patternType *string,
 	searchQuery string,
@@ -58,12 +57,11 @@ func (s *searchClient) Plan(
 	settings *schema.Settings,
 	sourcegraphDotComMode bool,
 ) (*run.SearchInputs, error) {
-	return run.NewSearchInputs(ctx, db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
+	return run.NewSearchInputs(ctx, s.db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
 }
 
 func (s *searchClient) Execute(
 	ctx context.Context,
-	db database.DB,
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
@@ -72,5 +70,5 @@ func (s *searchClient) Execute(
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
 	}
-	return execute.Execute(ctx, db, stream, jobArgs)
+	return execute.Execute(ctx, s.db, stream, jobArgs)
 }
