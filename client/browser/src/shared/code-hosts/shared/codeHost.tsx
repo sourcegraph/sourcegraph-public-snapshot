@@ -893,9 +893,14 @@ export async function handleCodeHost({
         )
 
     if (isGithubCodeHost(codeHost)) {
+        // TODO: add tests in codeHost.test.tsx
         const { searchEnhancement, enhanceSearchPage } = codeHost
-        subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
-        subscriptions.add(enhanceSearchPage(sourcegraphURL))
+        if (searchEnhancement) {
+            subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
+        }
+        if (enhanceSearchPage) {
+            subscriptions.add(enhanceSearchPage(sourcegraphURL, mutations))
+        }
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
@@ -1607,6 +1612,5 @@ export function injectCodeIntelligenceToCodeHost(
             }
         })
     )
-
     return subscriptions
 }
