@@ -21,7 +21,7 @@ const config = {
 
         const href = node.value.value
 
-        if (!href) {
+        if (!href || typeof href !== 'string') {
           return
         }
 
