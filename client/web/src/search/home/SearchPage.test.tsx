@@ -61,6 +61,7 @@ describe('SearchPage', () => {
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchCollaborators: () => of([]),
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,

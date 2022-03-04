@@ -5,7 +5,9 @@ import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
+import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { EXTERNAL_SERVICES_WITH_COLLABORATORS } from '../components/externalServices/backend'
 import {
     EventLogsDataResult,
     EventLogsDataVariables,
@@ -16,6 +18,8 @@ import {
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
     Scalars,
+    ExternalServicesWithCollaboratorsResult,
+    ExternalServicesWithCollaboratorsVariables,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -267,4 +271,23 @@ export function fetchRecentSearches(userId: Scalars['ID'], first: number): Obser
 
 export function fetchRecentFileViews(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
+}
+
+export function fetchCollaborators(userId: Scalars['ID']): Observable<InvitableCollaborator[]> {
+    if (!userId) {
+        return of([])
+    }
+
+    // @todo(#32125) Change this API to use the new backend added as part of #31777
+    const result = requestGraphQL<ExternalServicesWithCollaboratorsResult, ExternalServicesWithCollaboratorsVariables>(
+        EXTERNAL_SERVICES_WITH_COLLABORATORS,
+        { namespace: userId, first: null, after: null }
+    )
+
+    return result.pipe(
+        map(dataOrThrowErrors),
+        map((data: ExternalServicesWithCollaboratorsResult): InvitableCollaborator[] =>
+            data.externalServices.nodes.flatMap(repo => repo.invitableCollaborators)
+        )
+    )
 }

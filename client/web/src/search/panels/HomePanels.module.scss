@@ -6,3 +6,10 @@
 .panel {
     height: 15rem;
 }
+
+.tab-panel {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+}

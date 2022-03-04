@@ -3,6 +3,7 @@ import { Observable, of } from 'rxjs'
 import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
+import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { EventLogResult } from '../backend'
 
 export const authUser: AuthenticatedUser = {
@@ -356,3 +357,43 @@ export const _fetchRecentFileViews = (): Observable<EventLogResult | null> =>
         totalCount: 500,
         pageInfo: { hasNextPage: true, endCursor: null },
     })
+
+export const _fetchCollaborators: (_userId: string) => Observable<InvitableCollaborator[]> = () =>
+    of([
+        {
+            email: 'hello@philippspiess.com',
+            displayName: 'Philipp Spiess',
+            name: 'Philipp Spiess',
+            avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
+        },
+        {
+            email: 'hello@philippspiess.com',
+            displayName: 'Philipp Spiess',
+            name: 'Philipp Spiess',
+            avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
+        },
+        {
+            email: 'hello@philippspiess.com',
+            displayName: 'Philipp Spiess',
+            name: 'Philipp Spiess',
+            avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
+        },
+        {
+            email: 'hello@nicolasdular.com',
+            displayName: 'Nicolas Dular',
+            name: 'Nicolas Dular',
+            avatarURL: 'https://avatars.githubusercontent.com/u/890544?v=4',
+        },
+        {
+            email: 'mario.telesklav@gmx.at',
+            displayName: 'Mario Telesklav',
+            name: 'Mario Telesklav',
+            avatarURL: 'https://avatars.githubusercontent.com/u/3846403?v=4',
+        },
+        {
+            email: 'gluastoned@gmail.com',
+            displayName: 'Gregor Steiner',
+            name: 'Gregor Steiner',
+            avatarURL: 'https://avatars.githubusercontent.com/u/173158?v=4',
+        },
+    ])

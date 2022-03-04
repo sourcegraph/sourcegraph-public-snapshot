@@ -8,6 +8,8 @@ import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/sear
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
+import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
+
 import { EventLogResult } from './backend'
 
 /**
@@ -134,6 +136,7 @@ export interface HomePanelsProps {
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+    fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
 
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date

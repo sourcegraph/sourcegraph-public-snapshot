@@ -45,5 +45,15 @@
         min-width: var(--max-homepage-container-width);
     }
 
+    @media (--lg-breakpoint-up) and (--lg-breakpoint-down) {
+        width: 100%;
+    }
+
     position: relative;
+}
+
+.panels-container-with-collaborators {
+    @media (--xl-breakpoint-up) {
+        width: calc(var(--max-homepage-container-width) + 30rem);
+    }
 }

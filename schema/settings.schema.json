@@ -254,6 +254,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "homepageUserInvitation": {
+          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
