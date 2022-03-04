@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -61,6 +62,11 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 			return
 		}
 
+		emailTemplateEmailInvitation := emailTemplateEmailInvitationServer
+		if envvar.SourcegraphDotComMode() {
+			emailTemplateEmailInvitation = emailTemplateEmailInvitationCloud
+		}
+
 		urlSignUp, _ := url.Parse("/sign-up?invitedBy=" + invitedBy.Username)
 		if err := txemail.Send(ctx, txemail.Message{
 			To:       []string{args.Email},
@@ -82,12 +88,18 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 	return &EmptyResponse{}, nil
 }
 
-var emailTemplateEmailInvitation = txemail.MustValidate(txtypes.Templates{
+var emailTemplateEmailInvitationCloud = txemail.MustValidate(txtypes.Templates{
 	Subject: `{{.FromName}} has invited you to Sourcegraph`,
 	Text: `
-{{.FromName}} has invited you to Sourcegraph
+Sourcegraph enables you to quickly understand and fix your code.
 
-Sourcegraph is browser-based code search and navigation at its core. Features like code insights, batch changes, code monitors, and a corpus of more than 2 million open source repositories are why the top developers at the world’s most innovated companies can’t live without it.
+You can use Sourcegraph to:
+  - Search and navigate multiple repositories with cross-repository dependency navigation
+  - Share links directly to lines of code to work more collaboratively with your team
+  - Search more than 2 million open source repositories, all in one place
+  - Create code monitors to alert you about changes in code
+
+Join {{ .FromName }} on Sourcegraph to experience the power of great code search.
 
 Claim your invitation:
 
@@ -98,9 +110,61 @@ Learn more about Sourcegraph:
 https://about.sourcegraph.com
 `,
 	HTML: `
-<p><strong>{{.FromName}}</strong> has invited you to Sourcegraph</p>
+<p>Sourcegraph enables you to quickly understand and fix your code.</p>
 
-<p>Sourcegraph is browser-based code search and navigation at its core. Features like code insights, batch changes, code monitors, and a corpus of more than 2 million open source repositories are why the top developers at the world’s most innovated companies can’t live without it.</p>
+<p>
+	You can use Sourcegraph to:<br/>
+	<ul>
+		<li>Search and navigate multiple repositories with cross-repository dependency navigation</li>
+		<li>Share links directly to lines of code to work more collaboratively with your team</li>
+		<li>Search more than 2 million open source repositories, all in one place</li>
+		<li>Create code monitors to alert you about changes in code</li>
+	</ul>
+</p>
+
+<p>Join <strong>{{.FromName}}</strong> on Sourcegraph to experience the power of great code search.</p>
+
+<p><strong><a href="{{.URL}}">Claim your invitation</a></strong></p>
+
+<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+`,
+})
+
+var emailTemplateEmailInvitationServer = txemail.MustValidate(txtypes.Templates{
+	Subject: `{{.FromName}} has invited you to Sourcegraph`,
+	Text: `
+Sourcegraph enables your team to quickly understand, fix, and automate changes to your code.
+
+You can use Sourcegraph to:
+  - Search and navigate multiple repositories with cross-repository dependency navigation
+  - Share links directly to lines of code to work more collaboratively together
+  - Automate large-scale code changes with Batch Changes
+  - Create code monitors to alert you about changes in code
+
+Join {{ .FromName }} on Sourcegraph to experience the power of great code search.
+
+Claim your invitation:
+
+{{.URL}}
+
+Learn more about Sourcegraph:
+
+https://about.sourcegraph.com
+`,
+	HTML: `
+<p>Sourcegraph enables your team to quickly understand, fix, and automate changes to your code.</p>
+
+<p>
+	You can use Sourcegraph to:<br/>
+	<ul>
+		<li>Search and navigate multiple repositories with cross-repository dependency navigation</li>
+		<li>Share links directly to lines of code to work more collaboratively together</li>
+		<li>Automate large-scale code changes with Batch Changes</li>
+		<li>Create code monitors to alert you about changes in code</li>
+	</ul>
+</p>
+
+<p>Join <strong>{{.FromName}}</strong> on Sourcegraph to experience the power of great code search.</p>
 
 <p><strong><a href="{{.URL}}">Claim your invitation</a></strong></p>
 
