@@ -899,7 +899,7 @@ export async function handleCodeHost({
             subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
         }
         if (enhanceSearchPage) {
-            subscriptions.add(enhanceSearchPage(sourcegraphURL, mutations))
+            subscriptions.add(enhanceSearchPage(sourcegraphURL))
         }
     }
 
