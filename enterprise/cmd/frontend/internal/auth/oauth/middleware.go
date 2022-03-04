@@ -103,11 +103,10 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.NotFound(w, req)
 			return
 		}
-		redirect := req.URL.Query().Get("redirect")
-		if redirect == "" {
-			http.Error(w, "No redirect specified", http.StatusBadRequest)
-		}
-		http.Redirect(w, req, redirect, http.StatusFound)
+		state := req.URL.Query().Get("state")
+		appInstallURL := "https://github.com/apps/" + dotcomConfig.GithubAppCloud.Slug + "/installations/new?state=" + state
+
+		http.Redirect(w, req, appInstallURL, http.StatusFound)
 	}))
 	return mux
 }
