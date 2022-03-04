@@ -135,6 +135,10 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 			// non-nil returned from here is a context timeout error, so we are guaranteed to clean
 			// up the errgroup on exit.
 			if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
+				// Ensure that we always call Wait on the errgroup before exiting this function. If
+				// we exit without this check we can end up closing the dependencies channel before
+				// all writers have exited.
+				_ = g.Wait()
 				return nil, err
 			}
 
