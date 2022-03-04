@@ -38,6 +38,18 @@ function go_test() {
   mkdir -p './test-reports'
   go-junit-report <"$tmpfile" >>./test-reports/go-test-junit.xml
 
+  # Create annotation from test failure
+  if [ "$test_exit_code" -ne 0 ]; then
+    set -x
+    echo "~~~ Creating test failures anotation"
+    RICHGO_CONFIG="./.richstyle.yml"
+    cp "./dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
+    mkdir -p ./annotations
+    richgo testfilter <"$tmpfile" >>./annotations/go-test
+    rm -rf RICHGO_CONFIG
+    set +x
+  fi
+
   return "$test_exit_code"
 }
 
@@ -77,7 +89,8 @@ export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in som
 export NO_GRAPHQL_LOG=true
 
 # Install richgo for better output
-go install github.com/kyoh86/richgo@latest
+# This fork gives us the `anyStyle` configuration required to hide log lines
+go install github.com/jhchabran/richgo@installable
 asdf reshim golang
 
 # Used to ignore directories (for example, when using submodules)
