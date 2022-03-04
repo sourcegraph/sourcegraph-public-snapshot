@@ -68,6 +68,7 @@ function queryOrganization(args: {
                 }
                 viewerIsMember
                 viewerCanAdminister
+                viewerNeedsCodeHostUpdate
                 createdAt
             }
         `,

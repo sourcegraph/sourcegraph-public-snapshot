@@ -231,6 +231,48 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return false, nil
+	}
+	// enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
+	// if err != nil {
+	// 	return false, err
+	// } else if !enabled {
+	// 	return false, nil
+	// }
+	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
+		return false, nil
+	}
+	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{NamespaceOrgID: o.OrgID()})
+	if err != nil {
+		return false, err
+	}
+	// no need to update
+	if len(orgServices) == 0 {
+		return false, nil
+	}
+	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{NamespaceUserID: actor.UID})
+	if err != nil {
+		return false, err
+	}
+	// no need to update
+	if len(userServices) == 0 {
+		return false, nil
+	}
+	for _, os := range orgServices {
+		for _, us := range userServices {
+			if os.Kind == us.Kind {
+				if os.UpdatedAt.After(us.UpdatedAt) {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
+}
+
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
