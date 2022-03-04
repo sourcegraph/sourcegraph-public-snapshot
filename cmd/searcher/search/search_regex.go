@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"regexp"
-	"regexp/syntax"
 	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // readerGrep is responsible for finding LineMatches. It is not concurrency
@@ -299,12 +299,12 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile, limit int) (p
 func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, rg, zf, limit, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
 	return sender.Collected(), sender.LimitHit(), err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")

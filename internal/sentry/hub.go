@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/cockroachdb/errors"
-	"github.com/cockroachdb/sentry-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Hub struct {

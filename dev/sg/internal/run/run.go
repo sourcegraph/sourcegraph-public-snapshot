@@ -8,20 +8,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 	"github.com/rjeczalik/notify"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, addToMacOSFirewall bool, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -76,7 +77,8 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 		}(cmd, chs[i])
 	}
 
-	err = waitForInstallation(cmdNames, installed, failures, okayToStart)
+	postInstall := newPostInstall(ctx, cmds, addToMacOSFirewall)
+	err = waitForInstallation(cmdNames, installed, failures, okayToStart, postInstall)
 	if err != nil {
 		return err
 	}
@@ -92,7 +94,43 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 	}
 }
 
-func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}) error {
+func newPostInstall(ctx context.Context, cmds []Command, addToMacOSFirewall bool) func() error {
+	if !addToMacOSFirewall || runtime.GOOS != "darwin" {
+		return func() error { return nil }
+	}
+
+	return func() error {
+		root, err := root.RepositoryRoot()
+		if err != nil {
+			return err
+		}
+
+		fwCmdPath := "/usr/libexec/ApplicationFirewall/socketfilterfw"
+		stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, "You may be prompted to enter your password to add exceptions to the firewall."))
+		fcmd := exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "off")
+		err = fcmd.Run()
+		if err != nil {
+			return err
+		}
+		for _, cmd := range cmds {
+			if strings.HasPrefix(cmd.Cmd, ".bin/") {
+				fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--add", filepath.Join(root, cmd.Cmd))
+				err = fcmd.Run()
+				if err != nil {
+					return err
+				}
+			}
+		}
+		fcmd = exec.CommandContext(ctx, "sudo", fwCmdPath, "--setglobalstate", "on")
+		err = fcmd.Run()
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func waitForInstallation(cmdNames map[string]struct{}, installed chan string, failures chan failedRun, okayToStart chan struct{}, postInstallCallback func() error) error {
 	stdout.Out.Write("")
 	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
 	stdout.Out.Write("")
@@ -137,6 +175,10 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 				stdout.Out.Write("")
 				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system!"))
 				stdout.Out.Write("")
+				err := postInstallCallback()
+				if err != nil {
+					return err
+				}
 				close(okayToStart)
 				return nil
 			}
@@ -589,40 +631,4 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 	stdout.Out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
 
 	return c.Run()
-}
-
-func Checks(ctx context.Context, globalEnv map[string]string, checks ...Check) (bool, error) {
-	success := true
-
-	for _, check := range checks {
-		commandCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
-		c.Env = makeEnv(globalEnv)
-
-		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
-
-		if cmdOut, err := InRoot(c); err != nil {
-			success = false
-
-			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
-
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
-			if len(cmdOut) != 0 {
-				stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Check produced the following output:"))
-				separator := strings.Repeat("-", 80)
-				line := output.Linef(
-					"", output.StyleWarning,
-					"%s\n%s%s%s%s%s",
-					separator, output.StyleReset, cmdOut, output.StyleWarning, separator, output.StyleReset,
-				)
-				stdout.Out.WriteLine(line)
-			}
-		} else {
-			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
-		}
-	}
-
-	return success, nil
 }

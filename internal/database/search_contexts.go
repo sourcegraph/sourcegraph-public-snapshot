@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var ErrSearchContextNotFound = errors.New("search context not found")
@@ -192,7 +192,7 @@ func idsToQueries(ids []int32) []*sqlf.Query {
 	return queries
 }
 
-func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Query, error) {
+func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Query {
 	namespaceConds := []*sqlf.Query{}
 	if opts.NoNamespace {
 		namespaceConds = append(namespaceConds, sqlf.Sprintf("(sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL)"))
@@ -223,7 +223,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 		conds = append(conds, sqlf.Sprintf("1 = 1"))
 	}
 
-	return conds, nil
+	return conds
 }
 
 func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
@@ -240,19 +240,13 @@ func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 }
 
 func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
-	conds, err := getSearchContextsQueryConditions(opts)
-	if err != nil {
-		return nil, err
-	}
+	conds := getSearchContextsQueryConditions(opts)
 	orderBy := getSearchContextOrderByClause(opts.OrderBy, opts.OrderByDescending)
 	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
 }
 
 func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
-	conds, err := getSearchContextsQueryConditions(opts)
-	if err != nil {
-		return -1, err
-	}
+	conds := getSearchContextsQueryConditions(opts)
 	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
 	if err != nil {
 		return -1, err
@@ -373,10 +367,6 @@ func (s *searchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx con
 }
 
 func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
-	if len(repositoryRevisions) == 0 {
-		return nil
-	}
-
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -386,6 +376,10 @@ func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Co
 	err = tx.Exec(ctx, sqlf.Sprintf("DELETE FROM search_context_repos WHERE search_context_id = %d", searchContextID))
 	if err != nil {
 		return err
+	}
+
+	if len(repositoryRevisions) == 0 {
+		return nil
 	}
 
 	values := []*sqlf.Query{}

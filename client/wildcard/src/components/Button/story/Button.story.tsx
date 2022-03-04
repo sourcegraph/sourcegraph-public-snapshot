@@ -14,6 +14,7 @@ import { ButtonVariants } from './ButtonVariants'
 
 const config: Meta = {
     title: 'wildcard/Button',
+    component: Button,
 
     decorators: [
         story => (
@@ -23,15 +24,18 @@ const config: Meta = {
 
     parameters: {
         component: Button,
-        chromatic: {
-            enableDarkMode: true,
-        },
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A2513',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A5794',
+            },
+        ],
     },
 }
 
@@ -106,3 +110,10 @@ export const AllButtons: Story = () => (
         </Button>
     </div>
 )
+
+AllButtons.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

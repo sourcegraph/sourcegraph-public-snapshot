@@ -10,7 +10,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 SHELL_SCRIPTS=()
 
-while IFS='' read -r line; do SHELL_SCRIPTS+=("$line"); done < <(shfmt -f .)
+while IFS='' read -r line; do SHELL_SCRIPTS+=("$line"); done < <(comm -12 <(git ls-files | sort) <(shfmt -f . | sort))
 
 set +e
 OUT=$(shellcheck --external-sources --source-path="SCRIPTDIR" --color=always "${SHELL_SCRIPTS[@]}")
@@ -19,7 +19,7 @@ set -e
 echo -e "$OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo -e "$OUT" | ./dev/ci/annotate.sh -s "shellcheck"
+  echo -e "$OUT" >./annotations/shellcheck
   echo "^^^ +++"
 fi
 

@@ -7,20 +7,23 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/grafana/regexp"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -31,7 +34,12 @@ const (
 )
 
 func Squash(database db.Database, commit string) error {
-	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(database, commit)
+	definitions, err := readDefinitions(database)
+	if err != nil {
+		return err
+	}
+
+	newRoot, ok, err := selectNewRootMigration(database, definitions, commit)
 	if err != nil {
 		return err
 	}
@@ -39,19 +47,79 @@ func Squash(database db.Database, commit string) error {
 		return errors.Newf("no migrations exist at commit %s", commit)
 	}
 
-	// Run migrations up to last migration index and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, lastMigrationIndex)
+	// Run migrations up to the new selected root and dump the database into a single migration file pair
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID})
 	if err != nil {
 		return err
 	}
+	privilegedUpMigration, unprivilegedUpMigration := splitPrivilegedMigrations(squashedUpMigration)
 
-	// Remove the migration file pairs that were just squashed
-	filenames, err := removeMigrationFilesUpToIndex(database, lastMigrationIndex)
-	if err != nil {
-		return err
-	}
-
+	// Add newline after progress related to container
 	stdout.Out.Write("")
+
+	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID)
+	if err != nil {
+		return err
+	}
+	// Track the files we're generating so we can list what we changed on disk
+	files := []MigrationFiles{
+		unprivilegedFiles,
+	}
+
+	createMetadata := func(name string, parents []int, privileged bool) string {
+		content, _ := yaml.Marshal(struct {
+			Name          string `yaml:"name"`
+			Parents       []int  `yaml:"parents"`
+			Privileged    bool   `yaml:"privileged"`
+			NonIdempotent bool   `yaml:"nonIdempotent"`
+		}{name, parents, privileged, true})
+
+		return string(content)
+	}
+
+	contents := map[string]string{
+		unprivilegedFiles.UpFile:       unprivilegedUpMigration,
+		unprivilegedFiles.DownFile:     squashedDownMigration,
+		unprivilegedFiles.MetadataFile: createMetadata("squashed migrations", nil, false),
+	}
+	if privilegedUpMigration != "" {
+		if len(newRoot.Parents) == 0 {
+			return errors.New("select (unprivileged) squash root has no parent; create a new privileged root manually for this schema")
+		}
+
+		// We need a deterministic place to put our privileged queries _prior_ to the
+		// squashed migration. Naturally, we want to re-use a migration identifier that's
+		// already been applied. We'll choose any of the parents of this new squash root
+		// and replace its contents.
+		privilegedRoot := newRoot.Parents[0]
+
+		privilegedFiles, err := makeMigrationFilenames(database, privilegedRoot)
+		if err != nil {
+			return err
+		}
+		files = append(files, privilegedFiles)
+
+		// Add privileged queries into new migration
+		contents[privilegedFiles.UpFile] = privilegedUpMigration
+		contents[privilegedFiles.DownFile] = squashedDownMigration
+		contents[privilegedFiles.MetadataFile] = createMetadata("squashed migrations (privileged)", nil, true)
+
+		// Update new (unprivileged) root to declare the new privileged root as its parent
+		contents[unprivilegedFiles.MetadataFile] = createMetadata("squashed migrations (unprivileged)", []int{privilegedRoot}, false)
+	}
+
+	// Remove the migration files that were squashed into a new root
+	filenames, err := removeAncestorsOf(database, definitions, newRoot.ID)
+	if err != nil {
+		return err
+	}
+
+	// Write new file back onto disk. We do this after deleting since there might
+	// be some overlap (and we don't want to delete what we just wrote to disk).
+	if err := writeMigrationFiles(contents); err != nil {
+		return err
+	}
+
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
 	defer block.Close()
 
@@ -59,46 +127,44 @@ func Squash(database db.Database, commit string) error {
 		block.Writef("Deleted: %s", filename)
 	}
 
-	// Write the replacement migration pair
-	upPath, downPath, metadataPath, err := makeMigrationFilenames(database, lastMigrationIndex)
-	if err != nil {
-		return err
+	for _, files := range files {
+		block.Writef("Up query file: %s", rootRelative(files.UpFile))
+		block.Writef("Down query file: %s", rootRelative(files.DownFile))
+		block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
 	}
 
-	contents := map[string]string{
-		upPath:       squashedUpMigration,
-		downPath:     squashedDownMigration,
-		metadataPath: "name: 'squashed_migrations'\n",
-	}
-	if err := writeMigrationFiles(contents); err != nil {
-		return err
-	}
-
-	block.Writef("Created: %s", upPath)
-	block.Writef("Created: %s", downPath)
-	block.Writef("Created: %s", metadataPath)
 	return nil
 }
 
-// lastMigrationIndexAtCommit returns the index of the last migration for the given database
-// available at the given commit. This function returns a false-valued flag if no migrations
-// exist at the given commit.
-func lastMigrationIndexAtCommit(database db.Database, commit string) (int, bool, error) {
+// selectNewRootMigration selects the most recently defined migration that dominates the leaf
+// migrations of the schema at the given commit. This ensures that whenever we squash migrations,
+// we do so between a portion of the graph with a single entry and a single exit, which can
+// be easily collapsible into one file that can replace an existing migration node in-place.
+func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
 	migrationsDir := filepath.Join("migrations", database.Name)
 
 	output, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
-		return 0, false, err
+		return definition.Definition{}, false, err
 	}
 
-	lastMigrationIndex, ok := parseLastMigrationIndex(strings.Split(output, "\n"))
-	return lastMigrationIndex, ok, nil
+	ds, err = ds.Filter(parseVersions(strings.Split(output, "\n"), migrationsDir))
+	if err != nil {
+		return definition.Definition{}, false, err
+	}
+
+	leafDominator, ok := ds.LeafDominator()
+	if !ok {
+		return definition.Definition{}, false, nil
+	}
+
+	return leafDominator, true, nil
 }
 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index. This function will launch a daemon Postgres container,
 // migrate a fresh database up to the given migration index, then dump and sanitize the contents.
-func generateSquashedMigrations(database db.Database, migrationIndex int) (up, down string, err error) {
+func generateSquashedMigrations(database db.Database, targetVersions []int) (up, down string, err error) {
 	postgresDSN := fmt.Sprintf(
 		"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
 		squasherContainerExposedPort,
@@ -113,7 +179,7 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 		err = teardown(err)
 	}()
 
-	if err := runTargetedUpMigrations(database, migrationIndex, postgresDSN); err != nil {
+	if err := runTargetedUpMigrations(database, targetVersions, postgresDSN); err != nil {
 		return "", "", err
 	}
 
@@ -126,7 +192,11 @@ func generateSquashedMigrations(database db.Database, migrationIndex int) (up, d
 }
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
-func runTargetedUpMigrations(database db.Database, targetVersion int, postgresDSN string) (err error) {
+func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
+	// Disable runner logs to prevent clashing progress output below
+	runner.DisableLogging()
+	defer runner.EnableLogging()
+
 	pending := stdout.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -136,27 +206,28 @@ func runTargetedUpMigrations(database db.Database, targetVersion int, postgresDS
 		}
 	}()
 
-	ctx := context.Background()
-
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
-	}
-
-	options := runner.Options{
-		Operations: []runner.MigrationOperation{
-			{
-				SchemaName:    database.Name,
-				Type:          runner.MigrationOperationTypeTargetedUp,
-				TargetVersion: targetVersion,
-			},
-		},
-	}
-
 	dsns := map[string]string{
 		database.Name: postgresDSN,
 	}
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
+	}
+	r, err := connections.RunnerFromDSNs(dsns, "sg", storeFactory)
+	if err != nil {
+		return err
+	}
 
-	return connections.RunnerFromDSNs(dsns, "sg", storeFactory).Run(ctx, options)
+	ctx := context.Background()
+
+	return r.Run(ctx, runner.Options{
+		Operations: []runner.MigrationOperation{
+			{
+				SchemaName:     database.Name,
+				Type:           runner.MigrationOperationTypeTargetedUp,
+				TargetVersions: targetVersions,
+			},
+		},
+	})
 }
 
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
@@ -178,7 +249,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 			squasherContainerName,
 		}
 		if _, killErr := run.DockerCmd(killArgs...); killErr != nil {
-			err = multierror.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
+			err = errors.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
 		}
 
 		return err
@@ -190,7 +261,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 		"--name", squasherContainerName,
 		"-p", fmt.Sprintf("%d:5432", squasherContainerExposedPort),
 		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
-		"postgres:12.6",
+		"postgres:12.7",
 	}
 	if _, err := run.DockerCmd(runArgs...); err != nil {
 		return nil, err
@@ -259,6 +330,10 @@ func generateSquashedUpMigration(database db.Database, postgresDSN string) (_ st
 		pgDumpOutput += dataOutput
 	}
 
+	for _, table := range database.CountTables {
+		pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+	}
+
 	return sanitizePgDumpOutput(pgDumpOutput), nil
 }
 
@@ -300,33 +375,61 @@ outer:
 		filteredContent = pattern.ReplaceAllString(filteredContent, replacement)
 	}
 
-	return fmt.Sprintf("BEGIN;\n\n%s\n\nCOMMIT;\n", strings.TrimSpace(filteredContent))
+	return strings.TrimSpace(filteredContent)
 }
 
-// removeMigrationFilesUpToIndex removes migration files for the given database falling on
-// or before the given migration index. This method returns the names of the files that were
-// removed.
-func removeMigrationFilesUpToIndex(database db.Database, targetIndex int) ([]string, error) {
+var privilegedQueryPattern = lazyregexp.New(`(CREATE|COMMENT ON) EXTENSION .+;\n*`)
+
+// splitPrivilegedMigrations extracts the portion of the squashed migration file that must be run by
+// a user with elevated privileges. Both parts of the migration are returned. THe privileged migration
+// section is empty when there are no privileged queries.
+//
+// Currently, we consider the following query patterns as privileged from pg_dump output:
+//
+//  - CREATE EXTENSION ...
+//  - COMMENT ON EXTENSION ...
+func splitPrivilegedMigrations(content string) (privilegedMigration string, unprivilegedMigration string) {
+	var privilegedQueries []string
+	unprivileged := privilegedQueryPattern.ReplaceAllStringFunc(content, func(s string) string {
+		privilegedQueries = append(privilegedQueries, s)
+		return ""
+	})
+
+	return strings.TrimSpace(strings.Join(privilegedQueries, "")) + "\n", unprivileged
+}
+
+// removeAncestorsOf removes all migrations that are an ancestor of the given target version.
+// This method returns the names of the files that were removed.
+func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetVersion int) ([]string, error) {
+	allDefinitions := ds.All()
+
+	allIDs := make([]int, 0, len(allDefinitions))
+	for _, definition := range allDefinitions {
+		allIDs = append(allIDs, definition.ID)
+	}
+
+	properDescendants, err := ds.Down(allIDs, []int{targetVersion})
+	if err != nil {
+		return nil, err
+	}
+
+	keep := make(map[int]struct{}, len(properDescendants))
+	for _, definition := range properDescendants {
+		keep[definition.ID] = struct{}{}
+	}
+
+	// Gather the set of filtered that are NOT a proper descendant of the given target version.
+	// This will leave us with the ancestors of the target version (including itself).
+	filtered := make([]string, 0, len(allDefinitions))
+	for _, definition := range allDefinitions {
+		if _, ok := keep[definition.ID]; !ok {
+			filtered = append(filtered, strconv.Itoa(definition.ID))
+		}
+	}
+
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return nil, err
-	}
-
-	names, err := readFilenamesNamesInDirectory(baseDir)
-	if err != nil {
-		return nil, err
-	}
-
-	filtered := names[:0]
-	for _, name := range names {
-		index, ok := parseMigrationIndex(name)
-		if !ok {
-			continue
-		}
-
-		if index <= targetIndex {
-			filtered = append(filtered, name)
-		}
 	}
 
 	for _, name := range filtered {

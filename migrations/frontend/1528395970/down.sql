@@ -1,6 +1,2 @@
-BEGIN;
-
 ALTER TABLE cm_trigger_jobs
-    DROP COLUMN search_results;
-
-COMMIT;
+    DROP COLUMN IF EXISTS search_results;

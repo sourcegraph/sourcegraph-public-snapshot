@@ -8,13 +8,13 @@ import { isDefined } from '@sourcegraph/common'
 
 import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'
-import { RouterLink, AnchorLink } from '../Link'
+import { Link, AnchorLink } from '../Link'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
 
-export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
-    AnchorHTMLAttributes<HTMLAnchorElement> & {
+export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
+    Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onSelect'> & {
         /** The link destination URL. */
         to?: H.LocationDescriptor
 
@@ -50,80 +50,75 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as'> &
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink = React.forwardRef(
-    (
-        {
-            className,
-            to,
-            target,
-            rel,
-            disabled,
-            disabledClassName,
-            pressed,
-            'data-tooltip': tooltip,
-            onSelect = noop,
-            children,
-            id,
-            'data-content': dataContent,
-            tabIndex,
-            ...rest
-        },
-        reference
-    ) => {
-        // We need to set up a keypress listener because <a onclick> doesn't get
-        // triggered by enter.
-        const handleKeyPress: React.KeyboardEventHandler<HTMLElement> = event => {
-            if (!disabled && isSelectKeyPress(event)) {
-                onSelect(event)
-            }
+export const ButtonLink = React.forwardRef((props, reference) => {
+    const {
+        className,
+        to,
+        disabled,
+        disabledClassName,
+        pressed,
+        'data-tooltip': tooltip,
+        onSelect = noop,
+        children,
+        id,
+        'data-content': dataContent,
+        tabIndex,
+        ...rest
+    } = props
+
+    // We need to set up a keypress listener because <a onclick> doesn't get
+    // triggered by enter.
+    const handleKeyPress = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (!disabled && isSelectKeyPress(event)) {
+            onSelect(event)
+        }
+    }
+
+    const handleClick = (event: React.MouseEvent<HTMLElement>): void => {
+        // Prevent default action of reloading page because of empty href
+        event.preventDefault()
+
+        if (disabled) {
+            return
         }
 
-        const handleClick: React.MouseEventHandler<HTMLElement> = event => {
-            // Prevent default action of reloading page because of empty href
-            event.preventDefault()
+        onSelect(event)
+    }
 
-            if (disabled) {
-                return false
-            }
+    const commonProps = {
+        // `.disabled` will only be selected if the `.btn` class is applied as well
+        className: classNames(className, disabled && ['disabled', disabledClassName]),
+        'data-tooltip': tooltip,
+        'aria-label': tooltip,
+        role: typeof pressed === 'boolean' ? 'button' : undefined,
+        'aria-pressed': pressed,
+        tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
+        onClick: onSelect,
+        onKeyPress: handleKeyPress,
+        id,
+        ref: reference,
+        disabled,
+    }
 
-            return onSelect(event)
-        }
-
-        const commonProps = {
-            // `.disabled` will only be selected if the `.btn` class is applied as well
-            className: classNames(className, disabled && ['disabled', disabledClassName]),
-            'data-tooltip': tooltip,
-            'aria-label': tooltip,
-            role: typeof pressed === 'boolean' ? 'button' : undefined,
-            'aria-pressed': pressed,
-            tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
-            onClick: onSelect,
-            onKeyPress: handleKeyPress,
-            id,
-            ref: reference,
-            disabled,
-        }
-
-        if (!to || disabled) {
-            return (
-                <Button
-                    {...commonProps}
-                    as={AnchorLink}
-                    to=""
-                    onClick={handleClick}
-                    onAuxClick={handleClick}
-                    role="button"
-                    {...rest}
-                >
-                    {children}
-                </Button>
-            )
-        }
-
+    if (!to || disabled) {
         return (
-            <Button {...commonProps} as={RouterLink} to={to} {...rest}>
+            <Button
+                {...commonProps}
+                as={AnchorLink}
+                to=""
+                onClick={handleClick}
+                onAuxClick={handleClick}
+                role="button"
+                {...rest}
+            >
                 {children}
             </Button>
         )
     }
-) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>
+
+    return (
+        <Button {...commonProps} as={Link} to={to} {...rest}>
+            {children}
+        </Button>
+    )
+}) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>

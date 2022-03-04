@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // variable is an individual environment variable within an Environment
@@ -51,6 +51,7 @@ func (v *variable) UnmarshalJSON(data []byte) error {
 
 	for k, value := range kv {
 		v.name = k
+		//nolint:exportloopref // There should only be one iteration, so the value of `value` should not change
 		v.value = &value
 	}
 
@@ -77,6 +78,7 @@ func (v *variable) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	for k, value := range kv {
 		v.name = k
+		//nolint:exportloopref // There should only be one iteration, so the value of `value` should not change
 		v.value = &value
 	}
 

@@ -1,7 +1,7 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import { uniq } from 'lodash'
+import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable } from 'rxjs'
@@ -110,10 +110,6 @@ const observingSourcegraphUrl = observeSourcegraphURL(true).pipe(distinctUntilCh
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues(IS_EXTENSION)
 const observingSendTelemetry = observeSendTelemetry(IS_EXTENSION)
 
-function handleToggleActivated(isActivated: boolean): void {
-    storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
-}
-
 function handleChangeOptionFlag(key: string, value: boolean): void {
     if (isOptionFlagKey(key)) {
         featureFlags.set(key, value).catch(noop)
@@ -142,6 +138,12 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     useEffect(() => () => telemetryService.unsubscribe(), [telemetryService])
     return telemetryService
 }
+
+/**
+ * Returns unique URLs
+ */
+const uniqURLs = (urls: (string | undefined)[]): string[] =>
+    uniq(urls.filter(value => !!value).map(value => trimEnd(value, '/')))
 
 const Options: React.FunctionComponent = () => {
     const sourcegraphUrl = useObservable(observingSourcegraphUrl)
@@ -185,9 +187,7 @@ const Options: React.FunctionComponent = () => {
             storage.sync
                 .set({
                     sourcegraphURL: url,
-                    previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url, sourcegraphUrl]).filter(
-                        value => !!value
-                    ) as string[],
+                    previouslyUsedURLs: uniqURLs([...(previouslyUsedUrls || []), url, sourcegraphUrl]),
                 })
                 .catch(console.error)
         },
@@ -209,13 +209,21 @@ const Options: React.FunctionComponent = () => {
         }
     }, [sourcegraphUrl, telemetryService, previouslyUsedUrls, previousSourcegraphUrl])
 
+    const handleToggleActivated = useCallback(
+        (isActivated: boolean): void => {
+            telemetryService.log(isActivated ? 'BrowserExtensionEnabled' : 'BrowserExtensionDisabled')
+            storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
+        },
+        [telemetryService]
+    )
+
     return (
         <ThemeWrapper>
-            <WildcardThemeProvider>
+            <WildcardThemeProvider isBranded={true}>
                 <OptionsPage
                     isFullPage={isFullPage}
                     sourcegraphUrl={sourcegraphUrl || ''}
-                    suggestedSourcegraphUrls={previouslyUsedUrls || []}
+                    suggestedSourcegraphUrls={uniqURLs(previouslyUsedUrls || [])}
                     onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
                     version={version}
                     validateSourcegraphUrl={validateSourcegraphUrl}

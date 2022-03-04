@@ -7,6 +7,7 @@ import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
+    AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
@@ -52,7 +53,7 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
-    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+    assignInsightsToDashboard: (input: AssignInsightsToDashboardInput) => Observable<unknown>
 
     /**
      * Return all accessible for a user insights that are filtered by ids param.
@@ -87,12 +88,6 @@ export interface CodeInsightsBackend {
     updateInsight: (event: InsightUpdateInput) => Observable<unknown>
 
     deleteInsight: (insightId: string) => Observable<unknown>
-
-    /**
-     * Returns all available for users subjects (sharing levels, historically it was introduced
-     * from the setting cascade subject levels - global, org levels, personal)
-     */
-    getInsightSubjects: () => Observable<SupportedInsightSubject[]>
 
     /**
      * Returns backend insight (via gql API handler)
@@ -138,4 +133,19 @@ export interface CodeInsightsBackend {
      * @param query - search page query value
      */
     getResolvedSearchRepositories: (query: string) => Promise<string[]>
+
+    /**
+     * Used for the dynamic insight example on the insights landing page.
+     * Attempts to return a repository that contains the string "TODO"
+     * If a repository is not found it then returns the first repository it finds.
+     *
+     * Under the hood this is calling the search API with "select:repo TODO count:1"
+     * or "select:repo count:1" if no repository is found with the string "TODO"
+     */
+    getFirstExampleRepository: () => Observable<string>
+
+    /*
+     * Returns whether Code Insights is licensed
+     */
+    isCodeInsightsLicensed: () => Observable<boolean>
 }

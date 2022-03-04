@@ -4,7 +4,6 @@ import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
@@ -18,19 +17,24 @@ const LINE_CHART_SETTINGS = {
 }
 
 export interface LivePreviewContainerProps {
-    onUpdateClick: () => void
     loading: boolean
     disabled: boolean
-    className?: string
+    livePreviewControls?: boolean
     chartContentClassName?: string
     dataOrError: ChartContent | Error | undefined
     defaultMock: ChartContent
     mockMessage: ReactNode
+    title?: string
     description?: ReactNode
+    className?: string
+    onUpdateClick: () => void
+    children?: (data: ChartContent) => ReactNode
 }
 
 export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContainerProps>): ReactElement {
     const {
+        title = '',
+        livePreviewControls = true,
         disabled,
         loading,
         dataOrError,
@@ -40,30 +44,40 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
         mockMessage,
         description,
         chartContentClassName,
+        children,
     } = props
 
     return (
         <aside className={classNames(styles.livePreview, className)}>
-            <div className="d-flex align-items-center mb-1">
-                Live preview
-                <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
-                    <RefreshIcon size="1rem" />
-                </Button>
-            </div>
+            {livePreviewControls && (
+                <div className="d-flex align-items-center mb-1">
+                    Live preview
+                    <Button disabled={disabled} variant="icon" className="ml-1" onClick={onUpdateClick}>
+                        <RefreshIcon size="1rem" />
+                    </Button>
+                </div>
+            )}
 
-            <View.Root className={classNames(chartContentClassName, 'flex-grow-1')}>
+            <View.Root title={title} className={classNames(chartContentClassName, 'flex-grow-1')}>
                 {loading ? (
                     <View.LoadingContent text="Loading code insight" />
                 ) : isErrorLike(dataOrError) ? (
                     <View.ErrorContent error={dataOrError} title="" />
                 ) : (
                     <LineChartSettingsContext.Provider value={LINE_CHART_SETTINGS}>
-                        <View.Content
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                            content={[dataOrError ?? defaultMock]}
-                            layout={ChartViewContentLayout.ByContentSize}
-                            className={classNames({ [styles.chartWithMock]: !dataOrError })}
-                        />
+                        {dataOrError ? (
+                            children ? (
+                                children(dataOrError)
+                            ) : (
+                                <View.Content content={[dataOrError]} layout={ChartViewContentLayout.ByContentSize} />
+                            )
+                        ) : (
+                            <View.Content
+                                content={[defaultMock]}
+                                layout={ChartViewContentLayout.ByContentSize}
+                                className={styles.chartWithMock}
+                            />
+                        )}
 
                         {!dataOrError && <p className={styles.loadingChartInfo}>{mockMessage}</p>}
                     </LineChartSettingsContext.Provider>

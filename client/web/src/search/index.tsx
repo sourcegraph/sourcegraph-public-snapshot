@@ -1,12 +1,14 @@
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
 
+import { replaceRange } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { replaceRange } from '@sourcegraph/shared/src/util/strings'
+
+import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
 
 import { EventLogResult } from './backend'
 
@@ -134,6 +136,7 @@ export interface HomePanelsProps {
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+    fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
 
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date

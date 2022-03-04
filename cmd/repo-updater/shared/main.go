@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -48,7 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const port = "3182"
@@ -59,6 +57,12 @@ var stateHTMLTemplate string
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
 type EnterpriseInit func(db database.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+
+type LazyDebugserverEndpoint struct {
+	repoUpdaterStateEndpoint   http.HandlerFunc
+	listAuthzProvidersEndpoint http.HandlerFunc
+	gitserverReposStatus       http.HandlerFunc
+}
 
 func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
@@ -80,36 +84,10 @@ func Main(enterpriseInit EnterpriseInit) {
 	// Signals health of startup
 	ready := make(chan struct{})
 
-	type LazyDebugserverEndpoint struct {
-		repoUpdaterStateEndpoint   http.HandlerFunc
-		listAuthzProvidersEndpoint http.HandlerFunc
-	}
-	debugserverEndpoints := LazyDebugserverEndpoint{}
-
 	// Start debug server
-	go debugserver.NewServerRoutine(
-		ready,
-		debugserver.Endpoint{
-			Name: "Repo Updater State",
-			Path: "/repo-updater-state",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// wait until we're healthy to respond
-				<-ready
-				// repoUpdaterStateEndpoint is guaranteed to be assigned now
-				debugserverEndpoints.repoUpdaterStateEndpoint(w, r)
-			}),
-		},
-		debugserver.Endpoint{
-			Name: "List Authz Providers",
-			Path: "/list-authz-providers",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// wait until we're healthy to respond
-				<-ready
-				// listAuthzProvidersEndpoint is guaranteed to be assigned now
-				debugserverEndpoints.listAuthzProvidersEndpoint(w, r)
-			}),
-		},
-	).Start()
+	debugserverEndpoints := LazyDebugserverEndpoint{}
+	debugServerRoutine := createDebugServerRoutine(ready, &debugserverEndpoints)
+	go debugServerRoutine.Start()
 
 	clock := func() time.Time { return time.Now().UTC() }
 
@@ -120,25 +98,17 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
-	}
+	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
 	db := database.NewDB(sqlDB)
-	// Generally we'll mark the service as ready sometime after the database
-	// has been connected; migrations may take a while and we don't want to
-	// start accepting traffic until we've fully constructed the server we'll
-	// be exposing. We have a bit more to do in this method, though, and the
-	// process will be marked ready further down this function.
+
+	// Generally we'll mark the service as ready sometime after the database has been
+	// connected; migrations may take a while and we don't want to start accepting
+	// traffic until we've fully constructed the server we'll be exposing. We have a
+	// bit more to do in this method, though, and the process will be marked ready
+	// further down this function.
 
 	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
@@ -156,13 +126,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
+		src = repos.NewSourcer(database.NewDB(db).ExternalServices(), cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
 	}
 
-	scheduler := repos.NewUpdateScheduler()
+	updateScheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
 		Store:                 store,
-		Scheduler:             scheduler,
+		Scheduler:             updateScheduler,
 		GitserverClient:       gitserver.DefaultClient,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
@@ -198,7 +168,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
 	}
 
-	go watchSyncer(ctx, syncer, scheduler, gps, server.PermsSyncer)
+	go watchSyncer(ctx, syncer, updateScheduler, gps, server.PermsSyncer)
 	go func() {
 		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -208,7 +178,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncScheduler(ctx, scheduler, store)
+	go syncScheduler(ctx, updateScheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := rate.NewLimiter(.05, 1)
@@ -223,7 +193,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	// Git fetches scheduler
-	go repos.RunScheduler(ctx, scheduler)
+	go repos.RunScheduler(ctx, updateScheduler)
 	log15.Debug("started scheduler")
 
 	host := ""
@@ -248,7 +218,124 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	globals.WatchExternalURL(nil)
 
-	debugserverEndpoints.repoUpdaterStateEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(db, updateScheduler, debugDumpers)
+	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
+	debugserverEndpoints.gitserverReposStatus = gitserverReposStatusHandler(db)
+
+	// We mark the service as ready now AFTER assigning the additional endpoints in
+	// the debugserver constructed at the top of this function. This ensures we don't
+	// have a race between becoming ready and a debugserver request failing directly
+	// after being unblocked.
+	close(ready)
+
+	// NOTE: Internal actor is required to have full visibility of the repo table
+	// 	(i.e. bypass repository authorization).
+	authzBypass := func(f http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			r = r.WithContext(actor.WithInternalActor(r.Context()))
+			f.ServeHTTP(w, r)
+		}
+	}
+	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
+	})
+	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
+}
+
+func createDebugServerRoutine(ready chan struct{}, debugserverEndpoints *LazyDebugserverEndpoint) goroutine.BackgroundRoutine {
+	return debugserver.NewServerRoutine(
+		ready,
+		debugserver.Endpoint{
+			Name: "Repo Updater State",
+			Path: "/repo-updater-state",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// wait until we're healthy to respond
+				<-ready
+				// repoUpdaterStateEndpoint is guaranteed to be assigned now
+				debugserverEndpoints.repoUpdaterStateEndpoint(w, r)
+			}),
+		},
+		debugserver.Endpoint{
+			Name: "List Authz Providers",
+			Path: "/list-authz-providers",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// wait until we're healthy to respond
+				<-ready
+				// listAuthzProvidersEndpoint is guaranteed to be assigned now
+				debugserverEndpoints.listAuthzProvidersEndpoint(w, r)
+			}),
+		},
+		debugserver.Endpoint{
+			Name: "Gitserver Repo Status",
+			Path: "/gitserver-repo-status",
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-ready
+				debugserverEndpoints.gitserverReposStatus(w, r)
+			}),
+		},
+	)
+}
+
+func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		repo := r.FormValue("repo")
+		if repo == "" {
+			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
+			return
+		}
+
+		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
+			return
+		}
+
+		resp, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	}
+}
+
+func listAuthzProvidersHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		type providerInfo struct {
+			ServiceType        string `json:"service_type"`
+			ServiceID          string `json:"service_id"`
+			ExternalServiceURL string `json:"external_service_url"`
+		}
+
+		_, providers := authz.GetProviders()
+		infos := make([]providerInfo, len(providers))
+		for i, p := range providers {
+			_, id := extsvc.DecodeURN(p.URN())
+
+			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
+			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
+			infos[i] = providerInfo{
+				ServiceType:        p.ServiceType(),
+				ServiceID:          p.ServiceID(),
+				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+			}
+		}
+
+		resp, err := json.MarshalIndent(infos, "", "  ")
+		if err != nil {
+			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+	}
+}
+
+func repoUpdaterStatsHandler(db database.DB, scheduler *repos.UpdateScheduler, debugDumpers []debugserver.Dumper) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		dumps := []interface{}{
 			scheduler.DebugDump(r.Context(), db),
 		}
@@ -300,72 +387,7 @@ func Main(enterpriseInit EnterpriseInit) {
 				return
 			}
 		}
-	})
-
-	debugserverEndpoints.listAuthzProvidersEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		type providerInfo struct {
-			ServiceType        string `json:"service_type"`
-			ServiceID          string `json:"service_id"`
-			ExternalServiceURL string `json:"external_service_url"`
-		}
-
-		_, providers := authz.GetProviders()
-		infos := make([]providerInfo, len(providers))
-		for i, p := range providers {
-			_, id := extsvc.DecodeURN(p.URN())
-
-			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
-			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
-			infos[i] = providerInfo{
-				ServiceType:        p.ServiceType(),
-				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
-			}
-		}
-
-		resp, err := json.MarshalIndent(infos, "", "  ")
-		if err != nil {
-			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(resp)
-	})
-
-	// We mark the service as ready now AFTER assigning the additional endpoints in
-	// the debugserver constructed at the top of this function. This ensures we don't
-	// have a race between becoming ready and a debugserver request failing directly
-	// after being unblocked.
-	close(ready)
-
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	authzBypass := func(f http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(actor.WithInternalActor(r.Context()))
-			f.ServeHTTP(w, r)
-		}
 	}
-	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
-	})
-	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
-}
-
-type scheduler interface {
-	// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
-	UpdateFromDiff(repos.Diff)
-
-	// PrioritiseUncloned ensures uncloned repos are given priority in the scheduler.
-	PrioritiseUncloned([]string)
-
-	// ListRepos lists all the repos managed by the scheduler.
-	ListRepos() []string
-
-	// EnsureScheduled ensures that all the repos provided are known to the scheduler.
-	EnsureScheduled([]types.MinimalRepo)
 }
 
 type permsSyncer interface {
@@ -376,7 +398,7 @@ type permsSyncer interface {
 func watchSyncer(
 	ctx context.Context,
 	syncer *repos.Syncer,
-	sched scheduler,
+	sched *repos.UpdateScheduler,
 	gps *repos.GitolitePhabricatorMetadataSyncer,
 	permsSyncer permsSyncer,
 ) {
@@ -395,41 +417,42 @@ func watchSyncer(
 			if permsSyncer != nil {
 				// Schedule a repo permissions sync for all private repos that were added or
 				// modified.
-				var repoIDs []api.RepoID
-
-				for _, r := range diff.Added {
-					if r.Private {
-						repoIDs = append(repoIDs, r.ID)
-					}
-				}
-
-				for _, r := range diff.Modified {
-					if r.Private {
-						repoIDs = append(repoIDs, r.ID)
-					}
-				}
-
-				permsSyncer.ScheduleRepos(ctx, repoIDs...)
+				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
 			}
 
-			if gps == nil {
-				continue
+			if gps != nil {
+				go func() {
+					if err := gps.Sync(ctx, diff.Repos()); err != nil {
+						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+					}
+				}()
 			}
-
-			go func() {
-				if err := gps.Sync(ctx, diff.Repos()); err != nil {
-					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
-				}
-			}()
-
 		}
 	}
+}
+
+func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
+	repoIDs := make([]api.RepoID, 0, len(diff.Added)+len(diff.Modified))
+
+	for _, r := range diff.Added {
+		if r.Private {
+			repoIDs = append(repoIDs, r.ID)
+		}
+	}
+
+	for _, r := range diff.Modified {
+		if r.Private {
+			repoIDs = append(repoIDs, r.ID)
+		}
+	}
+
+	return repoIDs
 }
 
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched scheduler, store *repos.Store) {
+func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store *repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {

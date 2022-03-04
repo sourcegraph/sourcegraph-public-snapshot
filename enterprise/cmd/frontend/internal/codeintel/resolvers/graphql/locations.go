@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -14,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // CachedLocationResolver resolves repositories, commits, and git tree entries and caches the resulting
@@ -192,10 +191,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 	}
 
 	// Resolve new value and store in cache
-	resolver, err := r.resolvePath(ctx, parentResolver.resolver, path)
-	if err != nil {
-		return nil, err
-	}
+	resolver := r.resolvePath(parentResolver.resolver, path)
 	parentResolver.children[path] = resolver
 	return resolver, nil
 }
@@ -238,8 +234,8 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
-func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver *gql.GitCommitResolver, path string) (*gql.GitTreeEntryResolver, error) {
-	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, true)), nil
+func (r *CachedLocationResolver) resolvePath(commitResolver *gql.GitCommitResolver, path string) *gql.GitTreeEntryResolver {
+	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, false))
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The

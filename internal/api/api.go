@@ -17,7 +17,7 @@ type RepoID int32
 // Previously, this was called RepoURI.
 type RepoName string
 
-// Repository hashed name
+// RepoHashedName is the hashed name of a repo
 type RepoHashedName string
 
 func (r RepoName) Equal(o RepoName) bool {
@@ -34,6 +34,10 @@ func (c CommitID) Short() string {
 	}
 	return string(c)
 }
+
+// RevSpec is a revision range specifier suitable for passing to git. See
+// the manpage gitrevisions(7).
+type RevSpec string
 
 // Repo represents a source code repository.
 type Repo struct {

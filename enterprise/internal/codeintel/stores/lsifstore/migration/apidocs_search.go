@@ -3,8 +3,6 @@ package migration
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // APIDocsSearchMigrationID is the primary key of the migration record handled by an instance of
@@ -105,7 +104,7 @@ func (m *apiDocsSearchMigrator) Up(ctx context.Context) error {
 	for range dumpIDs {
 		err := <-done
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 	return errs

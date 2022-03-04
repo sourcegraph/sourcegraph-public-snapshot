@@ -5,7 +5,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Card, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
+import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
@@ -28,6 +28,7 @@ interface CaptureGroupCreationFormProps {
     stepValue: useFieldAPI<CaptureGroupFormFields['stepValue']>
     query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery']>
 
+    dashboardReferenceCount?: number
     isFormClearActive?: boolean
     className?: string
 
@@ -45,6 +46,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         step,
         stepValue,
         mode,
+        dashboardReferenceCount,
         className,
         isFormClearActive,
         onFormReset,
@@ -59,6 +61,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     const isEditMode = mode === 'edit'
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
             <FormGroup
                 name="insight repositories"
@@ -92,11 +95,11 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            limitations here.
                         </Link>
                     </small>
                 </label>
@@ -111,7 +114,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <>
                         Generated dynamically for each unique value from the regular expression capture group.{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener"
                         >
@@ -125,6 +128,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                         title="Search query"
                         required={true}
                         as={CaptureGroupQueryInput}
+                        repositories={repositories.input.value}
                         subtitle={<QueryFieldSubtitle className="mb-3" />}
                         placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                         valid={query.meta.touched && query.meta.validState === 'VALID'}
@@ -144,7 +148,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <small className="mt-3">
                         Explore{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
+                            to="/help/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -152,7 +156,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                         </Link>{' '}
                         and learn more about{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
@@ -186,6 +190,10 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
+
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
+            )}
 
             <hr className="my-4 w-100" />
 
@@ -225,7 +233,7 @@ const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = prop
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
         <Link
-            to="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
+            to="/help/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
             target="_blank"
             rel="noopener"
         >

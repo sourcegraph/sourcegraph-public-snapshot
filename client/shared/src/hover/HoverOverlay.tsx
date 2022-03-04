@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { CSSProperties } from 'react'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 import { Card } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
@@ -9,7 +9,6 @@ import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
-import { sanitizeClass } from '../util/strings'
 
 import hoverOverlayStyle from './HoverOverlay.module.scss'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName, GetAlertVariant } from './HoverOverlay.types'
@@ -92,6 +91,8 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         actionItemPressedClassName,
         contentClassName,
 
+        actionItemStyleProps,
+
         getAlertClassName,
         getAlertVariant,
         onAlertDismissed,
@@ -111,7 +112,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
             data-testid="hover-overlay"
             // eslint-disable-next-line react/forbid-dom-props
             style={getOverlayStyle(overlayPosition)}
-            className={classNames(hoverOverlayStyle.hoverOverlay, className)}
+            className={classNames(hoverOverlayStyle.card, hoverOverlayStyle.hoverOverlay, className)}
             ref={hoverRef}
         >
             <div
@@ -169,6 +170,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                                     telemetryService={telemetryService}
                                     extensionsController={extensionsController}
                                     location={location}
+                                    actionItemStyleProps={actionItemStyleProps}
                                 />
                             ))}
                         </div>

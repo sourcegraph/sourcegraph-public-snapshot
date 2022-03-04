@@ -38,7 +38,10 @@ import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 export enum TabName {
     Changesets = 'changesets',
     Chart = 'chart',
+    // Non-SSBC
     Spec = 'spec',
+    // SSBC-only
+    Executions = 'executions',
     Archived = 'archived',
     BulkOperations = 'bulkoperations',
 }
@@ -51,6 +54,8 @@ export interface BatchChangeDetailsProps
         TelemetryProps {
     history: H.History
     location: H.Location
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
 
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
@@ -73,6 +78,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     location,
     platformContext,
     settingsCascade,
+    initialTab = TabName.Changesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
@@ -86,7 +92,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
         false
 
     return (
-        <BatchChangeTabs history={history} location={location}>
+        <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
                     <span>
@@ -118,11 +124,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     </BatchChangeTab>
                 )}
                 {executionEnabled && (
-                    <BatchChangeTab index={2} name={TabName.Spec}>
+                    <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
                             <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
-                            <span className="text-content" data-tab-content="Specs">
-                                Specs
+                            <span className="text-content" data-tab-content="Executions">
+                                Executions
                             </span>
                         </span>
                     </BatchChangeTab>
@@ -151,7 +157,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 </BatchChangeTab>
             </BatchChangeTabList>
             <BatchChangeTabPanels>
-                <BatchChangeTabPanel index={0}>
+                <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
@@ -167,39 +173,38 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         onlyArchived={false}
                     />
                 </BatchChangeTabPanel>
-                <BatchChangeTabPanel index={1}>
+                <BatchChangeTabPanel>
                     <BatchChangeBurndownChart
                         batchChangeID={batchChange.id}
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         history={history}
                     />
                 </BatchChangeTabPanel>
-                {!executionEnabled && (
-                    <BatchChangeTabPanel index={2}>
-                        <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-                            <BatchSpecMeta
-                                createdAt={batchChange.createdAt}
-                                lastApplier={batchChange.lastApplier}
-                                lastAppliedAt={batchChange.lastAppliedAt}
-                            />
-                            <BatchSpecDownloadButton
-                                name={batchChange.name}
-                                isLightTheme={isLightTheme}
-                                originalInput={batchChange.currentSpec.originalInput}
-                            />
-                        </div>
-                        <Container>
-                            <BatchSpec
-                                name={batchChange.name}
-                                originalInput={batchChange.currentSpec.originalInput}
-                                isLightTheme={isLightTheme}
-                                className={styles.batchSpec}
-                            />
-                        </Container>
-                    </BatchChangeTabPanel>
-                )}
-                {executionEnabled && (
-                    <BatchChangeTabPanel index={2}>
+                <BatchChangeTabPanel>
+                    {!executionEnabled ? (
+                        <>
+                            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+                                <BatchSpecMeta
+                                    createdAt={batchChange.createdAt}
+                                    lastApplier={batchChange.lastApplier}
+                                    lastAppliedAt={batchChange.lastAppliedAt}
+                                />
+                                <BatchSpecDownloadButton
+                                    name={batchChange.name}
+                                    isLightTheme={isLightTheme}
+                                    originalInput={batchChange.currentSpec.originalInput}
+                                />
+                            </div>
+                            <Container>
+                                <BatchSpec
+                                    name={batchChange.name}
+                                    originalInput={batchChange.currentSpec.originalInput}
+                                    isLightTheme={isLightTheme}
+                                    className={styles.batchSpec}
+                                />
+                            </Container>
+                        </>
+                    ) : (
                         <Container>
                             <BatchChangeBatchSpecList
                                 history={history}
@@ -209,9 +214,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                                 isLightTheme={isLightTheme}
                             />
                         </Container>
-                    </BatchChangeTabPanel>
-                )}
-                <BatchChangeTabPanel index={3}>
+                    )}
+                </BatchChangeTabPanel>
+                <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
@@ -226,7 +231,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         refetchBatchChange={refetchBatchChange}
                     />
                 </BatchChangeTabPanel>
-                <BatchChangeTabPanel index={4}>
+                <BatchChangeTabPanel>
                     <BulkOperationsTab batchChangeID={batchChange.id} />
                 </BatchChangeTabPanel>
             </BatchChangeTabPanels>

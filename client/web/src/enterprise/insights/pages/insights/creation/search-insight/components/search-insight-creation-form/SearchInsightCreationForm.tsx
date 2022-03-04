@@ -1,18 +1,18 @@
-import React, { FormEventHandler, RefObject, useContext } from 'react'
+import React, { FormEventHandler, RefObject } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { CodeInsightTimeStepPicker, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
+import {
+    CodeInsightDashboardsVisibility,
+    CodeInsightTimeStepPicker,
+} from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -27,13 +27,11 @@ interface CreationSearchInsightFormProps {
     submitted: boolean
     className?: string
     isFormClearActive?: boolean
+    dashboardReferenceCount?: number
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
-
-    visibility: useFieldAPI<CreateInsightFormFields['visibility']>
-    subjects: SupportedInsightSubject[]
 
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
@@ -74,13 +72,12 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         title,
         repositories,
         allReposMode,
-        visibility,
-        subjects,
         series,
         stepValue,
         step,
         className,
         isFormClearActive,
+        dashboardReferenceCount,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -92,15 +89,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
     const isEditMode = mode === 'edit'
 
-    const api = useContext(CodeInsightsBackendContext)
-
-    // We have to know about what exactly api we use to be able switch our UI properly.
-    // In the creation UI case we should hide visibility section since we don't use that
-    // concept anymore with new GQL backend.
-    // TODO [VK]: Remove this condition rendering when we deprecate setting-based api
-    const isGqlBackend = api instanceof CodeInsightsGqlBackend
-
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
             <FormGroup
                 name="insight repositories"
@@ -136,11 +126,11 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     <small className="w-100 mt-2 text-muted">
                         This feature is actively in development. Read about the{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                            to="/help/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            limitations here.
                         </Link>
                     </small>
                 </label>
@@ -157,7 +147,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             >
                 <FormSeries
                     series={series.input.value}
-                    isBackendInsightEdit={isGqlBackend ? false : isEditMode && allReposMode.input.value}
+                    repositories={repositories.input.value}
                     showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
@@ -181,14 +171,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="d-flex flex-column"
                 />
 
-                {!isGqlBackend && (
-                    <VisibilityPicker
-                        subjects={subjects}
-                        value={visibility.input.value}
-                        onChange={visibility.input.onChange}
-                    />
-                )}
-
                 <CodeInsightTimeStepPicker
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
@@ -199,6 +181,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     numberOfPoints={allReposMode.input.value ? 12 : 7}
                 />
             </FormGroup>
+
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
+            )}
 
             <hr className="my-4 w-100" />
 

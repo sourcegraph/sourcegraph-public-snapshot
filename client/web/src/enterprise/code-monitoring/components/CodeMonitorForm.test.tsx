@@ -3,7 +3,8 @@ import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { mockAuthenticatedUser, mockCodeMonitorFields } from '../testing/util'
 
@@ -19,12 +20,20 @@ const PROPS: CodeMonitorFormProps = {
 
 describe('CodeMonitorForm', () => {
     test('Uses trigger query when present', () => {
-        renderWithRouter(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} triggerQuery="foo" />
+            </MockedTestProvider>
+        )
         expect(screen.getByTestId('trigger-query-edit')).toHaveValue('foo')
     })
 
     test('Submit button disabled if no actions are present', () => {
-        const { getByTestId } = renderWithRouter(<CodeMonitorForm {...PROPS} codeMonitor={mockCodeMonitorFields} />)
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} codeMonitor={mockCodeMonitorFields} />
+            </MockedTestProvider>
+        )
 
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('delete-action-email'))
@@ -33,8 +42,10 @@ describe('CodeMonitorForm', () => {
     })
 
     test('Submit button enabled if one action is present', () => {
-        const { getByTestId } = renderWithRouter(
-            <CodeMonitorForm {...PROPS} codeMonitor={{ ...mockCodeMonitorFields, actions: { nodes: [] } }} />
+        const { getByTestId } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <CodeMonitorForm {...PROPS} codeMonitor={{ ...mockCodeMonitorFields, actions: { nodes: [] } }} />
+            </MockedTestProvider>
         )
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('submit-action-email'))

@@ -22,8 +22,9 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHeadersMiddleware(t *testing.T) {
@@ -442,6 +443,7 @@ func TestExpJitterDelay(t *testing.T) {
 	}
 }
 
+//nolint:unparam // unparam complains that `code` always has same value across call-sites, but that's OK
 func newFakeClient(code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()

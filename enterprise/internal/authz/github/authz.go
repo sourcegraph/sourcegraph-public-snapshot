@@ -3,22 +3,38 @@ package github
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// ExternalConnection is a composite object of a GITHUB kind external service and
+// parsed connection information.
+type ExternalConnection struct {
+	*types.ExternalService
+	*types.GitHubConnection
+}
+
 // NewAuthzProviders returns the set of GitHub authz providers derived from the connections.
-// It also returns any validation problems with the config, separating these into "serious problems" and
-// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func NewAuthzProviders(
-	conns []*types.GitHubConnection,
+	externalServicesStore database.ExternalServiceStore,
+	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
 ) (ps []authz.Provider, problems []string, warnings []string) {
@@ -42,7 +58,7 @@ func NewAuthzProviders(
 
 	for _, c := range conns {
 		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token)
+		p, err := newAuthzProvider(externalServicesStore, c)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p == nil {
@@ -75,11 +91,6 @@ func NewAuthzProviders(
 			p.groupsCache = nil
 		}
 
-		// Check for other validation issues.
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("GitHub config for %s was invalid: %s", p.ServiceID(), problem))
-		}
-
 		// Register this provider.
 		ps = append(ps, p)
 	}
@@ -89,33 +100,48 @@ func NewAuthzProviders(
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
-func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, token string) (*Provider, error) {
-	if a == nil {
+func newAuthzProvider(
+	externalServicesStore database.ExternalServiceStore,
+	c *ExternalConnection,
+) (*Provider, error) {
+	if c.Authorization == nil {
 		return nil, nil
 	}
 
-	ghURL, err := url.Parse(instanceURL)
+	baseURL, err := url.Parse(c.Url)
 	if err != nil {
-		return nil, errors.Errorf("Could not parse URL for GitHub instance %q: %s", instanceURL, err)
+		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
+	}
+
+	if c.GithubAppInstallationID != "" {
+		dotcomConfig := conf.SiteConfig().Dotcom
+		if !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph Cloud is not enabled")
+		}
+
+		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "parse installation ID")
+		}
+		return newAppProvider(externalServicesStore, c.ExternalService, c.GitHubConnection.URN, baseURL, dotcomConfig.GithubAppCloud.AppID, dotcomConfig.GithubAppCloud.PrivateKey, installationID, nil)
 	}
 
 	// Disable by default for now
-	if a.GroupsCacheTTL <= 0 {
-		a.GroupsCacheTTL = -1
+	if c.Authorization.GroupsCacheTTL <= 0 {
+		c.Authorization.GroupsCacheTTL = -1
 	}
 
-	ttl := time.Duration(a.GroupsCacheTTL) * time.Hour
-
-	return NewProvider(urn, ProviderOptions{
-		GitHubURL:      ghURL,
-		BaseToken:      token,
+	ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
+	return NewProvider(c.GitHubConnection.URN, ProviderOptions{
+		GitHubURL:      baseURL,
+		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
 	}), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
-func ValidateAuthz(cfg *schema.GitHubConnection) error {
-	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token)
+func ValidateAuthz(c *types.GitHubConnection) error {
+	_, err := newAuthzProvider(nil, &ExternalConnection{GitHubConnection: c})
 	return err
 }

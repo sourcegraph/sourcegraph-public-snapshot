@@ -6,12 +6,12 @@ import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 
+import { highlightNode } from '@sourcegraph/common'
 import { highlightCode } from '@sourcegraph/search'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import styles from './CommitSearchResultMatch.module.scss'
@@ -19,6 +19,7 @@ import searchResultStyles from './SearchResult.module.scss'
 
 interface CommitSearchResultMatchProps extends PlatformContextProps<'requestGraphQL'> {
     item: CommitMatch
+    openInNewTab?: boolean
 }
 
 interface CommitSearchResultMatchState {
@@ -146,6 +147,8 @@ export class CommitSearchResultMatch extends React.Component<
             lastLine++
         }
 
+        const openInNewTabProps = this.props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
+
         return (
             <VisibilitySensor
                 active={true}
@@ -165,6 +168,7 @@ export class CommitSearchResultMatch extends React.Component<
                             key={this.props.item.url}
                             to={this.props.item.url}
                             className={searchResultStyles.searchResultMatch}
+                            {...openInNewTabProps}
                         >
                             <code>
                                 <Markdown

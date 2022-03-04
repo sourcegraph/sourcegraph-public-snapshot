@@ -1,0 +1,28 @@
+.error-icon {
+    color: var(--danger);
+}
+
+.check-icon {
+    color: var(--icon-color);
+}
+
+.error-icon-spacer {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+}
+
+.separator {
+    // Make it full width in the current row.
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border-color-2);
+    margin: 1rem 0;
+}
+
+.expanded-row {
+    grid-column: 1 / span 2;
+    margin-left: 2rem;
+    background-color: var(--body-bg);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+}

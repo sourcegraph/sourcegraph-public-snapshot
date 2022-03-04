@@ -18,7 +18,6 @@ type DBStore interface {
 		refDescriptions map[string][]gitdomain.RefDescription,
 		maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration,
 		dirtyToken int,
-		now time.Time,
 	) error
 	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
 }
@@ -28,6 +27,6 @@ type Locker interface {
 }
 
 type GitserverClient interface {
-	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitdomain.RefDescription, error)
+	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }

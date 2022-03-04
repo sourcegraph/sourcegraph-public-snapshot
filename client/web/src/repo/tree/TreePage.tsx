@@ -5,6 +5,7 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
+import GraphOutlineIcon from 'mdi-react/GraphOutlineIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -17,7 +18,14 @@ import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import {
+    asError,
+    ErrorLike,
+    isErrorLike,
+    pluralize,
+    encodeURIPathComponent,
+    memoizeObservable,
+} from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -33,10 +41,17 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
+import { toURIWithPath, toPrettyBlobURL, buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Button,
+    useObservable,
+    ButtonGroup,
+    Link,
+    ProductStatusBadge,
+} from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -46,8 +61,8 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { CodeInsightsProps } from '../../insights/types'
+import { SearchPatternType, GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { repoFilterForRepoRevision } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -115,7 +130,6 @@ interface Props
         ActivationProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
@@ -147,7 +161,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-    extensionViews: ExtensionViewsSection,
     ...props
 }) => {
     useEffect(() => {
@@ -320,6 +333,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
 
+    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
+    const repoDepsSearchQueryURL = buildSearchURLQuery(
+        `repo:deps(${repoFilterForRepoRevision(repo.name, false, revision)})`,
+        SearchPatternType.literal,
+        false
+    )
+
     return (
         <div className={styles.treePage}>
             <Container className={styles.container}>
@@ -413,6 +433,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
                                             </Button>
                                         )}
+                                        {dependenciesSearchEnabled && (
+                                            <Button
+                                                to={`/search?${repoDepsSearchQueryURL}`}
+                                                variant="secondary"
+                                                outline={true}
+                                                as={Link}
+                                            >
+                                                <GraphOutlineIcon className="icon-inline" /> Dependencies{' '}
+                                                <ProductStatusBadge status="beta" />
+                                            </Button>
+                                        )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
                                         {repo.viewerCanAdminister && (
                                             <Button
@@ -433,16 +464,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </header>
-
-                        <ExtensionViewsSection
-                            className={classNames('mb-3', styles.section)}
-                            telemetryService={props.telemetryService}
-                            settingsCascade={settingsCascade}
-                            platformContext={props.platformContext}
-                            extensionsController={props.extensionsController}
-                            where="directory"
-                            uri={uri}
-                        />
 
                         <section className={classNames('test-tree-entries mb-3', styles.section)}>
                             <h2>Files and directories</h2>

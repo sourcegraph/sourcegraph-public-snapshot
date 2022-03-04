@@ -3,9 +3,12 @@ import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
+import * as execa from 'execa'
+import * as semver from 'semver'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
+import * as chart from './chart'
 import { Config, releaseVersions } from './config'
 import {
     getAuthenticatedGitHubClient,
@@ -19,7 +22,7 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
-    createRelease,
+    createLatestRelease,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -353,6 +356,10 @@ These steps must be completed before this PR can be merged, unless otherwise sta
 ${actionItems.map(item => `- [ ] ${item}`).join('\n')}
 
 cc @${config.captainGitHubUsername}
+
+### Test plan
+
+CI checks in this repository should pass, and a manual review should confirm if the generated changes are correct.
 `,
                 }
             }
@@ -371,7 +378,7 @@ cc @${config.captainGitHubUsername}
 
             // Render changes
             const createdChanges = await createChangesets({
-                requiredCommands: ['comby', sed, 'find', 'go'],
+                requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
                 changes: [
                     {
                         owner: 'sourcegraph',
@@ -420,7 +427,7 @@ cc @${config.captainGitHubUsername}
                                     items.push('Update the upgrade guides in `doc/admin/updates`')
                                 } else {
                                     items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](departments/product-engineering/engineering/process/releases#changelogmd).',
+                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#changelogmd).',
                                         'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
                                     )
                                 }
@@ -494,6 +501,38 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             `${sed} -i -E 's/export SOURCEGRAPH_VERSION=${versionRegex}/export SOURCEGRAPH_VERSION=${release.version}/g' resources/user-data.sh`,
+                        ],
+                        ...prBodyAndDraftState([]),
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'deploy-sourcegraph-helm',
+                        base: 'main',
+                        head: `publish-${release.version}`,
+                        commitMessage: defaultPRMessage,
+                        title: defaultPRMessage,
+                        edits: [
+                            `sg ops update-images -kind helm -pin-tag ${release.version} charts/sourcegraph/.`,
+                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version}"/g' charts/sourcegraph/Chart.yaml`,
+                            (directory: string) => {
+                                const chartYamlPath = path.join(directory, 'charts/sourcegraph/Chart.yaml')
+                                const metadata = chart.parseChartMetadata(chartYamlPath)
+                                const parsedPreviousVersion = semver.parse(metadata.version)
+                                if (!parsedPreviousVersion) {
+                                    throw new Error('`version` field in Chart.yaml is not valid semver')
+                                }
+                                const nextVersion = notPatchRelease
+                                    ? parsedPreviousVersion.inc('minor')
+                                    : parsedPreviousVersion.inc('patch')
+                                execa.sync(
+                                    'bash',
+                                    [
+                                        '-c',
+                                        `${sed} -i 's/version:.*/version: ${nextVersion.version}/g' charts/sourcegraph/Chart.yaml`,
+                                    ],
+                                    { stdio: 'inherit', cwd: directory }
+                                )
+                            },
                         ],
                         ...prBodyAndDraftState([]),
                     },
@@ -600,7 +639,7 @@ Batch change: ${batchChangeURL}`,
             // Create final GitHub release
             let githubRelease = ''
             try {
-                githubRelease = await createRelease(
+                githubRelease = await createLatestRelease(
                     githubClient,
                     {
                         owner: 'sourcegraph',
@@ -621,7 +660,7 @@ Batch change: ${batchChangeURL}`,
             const releaseMessage = `*Sourcegraph ${release.version} has been published*
 
 * Changelog: ${changelogURL(release.format())}
-* GitHub release: ${githubRelease || 'Failed to generate release'}
+* GitHub release: ${githubRelease || 'No release generated'}
 * Release batch change: ${batchChangeURL}`
 
             // Slack

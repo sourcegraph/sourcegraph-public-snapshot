@@ -12,13 +12,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -140,13 +139,14 @@ func TestNoMaliciousFiles(t *testing.T) {
 	createMaliciousJar(t, jarPath)
 
 	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DBStore: &simpleJVMPackageDBStoreMock{},
+		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsStore: NewMockDependenciesStore(),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	err = s.commitJar(ctx, reposource.MavenDependency{}, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
+	dep := &reposource.MavenDependency{MavenModule: &reposource.MavenModule{}}
+	err = s.commitJar(ctx, dep, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
 	assert.NotNil(t, err)
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -191,8 +191,8 @@ func TestJVMCloneCommand(t *testing.T) {
 	coursier.CoursierBinary = coursierScript(t, dir)
 
 	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DBStore: &simpleJVMPackageDBStoreMock{},
+		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsStore: NewMockDependenciesStore(),
 	}
 	bareGitDirectory := path.Join(dir, "git")
 
@@ -253,19 +253,13 @@ func TestJVMCloneCommand(t *testing.T) {
 	)
 }
 
-type simpleJVMPackageDBStoreMock struct{}
-
-func (m *simpleJVMPackageDBStoreMock) GetJVMDependencyRepos(ctx context.Context, filter dbstore.GetJVMDependencyReposOpts) ([]dbstore.JVMDependencyRepo, error) {
-	return []dbstore.JVMDependencyRepo{}, nil
-}
-
-// Sanity check errors.Is
-func TestIsError(t *testing.T) {
-	err := coursier.ErrNoSources{Dependency: reposource.MavenDependency{}}
-	if !errors.Is(err, coursier.ErrNoSources{}) {
+// Sanity check errors.HasType
+func TestErrorHasType(t *testing.T) {
+	err := &coursier.ErrNoSources{}
+	if !errors.HasType(err, &coursier.ErrNoSources{}) {
 		t.Fatal("should be true")
 	}
-	if errors.Is(nil, coursier.ErrNoSources{}) {
+	if errors.Is(nil, &coursier.ErrNoSources{}) {
 		t.Fatal("should be false")
 	}
 }

@@ -39,7 +39,7 @@ func (r *batchChangesConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 func (r *batchChangesConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	opts := store.CountBatchChangesOpts{
 		ChangesetID:                   r.opts.ChangesetID,
-		State:                         r.opts.State,
+		States:                        r.opts.States,
 		CreatorID:                     r.opts.CreatorID,
 		NamespaceUserID:               r.opts.NamespaceUserID,
 		NamespaceOrgID:                r.opts.NamespaceOrgID,

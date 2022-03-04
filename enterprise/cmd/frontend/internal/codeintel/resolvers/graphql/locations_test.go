@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const numRoutines = 5
@@ -240,7 +240,7 @@ func TestResolveLocations(t *testing.T) {
 		backend.Mocks.Repos.GetCommit = nil
 	})
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}
@@ -271,13 +271,13 @@ func TestResolveLocations(t *testing.T) {
 	if len(locations) != 3 {
 		t.Fatalf("unexpected length. want=%d have=%d", 3, len(locations))
 	}
-	if url := locations[0].CanonicalURL(); url != "/repo50@deadbeef1/-/tree/p1?L12:13-14:15" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/tree/p1?L12:13-14:15", url)
+	if url := locations[0].CanonicalURL(); url != "/repo50@deadbeef1/-/blob/p1?L12:13-14:15" {
+		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/blob/p1?L12:13-14:15", url)
 	}
-	if url := locations[1].CanonicalURL(); url != "/repo51@deadbeef2/-/tree/p2?L22:23-24:25" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/tree/p2?L22:23-24:25", url)
+	if url := locations[1].CanonicalURL(); url != "/repo51@deadbeef2/-/blob/p2?L22:23-24:25" {
+		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/blob/p2?L22:23-24:25", url)
 	}
-	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/tree/p4?L42:43-44:45" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/tree/p4?L42:43-44:45", url)
+	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/blob/p4?L42:43-44:45" {
+		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/blob/p4?L42:43-44:45", url)
 	}
 }

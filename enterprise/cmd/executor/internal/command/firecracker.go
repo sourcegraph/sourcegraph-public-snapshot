@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type commandRunner interface {
@@ -30,7 +30,7 @@ const firecrackerContainerDir = "/work"
 // The name value supplied here refers to the Firecracker virtual machine, which must have
 // also been the name supplied to a successful invocation of setupFirecracker. Additionally,
 // the virtual machine must not yet have been torn down (via teardownFirecracker).
-func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Options) command {
+func formatFirecrackerCommand(spec CommandSpec, name string, options Options) command {
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
 	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
@@ -114,7 +114,7 @@ func callWithInstrumentedLock(operations *Operations, f func() error) error {
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
 // the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, options Options, operations *Operations) error {
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),

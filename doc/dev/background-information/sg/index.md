@@ -100,6 +100,17 @@ go build -o ~/my/path/sg ./dev/sg
 
 Then make sure that `~/my/path` is in your `$PATH`.
 
+## Updates
+
+Once set up, `sg` will automatically check for updates and let you know when there are changes.
+To update `sg`, run:
+
+```sh
+sg update
+```
+
+> NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
+
 ## Usage
 
 See [configuration](#configuration) to learn more about configuring `sg` behaviour.
@@ -109,6 +120,9 @@ See [configuration](#configuration) to learn more about configuring `sg` behavio
 ```bash
 # Run default environment, Sourcegraph enterprise:
 sg start
+
+# (macOs only) Automatically add exceptions to the system firewall 
+sg start -add-to-macos-firewall
 
 # List available environments (defined under `commandSets` in `sg.config.yaml`):
 sg start -help
@@ -205,7 +219,7 @@ sg rfc open 420
 
 ### `sg ci` - Interact with Sourcegraph's continuous integration
 
-Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/ci) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
 
 ```bash
 # Preview what a CI run for your current changes will look like
@@ -232,6 +246,13 @@ sg ci logs --build 123456
 sg ci build 
 # Manually trigger a build on the CI on the current branch, but with a specific commit
 sg ci build --commit my-commit
+# Manually trigger a main-dry-run build of the HEAD commit on the current branch
+sg ci build main-dry-run
+sg ci build --force main-dry-run
+# Manually trigger a main-dry-run build of a specified commit on the current ranch
+sg ci build --force --commit my-commit main-dry-run
+# View the available special build types
+sg ci build --help
 ```
 
 ### `sg teammate` - Get current time or open their handbook page
@@ -258,23 +279,23 @@ sg secret reset buildkite
 
 ```
 
-### `sg check` - Run checks against local code
+### `sg lint` - Run linters against local code
 
 ```bash
 # Run all possible checks 
-sg check
+sg lint
 
 # Run only go related checks
-sg check go
+sg lint go
 
 # Run only shell related checks
-sg check shell
+sg lint shell
 
 # Run only client related checks
-sg check client 
+sg lint client
 
 # List all available check groups 
-sg check --help
+sg lint --help
 ```
 
 ### `sg db` - Interact with your local Sourcegraph database(s)

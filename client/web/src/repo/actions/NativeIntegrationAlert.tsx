@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { AlertLink } from '@sourcegraph/wildcard'
 
+import { ExtensionRadialGradientIcon } from '../../components/CtaIcons'
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
-import { ExtensionRadialGradientIcon } from '../../search/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 export interface NativeIntegrationAlertProps {
-    className: string
+    className?: string
+    page: 'search' | 'file'
     onAlertDismissed: () => void
     externalURLs: ExternalLinkFields[]
 }
@@ -25,12 +26,18 @@ const supportedServiceTypes = new Set<string>([
 
 export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAlertProps> = ({
     className,
+    page,
     onAlertDismissed,
     externalURLs,
 }) => {
+    const args = useMemo(() => ({ page }), [page])
     useEffect(() => {
-        eventLogger.log('NativeIntegrationInstallShown')
-    }, [])
+        eventLogger.log('NativeIntegrationInstallShown', args, args)
+    }, [args])
+
+    const installLinkClickHandler = useCallback((): void => {
+        eventLogger.log('NativeIntegrationInstallClicked', args, args)
+    }, [args])
 
     const externalLink = externalURLs.find(link => link.serviceKind && supportedServiceTypes.has(link.serviceKind))
     if (!externalLink) {
@@ -47,7 +54,7 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
                 <>
                     Sourcegraph's code intelligence will follow you to your code host.{' '}
                     <AlertLink
-                        to="https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=inproduct-cta&utm_medium=direct_traffic&utm_source=search-results-cta&utm_term=null&utm_content=install-browser-exten"
+                        to="https://docs.sourcegraph.com/integration/browser_extension?utm_campaign=search-results-cta&utm_medium=direct_traffic&utm_source=in-product&utm_term=null&utm_content=install-browser-exten"
                         target="_blank"
                         rel="noopener"
                     >
@@ -61,8 +68,4 @@ export const NativeIntegrationAlert: React.FunctionComponent<NativeIntegrationAl
             onClose={onAlertDismissed}
         />
     )
-}
-
-const installLinkClickHandler = (): void => {
-    eventLogger.log('NativeIntegrationInstallClicked')
 }

@@ -3,12 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -19,7 +20,7 @@ type TriggerJob struct {
 	// The query we ran including after: filter.
 	QueryString *string
 
-	SearchResults cmtypes.CommitSearchResults
+	SearchResults []*result.CommitMatch
 
 	// Fields demanded for any dbworker.
 	State          string
@@ -69,8 +70,12 @@ SET query_string = %s,
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results cmtypes.CommitSearchResults) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, results, triggerJobID))
+func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error {
+	resultsJSON, err := json.Marshal(results)
+	if err != nil {
+		return err
+	}
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, resultsJSON, triggerJobID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `
@@ -108,7 +113,7 @@ func (o ListTriggerJobsOpts) Conds() *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("query = %s", *o.QueryID))
 	}
 	if o.After != nil {
-		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+		conds = append(conds, sqlf.Sprintf("id < %s", *o.After))
 	}
 	return sqlf.Join(conds, "AND")
 }
@@ -125,7 +130,7 @@ SELECT %s
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND jsonb_array_length(search_results) > 0) OR (state != 'completed'))
 AND %s
-ORDER BY id ASC
+ORDER BY id DESC
 LIMIT %s;
 `
 
@@ -185,12 +190,13 @@ func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
 }
 
 func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
+	var resultsJSON []byte
 	m := &TriggerJob{}
 	err := scanner.Scan(
 		&m.ID,
 		&m.Query,
 		&m.QueryString,
-		&m.SearchResults,
+		&resultsJSON,
 		&m.State,
 		&m.FailureMessage,
 		&m.StartedAt,
@@ -200,7 +206,17 @@ func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 		&m.NumFailures,
 		&m.LogContents,
 	)
-	return m, err
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resultsJSON) > 0 {
+		if err := json.Unmarshal(resultsJSON, &m.SearchResults); err != nil {
+			return nil, err
+		}
+	}
+
+	return m, nil
 }
 
 var TriggerJobsColumns = []*sqlf.Query{

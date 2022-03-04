@@ -3,10 +3,9 @@ package codeintel
 import (
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type indexingConfig struct {
@@ -37,8 +36,8 @@ func (c *indexingConfig) Load() {
 }
 
 func (c *indexingConfig) Validate() error {
-	var errs *multierror.Error
-	errs = multierror.Append(errs, c.BaseConfig.Validate())
-	errs = multierror.Append(errs, c.AutoIndexEnqueuerConfig.Validate())
-	return errs.ErrorOrNil()
+	var errs error
+	errs = errors.Append(errs, c.BaseConfig.Validate())
+	errs = errors.Append(errs, c.AutoIndexEnqueuerConfig.Validate())
+	return errs
 }

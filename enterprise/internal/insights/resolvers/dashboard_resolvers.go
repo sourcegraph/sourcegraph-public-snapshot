@@ -6,22 +6,16 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
-	"github.com/graph-gophers/graphql-go/relay"
-
-	"github.com/cockroachdb/errors"
-
 	"github.com/graph-gophers/graphql-go"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
@@ -43,7 +37,7 @@ type dashboardConnectionResolver struct {
 	err        error
 }
 
-func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Dashboard, int64, error) {
+func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Dashboard, error) {
 	d.once.Do(func() {
 		args := store.DashboardQueryArgs{}
 		if d.args.After != nil {
@@ -86,11 +80,11 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 			}
 		}
 	})
-	return d.dashboards, d.next, d.err
+	return d.dashboards, d.err
 }
 
 func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
-	dashboards, _, err := d.compute(ctx)
+	dashboards, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +97,7 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, err := d.compute(ctx)
+	_, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}

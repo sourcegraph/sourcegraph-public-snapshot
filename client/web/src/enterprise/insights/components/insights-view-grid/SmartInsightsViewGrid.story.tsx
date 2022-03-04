@@ -6,75 +6,27 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../components/WebStory'
 import {
-    LINE_CHART_CONTENT_MOCK,
     LINE_CHART_TESTS_CASES_EXAMPLE,
     LINE_CHART_WITH_HUGE_NUMBER_OF_LINES,
     LINE_CHART_WITH_MANY_LINES,
 } from '../../../../views/mocks/charts-content'
-import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsBackendStoryMock } from '../../CodeInsightsBackendStoryMock'
 import { BackendInsight, Insight, InsightExecutionType, InsightType, isCaptureGroupInsight } from '../../core/types'
-import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
-export default {
-    title: 'web/insights/SmartInsightsViewGrid',
+const defaultStory: Meta = {
+    title: 'web/insights/SmartInsightsViewGridExample',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
-
-const insights: Insight[] = [
-    {
-        id: 'searchInsights.insight.Backend_1',
-        type: InsightExecutionType.Backend,
-        viewType: InsightType.SearchBased,
-        title: 'Backend insight #1',
-        series: [],
-        visibility: 'personal',
-        step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+    parameters: {
+        chromatic: {
+            viewports: [576, 1440],
+            enableDarkMode: true,
+        },
     },
-    {
-        id: 'searchInsights.insight.Backend_2',
-        type: InsightExecutionType.Backend,
-        viewType: InsightType.SearchBased,
-        title: 'Backend insight #2',
-        series: [],
-        visibility: 'personal',
-        step: { weeks: 2 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
-    },
-]
-
-class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
-    constructor() {
-        super(SETTINGS_CASCADE_MOCK, {} as any)
-    }
-
-    public getBackendInsightData = (input: BackendInsight) => {
-        if (isCaptureGroupInsight(input)) {
-            throw new Error('This demo does not support capture group insight')
-        }
-
-        return of({
-            id: input.id,
-            view: {
-                title: 'Backend Insight Mock',
-                subtitle: 'Backend insight description text',
-                content: [LINE_CHART_CONTENT_MOCK],
-                isFetchingHistoricalData: false,
-            },
-        })
-    }
 }
 
-const codeInsightsApi = new CodeInsightsStoryBackend()
-
-export const SmartInsightsViewGridExample = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsApi}>
-        <SmartInsightsViewGrid insights={insights} telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendContext.Provider>
-)
+export default defaultStory
 
 const insightsWithManyLines: Insight[] = [
     {
@@ -86,6 +38,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -96,6 +49,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_3',
@@ -113,6 +67,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_4',
@@ -123,6 +78,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_5',
@@ -154,6 +110,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_6',
@@ -164,6 +121,7 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
     {
         id: 'searchInsights.insight.Backend_7',
@@ -174,15 +132,12 @@ const insightsWithManyLines: Insight[] = [
         visibility: 'personal',
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
+        dashboardReferenceCount: 0,
     },
 ]
 
-class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend {
-    constructor() {
-        super(SETTINGS_CASCADE_MOCK, {} as any)
-    }
-
-    public getBackendInsightData = (insight: BackendInsight) => {
+const codeInsightsApiWithManyLines = {
+    getBackendInsightData: (insight: BackendInsight) => {
         if (isCaptureGroupInsight(insight)) {
             throw new Error('This demo does not support capture group insight')
         }
@@ -202,13 +157,11 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
                 isFetchingHistoricalData: false,
             },
         })
-    }
+    },
 }
 
-const codeInsightsApiWithManyLines = new StoryBackendWithManyLinesCharts()
-
-export const SmartInsightsViewGridWithManyLinesExample = () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsApiWithManyLines}>
+export const SmartInsightsViewGridExample = (): JSX.Element => (
+    <CodeInsightsBackendStoryMock mocks={codeInsightsApiWithManyLines}>
         <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendContext.Provider>
+    </CodeInsightsBackendStoryMock>
 )

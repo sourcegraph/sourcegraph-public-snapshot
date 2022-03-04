@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
@@ -19,6 +17,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // IsEnabled tells if code insights are enabled or not.
@@ -66,16 +65,7 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsTimescaleDSN
 	})
-	var (
-		db  *sql.DB
-		err error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		db, err = connections.NewCodeInsightsDB(dsn, app, true, &observation.TestContext)
-	} else {
-		db, err = connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
-	}
+	db, err := connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}

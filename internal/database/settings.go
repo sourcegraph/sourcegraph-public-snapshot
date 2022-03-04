@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -126,22 +126,13 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 	if err != nil {
 		return nil, err
 	}
-	settings, err := parseQueryRows(ctx, rows)
+	settings, err := parseQueryRows(rows)
 	if err != nil {
 		return nil, err
 	}
 	if len(settings) != 1 {
 		// No configuration has been set for this subject yet.
 		return nil, nil
-	}
-	if settings[0].Contents == "" {
-		// On some instances user, org, and global settings are an invalid
-		// empty string / null.
-		//
-		// This happens particularly on instances that ran old versions of
-		// Sourcegraph where we didn't enforce that settings contents had to be
-		// non-empty for correctness.
-		settings[0].Contents = "{}"
 	}
 	return settings[0], nil
 }
@@ -202,10 +193,10 @@ func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) 
 	if err != nil {
 		return nil, err
 	}
-	return parseQueryRows(ctx, rows)
+	return parseQueryRows(rows)
 }
 
-func parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
+func parseQueryRows(rows *sql.Rows) ([]*api.Settings, error) {
 	settings := []*api.Settings{}
 	defer rows.Close()
 	for rows.Next() {

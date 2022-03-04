@@ -39,7 +39,8 @@
           }
         },
         "codeInsightsLandingPage": {
-          "description": "Enables code insights landing page layout.",
+          "deprecated": true,
+          "description": "DEPRECATED: Enables code insights landing page layout.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -71,7 +72,7 @@
           }
         },
         "searchContextsQuery": {
-          "description": "Enables query based search contexts",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -197,6 +198,14 @@
             "pointer": true
           }
         },
+        "treeSitterEnabled": {
+          "description": "Enables tree sitter for enabled filetypes",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
@@ -224,6 +233,30 @@
         },
         "codeMonitoringWebHooks": {
           "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "coolCodeIntel": {
+          "description": "Use the (cool) experimental reference panel for code intelligence",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "showCodeMonitoringLogs": {
+          "description": "Shows code monitoring logs tab.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "homepageUserInvitation": {
+          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -368,6 +401,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "history.preferAbsoluteTimestamps": {
+      "description": "Show absolute timestamps in the history panel and only show relative timestamps (e.g.: \"5 days ago\") in tooltip when hovering.",
+      "type": "boolean",
+      "default": false
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",

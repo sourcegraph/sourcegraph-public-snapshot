@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -12,11 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
+func DownTo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
 	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to migrate.`)
-		targetFlag     = flagSet.String("target", "", "Revert all children of the given target.")
+		flagSet              = flag.NewFlagSet(fmt.Sprintf("%s downto", commandName), flag.ExitOnError)
+		schemaNameFlag       = flagSet.String("db", "", `The target schema to modify.`)
+		unprivilegedOnlyFlag = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
+		targetsFlag          = flagSet.String("target", "", "Revert all children of the given target. Comma-separated values are accepted.")
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -30,24 +32,36 @@ func DownTo(commandName string, run RunFunc, out *output.Output) *ffcli.Command 
 			return flag.ErrHelp
 		}
 
-		if *targetFlag == "" {
+		targets := strings.Split(*targetsFlag, ",")
+		if len(targets) == 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration target via -target"))
 			return flag.ErrHelp
 		}
 
-		version, err := strconv.Atoi(*targetFlag)
+		versions := make([]int, 0, len(targets))
+		for _, target := range targets {
+			version, err := strconv.Atoi(target)
+			if err != nil {
+				return err
+			}
+
+			versions = append(versions, version)
+		}
+
+		r, err := factory(ctx, []string{*schemaNameFlag})
 		if err != nil {
 			return err
 		}
 
-		return run(ctx, runner.Options{
+		return r.Run(ctx, runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:    *schemaNameFlag,
-					Type:          runner.MigrationOperationTypeTargetedDown,
-					TargetVersion: version,
+					SchemaName:     *schemaNameFlag,
+					Type:           runner.MigrationOperationTypeTargetedDown,
+					TargetVersions: versions,
 				},
 			},
+			UnprivilegedOnly: *unprivilegedOnlyFlag,
 		})
 	}
 

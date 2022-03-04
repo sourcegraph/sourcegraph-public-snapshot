@@ -25,6 +25,7 @@ type CodeIntelResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitBlobCodeIntelInfoArgs) (CodeIntelSupportResolver, error)
 
 	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
@@ -56,6 +57,13 @@ type LSIFRepositoryUploadsQueryArgs struct {
 	RepositoryID graphql.ID
 }
 
+type LSIFUploadRetentionPolicyMatchesArgs struct {
+	MatchesOnly bool
+	First       *int32
+	After       *string
+	Query       *string
+}
+
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
@@ -70,6 +78,7 @@ type LSIFUploadResolver interface {
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 }
 
 type LSIFUploadConnectionResolver interface {
@@ -140,6 +149,7 @@ type QueueAutoIndexJobsForRepoArgs struct {
 }
 
 type GitTreeLSIFDataResolver interface {
+	LSIFUploads(ctx context.Context) ([]LSIFUploadResolver, error)
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
 	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 	DocumentationPathInfo(ctx context.Context, args *LSIFDocumentationPathInfoArgs) (JSONValue, error)
@@ -182,12 +192,14 @@ type LSIFRangesArgs struct {
 type LSIFQueryPositionArgs struct {
 	Line      int32
 	Character int32
+	Filter    *string
 }
 
 type LSIFPagedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
 	graphqlutil.ConnectionArgs
-	After *string
+	After  *string
+	Filter *string
 }
 
 type LSIFQueryDocumentationArgs struct {
@@ -337,4 +349,46 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
+}
+
+type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type CodeIntelligenceRetentionPolicyMatchResolver interface {
+	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
+	Matches() bool
+	ProtectingCommits() *[]string
+}
+
+type GitBlobCodeIntelInfoArgs struct {
+	Repo api.RepoName
+	Path string
+}
+
+type GitBlobCodeIntelInfoResolver interface {
+	Support(context.Context) CodeIntelSupportResolver
+	LSIFUploads(context.Context) (LSIFUploadConnectionResolver, error)
+}
+
+type CodeIntelSupportResolver interface {
+	SearchBasedSupport(context.Context) (SearchBasedCodeIntelSupportResolver, error)
+	PreciseSupport(context.Context) (PreciseCodeIntelSupportResolver, error)
+}
+
+type PreciseCodeIntelSupportResolver interface {
+	SupportLevel() string
+	Indexers() *[]CodeIntelIndexerResolver
+}
+
+type CodeIntelIndexerResolver interface {
+	Name() string
+	URL() string
+}
+
+type SearchBasedCodeIntelSupportResolver interface {
+	SupportLevel() string
+	Language() *string
 }

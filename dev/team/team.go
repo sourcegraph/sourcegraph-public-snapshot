@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/net/context/ctxhttp"
 	"gopkg.in/yaml.v3"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TeammateResolver provides an interface to find information about teammates.
@@ -89,9 +90,13 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
+	// Normalize and match against lowercased handle - GitHub handles are not case-sensitive
+	handle = strings.ToLower(handle)
+
+	// Scan for teammates
 	var teammate *Teammate
 	for _, tm := range team {
-		if tm.GitHub == handle {
+		if strings.ToLower(tm.GitHub) == handle {
 			teammate = tm
 			break
 		}
@@ -168,7 +173,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 
 		// Populate Slack details
 		if r.slack != nil {
-			slackUsers, err := r.slack.GetUsers()
+			slackUsers, err := r.slack.GetUsersContext(ctx)
 			if err != nil {
 				onceErr = errors.Newf("slack.GetUsers: %w", err)
 				return

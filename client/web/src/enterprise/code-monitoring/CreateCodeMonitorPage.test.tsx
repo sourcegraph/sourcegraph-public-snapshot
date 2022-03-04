@@ -6,7 +6,8 @@ import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../../auth'
 import { CreateCodeMonitorVariables } from '../../graphql-operations'
@@ -50,7 +51,11 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is called on submit', () => {
-        renderWithRouter(<CreateCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('trigger-button'))
@@ -81,7 +86,11 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
-        renderWithRouter(<CreateCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('submit-monitor'))
@@ -120,7 +129,11 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('Actions area button is disabled while trigger is incomplete', () => {
-        renderWithRouter(<CreateCodeMonitorPage {...props} />)
+        renderWithBrandedContext(
+            <MockedTestProvider>
+                <CreateCodeMonitorPage {...props} />
+            </MockedTestProvider>
+        )
         const actionButton = screen.getByTestId('form-action-toggle-email')
         expect(actionButton).toBeDisabled()
     })

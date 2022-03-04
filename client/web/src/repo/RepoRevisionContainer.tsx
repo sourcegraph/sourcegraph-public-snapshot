@@ -21,7 +21,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -31,6 +31,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { CoolCodeIntel, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -206,6 +207,13 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
+    // Experimental reference panel
+    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
+    const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
+    // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
+    const showCoolCodeIntelPanel =
+        coolCodeIntelEnabled && viewState && (viewState === 'references' || viewState.startsWith('implementations_'))
+
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -280,45 +288,55 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     const resolvedRevisionOrError = props.resolvedRevisionOrError
 
     return (
-        <RepoRevisionWrapper className="pl-3">
-            <Switch>
-                {props.routes.map(
-                    ({ path, render, exact, condition = () => true }) =>
-                        condition(context) && (
-                            <Route
-                                path={props.routePrefix + path}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
-            </Switch>
-            <RepoHeaderContributionPortal
-                position="left"
-                id="copy-path"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {() => <CopyPathAction key="copy-path" />}
-            </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={3}
-                id="go-to-permalink"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {context => (
-                    <GoToPermalinkAction
-                        key="go-to-permalink"
-                        telemetryService={props.telemetryService}
-                        revision={props.revision}
-                        commitID={resolvedRevisionOrError.commitID}
-                        location={props.location}
-                        history={props.history}
-                        {...context}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
-        </RepoRevisionWrapper>
+        <>
+            <RepoRevisionWrapper className="pl-3">
+                <Switch>
+                    {props.routes.map(
+                        ({ path, render, exact, condition = () => true }) =>
+                            condition(context) && (
+                                <Route
+                                    path={props.routePrefix + path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={exact}
+                                    render={routeComponentProps =>
+                                        render({
+                                            ...context,
+                                            ...routeComponentProps,
+                                        })
+                                    }
+                                />
+                            )
+                    )}
+                </Switch>
+                <RepoHeaderContributionPortal
+                    position="left"
+                    id="copy-path"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {() => <CopyPathAction key="copy-path" />}
+                </RepoHeaderContributionPortal>
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={3}
+                    id="go-to-permalink"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => (
+                        <GoToPermalinkAction
+                            key="go-to-permalink"
+                            telemetryService={props.telemetryService}
+                            revision={props.revision}
+                            commitID={resolvedRevisionOrError.commitID}
+                            location={props.location}
+                            history={props.history}
+                            {...context}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            </RepoRevisionWrapper>
+            {showCoolCodeIntelPanel && (
+                <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
+            )}
+        </>
     )
 }

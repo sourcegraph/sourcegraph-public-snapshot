@@ -8,20 +8,17 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type migrationBatch string
@@ -129,7 +126,7 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 	for _, job := range jobs {
 		err := m.performMigrationForRow(ctx, jobStoreTx, *job)
 		if err != nil {
-			errs = multierror.Append(err)
+			errs = errors.Append(err)
 		}
 	}
 
@@ -209,9 +206,9 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		return nil
 	}
 
-	langStatsInsights := getLangStatsInsights(ctx, *settings)
-	frontendInsights := getFrontendInsights(ctx, *settings)
-	backendInsights := getBackendInsights(ctx, *settings)
+	langStatsInsights := getLangStatsInsights(*settings)
+	frontendInsights := getFrontendInsights(*settings)
+	backendInsights := getBackendInsights(*settings)
 
 	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
 	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
@@ -238,27 +235,27 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 
 		count, err := m.migrateLangStatsInsights(ctx, langStatsInsights)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		count, err = m.migrateInsights(ctx, frontendInsights, frontend)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		count, err = m.migrateInsights(ctx, backendInsights, backend)
-		insightMigrationErrors = multierror.Append(insightMigrationErrors, err)
+		insightMigrationErrors = errors.Append(insightMigrationErrors, err)
 		migratedInsightsCount += count
 
 		err = jobStoreTx.UpdateMigratedInsights(ctx, job.UserId, job.OrgId, migratedInsightsCount)
 		if err != nil {
-			return multierror.Append(insightMigrationErrors, err)
+			return errors.Append(insightMigrationErrors, err)
 		}
 		if totalInsights != migratedInsightsCount {
 			return insightMigrationErrors
 		}
 	}
 
-	dashboards := getDashboards(ctx, *settings)
+	dashboards := getDashboards(*settings)
 	totalDashboards := len(dashboards)
 	if totalDashboards != job.MigratedDashboards {
 		err = jobStoreTx.UpdateTotalDashboards(ctx, job.UserId, job.OrgId, totalDashboards)
@@ -321,23 +318,20 @@ func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName s
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
-	created, _, err := m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	created, err := m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
 	return created, nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, _ []string, err error) {
+func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, err error) {
 	var mapped []string
-	var failed []string
 
 	for _, reference := range insightReferences {
-		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
+		id, _, err := m.lookupUniqueId(ctx, migration, reference)
 		if err != nil {
-			return nil, nil, err
-		} else if !exists {
-			failed = append(failed, reference)
+			return nil, err
 		}
 		mapped = append(mapped, id)
 	}
@@ -361,10 +355,10 @@ func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardSto
 		OrgID:  migration.orgIds,
 	})
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "CreateDashboard")
+		return nil, errors.Wrap(err, "CreateDashboard")
 	}
 
-	return created, failed, nil
+	return created, nil
 }
 
 // migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
@@ -414,7 +408,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		return nil
 	}
 
-	_, _, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
+	_, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
 	if err != nil {
 		return err
 	}

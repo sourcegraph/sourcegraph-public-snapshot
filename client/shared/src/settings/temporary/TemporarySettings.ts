@@ -11,13 +11,15 @@ export interface TemporarySettingsSchema {
     'search.sidebar.revisions.tab': number
     'search.onboarding.tourCancelled': boolean
     'search.contexts.ctaDismissed': boolean
-    'insights.freeBetaAccepted': boolean
+    'insights.freeGaAccepted': boolean
+    'insights.wasMainPageOpen': boolean
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'codemonitor.info.visible': boolean
+    'homepage.userInvites.tab': number
 }
 
 /**

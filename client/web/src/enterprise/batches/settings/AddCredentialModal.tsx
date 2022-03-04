@@ -3,13 +3,12 @@ import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, isErrorLike } from '@sourcegraph/common'
 import { Button, LoadingSpinner, Modal, Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
 import styles from './AddCredentialModal.module.scss'
-import { createBatchChangesCredential as _createBatchChangesCredential } from './backend'
+import { useCreateBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 
@@ -21,8 +20,6 @@ export interface AddCredentialModalProps {
     externalServiceURL: string
     requiresSSH: boolean
 
-    /** For testing only. */
-    createBatchChangesCredential?: typeof _createBatchChangesCredential
     /** For testing only. */
     initialStep?: Step
 }
@@ -77,11 +74,9 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
     externalServiceKind,
     externalServiceURL,
     requiresSSH,
-    createBatchChangesCredential = _createBatchChangesCredential,
     initialStep = 'add-token',
 }) => {
     const labelId = 'addCredential'
-    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [credential, setCredential] = useState<string>('')
     const [sshPublicKey, setSSHPublicKey] = useState<string>()
     const [step, setStep] = useState<Step>(initialStep)
@@ -90,25 +85,30 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
         setCredential(event.target.value)
     }, [])
 
+    const [createBatchChangesCredential, { loading, error }] = useCreateBatchChangesCredential()
+
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
-            setIsLoading(true)
+
             try {
-                const createdCredential = await createBatchChangesCredential({
-                    user: userID,
-                    credential,
-                    externalServiceKind,
-                    externalServiceURL,
+                const { data } = await createBatchChangesCredential({
+                    variables: {
+                        user: userID,
+                        credential,
+                        externalServiceKind,
+                        externalServiceURL,
+                    },
                 })
-                if (requiresSSH && createdCredential.sshPublicKey) {
-                    setSSHPublicKey(createdCredential.sshPublicKey)
+
+                if (requiresSSH && data?.createBatchChangesCredential.sshPublicKey) {
+                    setSSHPublicKey(data?.createBatchChangesCredential.sshPublicKey)
                     setStep('get-ssh-key')
                 } else {
                     afterCreate()
                 }
             } catch (error) {
-                setIsLoading(asError(error))
+                console.error(error)
             }
         },
         [
@@ -159,7 +159,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                 )}
                 {step === 'add-token' && (
                     <>
-                        {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+                        {error && <ErrorAlert error={error} />}
                         <Form onSubmit={onSubmit}>
                             <div className="form-group">
                                 <label htmlFor="token">Personal access token</label>
@@ -179,7 +179,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             </div>
                             <div className="d-flex justify-content-end">
                                 <Button
-                                    disabled={isLoading === true}
+                                    disabled={loading}
                                     className="mr-2"
                                     onClick={onCancel}
                                     outline={true}
@@ -189,11 +189,11 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={isLoading === true || credential.length === 0}
+                                    disabled={loading || credential.length === 0}
                                     className="test-add-credential-modal-submit"
                                     variant="primary"
                                 >
-                                    {isLoading === true && <LoadingSpinner />}
+                                    {loading && <LoadingSpinner />}
                                     {requiresSSH ? 'Next' : 'Add credential'}
                                 </Button>
                             </div>

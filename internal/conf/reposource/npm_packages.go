@@ -6,16 +6,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
 	// Exported for [NOTE: npm-tarball-filename-workaround].
-	NPMScopeRegexString       = `(?P<scope>[0-9a-z_\\-]+)`
-	npmPackageNameRegexString = `(?P<name>[0-9a-z_\\-]+)`
+	// . is allowed in scope names: for example https://www.npmjs.com/package/@dinero.js/core
+	NPMScopeRegexString = `(?P<scope>[\w\-\.]+)`
+	// . is allowed in package names: for example https://www.npmjs.com/package/highlight.js
+	npmPackageNameRegexString = `(?P<name>[\w\-]+(\.[\w\-]+)*)`
 )
 
 var (
@@ -24,7 +25,7 @@ var (
 	scopedPackageNameRegex = lazyregexp.New(
 		`^(@` + NPMScopeRegexString + `/)?` +
 			npmPackageNameRegexString +
-			`@(?P<version>[0-9a-zA-Z_\\-]+(\.[0-9a-zA-Z_\\-]+)*)$`)
+			`@(?P<version>[\w\-]+(\.[\w\-]+)*)$`)
 	npmURLRegex = lazyregexp.New(
 		`^npm/(` + NPMScopeRegexString + `/)?` +
 			npmPackageNameRegexString + `$`)
@@ -44,12 +45,16 @@ type NPMPackage struct {
 
 func NewNPMPackage(scope string, name string) (*NPMPackage, error) {
 	if scope != "" && !npmScopeRegex.MatchString(scope) {
-		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, _, -)", scope)
+		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, A-Z, _, -)", scope)
 	}
 	if !npmPackageNameRegex.MatchString(name) {
-		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, _, -)", name)
+		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, A-Z, _, -)", name)
 	}
 	return &NPMPackage{scope, name}, nil
+}
+
+func (pkg *NPMPackage) Equal(other *NPMPackage) bool {
+	return pkg == other || (pkg != nil && other != nil && *pkg == *other)
 }
 
 // ParseNPMPackageFromRepoURL is a convenience function to parse a string in a
@@ -76,7 +81,7 @@ func ParseNPMPackageFromPackageSyntax(pkg string) (*NPMPackage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &dep.Package, nil
+	return dep.NPMPackage, nil
 }
 
 type NPMPackageSerializationHelper struct {
@@ -122,7 +127,7 @@ func (pkg *NPMPackage) CloneURL() string {
 
 // MatchesDependencyString checks if a dependency (= package + version pair)
 // refers to the same package as pkg.
-func (pkg NPMPackage) MatchesDependencyString(depPackageSyntax string) bool {
+func (pkg *NPMPackage) MatchesDependencyString(depPackageSyntax string) bool {
 	return strings.HasPrefix(depPackageSyntax, pkg.PackageSyntax()+"@")
 }
 
@@ -131,7 +136,7 @@ func (pkg NPMPackage) MatchesDependencyString(depPackageSyntax string) bool {
 // This is largely for "lower-level" code interacting with the NPM API.
 //
 // In most cases, you want to use NPMDependency's PackageManagerSyntax() instead.
-func (pkg NPMPackage) PackageSyntax() string {
+func (pkg *NPMPackage) PackageSyntax() string {
 	if pkg.scope != "" {
 		return fmt.Sprintf("@%s/%s", pkg.scope, pkg.name)
 	}
@@ -145,7 +150,7 @@ func (pkg NPMPackage) PackageSyntax() string {
 //
 // Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
 type NPMDependency struct {
-	Package NPMPackage
+	*NPMPackage
 
 	// The version or tag (such as "latest") for a dependency.
 	//
@@ -182,26 +187,40 @@ func ParseNPMDependency(dependency string) (*NPMDependency, error) {
 		}
 	}
 	scope, name, version := result["scope"], result["name"], result["version"]
-	return &NPMDependency{NPMPackage{scope, name}, version}, nil
+	return &NPMDependency{&NPMPackage{scope, name}, version}, nil
 }
 
 // PackageManagerSyntax returns the dependency in NPM/Yarn syntax. The returned
 // string can (for example) be passed to `npm install`.
-func (d NPMDependency) PackageManagerSyntax() string {
-	return fmt.Sprintf("%s@%s", d.Package.PackageSyntax(), d.Version)
+func (d *NPMDependency) PackageManagerSyntax() string {
+	return fmt.Sprintf("%s@%s", d.PackageSyntax(), d.Version)
 }
 
-func (d NPMDependency) GitTagFromVersion() string {
+func (d *NPMDependency) Scheme() string {
+	return "npm"
+}
+
+func (d *NPMDependency) PackageVersion() string {
+	return d.Version
+}
+
+func (d *NPMDependency) GitTagFromVersion() string {
 	return "v" + d.Version
+}
+
+func (d *NPMDependency) Equal(other *NPMDependency) bool {
+	return d == other || (d != nil && other != nil &&
+		d.NPMPackage.Equal(other.NPMPackage) &&
+		d.Version == other.Version)
 }
 
 // SortDependencies sorts the dependencies by the semantic version in descending
 // order. The latest version of a dependency becomes the first element of the
 // slice.
-func SortNPMDependencies(dependencies []NPMDependency) {
+func SortNPMDependencies(dependencies []*NPMDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
-		iPkg, jPkg := dependencies[i].Package, dependencies[j].Package
-		if iPkg == jPkg {
+		iPkg, jPkg := dependencies[i].NPMPackage, dependencies[j].NPMPackage
+		if iPkg.Equal(jPkg) {
 			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}
 		if iPkg.scope == jPkg.scope {

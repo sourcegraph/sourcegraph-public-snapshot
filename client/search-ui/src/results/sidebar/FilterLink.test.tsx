@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
 import { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 
@@ -55,7 +56,7 @@ describe('FilterLink', () => {
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links).toHaveLength(2)
-        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
     it('should have show icons for repos on cloud', () => {
@@ -65,7 +66,7 @@ describe('FilterLink', () => {
         const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links).toHaveLength(2)
 
-        const { asFragment } = render(<>{links}</>)
+        const { asFragment } = renderWithBrandedContext(<>{links}</>)
         expect(screen.getByTitle('github.com')).toBeInTheDocument()
         expect(screen.getByTitle('gitlab.com')).toBeInTheDocument()
         expect(asFragment()).toMatchSnapshot()
@@ -85,7 +86,7 @@ describe('FilterLink', () => {
 
         const links = getDynamicFilterLinks(filters, onFilterChosen)
         expect(links).toHaveLength(3)
-        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
     it('should have no dynamic filters links if no dynamic filters present', () => {
@@ -108,7 +109,7 @@ describe('FilterLink', () => {
 
         const links = getSearchSnippetLinks({ subjects: [], final: { 'search.scopes': scopes } }, onFilterChosen)
         expect(links).toHaveLength(2)
-        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
     it('should have no snippet links if no snippets present', () => {
@@ -123,7 +124,7 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.spy()
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
-        render(<>{links}</>)
+        renderWithBrandedContext(<>{links}</>)
         userEvent.click(screen.getByTestId('filter-link'))
 
         sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value)

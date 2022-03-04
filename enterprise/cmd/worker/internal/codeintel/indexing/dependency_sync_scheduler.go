@@ -5,13 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	dbstore2 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,11 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var schemeToExternalService = map[string]string{
-	dbstore2.JVMPackagesScheme: extsvc.KindJVMPackages,
-	dbstore2.NPMPackagesScheme: extsvc.KindNPMPackages,
+	dependenciesStore.JVMPackagesScheme: extsvc.KindJVMPackages,
+	dependenciesStore.NPMPackagesScheme: extsvc.KindNPMPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -70,7 +69,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 	}
 	defer func() {
 		if closeErr := scanner.Close(); closeErr != nil {
-			err = multierror.Append(err, errors.Wrap(closeErr, "dbstore.ReferencesForUpload.Close"))
+			err = errors.Append(err, errors.Wrap(closeErr, "dbstore.ReferencesForUpload.Close"))
 		}
 	}()
 
@@ -125,7 +124,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 			if len(errs) == 0 {
 				return errors.Wrap(err, "dbstore.List")
 			} else {
-				return multierror.Append(err, errs...)
+				return errors.Append(err, errs...)
 			}
 		}
 
@@ -166,7 +165,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 		return errs[0]
 	}
 
-	return multierror.Append(nil, errs...)
+	return errors.Append(nil, errs...)
 }
 
 func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {

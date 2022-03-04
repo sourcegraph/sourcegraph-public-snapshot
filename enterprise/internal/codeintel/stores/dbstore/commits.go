@@ -11,13 +11,13 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -261,7 +261,50 @@ func (s *Store) CalculateVisibleUploads(
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
+) error {
+	return s.calculateVisibleUploadsInternal(
+		ctx,
+		repositoryID,
+		commitGraph,
+		refDescriptions,
+		maxAgeForNonStaleBranches,
+		maxAgeForNonStaleTags,
+		dirtyToken,
+		sqlf.Sprintf("transaction_timestamp()"),
+	)
+}
+
+func (s *Store) calculateVisibleUploadsWithTime(
+	ctx context.Context,
+	repositoryID int,
+	commitGraph *gitdomain.CommitGraph,
+	refDescriptions map[string][]gitdomain.RefDescription,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
+	dirtyToken int,
 	now time.Time,
+) error {
+	return s.calculateVisibleUploadsInternal(
+		ctx,
+		repositoryID,
+		commitGraph,
+		refDescriptions,
+		maxAgeForNonStaleBranches,
+		maxAgeForNonStaleTags,
+		dirtyToken,
+		sqlf.Sprintf("%s", now),
+	)
+}
+
+func (s *Store) calculateVisibleUploadsInternal(
+	ctx context.Context,
+	repositoryID int,
+	commitGraph *gitdomain.CommitGraph,
+	refDescriptions map[string][]gitdomain.RefDescription,
+	maxAgeForNonStaleBranches time.Duration,
+	maxAgeForNonStaleTags time.Duration,
+	dirtyToken int,
+	now *sqlf.Query,
 ) (err error) {
 	ctx, trace, endObservation := s.operations.calculateVisibleUploads.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
@@ -303,8 +346,18 @@ func (s *Store) CalculateVisibleUploads(
 	// Determine which uploads are visible to which commits for this repository
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
+	pctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Return a structure holding several channels that are populated by a background goroutine.
+	// When we write this data to temporary tables, we have three consumers pulling values from
+	// these channels in parallel. We need to make sure that once we return from this function that
+	// the producer routine shuts down. This prevents the producer from leaking if there is an
+	// error in one of the consumers before all values have been emitted.
+	sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+
 	// Write the graph into temporary tables in Postgres
-	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)); err != nil {
+	if err := tx.writeVisibleUploads(ctx, sanitizedInput); err != nil {
 		return err
 	}
 
@@ -417,10 +470,12 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 		return err
 	}
 
+	g, gctx := errgroup.WithContext(ctx)
+
 	// Insert the set of uploads that are visible from each commit for a given repository into a temporary table.
 	nearestUploadsWriter := func() error {
 		return batch.InsertValues(
-			ctx,
+			gctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads",
 			batch.MaxNumPostgresParameters,
@@ -434,7 +489,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	// set, which is multiplicative in the size of the commit graph AND the number of unique roots.
 	nearestUploadsLinksWriter := func() error {
 		return batch.InsertValues(
-			ctx,
+			gctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads_links",
 			batch.MaxNumPostgresParameters,
@@ -447,7 +502,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	// used to determine which bundles for a repository we open during a global find references query.
 	uploadsVisibleAtTipWriter := func() error {
 		return batch.InsertValues(
-			ctx,
+			gctx,
 			s.Handle().DB(),
 			"t_lsif_uploads_visible_at_tip",
 			batch.MaxNumPostgresParameters,
@@ -456,7 +511,11 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 		)
 	}
 
-	if err := goroutine.Parallel(nearestUploadsWriter, nearestUploadsLinksWriter, uploadsVisibleAtTipWriter); err != nil {
+	g.Go(nearestUploadsWriter)
+	g.Go(nearestUploadsLinksWriter)
+	g.Go(uploadsVisibleAtTipWriter)
+
+	if err := g.Wait(); err != nil {
 		return err
 	}
 	trace.Log(

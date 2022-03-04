@@ -202,6 +202,12 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if err != nil {
 			return nil, err
 		}
+
+		if computeResult == nil {
+			// We processed a match that compute doesn't generate a result for.
+			continue
+		}
+
 		repoResolver := getRepoResolver(m.RepoName(), "")
 		path, commit := pathAndCommitFromResult(m)
 		result := toComputeResultResolver(computeResult, repoResolver, path, commit)
@@ -210,9 +216,9 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 	return results, nil
 }
 
-// NewComputeImplementer is a function that abstracts away the need to have a
+// NewBatchComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewComputeImplementer(ctx context.Context, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
+func NewBatchComputeImplementer(ctx context.Context, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
 	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
@@ -225,7 +231,7 @@ func NewComputeImplementer(ctx context.Context, db database.DB, args *gql.Comput
 	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := gql.NewSearchImplementer(ctx, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, err := gql.NewBatchSearchImplementer(ctx, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}
@@ -238,5 +244,5 @@ func NewComputeImplementer(ctx context.Context, db database.DB, args *gql.Comput
 }
 
 func (r *Resolver) Compute(ctx context.Context, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
-	return NewComputeImplementer(ctx, r.db, args)
+	return NewBatchComputeImplementer(ctx, r.db, args)
 }
