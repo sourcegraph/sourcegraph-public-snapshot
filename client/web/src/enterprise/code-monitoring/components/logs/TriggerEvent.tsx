@@ -2,12 +2,20 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { EventStatus, MonitorActionEvents, MonitorTriggerEventWithActions } from '../../../../graphql-operations'
+import {
+    EventStatus,
+    MonitorActionEvents,
+    MonitorTriggerEventWithActions,
+    SearchPatternType,
+} from '../../../../graphql-operations'
 
 import { CollapsibleDetailsWithStatus } from './CollapsibleDetailsWithStatus'
 import styles from './TriggerEvent.module.scss'
@@ -15,7 +23,8 @@ import styles from './TriggerEvent.module.scss'
 export const TriggerEvent: React.FunctionComponent<{
     triggerEvent: MonitorTriggerEventWithActions
     startOpen?: boolean
-}> = ({ triggerEvent, startOpen = false }) => {
+    now?: () => Date
+}> = ({ triggerEvent, startOpen = false, now }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
@@ -57,7 +66,18 @@ export const TriggerEvent: React.FunctionComponent<{
                 {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline mr-2')} /> : <span />}
 
                 <span>
-                    Run <Timestamp date={triggerEvent.timestamp} />
+                    Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
+                    {triggerEvent.query && (
+                        <Link
+                            to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-weight-normal ml-2"
+                        >
+                            {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
+                            <OpenInNewIcon className="icon-inline" />
+                        </Link>
+                    )}
                 </span>
             </Button>
 

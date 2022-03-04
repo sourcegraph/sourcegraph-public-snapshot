@@ -538,11 +538,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 	// NOTE: The order of tests matters
 	tests := []struct {
-		name             string
-		update           *ExternalServiceUpdate
-		wantUnrestricted bool
-		wantCloudDefault bool
-		wantHasWebhooks  bool
+		name               string
+		update             *ExternalServiceUpdate
+		wantUnrestricted   bool
+		wantCloudDefault   bool
+		wantHasWebhooks    bool
+		wantTokenExpiresAt bool
 	}{
 		{
 			name: "update with authorization",
@@ -583,7 +584,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "set cloud_default true",
 			update: &ExternalServiceUpdate{
-				DisplayName:  strptr("GITHUB (updated) #3"),
+				DisplayName:  strptr("GITHUB (updated) #4"),
 				CloudDefault: boolptr(true),
 				Config: strptr(`
 {
@@ -597,6 +598,16 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantUnrestricted: false,
 			wantCloudDefault: true,
 			wantHasWebhooks:  true,
+		},
+		{
+			name: "update token_expires_at",
+			update: &ExternalServiceUpdate{
+				DisplayName:    strptr("GITHUB (updated) #5"),
+				Config:         strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				TokenExpiresAt: timePtr(time.Now()),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
 		},
 	}
 	for _, test := range tests {
@@ -632,6 +643,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				t.Fatal("has_webhooks is unexpectedly null")
 			} else if test.wantHasWebhooks != *got.HasWebhooks {
 				t.Fatalf("Want has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			}
+
+			if (got.TokenExpiresAt != nil) != test.wantTokenExpiresAt {
+				t.Fatalf("Want token_expires_at = %v, but got %v", test.wantTokenExpiresAt, got.TokenExpiresAt)
 			}
 		})
 	}

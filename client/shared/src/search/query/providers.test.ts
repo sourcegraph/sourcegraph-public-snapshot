@@ -45,4 +45,10 @@ describe('getSuggestionQuery', () => {
             'fork:only repo:a lang:Go pattern type:symbol count:50'
         )
     })
+
+    test('should generate a suggestion query for repo:deps without relevant filters ', () => {
+        expect(getSuggestionQuery(...getTokens('repo:deps(sourcegraph) fork:only lang:Go', 0))).toEqual(
+            'repo:sourcegraph type:repo count:50'
+        )
+    })
 })

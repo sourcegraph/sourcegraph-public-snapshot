@@ -36,12 +36,5 @@ export enum InsightType {
 export interface SyntheticInsightFields {
     id: string
     viewType: InsightType
-    visibility: InsightVisibility
     dashboardReferenceCount: number
 }
-
-/**
- * Visibility setting which responsible for where insight will appear.
- * possible value '<user subject id>' | '<org id 1> ... | ... <org id N> | <global subject id>'
- */
-export type InsightVisibility = string

@@ -3,6 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { Button, Link } from '@sourcegraph/wildcard'
@@ -75,8 +76,14 @@ export const MonitorLogNode: React.FunctionComponent<{
                 )}
                 {monitor.description}
                 {/* Use clickCatcher so clicking on link doesn't expand/collapse row */}
-                <Link to={`/code-monitoring/${monitor.id}`} className="ml-2 font-weight-normal" onClick={clickCatcher}>
-                    Monitor details
+                <Link
+                    to={`/code-monitoring/${monitor.id}`}
+                    className="ml-2 font-weight-normal"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={clickCatcher}
+                >
+                    Monitor details <OpenInNewIcon className="icon-inline" />
                 </Link>
             </Button>
             <span className="text-nowrap mr-2">
@@ -86,7 +93,12 @@ export const MonitorLogNode: React.FunctionComponent<{
             {expanded && (
                 <div className={styles.expandedRow}>
                     {monitor.trigger.events.nodes.map(triggerEvent => (
-                        <TriggerEvent key={triggerEvent.id} triggerEvent={triggerEvent} startOpen={startOpen} />
+                        <TriggerEvent
+                            key={triggerEvent.id}
+                            triggerEvent={triggerEvent}
+                            startOpen={startOpen}
+                            now={now}
+                        />
                     ))}
 
                     {monitor.trigger.events.nodes.length === 0 && <div>This code monitor has not been run yet.</div>}

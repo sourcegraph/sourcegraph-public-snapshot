@@ -932,19 +932,9 @@ func (m *monitorTriggerEvent) Query() *string {
 }
 
 func (m *monitorTriggerEvent) ResultCount() int32 {
-	var count int
-	for _, res := range m.TriggerJob.SearchResults {
-		var highlightCount int
-		if res.MessagePreview != nil {
-			highlightCount = len(res.MessagePreview.Highlights)
-		} else if res.DiffPreview != nil {
-			highlightCount = len(res.DiffPreview.Highlights)
-		}
-		if highlightCount > 0 {
-			count += highlightCount
-		} else {
-			count += 1
-		}
+	count := 0
+	for _, cm := range m.TriggerJob.SearchResults {
+		count += cm.ResultCount()
 	}
 	return int32(count)
 }
