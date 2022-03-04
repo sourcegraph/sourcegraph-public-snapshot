@@ -13,6 +13,7 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+import styles from './CodeMonitorList.module.scss'
 
 type CodeMonitorFilter = 'all' | 'user'
 
@@ -90,7 +91,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                     <h3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                     </h3>
-                    <Container>
+                    <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,
                             Omit<CodeMonitorNodeProps, 'node'>,
@@ -112,6 +113,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             cursorPaging={true}
                             withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
+                            className={styles.list}
                         />
                     </Container>
                 </div>
