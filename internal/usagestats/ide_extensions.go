@@ -69,7 +69,7 @@ var ideExtensionsPeriodUsageQuery = `
 			DATE_TRUNC('week', TIMEZONE('UTC', $1::timestamp)) as current_week,
 			DATE_TRUNC('day', TIMEZONE('UTC', $1::timestamp)) as current_day
 		FROM event_logs
-		WHERE timestamp >= DATE_TRUNC( 'month', TIMEZONE('UTC', $1::timestamp) ) AND source = 'IDEEXTENSION' AND ( source = 'BACKEND' AND name LIKE 'IDE%' )
+		WHERE timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) AND source = 'IDEEXTENSION' OR (source = 'BACKEND' AND name LIKE 'IDE%')
 	)
 	SELECT
 		ide_kind,
@@ -84,7 +84,7 @@ var ideExtensionsPeriodUsageQuery = `
 		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_week),
 		current_day,
 		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_day),
-		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_day),
+		COUNT(*) FILTER (WHERE name = 'IDESearchSubmitted' AND timestamp > current_day)
 	FROM events
 	GROUP BY ide_kind, current_month, current_week, current_day;
 `
