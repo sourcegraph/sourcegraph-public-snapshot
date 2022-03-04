@@ -128,7 +128,7 @@ export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelProps> = prop
         return null
     }
 
-    return <ReferencesList token={props.token} {...props} />
+    return <FilterableReferencesList token={props.token} {...props} />
 }
 
 interface Location {
@@ -177,7 +177,7 @@ interface LocationGroup {
     locations: Location[]
 }
 
-export const ReferencesList: React.FunctionComponent<
+const FilterableReferencesList: React.FunctionComponent<
     CoolCodeIntelProps & {
         token: Token
     }
@@ -185,6 +185,32 @@ export const ReferencesList: React.FunctionComponent<
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
+    useEffect(() => {
+        setFilter(undefined)
+    }, [props.token])
+
+    return (
+        <>
+            <Input
+                className={classNames('py-0 my-0', styles.referencesFilter)}
+                type="text"
+                placeholder="Filter by filename..."
+                value={filter === undefined ? '' : filter}
+                onChange={event => setFilter(event.target.value)}
+            />
+            <ReferencesList {...props} filter={debouncedFilter} />
+        </>
+    )
+}
+
+const SHOW_SPINNER_DELAY_MS = 100
+
+export const ReferencesList: React.FunctionComponent<
+    CoolCodeIntelProps & {
+        token: Token
+        filter?: string
+    }
+> = props => {
     const {
         lsifData,
         error,
@@ -204,13 +230,23 @@ export const ReferencesList: React.FunctionComponent<
             // get from hoverifier is 1-indexed.
             line: props.token.line - 1,
             character: props.token.character - 1,
-            filter: filter || null,
+            filter: props.filter || null,
             firstReferences: 100,
             afterReferences: null,
             firstImplementations: 100,
             afterImplementations: null,
         },
     })
+
+    // We only show the inline loading message if loading takes longer than
+    // SHOW_SPINNER_DELAY_MS milliseconds.
+    const [canShowSpinner, setCanShowSpinner] = useState(false)
+    useEffect(() => {
+        const handle = setTimeout(() => setCanShowSpinner(loading), SHOW_SPINNER_DELAY_MS)
+        // In case the component un-mounts before
+        return () => clearTimeout(handle)
+        // Make sure this effect only runs once
+    }, [loading])
 
     const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
     const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
@@ -224,19 +260,22 @@ export const ReferencesList: React.FunctionComponent<
     const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
 
     // When the token for which we display data changed, we want to reset
-    // activeLocation & filter.
+    // activeLocation.
+    // But only if we are not re-rendering with different token and the code
+    // blob already open.
     useEffect(() => {
-        setActiveLocation(undefined)
-        setFilter(undefined)
-    }, [props.token])
+        if (!props.jumpToFirst) {
+            setActiveLocation(undefined)
+        }
+    }, [props.jumpToFirst, props.token])
 
     // If props.jumpToFirst is true and we finished loading (and have
     // definitions) we select the first definition. We set it as activeLocation
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
         if (props.jumpToFirst === true && definitions.length > 0) {
-            setActiveLocation(definitions[0])
             blobMemoryHistory.push(definitions[0].url)
+            setActiveLocation(definitions[0])
         }
     }, [blobMemoryHistory, props.jumpToFirst, definitions])
 
@@ -263,10 +302,20 @@ export const ReferencesList: React.FunctionComponent<
     // '?jumpToFirst=true' causes the panel to select the first reference and
     // open it in code blob on right.
     const onBlobNav = (url: string): void => {
+        // If we're going to navigate inside the same file in the same repo we
+        // can optimistically jump to that position in the code blob.
+        const resource = activeLocation?.resource
+        if (resource !== undefined) {
+            const urlToken = tokenFromUrl(url)
+            if (urlToken.filePath === resource.path && urlToken.repoName === resource.repository.name) {
+                blobMemoryHistory.push(url)
+            }
+        }
+
         panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
-    if (loading) {
+    if (loading && !lsifData) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
@@ -294,15 +343,14 @@ export const ReferencesList: React.FunctionComponent<
 
     return (
         <>
-            <Input
-                className={classNames('py-0 my-0', styles.referencesFilter)}
-                type="text"
-                placeholder="Filter by filename..."
-                value={debouncedFilter === undefined ? '' : debouncedFilter}
-                onChange={event => setFilter(event.target.value)}
-            />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
+                    {canShowSpinner && (
+                        <div className="text-muted">
+                            <LoadingSpinner inline={true} />
+                            <i>Loading...</i>
+                        </div>
+                    )}
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
@@ -310,7 +358,7 @@ export const ReferencesList: React.FunctionComponent<
                         hasMore={false}
                         loadingMore={false}
                         setActiveLocation={onReferenceClick}
-                        filter={debouncedFilter}
+                        filter={props.filter}
                         activeLocation={activeLocation}
                     />
                     <CollapsibleLocationList
@@ -321,7 +369,7 @@ export const ReferencesList: React.FunctionComponent<
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
                         setActiveLocation={onReferenceClick}
-                        filter={debouncedFilter}
+                        filter={props.filter}
                         activeLocation={activeLocation}
                     />
                     {implementations.length > 0 && (
@@ -333,7 +381,7 @@ export const ReferencesList: React.FunctionComponent<
                             fetchMore={fetchMoreImplementations}
                             loadingMore={fetchMoreImplementationsLoading}
                             setActiveLocation={onReferenceClick}
-                            filter={debouncedFilter}
+                            filter={props.filter}
                             activeLocation={activeLocation}
                         />
                     )}
@@ -863,4 +911,12 @@ export const appendJumpToFirstQueryParameter = (url: string): string => {
     const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('jumpToFirst', 'true')
     return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
+}
+
+const tokenFromUrl = (url: string): { repoName: string; commitID?: string; filePath?: string } => {
+    const parsed = new URL(url, window.location.href)
+
+    const { filePath, repoName, commitID } = parseBrowserRepoURL(parsed.pathname)
+
+    return { repoName, filePath, commitID }
 }
