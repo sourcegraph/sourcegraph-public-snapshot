@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -116,6 +117,16 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 		return nil, err
 	}
 
+	actor := actor.FromContext(ctx)
+	ffs, err := db.FeatureFlags().GetUserFlags(ctx, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	if enabled, ok := ffs["cc-repo-aware-monitors"]; ok && enabled {
+		planJob = mapJob(planJob)
+	}
+
 	agg := streaming.NewAggregatingStream()
 	_, err = planJob.Run(ctx, db, agg)
 	if err != nil {
@@ -133,6 +144,8 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 
 	return results, nil
 }
+
+func mapJob(job.Job) job.Job
 
 func gqlURL(queryName string) (string, error) {
 	u, err := url.Parse(internalapi.Client.URL)
