@@ -2,7 +2,6 @@
 
 const customRules = {
   'forbid-class-name': require('./rules/forbid-class-name'),
-  'forbid-link-href': require('./rules/forbid-link-href'),
 }
 
 module.exports = {

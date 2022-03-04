@@ -37,6 +37,19 @@ const config = {
     // All other rules should go into https://github.com/sourcegraph/eslint-config
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    '@sourcegraph/sourcegraph/forbid-link-href': [
+      'error',
+      {
+        forbid: [
+          {
+            href: 'https://docs.sourcegraph.com',
+            replaceWith: '/help',
+            message:
+              "Use '/help' to redirect to the correct documentation for the current site version. See docs: https://sourcegraph.com/help/dev/how-to/documentation_implementation#linking-to-documentation-in-product",
+          },
+        ],
+      },
+    ],
     'no-restricted-imports': [
       'error',
       {
@@ -108,19 +121,6 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           {
             className: 'badge',
             message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
-          },
-        ],
-      },
-    ],
-    '@sourcegraph/wildcard/forbid-link-href': [
-      'error',
-      {
-        forbid: [
-          {
-            href: 'https://docs.sourcegraph.com',
-            replaceWith: '/help',
-            message:
-              "Use '/help' to redirect to the correct documentation for the current site version. See docs: https://sourcegraph.com/help/dev/how-to/documentation_implementation#linking-to-documentation-in-product",
           },
         ],
       },
