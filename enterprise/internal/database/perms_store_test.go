@@ -2386,9 +2386,8 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			AccountIDs:  []string{"cindy_github"},
 		}
 		userIDs, err = s.GetUserIDsByExternalAccounts(ctx, accounts)
-
 		require.Nil(t, err)
-		require.Empty(t, userIDs)
+		assert.Empty(t, userIDs)
 	}
 }
 
