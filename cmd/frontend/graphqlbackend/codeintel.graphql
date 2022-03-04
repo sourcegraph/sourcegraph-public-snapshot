@@ -241,6 +241,28 @@ extend type Query {
         """
         repos: [String!]
     ): DocumentationSearchResults!
+
+    squirrel: Squirrel!
+}
+
+type Squirrel {
+    definition(location: SquirrelLocationInput!): SquirrelLocation
+}
+
+input SquirrelLocationInput {
+    repo: String!
+    commit: String!
+    path: String!
+    row: Int!
+    column: Int!
+}
+
+type SquirrelLocation {
+    repo: String!
+    commit: String!
+    path: String!
+    row: Int!
+    column: Int!
 }
 
 """

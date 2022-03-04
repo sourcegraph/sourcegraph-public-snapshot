@@ -92,3 +92,11 @@ type OldCodeIntelEventStatistics struct {
 	UsersCount  int32
 	EventsCount *int32
 }
+
+type SquirrelLocation struct {
+	Repo   string `json:"repo"`
+	Commit string `json:"commit"`
+	Path   string `json:"path"`
+	Row    int32  `json:"row"`
+	Column int32  `json:"column"`
+}

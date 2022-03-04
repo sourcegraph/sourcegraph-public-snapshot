@@ -30,6 +30,7 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
+  SQUIRREL_URL: http://localhost:8984
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
@@ -807,6 +808,7 @@ commandsets:
       - gitserver
       - searcher
       - enterprise-symbols
+      - squirrel
       - caddy
       - docsite
       - syntax-highlighter

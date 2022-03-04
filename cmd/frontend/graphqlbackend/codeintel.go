@@ -41,6 +41,8 @@ type CodeIntelResolver interface {
 	DocumentationSearch(ctx context.Context, args *DocumentationSearchArgs) (DocumentationSearchResultsResolver, error)
 
 	ExecutorResolver() executor.Resolver
+
+	Squirrel(ctx context.Context) (SquirrelResolver, error)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -114,6 +116,22 @@ type LSIFIndexResolver interface {
 	PlaceInQueue() *int32
 	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+}
+
+type SquirrelResolver interface {
+	Definition(ctx context.Context, args *SquirrelDefinitionArgs) SquirrelLocationResolver
+}
+
+type SquirrelDefinitionArgs struct {
+	Location types.SquirrelLocation
+}
+
+type SquirrelLocationResolver interface {
+	Repo() string
+	Commit() string
+	Path() string
+	Row() int32
+	Column() int32
 }
 
 type IndexStepsResolver interface {

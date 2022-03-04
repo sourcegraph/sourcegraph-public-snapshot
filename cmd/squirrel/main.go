@@ -3,15 +3,16 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -85,34 +87,26 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func definitionHandler(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	repo := q.Get("repo")
-	if repo == "" {
-		http.Error(w, "missing repo", http.StatusBadRequest)
-		return
-	}
-	commit := q.Get("commit")
-	if commit == "" {
-		http.Error(w, "missing commit", http.StatusBadRequest)
-		return
-	}
-	path := q.Get("path")
-	if path == "" {
-		http.Error(w, "missing path", http.StatusBadRequest)
-		return
-	}
-	row64, err := strconv.ParseInt(q.Get("row"), 10, 32)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "missing or invalid int row", http.StatusBadRequest)
+		log15.Error("failed to read request body", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	row := uint32(row64)
-	column64, err := strconv.ParseInt(q.Get("column"), 10, 32)
-	if err != nil {
-		http.Error(w, "missing or invalid int column", http.StatusBadRequest)
+
+	var loc types.SquirrelLocation
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&loc); err != nil {
+		log15.Error("failed to decode request body", "err", err, "body", string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	column := uint32(column64)
+
+	repo := loc.Repo
+	commit := loc.Commit
+	path := loc.Path
+	row := loc.Row
+	column := loc.Column
+
 	fmt.Println("repo:", repo, "commit:", commit, "path:", path, "row:", row, "column:", column)
 
 	// get file extension
@@ -139,11 +133,12 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 			Repo:   repo,
 			Commit: commit,
 			Path:   path},
-		Row:    row,
-		Column: column,
+		Row:    uint32(row),
+		Column: uint32(column),
 	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(nil)
+		log15.Error("failed to get definition", "err", err)
 		return
 	}
 
