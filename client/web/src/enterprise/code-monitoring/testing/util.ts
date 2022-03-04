@@ -327,6 +327,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-11T18:30:50Z',
+                                    query: 'test type:diff',
+                                    resultCount: 1,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -361,6 +363,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-11T18:24:49Z',
+                                    query: 'test type:diff',
+                                    resultCount: 2,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -395,6 +399,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-11T17:29:16Z',
+                                    query: 'test type:diff',
+                                    resultCount: 5,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -463,6 +469,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.ERROR,
                                     message: 'Search failed',
                                     timestamp: '2022-02-14T12:29:21Z',
+                                    query: '',
+                                    resultCount: 0,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [
@@ -506,6 +514,8 @@ export const mockLogs: MonitorTriggerEventsResult = {
                                     status: EventStatus.SUCCESS,
                                     message: null,
                                     timestamp: '2022-02-13T12:29:21Z',
+                                    query: '',
+                                    resultCount: 0,
                                     actions: {
                                         __typename: 'MonitorActionConnection',
                                         nodes: [

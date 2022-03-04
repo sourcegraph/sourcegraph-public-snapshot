@@ -58,6 +58,8 @@ export const CODE_MONITOR_EVENTS = gql`
         status
         message
         timestamp
+        resultCount
+        query
         actions {
             nodes {
                 ... on MonitorWebhook {
