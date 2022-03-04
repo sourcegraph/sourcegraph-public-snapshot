@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func ReadDefinitions(fs fs.FS) (*Definitions, error) {
-	migrationDefinitions, err := readDefinitions(fs)
+func ReadDefinitions(fs fs.FS, schemaBasePath string) (*Definitions, error) {
+	migrationDefinitions, err := readDefinitions(fs, schemaBasePath)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func (e instructionalError) Error() string {
 	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
 }
 
-func readDefinitions(fs fs.FS) ([]Definition, error) {
+func readDefinitions(fs fs.FS, schemaBasePath string) ([]Definition, error) {
 	root, err := http.FS(fs).Open("/")
 	if err != nil {
 		return nil, err
@@ -61,9 +62,9 @@ func readDefinitions(fs fs.FS) ([]Definition, error) {
 
 	definitions := make([]Definition, 0, len(versions))
 	for _, version := range versions {
-		definition, err := readDefinition(fs, version)
+		definition, err := readDefinition(fs, schemaBasePath, version)
 		if err != nil {
-			return nil, errors.Wrapf(err, "malformed migration definition %d", version)
+			return nil, errors.Wrapf(err, "malformed migration definition at '%s'", filepath.Join(schemaBasePath, strconv.Itoa(version)))
 		}
 
 		definitions = append(definitions, definition)
@@ -72,7 +73,7 @@ func readDefinitions(fs fs.FS) ([]Definition, error) {
 	return definitions, nil
 }
 
-func readDefinition(fs fs.FS, version int) (Definition, error) {
+func readDefinition(fs fs.FS, schemaBasePath string, version int) (Definition, error) {
 	upFilename := fmt.Sprintf("%d/up.sql", version)
 	downFilename := fmt.Sprintf("%d/down.sql", version)
 	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
@@ -87,7 +88,7 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 		return Definition{}, err
 	}
 
-	return hydrateMetadataFromFile(fs, metadataFilename, Definition{
+	return hydrateMetadataFromFile(fs, schemaBasePath, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
 		DownQuery: downQuery,
@@ -96,8 +97,8 @@ func readDefinition(fs fs.FS, version int) (Definition, error) {
 
 // hydrateMetadataFromFile populates the given definition with metdata parsed
 // from the given file. The mutated definition is returned.
-func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (_ Definition, _ error) {
-	file, err := fs.Open(filepath)
+func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, definition Definition) (_ Definition, _ error) {
+	file, err := fs.Open(metadataFilename)
 	if err != nil {
 		return Definition{}, err
 	}
@@ -131,10 +132,13 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	sort.Ints(parents)
 	definition.Parents = parents
 
+	schemaPath := filepath.Join(schemaBasePath, strconv.Itoa(definition.ID))
+	metadataPath := filepath.Join(schemaBasePath, metadataFilename)
+
 	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
 		return Definition{}, instructionalError{
 			class:       "malformed concurrent index creation",
-			description: "did not expect down migration to contain concurrent creation of an index",
+			description: fmt.Sprintf("did not expect down query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 			instructions: strings.Join([]string{
 				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
 				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
@@ -146,9 +150,9 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 		if !payload.CreateIndexConcurrently {
 			return Definition{}, instructionalError{
 				class:       "malformed concurrent index creation",
-				description: "did not expect up migration to contain concurrent creation of an index",
+				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 				instructions: strings.Join([]string{
-					"Add `createIndexConcurrently: true` to this migration's metadata.yaml file.",
+					fmt.Sprintf("Add `createIndexConcurrently: true` to the metadata file '%s'.", metadataPath),
 				}, " "),
 			}
 		}
@@ -158,10 +162,22 @@ func hydrateMetadataFromFile(fs fs.FS, filepath string, definition Definition) (
 	} else if payload.CreateIndexConcurrently {
 		return Definition{}, instructionalError{
 			class:       "malformed concurrent index creation",
-			description: "expected up migration to contain concurrent creation of an index",
+			description: fmt.Sprintf("expected up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 			instructions: strings.Join([]string{
-				"Remove `createIndexConcurrently: true` from this migration's metadata.yaml file.",
+				fmt.Sprintf("Remove `createIndexConcurrently: true` from the metadata file '%s'.", metadataPath),
 			}, " "),
+		}
+	}
+
+	if isPrivileged(definition.UpQuery.Query(sqlf.PostgresBindVar)) || isPrivileged(definition.DownQuery.Query(sqlf.PostgresBindVar)) {
+		if !payload.Privileged {
+			return Definition{}, instructionalError{
+				class:       "malformed Postgres extension modification",
+				description: fmt.Sprintf("did not expect queries of migration at '%s' to require elevated permissions", schemaPath),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Add `privileged: true` to the metadata file '%s'.", metadataPath),
+				}, " "),
+			}
 		}
 	}
 
@@ -199,6 +215,13 @@ func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 		TableName: matches[2],
 		IndexName: matches[1],
 	}, true
+}
+
+var alterExtensionPattern = lazyregexp.New(`(CREATE|COMMENT ON|DROP)\s+EXTENSION`)
+
+func isPrivileged(queryText string) bool {
+	matches := alterExtensionPattern.FindStringSubmatch(queryText)
+	return len(matches) != 0
 }
 
 // reorderDefinitions will re-order the given migration definitions in-place so that

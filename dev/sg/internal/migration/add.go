@@ -24,6 +24,8 @@ const newUpMigrationFileTemplate = `-- Perform migration here.
 --    is defined per file, and that each such statement is NOT wrapped in a transaction.
 --    Each such migration must also declare "createIndexConcurrently: true" in their
 --    associated metadata.yaml file.
+--  * If you are modifying Postgres extensions, you must also declare "privileged: true"
+--    in the associated metadata.yaml file.
 `
 
 const newDownMigrationFileTemplate = `-- Undo the changes made in the up migration
@@ -62,9 +64,9 @@ func add(database db.Database, migrationName, upMigrationFileTemplate, downMigra
 	}
 
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
-	block.Writef("Up query file: %s", files.UpFile)
-	block.Writef("Down query file: %s", files.DownFile)
-	block.Writef("Metadata file: %s", files.MetadataFile)
+	block.Writef("Up query file: %s", rootRelative(files.UpFile))
+	block.Writef("Down query file: %s", rootRelative(files.DownFile))
+	block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
 	block.Close()
 
 	return nil

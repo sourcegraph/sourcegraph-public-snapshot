@@ -25,7 +25,7 @@ func makeTestSchema(t *testing.T, name string) *schemas.Schema {
 		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
-	definitions, err := definition.ReadDefinitions(fs)
+	definitions, err := definition.ReadDefinitions(fs, name)
 	if err != nil {
 		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}

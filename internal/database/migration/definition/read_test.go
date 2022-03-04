@@ -1,6 +1,7 @@
 package definition
 
 import (
+	"fmt"
 	"io/fs"
 	"strings"
 	"testing"
@@ -11,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition/testdata"
 )
 
+const relativeWorkingDirectory = "internal/database/migration/definition"
+
 func TestReadDefinitions(t *testing.T) {
 	t.Run("well-formed", func(t *testing.T) {
 		fs, err := fs.Sub(testdata.Content, "well-formed")
@@ -18,7 +21,7 @@ func TestReadDefinitions(t *testing.T) {
 			t.Fatalf("unexpected error fetching schema %q: %s", "well-formed", err)
 		}
 
-		definitions, err := ReadDefinitions(fs)
+		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -41,7 +44,7 @@ func TestReadDefinitions(t *testing.T) {
 			t.Fatalf("unexpected error fetching schema %q: %s", "concurrent", err)
 		}
 
-		definitions, err := ReadDefinitions(fs)
+		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -52,7 +55,6 @@ func TestReadDefinitions(t *testing.T) {
 				Name:      "first",
 				UpQuery:   sqlf.Sprintf("10001 UP"),
 				DownQuery: sqlf.Sprintf("10001 DOWN"),
-				Parents:   nil,
 			},
 			{
 				ID:                        10002,
@@ -72,6 +74,31 @@ func TestReadDefinitions(t *testing.T) {
 		}
 	})
 
+	t.Run("privileged", func(t *testing.T) {
+		fs, err := fs.Sub(testdata.Content, "privileged")
+		if err != nil {
+			t.Fatalf("unexpected error fetching schema %q: %s", "privileged", err)
+		}
+
+		definitions, err := ReadDefinitions(fs, relativeWorkingDirectory)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		expectedDefinitions := []Definition{
+			{
+				ID:         10001,
+				Name:       "first",
+				UpQuery:    sqlf.Sprintf("CREATE EXTENSION IF NOT EXISTS citext;"),
+				DownQuery:  sqlf.Sprintf("DROP EXTENSION IF EXISTS citext;"),
+				Privileged: true,
+			},
+		}
+		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
+			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("missing metadata", func(t *testing.T) { testReadDefinitionsError(t, "missing-metadata", "malformed") })
 	t.Run("missing upgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-upgrade-query", "malformed") })
 	t.Run("missing downgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-downgrade-query", "malformed") })
@@ -81,13 +108,16 @@ func TestReadDefinitions(t *testing.T) {
 	t.Run("cycle (disconnected from root)", func(t *testing.T) { testReadDefinitionsError(t, "cycle-size", "cycle") })
 	t.Run("unknown parent", func(t *testing.T) { testReadDefinitionsError(t, "unknown-parent", "unknown migration") })
 
-	errConcurrentUnexpected := "did not expect up migration to contain concurrent creation of an index"
-	errConcurrentExpected := "expected up migration to contain concurrent creation of an index"
-	errConcurrentDown := "did not expect down migration to contain concurrent creation of an index"
+	errConcurrentUnexpected := fmt.Sprintf("did not expect up query of migration at '%s/10002' to contain concurrent creation of an index", relativeWorkingDirectory)
+	errConcurrentExpected := fmt.Sprintf("expected up query of migration at '%s/10002' to contain concurrent creation of an index", relativeWorkingDirectory)
+	errConcurrentDown := fmt.Sprintf("did not expect down query of migration at '%s/10002' to contain concurrent creation of an index", relativeWorkingDirectory)
+	errUnmarkedPrivilege := fmt.Sprintf("did not expect queries of migration at '%s/10001' to require elevated permissions", relativeWorkingDirectory)
 
 	t.Run("unexpected concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-unexpected", errConcurrentUnexpected) })
 	t.Run("missing concurrent index creation", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-expected", errConcurrentExpected) })
 	t.Run("concurrent index creation down", func(t *testing.T) { testReadDefinitionsError(t, "concurrent-down", errConcurrentDown) })
+
+	t.Run("unmarked privilege", func(t *testing.T) { testReadDefinitionsError(t, "unmarked-privilege", errUnmarkedPrivilege) })
 }
 
 func testReadDefinitionsError(t *testing.T, name, expectedError string) {
@@ -98,7 +128,7 @@ func testReadDefinitionsError(t *testing.T, name, expectedError string) {
 		t.Fatalf("unexpected error fetching schema %q: %s", name, err)
 	}
 
-	if _, err := ReadDefinitions(fs); err == nil || !strings.Contains(err.Error(), expectedError) {
+	if _, err := ReadDefinitions(fs, relativeWorkingDirectory); err == nil || !strings.Contains(err.Error(), expectedError) {
 		t.Fatalf("unexpected error. want=%q got=%q", expectedError, err)
 	}
 }

@@ -3,6 +3,7 @@ package schemas
 import (
 	"fmt"
 	"io/fs"
+	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
@@ -37,7 +38,7 @@ func mustResolveSchema(name string) *Schema {
 }
 
 func ResolveSchema(fs fs.FS, name string) (*Schema, error) {
-	definitions, err := definition.ReadDefinitions(fs)
+	definitions, err := definition.ReadDefinitions(fs, filepath.Join("migrations", name))
 	if err != nil {
 		return nil, errors.Newf("malformed migration definitions %q: %s", name, err)
 	}
