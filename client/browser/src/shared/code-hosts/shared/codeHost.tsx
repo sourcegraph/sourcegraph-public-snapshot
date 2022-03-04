@@ -755,8 +755,6 @@ const isSafeToContinueCodeIntel = async ({
     try {
         const context = await codeHost.getContext()
 
-        console.log({ context })
-
         if (!context.privateRepository) {
             // We can auto-clone public repos
             return true
@@ -909,13 +907,7 @@ export async function handleCodeHost({
         }
     }
 
-    const isSafeToContinue = await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render })
-
-    console.log({
-        isSafeToContinue,
-    })
-
-    if (!isSafeToContinue) {
+    if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
         // Stop initializing code intelligence
         return subscriptions
     }

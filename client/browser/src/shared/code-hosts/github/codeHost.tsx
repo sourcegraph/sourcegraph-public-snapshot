@@ -677,6 +677,8 @@ export const githubCodeHost: GithubCodeHost = {
     routeChange: mutations =>
         mutations.pipe(
             map(() => window.location.pathname),
+            // works only for "blob" and "tree" page types
+            // TODO: add support to other GitHub pages with client-side navigation
             filter(pathname => pathname.endsWith(getFilePath())),
             distinctUntilChanged()
         ),
