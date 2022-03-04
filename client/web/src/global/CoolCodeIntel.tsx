@@ -81,6 +81,8 @@ interface CoolCodeIntelProps
         ThemeProps {
     // The token for which to show references
     token?: Token
+
+    jumpToFirst?: boolean
     /**
      * The panel runs inside its own MemoryRouter, we keep track of externalHistory
      * so that we're still able to actually navigate within the browser when required
@@ -126,7 +128,7 @@ export const ReferencesPanel: React.FunctionComponent<CoolCodeIntelProps> = prop
         return null
     }
 
-    return <ReferencesList token={props.token} {...props} />
+    return <FilterableReferencesList token={props.token} {...props} />
 }
 
 interface Location {
@@ -175,23 +177,108 @@ interface LocationGroup {
     locations: Location[]
 }
 
-export const ReferencesList: React.FunctionComponent<
+const FilterableReferencesList: React.FunctionComponent<
     CoolCodeIntelProps & {
         token: Token
     }
 > = props => {
-    const [activeLocation, setActiveLocation] = useState<Location>()
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
     useEffect(() => {
-        setActiveLocation(undefined)
         setFilter(undefined)
     }, [props.token])
 
+    return (
+        <>
+            <Input
+                className={classNames('py-0 my-0', styles.referencesFilter)}
+                type="text"
+                placeholder="Filter by filename..."
+                value={filter === undefined ? '' : filter}
+                onChange={event => setFilter(event.target.value)}
+            />
+            <ReferencesList {...props} filter={debouncedFilter} />
+        </>
+    )
+}
+
+const SHOW_SPINNER_DELAY_MS = 100
+
+export const ReferencesList: React.FunctionComponent<
+    CoolCodeIntelProps & {
+        token: Token
+        filter?: string
+    }
+> = props => {
+    const {
+        lsifData,
+        error,
+        loading,
+        referencesHasNextPage,
+        implementationsHasNextPage,
+        fetchMoreReferences,
+        fetchMoreImplementations,
+        fetchMoreReferencesLoading,
+        fetchMoreImplementationsLoading,
+    } = usePreciseCodeIntel({
+        variables: {
+            repository: props.token.repoName,
+            commit: props.token.commitID,
+            path: props.token.filePath,
+            // On the backend the line/character are 0-indexed, but what we
+            // get from hoverifier is 1-indexed.
+            line: props.token.line - 1,
+            character: props.token.character - 1,
+            filter: props.filter || null,
+            firstReferences: 100,
+            afterReferences: null,
+            firstImplementations: 100,
+            afterImplementations: null,
+        },
+    })
+
+    // We only show the inline loading message if loading takes longer than
+    // SHOW_SPINNER_DELAY_MS milliseconds.
+    const [canShowSpinner, setCanShowSpinner] = useState(false)
+    useEffect(() => {
+        const handle = setTimeout(() => setCanShowSpinner(loading), SHOW_SPINNER_DELAY_MS)
+        // In case the component un-mounts before
+        return () => clearTimeout(handle)
+        // Make sure this effect only runs once
+    }, [loading])
+
+    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
+    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
+    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
+
+    // activeLocation is the location that is selected/clicked in the list of
+    // definitions/references/implementations.
+    const [activeLocation, setActiveLocation] = useState<Location>()
     // We create an in-memory history here so we don't modify the browser
     // location. This panel is detached from the URL state.
     const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
+
+    // When the token for which we display data changed, we want to reset
+    // activeLocation.
+    // But only if we are not re-rendering with different token and the code
+    // blob already open.
+    useEffect(() => {
+        if (!props.jumpToFirst) {
+            setActiveLocation(undefined)
+        }
+    }, [props.jumpToFirst, props.token])
+
+    // If props.jumpToFirst is true and we finished loading (and have
+    // definitions) we select the first definition. We set it as activeLocation
+    // and push it to the blobMemoryHistory so the code blob is open.
+    useEffect(() => {
+        if (props.jumpToFirst && definitions.length > 0) {
+            blobMemoryHistory.push(definitions[0].url)
+            setActiveLocation(definitions[0])
+        }
+    }, [blobMemoryHistory, props.jumpToFirst, definitions])
+
     // When a user clicks on an item in the list of references, we push it to
     // the memory history for the code blob on the right, so it will jump to &
     // highlight the correct line.
@@ -207,31 +294,97 @@ export const ReferencesList: React.FunctionComponent<
     // When we user clicks on a token *inside* the code blob on the right, we
     // update the history for the panel itself, which is inside a memory router.
     //
-    // We also add '#tab=references' to the URL.
+    // We also '#tab=references' and '?jumpToFirst=true' to the URL.
     //
-    // That will cause the panel to show the references of the clicked token,
+    // '#tab=references' will cause the panel to show the references of the clicked token,
     // but not navigate the main web app to it.
+    //
+    // '?jumpToFirst=true' causes the panel to select the first reference and
+    // open it in code blob on right.
     const onBlobNav = (url: string): void => {
-        panelHistory.push(url + toViewStateHash('references'))
+        // If we're going to navigate inside the same file in the same repo we
+        // can optimistically jump to that position in the code blob.
+        const resource = activeLocation?.resource
+        if (resource !== undefined) {
+            const urlToken = tokenFromUrl(url)
+            if (urlToken.filePath === resource.path && urlToken.repoName === resource.repository.name) {
+                blobMemoryHistory.push(url)
+            }
+        }
+
+        panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
+    }
+
+    if (loading && !lsifData) {
+        return (
+            <>
+                <LoadingSpinner inline={false} className="mx-auto my-4" />
+                <p className="text-muted text-center">
+                    <i>Loading precise code intel ...</i>
+                </p>
+            </>
+        )
+    }
+
+    // If we received an error before we had received any data
+    if (error && !lsifData) {
+        return (
+            <div>
+                <p className="text-danger">Loading precise code intel failed:</p>
+                <pre>{error.message}</pre>
+            </div>
+        )
+    }
+
+    // If there weren't any errors and we just didn't receive any data
+    if (!lsifData) {
+        return <>Nothing found</>
     }
 
     return (
         <>
-            <Input
-                className={classNames('py-0 my-0', styles.referencesFilter)}
-                type="text"
-                placeholder="Filter by filename..."
-                value={filter === undefined ? '' : filter}
-                onChange={event => setFilter(event.target.value)}
-            />
             <div className={classNames('align-items-stretch', styles.referencesList)}>
                 <div className={classNames('px-0', styles.referencesSideReferences)}>
-                    <SideReferences
+                    {canShowSpinner && (
+                        <div className="text-muted">
+                            <LoadingSpinner inline={true} />
+                            <i>Loading...</i>
+                        </div>
+                    )}
+                    <CollapsibleLocationList
                         {...props}
-                        activeLocation={activeLocation}
+                        name="definitions"
+                        locations={definitions}
+                        hasMore={false}
+                        loadingMore={false}
                         setActiveLocation={onReferenceClick}
-                        filter={debouncedFilter}
+                        filter={props.filter}
+                        activeLocation={activeLocation}
                     />
+                    <CollapsibleLocationList
+                        {...props}
+                        name="references"
+                        locations={references}
+                        hasMore={referencesHasNextPage}
+                        fetchMore={fetchMoreReferences}
+                        loadingMore={fetchMoreReferencesLoading}
+                        setActiveLocation={onReferenceClick}
+                        filter={props.filter}
+                        activeLocation={activeLocation}
+                    />
+                    {implementations.length > 0 && (
+                        <CollapsibleLocationList
+                            {...props}
+                            name="implementations"
+                            locations={implementations}
+                            hasMore={implementationsHasNextPage}
+                            fetchMore={fetchMoreImplementations}
+                            loadingMore={fetchMoreImplementationsLoading}
+                            setActiveLocation={onReferenceClick}
+                            filter={props.filter}
+                            activeLocation={activeLocation}
+                        />
+                    )}
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
@@ -274,142 +427,6 @@ export const ReferencesList: React.FunctionComponent<
                     </div>
                 )}
             </div>
-        </>
-    )
-}
-
-interface ReferencesComponentProps extends CoolCodeIntelProps {
-    token: Token
-    setActiveLocation: (location: Location | undefined) => void
-    activeLocation: Location | undefined
-    filter: string | undefined
-}
-
-export const SideReferences: React.FunctionComponent<ReferencesComponentProps> = props => {
-    const {
-        lsifData,
-        error,
-        loading,
-        referencesHasNextPage,
-        implementationsHasNextPage,
-        fetchMoreReferences,
-        fetchMoreImplementations,
-        fetchMoreReferencesLoading,
-        fetchMoreImplementationsLoading,
-    } = usePreciseCodeIntel({
-        variables: {
-            repository: props.token.repoName,
-            commit: props.token.commitID,
-            path: props.token.filePath,
-            // On the backend the line/character are 0-indexed, but what we
-            // get from hoverifier is 1-indexed.
-            line: props.token.line - 1,
-            character: props.token.character - 1,
-            filter: props.filter || null,
-            firstReferences: 100,
-            afterReferences: null,
-            firstImplementations: 100,
-            afterImplementations: null,
-        },
-    })
-
-    if (loading) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading precise code intel ...</i>
-                </p>
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !lsifData) {
-        return (
-            <div>
-                <p className="text-danger">Loading precise code intel failed:</p>
-                <pre>{error.message}</pre>
-            </div>
-        )
-    }
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!lsifData) {
-        return <>Nothing found</>
-    }
-
-    const references = lsifData.references.nodes
-    const definitions = lsifData.definitions.nodes
-    const implementations = lsifData.implementations.nodes
-
-    return (
-        <SideReferencesLists
-            {...props}
-            definitions={definitions}
-            references={references}
-            referencesHasNextPage={referencesHasNextPage}
-            implementationsHasNextPage={implementationsHasNextPage}
-            implementations={implementations}
-            fetchMoreImplementations={fetchMoreImplementations}
-            fetchMoreReferences={fetchMoreReferences}
-            fetchMoreReferencesLoading={fetchMoreReferencesLoading}
-            fetchMoreImplementationsLoading={fetchMoreImplementationsLoading}
-        />
-    )
-}
-
-interface SideReferencesListsProps extends CoolCodeIntelProps {
-    token: Token
-    setActiveLocation: (location: Location | undefined) => void
-    activeLocation: Location | undefined
-    filter: string | undefined
-
-    definitions: LocationFields[]
-
-    references: LocationFields[]
-    referencesHasNextPage: boolean
-    fetchMoreReferences: () => void
-    fetchMoreReferencesLoading: boolean
-
-    implementations: LocationFields[]
-    implementationsHasNextPage: boolean
-    fetchMoreImplementations: () => void
-    fetchMoreImplementationsLoading: boolean
-}
-
-const SideReferencesLists: React.FunctionComponent<SideReferencesListsProps> = props => {
-    const references = useMemo(() => props.references.map(buildLocation), [props.references])
-    const definitions = useMemo(() => props.definitions.map(buildLocation), [props.definitions])
-    const implementations = useMemo(() => props.implementations.map(buildLocation), [props.implementations])
-
-    return (
-        <>
-            <CollapsibleLocationList
-                {...props}
-                name="definitions"
-                locations={definitions}
-                hasMore={false}
-                loadingMore={false}
-            />
-            <CollapsibleLocationList
-                {...props}
-                name="references"
-                locations={references}
-                hasMore={props.referencesHasNextPage}
-                fetchMore={props.fetchMoreReferences}
-                loadingMore={props.fetchMoreReferencesLoading}
-            />
-            {implementations.length > 0 && (
-                <CollapsibleLocationList
-                    {...props}
-                    name="implementations"
-                    locations={implementations}
-                    hasMore={props.implementationsHasNextPage}
-                    fetchMore={props.fetchMoreImplementations}
-                    loadingMore={props.fetchMoreImplementationsLoading}
-                />
-            )}
         </>
     )
 }
@@ -850,13 +867,16 @@ const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> =
         return null
     }
 
+    const searchParameters = new URLSearchParams(search)
+    const jumpToFirst = searchParameters.get('jumpToFirst') === 'true'
+
     const token = { repoName, line, character, filePath }
 
     if (commitID === undefined || revision === undefined) {
-        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} />
+        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} jumpToFirst={jumpToFirst} />
     }
 
-    return <ResizableCoolCodeIntelPanel {...props} token={{ ...token, revision, commitID }} />
+    return <ResizableCoolCodeIntelPanel {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
 }
 
 export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
@@ -885,4 +905,18 @@ export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
     }
 
     return <ResizableCoolCodeIntelPanel {...props} token={token} />
+}
+
+export const appendJumpToFirstQueryParameter = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('jumpToFirst', 'true')
+    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
+}
+
+const tokenFromUrl = (url: string): { repoName: string; commitID?: string; filePath?: string } => {
+    const parsed = new URL(url, window.location.href)
+
+    const { filePath, repoName, commitID } = parseBrowserRepoURL(parsed.pathname)
+
+    return { repoName, filePath, commitID }
 }
