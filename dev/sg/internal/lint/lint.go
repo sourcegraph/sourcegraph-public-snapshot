@@ -25,10 +25,10 @@ type Report struct {
 
 // Target denotes a linter task that can be run by `sg lint`
 type Target struct {
-	Name      string
-	ShortHelp string
-	FlagSet   *flag.FlagSet
-	Linters   []Func
+	Name    string
+	Help    string
+	FlagSet *flag.FlagSet
+	Linters []Func
 }
 
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.

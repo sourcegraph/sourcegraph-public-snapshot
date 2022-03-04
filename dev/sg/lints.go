@@ -24,17 +24,17 @@ var (
 
 var allLintTargets = lintTargets{
 	{
-		Name:      "urls",
-		ShortHelp: "Check for broken urls in the codebase.",
-		FlagSet:   lintURLsFlagSet,
+		Name:    "urls",
+		Help:    "Check for broken urls in the codebase.",
+		FlagSet: lintURLsFlagSet,
 		Linters: []lint.Func{
 			lint.RunScript("Broken urls", "dev/check/broken-urls.bash"),
 		},
 	},
 	{
-		Name:      "go",
-		ShortHelp: "Check go code for linting errors, forbidden imports, generated files...",
-		FlagSet:   lintGoFlagSet,
+		Name:    "go",
+		Help:    "Check go code for linting errors, forbidden imports, generated files...",
+		FlagSet: lintGoFlagSet,
 		Linters: []lint.Func{
 			lint.RunScript("Go format", "dev/check/gofmt.sh"),
 			lint.RunScript("Go generate", "dev/check/go-generate.sh"),
@@ -44,26 +44,26 @@ var allLintTargets = lintTargets{
 		},
 	},
 	{
-		Name:      "docsite",
-		ShortHelp: "Check the code powering docs.sourcegraph.com for broken links and linting errors.",
-		FlagSet:   lintDocsiteFlagSet,
+		Name:    "docsite",
+		Help:    "Check the code powering docs.sourcegraph.com for broken links and linting errors.",
+		FlagSet: lintDocsiteFlagSet,
 		Linters: []lint.Func{
 			lint.RunScript("Docsite lint", "dev/check/docsite.sh"),
 		},
 	},
 	{
-		Name:      "docker",
-		ShortHelp: "Check Dockerfiles for Sourcegraph best practices",
-		FlagSet:   lintDockerFlagSet,
+		Name:    "docker",
+		Help:    "Check Dockerfiles for Sourcegraph best practices",
+		FlagSet: lintDockerFlagSet,
 		Linters: []lint.Func{
 			lint.RunScript("Docker lint", "dev/check/docker-lint.sh"),
 			lintDockerfiles(),
 		},
 	},
 	{
-		Name:      "client",
-		ShortHelp: "Check client code for linting errors, forbidden imports, ...",
-		FlagSet:   lintClientFlagSet,
+		Name:    "client",
+		Help:    "Check client code for linting errors, forbidden imports, ...",
+		FlagSet: lintClientFlagSet,
 		Linters: []lint.Func{
 			lint.RunScript("Typescript imports in OSS", "dev/check/ts-enterprise-import.sh"),
 			lint.RunScript("Inline templates", "dev/check/template-inlines.sh"),
@@ -72,9 +72,9 @@ var allLintTargets = lintTargets{
 		},
 	},
 	{
-		Name:      "shell",
-		ShortHelp: "Check shell code for linting errors, formatting, ...",
-		FlagSet:   lintShellFlagSet,
+		Name:    "shell",
+		Help:    "Check shell code for linting errors, formatting, ...",
+		FlagSet: lintShellFlagSet,
 		Linters: []lint.Func{
 			lint.RunScript("Shell formatting", "dev/check/shfmt.sh"),
 			lint.RunScript("Shell lint", "dev/check/shellcheck.sh"),

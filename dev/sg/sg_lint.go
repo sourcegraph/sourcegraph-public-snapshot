@@ -125,10 +125,12 @@ type lintTargets []lint.Target
 func (lt lintTargets) Commands() (cmds []*ffcli.Command) {
 	for _, c := range lt {
 		cmds = append(cmds, &ffcli.Command{
-			Name:      c.Name,
-			ShortHelp: c.ShortHelp,
-			FlagSet:   c.FlagSet,
-			Exec:      runCheckScriptsAndReport(c.Linters...),
+			Name:       c.Name,
+			ShortUsage: fmt.Sprintf("sg lint %s", c.Name),
+			ShortHelp:  c.Help,
+			LongHelp:   c.Help,
+			FlagSet:    c.FlagSet,
+			Exec:       runCheckScriptsAndReport(c.Linters...),
 		})
 	}
 	return cmds
