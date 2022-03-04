@@ -178,7 +178,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 
 	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
-		SELECT DISTINCT path
+		SELECT path
 		FROM rockskip_symbols
 		WHERE
 			%s && singleton_integer(repo_id)
