@@ -1,24 +1,3 @@
-extend type Query {
-    """
-    Runs a code monitor search.
-    """
-    codeMonitorSearch(
-        """
-        PatternType controls the search pattern type, if and only if it is not specified in the query string using
-        the patternType: field.
-        """
-        patternType: SearchPatternType
-        """
-        The search query (such as "foo" or "repo:myrepo foo").
-        """
-        query: String = ""
-        """
-        codeMonitorID is the code monitor associated with this search
-        """
-        codeMonitorID: ID
-    ): Search
-}
-
 extend type Mutation {
     """
     Create a code monitor.
