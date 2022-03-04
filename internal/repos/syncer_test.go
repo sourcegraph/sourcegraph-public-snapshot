@@ -706,7 +706,7 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
 					Sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, repo),
+						repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, repo.Clone()),
 					),
 				}
 
