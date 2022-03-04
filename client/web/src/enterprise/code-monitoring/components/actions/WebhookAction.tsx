@@ -29,11 +29,10 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
 }) => {
     const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
 
-    const toggleWebhookEnabled: (enabled: boolean) => void = useCallback(
-        enabled => {
+    const toggleWebhookEnabled: (enabled: boolean, saveImmediately: boolean) => void = useCallback(
+        (enabled, saveImmediately) => {
             setWebhookEnabled(enabled)
-
-            if (action) {
+            if (action && saveImmediately) {
                 setAction({ ...action, enabled })
             }
         },
@@ -55,6 +54,11 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
         },
         [action, setAction, url, webhookEnabled]
     )
+
+    const onCancel: React.FormEventHandler = useCallback(() => {
+        setWebhookEnabled(action ? action.enabled : true)
+        setUrl(action && action.__typename === 'MonitorWebhook' ? action.url : '')
+    }, [action])
 
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
@@ -98,7 +102,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             toggleActionEnabled={toggleWebhookEnabled}
             canSubmit={!!url}
             onSubmit={onSubmit}
-            onCancel={() => {}}
+            onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
             _testStartOpen={_testStartOpen}
