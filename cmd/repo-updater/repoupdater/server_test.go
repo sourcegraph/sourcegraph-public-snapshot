@@ -709,7 +709,7 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 			permsSyncer:    &fakePermsSyncer{},
 			body:           "{}",
 			wantStatusCode: http.StatusBadRequest,
-			wantBody:       "neither user and repo ids provided",
+			wantBody:       "neither user IDs nor repo IDs was provided in request (must provide at least one)",
 		},
 
 		{
