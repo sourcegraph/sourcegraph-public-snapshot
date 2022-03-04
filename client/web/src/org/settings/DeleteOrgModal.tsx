@@ -50,10 +50,6 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
         [org.id, history]
     )
 
-    if (!props.org.viewerIsMember) {
-        return null
-    }
-
     return (
         <Modal
             position="center"
@@ -86,7 +82,8 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     value={orgNameInput}
                     placeholder={org.name}
                     onChange={onOrgChangeName}
-                    status={orgNamesMatch ? 'valid' : 'error'}                />
+                    status={orgNamesMatch ? 'valid' : 'error'}
+                />
                 <div className="d-flex justify-content-end mt-4">
                     <Button
                         type="button"

@@ -97,7 +97,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 </>
                                             }
                                         />
-                                        {props.isSourcegraphDotCom && (
+                                        {(props.isSourcegraphDotCom && props.org.viewerIsMember) && (
                                             <DeleteOrg
                                             {...routeComponentProps}
                                             {...props}
