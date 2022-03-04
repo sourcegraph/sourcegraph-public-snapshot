@@ -117,12 +117,14 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 	for _, revs := range repoRevs {
 		n += len(revs)
 	}
+
 	var (
-		closeOnce         sync.Once
-		depsChan          = make(chan []reposource.PackageDependency, n)
-		closeDepsChanOnce = func() { closeOnce.Do(func() { close(depsChan) }) }
+		mu   sync.Mutex
+		deps = make([]reposource.PackageDependency, 0, n)
 	)
-	defer closeDepsChanOnce()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	g, ctx := errgroup.WithContext(ctx)
 	for repoName, revs := range repoRevs {
@@ -131,14 +133,8 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 			repoName, rev := repoName, rev
 
 			// Acquire semaphore before spawning goroutine to ensure that we limit the total number
-			// of concurrent _routines_, whether they are actively processing lockfiles or not. Any
-			// non-nil returned from here is a context timeout error, so we are guaranteed to clean
-			// up the errgroup on exit.
+			// of concurrent _routines_, whether they are actively processing lockfiles or not.
 			if err := s.lockfilesSemaphore.Acquire(ctx, 1); err != nil {
-				// Ensure that we always call Wait on the errgroup before exiting this function. If
-				// we exit without this check we can end up closing the dependencies channel before
-				// all writers have exited.
-				_ = g.Wait()
 				return nil, err
 			}
 
@@ -150,7 +146,10 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 					return err
 				}
 
-				depsChan <- repoDeps
+				mu.Lock()
+				deps = append(deps, repoDeps...)
+				mu.Unlock()
+
 				return nil
 			})
 		}
@@ -158,14 +157,6 @@ func (s *Service) lockfileDependencies(ctx context.Context, repoRevs map[api.Rep
 
 	if err := g.Wait(); err != nil {
 		return nil, err
-	}
-
-	// Writers exited - close channel so we can consume it to completion below
-	closeDepsChanOnce()
-
-	var deps []reposource.PackageDependency
-	for batch := range depsChan {
-		deps = append(deps, batch...)
 	}
 
 	return deps, nil
