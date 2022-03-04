@@ -37,19 +37,7 @@ const config = {
     // All other rules should go into https://github.com/sourcegraph/eslint-config
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
-    '@sourcegraph/sourcegraph/forbid-link-href': [
-      'error',
-      {
-        forbid: [
-          {
-            href: 'https://docs.sourcegraph.com',
-            replaceWith: '/help',
-            message:
-              "Use '/help' to redirect to the correct documentation for the current site version. See docs: https://sourcegraph.com/help/dev/how-to/documentation_implementation#linking-to-documentation-in-product",
-          },
-        ],
-      },
-    ],
+    '@sourcegraph/sourcegraph/forbid-docs-links': 'error',
     'no-restricted-imports': [
       'error',
       {
