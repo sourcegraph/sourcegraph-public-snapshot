@@ -180,7 +180,6 @@ interface LocationGroup {
 export const ReferencesList: React.FunctionComponent<
     CoolCodeIntelProps & {
         token: Token
-        jumpToFirst?: boolean
     }
 > = props => {
     const [filter, setFilter] = useState<string>()
@@ -217,30 +216,29 @@ export const ReferencesList: React.FunctionComponent<
     const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
     const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
 
+    // activeLocation is the location that is selected/clicked in the list of
+    // definitions/references/implementations.
     const [activeLocation, setActiveLocation] = useState<Location>()
-    // If we finished loading (and have definitions) and props.jumpToFirst is
-    // true, then we use the first definition as activeLocation
-    useEffect(() => {
-        if (props.jumpToFirst === true && definitions.length > 0) {
-            setActiveLocation(definitions[0])
-        }
-    }, [props.jumpToFirst, definitions])
+    // We create an in-memory history here so we don't modify the browser
+    // location. This panel is detached from the URL state.
+    const blobMemoryHistory = useMemo(() => H.createMemoryHistory(), [])
 
+    // When the token for which we display data changed, we want to reset
+    // activeLocation & filter.
     useEffect(() => {
         setActiveLocation(undefined)
         setFilter(undefined)
     }, [props.token])
 
-    // We create an in-memory history here so we don't modify the browser
-    // location. This panel is detached from the URL state.
-    const blobMemoryHistory = useMemo(() => {
-        const history = H.createMemoryHistory()
-        return history
-    }, [])
-
-    if (activeLocation !== undefined) {
-        blobMemoryHistory.push(activeLocation.url)
-    }
+    // If props.jumpToFirst is true and we finished loading (and have
+    // definitions) we select the first definition. We set it as activeLocation
+    // and push it to the blobMemoryHistory so the code blob is open.
+    useEffect(() => {
+        if (props.jumpToFirst === true && definitions.length > 0) {
+            setActiveLocation(definitions[0])
+            blobMemoryHistory.push(definitions[0].url)
+        }
+    }, [blobMemoryHistory, props.jumpToFirst, definitions])
 
     // When a user clicks on an item in the list of references, we push it to
     // the memory history for the code blob on the right, so it will jump to &
@@ -257,14 +255,15 @@ export const ReferencesList: React.FunctionComponent<
     // When we user clicks on a token *inside* the code blob on the right, we
     // update the history for the panel itself, which is inside a memory router.
     //
-    // We also add '#tab=references' to the URL.
+    // We also '#tab=references' and '?jumpToFirst=true' to the URL.
     //
-    // That will cause the panel to show the references of the clicked token,
+    // '#tab=references' will cause the panel to show the references of the clicked token,
     // but not navigate the main web app to it.
+    //
+    // '?jumpToFirst=true' causes the panel to select the first reference and
+    // open it in code blob on right.
     const onBlobNav = (url: string): void => {
-        const parsedURL = new URL(url, window.location.href)
-        parsedURL.searchParams.set('jumpToFirst', 'true')
-        panelHistory.push(parsedURL.pathname + parsedURL.search + toViewStateHash('references'))
+        panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
     if (loading) {
@@ -858,4 +857,10 @@ export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
     }
 
     return <ResizableCoolCodeIntelPanel {...props} token={token} />
+}
+
+export const appendJumpToFirstQueryParameter = (url: string): string => {
+    const newUrl = new URL(url, window.location.href)
+    newUrl.searchParams.set('jumpToFirst', 'true')
+    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
 }
