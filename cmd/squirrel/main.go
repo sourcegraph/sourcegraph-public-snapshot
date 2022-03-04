@@ -4,9 +4,12 @@ package main
 
 import (
 	"context"
+	"embed"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -172,14 +175,19 @@ func NewSquirrel(readFile ReadFileFunc) *Squirrel {
 func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error) {
 	parser := sitter.NewParser()
 
-	var queryString string
-	var lang *sitter.Language
-	ext := filepath.Ext(location.Path)
-	switch ext {
-	case ".go":
-		queryString = goQueries
-		lang = golang.GetLanguage()
-	default:
+	ext := strings.TrimPrefix(filepath.Ext(location.Path), ".")
+	nvimLang, ok := extToNvimQueryDir[ext]
+	if !ok {
+		return nil, nil, errors.New("unsupported file extension")
+	}
+	queriesBytes, err := queriesFs.ReadFile(path.Join("nvim-treesitter", "queries", nvimLang, "locals.scm"))
+	if err != nil {
+		return nil, []Breadcrumb{}, errors.Newf("could not find nvim-treesitter locals.scm for %s: %s", nvimLang, err)
+	}
+	queryString := string(queriesBytes)
+
+	lang, ok := extToSitterLanguage[ext]
+	if !ok {
 		return nil, nil, fmt.Errorf("unrecognized file extension %s", ext)
 	}
 
@@ -303,87 +311,61 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 
 var goIdentifiers = []string{"identifier", "type_identifier"}
 
-var goQueries = `
-(
-    (function_declaration
-        name: (identifier) @definition.function) ;@function
-)
+//go:embed nvim-treesitter
+var queriesFs embed.FS
 
-(
-    (method_declaration
-        name: (field_identifier) @definition.method); @method
-)
+//go:embed language-file-extensions.json
+var languageFileExtensionsJson string
 
-(short_var_declaration
-  left: (expression_list
-          (identifier) @definition.var))
+var langToNvimQueryDir = map[string]string{
+	"go": "go",
+}
 
-(var_spec
-  name: (identifier) @definition.var)
+var langToExts = func() map[string][]string {
+	var m map[string][]string
+	err := json.Unmarshal([]byte(languageFileExtensionsJson), &m)
+	if err != nil {
+		panic(err)
+	}
+	return m
+}()
 
-(parameter_declaration (identifier) @definition.var)
-(variadic_parameter_declaration (identifier) @definition.var)
+var extToNvimQueryDir = func() map[string]string {
+	m := map[string]string{}
+	for lang, exts := range langToExts {
+		nvimQueryDir, ok := langToNvimQueryDir[lang]
+		if !ok {
+			continue
+		}
 
-(for_statement
- (range_clause
-   left: (expression_list
-           (identifier) @definition.var)))
+		for _, ext := range exts {
+			if _, ok := m[ext]; ok {
+				panic(fmt.Sprintf("ambiguous language for extension %s", ext))
+			}
+			m[ext] = nvimQueryDir
+		}
+	}
 
-(const_declaration
- (const_spec
-  name: (identifier) @definition.var))
+	return m
+}()
 
-(type_declaration
-  (type_spec
-    name: (type_identifier) @definition.type))
+var langToSitterLanguage = map[string]*sitter.Language{
+	"go": golang.GetLanguage(),
+}
 
-;; reference
-(identifier) @reference
-(type_identifier) @reference
-(field_identifier) @reference
-((package_identifier) @reference
-  (set! reference.kind "namespace"))
+var extToSitterLanguage = func() map[string]*sitter.Language {
+	m := map[string]*sitter.Language{}
+	for lang := range langToExts {
+		sitterLanguage, ok := langToSitterLanguage[lang]
+		if !ok {
+			continue
+		}
 
-(package_clause
-   (package_identifier) @definition.namespace)
+		m[lang] = sitterLanguage
+	}
 
-(import_spec_list
-  (import_spec
-    name: (package_identifier) @definition.namespace))
-
-;; Call references
-((call_expression
-   function: (identifier) @reference)
- (set! reference.kind "call" ))
-
-((call_expression
-    function: (selector_expression
-                field: (field_identifier) @reference))
- (set! reference.kind "call" ))
-
-
-((call_expression
-    function: (parenthesized_expression
-                (identifier) @reference))
- (set! reference.kind "call" ))
-
-((call_expression
-   function: (parenthesized_expression
-               (selector_expression
-                 field: (field_identifier) @reference)))
- (set! reference.kind "call" ))
-
-;; Scopes
-
-(func_literal) @scope
-(source_file) @scope
-(function_declaration) @scope
-(if_statement) @scope
-(block) @scope
-(expression_switch_statement) @scope
-(for_statement) @scope
-(method_declaration) @scope
-`
+	return m
+}()
 
 type Breadcrumb struct {
 	Location

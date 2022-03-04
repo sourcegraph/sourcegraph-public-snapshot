@@ -31,3 +31,4 @@ storybook-static/
 browser/code-intel-extensions/
 .buildkite-cache/
 lib/codeintel/reprolang/
+cmd/squirrel/language-file-extensions.json
