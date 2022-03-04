@@ -18,10 +18,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/structural"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -145,7 +151,30 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	return results, nil
 }
 
-func mapJob(job.Job) job.Job
+func mapJob(in job.Job) (_ job.Job, err error) {
+	mapper := job.Mapper{
+		// Ignore any leaf nodes that aren't commit/diff searches
+		MapRepoSearchJob:               func(*run.RepoSearch) *run.RepoSearch { return nil },
+		MapRepoSubsetTextSearchJob:     func(*textsearch.RepoSubsetTextSearch) *textsearch.RepoSubsetTextSearch { return nil },
+		MapRepoUniverseTextSearchJob:   func(*textsearch.RepoUniverseTextSearch) *textsearch.RepoUniverseTextSearch { return nil },
+		MapStructuralSearchJob:         func(*structural.StructuralSearch) *structural.StructuralSearch { return nil },
+		MapRepoSubsetSymbolSearchJob:   func(*symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch { return nil },
+		MapRepoUniverseSymbolSearchJob: func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch { return nil },
+		MapComputeExcludedReposJob:     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos { return nil },
+
+		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
+			c, commitErr := mapCommitJob(c)
+			if commitErr != nil {
+				err = errors.Append(err, commitErr)
+			}
+			return c
+		},
+	}
+
+	return mapper.Map(in), err
+}
+
+func mapCommitJob(*commit.CommitSearch) (*commit.CommitSearch, error)
 
 func gqlURL(queryName string) (string, error) {
 	u, err := url.Parse(internalapi.Client.URL)
