@@ -6,11 +6,10 @@ const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-// @todo: Add explaination
-// @todo: Add tests
-// https://sourcegraph.test:3443/-/editor?remote_url=git%40github.com%3Asourcegraph%2Fsourcegraph-jetbrains.git&branch=main&file=src%2Fmain%2Fjava%2FOpenRevisionAction.java&editor=JetBrains&version=v1.2.2&start_row=68&start_col=26&end_row=68&end_col=26&utm_product_name=IntelliJ+IDEA&utm_product_version=2021.3.2
-// https://sourcegraph.test:3443/-/editor?remote_url=git@github.com:sourcegraph/sourcegraph.git&branch=ps/detect-ide-extensions&file=client/web/src/tracking/util.ts&editor=VSCode&version=2.0.9&start_row=13&start_col=22&end_row=13&end_col=22&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=vsce-commands
-// https://sourcegraph.test:3443/sign-up?editor=vscode&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up
+/**
+ * This component uses UTM parameters to detect incoming traffic from our IDE extensions (VS Code
+ * and JetBrains) and updates a temporary setting whenever these are found.
+ */
 export const IdeExtensionTracker: React.FunctionComponent = () => {
     const [, setLastVSCodeDetection] = useTemporarySetting(VSCODE_SETTING, 0)
     const [, setLastJetBrainsDetection] = useTemporarySetting(JETBRAINS_SETTING, 0)
@@ -36,10 +35,9 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
     return null
 }
 
-export const useIsUsingIDEIntegration = (): undefined | boolean => {
+export const useIsUsingIdeIntegration = (): undefined | boolean => {
     const [lastVSCodeDetection] = useTemporarySetting(VSCODE_SETTING, 0)
     const [lastJetBrainsDetection] = useTemporarySetting(JETBRAINS_SETTING, 0)
-
     const [now] = useState<number>(Date.now())
 
     if (lastVSCodeDetection === undefined || lastJetBrainsDetection === undefined) {
