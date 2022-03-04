@@ -69,15 +69,16 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     style={{ top: '1rem', right: '1rem' }}
                     onClick={toggleDeleteModal}
                 />
-                <p>
-                    <strong>Your are going to delete { org.name } from Sourcegraph.</strong>This cannot be undone. Deleting an organization will remove all of its synced repositories from Sourcegraph, along with the organization's code insights, batch changes, code monitors and other resources.
+                <p className="pt-3">
+                    <strong>You are going to delete { org.name } from Sourcegraph.</strong>This cannot be undone. Deleting an organization will remove all of its synced repositories from Sourcegraph, along with the organization's code insights, batch changes, code monitors and other resources.
                 </p>
-                <p>
+                <p className="text-mutedpt-3">
                     Please type the organization's name to continue
                 </p>
                 <Input
                     autoFocus={true}
                     value={orgNameInput}
+                    placeholder={org.name}
                     onChange={onOrgChangeName}
                     status={isOrgNameValid === undefined ? undefined : isOrgNameValid ? 'valid' : 'error'}                />
                 <div className="d-flex justify-content-end mt-4">
