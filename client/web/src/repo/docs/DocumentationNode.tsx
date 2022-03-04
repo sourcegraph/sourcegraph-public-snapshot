@@ -159,7 +159,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                         <Link
                                             target="_blank"
                                             rel="noopener"
-                                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                            to="/help/code_intelligence/apidocs"
                                         >
                                             Learn more
                                         </Link>

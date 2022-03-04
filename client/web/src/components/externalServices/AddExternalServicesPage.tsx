@@ -101,7 +101,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         <li>
                             Fetching{' '}
                             <Link
-                                to="https://docs.sourcegraph.com/admin/repo/permissions"
+                                to="/help/admin/repo/permissions"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -112,7 +112,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         <li>
                             Opening pull requests and syncing their metadata as part of{' '}
                             <Link
-                                to="https://docs.sourcegraph.com/user/batch_changes"
+                                to="/help/user/batch_changes"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

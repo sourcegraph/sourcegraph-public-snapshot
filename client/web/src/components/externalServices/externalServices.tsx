@@ -167,7 +167,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
             <Link
                 rel="noopener noreferrer"
                 target="_blank"
-                to="https://docs.sourcegraph.com/admin/external_service/github#configuration"
+                to="/help/admin/external_service/github#configuration"
             >
                 the docs for more options
             </Link>
@@ -235,7 +235,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
             <Link
                 rel="noopener noreferrer"
                 target="_blank"
-                to="https://docs.sourcegraph.com/admin/external_service/gitlab#configuration"
+                to="/help/admin/external_service/gitlab#configuration"
             >
                 the docs for more options
             </Link>
@@ -593,7 +593,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration"
+                    to="/help/admin/external_service/aws_codecommit#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -722,7 +722,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration"
+                    to="/help/admin/external_service/bitbucket_cloud#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -811,7 +811,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration"
+                    to="/help/admin/external_service/bitbucket_server#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -990,7 +990,7 @@ const GITOLITE: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/gitolite#configuration"
+                    to="/help/admin/external_service/gitolite#configuration"
                 >
                     the docs for more advanced options
                 </Link>
@@ -1095,7 +1095,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/other#configuration"
+                    to="/help/admin/external_service/other#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -1154,7 +1154,7 @@ const PERFORCE: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/repo/perforce#configuration"
+                    to="/help/admin/repo/perforce#configuration"
                 >
                     the docs for more advanced options
                 </Link>

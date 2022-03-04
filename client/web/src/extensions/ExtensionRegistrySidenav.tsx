@@ -117,7 +117,7 @@ const ExtensionSidenavBanner: React.FunctionComponent = () => (
         <small>
             You can improve your workflow by creating custom extensions. See{' '}
             <Link
-                to="https://docs.sourcegraph.com/extensions/authoring"
+                to="/help/extensions/authoring"
                 // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"

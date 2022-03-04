@@ -21,7 +21,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
             description = (
                 <p>
                     <Link
-                        to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#webhooks"
+                        to="/help/admin/external_service/bitbucket_server#webhooks"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -30,7 +30,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
                     will be created automatically on the configured Bitbucket Server instance. In case you don't provide
                     an admin token,{' '}
                     <Link
-                        to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#manual-configuration"
+                        to="/help/admin/external_service/bitbucket_server#manual-configuration"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -59,11 +59,11 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />
             <p className="mb-0">
                 Note that only{' '}
-                <Link to="https://docs.sourcegraph.com/user/batch_changes" target="_blank" rel="noopener noreferrer">
+                <Link to="/help/user/batch_changes" target="_blank" rel="noopener noreferrer">
                     batch changes
                 </Link>{' '}
                 make use of this webhook. To enable webhooks to trigger repository updates on Sourcegraph,{' '}
-                <Link to="https://docs.sourcegraph.com/admin/repo/webhooks" target="_blank" rel="noopener noreferrer">
+                <Link to="/help/admin/repo/webhooks" target="_blank" rel="noopener noreferrer">
                     see the docs on how to use them
                 </Link>
                 .

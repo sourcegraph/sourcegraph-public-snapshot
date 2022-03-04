@@ -50,7 +50,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
                 <Link
-                    to="https://docs.sourcegraph.com/cloud/cloud_ent_on-prem_comparison"
+                    to="/help/cloud/cloud_ent_on-prem_comparison"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
@@ -78,7 +78,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">
                     <Link
-                        to="https://docs.sourcegraph.com/admin/install"
+                        to="/help/admin/install"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mr-2"

@@ -124,7 +124,7 @@ export const SearchPageFooter: React.FunctionComponent<
                 <span className="d-flex flex-row mb-2 mb-md-0">
                     <Link
                         className="px-3"
-                        to="https://docs.sourcegraph.com/integration/browser_extension"
+                        to="/help/integration/browser_extension"
                         rel="noopener noreferrer"
                         target="_blank"
                         onClick={() => logLinkClicked('BrowserExtensions')}
@@ -145,7 +145,7 @@ export const SearchPageFooter: React.FunctionComponent<
                 <span className="d-flex flex-row">
                     <Link
                         className="px-3"
-                        to="https://docs.sourcegraph.com/integration/editor"
+                        to="/help/integration/editor"
                         rel="noopener noreferrer"
                         target="_blank"
                         onClick={() => logLinkClicked('EditorPlugins')}
@@ -155,7 +155,7 @@ export const SearchPageFooter: React.FunctionComponent<
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
                     <Link
                         className="pl-3"
-                        to="https://docs.sourcegraph.com/admin/external_service"
+                        to="/help/admin/external_service"
                         rel="noopener noreferrer"
                         target="_blank"
                         onClick={() => logLinkClicked('CodeHostIntegrations')}

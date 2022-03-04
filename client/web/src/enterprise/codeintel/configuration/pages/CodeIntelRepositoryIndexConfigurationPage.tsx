@@ -40,7 +40,7 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIn
                         <>
                             Provide explicit index job configuration to customize how this repository is indexed. See
                             the{' '}
-                            <Link to="https://docs.sourcegraph.com/code_intelligence/references/auto_indexing_configuration">
+                            <Link to="/help/code_intelligence/references/auto_indexing_configuration">
                                 reference guide
                             </Link>{' '}
                             for more information.

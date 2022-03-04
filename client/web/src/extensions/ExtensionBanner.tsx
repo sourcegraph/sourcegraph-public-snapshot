@@ -19,6 +19,6 @@ export const ExtensionBanner: React.FunctionComponent<Props> = ({ className }) =
         bodyText="You can improve your workflow by creating custom extensions. See the Sourcegraph Docs for details about writing and publishing."
         bodyTextClassName={classNames('mt-3', styles.bodyText)}
         linkText="Explore extension API"
-        href="https://docs.sourcegraph.com/extensions/authoring"
+        href="/help/extensions/authoring"
     />
 )

@@ -47,7 +47,7 @@ function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => 
                 <div>
                     <strong>New</strong>: Create a code monitor to get notified about new search results for a query.{' '}
                     {isAuthenticatedUser ? (
-                        <Link to="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                        <Link to="/help/code_monitoring" target="_blank" rel="noopener">
                             Learn more.
                         </Link>
                     ) : null}

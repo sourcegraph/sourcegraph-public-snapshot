@@ -28,7 +28,7 @@ export const SelfHostedCtaLink: React.FunctionComponent<SelfHostedCtaLinkProps> 
         <div className={classNames(styles.container, className)}>
             <span className={contentClassName}>
                 Get Sourcegraph for teams via our{' '}
-                <Link onClick={gettingStartedCTAOnClick} to="https://docs.sourcegraph.com/admin/install" {...linkProps}>
+                <Link onClick={gettingStartedCTAOnClick} to="/help/admin/install" {...linkProps}>
                     self-hosted installation
                 </Link>
                 .

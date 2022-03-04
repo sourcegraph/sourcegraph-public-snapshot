@@ -178,7 +178,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     We’ll sync and index these repositories so you can search your code
                                                     all in one place.
                                                     <Link
-                                                        to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
+                                                        to="/help/code_search/how-to/adding_repositories_to_cloud"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                     >
