@@ -893,14 +893,9 @@ export async function handleCodeHost({
         )
 
     if (isGithubCodeHost(codeHost)) {
-        // TODO: add tests in codeHost.test.tsx
         const { searchEnhancement, enhanceSearchPage } = codeHost
-        if (searchEnhancement) {
-            subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
-        }
-        if (enhanceSearchPage) {
-            subscriptions.add(enhanceSearchPage(sourcegraphURL, mutations))
-        }
+        subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
+        subscriptions.add(enhanceSearchPage(sourcegraphURL))
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
@@ -1553,19 +1548,17 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(extensionsController)
 
-    const isTelemetryEnabled =
-        of(false) ||
-        combineLatest([
-            observeSendTelemetry(isExtension),
-            from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
-        ]).pipe(
-            map(
-                ([sendTelemetry, isPrivateRepo]) =>
-                    sendTelemetry &&
-                    /** Enable telemetry if: a) this is a self-hosted Sourcegraph instance; b) or public repository; */
-                    (!isDefaultSourcegraphUrl(sourcegraphURL) || !isPrivateRepo)
-            )
+    const isTelemetryEnabled = combineLatest([
+        observeSendTelemetry(isExtension),
+        from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
+    ]).pipe(
+        map(
+            ([sendTelemetry, isPrivateRepo]) =>
+                sendTelemetry &&
+                /** Enable telemetry if: a) this is a self-hosted Sourcegraph instance; b) or public repository; */
+                (!isDefaultSourcegraphUrl(sourcegraphURL) || !isPrivateRepo)
         )
+    )
 
     const innerTelemetryService = new EventLogger(requestGraphQL, sourcegraphURL)
     const telemetryService = new ConditionalTelemetryService(innerTelemetryService, isTelemetryEnabled)
