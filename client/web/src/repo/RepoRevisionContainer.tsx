@@ -310,9 +310,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {showCoolCodeIntelPanel && (
-                <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
-            )}
+            {false && <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />}
         </>
     )
 }

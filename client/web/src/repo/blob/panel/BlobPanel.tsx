@@ -12,13 +12,25 @@ import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegrap
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
+import { BuiltinCoolCodeIntelPanel } from '../../../global/CoolCodeIntel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
-interface Props extends AbsoluteRepoFile, ModeSpec, SettingsCascadeProps, ExtensionsControllerProps, ActivationProps {
+interface Props
+    extends AbsoluteRepoFile,
+        ModeSpec,
+        SettingsCascadeProps,
+        ExtensionsControllerProps,
+        ActivationProps,
+        ThemeProps,
+        PlatformContextProps,
+        TelemetryProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -26,7 +38,7 @@ interface Props extends AbsoluteRepoFile, ModeSpec, SettingsCascadeProps, Extens
     commitID: string
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'cool'
 
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpec> {
@@ -57,6 +69,9 @@ export function useBlobPanelViews({
     location,
     history,
     settingsCascade,
+    isLightTheme,
+    platformContext,
+    telemetryService,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -176,6 +191,41 @@ export function useBlobPanelViews({
                     ),
                 },
                 {
+                    id: 'cool',
+                    provider: panelSubjectChanges.pipe(
+                        map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
+                            title: 'Code Navigation',
+                            content: '',
+                            priority: 200,
+                            selector: null,
+                            locationProvider: undefined,
+                            // TODO: What do we do if we have no position?
+                            reactElement: position ? (
+                                <BuiltinCoolCodeIntelPanel
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    isLightTheme={isLightTheme}
+                                    extensionsController={extensionsController}
+                                    telemetryService={telemetryService}
+                                    key="commits"
+                                    token={{
+                                        repoName,
+                                        commitID,
+                                        revision,
+                                        filePath,
+                                        line: position?.line,
+                                        character: position?.character,
+                                    }}
+                                    externalHistory={history}
+                                    externalLocation={location}
+                                />
+                            ) : (
+                                <></>
+                            ),
+                        }))
+                    ),
+                },
+                {
                     id: 'def',
                     provider: createLocationProvider('def', 'Definition', 190, parameters =>
                         from(extensionsController.extHostAPI).pipe(
@@ -198,7 +248,16 @@ export function useBlobPanelViews({
                     ),
                 },
             ],
-            [createLocationProvider, extensionsController.extHostAPI, panelSubjectChanges, preferAbsoluteTimestamps]
+            [
+                createLocationProvider,
+                panelSubjectChanges,
+                preferAbsoluteTimestamps,
+                isLightTheme,
+                settingsCascade,
+                telemetryService,
+                platformContext,
+                extensionsController,
+            ]
         )
     )
 
