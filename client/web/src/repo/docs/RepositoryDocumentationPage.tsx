@@ -256,11 +256,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 repository.
                             </p>
                             <h3>
-                                <Link
-                                    target="_blank"
-                                    rel="noopener"
-                                    to="/help/code_intelligence/apidocs"
-                                >
+                                <Link target="_blank" rel="noopener" to="/help/code_intelligence/apidocs">
                                     Learn more
                                 </Link>
                             </h3>

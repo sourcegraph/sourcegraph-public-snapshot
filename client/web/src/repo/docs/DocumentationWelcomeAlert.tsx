@@ -22,11 +22,7 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
                     <li>Use the navbar on the left to navigate all the API documentation for this repository.</li>
                     <li>Only the Go programming language is supported at this time.</li>
                     <li>
-                        <Link
-                            target="_blank"
-                            rel="noopener"
-                            to="/help/code_intelligence/apidocs"
-                        >
+                        <Link target="_blank" rel="noopener" to="/help/code_intelligence/apidocs">
                             Learn more
                         </Link>
                     </li>

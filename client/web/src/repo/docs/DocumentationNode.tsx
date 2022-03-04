@@ -156,11 +156,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                         <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
                                         API docs
                                         <span className={classNames('mx-2', styles.pillDivider)} />
-                                        <Link
-                                            target="_blank"
-                                            rel="noopener"
-                                            to="/help/code_intelligence/apidocs"
-                                        >
+                                        <Link target="_blank" rel="noopener" to="/help/code_intelligence/apidocs">
                                             Learn more
                                         </Link>
                                     </span>

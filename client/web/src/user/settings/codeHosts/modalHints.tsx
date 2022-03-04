@@ -40,11 +40,7 @@ export const getMachineUserFragment = (serviceName: string): React.ReactFragment
         <div className="px-2 py-1">
             <h4>
                 We recommend setting up a machine user on {serviceName} to provide restricted access to repositories.{' '}
-                <Link
-                    to="/help/cloud/access_tokens_on_cloud"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <Link to="/help/cloud/access_tokens_on_cloud" target="_blank" rel="noopener noreferrer">
                     Learn more
                 </Link>
                 .

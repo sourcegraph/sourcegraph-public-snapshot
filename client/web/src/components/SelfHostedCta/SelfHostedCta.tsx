@@ -48,11 +48,7 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
 
                 <ul>
                     <li>
-                        <Link
-                            onClick={gettingStartedCTAOnClick}
-                            to="/help/admin/install"
-                            {...linkProps}
-                        >
+                        <Link onClick={gettingStartedCTAOnClick} to="/help/admin/install" {...linkProps}>
                             Learn how to install
                         </Link>
                     </li>

@@ -49,11 +49,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <li>Your code never leaves your server</li>
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
-                <Link
-                    to="/help/cloud/cloud_ent_on-prem_comparison"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
+                <Link to="/help/cloud/cloud_ent_on-prem_comparison" target="_blank" rel="noopener noreferrer">
                     Learn more about self-hosted vs. cloud features{' '}
                     <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                 </Link>
@@ -77,12 +73,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <code className={styles.codeBlock}>{dockerCommand}</code>
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">
-                    <Link
-                        to="/help/admin/install"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mr-2"
-                    >
+                    <Link to="/help/admin/install" target="_blank" rel="noopener noreferrer" className="mr-2">
                         Learn how to deploy a server or cluster{' '}
                         <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                     </Link>

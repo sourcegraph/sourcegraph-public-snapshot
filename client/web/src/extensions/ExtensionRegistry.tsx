@@ -392,19 +392,11 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                         self-hosted or managed instances
                                     </Link>
                                     , <Link to="http://sourcegraph.com/">Sourcegraph.com</Link>, and Sourcegraph's{' '}
-                                    <Link to="/help/integration/browser_extension">
-                                        browser extensions
-                                    </Link>{' '}
-                                    and{' '}
-                                    <Link to="/help/integration/editor">
-                                        editor integrations
-                                    </Link>
-                                    . You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
-                                    more about the Sourcegraph.com extension registry and administration options in our{' '}
-                                    <Link to="/help/admin/extensions">
-                                        extensions documentation
-                                    </Link>
-                                    .
+                                    <Link to="/help/integration/browser_extension">browser extensions</Link> and{' '}
+                                    <Link to="/help/integration/editor">editor integrations</Link>. You may not use the
+                                    Sourcegraph.com extension registry with Sourcegraph OSS. Learn more about the
+                                    Sourcegraph.com extension registry and administration options in our{' '}
+                                    <Link to="/help/admin/extensions">extensions documentation</Link>.
                                 </div>
                             </>
                         )}

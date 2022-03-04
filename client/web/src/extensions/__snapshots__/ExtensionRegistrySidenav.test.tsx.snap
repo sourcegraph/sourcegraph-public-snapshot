@@ -109,7 +109,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
         You can improve your workflow by creating custom extensions. See 
         <a
           class="anchorLink"
-          href="https://docs.sourcegraph.com/extensions/authoring"
+          href="/help/extensions/authoring"
           rel="noreferrer"
           target="_blank"
         >
