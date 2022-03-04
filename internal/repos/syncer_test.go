@@ -636,34 +636,47 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 		testCases := []struct {
 			name          string
 			repo          api.RepoName
+			background    bool
 			before, after types.Repos
 			returned      *types.Repo
 		}{{
-			name:     "insert",
-			repo:     repo.Name,
-			returned: repo,
-			after:    types.Repos{repo},
+			name:       "insert",
+			repo:       repo.Name,
+			background: true,
+			returned:   repo,
+			after:      types.Repos{repo},
 		}, {
-			name:     "update",
-			repo:     repo.Name,
-			before:   types.Repos{oldRepo},
-			returned: oldRepo,
-			after:    types.Repos{repo},
+			name:       "update",
+			repo:       repo.Name,
+			background: true,
+			before:     types.Repos{oldRepo},
+			returned:   oldRepo,
+			after:      types.Repos{repo},
 		}, {
-			name:     "update name",
-			repo:     repo.Name,
-			before:   types.Repos{repo.With(typestest.Opt.RepoName("old/name"))},
-			returned: repo,
-			after:    types.Repos{repo},
+			name:       "blocking update",
+			repo:       repo.Name,
+			background: false,
+			before:     types.Repos{oldRepo},
+			returned:   repo,
+			after:      types.Repos{repo},
 		}, {
-			name:     "delete conflicting name",
-			repo:     repo.Name,
-			before:   types.Repos{repo.With(typestest.Opt.RepoExternalID("old id"))},
-			returned: repo.With(typestest.Opt.RepoExternalID("old id")),
-			after:    types.Repos{repo},
+			name:       "update name",
+			repo:       repo.Name,
+			background: true,
+			before:     types.Repos{repo.With(typestest.Opt.RepoName("old/name"))},
+			returned:   repo,
+			after:      types.Repos{repo},
 		}, {
-			name: "rename and delete conflicting name",
-			repo: repo.Name,
+			name:       "delete conflicting name",
+			repo:       repo.Name,
+			background: true,
+			before:     types.Repos{repo.With(typestest.Opt.RepoExternalID("old id"))},
+			returned:   repo.With(typestest.Opt.RepoExternalID("old id")),
+			after:      types.Repos{repo},
+		}, {
+			name:       "rename and delete conflicting name",
+			repo:       repo.Name,
+			background: true,
 			before: types.Repos{
 				repo.With(typestest.Opt.RepoExternalID("old id")),
 				repo.With(typestest.Opt.RepoName("old name")),
@@ -693,13 +706,17 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
 					Sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, repo),
+						repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, repo.Clone()),
 					),
 				}
 
-				have, err := syncer.SyncRepo(ctx, tc.repo, true)
+				have, err := syncer.SyncRepo(ctx, tc.repo, tc.background)
 				if err != nil {
 					t.Fatal(err)
+				}
+
+				if have.ID == 0 {
+					t.Errorf("expected returned synced repo to have an ID set")
 				}
 
 				opt := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
