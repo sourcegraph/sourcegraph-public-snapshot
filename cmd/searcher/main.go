@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var (
@@ -70,7 +71,7 @@ func main() {
 	service := &search.Service{
 		Store: &store.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
+				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
 			},
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),

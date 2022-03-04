@@ -24,7 +24,6 @@ import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
@@ -63,8 +62,7 @@ interface Props
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        GlobalCoolCodeIntelProps {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -381,8 +379,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     telemetryService={props.telemetryService}
                     location={props.location}
                     disableStatusBar={false}
-                    onTokenClick={props.onTokenClick}
-                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
                 />
             )}
         </>

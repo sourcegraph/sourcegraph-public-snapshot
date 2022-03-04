@@ -9,7 +9,7 @@ import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
@@ -21,8 +21,6 @@ import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
 import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
-import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
-import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps extends TelemetryProps {
@@ -47,7 +45,9 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const handleDashboardSelect = useDashboardSelectHandler()
+    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
+        history.push(`/insights/dashboards/${dashboard.id}`)
+
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
@@ -65,7 +65,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         )
     }
 
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
     const permissions = getDashboardPermissions(currentDashboard)
 
     const handleSelect = (action: DashboardMenuAction): void => {
@@ -76,9 +76,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     !isVirtualDashboard(currentDashboard) &&
                     isCustomInsightDashboard(currentDashboard)
                 ) {
-                    const dashboardURL = currentDashboard.settingsKey ?? currentDashboard.id
-
-                    history.push(`/insights/dashboards/${dashboardURL}/edit`)
+                    history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
             }

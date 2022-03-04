@@ -822,7 +822,7 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  clone_url           | text                     |           | not null | 
  user_id             | integer                  |           |          | 
  org_id              | integer                  |           |          | 
- created_at          | timestamp with time zone |           |          | transaction_timestamp()
+ created_at          | timestamp with time zone |           | not null | transaction_timestamp()
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_clone_url_idx" btree (clone_url)
@@ -880,6 +880,7 @@ Foreign-key constraints:
  encryption_key_id | text                     |           | not null | ''::text
  namespace_org_id  | integer                  |           |          | 
  has_webhooks      | boolean                  |           |          | 
+ token_expires_at  | timestamp with time zone |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
@@ -1657,7 +1658,6 @@ Referenced by:
  expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
-    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
     "org_invitations_org_id" btree (org_id) WHERE deleted_at IS NULL
     "org_invitations_recipient_user_id" btree (recipient_user_id) WHERE deleted_at IS NULL
 Check constraints:
@@ -2028,7 +2028,6 @@ Triggers:
 ---------------+--------------------------+-----------+----------+-----------------
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
- user_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at    | timestamp with time zone |           | not null | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
@@ -2340,7 +2339,6 @@ Foreign-key constraints:
  bind_id         | text                     |           | not null | 
  permission      | text                     |           | not null | 
  object_type     | text                     |           | not null | 
- object_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at      | timestamp with time zone |           | not null | 
  service_type    | text                     |           | not null | 
  service_id      | text                     |           | not null | 

@@ -110,11 +110,11 @@ describe('e2e test suite', () => {
 
             // Switch to dark
             await driver.page.select('.test-theme-toggle', 'dark')
-            expect(await getActiveThemeClasses()).toContain(expect.arrayContaining(['theme-dark']))
+            expect(await getActiveThemeClasses()).toContain('theme-dark')
 
             // Switch to light
             await driver.page.select('.test-theme-toggle', 'light')
-            expect(await getActiveThemeClasses()).toContain(expect.arrayContaining(['theme-light']))
+            expect(await getActiveThemeClasses()).toContain('theme-light')
         })
     })
 
@@ -265,9 +265,6 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
                 await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
-                // expect(
-                //     await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
-                // ).toHaveLength(1)
                 expect(
                     await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]'))
                 ).toHaveLength(1)
@@ -276,10 +273,8 @@ describe('e2e test suite', () => {
             test('responds to keyboard shortcuts', async () => {
                 const assertNumberRowsExpanded = async (expectedCount: number): Promise<void> => {
                     expect(
-                        await driver.page.evaluate(
-                            () => document.querySelectorAll('[data-tree-row-expanded="true"]').length
-                        )
-                    ).toBe(expectedCount)
+                        await driver.page.evaluate(() => document.querySelectorAll('[data-tree-row-expanded="true"]'))
+                    ).toHaveLength(expectedCount)
                 }
                 await driver.page.goto(
                     sourcegraphBaseUrl +

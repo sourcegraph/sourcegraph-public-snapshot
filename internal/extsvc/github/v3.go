@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -46,6 +47,9 @@ type V3Client struct {
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
+
+	// orgsCache is the organizations cache associated with the token.
+	orgsCache *rcache.Cache
 
 	// repoCache is the repository cache associated with the token.
 	repoCache *rcache.Cache
@@ -114,6 +118,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
+		orgsCache:        newOrgsCache(a),
 		repoCache:        newRepoCache(apiURL, a),
 		resource:         resource,
 	}
@@ -129,6 +134,29 @@ func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
 // RateLimitMonitor exposes the rate limit monitor.
 func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
+}
+
+// getConditional sends a conditional request to the GitHub API which does not count against the
+// rate limits. If the resource has not changed since based on teh value of etag, the
+// httpResponseState.status_code will be set to 304 otherwise it will be 200 (HTTP request errors
+// are handled by the underlying doRequest method). It is the caller's responsibility to ensure that
+// they take appropriate decisions based on the value of the status code.
+//
+// GitHub supports conditional requests by allowing us to set either If-None-Match (etag) or
+// If-Modified-Since (time) in the request header. At the moment, getConditional only supports
+// If-None-Match.
+//
+// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
+func (c *V3Client) getConditional(ctx context.Context, requestURI, etag string, result interface{}) (*httpResponseState, error) {
+	req, err := http.NewRequest("GET", requestURI, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add(headerIfNoneMatch, etag)
+
+	// Let the caller of getConditional inspect the err. We will return it as is.
+	return c.request(ctx, req, result)
 }
 
 func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
@@ -187,6 +215,15 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	}
 
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+}
+
+func newOrgsCache(a auth.Authenticator) *rcache.Cache {
+	if a == nil {
+		log15.Warn("Cannot initialize orgsCache for nil auth")
+		return nil
+	}
+
+	return rcache.New("gh_orgs:" + a.Hash())
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
@@ -474,9 +511,93 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // server instances only. Callers should be careful not to use this for github.com or GitHub
 // enterprise cloud.
 func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org, hasNextPage bool, err error) {
+	hash := strings.ToLower(c.auth.Hash())
+
+	// Each specific page will return a different list of organizations, so each page specific
+	// request will also have its own etag. We need to be able to identify each etag by page as well
+	// as each list of orgs by page.
+	orgsKey := fmt.Sprintf("%s-orgs-%d", hash, page)
+	etagKey := fmt.Sprintf("%s-orgs-etag-%d", hash, page)
+
 	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
-	_, err = c.get(ctx, path, &orgs)
-	return orgs, len(orgs) > 0, err
+	updateOrgsCache := func(r *httpResponseState) error {
+		if c.orgsCache == nil {
+			return nil
+		}
+
+		newEtag := r.headers.Get("Etag")
+		c.orgsCache.Set(etagKey, []byte(newEtag))
+
+		value, err := json.Marshal(orgs)
+		if err != nil {
+			return err
+		}
+
+		c.orgsCache.Set(orgsKey, value)
+		return nil
+	}
+
+	// getOrgsFromAPI fetches the new list of orgs from GitHub and updates the orgsCache.
+	getOrgsFromAPI := func() error {
+		respState, err := c.get(ctx, path, &orgs)
+		if err != nil {
+			return err
+		}
+
+		return updateOrgsCache(respState)
+	}
+
+	if c.orgsCache == nil {
+		log15.Warn("ListOrganizations invoked with a nil orgsCache (client probably has no authenticator) and this could be bad for API rate limits")
+
+		if err := getOrgsFromAPI(); err != nil {
+			return nil, false, err
+		}
+
+		return orgs, len(orgs) > 0, nil
+	}
+
+	etag, cacheHit := c.orgsCache.Get(etagKey)
+	if !cacheHit {
+		if err := getOrgsFromAPI(); err != nil {
+			return nil, false, err
+		}
+
+		return orgs, len(orgs) > 0, nil
+	}
+
+	respState, err := c.getConditional(ctx, path, string(etag), &orgs)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// If the resource was modified since the last time this resource was accessed, the response
+	// body will have a new response and we should return the new result now populated in orgs.
+	if respState.statusCode == 200 {
+		if err := updateOrgsCache(respState); err != nil {
+			return nil, false, err
+		}
+
+		return orgs, len(orgs) > 0, nil
+	}
+
+	rawOrgs, ok := c.orgsCache.Get(orgsKey)
+	if !ok {
+		// Reading the orgs from the cache failed even though the API call to GitHub succeeded. This
+		// isn't ideal and is our fault. Treat this as a cache miss and make a regular API call
+		// anyway.
+		if err := getOrgsFromAPI(); err != nil {
+			return nil, false, err
+		}
+
+		return orgs, len(orgs) > 0, nil
+	}
+
+	if err := json.Unmarshal(rawOrgs, &orgs); err != nil {
+		return nil, false, err
+	}
+
+	return orgs, len(orgs) > 0, nil
 }
 
 // ListOrganizationMembers retrieves collaborators in the given organization.
@@ -701,7 +822,13 @@ func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
 // - /user/repos
 func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
-	if _, err := c.get(ctx, requestURI, &restRepos); err != nil {
+	if res, err := c.get(ctx, requestURI, &restRepos); err != nil {
+		link := res.headers.Get("Link")
+		// If we've reached beyond the last page then GitHub API returns 404 with link to the first page, but does NOT contain link to the next page.
+		// link to the next page is typically included in 200 response Link header
+		if res.statusCode == 404 && strings.Contains(link, `rel="first"`) && !strings.Contains(link, `rel="next"`) {
+			return []*Repository{}, nil
+		}
 		return nil, err
 	}
 	repos := make([]*Repository, 0, len(restRepos))
