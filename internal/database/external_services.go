@@ -1062,6 +1062,10 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		updates = append(updates, sqlf.Sprintf("token_expires_at = %s", update.TokenExpiresAt))
 	}
 
+	if len(updates) == 0 {
+		return nil
+	}
+
 	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
 	res, err := e.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
