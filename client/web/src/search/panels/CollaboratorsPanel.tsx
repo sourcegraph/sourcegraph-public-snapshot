@@ -193,7 +193,49 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
 const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> = ({ isSiteAdmin }) => {
     const [infoShown, setInfoShown] = useState<boolean>(false)
 
-    return !infoShown ? (
+    if (infoShown) {
+        return (
+            <div className="col-12 mt-2 mb-2 position-relative">
+                <Card>
+                    <CardBody>
+                        <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
+                            <h2 className={classNames(styles.infoBox, 'mb-0')}>
+                                <InformationOutlineIcon className="icon-inline mr-2 text-muted" />
+                                What is this?
+                            </h2>
+                            <div className="flex-grow-1" />
+                            <Button
+                                variant="icon"
+                                onClick={() => setInfoShown(false)}
+                                aria-label="Close info box"
+                                aria-expanded="true"
+                            >
+                                ×
+                            </Button>
+                        </div>
+                        {isSiteAdmin ? (
+                            <>
+                                <p className={styles.infoBox}>
+                                    This feature enables Sourcegraph users to invite collaborators we discover through
+                                    your Git repository commit history. The invitee will receive a link to Sourcegraph,
+                                    but no special permissions are granted.
+                                </p>
+                                <p className={classNames(styles.infoBox, 'mb-0')}>
+                                    If you wish to disable this feature, see <Link to="#">this documentation</Link>.
+                                </p>
+                            </>
+                        ) : (
+                            <p className={classNames(styles.infoBox, 'mb-0')}>
+                                These collaborators were found via your repositories Git commit history. The invitee
+                                will receive a link to Sourcegraph, but no special permissions are granted.
+                            </p>
+                        )}
+                    </CardBody>
+                </Card>
+            </div>
+        )
+    }
+    return (
         <div className={classNames('col-12', 'd-flex', 'mt-2', 'mb-1')}>
             <div className={classNames('text-muted', styles.info)}>Collaborators from your repositories</div>
             <div className="flex-grow-1" />
@@ -206,44 +248,12 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                         event.preventDefault()
                         setInfoShown(true)
                     }}
+                    aria-haspopup="true"
+                    aria-expanded="false"
                 >
                     What is this?
                 </Link>
             </div>
-        </div>
-    ) : (
-        <div className="col-12 mt-2 mb-2 position-relative">
-            <Card>
-                <CardBody>
-                    <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
-                        <h2 className={classNames(styles.infoBox, 'mb-0')}>
-                            <InformationOutlineIcon className="icon-inline mr-2 text-muted" />
-                            What is this?
-                        </h2>
-                        <div className="flex-grow-1" />
-                        <Button variant="icon" onClick={() => setInfoShown(false)}>
-                            ×
-                        </Button>
-                    </div>
-                    {isSiteAdmin ? (
-                        <>
-                            <p className={styles.infoBox}>
-                                This feature enables Sourcegraph users to invite collaborators we discover through your
-                                Git repository commit history. The invitee will receive a link to Sourcegraph, but no
-                                special permissions are granted.
-                            </p>
-                            <p className={classNames(styles.infoBox, 'mb-0')}>
-                                If you wish to disable this feature, see <Link to="#">this documentation</Link>.
-                            </p>
-                        </>
-                    ) : (
-                        <p className={classNames(styles.infoBox, 'mb-0')}>
-                            These collaborators were found via your repositories Git commit history. The invitee will
-                            receive a link to Sourcegraph, but no special permissions are granted.
-                        </p>
-                    )}
-                </CardBody>
-            </Card>
         </div>
     )
 }
