@@ -118,7 +118,7 @@ func setupStoreTest(t *testing.T) dbutil.DB {
 			process_after     timestamp with time zone,
 			num_resets        integer NOT NULL default 0,
 			num_failures      integer NOT NULL default 0,
-			created_at       timestamp with time zone NOT NULL default NOW(),
+			created_at        timestamp with time zone NOT NULL default NOW(),
 			execution_logs    json[],
 			worker_hostname   text NOT NULL default ''
 		)

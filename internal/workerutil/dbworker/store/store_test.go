@@ -21,7 +21,7 @@ func TestStoreQueuedCount(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -45,7 +45,7 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -69,7 +69,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at, num_failures)
+		INSERT INTO workerutil_test (id, state, created_at, num_failures)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, 0),
 			(2, 'errored', NOW() - '2 minute'::interval, 2),
@@ -94,7 +94,7 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -119,7 +119,7 @@ func TestStoreMaxDurationInQueue(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			-- TODO
 			(1, 'queued', NOW() - '20 minutes'::interval), -- young
@@ -144,7 +144,7 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at, finished_at, num_failures)
+		INSERT INTO workerutil_test (id, state, created_at, finished_at, num_failures)
 		VALUES
 			-- TODO
 			(1, 'queued',  NOW() - '10 minutes'::interval, NULL,  0), -- young
@@ -170,7 +170,7 @@ func TestStoreDequeueState(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -189,7 +189,7 @@ func TestStoreDequeueOrder(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
 			(2, 'queued', NOW() - '5 minute'::interval),
@@ -208,7 +208,7 @@ func TestStoreDequeueConditions(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -228,7 +228,7 @@ func TestStoreDequeueResetExecutionLogs(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, execution_logs, uploaded_at)
+		INSERT INTO workerutil_test (id, state, execution_logs, created_at)
 		VALUES
 			(1, 'queued', E'{"{\\"key\\": \\"test\\"}"}', NOW() - '1 minute'::interval)
 	`); err != nil {
@@ -244,7 +244,7 @@ func TestStoreDequeueDelay(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at, process_after)
+		INSERT INTO workerutil_test (id, state, created_at, process_after)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, NULL),
 			(2, 'queued', NOW() - '2 minute'::interval, NULL),
@@ -263,7 +263,7 @@ func TestStoreDequeueView(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
 			(2, 'queued', NOW() - '2 minute'::interval),
@@ -277,7 +277,7 @@ func TestStoreDequeueView(t *testing.T) {
 	options := defaultTestStoreOptions(nil)
 	options.ViewName = "workerutil_test_view v"
 	options.Scan = testScanFirstRecordView
-	options.OrderByExpression = sqlf.Sprintf("v.uploaded_at")
+	options.OrderByExpression = sqlf.Sprintf("v.created_at")
 	options.ColumnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("v.id"),
 		sqlf.Sprintf("v.state"),
@@ -293,7 +293,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, uploaded_at)
+		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
 			(2, 'queued', NOW() - '1 minute'::interval)
@@ -342,7 +342,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, created_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
@@ -381,7 +381,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	db := setupStoreTest(t)
 
 	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
+		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, created_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
