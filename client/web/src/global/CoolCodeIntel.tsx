@@ -273,7 +273,7 @@ export const ReferencesList: React.FunctionComponent<
     // definitions) we select the first definition. We set it as activeLocation
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
-        if (props.jumpToFirst === true && definitions.length > 0) {
+        if (props.jumpToFirst && definitions.length > 0) {
             blobMemoryHistory.push(definitions[0].url)
             setActiveLocation(definitions[0])
         }
