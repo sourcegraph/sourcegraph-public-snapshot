@@ -68,6 +68,7 @@ import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { repoFilterForRepoRevision } from '../../search'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
 import styles from './TreePage.module.scss'
@@ -333,7 +334,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
-    const repoDepsSearchQueryURL = buildSearchURLQuery(`repo:deps(${repo.name})`, SearchPatternType.literal, false)
+    const repoDepsSearchQueryURL = buildSearchURLQuery(
+        `repo:deps(${repoFilterForRepoRevision(repo.name, false, revision)})`,
+        SearchPatternType.literal,
+        false
+    )
 
     return (
         <div className={styles.treePage}>
