@@ -152,15 +152,19 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 }
 
 func mapJob(in job.Job) (_ job.Job, err error) {
+	addErr := func(j interface{}) {
+		err = errors.Append(err, errors.Errorf("found invalid leaf job %T", j))
+	}
+
 	mapper := job.Mapper{
 		// Ignore any leaf nodes that aren't commit/diff searches
-		MapRepoSearchJob:               func(*run.RepoSearch) *run.RepoSearch { return nil },
-		MapRepoSubsetTextSearchJob:     func(*textsearch.RepoSubsetTextSearch) *textsearch.RepoSubsetTextSearch { return nil },
-		MapRepoUniverseTextSearchJob:   func(*textsearch.RepoUniverseTextSearch) *textsearch.RepoUniverseTextSearch { return nil },
-		MapStructuralSearchJob:         func(*structural.StructuralSearch) *structural.StructuralSearch { return nil },
-		MapRepoSubsetSymbolSearchJob:   func(*symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch { return nil },
-		MapRepoUniverseSymbolSearchJob: func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch { return nil },
-		MapComputeExcludedReposJob:     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos { return nil },
+		MapRepoSearchJob:               func(j *run.RepoSearch) *run.RepoSearch { addErr(j); return nil },
+		MapRepoSubsetTextSearchJob:     func(j *textsearch.RepoSubsetTextSearch) *textsearch.RepoSubsetTextSearch { addErr(j); return nil },
+		MapRepoUniverseTextSearchJob:   func(j *textsearch.RepoUniverseTextSearch) *textsearch.RepoUniverseTextSearch { addErr(j); return nil },
+		MapStructuralSearchJob:         func(j *structural.StructuralSearch) *structural.StructuralSearch { addErr(j); return nil },
+		MapRepoSubsetSymbolSearchJob:   func(j *symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch { addErr(j); return nil },
+		MapRepoUniverseSymbolSearchJob: func(j *symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch { addErr(j); return nil },
+		MapComputeExcludedReposJob:     func(j *repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos { addErr(j); return nil },
 
 		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
 			c, commitErr := mapCommitJob(c)
