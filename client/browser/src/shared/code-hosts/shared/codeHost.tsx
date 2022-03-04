@@ -745,7 +745,6 @@ const isSafeToContinueCodeIntel = async ({
 }: Pick<HandleCodeHostOptions, 'render' | 'codeHost'> &
     Pick<HandleCodeHostOptions['platformContext'], 'requestGraphQL' | 'sourcegraphURL'>): Promise<boolean> => {
     if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
-        console.log(111111)
         return true
     }
 
@@ -767,11 +766,8 @@ const isSafeToContinueCodeIntel = async ({
             requestGraphQL,
         }).toPromise()
 
-        console.log({ isRepoCloned })
-
         return isRepoCloned
     } catch (error) {
-        console.log({ error })
         // Ignore non-repository pages
         if (error instanceof RepoURLParseError) {
             return false
@@ -1618,8 +1614,6 @@ export function injectCodeIntelligenceToCodeHost(
             }
         })
     )
-
-    console.log('subscribed!')
 
     return subscriptions
 }
