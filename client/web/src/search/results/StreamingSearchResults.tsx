@@ -27,7 +27,7 @@ import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { usePersistentCadence } from '../../hooks'
-import { useIsUsingIDEIntegration } from '../../IdeExtensionTracker'
+import { useIsUsingIdeIntegration } from '../../IdeExtensionTracker'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
@@ -106,7 +106,7 @@ function useCtaAlert(
         false
     )
     const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
-    const isUsingIDEIntegration = useIsUsingIDEIntegration()
+    const isUsingIdeIntegration = useIsUsingIdeIntegration()
 
     const displaySignupAndBrowserExtensionCTAsBasedOnCadence = usePersistentCadence(
         CTA_ALERTS_CADENCE_KEY,
@@ -137,7 +137,7 @@ function useCtaAlert(
         }
 
         if (
-            isUsingIDEIntegration === false &&
+            isUsingIdeIntegration === false &&
             displayIDEExtensionCTABasedOnCadence &&
             !hasDismissedIDEExtensionAlert &&
             true
@@ -153,7 +153,7 @@ function useCtaAlert(
         displaySignupAndBrowserExtensionCTAsBasedOnCadence,
         hasDismissedBrowserExtensionAlert,
         isBrowserExtensionInstalled,
-        isUsingIDEIntegration,
+        isUsingIdeIntegration,
         hasDismissedIDEExtensionAlert,
         displayIDEExtensionCTABasedOnCadence,
     ])
