@@ -7,7 +7,7 @@ module.exports = {
   },
   overrides: baseConfig.overrides,
   rules: {
-    // The browser extensions do not have the /help redirect
+    // We cannot use the versioned "/help" redirect in the browser extension
     '@sourcegraph/sourcegraph/forbid-docs-links': 'off',
   },
 }
