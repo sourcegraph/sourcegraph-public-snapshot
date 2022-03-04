@@ -25,14 +25,14 @@ func ArchiveReader(
 	repo api.RepoName,
 	options gitserver.ArchiveOptions,
 ) (io.ReadCloser, error) {
+	options, err := validateOptions(options)
+	if err != nil {
+		return nil, err
+	}
 	if authz.SubRepoEnabled(checker) {
 		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
 		} else if enabled {
-			// todo: handle case if options nil or if Treeish empty
-			if len(options.Paths) == 0 {
-				options.Paths = []string{"."}
-			}
 			filteredFiles, err := LsFiles(ctx, checker, repo, api.CommitID(options.Treeish), options.Paths...)
 			if err != nil {
 				return nil, errors.Wrap(err, "LsFiles in ArchiveReader")
@@ -41,4 +41,14 @@ func ArchiveReader(
 		}
 	}
 	return gitserver.DefaultClient.Archive(ctx, repo, options)
+}
+
+func validateOptions(opts gitserver.ArchiveOptions) (gitserver.ArchiveOptions, error) {
+	if opts.Treeish == "" {
+		return opts, errors.New("must provide a tree or commit to archive")
+	}
+	if len(opts.Paths) == 0 {
+		opts.Paths = []string{"."}
+	}
+	return opts, nil
 }
