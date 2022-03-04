@@ -2,6 +2,7 @@ package executorqueue
 
 import (
 	"context"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,5 +23,18 @@ func initPrometheusMetric(observationContext *observation.Context, queueName str
 		}
 
 		return float64(count)
+	}))
+
+	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name:        "src_executor_queued_duration_seconds_total",
+		Help:        "The maximum amount of time an executor job has been sitting in the queue.",
+		ConstLabels: map[string]string{"queue": queueName},
+	}, func() float64 {
+		age, err := store.MaxDurationInQueue(context.Background())
+		if err != nil {
+			log15.Error("Failed to determine queued duration", "queue", queueName, "error", err)
+		}
+
+		return float64(age) / float64(time.Second)
 	}))
 }

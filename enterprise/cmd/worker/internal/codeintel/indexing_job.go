@@ -2,6 +2,7 @@ package codeintel
 
 import (
 	"context"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
@@ -81,6 +82,18 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		}
 
 		return float64(count)
+	}))
+
+	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_codeintel_dependency_index_queued_duration_seconds_total",
+		Help: "The maximum amount of time a dependency index job has been sitting in the queue.",
+	}, func() float64 {
+		age, err := dependencySyncStore.MaxDurationInQueue(context.Background())
+		if err != nil {
+			log15.Error("Failed to determine queued duration", "err", err)
+		}
+
+		return float64(age) / float64(time.Second)
 	}))
 
 	routines := []goroutine.BackgroundRoutine{

@@ -115,6 +115,57 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 }
 
+func TestStoreMaxDurationInQueue(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, uploaded_at)
+		VALUES
+			-- TODO
+			(1, 'queued', NOW() - '20 minutes'::interval), -- young
+			(2, 'queued', NOW() - '30 minutes'::interval), -- oldest queued
+			(3, 'state2', NOW() - '40 minutes'::interval), -- wrong state
+			(4, 'queued', NOW() - '10 minutes'::interval), -- young
+			(5, 'state3', NOW() - '50 minutes'::interval)  -- wrong state
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 30*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	}
+}
+
+func TestStoreMaxDurationInQueueFailed(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, uploaded_at, finished_at, num_failures)
+		VALUES
+			-- TODO
+			(1, 'queued',  NOW() - '10 minutes'::interval, NULL,  0), -- young
+			(2, 'errored', NOW(), NOW() - '30 minutes'::interval, 2), -- oldest retryable error'd
+			(3, 'state2',  NOW() - '40 minutes'::interval, NULL,  0), -- wrong state
+			(4, 'errored', NOW(), NOW() - '50 minutes'::interval, 3), -- non-retryable
+			(5, 'queued',  NOW() - '20 minutes'::interval, NULL,  0), -- oldest queued
+			(6, 'failed',  NOW(), NOW() - '60 minutes'::interval, 1)  -- wrong state
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 30*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	}
+}
+
 func TestStoreDequeueState(t *testing.T) {
 	db := setupStoreTest(t)
 

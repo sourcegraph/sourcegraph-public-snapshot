@@ -183,6 +183,18 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 
 		return float64(count)
 	}))
+
+	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_codeintel_upload_queued_duration_seconds_total",
+		Help: "The maximum amount of time an upload has been sitting in the queue.",
+	}, func() float64 {
+		age, err := workerStore.MaxDurationInQueue(context.Background())
+		if err != nil {
+			log15.Error("Failed to determine queued duration", "err", err)
+		}
+
+		return float64(age) / float64(time.Second)
+	}))
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
