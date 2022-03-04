@@ -564,7 +564,7 @@ const SearchReference = React.memo(
                 )}
                 <p className={sidebarStyles.sidebarSectionFooter}>
                     <small>
-                        <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                        <Link target="blank" to="/help/code_search/reference/queries">
                             Search syntax <ExternalLinkIcon className="icon-inline" />
                         </Link>
                     </small>
