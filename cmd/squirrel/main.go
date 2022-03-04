@@ -147,7 +147,11 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintln(w, result)
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		log15.Error("failed to write response: %s", err)
+		http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
+	}
 }
 
 type RepoCommitPath struct {
