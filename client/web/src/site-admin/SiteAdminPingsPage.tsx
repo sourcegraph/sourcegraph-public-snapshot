@@ -337,26 +337,22 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     </ul>
                 </li>
                 <li>
-                    IDE extension data
+                    IDE extensions data
                     <ul>
-                        VS Code extension
-                        <li>Total user count</li>
+                        Aggregate daily, weekly, and monthly counts of:
                         <li>
-                            Aggregate daily, weekly, and monthly counts of:
-                            <ul>
-                                <li>Unique searches performed</li>
-                                <li>Total searches performed</li>
-                            </ul>
+                            <ul>Unique searches performed</ul>
+                            <ul>Total searches performed</ul>
                         </li>
-                        <li>
-                            Monthly aggregated user state changes:
-                            <ul>
-                                <li>Count of users who installed the extension</li>
-                                <li>Count of users who uninstalled the extension</li>
-                            </ul>
-                        </li>
-                        <li>Total count of redirects to Sourcegraph instance monthly from the extension</li>
                     </ul>
+                    <ul>
+                        Monthly aggregated user state changes:
+                        <li>
+                            <ul>Count of users who installed the extension</ul>
+                            <ul>Count of users who uninstalled the extension</ul>
+                        </li>
+                    </ul>
+                    <ul>Total count of redirects to Sourcegraph instance monthly from the extension</ul>
                 </li>
             </ul>
             {updatesDisabled ? (

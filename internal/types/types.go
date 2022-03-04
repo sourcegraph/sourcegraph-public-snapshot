@@ -1040,30 +1040,34 @@ type GrowthStatistics struct {
 // number of unique users, user state, events for IDE extensions usages,
 // and inbound traffic from each IDE extension to Sourcegraph instance
 
-type IdeExtensionsUsage struct {
-	IDEs []*IdeExtensionsUsageStatistics
+type IDEExtensionsUsage struct {
+	IDEs []*IDEExtensionsUsageStatistics
 }
-type IdeExtensionsUsageStatistics struct {
+type IDEExtensionsUsageStatistics struct {
 	IdeKind string
-	Month   IdeExtensionsUsagePeriod
-	Week    IdeExtensionsUsagePeriod
-	Day     IdeExtensionsUsagePeriod
+	Month   IDEExtensionsUsageMonthlyPeriod
+	Week    IDEExtensionsUsageRegularPeriod
+	Day     IDEExtensionsUsageRegularPeriod
 }
 
-type IdeExtensionsUsagePeriod struct {
-	StartTime        time.Time
-	UserCount        int32
-	SearchPerformed  IdeExtensionsUsageSearchPerformed
-	MonthlyUserState IdeExtensionsUserStateMonthlyCount
-	RedirectCount    int32
+type IDEExtensionsUsageRegularPeriod struct {
+	StartTime       time.Time
+	SearchPerformed IDEExtensionsUsageSearchPerformed
 }
 
-type IdeExtensionsUsageSearchPerformed struct {
+type IDEExtensionsUsageMonthlyPeriod struct {
+	StartTime       time.Time
+	SearchPerformed IDEExtensionsUsageSearchPerformed
+	UserState       IDEExtensionsUsageUserStates
+	RedirectCount   int32
+}
+
+type IDEExtensionsUsageSearchPerformed struct {
 	UniqueCount int32
 	TotalCount  int32
 }
 
-type IdeExtensionsUserStateMonthlyCount struct {
+type IDEExtensionsUsageUserStates struct {
 	Installs   int32
 	Uninstalls int32
 }
