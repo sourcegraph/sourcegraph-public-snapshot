@@ -204,6 +204,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 }
 
 func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+	t.Helper()
 	exists, err := s.RepoIdSupported(ctx, repoID)
 	if err != nil {
 		t.Fatal(err)
@@ -221,6 +222,7 @@ func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepo
 }
 
 func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+	t.Helper()
 	exists, err := s.RepoIdSupported(ctx, repoID)
 	if err != nil {
 		t.Fatal(err)

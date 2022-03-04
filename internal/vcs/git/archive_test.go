@@ -1,7 +1,10 @@
 package git
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
+	"io"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -46,10 +49,35 @@ func TestArchiveReaderForRepoWithSubRepoPermissionsFiltersFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	// TODO: read contents of zip file and check only contains file1
-	err = readCloser.Close()
+	defer readCloser.Close()
+	validateFilesInZipArchive(readCloser, t, []string{"file1"})
+}
+
+func validateFilesInZipArchive(rc io.ReadCloser, t *testing.T, expectedFiles []string) {
+	t.Helper()
+	buff := bytes.NewBuffer([]byte{})
+	size, err := io.Copy(buff, rc)
 	if err != nil {
-		t.Error("Error during closing a reader")
+		t.Fatalf("error copying file contents: %s", err)
+	}
+	reader := bytes.NewReader(buff.Bytes())
+	zipReader, err := zip.NewReader(reader, size)
+	if err != nil {
+		t.Fatalf("error creating zip reader: %s", err)
+	}
+	if len(zipReader.File) != len(expectedFiles) {
+		t.Errorf("expected zip archive to have %d files, got %d files instead", len(expectedFiles), len(zipReader.File))
+	}
+	for _, zf := range zipReader.File {
+		match := false
+		for _, ef := range expectedFiles {
+			if zf.Name == ef {
+				match = true
+			}
+		}
+		if match == false {
+			t.Errorf("zip archive missing file: %s", zf.Name)
+		}
 	}
 }
 
