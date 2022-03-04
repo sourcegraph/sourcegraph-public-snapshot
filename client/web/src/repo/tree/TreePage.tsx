@@ -62,6 +62,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { SearchPatternType, GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { repoFilterForRepoRevision } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -333,7 +334,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
-    const repoDepsSearchQueryURL = buildSearchURLQuery(`repo:deps(${repo.name})`, SearchPatternType.literal, false)
+    const repoDepsSearchQueryURL = buildSearchURLQuery(
+        `repo:deps(${repoFilterForRepoRevision(repo.name, false, revision)})`,
+        SearchPatternType.literal,
+        false
+    )
 
     return (
         <div className={styles.treePage}>
