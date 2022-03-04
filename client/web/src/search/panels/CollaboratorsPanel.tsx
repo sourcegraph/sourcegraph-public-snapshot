@@ -1,13 +1,14 @@
 import classNames from 'classnames'
 import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -33,6 +34,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
     fetchCollaborators,
 }) => {
+    console.log(authenticatedUser)
     const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
     const collaborators = useObservable(
         useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
@@ -89,19 +91,14 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
         filteredCollaborators?.length === 0 || !emailEnabled ? (
             <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} />
         ) : (
-            <div className={classNames('row', 'py-1')}>
+            <div className={classNames('row', 'pt-1')}>
                 {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
+
+                <CollaboratorsPanelInfo isSiteAdmin={authenticatedUser?.siteAdmin ?? false} />
 
                 {filteredCollaborators?.map((person: InvitableCollaborator) => (
                     <div
-                        className={classNames(
-                            'd-flex',
-                            'align-items-center',
-                            'col-lg-6',
-                            'mt-1',
-                            'mb-1',
-                            styles.invitebox
-                        )}
+                        className={classNames('d-flex', 'align-items-center', 'col-lg-6', 'mt-1', styles.invitebox)}
                         key={person.email}
                     >
                         <Button
@@ -146,7 +143,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
     return (
         <PanelContainer
-            className={classNames(className, 'h-100')}
+            className={classNames(className, styles.panel)}
             title="Invite your colleagues"
             insideTabPanel={true}
             state={collaborators === undefined ? 'loading' : 'populated'}
@@ -189,6 +186,74 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 size={inviteURL.length}
                 onCopy={() => eventLogger.log('HomepageInvitationsCopiedInviteLink')}
             />
+        </div>
+    )
+}
+
+const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> = ({ isSiteAdmin }) => {
+    const [infoShown, setInfoShown] = useState<boolean>(false)
+
+    if (infoShown) {
+        return (
+            <div className="col-12 mt-2 mb-2 position-relative">
+                <Card>
+                    <CardBody>
+                        <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
+                            <h2 className={classNames(styles.infoBox, 'mb-0')}>
+                                <InformationOutlineIcon className="icon-inline mr-2 text-muted" />
+                                What is this?
+                            </h2>
+                            <div className="flex-grow-1" />
+                            <Button
+                                variant="icon"
+                                onClick={() => setInfoShown(false)}
+                                aria-label="Close info box"
+                                aria-expanded="true"
+                            >
+                                ×
+                            </Button>
+                        </div>
+                        {isSiteAdmin ? (
+                            <>
+                                <p className={styles.infoBox}>
+                                    This feature enables Sourcegraph users to invite collaborators we discover through
+                                    your Git repository commit history. The invitee will receive a link to Sourcegraph,
+                                    but no special permissions are granted.
+                                </p>
+                                <p className={classNames(styles.infoBox, 'mb-0')}>
+                                    If you wish to disable this feature, see <Link to="#">this documentation</Link>.
+                                </p>
+                            </>
+                        ) : (
+                            <p className={classNames(styles.infoBox, 'mb-0')}>
+                                These collaborators were found via your repositories Git commit history. The invitee
+                                will receive a link to Sourcegraph, but no special permissions are granted.
+                            </p>
+                        )}
+                    </CardBody>
+                </Card>
+            </div>
+        )
+    }
+    return (
+        <div className={classNames('col-12', 'd-flex', 'mt-2', 'mb-1')}>
+            <div className={classNames('text-muted', styles.info)}>Collaborators from your repositories</div>
+            <div className="flex-grow-1" />
+            <div>
+                <InformationOutlineIcon className="icon-inline mr-1 text-muted" />
+                <Link
+                    to="#"
+                    className={styles.info}
+                    onClick={event => {
+                        event.preventDefault()
+                        setInfoShown(true)
+                    }}
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                >
+                    What is this?
+                </Link>
+            </div>
         </div>
     )
 }
