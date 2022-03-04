@@ -2,8 +2,8 @@ import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
 import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
-import { of } from 'rxjs'
-import { throttleTime } from 'rxjs/operators'
+import { merge, of } from 'rxjs'
+import { last, throttleTime } from 'rxjs/operators'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -55,9 +55,16 @@ export function useCachedSearchResults(
                 return of(cachedResults?.results)
             }
 
-            return streamSearch(transformedQuery, options).pipe(
-                throttleTime(500, undefined, { leading: true, trailing: true })
-            )
+            const stream = streamSearch(transformedQuery, options)
+
+            // If the throttleTime option `trailing` is set, we will return the
+            // final value, but it also removes the guarantee that the output events
+            // are a minimum of 200ms apart. If it's unset, we might throw away
+            // some trailing events. This is a fundamental issue with throttleTime,
+            // and is discussed extensively in github issues. Instead, we just manually
+            // merge throttleTime with only leading values and the final value.
+            // See: https://github.com/ReactiveX/rxjs/issues/5732
+            return merge(stream.pipe(throttleTime(500)), stream.pipe(last()))
         }, [
             query,
             cachedResults?.query,

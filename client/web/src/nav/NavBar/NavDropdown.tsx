@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { Link, Menu, MenuButton, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
@@ -41,9 +41,9 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     const [isOverList, setIsOverList] = useState(false)
 
     // Use this func for toggling menu
-    const triggerMenuButtonEvent = (): void => {
+    const triggerMenuButtonEvent = useCallback(() => {
         menuButtonReference.current!.dispatchEvent(new Event('mousedown', { bubbles: true }))
-    }
+    }, [])
 
     useLayoutEffect(() => {
         const isOpen = menuButtonReference.current!.hasAttribute('aria-expanded')
@@ -57,27 +57,35 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
         if (!isOpen && (isOverButton || isOverList)) {
             triggerMenuButtonEvent()
         }
-    }, [isOverButton, isOverList])
+    }, [isOverButton, isOverList, triggerMenuButtonEvent])
 
     useEffect(() => {
         const currentLink = linkReference.current!
         const currentMenuButton = menuButtonReference.current!
-        const handleTouchStart = (event: TouchEvent): void => {
+        const handleMenuButtonTouchStart = (event: TouchEvent): void => {
             event.preventDefault()
-
+            triggerMenuButtonEvent()
+        }
+        const handleLinkTouchEnd = (event: TouchEvent): void => {
+            // preventDefault would help to block navigation when touching on Link
+            event.preventDefault()
+        }
+        const handleLinkTouchStart = (): void => {
             triggerMenuButtonEvent()
         }
 
         // Have to add/remove `touchstart` manually like this to prevent
         // page navigation on touch screen (onTouchStart binding doesn't work)
-        currentLink.addEventListener('touchstart', handleTouchStart)
-        currentMenuButton.addEventListener('touchstart', handleTouchStart)
+        currentMenuButton.addEventListener('touchstart', handleMenuButtonTouchStart)
+        currentLink.addEventListener('touchstart', handleLinkTouchStart)
+        currentLink.addEventListener('touchend', handleLinkTouchEnd)
 
         return () => {
-            currentLink.removeEventListener('touchstart', handleTouchStart)
-            currentMenuButton.addEventListener('touchstart', handleTouchStart)
+            currentMenuButton.removeEventListener('touchstart', handleMenuButtonTouchStart)
+            currentLink.removeEventListener('touchstart', handleLinkTouchStart)
+            currentLink.removeEventListener('touchend', handleLinkTouchEnd)
         }
-    }, [])
+    }, [triggerMenuButtonEvent])
 
     // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
     // and then use CSS @media queries to toggle between them.

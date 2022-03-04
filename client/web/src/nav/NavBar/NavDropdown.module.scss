@@ -18,7 +18,7 @@
 
     &-container {
         // use these rules to adjust dropdown menu position
-        margin-top: 0.125rem;
+        margin-top: 0;
         margin-left: -0.625rem;
     }
 
@@ -31,7 +31,6 @@
         align-items: center;
         z-index: 1;
     }
-
     &-icon-button {
         // - we show this button under the actual link
         // - we make it `absolute` at top-left so we have good origin point
