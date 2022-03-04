@@ -20,16 +20,15 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
     const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
-    const [isOrgNameValid, setIsOrgNameValid] = useState<boolean>()
+    const [orgNamesMatch, setOrgNamesMatch] = useState<boolean>()
     const [loading, setLoading] = useState<boolean | Error>(false)
-
     const history = useHistory()
 
     useEffect(() => { setOrgNameInput(orgNameInput) }, [setOrgNameInput, orgNameInput])
 
     const onOrgChangeName = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setOrgNameInput(event.currentTarget.value)
-        setIsOrgNameValid(event.currentTarget.value === org.name)
+        setOrgNamesMatch(event.currentTarget.value === org.name)
     }, [org])
 
     const deleteOrg = useCallback(
@@ -48,7 +47,12 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                 eventLogger.log('OrgDeletionFailed')
             }
         },
-        [org.id, history])
+        [org.id, history]
+    )
+
+    if (!props.org.viewerIsMember) {
+        return null
+    }
 
     return (
         <Modal
@@ -58,8 +62,6 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
             aria-labelledby={deleteLabelId}
             data-testid="delete-org-modal"
         >
-
-        {props.org.viewerIsMember && (
             <div>
                 <h3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
@@ -70,7 +72,11 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     onClick={toggleDeleteModal}
                 />
                 <p className="pt-3">
-                    <strong>You are going to delete { org.name } from Sourcegraph.</strong>This cannot be undone. Deleting an organization will remove all of its synced repositories from Sourcegraph, along with the organization's code insights, batch changes, code monitors and other resources.
+                    <strong>You are going to delete { org.name } from Sourcegraph.</strong>
+                    This cannot be undone.
+                    Deleting an organization will remove all of its
+                    synced repositories from Sourcegraph, along with the organization's code
+                    insights, batch changes, code monitors and other resources.
                 </p>
                 <p className="text-mutedpt-3">
                     Please type the organization's name to continue
@@ -80,19 +86,17 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     value={orgNameInput}
                     placeholder={org.name}
                     onChange={onOrgChangeName}
-                    status={isOrgNameValid === undefined ? undefined : isOrgNameValid ? 'valid' : 'error'}                />
+                    status={orgNamesMatch ? 'valid' : 'error'}                />
                 <div className="d-flex justify-content-end mt-4">
-                <Button
-                    type="button"
-                    variant="danger"
-                    onClick={deleteOrg}
-                    disabled={!isOrgNameValid || loading === true}>
-                    {loading === true && <LoadingSpinner />}
-                    Delete this organization
-                </Button>
+                    <Button
+                        type="button"
+                        variant="danger"
+                        onClick={deleteOrg}
+                        disabled={!orgNamesMatch || loading === true}>
+                        {loading === true && <LoadingSpinner />}
+                        Delete this organization
+                    </Button>
+                </div>
             </div>
-            </div>
-        )}
         </Modal>
-    )
-}
+    )}

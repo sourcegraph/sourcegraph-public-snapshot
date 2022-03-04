@@ -15,29 +15,27 @@ interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {}
 export const DeleteOrg: React.FunctionComponent<DeleteOrgProps> = props => {
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
+    const toggleDeleteModal = useCallback(() => setShowDeleteModal(!showDeleteModal), [setShowDeleteModal, showDeleteModal])
 
     return (
-        <div className="mt-3 mb-5">
-            <Container>
-                <h3 className="text-danger">Delete this organization</h3>
-                <div className="d-flex justify-content-between">
-                    <p className="d-flex justify-content-right">This cannot be undone. Deleting an organization removes all of its resources.</p>
-                    <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={toggleDeleteModal}
+        <Container className="mt-3 mb-5">
+            <h3 className="text-danger">Delete this organization</h3>
+            <div className="d-flex justify-content-between">
+                <p className="d-flex justify-content-right">This cannot be undone. Deleting an organization removes all of its resources.</p>
+                <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={toggleDeleteModal}
 
-                    >
-                        Delete this organization
-                    </Button>
-                    <DeleteOrgModal
-                        {...props}
-                        isOpen={showDeleteModal}
-                        toggleDeleteModal={toggleDeleteModal}
-                    />
-                </div>
-            </Container>
-        </div>
+                >
+                    Delete this organization
+                </Button>
+                <DeleteOrgModal
+                    {...props}
+                    isOpen={showDeleteModal}
+                    toggleDeleteModal={toggleDeleteModal}
+                />
+            </div>
+        </Container>
     )
 }
