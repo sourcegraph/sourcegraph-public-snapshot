@@ -112,6 +112,19 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         ],
       },
     ],
+    '@sourcegraph/wildcard/forbid-link-href': [
+      'error',
+      {
+        forbid: [
+          {
+            href: 'https://docs.sourcegraph.com',
+            replaceWith: '/help',
+            message:
+              "Use '/help' to redirect to the correct documentation for the current site version. See docs: https://sourcegraph.com/help/dev/how-to/documentation_implementation#linking-to-documentation-in-product",
+          },
+        ],
+      },
+    ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
   },
   overrides: [
