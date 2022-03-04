@@ -674,7 +674,12 @@ export const githubCodeHost: GithubCodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
-    getFilePath,
+    routeChange: mutations =>
+        mutations.pipe(
+            map(() => window.location.pathname),
+            filter(pathname => pathname.endsWith(getFilePath())),
+            distinctUntilChanged()
+        ),
     getContext: async () => {
         const { repoName, rawRepoName, pageType } = parseURL()
 
