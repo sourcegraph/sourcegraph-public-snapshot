@@ -9,7 +9,7 @@ import { Button, Input, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
-interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}>  {
+interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> {
     isOpen: boolean
     toggleDeleteModal: () => void
 }
@@ -20,37 +20,39 @@ const HARD_DELETE_ORG_MUTATION = gql`
             alwaysNil
         }
     }
-    `
+`
 
-export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
+export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> = props => {
     const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
     const [orgNamesMatch, setOrgNamesMatch] = useState<boolean>()
     const history = useHistory()
 
-    useEffect(() => { setOrgNameInput(orgNameInput) }, [setOrgNameInput, orgNameInput])
+    useEffect(() => {
+        setOrgNameInput(orgNameInput)
+    }, [setOrgNameInput, orgNameInput])
 
     const [deleteOrganization, { loading }] = useMutation(HARD_DELETE_ORG_MUTATION)
 
-    const onOrgChangeName = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setOrgNameInput(event.currentTarget.value)
-        setOrgNamesMatch(event.currentTarget.value === org.name)
-    }, [org])
-
-    const deleteOrg = useCallback(
-        async() => {
-            try {
-                await deleteOrganization({ variables: { organization: org.id, hard: true } })
-                history.push({
-                    pathname: '/settings',
-                })
-            } catch   {
-                eventLogger.log('OrgDeletionFailed')
-            }
+    const onOrgChangeName = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => {
+            setOrgNameInput(event.currentTarget.value)
+            setOrgNamesMatch(event.currentTarget.value === org.name)
         },
-        [org, deleteOrganization, history]
+        [org]
     )
+
+    const deleteOrg = useCallback(async () => {
+        try {
+            await deleteOrganization({ variables: { organization: org.id, hard: true } })
+            history.push({
+                pathname: '/settings',
+            })
+        } catch {
+            eventLogger.log('OrgDeletionFailed')
+        }
+    }, [org, deleteOrganization, history])
 
     return (
         <Modal
@@ -70,15 +72,12 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                     onClick={toggleDeleteModal}
                 />
                 <p className="pt-3">
-                    <strong>You are going to delete { org.name } from Sourcegraph.</strong>
-                    This cannot be undone.
-                    Deleting an organization will remove all of its
-                    synced repositories from Sourcegraph, along with the organization's code
-                    insights, batch changes, code monitors and other resources.
+                    <strong>You are going to delete {org.name} from Sourcegraph.</strong>
+                    This cannot be undone. Deleting an organization will remove all of its synced repositories from
+                    Sourcegraph, along with the organization's code insights, batch changes, code monitors and other
+                    resources.
                 </p>
-                <p className="text-mutedpt-3">
-                    Please type the organization's name to continue
-                </p>
+                <p className="text-mutedpt-3">Please type the organization's name to continue</p>
                 <Input
                     autoFocus={true}
                     value={orgNameInput}
@@ -91,11 +90,13 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
                         type="button"
                         variant="danger"
                         onClick={deleteOrg}
-                        disabled={!orgNamesMatch || loading === true}>
+                        disabled={!orgNamesMatch || loading === true}
+                    >
                         {loading === true && <LoadingSpinner />}
                         Delete this organization
                     </Button>
                 </div>
             </div>
         </Modal>
-    )}
+    )
+}

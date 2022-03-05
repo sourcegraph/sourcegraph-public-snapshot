@@ -91,17 +91,14 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                             </SiteAdminAlert>
                                                         )}
                                                     <p>
-                                                        Organization settings apply to all members. User settings override
-                                                        organization settings.
+                                                        Organization settings apply to all members. User settings
+                                                        override organization settings.
                                                     </p>
                                                 </>
                                             }
                                         />
-                                        {(props.isSourcegraphDotCom && props.org.viewerIsMember) && (
-                                            <DeleteOrg
-                                            {...routeComponentProps}
-                                            {...props}
-                                            />
+                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && (
+                                            <DeleteOrg {...routeComponentProps} {...props} />
                                         )}
                                     </div>
                                 )}

@@ -884,7 +884,7 @@ export function setUserTag(node: string, tag: string, present: boolean = true): 
 export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean ) {
+            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
                 deleteOrganization(organization: $organization, hard: $hard) {
                     alwaysNil
                 }
