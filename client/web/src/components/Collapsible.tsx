@@ -44,6 +44,11 @@ interface Props {
      * Whether the title should be placed before the chevron icon.
      */
     titleAtStart?: true
+
+    /**
+     * Whether the title and the chevron icon should be floated to the ends.
+     */
+    justifyContentBetween?: boolean
 }
 
 /**
@@ -62,6 +67,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     buttonClassName = '',
     expandedButtonClassName = '',
     wholeTitleClickable = true,
+    justifyContentBetween = true,
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -85,7 +91,8 @@ export const Collapsible: React.FunctionComponent<Props> = ({
         <div className={className}>
             <div
                 className={classNames(
-                    'd-flex justify-content-between align-items-center position-relative',
+                    'd-flex align-items-center position-relative',
+                    justifyContentBetween && 'justify-content-between',
                     isExpanded && expandedButtonClassName,
                     buttonClassName
                 )}
