@@ -94,7 +94,7 @@ func DefinitionHandler(w http.ResponseWriter, r *http.Request) {
 		Column: uint32(column),
 	})
 	if breadcrumbs != nil && debug {
-		prettyPrintBreadcrumbs(breadcrumbs, readFile)
+		prettyPrintBreadcrumbs(pickBreadcrumbs(breadcrumbs, []string{"start", "found"}), readFile)
 	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
@@ -263,11 +263,11 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 					Column:         def.StartPoint().Column,
 				}
 
-				breadcrumbs := []Breadcrumb{{
+				breadcrumbs := append(breadcrumbs, Breadcrumb{
 					Location: found,
 					length:   1,
 					message:  "found",
-				}}
+				})
 
 				return &found, breadcrumbs, nil
 			}
@@ -499,4 +499,17 @@ func spacesToColumn(s string, ix int) int {
 		}
 	}
 	return total
+}
+
+func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
+	var picked []Breadcrumb
+	for _, breadcrumb := range breadcrumbs {
+		for _, message := range messages {
+			if strings.Contains(breadcrumb.message, message) {
+				picked = append(picked, breadcrumb)
+				break
+			}
+		}
+	}
+	return picked
 }
