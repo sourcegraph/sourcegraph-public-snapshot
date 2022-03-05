@@ -71,6 +71,8 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                 nodes: featureFlagsOrErrors.filter(node =>
                     (args.type === undefined || node.__typename === args.type) &&
                     (!args.query || node.name.toLowerCase().includes(args.query.toLowerCase()))),
+                totalCount: featureFlagsOrErrors.length,
+                pageInfo: { hasNextPage: false },
             })
         },
         [featureFlagsOrErrors]
