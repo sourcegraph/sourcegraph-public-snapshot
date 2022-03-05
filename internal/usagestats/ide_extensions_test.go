@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestIdeExtensionsUsageStatistics(t *testing.T) {
+func TestIDEExtensionsUsageStatistics(t *testing.T) {
 	ctx := context.Background()
 
 	defer func() {
@@ -53,7 +53,7 @@ func TestIdeExtensionsUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := GetIdeExtensionsUsageStatistics(ctx, db)
+	have, err := GetIDEExtensionsUsageStatistics(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}

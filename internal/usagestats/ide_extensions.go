@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetIdeExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.IDEExtensionsUsage, error) {
+func GetIDEExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.IDEExtensionsUsage, error) {
 	stats := types.IDEExtensionsUsage{}
 
 	usageStatisticsByIdext := []*types.IDEExtensionsUsageStatistics{}

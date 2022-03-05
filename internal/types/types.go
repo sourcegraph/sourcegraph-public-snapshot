@@ -1045,13 +1045,14 @@ type GrowthStatistics struct {
 	RetainedUsers    int32
 }
 
-// IdeExtensionsUsage represents the daily, weekly and monthly
+// IDEExtensionsUsage represents the daily, weekly and monthly
 // number of unique users, user state, events for IDE extensions usages,
 // and inbound traffic from each IDE extension to Sourcegraph instance
 
 type IDEExtensionsUsage struct {
 	IDEs []*IDEExtensionsUsageStatistics
 }
+
 type IDEExtensionsUsageStatistics struct {
 	IdeKind string
 	Month   IDEExtensionsUsageMonthlyPeriod
