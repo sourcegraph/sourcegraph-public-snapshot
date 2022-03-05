@@ -19,6 +19,12 @@
     "applescript",
     "scpt"
   ],
+  "beancount": [
+    "beancount"
+  ],
+  "bibtex": [
+    "bib"
+  ],
   "clojure": [
     "clj",
     "cljs",
@@ -60,12 +66,21 @@
     "cu",
     "cuh"
   ],
+  "d": [
+    "d"
+  ],
+  "dot": [
+    "dot"
+  ],
   "dart": [
     "dart"
   ],
   "diff": [
     "diff",
     "patch"
+  ],
+  "dockerfile": [
+    "Dockerfile"
   ],
   "django": [
     "jinja"
@@ -115,6 +130,13 @@
   "haskell": [
     "hs",
     "hsc"
+  ],
+  "hcl": [
+    "hcl",
+    "nomad",
+    "tf",
+    "tfvars",
+    "workflow"
   ],
   "html": [
     "htm",
@@ -315,11 +337,17 @@
   "stylus": [
     "styl"
   ],
+  "svelte": [
+    "svelte"
+  ],
   "swift": [
     "swift"
   ],
   "thrift": [
     "thrift"
+  ],
+  "toml": [
+    "toml"
   ],
   "twig": [
     "twig"

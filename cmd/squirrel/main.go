@@ -11,14 +11,38 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
 	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/bash"
+	"github.com/smacker/go-tree-sitter/cpp"
+	"github.com/smacker/go-tree-sitter/csharp"
+	"github.com/smacker/go-tree-sitter/css"
+	"github.com/smacker/go-tree-sitter/dockerfile"
+	"github.com/smacker/go-tree-sitter/elm"
 	"github.com/smacker/go-tree-sitter/golang"
+	"github.com/smacker/go-tree-sitter/hcl"
+	"github.com/smacker/go-tree-sitter/html"
+	"github.com/smacker/go-tree-sitter/java"
+	"github.com/smacker/go-tree-sitter/javascript"
+	"github.com/smacker/go-tree-sitter/lua"
+	"github.com/smacker/go-tree-sitter/ocaml"
+	"github.com/smacker/go-tree-sitter/php"
+	"github.com/smacker/go-tree-sitter/protobuf"
+	"github.com/smacker/go-tree-sitter/python"
+	"github.com/smacker/go-tree-sitter/ruby"
+	"github.com/smacker/go-tree-sitter/rust"
+	"github.com/smacker/go-tree-sitter/scala"
+	"github.com/smacker/go-tree-sitter/svelte"
+	"github.com/smacker/go-tree-sitter/toml"
+	"github.com/smacker/go-tree-sitter/typescript/typescript"
+	"github.com/smacker/go-tree-sitter/yaml"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -107,13 +131,10 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 	row := loc.Row
 	column := loc.Column
 
-	fmt.Println("repo:", repo, "commit:", commit, "path:", path, "row:", row, "column:", column)
+	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 
-	// get file extension
-	ext := filepath.Ext(path)
-	if ext != ".go" {
-		http.Error(w, "only .go files are supported", http.StatusBadRequest)
-		return
+	if debug {
+		fmt.Println("👉 repo:", repo, "commit:", commit, "path:", path, "row:", row, "column:", column)
 	}
 
 	readFile := func(RepoCommitPath) ([]byte, error) {
@@ -128,7 +149,7 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 
 	squirrel := NewSquirrel(readFile)
 
-	result, _, err := squirrel.definition(Location{
+	result, breadcrumbs, err := squirrel.definition(Location{
 		RepoCommitPath: RepoCommitPath{
 			Repo:   repo,
 			Commit: commit,
@@ -136,10 +157,17 @@ func definitionHandler(w http.ResponseWriter, r *http.Request) {
 		Row:    uint32(row),
 		Column: uint32(column),
 	})
+	if breadcrumbs != nil && debug {
+		prettyPrintBreadcrumbs(breadcrumbs, readFile)
+	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
 		log15.Error("failed to get definition", "err", err)
 		return
+	}
+
+	if debug {
+		fmt.Println("✅ repo:", result.Repo, "commit:", result.Commit, "path:", result.Path, "row:", result.Row, "column:", result.Column)
 	}
 
 	err = json.NewEncoder(w).Encode(result)
@@ -175,19 +203,27 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 	parser := sitter.NewParser()
 
 	ext := strings.TrimPrefix(filepath.Ext(location.Path), ".")
-	nvimLang, ok := extToNvimQueryDir[ext]
+
+	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, nil, errors.New("unsupported file extension")
+		return nil, nil, errors.Newf("unrecognized file extension %s", ext)
 	}
-	queriesBytes, err := queriesFs.ReadFile(path.Join("nvim-treesitter", "queries", nvimLang, "locals.scm"))
+
+	nvimDir, ok := langToNvimQueryDir[langName]
+	if !ok {
+		return nil, nil, errors.Newf("neovim-treesitter does not have queries for the language %s", langName)
+	}
+
+	localsPath := path.Join("nvim-treesitter", "queries", nvimDir, "locals.scm")
+	queriesBytes, err := queriesFs.ReadFile(localsPath)
 	if err != nil {
-		return nil, []Breadcrumb{}, errors.Newf("could not find nvim-treesitter locals.scm for %s: %s", nvimLang, err)
+		return nil, nil, errors.Newf("could not read %d: %s", localsPath, err)
 	}
 	queryString := string(queriesBytes)
 
-	lang, ok := extToSitterLanguage[ext]
+	lang, ok := langToSitterLanguage[langName]
 	if !ok {
-		return nil, nil, fmt.Errorf("unrecognized file extension %s", ext)
+		return nil, nil, fmt.Errorf("no tree-sitter parser for language %s", langName)
 	}
 
 	parser.SetLanguage(lang)
@@ -210,17 +246,6 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 
 	if startNode == nil {
 		return nil, nil, errors.New("node is nil")
-	}
-
-	typeOk := false
-	for _, identifier := range goIdentifiers {
-		if startNode.Type() == identifier {
-			typeOk = true
-			break
-		}
-	}
-	if !typeOk {
-		return nil, nil, errors.Newf("can't find definition of %s", startNode.Type())
 	}
 
 	breadcrumbs := []Breadcrumb{{
@@ -246,7 +271,7 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 
 			// Add to breadcrumbs
 			length := 1
-			if capture.Node.EndPoint().Row == capture.Node.StartPoint().Row {
+			if capture.Node.EndPoint().Row == capture.Node.StartPoint().Row && name != "scope" {
 				length = int(capture.Node.EndPoint().Column - capture.Node.StartPoint().Column)
 			}
 			breadcrumbs = append(breadcrumbs, Breadcrumb{
@@ -296,11 +321,19 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 		// Check if the scope contains the definition
 		for _, def := range scope {
 			if def.Content(input) == startNode.Content(input) {
-				return &Location{
+				found := Location{
 					RepoCommitPath: location.RepoCommitPath,
 					Row:            def.StartPoint().Row,
 					Column:         def.StartPoint().Column,
-				}, breadcrumbs, nil
+				}
+
+				breadcrumbs := []Breadcrumb{{
+					Location: found,
+					length:   1,
+					message:  "found",
+				}}
+
+				return &found, breadcrumbs, nil
 			}
 		}
 	}
@@ -308,17 +341,13 @@ func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error
 	return nil, breadcrumbs, errors.New("could not find definition")
 }
 
-var goIdentifiers = []string{"identifier", "type_identifier"}
+// var goIdentifiers = []string{"identifier", "type_identifier"}
 
 //go:embed nvim-treesitter
 var queriesFs embed.FS
 
 //go:embed language-file-extensions.json
 var languageFileExtensionsJson string
-
-var langToNvimQueryDir = map[string]string{
-	"go": "go",
-}
 
 var langToExts = func() map[string][]string {
 	var m map[string][]string
@@ -329,42 +358,71 @@ var langToExts = func() map[string][]string {
 	return m
 }()
 
-var extToNvimQueryDir = func() map[string]string {
+var extToLang = func() map[string]string {
 	m := map[string]string{}
 	for lang, exts := range langToExts {
-		nvimQueryDir, ok := langToNvimQueryDir[lang]
-		if !ok {
-			continue
-		}
-
 		for _, ext := range exts {
 			if _, ok := m[ext]; ok {
-				panic(fmt.Sprintf("ambiguous language for extension %s", ext))
+				panic(fmt.Sprintf("duplicate file extension %s", ext))
 			}
-			m[ext] = nvimQueryDir
+			m[ext] = lang
 		}
 	}
-
 	return m
 }()
 
-var langToSitterLanguage = map[string]*sitter.Language{
-	"go": golang.GetLanguage(),
+var langToNvimQueryDir = map[string]string{
+	"cpp":        "cpp",
+	"csharp":     "c_sharp",
+	"css":        "css",
+	"dockerfile": "dockerfile",
+	"elm":        "elm",
+	"go":         "go",
+	"hcl":        "hcl",
+	"html":       "html",
+	"java":       "java",
+	"javascript": "javascript",
+	"lua":        "lua",
+	"ocaml":      "ocaml",
+	"php":        "php",
+	"python":     "python",
+	"ruby":       "ruby",
+	"rust":       "rust",
+	"scala":      "scala",
+	"shell":      "bash",
+	"svelte":     "svelte",
+	"toml":       "toml",
+	"typescript": "typescript",
+	"yaml":       "yaml",
 }
 
-var extToSitterLanguage = func() map[string]*sitter.Language {
-	m := map[string]*sitter.Language{}
-	for lang := range langToExts {
-		sitterLanguage, ok := langToSitterLanguage[lang]
-		if !ok {
-			continue
-		}
-
-		m[lang] = sitterLanguage
-	}
-
-	return m
-}()
+var langToSitterLanguage = map[string]*sitter.Language{
+	// Sourcegraph's language map makes no distinction between c and cpp.
+	// "c":          c.GetLanguage(),
+	"cpp":        cpp.GetLanguage(),
+	"csharp":     csharp.GetLanguage(),
+	"css":        css.GetLanguage(),
+	"dockerfile": dockerfile.GetLanguage(),
+	"elm":        elm.GetLanguage(),
+	"go":         golang.GetLanguage(),
+	"hcl":        hcl.GetLanguage(),
+	"html":       html.GetLanguage(),
+	"java":       java.GetLanguage(),
+	"javascript": javascript.GetLanguage(),
+	"lua":        lua.GetLanguage(),
+	"ocaml":      ocaml.GetLanguage(),
+	"php":        php.GetLanguage(),
+	"protobuf":   protobuf.GetLanguage(),
+	"python":     python.GetLanguage(),
+	"ruby":       ruby.GetLanguage(),
+	"rust":       rust.GetLanguage(),
+	"scala":      scala.GetLanguage(),
+	"shell":      bash.GetLanguage(),
+	"svelte":     svelte.GetLanguage(),
+	"toml":       toml.GetLanguage(),
+	"typescript": typescript.GetLanguage(),
+	"yaml":       yaml.GetLanguage(),
+}
 
 type Breadcrumb struct {
 	Location
@@ -375,4 +433,134 @@ type Breadcrumb struct {
 // IDs are <startByte>-<endByte> as a proxy for node ID
 func getId(node *sitter.Node) string {
 	return fmt.Sprintf("%d-%d", node.StartByte(), node.EndByte())
+}
+
+func prettyPrintBreadcrumbs(breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
+	sb := &strings.Builder{}
+
+	m := map[RepoCommitPath]map[int][]Breadcrumb{}
+	for _, breadcrumb := range breadcrumbs {
+		path := breadcrumb.RepoCommitPath
+
+		if _, ok := m[path]; !ok {
+			m[path] = map[int][]Breadcrumb{}
+		}
+
+		m[path][int(breadcrumb.Row)] = append(m[path][int(breadcrumb.Row)], breadcrumb)
+	}
+
+	for repoCommitPath, lineToBreadcrumb := range m {
+		blue := color.New(color.FgBlue).SprintFunc()
+		grey := color.New(color.FgBlack).SprintFunc()
+		fmt.Fprintf(sb, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
+		fmt.Fprintln(sb)
+
+		contents, err := readFile(repoCommitPath)
+		if err != nil {
+			fmt.Println("Error reading file: ", err)
+			return
+		}
+		lines := strings.Split(string(contents), "\n")
+		for lineNumber, line := range lines {
+			breadcrumbs, ok := lineToBreadcrumb[lineNumber]
+			if !ok {
+				continue
+			}
+
+			fmt.Fprintln(sb)
+
+			gutter := fmt.Sprintf("%5d | ", lineNumber)
+
+			columnToMessage := map[int]string{}
+			for _, breadcrumb := range breadcrumbs {
+				for column := int(breadcrumb.Column); column < int(breadcrumb.Column)+breadcrumb.length; column++ {
+					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message
+				}
+
+				gutterPadding := strings.Repeat(" ", len(gutter))
+
+				space := strings.Repeat(" ", lengthInSpaces(line[:breadcrumb.Column]))
+
+				arrows := messageColor(breadcrumb.message)(strings.Repeat("v", breadcrumb.length))
+
+				fmt.Fprintf(sb, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
+			}
+
+			fmt.Fprint(sb, grey(gutter))
+			lineWithSpaces := strings.ReplaceAll(line, "\t", "    ")
+			for c := 0; c < len(lineWithSpaces); c++ {
+				if message, ok := columnToMessage[c]; ok {
+					fmt.Fprint(sb, messageColor(message)(string(lineWithSpaces[c])))
+				} else {
+					fmt.Fprint(sb, grey(string(lineWithSpaces[c])))
+				}
+			}
+			fmt.Fprintln(sb)
+		}
+	}
+
+	fmt.Println(bracket(sb.String()))
+}
+
+type colorSprintfFunc func(a ...interface{}) string
+
+func messageColor(message string) colorSprintfFunc {
+	if message == "start" {
+		return color.New(color.FgHiCyan).SprintFunc()
+	} else if message == "found" {
+		return color.New(color.FgRed).SprintFunc()
+	} else if message == "correct" {
+		return color.New(color.FgGreen).SprintFunc()
+	} else if strings.Contains(message, "scope") {
+		return color.New(color.FgHiYellow).SprintFunc()
+	} else {
+		return color.New(color.FgHiMagenta).SprintFunc()
+	}
+}
+
+func bracket(text string) string {
+	lines := strings.Split(strings.TrimSpace(text), "\n")
+	if len(lines) == 1 {
+		return "- " + text
+	}
+
+	for i, line := range lines {
+		if i == 0 {
+			lines[i] = "┌ " + line
+		} else if i < len(lines)-1 {
+			lines[i] = "│ " + line
+		} else {
+			lines[i] = "└ " + line
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func lengthInSpaces(s string) int {
+	total := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\t' {
+			total += 4
+		} else {
+			total++
+		}
+	}
+	return total
+}
+
+func spacesToColumn(s string, ix int) int {
+	total := 0
+	for i := 0; i < len(s); i++ {
+		if total >= ix {
+			return i
+		}
+
+		if s[i] == '\t' {
+			total += 4
+		} else {
+			total++
+		}
+	}
+	return total
 }

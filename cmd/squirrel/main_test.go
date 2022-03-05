@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fatih/color"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -69,7 +67,7 @@ func TestDefinition(t *testing.T) {
 				got, breadcrumbs, err := squirrel.definition(annotation.location)
 				if err != nil {
 					breadcrumbs = append(breadcrumbs, Breadcrumb{Location: *want, length: 1, message: "correct"})
-					prettyPrintBreadcrumbs(t, breadcrumbs, readFile)
+					prettyPrintBreadcrumbs(breadcrumbs, readFile)
 					t.Fatal(err)
 				}
 
@@ -176,7 +174,7 @@ func collectAnnotations(t *testing.T) []annotation {
 	previousSourceLine:
 		for sourceLine := len(lines) - 1; ; {
 			for annLine := sourceLine - 1; ; annLine-- {
-				if annLine <= 0 {
+				if annLine < 0 {
 					break previousSourceLine
 				}
 
@@ -226,34 +224,6 @@ func groupAnnotationsBysymbol(annotations []annotation) map[string][]annotation 
 	return symbolToAnnotations
 }
 
-func lengthInSpaces(s string) int {
-	total := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\t' {
-			total += 4
-		} else {
-			total++
-		}
-	}
-	return total
-}
-
-func spacesToColumn(s string, ix int) int {
-	total := 0
-	for i := 0; i < len(s); i++ {
-		if total >= ix {
-			return i
-		}
-
-		if s[i] == '\t' {
-			total += 4
-		} else {
-			total++
-		}
-	}
-	return total
-}
-
 func fatalIfError(t *testing.T, err error) {
 	if err != nil {
 		t.Fatal(err)
@@ -261,101 +231,3 @@ func fatalIfError(t *testing.T, err error) {
 }
 
 const TEST_REPOS_DIR = "test_repos"
-
-func prettyPrintBreadcrumbs(t *testing.T, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
-	sb := &strings.Builder{}
-
-	m := map[RepoCommitPath]map[int][]Breadcrumb{}
-	for _, breadcrumb := range breadcrumbs {
-		path := breadcrumb.RepoCommitPath
-
-		if _, ok := m[path]; !ok {
-			m[path] = map[int][]Breadcrumb{}
-		}
-
-		m[path][int(breadcrumb.Row)] = append(m[path][int(breadcrumb.Row)], breadcrumb)
-	}
-
-	for repoCommitPath, lineToBreadcrumb := range m {
-		blue := color.New(color.FgBlue).SprintFunc()
-		grey := color.New(color.FgBlack).SprintFunc()
-		fmt.Fprintf(sb, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
-		fmt.Fprintln(sb)
-
-		contents, err := readFile(repoCommitPath)
-		fatalIfError(t, err)
-		lines := strings.Split(string(contents), "\n")
-		for lineNumber, line := range lines {
-			breadcrumbs, ok := lineToBreadcrumb[lineNumber]
-			if !ok {
-				continue
-			}
-
-			fmt.Fprintln(sb)
-
-			gutter := fmt.Sprintf("%5d | ", lineNumber)
-
-			columnToMessage := map[int]string{}
-			for _, breadcrumb := range breadcrumbs {
-				for column := int(breadcrumb.Column); column < int(breadcrumb.Column)+breadcrumb.length; column++ {
-					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message
-				}
-
-				gutterPadding := strings.Repeat(" ", len(gutter))
-
-				space := strings.Repeat(" ", lengthInSpaces(line[:breadcrumb.Column]))
-
-				arrows := messageColor(breadcrumb.message)(strings.Repeat("v", breadcrumb.length))
-
-				fmt.Fprintf(sb, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
-			}
-
-			fmt.Fprint(sb, grey(gutter))
-			lineWithSpaces := strings.ReplaceAll(line, "\t", "    ")
-			for c := 0; c < len(lineWithSpaces); c++ {
-				if message, ok := columnToMessage[c]; ok {
-					fmt.Fprint(sb, messageColor(message)(string(lineWithSpaces[c])))
-				} else {
-					fmt.Fprint(sb, grey(string(lineWithSpaces[c])))
-				}
-			}
-			fmt.Fprintln(sb)
-		}
-	}
-
-	fmt.Println(bracket(sb.String()))
-}
-
-type colorSprintfFunc func(a ...interface{}) string
-
-func messageColor(message string) colorSprintfFunc {
-	switch message {
-	case "start":
-		return color.New(color.FgHiCyan).SprintFunc()
-	case "found":
-		return color.New(color.FgRed).SprintFunc()
-	case "correct":
-		return color.New(color.FgGreen).SprintFunc()
-	default:
-		return color.New(color.FgHiMagenta).SprintFunc()
-	}
-}
-
-func bracket(text string) string {
-	lines := strings.Split(strings.TrimSpace(text), "\n")
-	if len(lines) == 1 {
-		return "- " + text
-	}
-
-	for i, line := range lines {
-		if i == 0 {
-			lines[i] = "┌ " + line
-		} else if i < len(lines)-1 {
-			lines[i] = "│ " + line
-		} else {
-			lines[i] = "└ " + line
-		}
-	}
-
-	return strings.Join(lines, "\n")
-}
