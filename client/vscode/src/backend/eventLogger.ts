@@ -43,6 +43,7 @@ export const logEventsMutation = gql`
  * When invoked on a non-Sourcegraph.com instance, this data is stored in the
  * instance's database, and not sent to Sourcegraph.com.
  */
+
 export function logEvent(eventVariable: Event): void {
     events.next(eventVariable)
 }

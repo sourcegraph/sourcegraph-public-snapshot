@@ -2,7 +2,12 @@ import fetch from 'node-fetch'
 
 import { version } from '../package.json'
 
-// This will be run after an user has restarted their VSCode after uninstalled
+/**
+ * Script to log extension uninstall event
+ * This will be run after an user has uninstalled the extension
+ * AND restarted their VSCode
+ **/
+
 fetch('https://sourcegraph.com/.api/graphql', {
     method: 'POST',
     headers: {
@@ -10,13 +15,23 @@ fetch('https://sourcegraph.com/.api/graphql', {
     },
     body: JSON.stringify({
         query: `
-        mutation {
-          logEvent(event: "IDEUninstalled", userCookieID: "VSCE", url: "", source: IDEEXTENSION) {
-            alwaysNil
+        mutation logEvent($userCookieID: String!, $arguments: String) {
+            logEvent(
+              event: "IDEUninstalled"
+              userCookieID: $userCookieID
+              url: ""
+              source: BACKEND
+              argument: $arguments
+              publicArgument: $arguments
+            ) {
+              alwaysNil
+            }
           }
-        }
       `,
-        variables: { platform: 'vscode-web', version, action: 'uninstalled' },
+        variables: {
+            userCookieID: '',
+            arguments: JSON.stringify({ editor: 'vscode', version }),
+        },
     }),
 })
     .then((response: any) => response.json())

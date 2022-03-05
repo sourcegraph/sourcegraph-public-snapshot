@@ -14,7 +14,7 @@
     "directory": "client/vscode"
   },
   "bugs": {
-    "url": "https://github.com/sourcegraph/sourcegraph-vscode/issues"
+    "url": "https://github.com/sourcegraph/sourcegraph/issues"
   },
   "engines": {
     "vscode": "^1.63.2"
