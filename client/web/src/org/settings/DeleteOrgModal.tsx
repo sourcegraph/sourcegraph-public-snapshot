@@ -1,13 +1,11 @@
-
+import { gql, useMutation } from '@apollo/client'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
 import { Button, Input, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
-import { deleteOrganization } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -16,15 +14,24 @@ interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> 
     toggleDeleteModal: () => void
 }
 
+const HARD_DELETE_ORG_MUTATION = gql`
+    mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
+        deleteOrganization(organization: $organization, hard: $hard) {
+            alwaysNil
+        }
+    }
+    `
+
 export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  props => {
     const { org, isOpen, toggleDeleteModal } = props
     const deleteLabelId = 'deleteOrgId'
     const [orgNameInput, setOrgNameInput] = useState('')
     const [orgNamesMatch, setOrgNamesMatch] = useState<boolean>()
-    const [loading, setLoading] = useState<boolean | Error>(false)
     const history = useHistory()
 
     useEffect(() => { setOrgNameInput(orgNameInput) }, [setOrgNameInput, orgNameInput])
+
+    const [deleteOrganization, { loading }] = useMutation(HARD_DELETE_ORG_MUTATION)
 
     const onOrgChangeName = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setOrgNameInput(event.currentTarget.value)
@@ -33,21 +40,16 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> =  pro
 
     const deleteOrg = useCallback(
         async() => {
-            setLoading(true)
-
             try {
-                await deleteOrganization(org.id, true)
-                setLoading(false)
+                await deleteOrganization({ variables: { organization: org.id, hard: true } })
                 history.push({
                     pathname: '/settings',
                 })
-
-            } catch(error)   {
-                setLoading(asError(error))
+            } catch   {
                 eventLogger.log('OrgDeletionFailed')
             }
         },
-        [org.id, history]
+        [org, deleteOrganization, history]
     )
 
     return (
