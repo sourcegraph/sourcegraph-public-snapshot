@@ -56,6 +56,9 @@ import {
     UserRepositoriesTotalCountVariables,
     SetUserTagResult,
     SetUserTagVariables,
+    FeatureFlagsResult,
+    FeatureFlagsVariables,
+    FeatureFlagFields,
 } from '../graphql-operations'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
@@ -1050,5 +1053,47 @@ export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFiel
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.outOfBandMigrations)
+    )
+}
+
+/**
+ * Fetches all feature flags.
+ */
+export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
+    return requestGraphQL<FeatureFlagsResult, FeatureFlagsVariables>(
+        gql`
+            query FeatureFlags {
+                featureFlags {
+                    ...FeatureFlagFields
+                }
+            }
+
+            fragment FeatureFlagFields on FeatureFlag {
+                __typename
+                ... on FeatureFlagBoolean {
+                    name
+                    value
+                    overrides {
+                        ...OverrideFields
+                    }
+                }
+                ... on FeatureFlagRollout {
+                    name
+                    rolloutBasisPoints
+                    overrides {
+                        ...OverrideFields
+                    }
+                }
+            }
+
+            fragment OverrideFields on FeatureFlagOverride {
+                id
+                value
+                # Querying on namespace seems bugged, so we just get id and value for now.
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.featureFlags)
     )
 }
