@@ -1,36 +1,28 @@
 {
+  "actionscript": [
+    "as"
+  ],
   "ada": [
     "adb",
     "ada",
     "ads"
+  ],
+  "apache": [
+    "apacheconf"
   ],
   "apex": [
     "cls",
     "apex",
     "trigger"
   ],
-  "actionscript": [
-    "as"
-  ],
-  "apache": [
-    "apacheconf"
-  ],
   "applescript": [
     "applescript",
     "scpt"
-  ],
-  "shell": [
-    "sh",
-    "bash",
-    "zsh"
   ],
   "clojure": [
     "clj",
     "cljs",
     "cljx"
-  ],
-  "css": [
-    "css"
   ],
   "cmake": [
     "cmake",
@@ -44,10 +36,6 @@
     "cjsx",
     "iced"
   ],
-  "csharp": [
-    "cs",
-    "csx"
-  ],
   "cpp": [
     "c",
     "cc",
@@ -60,6 +48,13 @@
     "hpp",
     "pc",
     "pcc"
+  ],
+  "csharp": [
+    "cs",
+    "csx"
+  ],
+  "css": [
+    "css"
   ],
   "cuda": [
     "cu",
@@ -290,10 +285,6 @@
     "rs",
     "rs.in"
   ],
-  "scss": [
-    "sass",
-    "scss"
-  ],
   "scala": [
     "sbt",
     "sc",
@@ -305,6 +296,15 @@
     "sls",
     "sps",
     "ss"
+  ],
+  "scss": [
+    "sass",
+    "scss"
+  ],
+  "shell": [
+    "sh",
+    "bash",
+    "zsh"
   ],
   "smalltalk": [
     "st"
@@ -321,12 +321,12 @@
   "thrift": [
     "thrift"
   ],
+  "twig": [
+    "twig"
+  ],
   "typescript": [
     "ts",
     "tsx"
-  ],
-  "twig": [
-    "twig"
   ],
   "vbnet": [
     "vb"
