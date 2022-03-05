@@ -190,6 +190,7 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
                                     {/*
                                         TODO: querying for namespace connection seems to
                                         error out often, so just present the ID for now.
+                                        https://github.com/sourcegraph/sourcegraph/issues/32238
                                     */}
                                     <code>{override.id}</code>
                                 </span>
