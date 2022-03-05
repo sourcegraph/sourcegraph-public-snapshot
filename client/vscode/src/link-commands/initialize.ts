@@ -50,7 +50,7 @@ export function initializeCodeSharingCommands(
             referrer: 'VSCE',
             url: sourcegraphUrl,
             source: eventSourceType,
-            argument: JSON.stringify({ platform: 'vscode', version }),
+            argument: JSON.stringify({ editor: 'vscode', version }),
         }
         logEvent(userEventVariables)
     }

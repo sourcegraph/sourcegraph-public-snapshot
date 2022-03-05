@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink'
 import * as uuid from 'uuid'
 
-import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, Event as EventType } from '@sourcegraph/web/src/graphql-operations'
 
 import { version } from '../../../package.json'
 import { ExtensionCoreAPI } from '../../contract'
@@ -12,10 +12,12 @@ import { VsceTelemetryService } from './telemetryService'
 // Event Logger for VS Code Extension
 export class EventLogger implements VsceTelemetryService {
     private anonymousUserID = ''
-    private evenSourceType = EventSource.IDEEXTENSION
+    private evenSourceType = EventSource.BACKEND || EventSource.IDEEXTENSION
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
     private vsceAPI: Comlink.Remote<ExtensionCoreAPI>
+    private newInstall = false
+    private editorInfo = { editor: 'vscode', version }
 
     constructor(extensionAPI: Comlink.Remote<ExtensionCoreAPI>) {
         this.vsceAPI = extensionAPI
@@ -28,12 +30,12 @@ export class EventLogger implements VsceTelemetryService {
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
-    public logViewEvent(pageTitle: string, eventProperties?: any, logAsActiveUser = true, url?: string): void {
+    public logViewEvent(pageTitle: string, eventProperties?: any, publicArgument?: any, url?: string): void {
         if (pageTitle) {
             this.tracker(
                 `View${pageTitle}`,
-                eventProperties ? { platform: 'vscode', version, ...eventProperties } : eventProperties,
-                logAsActiveUser,
+                { ...eventProperties, ...this.editorInfo },
+                { ...publicArgument, ...this.editorInfo },
                 url
             )
         }
@@ -70,8 +72,8 @@ export class EventLogger implements VsceTelemetryService {
         }
         this.tracker(
             eventLabel,
-            eventProperties ? { platform: 'vscode', version, ...eventProperties } : { platform: 'vscode', version },
-            publicArgument,
+            { ...eventProperties, ...this.editorInfo },
+            { ...publicArgument, ...this.editorInfo },
             uri
         )
     }
@@ -79,16 +81,22 @@ export class EventLogger implements VsceTelemetryService {
     /**
      * Gets the anonymous user ID and cohort ID of the user from VSCE storage utility.
      * If user doesn't have an anonymous user ID yet, a new one is generated
+     * And a new ide install event will be logged
      */
     private async initializeLogParameters(): Promise<void> {
         let anonymousUserID = await this.vsceAPI.getLocalStorageItem(ANONYMOUS_USER_ID_KEY)
         const source = await this.vsceAPI.getEventSource
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
+            this.newInstall = true
             await this.vsceAPI.setLocalStorageItem(ANONYMOUS_USER_ID_KEY, anonymousUserID)
         }
         this.anonymousUserID = anonymousUserID
         this.evenSourceType = source
+        if (this.newInstall) {
+            this.log('IDEInstalled')
+            this.newInstall = false
+        }
     }
 
     /**
@@ -124,14 +132,14 @@ export class EventLogger implements VsceTelemetryService {
     }
 
     public tracker(eventName: string, eventProperties?: unknown, publicArgument?: unknown, uri?: string): void {
-        const userEventVariables = {
+        const userEventVariables: EventType = {
             event: eventName,
             userCookieID: this.getAnonymousUserID(),
             referrer: 'VSCE',
             url: uri || '',
             source: this.getEventSourceType(),
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
-            publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+            publicArgument: JSON.stringify(publicArgument),
             deviceID: this.getAnonymousUserID(),
             eventID: this.getEventID(),
         }
