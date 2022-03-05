@@ -43,6 +43,10 @@ export const configurationGroup: SiteAdminSideBarGroup = {
             label: 'Global settings',
             to: '/site-admin/global-settings',
         },
+        {
+            label: 'Feature flags',
+            to: '/site-admin/feature-flags',
+        },
     ],
 }
 
