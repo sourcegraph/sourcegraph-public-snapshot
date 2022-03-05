@@ -171,6 +171,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
+                        settingsCascade={settingsCascade}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
@@ -229,6 +230,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
+                        settingsCascade={settingsCascade}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>

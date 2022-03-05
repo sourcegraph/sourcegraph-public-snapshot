@@ -5,6 +5,8 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+
 import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
@@ -256,6 +258,7 @@ add('Overview', () => {
                     fetchBatchChangeByNamespace={fetchBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>
@@ -290,6 +293,7 @@ add('No open changesets', () => {
                     fetchBatchChangeByNamespace={fetchBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>

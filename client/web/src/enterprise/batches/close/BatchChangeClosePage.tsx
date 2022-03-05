@@ -6,6 +6,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -29,7 +30,8 @@ export interface BatchChangeClosePageProps
     extends ThemeProps,
         TelemetryProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        SettingsCascadeProps {
     /**
      * The namespace ID.
      */
@@ -64,6 +66,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     closeBatchChange,
+    settingsCascade,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
@@ -151,6 +154,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 willClose={closeChangesets}
                 onUpdate={onFetchChangesets}
+                settingsCascade={settingsCascade}
             />
         </>
     )
