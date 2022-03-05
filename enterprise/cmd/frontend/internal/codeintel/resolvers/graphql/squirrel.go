@@ -7,7 +7,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/squirrel"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -24,7 +24,7 @@ func NewSquirrelResolver(resolver resolvers.Resolver, errTracer *observation.Err
 }
 
 func (r *squirrelResolver) Definition(ctx context.Context, args *gql.SquirrelDefinitionArgs) gql.SquirrelLocationResolver {
-	result, err := squirrel.DefaultClient.Definition(ctx, args.Location)
+	result, err := symbols.DefaultClient.Definition(ctx, args.Location)
 	fmt.Println("GQL", result, err)
 	if err != nil || result == nil {
 		return nil

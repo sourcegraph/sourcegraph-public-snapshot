@@ -36,7 +36,6 @@ var DefaultEnv = map[string]string{
 	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
 	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
-	"SQUIRREL_URL":          "http://127.0.0.1:8984",
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,

@@ -292,9 +292,6 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 		defer cancel()
 	}
 
-	if args.Zoekt == nil {
-		return nil
-	}
 	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{

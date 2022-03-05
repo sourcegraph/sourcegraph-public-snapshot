@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,6 +23,7 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
 	mux.HandleFunc("/healthz", handleHealthCheck)
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
+	mux.HandleFunc("/squirrel/definition", squirrel.DefinitionHandler)
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}

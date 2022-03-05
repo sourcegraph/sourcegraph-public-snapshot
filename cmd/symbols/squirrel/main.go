@@ -1,6 +1,4 @@
-// Command symbols is a service that serves code symbols (functions, variables, etc.) from a repository at a
-// specific commit.
-package main
+package squirrel
 
 import (
 	"bytes"
@@ -9,13 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
@@ -44,73 +40,13 @@ import (
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
 	"github.com/smacker/go-tree-sitter/yaml"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func main() {
-	routines := []goroutine.BackgroundRoutine{}
-
-	// Set up Google Cloud Profiler when running in Cloud
-	if err := profiler.Init(); err != nil {
-		log.Fatalf("Failed to start profiler: %v", err)
-	}
-
-	// Initialization
-	env.HandleHelpFlag()
-	conf.Init()
-	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
-
-	// Start debug server
-	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
-
-	// Create HTTP server
-	server := httpserver.NewFromAddr(":8984", &http.Server{
-		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(NewHandler(), conf.DefaultClient()))),
-	})
-	routines = append(routines, server)
-
-	// Mark health server as ready and go!
-	close(ready)
-	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
-}
-
-func NewHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/definition", definitionHandler)
-	mux.HandleFunc("/healthz", handleHealthCheck)
-	return mux
-}
-
-func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-
-	if _, err := w.Write([]byte("OK")); err != nil {
-		log15.Error("failed to write response to health check, err: %s", err)
-	}
-}
-
-func definitionHandler(w http.ResponseWriter, r *http.Request) {
+func DefinitionHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("failed to read request body", "err", err)
