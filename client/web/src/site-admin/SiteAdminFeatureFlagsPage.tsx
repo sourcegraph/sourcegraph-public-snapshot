@@ -14,7 +14,7 @@ import { PageTitle } from '../components/PageTitle'
 import { FeatureFlagFields } from '../graphql-operations'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
-import styles from './SiteAdminMigrationsPage.module.scss'
+import styles from './SiteAdminFeatureFlagsPage.module.scss'
 
 export interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
@@ -113,7 +113,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
             <Container>
                 <FilteredConnection<FeatureFlagFields, {}>
                     listComponent="div"
-                    listClassName={classNames('mb-3', styles.migrationsGrid)}
+                    listClassName={classNames('mb-3', styles.flagsGrid)}
                     noun="feature flag"
                     pluralNoun="feature flags"
                     queryConnection={queryFeatureFlags}
