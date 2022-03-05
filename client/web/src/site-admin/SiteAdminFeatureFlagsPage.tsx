@@ -174,10 +174,9 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
             <Collapsible
                 title={<strong>{node.overrides.length} {node.overrides.length > 1 ? 'overrides' : 'override'}</strong>}
                 className="p-0 font-weight-normal"
+                titleClassName="flex-grow-1"
                 buttonClassName="mb-0"
-                titleAtStart={true}
                 defaultExpanded={false}
-                justifyContentBetween={false}
             >
                 <div className={classNames('pt-2', styles.nodeGrid)}>
                     {node.overrides
