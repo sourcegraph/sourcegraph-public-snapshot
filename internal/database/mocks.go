@@ -22564,16 +22564,15 @@ func (f *OrgStoreHardDeleteFunc) PushHook(hook func(context.Context, int32) erro
 	f.mutex.Unlock()
 }
 
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
 func (f *OrgStoreHardDeleteFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int32) error {
 		return r0
 	})
 }
 
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
+// PushReturn calls PushHook with a function that returns the given values.
 func (f *OrgStoreHardDeleteFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int32) error {
 		return r0
