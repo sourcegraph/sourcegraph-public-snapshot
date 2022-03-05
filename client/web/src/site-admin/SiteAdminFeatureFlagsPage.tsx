@@ -54,23 +54,22 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
     ...props
 }) => {
     const featureFlagsOrErrors = useObservable(
-        useMemo(
-            () => fetchFeatureFlags().pipe(
-                catchError((error): [ErrorLike] => [asError(error)]),
-            ),
-            [fetchFeatureFlags]
-        )
+        useMemo(() => fetchFeatureFlags().pipe(catchError((error): [ErrorLike] => [asError(error)])), [
+            fetchFeatureFlags,
+        ])
     )
 
     const queryFeatureFlags = useCallback(
-        (args: { query?: string, type?: string }) => {
+        (args: { query?: string; type?: string }) => {
             if (isErrorLike(featureFlagsOrErrors) || featureFlagsOrErrors === undefined) {
                 return of({ nodes: [] })
             }
             return of({
-                nodes: featureFlagsOrErrors.filter(node =>
-                    (args.type === undefined || node.__typename === args.type) &&
-                    (!args.query || node.name.toLowerCase().includes(args.query.toLowerCase()))),
+                nodes: featureFlagsOrErrors.filter(
+                    node =>
+                        (args.type === undefined || node.__typename === args.type) &&
+                        (!args.query || node.name.toLowerCase().includes(args.query.toLowerCase()))
+                ),
                 totalCount: featureFlagsOrErrors.length,
                 pageInfo: { hasNextPage: false },
             })
@@ -88,25 +87,22 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                         text: <>Feature flags</>,
                     },
                 ]}
-                description={(
+                description={
                     <>
                         <p>
-                        Feature flags, as opposed to experimental features, are intended
-                        to be strictly short-lived. They are designed to be useful for A/B
-                        testing, and the values of all active feature flags are added to
-                        every event log for the purpose of analytics.
+                            Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
+                            They are designed to be useful for A/B testing, and the values of all active feature flags
+                            are added to every event log for the purpose of analytics.
                         </p>
                         <p>
-                            To learn more, refer to <Link
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                to="/help/dev/how-to/use_feature_flags"
-                            >
+                            To learn more, refer to{' '}
+                            <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
                                 How to use feature flags
-                            </Link>.
+                            </Link>
+                            .
                         </p>
                     </>
-                )}
+                }
                 className="mb-3"
             />
 
@@ -152,17 +148,19 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
                     {node.__typename === 'FeatureFlagRollout' && node.rolloutBasisPoints}
                 </div>
 
-                {node.__typename === 'FeatureFlagRollout' && (<div>
-                    <meter
-                        min={0}
-                        max={1}
-                        optimum={1}
-                        value={node.rolloutBasisPoints/(100 * 100)}
-                        data-tooltip={`${Math.floor(node.rolloutBasisPoints/100)}%`}
-                        aria-label="rollout progress"
-                        data-placement="bottom"
-                    />
-                </div>)}
+                {node.__typename === 'FeatureFlagRollout' && (
+                    <div>
+                        <meter
+                            min={0}
+                            max={1}
+                            optimum={1}
+                            value={node.rolloutBasisPoints / (100 * 100)}
+                            data-tooltip={`${Math.floor(node.rolloutBasisPoints / 100)}%`}
+                            aria-label="rollout progress"
+                            data-placement="bottom"
+                        />
+                    </div>
+                )}
             </div>
         </span>
 
@@ -172,30 +170,33 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
         */}
         {node.overrides.length > 0 && (
             <Collapsible
-                title={<strong>{node.overrides.length} {node.overrides.length > 1 ? 'overrides' : 'override'}</strong>}
+                title={
+                    <strong>
+                        {node.overrides.length} {node.overrides.length > 1 ? 'overrides' : 'override'}
+                    </strong>
+                }
                 className="p-0 font-weight-normal"
                 titleClassName="flex-grow-1"
                 buttonClassName="mb-0"
                 defaultExpanded={false}
             >
                 <div className={classNames('pt-2', styles.nodeGrid)}>
-                    {node.overrides
-                        .map(override => (
-                            <React.Fragment key={override.id}>
-                                <div className="py-1 pr-2">
-                                    <code>{JSON.stringify(override.value)}</code>
-                                </div>
+                    {node.overrides.map(override => (
+                        <React.Fragment key={override.id}>
+                            <div className="py-1 pr-2">
+                                <code>{JSON.stringify(override.value)}</code>
+                            </div>
 
-                                <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
-                                    {/*
+                            <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
+                                {/*
                                         TODO: querying for namespace connection seems to
                                         error out often, so just present the ID for now.
                                         https://github.com/sourcegraph/sourcegraph/issues/32238
                                     */}
-                                    <code>{override.id}</code>
-                                </span>
-                            </React.Fragment>
-                        ))}
+                                <code>{override.id}</code>
+                            </span>
+                        </React.Fragment>
+                    ))}
                 </div>
             </Collapsible>
         )}
