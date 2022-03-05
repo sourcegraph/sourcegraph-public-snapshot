@@ -9,11 +9,11 @@ export interface UseUiFeatures {
 }
 
 export function useUiFeatures(): UseUiFeatures {
-    const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
 
-    const licensed = !!useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
+    const uiFeatures = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
 
     return {
-        licensed,
+        licensed: !!uiFeatures?.licensed,
     }
 }

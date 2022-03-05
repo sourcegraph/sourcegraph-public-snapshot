@@ -1,5 +1,5 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
-import { from, Observable, of } from 'rxjs'
+import { forkJoin, from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 import {
@@ -26,7 +26,7 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { SupportedInsightSubject } from '../../types/subjects'
-import { CodeInsightsBackend } from '../code-insights-backend'
+import { CodeInsightsBackend, UiFeatures } from '../code-insights-backend'
 import {
     AssignInsightsToDashboardInput,
     BackendInsightData,
@@ -477,6 +477,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 `,
             })
         ).pipe(map(({ data }) => data.enterpriseLicenseHasFeature))
+
+    public getUiFeatures = (): Observable<UiFeatures> =>
+        forkJoin({
+            licensed: this.isCodeInsightsLicensed(),
+        })
 }
 
 const getRepositoryName = (

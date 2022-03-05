@@ -16,6 +16,7 @@ import { HeroPage } from '../../components/HeroPage'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsGqlBackendLimited } from './core/backend/gql-api/code-insights-gql-backend-limited'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
@@ -55,7 +56,12 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
-    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
+    let gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
+    const uiFeatures = useObservable(useMemo(() => gqlApi.getUiFeatures(), [gqlApi]))
+
+    if (!uiFeatures?.licensed) {
+        gqlApi = useMemo(() => new CodeInsightsGqlBackendLimited(apolloClient), [apolloClient])
+    }
 
     return (
         <CodeInsightsBackendContext.Provider value={gqlApi}>
