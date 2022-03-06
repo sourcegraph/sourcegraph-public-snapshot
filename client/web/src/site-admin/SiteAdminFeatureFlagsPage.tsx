@@ -1,12 +1,11 @@
 import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { of } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { catchError, map } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, useObservable } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -53,28 +52,30 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
     telemetryService,
     ...props
 }) => {
-    const featureFlagsOrErrors = useObservable(
-        useMemo(() => fetchFeatureFlags().pipe(catchError((error): [ErrorLike] => [asError(error)])), [
-            fetchFeatureFlags,
-        ])
+    const featureFlagsOrErrorsObservable = useMemo(
+        () => fetchFeatureFlags().pipe(catchError((error): [ErrorLike] => [asError(error)])),
+        [fetchFeatureFlags]
     )
 
     const queryFeatureFlags = useCallback(
-        (args: { query?: string; type?: string }) => {
-            if (isErrorLike(featureFlagsOrErrors) || featureFlagsOrErrors === undefined) {
-                return of({ nodes: [] })
-            }
-            return of({
-                nodes: featureFlagsOrErrors.filter(
-                    node =>
-                        (args.type === undefined || node.__typename === args.type) &&
-                        (!args.query || node.name.toLowerCase().includes(args.query.toLowerCase()))
-                ),
-                totalCount: featureFlagsOrErrors.length,
-                pageInfo: { hasNextPage: false },
-            })
-        },
-        [featureFlagsOrErrors]
+        (args: { query?: string; type?: string }) =>
+            featureFlagsOrErrorsObservable.pipe(
+                map(featureFlagsOrErrors => {
+                    if (isErrorLike(featureFlagsOrErrors)) {
+                        return { nodes: [] }
+                    }
+                    return {
+                        nodes: featureFlagsOrErrors.filter(
+                            node =>
+                                (args.type === undefined || node.__typename === args.type) &&
+                                (!args.query || node.name.toLowerCase().includes(args.query.toLowerCase()))
+                        ),
+                        totalCount: featureFlagsOrErrors.length,
+                        pageInfo: { hasNextPage: false },
+                    }
+                })
+            ),
+        [featureFlagsOrErrorsObservable]
     )
 
     return (
