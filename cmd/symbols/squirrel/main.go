@@ -174,6 +174,9 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 
 					// Put the ref in the scope
 					(*scope[symbolName]).Refs[nodeToRange(node)] = struct{}{}
+
+					// Stop walking up the tree.
+					break
 				}
 			}
 		}
@@ -403,7 +406,7 @@ var langToSitterLanguage = map[string]*sitter.Language{
 }
 
 func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
-	lines := strings.Split(strings.TrimSpace(contents), "\n")
+	lines := strings.Split(contents, "\n")
 
 	// Sort payload.Symbols by Def Row then Column.
 	sort.Slice(payload.Symbols, func(i, j int) bool {
