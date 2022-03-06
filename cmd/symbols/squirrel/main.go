@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path"
@@ -15,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/bash"
@@ -153,8 +155,12 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 				if scope, ok := scopes[getId(cur)]; ok {
 					symbolName := node.Content([]byte(contents))
 					if _, ok := scope[symbolName]; !ok {
+						var hover *string
+						if commentStyle, ok := langToCommentStyle[langName]; ok {
+							hover = getHover(node, commentStyle, contents)
+						}
 						scope[symbolName] = &PartialSymbol{
-							Hover: nil,
+							Hover: hover,
 							Def:   nil,
 							Refs:  map[types.Range]struct{}{},
 						}
@@ -194,7 +200,126 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 	return &types.LocalCodeIntelPayload{Symbols: symbols}, nil
 }
 
-// var goIdentifiers = []string{"identifier", "type_identifier"}
+func getHover(node *sitter.Node, style CommentStyle, contents string) *string {
+	for cur := node; cur != nil && cur.StartPoint().Row == node.StartPoint().Row; cur = cur.Parent() {
+		prev := cur.PrevNamedSibling()
+
+		// Skip over Java annotations and the like.
+		for ; prev != nil; prev = prev.PrevNamedSibling() {
+			if !contains(style.skipNodeTypes, prev.Type()) {
+				break
+			}
+		}
+
+		// Collect comments backwards.
+		comments := []string{}
+		lastStartRow := -1
+		for ; prev != nil && contains(style.nodeTypes, prev.Type()); prev = prev.PrevNamedSibling() {
+			if lastStartRow == -1 {
+				lastStartRow = int(prev.StartPoint().Row)
+			} else if lastStartRow != int(prev.EndPoint().Row+1) {
+				break
+			} else {
+				lastStartRow = int(prev.StartPoint().Row)
+			}
+
+			comment := prev.Content([]byte(contents))
+
+			// Strip line noise and delete garbage lines.
+			lines := []string{}
+			allLines := strings.Split(comment, "\n")
+			for _, line := range allLines {
+				if style.deleteRegex != nil && style.deleteRegex.MatchString(line) {
+					continue
+				}
+
+				if style.stripRegex != nil {
+					line = style.stripRegex.ReplaceAllString(line, "")
+				}
+
+				lines = append(lines, line)
+			}
+
+			// Remove shared leading spaces.
+			spaces := math.MaxInt32
+			for _, line := range lines {
+				spaces = min(spaces, len(line)-len(strings.TrimLeft(line, " ")))
+			}
+			for i := range lines {
+				lines[i] = strings.TrimLeft(lines[i], " ")
+			}
+
+			// Join lines.
+			comments = append(comments, strings.Join(lines, "\n"))
+		}
+
+		if len(comments) == 0 {
+			continue
+		}
+
+		// Reverse comments
+		for i, j := 0, len(comments)-1; i < j; i, j = i+1, j-1 {
+			comments[i], comments[j] = comments[j], comments[i]
+		}
+
+		s := strings.Join(comments, "\n") + "\n"
+		return &s
+	}
+	return nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
+
+var langToCommentStyle = map[string]CommentStyle{
+	"cpp":        {}, // TODO
+	"csharp":     {}, // TODO
+	"css":        {}, // TODO
+	"dockerfile": {}, // TODO
+	"elm":        {}, // TODO
+	"go": {
+		nodeTypes:  []string{"comment"},
+		stripRegex: regexp.MustCompile(`^//`),
+	},
+	"hcl":        {}, // TODO
+	"html":       {}, // TODO
+	"java":       {}, // TODO
+	"javascript": {}, // TODO
+	"lua":        {}, // TODO
+	"ocaml":      {}, // TODO
+	"php":        {}, // TODO
+	"protobuf":   {}, // TODO
+	"python":     {}, // TODO
+	"ruby":       {}, // TODO
+	"rust":       {}, // TODO
+	"scala":      {}, // TODO
+	"shell":      {}, // TODO
+	"svelte":     {}, // TODO
+	"toml":       {}, // TODO
+	"typescript": {}, // TODO
+	"yaml":       {}, // TODO
+}
+
+type CommentStyle struct {
+	placedBelow   bool
+	deleteRegex   *regexp.Regexp
+	stripRegex    *regexp.Regexp
+	skipNodeTypes []string
+	nodeTypes     []string
+}
 
 //go:embed nvim-treesitter
 var queriesFs embed.FS
