@@ -242,6 +242,11 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 }
 
 func getHover(node *sitter.Node, style CommentStyle, contents string) *string {
+	hover := ""
+	hover += "```" + style.codeFenceName + "\n"
+	hover += strings.Split(contents, "\n")[node.StartPoint().Row] + "\n"
+	hover += "```"
+
 	for cur := node; cur != nil && cur.StartPoint().Row == node.StartPoint().Row; cur = cur.Parent() {
 		prev := cur.PrevNamedSibling()
 
@@ -303,10 +308,10 @@ func getHover(node *sitter.Node, style CommentStyle, contents string) *string {
 			comments[i], comments[j] = comments[j], comments[i]
 		}
 
-		s := strings.Join(comments, "\n") + "\n"
-		return &s
+		hover = hover + "\n\n---\n\n" + strings.Join(comments, "\n") + "\n"
 	}
-	return nil
+
+	return &hover
 }
 
 func min(a, b int) int {
@@ -332,8 +337,9 @@ var langToCommentStyle = map[string]CommentStyle{
 	"dockerfile": {}, // TODO
 	"elm":        {}, // TODO
 	"go": {
-		nodeTypes:  []string{"comment"},
-		stripRegex: regexp.MustCompile(`^//`),
+		nodeTypes:     []string{"comment"},
+		stripRegex:    regexp.MustCompile(`^//`),
+		codeFenceName: "go",
 	},
 	"hcl":        {}, // TODO
 	"html":       {}, // TODO
@@ -360,6 +366,7 @@ type CommentStyle struct {
 	stripRegex    *regexp.Regexp
 	skipNodeTypes []string
 	nodeTypes     []string
+	codeFenceName string
 }
 
 //go:embed nvim-treesitter
