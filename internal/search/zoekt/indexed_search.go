@@ -275,6 +275,10 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
+	if args.Zoekt == nil {
+		return nil
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
