@@ -46,7 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func DefinitionHandler(w http.ResponseWriter, r *http.Request) {
+func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("failed to read request body", "err", err)
@@ -54,47 +54,35 @@ func DefinitionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var loc types.SquirrelLocation
-	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&loc); err != nil {
+	var args types.RepoCommitPath
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&args); err != nil {
 		log15.Error("failed to decode request body", "err", err, "body", string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	repo := loc.Repo
-	commit := loc.Commit
-	path := loc.Path
-	row := loc.Row
-	column := loc.Column
+	repo := args.Repo
+	commit := args.Commit
+	path := args.Path
 
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 
 	if debug {
-		fmt.Println("👉 repo:", repo, "commit:", commit, "path:", path, "row:", row, "column:", column)
+		fmt.Println("👉 repo:", repo, "commit:", commit, "path:", path)
 	}
 
-	readFile := func(RepoCommitPath) ([]byte, error) {
-		cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
-		cmd.Repo = api.RepoName(repo)
-		stdout, stderr, err := cmd.DividedOutput(r.Context())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
-		}
-		return stdout, nil
+	cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
+	cmd.Repo = api.RepoName(repo)
+	contents, stderr, err := cmd.DividedOutput(r.Context())
+	if err != nil {
+		log15.Error("failed to get file contents", "stdout", contents, "stderr", stderr)
+		http.Error(w, fmt.Sprintf("failed to get file contents: %s", err), http.StatusInternalServerError)
+		return
 	}
 
-	squirrel := NewSquirrel(readFile)
-
-	result, breadcrumbs, err := squirrel.definition(Location{
-		RepoCommitPath: RepoCommitPath{
-			Repo:   repo,
-			Commit: commit,
-			Path:   path},
-		Row:    uint32(row),
-		Column: uint32(column),
-	})
-	if breadcrumbs != nil && debug {
-		prettyPrintBreadcrumbs(pickBreadcrumbs(breadcrumbs, []string{"start", "found"}), readFile)
+	result, err := localCodeIntel(path, string(contents))
+	if result != nil && debug {
+		prettyPrintLocalCodeIntelPayload(args, *result, string(contents))
 	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
@@ -103,178 +91,103 @@ func DefinitionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if debug {
-		fmt.Println("✅ repo:", result.Repo, "commit:", result.Commit, "path:", result.Path, "row:", result.Row, "column:", result.Column)
+		fmt.Println("✅ repo:", repo, "commit:", commit, "path:", path)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
-		log15.Error("failed to write response: %s", err)
+		log15.Error("failed to write response: %s", "error", err)
 		http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
+		return
 	}
 }
 
-type RepoCommitPath struct {
-	Repo   string `json:"repo"`
-	Commit string `json:"commit"`
-	Path   string `json:"path"`
-}
-
-type Location struct {
-	RepoCommitPath
-	Row    uint32 `json:"row"`
-	Column uint32 `json:"column"`
-}
-
-type ReadFileFunc func(RepoCommitPath) ([]byte, error)
-
-type Squirrel struct {
-	readFile ReadFileFunc
-}
-
-func NewSquirrel(readFile ReadFileFunc) *Squirrel {
-	return &Squirrel{readFile: readFile}
-}
-
-func (s *Squirrel) definition(location Location) (*Location, []Breadcrumb, error) {
-	parser := sitter.NewParser()
-
-	ext := strings.TrimPrefix(filepath.Ext(location.Path), ".")
+func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayload, error) {
+	ext := strings.TrimPrefix(filepath.Ext(fullPath), ".")
 
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, nil, errors.Newf("unrecognized file extension %s", ext)
+		return nil, errors.Newf("unrecognized file extension %s", ext)
 	}
 
 	nvimDir, ok := langToNvimQueryDir[langName]
 	if !ok {
-		return nil, nil, errors.Newf("neovim-treesitter does not have queries for the language %s", langName)
+		return nil, errors.Newf("neovim-treesitter does not have queries for the language %s", langName)
 	}
 
 	localsPath := path.Join("nvim-treesitter", "queries", nvimDir, "locals.scm")
 	queriesBytes, err := queriesFs.ReadFile(localsPath)
 	if err != nil {
-		return nil, nil, errors.Newf("could not read %d: %s", localsPath, err)
+		return nil, errors.Newf("could not read %d: %s", localsPath, err)
 	}
 	queryString := string(queriesBytes)
 
 	lang, ok := langToSitterLanguage[langName]
 	if !ok {
-		return nil, nil, fmt.Errorf("no tree-sitter parser for language %s", langName)
+		return nil, fmt.Errorf("no tree-sitter parser for language %s", langName)
 	}
 
+	parser := sitter.NewParser()
 	parser.SetLanguage(lang)
 
-	input, err := s.readFile(location.RepoCommitPath)
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte(contents))
 	if err != nil {
-		return nil, nil, err
-	}
-
-	tree, err := parser.ParseCtx(context.Background(), nil, input)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse file contents: %s", err)
+		return nil, fmt.Errorf("failed to parse file contents: %s", err)
 	}
 	root := tree.RootNode()
 
-	startNode := root.NamedDescendantForPointRange(
-		sitter.Point{Row: location.Row, Column: location.Column},
-		sitter.Point{Row: location.Row, Column: location.Column},
-	)
+	getId := newGetIdFunc()
 
-	if startNode == nil {
-		return nil, nil, errors.New("node is nil")
-	}
+	// Collect all scopes, defs, and refs
+	scopes := map[Id]Scope{}
+	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+		// Record the scope
+		if captureName == "scope" {
+			scopes[getId(node)] = map[string]*PartialSymbol{}
+			return
+		}
 
-	breadcrumbs := []Breadcrumb{{
-		Location: location,
-		length:   1,
-		message:  "start",
-	}}
-
-	// Execute the query
-	query, err := sitter.NewQuery([]byte(queryString), lang)
-	if err != nil {
-		return nil, breadcrumbs, errors.Newf("failed to parse query: %s\n%s", err, queryString)
-	}
-	cursor := sitter.NewQueryCursor()
-	cursor.Exec(query, root)
-
-	// Collect all definitions into scopes
-	scopes := map[string][]*sitter.Node{}
-	match, _, hasCapture := cursor.NextCapture()
-	for hasCapture {
-		for _, capture := range match.Captures {
-			name := query.CaptureNameForId(capture.Index)
-
-			// Add to breadcrumbs
-			length := 1
-			if capture.Node.EndPoint().Row == capture.Node.StartPoint().Row && name != "scope" {
-				length = int(capture.Node.EndPoint().Column - capture.Node.StartPoint().Column)
-			}
-			breadcrumbs = append(breadcrumbs, Breadcrumb{
-				Location: Location{
-					RepoCommitPath: location.RepoCommitPath,
-					Row:            capture.Node.StartPoint().Row,
-					Column:         capture.Node.StartPoint().Column,
-				},
-				length:  length,
-				message: fmt.Sprintf("%s: %s", name, capture.Node.Type()),
-			})
-
-			// Add definition to nearest scope
-			if strings.Contains(name, "definition") {
-				for cur := capture.Node; cur != nil; cur = cur.Parent() {
-					id := getId(cur)
-					_, ok := scopes[id]
-					if !ok {
-						continue
+		if node.IsNamed() {
+			for cur := node; cur != nil; cur = cur.Parent() {
+				if scope, ok := scopes[getId(cur)]; ok {
+					symbolName := node.Content([]byte(contents))
+					if _, ok := scope[symbolName]; !ok {
+						scope[symbolName] = &PartialSymbol{
+							Hover: nil,
+							Def:   nil,
+							Refs:  []types.Range{},
+						}
 					}
-					scopes[id] = append(scopes[id], capture.Node)
-					break
+
+					// Put the def in the scope
+					if strings.HasPrefix(captureName, "definition") {
+						rnge := nodeToRange(node)
+						(*scope[symbolName]).Def = &rnge
+					}
+
+					// Put the ref in the scope
+					(*scope[symbolName]).Refs = append(scope[symbolName].Refs, nodeToRange(node))
 				}
-
-				continue
-			}
-
-			// Record the scope
-			if strings.Contains(name, "scope") {
-				scopes[getId(capture.Node)] = []*sitter.Node{}
-				continue
 			}
 		}
+	})
 
-		// Next capture
-		match, _, hasCapture = cursor.NextCapture()
-	}
-
-	// Walk up the tree to find the nearest definition
-	for currentNode := startNode; currentNode != nil; currentNode = currentNode.Parent() {
-		scope, ok := scopes[getId(currentNode)]
-		if !ok {
-			// This node isn't a scope, continue.
-			continue
-		}
-
-		// Check if the scope contains the definition
-		for _, def := range scope {
-			if def.Content(input) == startNode.Content(input) {
-				found := Location{
-					RepoCommitPath: location.RepoCommitPath,
-					Row:            def.StartPoint().Row,
-					Column:         def.StartPoint().Column,
-				}
-
-				breadcrumbs := append(breadcrumbs, Breadcrumb{
-					Location: found,
-					length:   1,
-					message:  "found",
+	// Collect the symbols
+	symbols := []types.Symbol{}
+	for _, scope := range scopes {
+		for _, partialSymbol := range scope {
+			if partialSymbol.Def != nil {
+				symbols = append(symbols, types.Symbol{
+					Hover: partialSymbol.Hover,
+					Def:   *partialSymbol.Def,
+					Refs:  partialSymbol.Refs,
 				})
-
-				return &found, breadcrumbs, nil
 			}
 		}
 	}
 
-	return nil, breadcrumbs, errors.New("could not find definition")
+	return &types.LocalCodeIntelPayload{Symbols: symbols}, nil
 }
 
 // var goIdentifiers = []string{"identifier", "type_identifier"}
@@ -360,99 +273,21 @@ var langToSitterLanguage = map[string]*sitter.Language{
 	"yaml":       yaml.GetLanguage(),
 }
 
-type Breadcrumb struct {
-	Location
-	length  int
-	message string
-}
-
-// IDs are <startByte>-<endByte> as a proxy for node ID
-func getId(node *sitter.Node) string {
-	return fmt.Sprintf("%d-%d", node.StartByte(), node.EndByte())
-}
-
-func prettyPrintBreadcrumbs(breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
+func prettyPrintLocalCodeIntelPayload(args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
 	sb := &strings.Builder{}
 
-	m := map[RepoCommitPath]map[int][]Breadcrumb{}
-	for _, breadcrumb := range breadcrumbs {
-		path := breadcrumb.RepoCommitPath
+	blue := color.New(color.FgBlue).SprintFunc()
+	fmt.Fprintf(sb, blue("repo %s, commit %s, path %s"), args.Repo, args.Commit, args.Path)
+	fmt.Fprintln(sb)
+	// gutter := fmt.Sprintf("%5d | ", 3)
 
-		if _, ok := m[path]; !ok {
-			m[path] = map[int][]Breadcrumb{}
-		}
-
-		m[path][int(breadcrumb.Row)] = append(m[path][int(breadcrumb.Row)], breadcrumb)
-	}
-
-	for repoCommitPath, lineToBreadcrumb := range m {
-		blue := color.New(color.FgBlue).SprintFunc()
-		grey := color.New(color.FgBlack).SprintFunc()
-		fmt.Fprintf(sb, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
-		fmt.Fprintln(sb)
-
-		contents, err := readFile(repoCommitPath)
-		if err != nil {
-			fmt.Println("Error reading file: ", err)
-			return
-		}
-		lines := strings.Split(string(contents), "\n")
-		for lineNumber, line := range lines {
-			breadcrumbs, ok := lineToBreadcrumb[lineNumber]
-			if !ok {
-				continue
-			}
-
-			fmt.Fprintln(sb)
-
-			gutter := fmt.Sprintf("%5d | ", lineNumber)
-
-			columnToMessage := map[int]string{}
-			for _, breadcrumb := range breadcrumbs {
-				for column := int(breadcrumb.Column); column < int(breadcrumb.Column)+breadcrumb.length; column++ {
-					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message
-				}
-
-				gutterPadding := strings.Repeat(" ", len(gutter))
-
-				space := strings.Repeat(" ", lengthInSpaces(line[:breadcrumb.Column]))
-
-				arrows := messageColor(breadcrumb.message)(strings.Repeat("v", breadcrumb.length))
-
-				fmt.Fprintf(sb, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
-			}
-
-			fmt.Fprint(sb, grey(gutter))
-			lineWithSpaces := strings.ReplaceAll(line, "\t", "    ")
-			for c := 0; c < len(lineWithSpaces); c++ {
-				if message, ok := columnToMessage[c]; ok {
-					fmt.Fprint(sb, messageColor(message)(string(lineWithSpaces[c])))
-				} else {
-					fmt.Fprint(sb, grey(string(lineWithSpaces[c])))
-				}
-			}
-			fmt.Fprintln(sb)
-		}
-	}
+	// fmt.Fprintf(sb, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
+	fmt.Fprintln(sb)
 
 	fmt.Println(bracket(sb.String()))
 }
 
 type colorSprintfFunc func(a ...interface{}) string
-
-func messageColor(message string) colorSprintfFunc {
-	if message == "start" {
-		return color.New(color.FgHiCyan).SprintFunc()
-	} else if message == "found" {
-		return color.New(color.FgRed).SprintFunc()
-	} else if message == "correct" {
-		return color.New(color.FgGreen).SprintFunc()
-	} else if strings.Contains(message, "scope") {
-		return color.New(color.FgHiYellow).SprintFunc()
-	} else {
-		return color.New(color.FgHiMagenta).SprintFunc()
-	}
-}
 
 func bracket(text string) string {
 	lines := strings.Split(strings.TrimSpace(text), "\n")
@@ -473,43 +308,94 @@ func bracket(text string) string {
 	return strings.Join(lines, "\n")
 }
 
-func lengthInSpaces(s string) int {
-	total := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\t' {
-			total += 4
-		} else {
-			total++
-		}
+func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f func(name string, node *sitter.Node)) error {
+	sitterQuery, err := sitter.NewQuery([]byte(query), lang)
+	if err != nil {
+		return errors.Newf("failed to parse query: %s\n%s", err, query)
 	}
-	return total
+	cursor := sitter.NewQueryCursor()
+	cursor.Exec(sitterQuery, root)
+
+	match, _, hasCapture := cursor.NextCapture()
+	for hasCapture {
+		for _, capture := range match.Captures {
+			name := sitterQuery.CaptureNameForId(capture.Index)
+			f(name, capture.Node)
+		}
+		// Next capture
+		match, _, hasCapture = cursor.NextCapture()
+	}
+
+	return nil
 }
 
-func spacesToColumn(s string, ix int) int {
-	total := 0
-	for i := 0; i < len(s); i++ {
-		if total >= ix {
-			return i
-		}
+func newGetIdFunc() func(node *sitter.Node) Id {
+	// TODO get the ID directly from tree-sitter for convenience
 
-		if s[i] == '\t' {
-			total += 4
-		} else {
-			total++
-		}
+	// String IDs look like this: <startByte>-<endByte>
+	sringId := func(node *sitter.Node) string {
+		return fmt.Sprintf("%d-%d", node.StartByte(), node.EndByte())
 	}
-	return total
+
+	nextId := 0
+	stringIdToId := map[string]Id{}
+	return func(node *sitter.Node) Id {
+		if id, ok := stringIdToId[sringId(node)]; ok {
+			return id
+		}
+		stringIdToId[sringId(node)] = nextId
+		nextId++
+		return stringIdToId[sringId(node)]
+	}
 }
 
-func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
-	var picked []Breadcrumb
-	for _, breadcrumb := range breadcrumbs {
-		for _, message := range messages {
-			if strings.Contains(breadcrumb.message, message) {
-				picked = append(picked, breadcrumb)
-				break
-			}
-		}
+func nodeToRange(node *sitter.Node) types.Range {
+	length := 1
+	if node.StartPoint().Row == node.EndPoint().Row {
+		length = int(node.EndPoint().Column - node.StartPoint().Column)
 	}
-	return picked
+	return types.Range{
+		Row:    int(node.StartPoint().Row),
+		Column: int(node.StartPoint().Column),
+		Length: length,
+	}
+}
+
+// The ID of a tree-sitter node.
+type Id = int
+
+type Scope = map[string]*PartialSymbol
+
+type PartialSymbol struct {
+	Hover *string
+	Def   *types.Range
+	Refs  []types.Range
+}
+
+type Scope2 struct {
+	parent  *Scope2
+	symbols map[string]types.Symbol
+}
+
+func newScope(parent *Scope2) *Scope2 {
+	return &Scope2{
+		parent:  parent,
+		symbols: map[string]types.Symbol{},
+	}
+}
+
+func (s *Scope2) set(name string, symbol types.Symbol) {
+	s.symbols[name] = symbol
+}
+
+func (s *Scope2) get(name string) *types.Symbol {
+	if symbol, ok := s.symbols[name]; ok {
+		return &symbol
+	}
+
+	if s.parent != nil {
+		return s.parent.get(name)
+	}
+
+	return nil
 }

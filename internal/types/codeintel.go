@@ -93,10 +93,24 @@ type OldCodeIntelEventStatistics struct {
 	EventsCount *int32
 }
 
-type SquirrelLocation struct {
+type RepoCommitPath struct {
 	Repo   string `json:"repo"`
 	Commit string `json:"commit"`
 	Path   string `json:"path"`
-	Row    int32  `json:"row"`
-	Column int32  `json:"column"`
+}
+
+type LocalCodeIntelPayload struct {
+	Symbols []Symbol `json:"symbols"`
+}
+
+type Symbol struct {
+	Hover *string `json:"hover,omitempty"`
+	Def   Range   `json:"def,omitempty"`
+	Refs  []Range `json:"refs,omitempty"`
+}
+
+type Range struct {
+	Row    int `json:"row"`
+	Column int `json:"column"`
+	Length int `json:"length"`
 }

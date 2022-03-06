@@ -23,7 +23,7 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
 	mux.HandleFunc("/healthz", handleHealthCheck)
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
-	mux.HandleFunc("/squirrel/definition", squirrel.DefinitionHandler)
+	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler)
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}

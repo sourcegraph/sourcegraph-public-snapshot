@@ -194,8 +194,8 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	return filtered, nil
 }
 
-func (c *Client) Definition(ctx context.Context, args types.SquirrelLocation) (result *types.SquirrelLocation, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.Definition")
+func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -203,10 +203,10 @@ func (c *Client) Definition(ctx context.Context, args types.SquirrelLocation) (r
 		}
 		span.Finish()
 	}()
-	span.SetTag("Repo", string(args.Repo))
-	span.SetTag("CommitID", string(args.Commit))
+	span.SetTag("Repo", args.Repo)
+	span.SetTag("CommitID", args.Commit)
 
-	resp, err := c.httpPost(ctx, "squirrel/definition", api.RepoName(args.Repo), args)
+	resp, err := c.httpPost(ctx, "localCodeIntel", api.RepoName(args.Repo), args)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (c *Client) Definition(ctx context.Context, args types.SquirrelLocation) (r
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, errors.Errorf(
-			"Squirrel.Definition http status %d: %s",
+			"Squirrel.LocalCodeIntel http status %d: %s",
 			resp.StatusCode,
 			string(body),
 		)
@@ -225,31 +225,6 @@ func (c *Client) Definition(ctx context.Context, args types.SquirrelLocation) (r
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, errors.Wrap(err, "decoding response body")
-	}
-
-	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
-	// filtering.
-	if c.SubRepoPermsChecker == nil {
-		return result, err
-	}
-
-	checker := c.SubRepoPermsChecker()
-	if !authz.SubRepoEnabled(checker) {
-		return result, err
-	}
-
-	a := actor.FromContext(ctx)
-	// Filter in place
-	rc := authz.RepoContent{
-		Repo: api.RepoName(result.Repo),
-		Path: result.Path,
-	}
-	perm, err := authz.ActorPermissions(ctx, checker, a, rc)
-	if err != nil {
-		return nil, errors.Wrap(err, "checking sub-repo permissions")
-	}
-	if !perm.Include(authz.Read) {
-		return nil, errors.New("not authorized to read this file")
 	}
 
 	return result, nil
