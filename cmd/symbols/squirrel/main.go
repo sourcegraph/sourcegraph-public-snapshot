@@ -141,38 +141,76 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 
 	getId := newGetIdFunc()
 
-	// Collect all scopes, defs, and refs
+	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
+
+	// Collect scopes
 	scopes := map[Id]Scope{}
 	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
-		// Record the scope
 		if captureName == "scope" {
 			scopes[getId(node)] = map[string]*PartialSymbol{}
 			return
 		}
+	})
 
-		if node.IsNamed() {
+	// Collect defs
+	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+		// Only collect "definition*" captures.
+		if strings.HasPrefix(captureName, "definition") {
+			// Find the nearest scope (if it exists).
 			for cur := node; cur != nil; cur = cur.Parent() {
+				// Found the scope.
 				if scope, ok := scopes[getId(cur)]; ok {
+					// Get the symbol name.
 					symbolName := node.Content([]byte(contents))
+
+					// Print a debug message if the symbol is already defined.
+					if symbol, ok := scope[symbolName]; ok && debug {
+						lines := strings.Split(contents, "\n")
+						fmt.Printf("duplicate definition for %q in %s (using second)\n", symbolName, fullPath)
+						fmt.Printf("  %4d | %s\n", symbol.Def.Row, lines[symbol.Def.Row])
+						fmt.Printf("  %4d | %s\n", node.StartPoint().Row, lines[node.StartPoint().Row])
+					}
+
+					// Get the hover.
+					var hover *string
+					if commentStyle, ok := langToCommentStyle[langName]; ok {
+						hover = getHover(node, commentStyle, contents)
+					}
+
+					// Put the symbol in the scope.
+					def := nodeToRange(node)
+					scope[symbolName] = &PartialSymbol{
+						Hover: hover,
+						Def:   &def,
+						Refs:  map[types.Range]struct{}{},
+					}
+
+					// Stop walking up the tree.
+					break
+				}
+			}
+		}
+	})
+
+	// Collect refs.
+	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+		// Only collect named nodes. We could be more selective if we knew for each langauge which node
+		// types are references.
+		if node.IsNamed() {
+			// Find the nearest scope (if it exists).
+			for cur := node; cur != nil; cur = cur.Parent() {
+				// Found the scope.
+				if scope, ok := scopes[getId(cur)]; ok {
+					// Get the symbol name.
+					symbolName := node.Content([]byte(contents))
+
+					// Check if it's in the scope.
 					if _, ok := scope[symbolName]; !ok {
-						var hover *string
-						if commentStyle, ok := langToCommentStyle[langName]; ok {
-							hover = getHover(node, commentStyle, contents)
-						}
-						scope[symbolName] = &PartialSymbol{
-							Hover: hover,
-							Def:   nil,
-							Refs:  map[types.Range]struct{}{},
-						}
+						// It's not in this scope, so keep walking up the tree.
+						continue
 					}
 
-					// Put the def in the scope
-					if strings.HasPrefix(captureName, "definition") {
-						rnge := nodeToRange(node)
-						(*scope[symbolName]).Def = &rnge
-					}
-
-					// Put the ref in the scope
+					// Put the ref in the scope.
 					(*scope[symbolName]).Refs[nodeToRange(node)] = struct{}{}
 
 					// Stop walking up the tree.
