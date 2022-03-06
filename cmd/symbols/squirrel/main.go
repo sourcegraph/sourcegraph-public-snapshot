@@ -155,7 +155,7 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 						scope[symbolName] = &PartialSymbol{
 							Hover: nil,
 							Def:   nil,
-							Refs:  []types.Range{},
+							Refs:  map[types.Range]struct{}{},
 						}
 					}
 
@@ -166,7 +166,7 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 					}
 
 					// Put the ref in the scope
-					(*scope[symbolName]).Refs = append(scope[symbolName].Refs, nodeToRange(node))
+					(*scope[symbolName]).Refs[nodeToRange(node)] = struct{}{}
 				}
 			}
 		}
@@ -177,10 +177,14 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 	for _, scope := range scopes {
 		for _, partialSymbol := range scope {
 			if partialSymbol.Def != nil {
+				refs := []types.Range{}
+				for ref := range partialSymbol.Refs {
+					refs = append(refs, ref)
+				}
 				symbols = append(symbols, types.Symbol{
 					Hover: partialSymbol.Hover,
 					Def:   *partialSymbol.Def,
-					Refs:  partialSymbol.Refs,
+					Refs:  refs,
 				})
 			}
 		}
@@ -418,7 +422,8 @@ type Scope = map[string]*PartialSymbol
 type PartialSymbol struct {
 	Hover *string
 	Def   *types.Range
-	Refs  []types.Range
+	// Store refs as a set to avoid duplicates from some tree-sitter queries.
+	Refs map[types.Range]struct{}
 }
 
 type Scope2 struct {
