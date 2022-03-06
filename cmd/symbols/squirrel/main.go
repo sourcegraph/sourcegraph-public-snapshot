@@ -404,7 +404,18 @@ var langToSitterLanguage = map[string]*sitter.Language{
 
 func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
 	lines := strings.Split(strings.TrimSpace(contents), "\n")
+
+	// Sort payload.Symbols by Def Row then Column.
+	sort.Slice(payload.Symbols, func(i, j int) bool {
+		if payload.Symbols[i].Def.Row != payload.Symbols[j].Def.Row {
+			return payload.Symbols[i].Def.Row < payload.Symbols[j].Def.Row
+		}
+		return payload.Symbols[i].Def.Column < payload.Symbols[j].Def.Column
+	})
+
+	// Print all symbols.
 	for _, symbol := range payload.Symbols {
+		// Print the hover.
 		hover := "<no hover>"
 		if symbol.Hover != nil {
 			hover = *symbol.Hover
@@ -413,6 +424,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 		refColor := color.New(color.FgCyan)
 		fmt.Fprintf(w, "Hover %q, %s, %s\n", hover, defColor.Sprint("def"), refColor.Sprint("refs"))
 
+		// Convert each def and ref into a rangeColor.
 		type rangeColor struct {
 			rnge   types.Range
 			color_ *color.Color
@@ -424,6 +436,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 			rnges = append(rnges, rangeColor{rnge: ref, color_: refColor})
 		}
 
+		// How to print a range in color.
 		printRange := func(rnge types.Range, c *color.Color) {
 			line := lines[rnge.Row]
 			lineWithSpaces := tabsToSpaces(line)
@@ -436,6 +449,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 			fmt.Fprintln(w)
 		}
 
+		// Sort ranges by row, then column.
 		sort.Slice(rnges, func(i, j int) bool {
 			if rnges[i].rnge.Row == rnges[j].rnge.Row {
 				return rnges[i].rnge.Column < rnges[j].rnge.Column
@@ -443,6 +457,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 			return rnges[i].rnge.Row < rnges[j].rnge.Row
 		})
 
+		// Print each range.
 		for _, rnge := range rnges {
 			printRange(rnge.rnge, rnge.color_)
 		}
