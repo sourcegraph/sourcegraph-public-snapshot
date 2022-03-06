@@ -145,15 +145,18 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 
 	// Collect scopes
 	scopes := map[Id]Scope{}
-	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+	err = forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
 		if captureName == "scope" {
 			scopes[getId(node)] = map[string]*PartialSymbol{}
 			return
 		}
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	// Collect defs
-	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+	err = forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
 		// Only collect "definition*" captures.
 		if strings.HasPrefix(captureName, "definition") {
 			// Find the nearest scope (if it exists).
@@ -191,9 +194,12 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 			}
 		}
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	// Collect refs.
-	forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+	err = forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
 		// Only collect named nodes. We could be more selective if we knew for each langauge which node
 		// types are references.
 		if node.IsNamed() {
@@ -219,6 +225,9 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 			}
 		}
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	// Collect the symbols
 	symbols := []types.Symbol{}
