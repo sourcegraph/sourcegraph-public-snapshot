@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -285,23 +286,40 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 		}
 		defColor := color.New(color.FgMagenta)
 		refColor := color.New(color.FgCyan)
-		fmt.Fprintf(w, "Hover %q, %s, %s\n", hover, defColor.Sprint("defs"), refColor.Sprint("refs"))
+		fmt.Fprintf(w, "Hover %q, %s, %s\n", hover, defColor.Sprint("def"), refColor.Sprint("refs"))
+
+		type rangeColor struct {
+			rnge   types.Range
+			color_ *color.Color
+		}
+
+		rnges := []rangeColor{{rnge: symbol.Def, color_: defColor}}
+
+		for _, ref := range symbol.Refs {
+			rnges = append(rnges, rangeColor{rnge: ref, color_: refColor})
+		}
 
 		printRange := func(rnge types.Range, c *color.Color) {
 			line := lines[rnge.Row]
 			lineWithSpaces := tabsToSpaces(line)
 			column := lengthInSpaces(line[:rnge.Column])
 			length := lengthInSpaces(line[rnge.Column : rnge.Column+rnge.Length])
+			fmt.Fprint(w, color.New(color.FgBlack).Sprintf("%4d | ", rnge.Row+1))
 			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[:column]))
 			fmt.Fprint(w, c.Sprint(lineWithSpaces[column:column+length]))
 			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[column+length:]))
 			fmt.Fprintln(w)
 		}
 
-		printRange(symbol.Def, defColor)
+		sort.Slice(rnges, func(i, j int) bool {
+			if rnges[i].rnge.Row == rnges[j].rnge.Row {
+				return rnges[i].rnge.Column < rnges[j].rnge.Column
+			}
+			return rnges[i].rnge.Row < rnges[j].rnge.Row
+		})
 
-		for _, ref := range symbol.Refs {
-			printRange(ref, refColor)
+		for _, rnge := range rnges {
+			printRange(rnge.rnge, rnge.color_)
 		}
 
 		fmt.Fprintln(w)
