@@ -108,8 +108,20 @@ type LocalCodeIntelPayload struct {
 
 type Symbol struct {
 	Hover *string `json:"hover,omitempty"`
-	Def   Range   `json:"def,omitempty"`
+	Def   *Range  `json:"def,omitempty"`
 	Refs  []Range `json:"refs,omitempty"`
+}
+
+func (s Symbol) String() string {
+	hover := "<nil>"
+	if s.Hover != nil {
+		hover = *s.Hover
+	}
+	def := "<nil>"
+	if s.Def != nil {
+		def = s.Def.String()
+	}
+	return fmt.Sprintf("Symbol{Hover: %q, Def: %s, Refs: %+v", hover, def, s.Refs)
 }
 
 type Range struct {

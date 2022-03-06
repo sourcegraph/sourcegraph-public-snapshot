@@ -33,7 +33,6 @@ import (
 	"github.com/smacker/go-tree-sitter/lua"
 	"github.com/smacker/go-tree-sitter/ocaml"
 	"github.com/smacker/go-tree-sitter/php"
-	"github.com/smacker/go-tree-sitter/protobuf"
 	"github.com/smacker/go-tree-sitter/python"
 	"github.com/smacker/go-tree-sitter/ruby"
 	"github.com/smacker/go-tree-sitter/rust"
@@ -113,25 +112,20 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 		return nil, errors.Newf("unrecognized file extension %s", ext)
 	}
 
-	nvimDir, ok := langToNvimQueryDir[langName]
+	langSpec, ok := langToLangSpec[langName]
 	if !ok {
-		return nil, errors.Newf("neovim-treesitter does not have queries for the language %s", langName)
+		return nil, errors.Newf("unsupported language %s", langName)
 	}
 
-	localsPath := path.Join("nvim-treesitter", "queries", nvimDir, "locals.scm")
+	localsPath := path.Join("nvim-treesitter", "queries", langSpec.nvimQueryDir, "locals.scm")
 	queriesBytes, err := queriesFs.ReadFile(localsPath)
 	if err != nil {
 		return nil, errors.Newf("could not read %d: %s", localsPath, err)
 	}
 	queryString := string(queriesBytes)
 
-	lang, ok := langToSitterLanguage[langName]
-	if !ok {
-		return nil, fmt.Errorf("no tree-sitter parser for language %s", langName)
-	}
-
 	parser := sitter.NewParser()
-	parser.SetLanguage(lang)
+	parser.SetLanguage(langSpec.language)
 
 	tree, err := parser.ParseCtx(context.Background(), nil, []byte(contents))
 	if err != nil {
@@ -139,15 +133,16 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 	}
 	root := tree.RootNode()
 
-	getId := newGetIdFunc()
-
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 
 	// Collect scopes
-	scopes := map[Id]Scope{}
-	err = forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+	rootScopeId := nodeId(root)
+	scopes := map[Id]Scope{
+		rootScopeId: {},
+	}
+	err = forEachCapture(queryString, root, langSpec.language, func(captureName string, node *sitter.Node) {
 		if captureName == "scope" {
-			scopes[getId(node)] = map[string]*PartialSymbol{}
+			scopes[nodeId(node)] = map[string]*PartialSymbol{}
 			return
 		}
 	})
@@ -156,13 +151,13 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 	}
 
 	// Collect defs
-	err = forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
+	err = forEachCapture(queryString, root, langSpec.language, func(captureName string, node *sitter.Node) {
 		// Only collect "definition*" captures.
 		if strings.HasPrefix(captureName, "definition") {
 			// Find the nearest scope (if it exists).
 			for cur := node; cur != nil; cur = cur.Parent() {
 				// Found the scope.
-				if scope, ok := scopes[getId(cur)]; ok {
+				if scope, ok := scopes[nodeId(cur)]; ok {
 					// Get the symbol name.
 					symbolName := node.Content([]byte(contents))
 
@@ -175,10 +170,7 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 					}
 
 					// Get the hover.
-					var hover *string
-					if commentStyle, ok := langToCommentStyle[langName]; ok {
-						hover = getHover(node, commentStyle, contents)
-					}
+					hover := getHover(node, langSpec.commentStyle, contents)
 
 					// Put the symbol in the scope.
 					def := nodeToRange(node)
@@ -198,52 +190,57 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 		return nil, err
 	}
 
-	// Collect refs.
-	err = forEachCapture(queryString, root, lang, func(captureName string, node *sitter.Node) {
-		// Only collect named nodes. We could be more selective if we knew for each langauge which node
-		// types are references.
-		if node.IsNamed() {
-			// Find the nearest scope (if it exists).
-			for cur := node; cur != nil; cur = cur.Parent() {
-				// Found the scope.
-				if scope, ok := scopes[getId(cur)]; ok {
-					// Get the symbol name.
-					symbolName := node.Content([]byte(contents))
+	// Collect refs by walking the entire tree.
+	walk(root, func(node *sitter.Node) {
+		// Only collect identifiers.
+		if !strings.Contains(node.Type(), "identifier") {
+			return
+		}
 
-					// Check if it's in the scope.
-					if _, ok := scope[symbolName]; !ok {
-						// It's not in this scope, so keep walking up the tree.
-						continue
-					}
+		// Get the symbol name.
+		symbolName := node.Content([]byte(contents))
 
-					// Put the ref in the scope.
-					(*scope[symbolName]).Refs[nodeToRange(node)] = struct{}{}
-
-					// Stop walking up the tree.
-					break
+		// Find the nearest scope (if it exists).
+		for cur := node; cur != nil; cur = cur.Parent() {
+			if scope, ok := scopes[nodeId(cur)]; ok {
+				// Check if it's in the scope.
+				if _, ok := scope[symbolName]; !ok {
+					// It's not in this scope, so keep walking up the tree.
+					continue
 				}
+
+				// Put the ref in the scope.
+				(*scope[symbolName]).Refs[nodeToRange(node)] = struct{}{}
+
+				// Done.
+				return
 			}
 		}
+
+		// Did not find the symbol in this file, so create a symbol at the root without a def for it.
+		if _, ok := scopes[rootScopeId][symbolName]; !ok {
+			scopes[rootScopeId][symbolName] = &PartialSymbol{Refs: map[types.Range]struct{}{}}
+		}
+		scopes[rootScopeId][symbolName].Refs[nodeToRange(node)] = struct{}{}
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Collect the symbols
 	symbols := []types.Symbol{}
 	for _, scope := range scopes {
 		for _, partialSymbol := range scope {
-			if partialSymbol.Def != nil {
-				refs := []types.Range{}
-				for ref := range partialSymbol.Refs {
-					refs = append(refs, ref)
-				}
-				symbols = append(symbols, types.Symbol{
-					Hover: partialSymbol.Hover,
-					Def:   *partialSymbol.Def,
-					Refs:  refs,
-				})
+			if partialSymbol.Def == nil && len(partialSymbol.Refs) == 0 && debug {
+				fmt.Println("no def or refs for", partialSymbol)
+				continue
 			}
+			refs := []types.Range{}
+			for ref := range partialSymbol.Refs {
+				refs = append(refs, ref)
+			}
+			symbols = append(symbols, types.Symbol{
+				Hover: partialSymbol.Hover,
+				Def:   partialSymbol.Def,
+				Refs:  refs,
+			})
 		}
 	}
 
@@ -284,7 +281,7 @@ func getHover(node *sitter.Node, style CommentStyle, contents string) *string {
 			lines := []string{}
 			allLines := strings.Split(comment, "\n")
 			for _, line := range allLines {
-				if style.deleteRegex != nil && style.deleteRegex.MatchString(line) {
+				if style.ignoreRegex != nil && style.ignoreRegex.MatchString(line) {
 					continue
 				}
 
@@ -339,39 +336,9 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-var langToCommentStyle = map[string]CommentStyle{
-	"cpp":        {}, // TODO
-	"csharp":     {}, // TODO
-	"css":        {}, // TODO
-	"dockerfile": {}, // TODO
-	"elm":        {}, // TODO
-	"go": {
-		nodeTypes:     []string{"comment"},
-		stripRegex:    regexp.MustCompile(`^//`),
-		codeFenceName: "go",
-	},
-	"hcl":        {}, // TODO
-	"html":       {}, // TODO
-	"java":       {}, // TODO
-	"javascript": {}, // TODO
-	"lua":        {}, // TODO
-	"ocaml":      {}, // TODO
-	"php":        {}, // TODO
-	"protobuf":   {}, // TODO
-	"python":     {}, // TODO
-	"ruby":       {}, // TODO
-	"rust":       {}, // TODO
-	"scala":      {}, // TODO
-	"shell":      {}, // TODO
-	"svelte":     {}, // TODO
-	"toml":       {}, // TODO
-	"typescript": {}, // TODO
-	"yaml":       {}, // TODO
-}
-
 type CommentStyle struct {
 	placedBelow   bool
-	deleteRegex   *regexp.Regexp
+	ignoreRegex   *regexp.Regexp
 	stripRegex    *regexp.Regexp
 	skipNodeTypes []string
 	nodeTypes     []string
@@ -406,57 +373,133 @@ var extToLang = func() map[string]string {
 	return m
 }()
 
-var langToNvimQueryDir = map[string]string{
-	"cpp":        "cpp",
-	"csharp":     "c_sharp",
-	"css":        "css",
-	"dockerfile": "dockerfile",
-	"elm":        "elm",
-	"go":         "go",
-	"hcl":        "hcl",
-	"html":       "html",
-	"java":       "java",
-	"javascript": "javascript",
-	"lua":        "lua",
-	"ocaml":      "ocaml",
-	"php":        "php",
-	"python":     "python",
-	"ruby":       "ruby",
-	"rust":       "rust",
-	"scala":      "scala",
-	"shell":      "bash",
-	"svelte":     "svelte",
-	"toml":       "toml",
-	"typescript": "typescript",
-	"yaml":       "yaml",
+type LangSpec struct {
+	nvimQueryDir string
+	language     *sitter.Language
+	commentStyle CommentStyle
 }
 
-var langToSitterLanguage = map[string]*sitter.Language{
-	// Sourcegraph's language map makes no distinction between c and cpp.
-	// "c":          c.GetLanguage(),
-	"cpp":        cpp.GetLanguage(),
-	"csharp":     csharp.GetLanguage(),
-	"css":        css.GetLanguage(),
-	"dockerfile": dockerfile.GetLanguage(),
-	"elm":        elm.GetLanguage(),
-	"go":         golang.GetLanguage(),
-	"hcl":        hcl.GetLanguage(),
-	"html":       html.GetLanguage(),
-	"java":       java.GetLanguage(),
-	"javascript": javascript.GetLanguage(),
-	"lua":        lua.GetLanguage(),
-	"ocaml":      ocaml.GetLanguage(),
-	"php":        php.GetLanguage(),
-	"protobuf":   protobuf.GetLanguage(),
-	"python":     python.GetLanguage(),
-	"ruby":       ruby.GetLanguage(),
-	"rust":       rust.GetLanguage(),
-	"scala":      scala.GetLanguage(),
-	"shell":      bash.GetLanguage(),
-	"svelte":     svelte.GetLanguage(),
-	"toml":       toml.GetLanguage(),
-	"typescript": typescript.GetLanguage(),
-	"yaml":       yaml.GetLanguage(),
+var langToLangSpec = map[string]LangSpec{
+	"cpp": {
+		nvimQueryDir: "cpp",
+		language:     cpp.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"csharp": {
+		nvimQueryDir: "c_sharp",
+		language:     csharp.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"css": {
+		nvimQueryDir: "css",
+		language:     css.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"dockerfile": {
+		nvimQueryDir: "dockerfile",
+		language:     dockerfile.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"elm": {
+		nvimQueryDir: "elm",
+		language:     elm.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"go": {
+		nvimQueryDir: "go",
+		language:     golang.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"comment"},
+			stripRegex:    regexp.MustCompile(`^//`),
+			codeFenceName: "go",
+		}, // TODO
+	},
+	"hcl": {
+		nvimQueryDir: "hcl",
+		language:     hcl.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"html": {
+		nvimQueryDir: "html",
+		language:     html.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"java": {
+		nvimQueryDir: "java",
+		language:     java.GetLanguage(),
+		commentStyle: CommentStyle{
+			nodeTypes:     []string{"line_comment", "block_comment"},
+			stripRegex:    regexp.MustCompile(`(^//|^\s*\*|^/\*\*|\*/$)`),
+			ignoreRegex:   regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`),
+			codeFenceName: "java",
+			skipNodeTypes: []string{"modifiers"},
+		}, // TODO
+	},
+	"javascript": {
+		nvimQueryDir: "javascript",
+		language:     javascript.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"lua": {
+		nvimQueryDir: "lua",
+		language:     lua.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"ocaml": {
+		nvimQueryDir: "ocaml",
+		language:     ocaml.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"php": {
+		nvimQueryDir: "php",
+		language:     php.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"python": {
+		nvimQueryDir: "python",
+		language:     python.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"ruby": {
+		nvimQueryDir: "ruby",
+		language:     ruby.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"rust": {
+		nvimQueryDir: "rust",
+		language:     rust.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"scala": {
+		nvimQueryDir: "scala",
+		language:     scala.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"shell": {
+		nvimQueryDir: "bash",
+		language:     bash.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"svelte": {
+		nvimQueryDir: "svelte",
+		language:     svelte.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"toml": {
+		nvimQueryDir: "toml",
+		language:     toml.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"typescript": {
+		nvimQueryDir: "typescript",
+		language:     typescript.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
+	"yaml": {
+		nvimQueryDir: "yaml",
+		language:     yaml.GetLanguage(),
+		commentStyle: CommentStyle{}, // TODO
+	},
 }
 
 func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
@@ -464,10 +507,24 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 
 	// Sort payload.Symbols by Def Row then Column.
 	sort.Slice(payload.Symbols, func(i, j int) bool {
-		if payload.Symbols[i].Def.Row != payload.Symbols[j].Def.Row {
-			return payload.Symbols[i].Def.Row < payload.Symbols[j].Def.Row
+		if payload.Symbols[i].Def == nil && payload.Symbols[j].Def == nil {
+			if len(payload.Symbols[i].Refs) == 0 && len(payload.Symbols[j].Refs) == 0 {
+				fmt.Println("expected a definition or reference, sorting will be unstable")
+				return true
+			} else if len(payload.Symbols[i].Refs) == 0 {
+				return false
+			} else if len(payload.Symbols[j].Refs) == 0 {
+				return true
+			} else {
+				return isLessRange(payload.Symbols[i].Refs[0], payload.Symbols[j].Refs[0])
+			}
+		} else if payload.Symbols[i].Def == nil {
+			return false
+		} else if payload.Symbols[j].Def == nil {
+			return true
+		} else {
+			return isLessRange(*payload.Symbols[i].Def, *payload.Symbols[j].Def)
 		}
-		return payload.Symbols[i].Def.Column < payload.Symbols[j].Def.Column
 	})
 
 	// Print all symbols.
@@ -487,7 +544,11 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 			color_ *color.Color
 		}
 
-		rnges := []rangeColor{{rnge: symbol.Def, color_: defColor}}
+		rnges := []rangeColor{}
+
+		if symbol.Def != nil {
+			rnges = append(rnges, rangeColor{rnge: *symbol.Def, color_: defColor})
+		}
 
 		for _, ref := range symbol.Refs {
 			rnges = append(rnges, rangeColor{rnge: ref, color_: refColor})
@@ -499,7 +560,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 			lineWithSpaces := tabsToSpaces(line)
 			column := lengthInSpaces(line[:rnge.Column])
 			length := lengthInSpaces(line[rnge.Column : rnge.Column+rnge.Length])
-			fmt.Fprint(w, color.New(color.FgBlack).Sprintf("%4d | ", rnge.Row+1))
+			fmt.Fprint(w, color.New(color.FgBlack).Sprintf("%4d | ", rnge.Row))
 			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[:column]))
 			fmt.Fprint(w, c.Sprint(lineWithSpaces[column:column+length]))
 			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[column+length:]))
@@ -521,6 +582,13 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, pa
 
 		fmt.Fprintln(w)
 	}
+}
+
+func isLessRange(a, b types.Range) bool {
+	if a.Row == b.Row {
+		return a.Column < b.Column
+	}
+	return a.Row < b.Row
 }
 
 func tabsToSpaces(s string) string {
@@ -597,26 +665,6 @@ func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f fu
 	return nil
 }
 
-func newGetIdFunc() func(node *sitter.Node) Id {
-	// TODO get the ID directly from tree-sitter for convenience
-
-	// String IDs look like this: <startByte>-<endByte>
-	sringId := func(node *sitter.Node) string {
-		return fmt.Sprintf("%d-%d", node.StartByte(), node.EndByte())
-	}
-
-	nextId := 0
-	stringIdToId := map[string]Id{}
-	return func(node *sitter.Node) Id {
-		if id, ok := stringIdToId[sringId(node)]; ok {
-			return id
-		}
-		stringIdToId[sringId(node)] = nextId
-		nextId++
-		return stringIdToId[sringId(node)]
-	}
-}
-
 func nodeToRange(node *sitter.Node) types.Range {
 	length := 1
 	if node.StartPoint().Row == node.EndPoint().Row {
@@ -630,10 +678,14 @@ func nodeToRange(node *sitter.Node) types.Range {
 }
 
 // The ID of a tree-sitter node.
-type Id = int
+type Id = string
 
-type Scope = map[string]*PartialSymbol
+type SymbolName = string
 
+// Scope is a mapping from symbol name to symbol.
+type Scope = map[SymbolName]*PartialSymbol // pointer for mutability
+
+// PartialSymbol is the same as types.Symbol, but with the refs stored in a map to deduplicate.
 type PartialSymbol struct {
 	Hover *string
 	Def   *types.Range
@@ -641,30 +693,14 @@ type PartialSymbol struct {
 	Refs map[types.Range]struct{}
 }
 
-type Scope2 struct {
-	parent  *Scope2
-	symbols map[string]types.Symbol
-}
-
-func newScope(parent *Scope2) *Scope2 {
-	return &Scope2{
-		parent:  parent,
-		symbols: map[string]types.Symbol{},
+// walk walks every node in the tree-sitter tree, calling f on each node.
+func walk(node *sitter.Node, f func(node *sitter.Node)) {
+	f(node)
+	for i := 0; i < int(node.ChildCount()); i++ {
+		walk(node.Child(i), f)
 	}
 }
 
-func (s *Scope2) set(name string, symbol types.Symbol) {
-	s.symbols[name] = symbol
-}
-
-func (s *Scope2) get(name string) *types.Symbol {
-	if symbol, ok := s.symbols[name]; ok {
-		return &symbol
-	}
-
-	if s.parent != nil {
-		return s.parent.get(name)
-	}
-
-	return nil
+func nodeId(node *sitter.Node) Id {
+	return fmt.Sprint(nodeToRange(node))
 }
