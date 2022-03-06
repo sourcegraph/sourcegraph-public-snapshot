@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // CodeIntelAggregatedEvent represents the total events and unique users within
 // the current week for a single event. The events are split again by language id
@@ -113,4 +116,8 @@ type Range struct {
 	Row    int `json:"row"`
 	Column int `json:"column"`
 	Length int `json:"length"`
+}
+
+func (r Range) String() string {
+	return fmt.Sprintf("%d:%d:%d", r.Row, r.Column, r.Length)
 }

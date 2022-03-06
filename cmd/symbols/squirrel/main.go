@@ -66,10 +66,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	path := args.Path
 
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
-
-	if debug {
-		fmt.Println("👉 repo:", repo, "commit:", commit, "path:", path)
-	}
+	debugStringBuilder := &strings.Builder{}
 
 	cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
 	cmd.Repo = api.RepoName(repo)
@@ -82,16 +79,18 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := localCodeIntel(path, string(contents))
 	if result != nil && debug {
-		prettyPrintLocalCodeIntelPayload(args, *result, string(contents))
+		fmt.Fprintln(debugStringBuilder, "👉 repo:", repo, "commit:", commit, "path:", path)
+		prettyPrintLocalCodeIntelPayload(debugStringBuilder, args, *result, string(contents))
+		fmt.Fprintln(debugStringBuilder, "✅ repo:", repo, "commit:", commit, "path:", path)
+
+		fmt.Println(" ")
+		fmt.Println(bracket(debugStringBuilder.String()))
+		fmt.Println(" ")
 	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
 		log15.Error("failed to get definition", "err", err)
 		return
-	}
-
-	if debug {
-		fmt.Println("✅ repo:", repo, "commit:", commit, "path:", path)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -273,18 +272,68 @@ var langToSitterLanguage = map[string]*sitter.Language{
 	"yaml":       yaml.GetLanguage(),
 }
 
-func prettyPrintLocalCodeIntelPayload(args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
-	sb := &strings.Builder{}
+func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
+	lines := strings.Split(strings.TrimSpace(contents), "\n")
+	for _, symbol := range payload.Symbols {
+		hover := "<no hover>"
+		if symbol.Hover != nil {
+			hover = *symbol.Hover
+		}
+		defColor := color.New(color.FgMagenta)
+		refColor := color.New(color.FgCyan)
+		fmt.Fprintf(w, "Hover %q, %s, %s\n", hover, defColor.Sprint("defs"), refColor.Sprint("refs"))
 
-	blue := color.New(color.FgBlue).SprintFunc()
-	fmt.Fprintf(sb, blue("repo %s, commit %s, path %s"), args.Repo, args.Commit, args.Path)
-	fmt.Fprintln(sb)
-	// gutter := fmt.Sprintf("%5d | ", 3)
+		printRange := func(rnge types.Range, c *color.Color) {
+			line := lines[rnge.Row]
+			lineWithSpaces := tabsToSpaces(line)
+			column := lengthInSpaces(line[:rnge.Column])
+			length := lengthInSpaces(line[rnge.Column : rnge.Column+rnge.Length])
+			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[:column]))
+			fmt.Fprint(w, c.Sprint(lineWithSpaces[column:column+length]))
+			fmt.Fprint(w, color.New(color.FgBlack).Sprint(lineWithSpaces[column+length:]))
+			fmt.Fprintln(w)
+		}
 
-	// fmt.Fprintf(sb, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
-	fmt.Fprintln(sb)
+		printRange(symbol.Def, defColor)
 
-	fmt.Println(bracket(sb.String()))
+		for _, ref := range symbol.Refs {
+			printRange(ref, refColor)
+		}
+
+		fmt.Fprintln(w)
+	}
+}
+
+func tabsToSpaces(s string) string {
+	return strings.Replace(s, "\t", "    ", -1)
+}
+
+func lengthInSpaces(s string) int {
+	total := 0
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\t' {
+			total += 4
+		} else {
+			total++
+		}
+	}
+	return total
+}
+
+func spacesToColumn(s string, ix int) int {
+	total := 0
+	for i := 0; i < len(s); i++ {
+		if total >= ix {
+			return i
+		}
+
+		if s[i] == '\t' {
+			total += 4
+		} else {
+			total++
+		}
+	}
+	return total
 }
 
 type colorSprintfFunc func(a ...interface{}) string
