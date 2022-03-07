@@ -125,24 +125,20 @@ Example:
 }
 ```
 
-## How to Import your Code Host into Sourcegraph using GraphQL
-Sourcegraph super admins can use graphql API to import a code host into their sourcegraph instance using the `mutation.AddExternalService`.
-Your query would look like the sample below:
+## How to Import your code host and repositories into Sourcegraph using GraphQL
+Sourcegraph site admins can use graphql API to import a code host as well as repositories into their Sourcegraph instance using `mutation.AddExternalService`.
+This is as below:
 
 ```
 mutation {
   addExternalService(
-    input: {kind: GITHUB, displayName: "github-m", config: "{\"url\":\"https://github.com\",\"token\":\"xxxxxxxxxxx\",\"repos\":[\"<owner>/<reponame>"]}"
-        
-    }
-  ) {
+    input: {input: {kind: $codehost_type, displayName: "$example_name", config: "{\"url\":\"https://example.com\",\"token\":\"xxxxxxxxxxx\",\"repos\":[\"<owner>/<reponame>]"}){
     id
     nextSyncAt
   }
 }
-
 ```
-You can also check the documentation explorer on the right-hand side of the `API console` page to explore the fields available.
+You can also use the documentation explorer on the right-hand side of the `API console` page to explore the fields available as well as use `Ctrl`+ `Spacebar` on Mac to bring up suggestions.
 
 ## Further resources
 
