@@ -380,6 +380,10 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 }
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	if len(args.Input.DataSeries) == 0 {
+		return nil, errors.New("Insight views need at least one data series to be created")
+	}
+
 	uid := actor.FromContext(ctx).UID
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
@@ -431,6 +435,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	if len(args.Input.DataSeries) == 0 {
+		return nil, errors.New("Cannot update insight view with no data series")
+	}
+
 	tx, err := r.insightStore.Transact(ctx)
 	if err != nil {
 		return nil, err
