@@ -195,7 +195,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         setSelectedEntries(reversedEntries.map((_value, index) => index))
                     }
                     break
-                // Clear entry selection
+                // Clear selection
                 case 'Escape':
                     if (selectedEntries.length > 0) {
                         setSelectedEntries([])
@@ -208,7 +208,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         deleteSelectedEntries()
                     }
                     break
-                // Select next entry
+                // Select "next" entry
                 case 'ArrowUp':
                 case 'ArrowDown': {
                     const { shiftKey, key } = event
@@ -285,7 +285,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         <CloseIcon className="icon-inline" />
                     </Button>
                 </div>
-                <ul role="listbox" onKeyDown={handleKey}>
+                <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
                     <li className="d-flex flex-column">{addableEntry && <AddEntryButton entry={addableEntry} />}</li>
                     {reversedEntries.map((entry, index) => {
                         const selected = selectedEntries.includes(index)
