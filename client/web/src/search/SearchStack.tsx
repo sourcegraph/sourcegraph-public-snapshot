@@ -17,6 +17,7 @@ import React, {
     MouseEvent,
     useRef,
     useEffect,
+    useLayoutEffect,
 } from 'react'
 import { useHistory } from 'react-router-dom'
 
@@ -68,11 +69,10 @@ function preventTextSelection(event: MouseEvent | KeyboardEvent): void {
 function useHasNewEntry(entries: SearchStackEntry[]): boolean {
     const previousLength = useRef<number>()
 
-    useEffect(() => {
-        previousLength.current = entries.length
-    }, [entries])
+    const previous = previousLength.current
+    previousLength.current = entries.length
 
-    return previousLength.current !== undefined && previousLength.current < entries.length
+    return previous !== undefined && previous < entries.length
 }
 
 export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
@@ -89,6 +89,14 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
 
     const reversedEntries = useMemo(() => [...entries].reverse(), [entries])
     const hasNewEntry = useHasNewEntry(reversedEntries)
+
+    useLayoutEffect(() => {
+        if (hasNewEntry) {
+            // Always select the new entry. This is also avoids problems with
+            // getting the selection index out of sync.
+            setSelectedEntries([0])
+        }
+    }, [hasNewEntry])
 
     const toggleSelectedEntry = useCallback(
         (position: number, event: MouseEvent | KeyboardEvent) => {
