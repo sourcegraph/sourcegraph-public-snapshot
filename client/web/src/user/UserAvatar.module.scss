@@ -1,9 +1,9 @@
-@mixin QuadVertexColors($v0, $v1, $v2, $v3) {
+@mixin quad-vertex-colors($v0, $v1, $v2, $v3) {
   background: linear-gradient(to bottom, $v0, $v2);
 
   &::after {
 
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     right: 0;
@@ -11,7 +11,7 @@
     left: 0;
     border-radius: 50%;
     background: linear-gradient(to right, $v1, $v3);
-    mask-image: linear-gradient(to bottom, black, transparent);
+    mask-image: linear-gradient(to bottom, #000000, transparent);
   }
 }
 
@@ -25,7 +25,7 @@
     min-width: 1.5rem;
     min-height: 1.5rem;
     position: relative;
-    @include QuadVertexColors(var(--logo-purple), var(--logo-purple), var(--logo-orange), var(--logo-blue));
+    @include quad-vertex-colors(var(--logo-purple), var(--logo-purple), var(--logo-orange), var(--logo-blue));
 }
 
 .initials {
