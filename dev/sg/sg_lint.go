@@ -91,34 +91,24 @@ var allLintTargets = lintTargets{
 	},
 }
 
-var (
-	lintCommand = &ffcli.Command{
-		Name:       "lint",
-		ShortUsage: "sg lint [target]",
-		ShortHelp:  "Run all or specified linter on the codebase.",
-		LongHelp:   `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
-		FlagSet:    lintFlagSet,
-		Exec: func(ctx context.Context, args []string) error {
-			if len(args) > 0 {
-				return errors.New("unrecognized command, please run 'sg lint --help' to list available linters")
-			}
-			var fns []lintFunc
-			for _, c := range allLintTargets {
-				fns = append(fns, c.Linters...)
-			}
-			return runCheckScriptsAndReport(fns...)(ctx, args)
-		},
-		Subcommands: allLintTargets.Commands(),
-	}
-	// TODO remove after a while
-	checkCommand = &ffcli.Command{
-		Name:      "check",
-		ShortHelp: "DEPRECATED: use 'sg lint' instead",
-		Exec: func(context.Context, []string) error {
-			return errors.New("'sg check' is deprecated - use 'sg lint' instead")
-		},
-	}
-)
+var lintCommand = &ffcli.Command{
+	Name:       "lint",
+	ShortUsage: "sg lint [target]",
+	ShortHelp:  "Run all or specified linter on the codebase.",
+	LongHelp:   `Run all or specified linter on the codebase and display failures, if any. To run all checks, don't provide an argument.`,
+	FlagSet:    lintFlagSet,
+	Exec: func(ctx context.Context, args []string) error {
+		if len(args) > 0 {
+			return errors.New("unrecognized command, please run 'sg lint --help' to list available linters")
+		}
+		var fns []lintFunc
+		for _, c := range allLintTargets {
+			fns = append(fns, c.Linters...)
+		}
+		return runCheckScriptsAndReport(fns...)(ctx, args)
+	},
+	Subcommands: allLintTargets.Commands(),
+}
 
 type lintFunc func(context.Context) *lintReport
 
