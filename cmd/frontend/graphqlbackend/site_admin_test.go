@@ -375,6 +375,35 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 		})
 	})
 
+	t.Run("Returns an error when user tries to soft delete an org in Cloud mode", func(t *testing.T) {
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `
+				mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
+					deleteOrganization(organization: $organization, hard: $hard) {
+						alwaysNil
+					}
+				}
+				`,
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+				"hard":         false,
+			},
+			ExpectedResult: `
+				{
+					"deleteOrganization": null
+				}
+				`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "soft deleting organization in not supported on Sourcegraph.com",
+					Path:    []interface{}{string("deleteOrganization")},
+				},
+			},
+		})
+	})
+
 	t.Run("Org member can hard delete their org", func(t *testing.T) {
 		mockedFeatureFlag := featureflag.FeatureFlag{
 			Name:      "org-deletion",

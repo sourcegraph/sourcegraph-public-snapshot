@@ -111,37 +111,51 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	}
 
 	if args.Hard != nil && *args.Hard {
-		// In the initial phase, hard deleting an org will be supported only on Cloud.
-		if !envvar.SourcegraphDotComMode() {
-			return nil, errors.New("hard deleting organization is only supported on Sourcegraph.com")
-		}
-
-		// 🚨 SECURITY: Only org members can hard delete an org.
-		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-			return nil, err
-		}
-
-		orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
-		if err != nil {
-			return nil, err
-		}
-
-		if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
-			return nil, errors.New("hard deleting organization is not supported")
-		}
-
-		if err := r.db.Orgs().HardDelete(ctx, orgID); err != nil {
-			return nil, err
-		}
+		return r.hardDelete(ctx, orgID)
 	} else {
-		// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-			return nil, err
-		}
+		return r.softDelete(ctx, orgID)
+	}
+}
 
-		if err := r.db.Orgs().Delete(ctx, orgID); err != nil {
-			return nil, err
-		}
+func (r *schemaResolver) hardDelete(ctx context.Context, orgID int32) (*EmptyResponse, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("hard deleting organization is only supported on Sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: Only org members can hard delete orgs.
+	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+		return nil, err
+	}
+
+	orgDeletionFlag, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "org-deletion")
+	if err != nil {
+		return nil, err
+	}
+
+	if orgDeletionFlag == nil || !orgDeletionFlag.Bool.Value {
+		return nil, errors.New("hard deleting organization is not supported")
+	}
+
+	if err := r.db.Orgs().HardDelete(ctx, orgID); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) softDelete(ctx context.Context, orgID int32) (*EmptyResponse, error) {
+	// For Cloud, orgs can only be hard deleted.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("soft deleting organization in not supported on Sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if err := r.db.Orgs().Delete(ctx, orgID); err != nil {
+		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
