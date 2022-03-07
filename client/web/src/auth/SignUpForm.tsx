@@ -213,7 +213,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             autoComplete="new-password"
                             placeholder=" "
                             onInvalid={preventDefault}
-                            minLength={12}
                             inputRef={passwordInputReference}
                             formNoValidate={true}
                         />
@@ -320,4 +319,12 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
         }),
         catchError(() => of('Unknown error validating username'))
     )
+}
+
+function validatePassword(password: string): Observable<string | undefined> {
+    let passwordError = ""
+
+    if (window.context.experimentalFeatures.passwordPolicy) {
+        if (window.context.experimentalFeatures.passwordPolicy.)
+    }
 }
