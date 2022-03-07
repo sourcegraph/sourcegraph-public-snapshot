@@ -47,6 +47,21 @@ type CommitsOptions struct {
 	NameOnly bool
 }
 
+func (opt *CommitsOptions) partsPerCommit() int {
+	p := partsPerCommitBasic
+	if opt.NameOnly {
+		p++
+	}
+	return p
+}
+
+func (opt *CommitsOptions) fileNamesIndex() int {
+	if opt.NameOnly {
+		return opt.partsPerCommit() - 1
+	}
+	return -312948 // sentinel value to catch errors
+}
+
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
@@ -301,7 +316,7 @@ func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, check
 }
 
 func getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
-	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
+	args, err := commitLogArgs([]string{"log"}, defaultLogFormat, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -393,16 +408,12 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	}
 
 	allParts := bytes.Split(data, []byte{'\x00'})
-	partsPerCommit := partsPerCommitBasic
-	if opt.NameOnly {
-		partsPerCommit = partsPerCommitWithFileNames
-	}
-	numCommits := len(allParts) / partsPerCommit
+	numCommits := len(allParts) / opt.partsPerCommit()
 	commits := make([]*wrappedCommit, 0, numCommits)
 	for len(data) > 0 {
 		var commit *wrappedCommit
 		var err error
-		commit, data, err = parseCommitFromLog(data, partsPerCommit)
+		commit, data, err = parseCommitFromLog(data, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -416,7 +427,10 @@ type wrappedCommit struct {
 	files []string
 }
 
-func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
+// commitLogArgs prepares the arguments for commands like git-log and git rev-list.
+//
+// Not all fields in CommitsOptions are supported for all git commands. :
+func commitLogArgs(initialArgs []string, formatString string, opt CommitsOptions) (args []string, err error) {
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
@@ -456,6 +470,9 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 	if opt.NameOnly {
 		args = append(args, "--name-only")
 	}
+
+	args = append(args, fmt.Sprintf("--format=%s", formatString))
+
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
 	}
@@ -468,7 +485,7 @@ func commitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, opt)
+	args, err := commitLogArgs([]string{"rev-list", "--count"}, "", opt)
 	if err != nil {
 		return 0, err
 	}
@@ -553,17 +570,17 @@ func checkError(err error) (string, bool, error) {
 }
 
 const (
-	partsPerCommitBasic         = 9  // number of \x00-separated fields per commit
-	partsPerCommitWithFileNames = 10 // number of \x00-separated fields per commit with names of modified files also returned
+	// partsPerCommitBasic is the number of \x00-separated fields in defaultLogFormat.
+	partsPerCommitBasic = 9
 
-	// don't include refs (faster, should be used if refs are not needed)
-	logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+	// defaultLogFormat is the baseline string for formatting git log output
+	defaultLogFormat = "format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
-// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
-// logFormatFlag.
-func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, rest []byte, err error) {
+// data. The data arg is a byte array that contains NUL-separated log fields.
+func parseCommitFromLog(data []byte, opt CommitsOptions) (commit *wrappedCommit, rest []byte, err error) {
+	partsPerCommit := opt.partsPerCommit()
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
 		return nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
@@ -592,7 +609,7 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 		}
 	}
 
-	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
+	fileNames, nextCommit := parseCommitFileNames(opt, parts)
 
 	commit = &wrappedCommit{
 		Commit: &gitdomain.Commit{
@@ -617,12 +634,12 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 
 // If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this
 // portion of the byte array, so it must be returned as well to be added to the rest of the commits to be processed.
-func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte) {
+func parseCommitFileNames(opt CommitsOptions, parts [][]byte) ([]string, []byte) {
 	var fileNames []string
 	var nextCommit []byte
-	if partsPerCommit == partsPerCommitWithFileNames {
-		parts[9] = bytes.TrimPrefix(parts[9], []byte{'\n'})
-		fileNamesRaw := parts[9]
+	if fileNameIndex := opt.fileNamesIndex(); fileNameIndex >= 0 {
+		parts[fileNameIndex] = bytes.TrimPrefix(parts[fileNameIndex], []byte{'\n'})
+		fileNamesRaw := parts[fileNameIndex]
 		fileNameParts := bytes.Split(fileNamesRaw, []byte{'\n'})
 		for i, name := range fileNameParts {
 			// The last item contains the files modified, some empty space, and the commit ID for the next commit. Drop
