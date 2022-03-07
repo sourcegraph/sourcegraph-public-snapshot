@@ -111,6 +111,16 @@ type RepoCommitPathRange struct {
 	Range
 }
 
+type RepoCommitPathPoint struct {
+	RepoCommitPath
+	Point
+}
+
+type Point struct {
+	Row    int `json:"row"`
+	Column int `json:"column"`
+}
+
 type Symbol struct {
 	Hover *string `json:"hover,omitempty"`
 	Def   *Range  `json:"def,omitempty"`

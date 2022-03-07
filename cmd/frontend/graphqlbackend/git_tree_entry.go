@@ -319,19 +319,19 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		return nil, err
 	}
 
-	startLocation := types.RepoCommitPathRange{
+	start := types.RepoCommitPathPoint{
 		RepoCommitPath: types.RepoCommitPath{
 			Repo:   string(repo.Name),
 			Commit: string(r.commit.oid),
 			Path:   r.Path(),
 		},
-		Range: types.Range{
+		Point: types.Point{
 			Row:    int(args.Line),
 			Column: int(args.Character),
 		},
 	}
 
-	result, err := symbols.DefaultClient.SymbolInfo(ctx, startLocation)
+	result, err := symbols.DefaultClient.SymbolInfo(ctx, start)
 	if err != nil {
 		return nil, err
 	}

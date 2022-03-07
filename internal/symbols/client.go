@@ -230,7 +230,7 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 	return result, nil
 }
 
-func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathRange) (result *types.SymbolInfo, err error) {
+func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.SymbolInfo")
 	defer func() {
 		if err != nil {

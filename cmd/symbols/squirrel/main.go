@@ -71,24 +71,20 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 	debugStringBuilder := &strings.Builder{}
 
-	cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
-	cmd.Repo = api.RepoName(repo)
-	contents, stderr, err := cmd.DividedOutput(r.Context())
-	if err != nil {
-		log15.Error("failed to get file contents", "stdout", contents, "stderr", stderr)
-		http.Error(w, fmt.Sprintf("failed to get file contents: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	result, err := localCodeIntel(path, string(contents))
+	result, err := localCodeIntel(r.Context(), args, readFileFromGitserver)
 	if result != nil && debug {
 		fmt.Fprintln(debugStringBuilder, "👉 repo:", repo, "commit:", commit, "path:", path)
-		prettyPrintLocalCodeIntelPayload(debugStringBuilder, args, *result, string(contents))
-		fmt.Fprintln(debugStringBuilder, "✅ repo:", repo, "commit:", commit, "path:", path)
+		contents, err := readFileFromGitserver(r.Context(), args)
+		if err != nil {
+			log15.Error("failed to read file from gitserver", "err", err)
+		} else {
+			prettyPrintLocalCodeIntelPayload(debugStringBuilder, args, *result, string(contents))
+			fmt.Fprintln(debugStringBuilder, "✅ repo:", repo, "commit:", commit, "path:", path)
 
-		fmt.Println(" ")
-		fmt.Println(bracket(debugStringBuilder.String()))
-		fmt.Println(" ")
+			fmt.Println(" ")
+			fmt.Println(bracket(debugStringBuilder.String()))
+			fmt.Println(" ")
+		}
 	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
@@ -114,7 +110,7 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 			return
 		}
 
-		var args types.RepoCommitPathRange
+		var args types.RepoCommitPathPoint
 		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&args); err != nil {
 			log15.Error("failed to decode request body", "err", err, "body", string(body))
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -130,31 +126,12 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 		debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 		debugStringBuilder := &strings.Builder{}
 
-		cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
-		cmd.Repo = api.RepoName(repo)
-		contents, stderr, err := cmd.DividedOutput(r.Context())
-		if err != nil {
-			log15.Error("failed to get file contents", "stdout", contents, "stderr", stderr)
-			http.Error(w, fmt.Sprintf("failed to get file contents: %s", err), http.StatusInternalServerError)
-			return
-		}
+		squirrel := NewSquirrel(readFileFromGitserver, symbolSearch)
 
-		readFile := func(repoCommitPath types.RepoCommitPath) ([]byte, error) {
-			cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
-			cmd.Repo = api.RepoName(repoCommitPath.Repo)
-			stdout, stderr, err := cmd.DividedOutput(r.Context())
-			if err != nil {
-				return nil, fmt.Errorf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
-			}
-			return stdout, nil
-		}
-
-		squirrel := NewSquirrel(readFile, symbolSearch)
-
-		result, breadcrumbs, err := squirrel.symbolInfo(r.Context(), args)
+		result, err := squirrel.symbolInfo(r.Context(), args)
 		if debug {
 			fmt.Fprintln(debugStringBuilder, "👉 repo:", repo, "commit:", commit, "path:", path, "row:", row, "column:", column)
-			prettyPrintBreadcrumbs(debugStringBuilder, breadcrumbs, readFile)
+			prettyPrintBreadcrumbs(debugStringBuilder, squirrel.breadcrumbs, readFileFromGitserver)
 			if result == nil {
 				fmt.Fprintln(debugStringBuilder, "❌ no definition found")
 			} else {
@@ -181,18 +158,8 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 	}
 }
 
-func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayload, error) {
-	ext := strings.TrimPrefix(filepath.Ext(fullPath), ".")
-
-	langName, ok := extToLang[ext]
-	if !ok {
-		return nil, errors.Newf("unrecognized file extension %s", ext)
-	}
-
-	langSpec, ok := langToLangSpec[langName]
-	if !ok {
-		return nil, errors.Newf("unsupported language %s", langName)
-	}
+func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*types.LocalCodeIntelPayload, error) {
+	root, contents, langSpec, err := parse(ctx, repoCommitPath, readFile)
 
 	localsPath := path.Join("nvim-treesitter", "queries", langSpec.nvimQueryDir, "locals.scm")
 	queriesBytes, err := queriesFs.ReadFile(localsPath)
@@ -200,15 +167,6 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 		return nil, errors.Newf("could not read %d: %s", localsPath, err)
 	}
 	queryString := string(queriesBytes)
-
-	parser := sitter.NewParser()
-	parser.SetLanguage(langSpec.language)
-
-	tree, err := parser.ParseCtx(context.Background(), nil, []byte(contents))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse file contents: %s", err)
-	}
-	root := tree.RootNode()
 
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 
@@ -236,18 +194,18 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 				// Found the scope.
 				if scope, ok := scopes[nodeId(cur)]; ok {
 					// Get the symbol name.
-					symbolName := node.Content([]byte(contents))
+					symbolName := node.Content(contents)
 
 					// Print a debug message if the symbol is already defined.
 					if symbol, ok := scope[symbolName]; ok && debug {
-						lines := strings.Split(contents, "\n")
-						fmt.Printf("duplicate definition for %q in %s (using second)\n", symbolName, fullPath)
+						lines := strings.Split(string(contents), "\n")
+						fmt.Printf("duplicate definition for %q in %s (using second)\n", symbolName, repoCommitPath.Path)
 						fmt.Printf("  %4d | %s\n", symbol.Def.Row, lines[symbol.Def.Row])
 						fmt.Printf("  %4d | %s\n", node.StartPoint().Row, lines[node.StartPoint().Row])
 					}
 
 					// Get the hover.
-					hover := getHover(node, langSpec.commentStyle, contents)
+					hover := getHover(node, langSpec.commentStyle, string(contents))
 
 					// Put the symbol in the scope.
 					def := nodeToRange(node)
@@ -324,142 +282,414 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 	return &types.LocalCodeIntelPayload{Symbols: symbols}, nil
 }
 
-type ReadFileFunc func(types.RepoCommitPath) ([]byte, error)
+type ReadFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
 
 type Squirrel struct {
 	readFile     ReadFileFunc
 	symbolSearch symbolsTypes.SearchFunc
+	breadcrumbs  []Breadcrumb
 }
 
 func NewSquirrel(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *Squirrel {
 	return &Squirrel{
 		readFile:     readFile,
 		symbolSearch: symbolSearch,
+		breadcrumbs:  []Breadcrumb{},
 	}
 }
 
-func (s *Squirrel) symbolInfo(ctx context.Context, location types.RepoCommitPathRange) (*types.SymbolInfo, []Breadcrumb, error) {
-	ext := strings.TrimPrefix(filepath.Ext(location.Path), ".")
-
-	langName, ok := extToLang[ext]
-	if !ok {
-		return nil, nil, errors.Newf("unrecognized file extension %s", ext)
-	}
-
-	langSpec, ok := langToLangSpec[langName]
-	if !ok {
-		return nil, nil, errors.Newf("unsupported language %s", langName)
-	}
-
-	parser := sitter.NewParser()
-	parser.SetLanguage(langSpec.language)
-
-	startContents, err := s.readFile(location.RepoCommitPath)
+func (s *Squirrel) symbolInfo(ctx context.Context, location types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
+	def, err := s.getDefAtLocation(ctx, location)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+	if def == nil {
+		return nil, nil
 	}
 
-	tree, err := parser.ParseCtx(context.Background(), nil, startContents)
+	hover, err := s.getHoverOnLine(ctx, *def)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse file contents: %s", err)
+		log15.Error("failed to get hover on a line", "error", err, "location", location, "deflocation", def)
 	}
-	root := tree.RootNode()
+
+	return &types.SymbolInfo{
+		Definition: *def,
+		Hover:      hover,
+	}, nil
+}
+
+func (s *Squirrel) getDefAtLocation(ctx context.Context, point types.RepoCommitPathPoint) (*types.RepoCommitPathRange, error) {
+	root, _, langSpec, err := parse(ctx, point.RepoCommitPath, s.readFile)
+	if err != nil {
+		return nil, err
+	}
 
 	startNode := root.NamedDescendantForPointRange(
-		sitter.Point{Row: uint32(location.Row), Column: uint32(location.Column)},
-		sitter.Point{Row: uint32(location.Row), Column: uint32(location.Column)},
+		sitter.Point{Row: uint32(point.Row), Column: uint32(point.Column)},
+		sitter.Point{Row: uint32(point.Row), Column: uint32(point.Column)},
 	)
 
 	if startNode == nil {
-		return nil, nil, errors.New("node is nil")
+		return nil, errors.New("node is nil")
 	}
 
-	breadcrumbs := []Breadcrumb{{
-		RepoCommitPathRange: location,
-		length:              1,
-		message:             "start",
-	}}
+	foundPkgOrNode, err := s.getDef(ctx, langSpec.language, point.RepoCommitPath, startNode)
+	if err != nil {
+		return nil, err
+	}
+	if foundPkgOrNode == nil {
+		return nil, nil
+	}
 
+	if foundPkgOrNode.Node != nil {
+		return &types.RepoCommitPathRange{
+			RepoCommitPath: foundPkgOrNode.Node.RepoCommitPath,
+			Range:          nodeToRange(foundPkgOrNode.Node.Node),
+		}, nil
+	}
+
+	return nil, nil
+}
+
+type PkgOrNode struct {
+	Pkg  *types.RepoCommitPath
+	Node *NodeWithRepoCommitPath
+}
+
+type NodeWithRepoCommitPath struct {
+	RepoCommitPath types.RepoCommitPath
+	Node           *sitter.Node
+}
+
+func (s *Squirrel) getDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
+	if node == nil {
+		return nil, nil
+	}
+
+	s.breadcrumbs = append(s.breadcrumbs, Breadcrumb{
+		RepoCommitPathRange: types.RepoCommitPathRange{
+			RepoCommitPath: repoCommitPath,
+			Range:          nodeToRange(node),
+		},
+		length:  nodeLength(node),
+		message: "getDef",
+	})
+
+	contents, err := s.readFile(ctx, repoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+
+	switch node.Type() {
+	case "identifier":
+		for cur := node; cur != nil; cur = cur.Parent() {
+			parent := cur.Parent()
+			if parent == nil {
+				break
+			}
+			switch parent.Type() {
+			case "block":
+				for cur2 := cur; cur2 != nil; cur2 = cur2.PrevNamedSibling() {
+					if cur2.Type() == "var_declaration" {
+						if cur2.NamedChild(0).Type() == "var_spec" {
+							found := cur2.NamedChild(0).ChildByFieldName("name")
+							if found.Content(contents) == node.Content(contents) {
+								return &PkgOrNode{Node: &NodeWithRepoCommitPath{RepoCommitPath: repoCommitPath, Node: found}}, nil
+							}
+						}
+					}
+				}
+			}
+		}
+	case "type_identifier":
+		parent := node.Parent()
+		if parent == nil {
+			break
+		}
+		switch parent.Type() {
+		case "qualified_type":
+			return s.getField(ctx, lang, repoCommitPath, parent.ChildByFieldName("package"), node.Content(contents))
+		default:
+			return nil, errors.Newf("unrecognized parent type %s", parent.Type())
+		}
+	case "field_identifier":
+		parent := node.Parent()
+		if parent == nil {
+			return nil, nil
+		}
+
+		switch parent.Type() {
+		case "selector_expression":
+			return s.getField(ctx, lang, repoCommitPath, parent.ChildByFieldName("operand"), node.Content(contents))
+		default:
+			return nil, errors.Newf("unexpected parent type %s", parent.Type())
+		}
+	case "package_identifier":
+		top := getRoot(node)
+		pkg := node.Content(contents)
+		dir := ""
+		forEachCapture("(import_spec path: (interpreted_string_literal) @import)", top, lang, func(name string, node *sitter.Node) {
+			path := node.Content(contents)
+			path = strings.TrimPrefix(path, `"`)
+			path = strings.TrimSuffix(path, `"`)
+
+			if !strings.HasSuffix(path, "/"+pkg) {
+				return
+			}
+
+			components := strings.Split(path, "/")
+			if len(components) < 3 {
+				return
+			}
+
+			dir = strings.Join(components[3:], "/")
+		})
+		if dir == "" {
+			return nil, nil
+		}
+		return &PkgOrNode{Pkg: &types.RepoCommitPath{
+			Repo:   repoCommitPath.Repo,
+			Commit: repoCommitPath.Commit,
+			Path:   dir,
+		}}, nil
+	}
+
+	return nil, nil
+}
+
+func (s *Squirrel) getField(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node, field string) (*PkgOrNode, error) {
+	if node == nil {
+		return nil, nil
+	}
+
+	s.breadcrumbs = append(s.breadcrumbs, Breadcrumb{
+		RepoCommitPathRange: types.RepoCommitPathRange{
+			RepoCommitPath: repoCommitPath,
+			Range:          nodeToRange(node),
+		},
+		length:  nodeLength(node),
+		message: fmt.Sprintf("getField(%s)", field),
+	})
+
+	typePkgOrNode, err := s.getTypeDef(ctx, lang, repoCommitPath, node)
+	if err != nil {
+		return nil, err
+	}
+	if typePkgOrNode == nil {
+		return nil, nil
+	}
+
+	if typePkgOrNode.Pkg != nil {
+		result, err := s.getDefInRepoDir(ctx, typePkgOrNode.Pkg.Repo, typePkgOrNode.Pkg.Commit, field, typePkgOrNode.Pkg.Path)
+		if err != nil {
+			return nil, err
+		}
+		return &PkgOrNode{Node: result}, nil
+	}
+
+	typeDef := typePkgOrNode.Node.Node
+
+	parent := typeDef.Parent()
+	if parent == nil {
+		return nil, nil
+	}
+	switch parent.Type() {
+	case "type_spec":
+		ty := parent.ChildByFieldName("type")
+		if ty == nil {
+			return nil, nil
+		}
+
+		contents, err := s.readFile(ctx, typePkgOrNode.Node.RepoCommitPath)
+		if err != nil {
+			return nil, err
+		}
+
+		var foundMethod *sitter.Node
+		forEachCapture("(method_declaration name: (field_identifier) @method)", getRoot(ty), lang, func(captureName string, node *sitter.Node) {
+			if node.Content(contents) == field {
+				foundMethod = node
+			}
+		})
+		if foundMethod == nil {
+			return nil, nil
+		}
+		return &PkgOrNode{Node: &NodeWithRepoCommitPath{RepoCommitPath: typePkgOrNode.Node.RepoCommitPath, Node: foundMethod}}, nil
+	default:
+		return nil, errors.Newf("unrecognized type %s", typeDef.Type())
+	}
+}
+
+func (s *Squirrel) getTypeDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
+	if node == nil {
+		return nil, nil
+	}
+
+	s.breadcrumbs = append(s.breadcrumbs, Breadcrumb{
+		RepoCommitPathRange: types.RepoCommitPathRange{
+			RepoCommitPath: repoCommitPath,
+			Range:          nodeToRange(node),
+		},
+		length:  nodeLength(node),
+		message: "getTypeDef",
+	})
+
+	_, err := s.readFile(ctx, repoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+
+	defPkgOrNode, err := s.getDef(ctx, lang, repoCommitPath, node)
+	if err != nil {
+		return nil, err
+	}
+	if defPkgOrNode == nil {
+		return nil, nil
+	}
+
+	if defPkgOrNode.Pkg != nil {
+		return defPkgOrNode, nil
+	}
+
+	def := defPkgOrNode.Node.Node
+
+	parent := def.Parent()
+	if parent == nil {
+		return nil, nil
+	}
+
+	switch parent.Type() {
+	case "var_spec":
+		ty := parent.ChildByFieldName("type")
+		if ty == nil {
+			return nil, nil
+		}
+		if ty.Type() == "pointer_type" {
+			ty = ty.NamedChild(0)
+			if ty == nil {
+				return nil, nil
+			}
+		}
+		switch ty.Type() {
+		case "qualified_type":
+			return s.getTypeDef(ctx, lang, defPkgOrNode.Node.RepoCommitPath, ty.ChildByFieldName("name"))
+		}
+	case "type_spec":
+		return defPkgOrNode, nil
+	default:
+		return nil, errors.Newf("unrecognized parent type %s", parent.Type())
+	}
+
+	return nil, nil
+}
+
+func (s *Squirrel) getDefInRepoDir(ctx context.Context, repo, commit, symbolName, dir string) (*NodeWithRepoCommitPath, error) {
 	defSymbols, err := s.symbolSearch(ctx, symbolsTypes.SearchArgs{
-		Repo:            api.RepoName(location.Repo),
-		CommitID:        api.CommitID(location.Commit),
-		Query:           fmt.Sprintf("^%s$", startNode.Content([]byte(startContents))),
+		Repo:            api.RepoName(repo),
+		CommitID:        api.CommitID(commit),
+		Query:           fmt.Sprintf("^%s$", symbolName),
 		IsRegExp:        true,
 		IsCaseSensitive: true,
-		IncludePatterns: nil,
+		IncludePatterns: []string{"^" + dir},
 		ExcludePattern:  "",
 		First:           1,
 	})
 	if err != nil {
-		return nil, breadcrumbs, err
+		return nil, err
 	}
 
 	if len(defSymbols) == 0 {
-		return nil, breadcrumbs, nil
+		return nil, nil
 	}
 
 	defSymbol := defSymbols[0]
 
 	def := types.RepoCommitPathRange{
 		RepoCommitPath: types.RepoCommitPath{
-			Repo:   location.Repo,
-			Commit: location.Commit,
+			Repo:   repo,
+			Commit: commit,
 			Path:   defSymbol.Path,
 		},
 		Range: types.Range{
-			Row:    int(defSymbol.Line - 1), // TODO check if ctags is 1-indexed
-			Column: 0,                       // TODO symbol search should also return the character
+			Row:    int(defSymbol.Line - 1),
+			Column: 0, // TODO symbol search should also return the character
 			Length: len(defSymbol.Name),
 		},
 	}
 
-	hover, err := s.getHoverOnLine(ctx, defSymbol.Name, def.RepoCommitPath, def.Row, parser, langSpec.commentStyle)
-	if err != nil {
-		log15.Error("failed to get hover on a line", "error", err, "symbol", defSymbol.Name, "deflocation", def)
-	}
-
-	return &types.SymbolInfo{
-		Definition: def,
-		Hover:      hover,
-	}, breadcrumbs, nil
-}
-
-func (s *Squirrel) getHoverOnLine(ctx context.Context, name string, repoCommitPath types.RepoCommitPath, line int, parser *sitter.Parser, commentStyle CommentStyle) (*string, error) {
-	endContents, err := s.readFile(repoCommitPath)
+	contents, err := s.readFile(ctx, def.RepoCommitPath)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := parser.ParseCtx(context.Background(), nil, endContents)
+	root, _, _, err := parse(ctx, def.RepoCommitPath, s.readFile)
+	lines := strings.Split(string(contents), "\n")
+	column := strings.Index(lines[def.Range.Row], defSymbol.Name)
+	if column == -1 {
+		return nil, nil
+	}
+
+	node := root.NamedDescendantForPointRange(
+		sitter.Point{Row: uint32(def.Range.Row), Column: uint32(column)},
+		sitter.Point{Row: uint32(def.Range.Row), Column: uint32(column)},
+	)
+
+	if node == nil {
+		return nil, nil
+	}
+
+	return &NodeWithRepoCommitPath{RepoCommitPath: def.RepoCommitPath, Node: node}, nil
+}
+
+func (s *Squirrel) getHoverOnLine(ctx context.Context, rnge types.RepoCommitPathRange) (*string, error) {
+	root, endContents, langSpec, err := parse(ctx, rnge.RepoCommitPath, s.readFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse file contents: %s", err)
+		return nil, err
 	}
 
-	endRoot := tree.RootNode()
-
-	if endRoot == nil {
-		return nil, errors.New("root is nil")
-	}
-
-	lines := strings.Split(string(endContents), "\n")
-	if line < 0 || line >= len(lines) {
-		return nil, errors.Newf("line %d out of range, max %d", line, len(lines))
-	}
-
-	character := strings.Index(lines[line], name)
-	if character == -1 {
-		return nil, errors.Newf("could not find %s on line %d", name, line)
-	}
-
-	endNode := endRoot.NamedDescendantForPointRange(
-		sitter.Point{Row: uint32(line), Column: uint32(character)},
-		sitter.Point{Row: uint32(line), Column: uint32(character)},
+	endNode := root.NamedDescendantForPointRange(
+		sitter.Point{Row: uint32(rnge.Row), Column: uint32(rnge.Column)},
+		sitter.Point{Row: uint32(rnge.Row), Column: uint32(rnge.Column)},
 	)
 	if endNode == nil {
-		return nil, errors.Newf("no node at %d:%d", line, character)
+		return nil, errors.Newf("no node at %d:%d", rnge.Row, rnge.Column)
 	}
 
-	return getHover(endNode, commentStyle, string(endContents)), nil
+	return getHover(endNode, langSpec.commentStyle, string(endContents)), nil
+}
+
+func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*sitter.Node, []byte, *LangSpec, error) {
+	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+
+	langName, ok := extToLang[ext]
+	if !ok {
+		return nil, nil, nil, errors.Newf("unrecognized file extension %s", ext)
+	}
+
+	langSpec, ok := langToLangSpec[langName]
+	if !ok {
+		return nil, nil, nil, errors.Newf("unsupported language %s", langName)
+	}
+
+	parser := sitter.NewParser()
+	parser.SetLanguage(langSpec.language)
+
+	contents, err := readFile(ctx, repoCommitPath)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	tree, err := parser.ParseCtx(context.Background(), nil, contents)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to parse file contents: %s", err)
+	}
+
+	root := tree.RootNode()
+	if root == nil {
+		return nil, nil, nil, errors.New("root is nil")
+	}
+
+	return root, contents, &langSpec, nil
 }
 
 type Breadcrumb struct {
@@ -486,7 +716,7 @@ func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFi
 		fmt.Fprintf(w, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
 		fmt.Fprintln(w)
 
-		contents, err := readFile(repoCommitPath)
+		contents, err := readFile(context.Background(), repoCommitPath)
 		if err != nil {
 			fmt.Println("Error reading file: ", err)
 			return
@@ -955,7 +1185,7 @@ func bracket(text string) string {
 	return strings.Join(lines, "\n")
 }
 
-func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f func(name string, node *sitter.Node)) error {
+func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f func(captureName string, node *sitter.Node)) error {
 	sitterQuery, err := sitter.NewQuery([]byte(query), lang)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
@@ -966,8 +1196,8 @@ func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f fu
 	match, _, hasCapture := cursor.NextCapture()
 	for hasCapture {
 		for _, capture := range match.Captures {
-			name := sitterQuery.CaptureNameForId(capture.Index)
-			f(name, capture.Node)
+			captureName := sitterQuery.CaptureNameForId(capture.Index)
+			f(captureName, capture.Node)
 		}
 		// Next capture
 		match, _, hasCapture = cursor.NextCapture()
@@ -986,6 +1216,14 @@ func nodeToRange(node *sitter.Node) types.Range {
 		Column: int(node.StartPoint().Column),
 		Length: length,
 	}
+}
+
+func nodeLength(node *sitter.Node) int {
+	length := 1
+	if node.StartPoint().Row == node.EndPoint().Row {
+		length = int(node.EndPoint().Column - node.StartPoint().Column)
+	}
+	return length
 }
 
 // The ID of a tree-sitter node.
@@ -1014,4 +1252,22 @@ func walk(node *sitter.Node, f func(node *sitter.Node)) {
 
 func nodeId(node *sitter.Node) Id {
 	return fmt.Sprint(nodeToRange(node))
+}
+
+func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
+	cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
+	cmd.Repo = api.RepoName(repoCommitPath.Repo)
+	stdout, stderr, err := cmd.DividedOutput(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
+	}
+	return stdout, nil
+}
+
+func getRoot(node *sitter.Node) *sitter.Node {
+	var top *sitter.Node
+	for cur := node; cur != nil; cur = cur.Parent() {
+		top = cur
+	}
+	return top
 }
