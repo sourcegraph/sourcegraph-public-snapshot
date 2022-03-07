@@ -75,8 +75,8 @@ var stageCheckNoAlpine = stageCheck{
 	},
 }
 
-// CheckDockerfile is a linter for Dockerfile directives.
-func CheckDockerfile(dockerfile string) func(is []instructions.Stage) error {
+// LintDockerfile is a linter for Dockerfile directives.
+func LintDockerfile(dockerfile string) func(is []instructions.Stage) error {
 	return func(is []instructions.Stage) error {
 		var errs error
 		for _, s := range is {
