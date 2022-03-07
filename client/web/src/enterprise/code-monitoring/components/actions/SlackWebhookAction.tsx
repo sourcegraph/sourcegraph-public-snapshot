@@ -41,7 +41,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     )
 
     const [url, setUrl] = useState(action && action.__typename === 'MonitorSlackWebhook' ? action.url : '')
-    const urlIsValid = useMemo(() => !!url.match(/^https:\/\/hooks.slack.com\/services\//), [url])
+    const urlIsValid = useMemo(() => url.startsWith('https://hooks.slack.com/services/'), [url])
 
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
