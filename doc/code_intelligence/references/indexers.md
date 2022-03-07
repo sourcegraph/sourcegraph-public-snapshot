@@ -1,3 +1,9 @@
+<style>
+.indexer-status:hover {
+  text-decoration: none;
+}
+</style>
+
 # LSIF indexers
 
 Language support is an ever-evolving feature of Sourcegraph. Some languages may be better supported than others due to demand or developer bandwidth/expertise. This page clarifies the status of the LSIF indexers which the Sourcegraph team can both recommend to customers and provide support for.
@@ -16,7 +22,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <th>Language</th>
         <th>Indexer</th>
         <th>Status</th>
-        <th>Hover documentation</th>
+        <th>Hover docs</th>
         <th>Go to definition</th>
         <th>Find references</th>
         <th>Cross-file</th>
@@ -29,7 +35,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       <tr>
         <td>Go</td>
         <td><a href="https://github.com/sourcegraph/lsif-go">lsif-go</a></td>
-        <td><img src="https://img.shields.io/badge/GA-green" alt="GA"></td>
+        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
@@ -41,7 +47,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       <tr>
         <td>TypeScript/JavaScript</td>
         <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
-        <td><img src="https://img.shields.io/badge/Partially-GA-yellow" alt="Partially Available"></td>
+        <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
@@ -53,7 +59,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       <tr>
         <td>C/C++</td>
         <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
-        <td><img src="https://img.shields.io/badge/Partially-GA-yellow" alt="Partially Available"></td>
+        <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
@@ -65,7 +71,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       <tr>
          <td>Java</td>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
-        <td><img src="https://img.shields.io/badge/GA-green" alt="GA"></td>
+        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
@@ -77,7 +83,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       <tr>
         <td>Scala</td>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
-        <td><img src="https://img.shields.io/badge/GA-green" alt="GA"></td>
+        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
@@ -89,7 +95,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       <tr>
         <td>Kotlin</td>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
-        <td><img src="https://img.shields.io/badge/GA-green" alt="GA"></td>
+        <td><a href="#status-definitions" class="indexer-status">🟢</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
@@ -106,10 +112,10 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
 #### Status definitions
 An indexer status is:
 
-- <img src="https://img.shields.io/badge/GA-green" alt="GA"> (_Genarally Available_): Available as a normal product feature, no major features are absent.
-- <img src="https://img.shields.io/badge/Partially-GA-yellow" alt="PA"> (_Partially available_): Available, but may be limited in some significant ways. No major features are absent but edge cases remain.
-- <img src="https://img.shields.io/badge/Beta-orange" alt="Beta"> (_Beta_): Available in pre-release form on a limited basis. Could be useful to early adopters despite lack of features.
-- <img src="https://img.shields.io/badge/Experimental-purple" alt="Experimental"> (_Experimental_): Available in pre-release form, with significant caveats. Early adopters can try it with expectations of failure.
+- 🟢 _Generally Available_: Available as a normal product feature, no major features are absent.
+- 🟡 _Partially available_: Available, but may be limited in some significant ways. No major features are absent but edge cases remain.
+- 🟠 _Beta_: Available in pre-release form on a limited basis. Could be useful to early adopters despite lack of features.
+- 🟣 _Experimental_: Available in pre-release form, with significant caveats. Early adopters can try it with expectations of failure.
 
 ## Milestone definitions
 
