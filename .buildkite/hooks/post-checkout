@@ -3,27 +3,11 @@
 # shellcheck disable=SC1090
 source "$HOME/.profile"
 
-## -- START: ADD git lfs
-echo "Installing Git LFS..."
-
-curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-sudo apt install git-lfs
-git-lfs install
-
-echo "Git LFS installed"
-## -- END: ADD git lfs
-
 # Fetch the latest origin/main to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
 git fetch
 echo "Running git fetch... done"
-
-## -- START: fetch files from git lfs
-echo "Fetching files from Git LFS..."
-git-lfs fetch
-echo "Fetched files from Git LFS"
-## -- END: fetch files from git lfs
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
 ln -s "$(pwd)/enterprise/dev/ci/scripts/trace-command.sh" tr 2>/dev/null || true
