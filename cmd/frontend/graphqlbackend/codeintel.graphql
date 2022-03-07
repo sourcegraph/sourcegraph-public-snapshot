@@ -564,14 +564,30 @@ extend type GitBlob {
     """
     localCodeIntel: JSONValue
 
+    """
+    A wrapper around syntactic hover and definition query methods.
+    """
     symbolInfo(line: Int!, character: Int!): SymbolInfo
 }
 
+"""
+SymbolInfo contains hover and definition methods. It's returned by GitBlob.symbolInfo(line, character).
+"""
 type SymbolInfo {
+    """
+    The definition of the symbol.
+    """
     definition: SymbolLocation
+
+    """
+    The hover for the symbol.
+    """
     hover: String
 }
 
+"""
+SymbolLocation is a single-line range within a repository. It's returned by SymbolInfo.definition.
+"""
 type SymbolLocation {
     repo: String!
     commit: String!
