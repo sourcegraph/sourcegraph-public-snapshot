@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const specExpireInteral = 2 * time.Minute

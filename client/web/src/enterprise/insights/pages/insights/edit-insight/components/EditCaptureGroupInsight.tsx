@@ -2,10 +2,10 @@ import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CaptureGroupInsight } from '../../../../core/types'
+import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'
-import { CaptureGroupFormFields } from '../../creation/capture-group/types'
 import { getSanitizedCaptureGroupInsight } from '../../creation/capture-group/utils/capture-group-insight-sanitizer'
-import { InsightStep } from '../../creation/search-insight/types'
+import { InsightStep } from '../../creation/search-insight'
 
 interface EditCaptureGroupInsightProps {
     insight: CaptureGroupInsight
@@ -24,6 +24,7 @@ export const EditCaptureGroupInsight: React.FunctionComponent<EditCaptureGroupIn
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: insight.repositories.length === 0,
+            dashboardReferenceCount: insight.dashboardReferenceCount,
         }),
         [insight]
     )

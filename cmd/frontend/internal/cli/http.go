@@ -42,15 +42,16 @@ func newExternalHTTPHandler(
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-) (http.Handler, error) {
+) http.Handler {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler, rateLimitWatcher)
+	apiHandler := internalhttpapi.NewHandler(db, r, schema, gitHubWebhook, gitLabWebhook, bitbucketServerWebhook, newCodeIntelUploadHandler, newComputeStreamHandler, rateLimitWatcher)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
@@ -109,7 +110,7 @@ func newExternalHTTPHandler(
 	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
-	return h, nil
+	return h
 }
 
 func healthCheckMiddleware(next http.Handler) http.Handler {

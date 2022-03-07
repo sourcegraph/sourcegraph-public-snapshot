@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GitserverRepoStore interface {
@@ -21,10 +21,12 @@ type GitserverRepoStore interface {
 	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
 	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error
 	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
+	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
+	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -83,6 +85,35 @@ INSERT INTO
 	return errors.Wrap(err, "creating GitserverRepo")
 }
 
+// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
+// counting repos with an associated cloud_default external service.
+func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(totalErroredQuery))
+	if err != nil {
+		return 0, errors.Wrap(err, "fetching count of total errored repos")
+	}
+	var total int
+	for rows.Next() {
+		if err := rows.Scan(
+			&total,
+		); err != nil {
+			return 0, errors.Wrap(err, "scanning row")
+		}
+	}
+	return total, nil
+}
+
+const totalErroredQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredCloudDefaultRepos
+SELECT
+	count(*)
+FROM repo
+	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
+	INNER JOIN external_services es on esr.external_service_id = es.id
+WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
+`
+
 // IterateWithNonemptyLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
 // note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
 func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error {
@@ -121,7 +152,7 @@ SELECT
 	repo.name,
 	gr.last_error
 FROM repo
-	LEFT JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN gitserver_repos gr ON repo.id = gr.repo_id
 	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
 	INNER JOIN external_services es on esr.external_service_id = es.id
 WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
@@ -255,7 +286,29 @@ FROM gitserver_repos
 WHERE repo_id = %s
 `
 
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, id))
+	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, id)))
+}
+
+func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
+	q := `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
+SELECT
+       g.repo_id,
+       g.clone_status,
+       g.shard_id,
+       g.last_error,
+       g.last_fetched,
+       g.last_changed,
+       g.updated_at
+FROM gitserver_repos g
+JOIN repo r on r.id = g.repo_id
+WHERE r.name = %s
+`
+
+	return scanSingleGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, name)))
+}
+
+func scanSingleGitserverRepo(row *sql.Row) (*types.GitserverRepo, error) {
 	if row.Err() != nil {
 		return nil, errors.Wrap(row.Err(), "getting GitserverRepo")
 	}

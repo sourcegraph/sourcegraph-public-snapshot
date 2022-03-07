@@ -98,6 +98,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>
                 <li>Total count of existing user accounts</li>
+                <li>Code Insights: total count of insights</li>
             </ul>
             <h3>Other telemetry</h3>
             <p>
@@ -291,6 +292,47 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                         <li>Total number of views of the manage code monitor page</li>
                         <li>Total number of clicks on the code monitor email search link</li>
+                    </ul>
+                </li>
+                <li>
+                    CTA usage data
+                    <ul>
+                        <li>
+                            Browser extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
+                                    / search pages today
+                                </li>
+                                <li>
+                                    Number of views / clicks on the "install browser extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            IDE extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
+                                    search pages today
+                                </li>
+                                <li>
+                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Code Host integration usage data (Browser extension / Native Integration)
+                    <ul>
+                        <li>Aggregate counts of current daily, weekly, and monthly unique users and total events</li>
+                        <li>
+                            Aggregate counts of current daily, weekly, and monthly unique users and total events who
+                            visited Sourcegraph instance from browser extension
+                        </li>
                     </ul>
                 </li>
             </ul>

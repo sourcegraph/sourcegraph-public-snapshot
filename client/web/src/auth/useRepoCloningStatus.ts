@@ -16,7 +16,7 @@ interface UseRepoCloningStatusArguments {
     repoSelectionMode: RepoSelectionMode
 }
 
-interface RepoLine {
+export interface RepoLine {
     id: string
     title: string
     details: string

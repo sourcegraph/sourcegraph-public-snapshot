@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
@@ -29,10 +28,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
+func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 

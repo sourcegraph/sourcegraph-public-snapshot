@@ -2,11 +2,10 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { asError } from '@sourcegraph/common'
+import { asError, renderMarkdown } from '@sourcegraph/common'
 import { Alert, AlertProps, Badge } from '@sourcegraph/wildcard'
 
 import { HoverMerged } from '../../../api/client/types/hover'
-import { renderMarkdown } from '../../../util/markdown'
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
 import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'
 

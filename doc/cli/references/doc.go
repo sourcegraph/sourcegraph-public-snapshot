@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func clean(base string) error {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MaxBufferSize is the maximum size of the metaData line in the dump. This should be large enough

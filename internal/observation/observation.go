@@ -56,8 +56,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -68,6 +66,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Context carries context about where to send logs, trace spans, and register
@@ -203,21 +202,24 @@ func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
 
 // ErrCollector represents multiple errors and additional log fields that arose from those errors.
 type ErrCollector struct {
-	multi       *multierror.Error
+	errs        error
 	extraFields []log.Field
 }
 
-func NewErrorCollector() *ErrCollector { return &ErrCollector{multi: &multierror.Error{}} }
+func NewErrorCollector() *ErrCollector { return &ErrCollector{errs: nil} }
 
 func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
 	if err != nil && *err != nil {
-		e.multi.Errors = append(e.multi.Errors, *err)
+		e.errs = errors.Append(e.errs, *err)
 		e.extraFields = append(e.extraFields, fields...)
 	}
 }
 
 func (e *ErrCollector) Error() string {
-	return e.multi.Error()
+	if e.errs == nil {
+		return ""
+	}
+	return e.errs.Error()
 }
 
 // Args configures the observation behavior of an invocation of an operation.
@@ -274,7 +276,7 @@ func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args 
 	if root != nil {
 		endFunc = func(count float64, args Args) {
 			if *root != nil {
-				errTracer.multi.Errors = append(errTracer.multi.Errors, *root)
+				errTracer.errs = errors.Append(errTracer.errs, *root)
 			}
 			endObservation(count, args)
 		}
@@ -295,7 +297,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // to the active trace, and a function to be deferred until the end of the operation.
 func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
-	tr, ctx := op.startTrace(ctx, args)
+	tr, ctx := op.startTrace(ctx)
 
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
@@ -330,7 +332,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
-			if len(multi.multi.Errors) == 0 {
+			if multi.errs == nil {
 				err = nil
 			}
 			logFields = append(logFields, multi.extraFields...)
@@ -353,7 +355,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 
 // startTrace creates a new Trace object and returns the wrapped context. This returns
 // an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
-func (op *Operation) startTrace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
+func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Context) {
 	if op.context.Tracer == nil {
 		return nil, ctx
 	}

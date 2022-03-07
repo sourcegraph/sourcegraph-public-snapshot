@@ -13,6 +13,7 @@ import {
     PageSelector,
     RadioButton,
     TextArea,
+    Select,
     Button,
     Alert,
     Link,
@@ -182,7 +183,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [onloadRadioValue, setOnloadRadioValue] = useState('')
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
-    const [query, setQuery] = useState('')
+    const [query, setQuery] = useState(new URLSearchParams(window.location.search).get('filter') || '')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
@@ -626,8 +627,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
-                <select
-                    className="form-control"
+                <Select
                     name="code-host"
                     aria-label="select code host type"
                     onChange={event => setCodeHostFilter(event.target.value)}
@@ -636,7 +636,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     {codeHosts.hosts.map(value => (
                         <option key={value.id} value={value.id} label={value.displayName} />
                     ))}
-                </select>
+                </Select>
             </div>
             <FilterInput
                 className="form-control"
@@ -647,6 +647,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
+                defaultValue={query}
                 onChange={event => {
                     setQuery(event.target.value)
                 }}

@@ -20,10 +20,10 @@ type CodeMonitorsResolver interface {
 	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
 	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
 	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
+	TriggerTestWebhookAction(ctx context.Context, args *TriggerTestWebhookActionArgs) (*EmptyResponse, error)
+	TriggerTestSlackWebhookAction(ctx context.Context, args *TriggerTestSlackWebhookActionArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
-
-	CodeMonitorSearch(context.Context, *SearchArgs) (SearchImplementer, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -65,6 +65,8 @@ type MonitorTriggerEventResolver interface {
 	Message() *string
 	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+	ResultCount() int32
+	Query() *string
 }
 
 type MonitorActionConnectionResolver interface {
@@ -83,6 +85,7 @@ type MonitorAction interface {
 type MonitorEmailResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	Priority() string
 	Header() string
 	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
@@ -92,6 +95,7 @@ type MonitorEmailResolver interface {
 type MonitorWebhookResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
@@ -99,6 +103,7 @@ type MonitorWebhookResolver interface {
 type MonitorSlackWebhookResolver interface {
 	ID() graphql.ID
 	Enabled() bool
+	IncludeResults() bool
 	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
@@ -163,20 +168,23 @@ type CreateActionArgs struct {
 }
 
 type CreateActionEmailArgs struct {
-	Enabled    bool
-	Priority   string
-	Recipients []graphql.ID
-	Header     string
+	Enabled        bool
+	IncludeResults bool
+	Priority       string
+	Recipients     []graphql.ID
+	Header         string
 }
 
 type CreateActionWebhookArgs struct {
-	Enabled bool
-	URL     string
+	Enabled        bool
+	IncludeResults bool
+	URL            string
 }
 
 type CreateActionSlackWebhookArgs struct {
-	Enabled bool
-	URL     string
+	Enabled        bool
+	IncludeResults bool
+	URL            string
 }
 
 type ToggleCodeMonitorArgs struct {
@@ -196,6 +204,18 @@ type TriggerTestEmailActionArgs struct {
 	Namespace   graphql.ID
 	Description string
 	Email       *CreateActionEmailArgs
+}
+
+type TriggerTestWebhookActionArgs struct {
+	Namespace   graphql.ID
+	Description string
+	Webhook     *CreateActionWebhookArgs
+}
+
+type TriggerTestSlackWebhookActionArgs struct {
+	Namespace    graphql.ID
+	Description  string
+	SlackWebhook *CreateActionSlackWebhookArgs
 }
 
 type CreateMonitorArgs struct {

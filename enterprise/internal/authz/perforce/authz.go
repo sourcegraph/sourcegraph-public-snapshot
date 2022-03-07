@@ -1,7 +1,6 @@
 package perforce
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -10,24 +9,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewAuthzProviders returns the set of Perforce authz providers derived from
-// the connections. It also returns any validation problems with the config,
-// separating these into "serious problems" and "warnings". "Serious problems"
-// are those that should make Sourcegraph set authz.allowAccessByDefault to
-// false. "Warnings" are all other validation problems.
+// NewAuthzProviders returns the set of Perforce authz providers derived from the connections.
+//
+// It also returns any simple validation problems with the config, separating these into "serious problems"
+// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+// to false. "Warnings" are all other validation problems.
+//
+// This constructor does not and should not directly check connectivity to external services - if
+// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// to connection issues.
 func NewAuthzProviders(conns []*types.PerforceConnection) (ps []authz.Provider, problems []string, warnings []string) {
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
-		if err != nil {
-			problems = append(problems, err.Error())
-		} else if p != nil {
+		p := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
+		if p != nil {
 			ps = append(ps, p)
-		}
-	}
-
-	for _, p := range ps {
-		for _, problem := range p.Validate() {
-			warnings = append(warnings, fmt.Sprintf("Perforce config for %s was invalid: %s", p.ServiceID(), problem))
 		}
 	}
 
@@ -39,9 +34,10 @@ func newAuthzProvider(
 	a *schema.PerforceAuthorization,
 	host, user, password string,
 	depots []string,
-) (authz.Provider, error) {
+) authz.Provider {
+	// Call this function from ValidateAuthz if this function starts returning an error.
 	if a == nil {
-		return nil, nil
+		return nil
 	}
 
 	var depotIDs []extsvc.RepoID
@@ -57,12 +53,12 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(urn, host, user, password, depotIDs), nil
+	return NewProvider(urn, host, user, password, depotIDs)
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce
 // external service config.
-func ValidateAuthz(cfg *schema.PerforceConnection) error {
-	_, err := newAuthzProvider("", cfg.Authorization, cfg.P4Port, cfg.P4User, cfg.P4Passwd, cfg.Depots)
-	return err
+func ValidateAuthz(_ *schema.PerforceConnection) error {
+	// newAuthzProvider always succeeds, so directly return nil here.
+	return nil
 }

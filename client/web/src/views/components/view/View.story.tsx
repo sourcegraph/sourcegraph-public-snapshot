@@ -6,7 +6,6 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React from 'react'
 import { LineChartContent } from 'sourcegraph'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
@@ -59,34 +58,10 @@ const LINE_CHART_DATA: LineChartContent<any, string> = {
     },
 }
 
-export const EmptyView: Story = () => <View.Root {...standardViewProps} title="Empty view" />
-
-export const ViewWithChartContent: Story = () => (
-    <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
-        <View.Content content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </View.Root>
-)
-
-export const ViewWithLoadingContent: Story = () => (
-    <View.Root {...standardViewProps} title="Loading view">
-        <View.LoadingContent text="Loading insight" />
-    </View.Root>
-)
-
-export const ViewWithErrorLikeContent: Story = () => (
-    <View.Root
-        style={{ width: '400px', height: '400px' }}
-        title="Error view"
-        subtitle="View with errored content example"
-    >
-        <View.ErrorContent title="searchInsights.insight.id" error={new Error("We couldn't find code insight")} />
-    </View.Root>
-)
-
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton as={Button} className="btn-icon p-1">
+            <MenuButton as={Button} variant="icon" className="p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover>
@@ -102,20 +77,58 @@ function ContextMenu() {
     )
 }
 
-export const ViewWithContextMenu: Story = () => (
-    <View.Root
-        {...standardViewProps}
-        title="Chart view and looooooong loooooooooooooooong name of insight card block"
-        subtitle="Subtitle chart description"
-        actions={
-            <>
-                <Button className="btn-icon p-1">
-                    <FilterOutlineIcon size="1rem" />
-                </Button>
-                <ContextMenu />
-            </>
-        }
-    >
-        <View.Content content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </View.Root>
+export const ViewsShowcase: Story = () => (
+    <main style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+        <section>
+            <h2>Empty view</h2>
+            <View.Root {...standardViewProps} title="Empty view" />
+        </section>
+
+        <section>
+            <h2>View with loading content</h2>
+            <View.Root {...standardViewProps} title="Loading view">
+                <View.LoadingContent text="Loading insight" />
+            </View.Root>
+        </section>
+
+        <section>
+            <h2>View with error-like content</h2>
+            <View.Root
+                style={{ width: '400px', height: '400px' }}
+                title="Error view"
+                subtitle="View with errored content example"
+            >
+                <View.ErrorContent
+                    title="searchInsights.insight.id"
+                    error={new Error("We couldn't find code insight")}
+                />
+            </View.Root>
+        </section>
+
+        <section>
+            <h2>View with chart content</h2>
+            <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
+                <View.Content content={[LINE_CHART_DATA]} />
+            </View.Root>
+        </section>
+
+        <section>
+            <h2>View with context action item</h2>
+            <View.Root
+                {...standardViewProps}
+                title="Chart view and looooooong loooooooooooooooong name of insight card block"
+                subtitle="Subtitle chart description"
+                actions={
+                    <>
+                        <Button variant="icon" className="p-1">
+                            <FilterOutlineIcon size="1rem" />
+                        </Button>
+                        <ContextMenu />
+                    </>
+                }
+            >
+                <View.Content content={[LINE_CHART_DATA]} />
+            </View.Root>
+        </section>
+    </main>
 )

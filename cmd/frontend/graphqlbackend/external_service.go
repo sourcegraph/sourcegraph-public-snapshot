@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -173,7 +173,7 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 var scopeCache = rcache.New("extsvc_token_scope")
 
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
-	scopes, err := repos.GrantedScopes(ctx, scopeCache, r.externalService)
+	scopes, err := repos.GrantedScopes(ctx, scopeCache, r.db.ExternalServices(), r.externalService)
 	if err != nil {
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.

@@ -1,15 +1,30 @@
-import React, { useCallback, useState } from 'react'
+import { gql, useMutation } from '@apollo/client'
+import classNames from 'classnames'
+import { noop } from 'lodash'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { Alert, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Button, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
+import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
+
+export const SEND_TEST_WEBHOOK = gql`
+    mutation SendTestWebhook($namespace: ID!, $description: String!, $webhook: MonitorWebhookInput!) {
+        triggerTestWebhookAction(namespace: $namespace, description: $description, webhook: $webhook) {
+            alwaysNil
+        }
+    }
+`
 
 export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     action,
     setAction,
     disabled,
+    monitorName,
+    authenticatedUser,
     _testStartOpen,
 }) => {
     const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
@@ -26,6 +41,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     )
 
     const [url, setUrl] = useState(action && action.__typename === 'MonitorWebhook' ? action.url : '')
+    const urlIsValid = useMemo(() => !!url.match(/^https?:\/\//), [url])
 
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
@@ -35,6 +51,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                 id: action ? action.id : '',
                 url,
                 enabled: webhookEnabled,
+                includeResults: false,
             })
         },
         [action, setAction, url, webhookEnabled]
@@ -43,6 +60,27 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
     }, [setAction])
+
+    const [sendTestMessage, { loading, error, called }] = useMutation<SendTestWebhookResult, SendTestWebhookVariables>(
+        SEND_TEST_WEBHOOK
+    )
+    const isSendTestButtonDisabled = loading || !monitorName || !url || (called && !error)
+
+    const onSendTestMessage = useCallback(() => {
+        sendTestMessage({
+            variables: {
+                namespace: authenticatedUser.id,
+                description: monitorName,
+                webhook: { url, enabled: true, includeResults: false },
+            },
+        }).catch(noop) // Ignore errors, they will be handled with the error state from useMutation
+    }, [authenticatedUser.id, monitorName, sendTestMessage, url])
+
+    const sendTestEmailButtonText = loading
+        ? 'Calling webhook...'
+        : called && !error
+        ? 'Test call completed!'
+        : 'Call webhook with test payload'
 
     return (
         <ActionEditor
@@ -59,7 +97,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             completedSubtitle="The webhook at the specified URL will be called."
             actionEnabled={webhookEnabled}
             toggleActionEnabled={toggleWebhookEnabled}
-            canSubmit={!!url}
+            canSubmit={!!urlIsValid}
             onSubmit={onSubmit}
             onCancel={() => {}}
             canDelete={!!action}
@@ -72,10 +110,10 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             </Alert>
             <div className="form-group">
                 <label htmlFor="code-monitor-webhook-url">Webhook URL</label>
-                <input
+                <Input
                     id="code-monitor-webhook-url"
                     type="url"
-                    className="form-control mb-2"
+                    className="mb-2"
                     data-testid="webhook-url"
                     required={true}
                     onChange={event => {
@@ -84,12 +122,51 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                     value={url}
                     autoFocus={true}
                     spellCheck={false}
+                    status={urlIsValid ? 'valid' : url ? 'error' : undefined /* Don't show error state when empty */}
+                    message={!urlIsValid && url && 'Enter a valid webhook URL.'}
                 />
             </div>
             <div className="flex mt-1">
-                <Button className="mr-2" disabled={true} size="sm" variant="secondary">
-                    Send test message (coming soon)
+                <Button
+                    className="mr-2"
+                    variant="secondary"
+                    outline={!isSendTestButtonDisabled}
+                    disabled={isSendTestButtonDisabled}
+                    onClick={onSendTestMessage}
+                    size="sm"
+                    data-testid="send-test-webhook"
+                >
+                    {sendTestEmailButtonText}
                 </Button>
+                {called && !error && !loading && monitorName && url && (
+                    <Button
+                        className="p-0"
+                        onClick={onSendTestMessage}
+                        variant="link"
+                        size="sm"
+                        data-testid="send-test-webhook-again"
+                    >
+                        Test again
+                    </Button>
+                )}
+                {!monitorName && (
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
+                        Please provide a name for the code monitor before making a test call
+                    </small>
+                )}
+                {!url && (
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
+                        Please provide a webhook URL before making a test call
+                    </small>
+                )}
+                {error && (
+                    <small
+                        className={classNames('mt-2 form-text', styles.testActionError)}
+                        data-testid="test-webhook-error"
+                    >
+                        {error.message}
+                    </small>
+                )}
             </div>
         </ActionEditor>
     )

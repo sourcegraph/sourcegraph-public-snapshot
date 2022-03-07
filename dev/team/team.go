@@ -13,6 +13,8 @@ import (
 	"github.com/slack-go/slack"
 	"golang.org/x/net/context/ctxhttp"
 	"gopkg.in/yaml.v3"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TeammateResolver provides an interface to find information about teammates.
@@ -28,6 +30,7 @@ type TeammateResolver interface {
 }
 
 const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
+const teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
 
 type Teammate struct {
 	// Key is the key for this teammate in team.yml
@@ -71,12 +74,12 @@ func NewTeammateResolver(ghClient *github.Client, slackClient *slack.Client) Tea
 
 func (r *teammateResolver) ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error) {
 	if r.github == nil {
-		return nil, fmt.Errorf("GitHub integration disabled")
+		return nil, errors.Newf("GitHub integration disabled")
 	}
 
 	resp, _, err := r.github.Repositories.GetCommit(ctx, org, repo, commit, nil)
 	if err != nil {
-		return nil, fmt.Errorf("GetCommit: %w", err)
+		return nil, errors.Newf("GetCommit: %w", err)
 	}
 	return r.ResolveByGitHubHandle(ctx, resp.Author.GetLogin())
 }
@@ -84,18 +87,23 @@ func (r *teammateResolver) ResolveByCommitAuthor(ctx context.Context, org, repo,
 func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle string) (*Teammate, error) {
 	team, err := r.getTeamData(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getTeamData: %w", err)
+		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
+	// Normalize and match against lowercased handle - GitHub handles are not case-sensitive
+	handle = strings.ToLower(handle)
+
+	// Scan for teammates
 	var teammate *Teammate
 	for _, tm := range team {
-		if tm.GitHub == handle {
+		if strings.ToLower(tm.GitHub) == handle {
 			teammate = tm
 			break
 		}
 	}
 	if teammate == nil {
-		return nil, fmt.Errorf("no teammate with GitHub handle %q", handle)
+		return nil, errors.Newf("no teammate with GitHub handle %q - if this is you, ensure the `github` field is set in your profile in %s",
+			handle, teamDataGitHubURL)
 	}
 	return teammate, nil
 }
@@ -103,7 +111,7 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Teammate, error) {
 	team, err := r.getTeamData(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getTeamData: %w", err)
+		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
 	// Generalize name
@@ -135,10 +143,10 @@ func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Tea
 		for _, c := range candidates {
 			candidateNames = append(candidateNames, c.Name)
 		}
-		return nil, fmt.Errorf("multiple users found for name %q: %s", name, strings.Join(candidateNames, ", "))
+		return nil, errors.Newf("multiple users found for name %q: %s", name, strings.Join(candidateNames, ", "))
 	}
 
-	return nil, fmt.Errorf("no users found matching name %q", name)
+	return nil, errors.Newf("no users found matching name %q", name)
 }
 
 func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammate, error) {
@@ -146,7 +154,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 	r.cachedTeamOnce.Do(func() {
 		team, err := fetchTeamData(ctx)
 		if err != nil {
-			onceErr = fmt.Errorf("fetchTeamData: %w", err)
+			onceErr = errors.Newf("fetchTeamData: %w", err)
 			return
 		}
 
@@ -165,9 +173,9 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 
 		// Populate Slack details
 		if r.slack != nil {
-			slackUsers, err := r.slack.GetUsers()
+			slackUsers, err := r.slack.GetUsersContext(ctx)
 			if err != nil {
-				onceErr = fmt.Errorf("slack.GetUsers: %w", err)
+				onceErr = errors.Newf("slack.GetUsers: %w", err)
 				return
 			}
 			for _, user := range slackUsers {
@@ -176,7 +184,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 					teammate.SlackName = user.Name
 					teammate.SlackTimezone, err = time.LoadLocation(user.TZ)
 					if err != nil {
-						onceErr = fmt.Errorf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
+						onceErr = errors.Newf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
 						return
 					}
 				}
@@ -191,18 +199,18 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 func fetchTeamData(ctx context.Context) (map[string]*Teammate, error) {
 	resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
 	if err != nil {
-		return nil, fmt.Errorf("Get: %w", err)
+		return nil, errors.Newf("Get: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("ReadAll: %w", err)
+		return nil, errors.Newf("ReadAll: %w", err)
 	}
 
 	team := map[string]*Teammate{}
 	if err = yaml.Unmarshal(body, &team); err != nil {
-		return nil, fmt.Errorf("Unmarshal: %w", err)
+		return nil, errors.Newf("Unmarshal: %w", err)
 	}
 	for id, tm := range team {
 		tm.Key = id

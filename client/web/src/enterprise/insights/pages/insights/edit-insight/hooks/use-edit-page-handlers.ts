@@ -7,8 +7,10 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { Insight, isVirtualDashboard } from '../../../../core/types'
+import { Insight } from '../../../../core/types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../core/types/dashboard/virtual-dashboard'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
+import { getTrackingTypeByInsightType } from '../../../../pings'
 
 export interface UseHandleSubmitProps {
     originalInsight: Insight | null | undefined
@@ -42,27 +44,18 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
                 newInsight,
             }).toPromise()
 
-            eventLogger.log('InsightEdit', { insightType: newInsight.type }, { insightType: newInsight.type })
+            const insightType = getTrackingTypeByInsightType(newInsight.viewType)
 
-            if (!dashboard || isVirtualDashboard(dashboard)) {
+            eventLogger.log('InsightEdit', { insightType }, { insightType })
+
+            if (!dashboard) {
                 // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${newInsight.visibility}`)
+                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD_ID}`)
 
                 return
             }
 
-            if (!dashboard.owner) {
-                history.push(`/insights/dashboards/${dashboard.id}`)
-                return
-            }
-
-            // If insight's visible area has been changed explicit redirect to new
-            // scope dashboard page
-            if (dashboard.owner.id !== newInsight.visibility) {
-                history.push(`/insights/dashboards/${newInsight.visibility}`)
-            } else {
-                history.push(`/insights/dashboards/${dashboard.id}`)
-            }
+            history.push(`/insights/dashboards/${dashboard.id}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -71,7 +64,12 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
     }
 
     const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+        if (!dashboard) {
+            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD_ID}`)
+            return
+        }
+
+        history.push(`/insights/dashboards/${dashboard.id}`)
     }
 
     return { handleSubmit, handleCancel }

@@ -2,12 +2,12 @@ package query
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names,
@@ -483,7 +483,7 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 	}
 	return Pattern{
 		Annotation: Annotation{Labels: Regexp},
-		Value:      "(" + strings.Join(values, ").*?(") + ")",
+		Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
 	}
 }
 
@@ -646,15 +646,6 @@ func Map(query []Node, fns ...func([]Node) []Node) []Node {
 	return query
 }
 
-func FuzzifyRegexPatterns(nodes []Node) []Node {
-	return MapParameter(nodes, func(field string, value string, negated bool, annotation Annotation) Node {
-		if field == FieldRepo || field == FieldFile || field == FieldRepoHasFile {
-			value = strings.TrimSuffix(value, "$")
-		}
-		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
-	})
-}
-
 // concatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
 // Invariant: Guaranteed to succeed on a validat Basic query.
 func ConcatRevFilters(b Basic) Basic {
@@ -754,11 +745,6 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 		return Basic{}, err
 	}
 	return Basic{Parameters: parameters, Pattern: pattern}, nil
-}
-
-// Identity is the identity transformer for basic queries.
-func Identity(b Basic) Basic {
-	return b
 }
 
 // PatternToFile transforms a search query such that `file:` is prefixed to the

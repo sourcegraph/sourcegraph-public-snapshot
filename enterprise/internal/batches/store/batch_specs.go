@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
@@ -438,6 +438,10 @@ ON
 		}
 	} else {
 		preds = append(preds, sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(

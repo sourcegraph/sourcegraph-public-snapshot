@@ -1,5 +1,5 @@
 # Who can see your organization’s code on Sourcegraph Cloud
-Note: Team access for Sourcegraph Cloud is in Private Beta. If you are interested in getting early-access, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku)!
+Note: Team access for Sourcegraph Cloud is in Private Beta. If you are interested in getting early-access, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams)!
 
 Sourcegraph Cloud protects your organization’s private code using repository permissions from GitHub.com and GitLab.com to determine who can see repositories you’ve added to your organization on Sourcegraph Cloud.
 

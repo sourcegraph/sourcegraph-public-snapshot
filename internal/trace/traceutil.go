@@ -8,15 +8,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/uber/jaeger-client-go"
 	nettrace "golang.org/x/net/trace"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ID returns a trace ID, if any, found in the given context.
@@ -30,11 +31,15 @@ func ID(ctx context.Context) string {
 
 // IDFromSpan returns a trace ID, if any, found in the given span.
 func IDFromSpan(span opentracing.Span) string {
-	spanCtx, ok := span.Context().(jaeger.SpanContext)
-	if !ok {
-		return ""
+	ddctx, ok := span.Context().(ddtrace.SpanContext)
+	if ok {
+		return strconv.FormatUint(ddctx.TraceID(), 10)
 	}
-	return spanCtx.TraceID().String()
+	spanCtx, ok := span.Context().(jaeger.SpanContext)
+	if ok {
+		return spanCtx.TraceID().String()
+	}
+	return ""
 }
 
 // URL returns a trace URL for the given trace ID at the given external URL.
@@ -145,8 +150,9 @@ func (t *Trace) LogFields(fields ...log.Field) {
 // TagFields adds fields to the opentracing.Span as tags
 // as well as as logs to the nettrace.Trace.
 func (t *Trace) TagFields(fields ...log.Field) {
+	enc := spanTagEncoder{Span: t.span}
 	for _, field := range fields {
-		t.span.SetTag(field.Key(), field.Value())
+		field.Marshal(&enc)
 	}
 	t.trace.LazyLog(fieldsStringer(fields), false)
 }
@@ -225,6 +231,16 @@ func Printf(key, f string, args ...interface{}) log.Field {
 func Stringer(key string, v fmt.Stringer) log.Field {
 	return log.Lazy(func(fv log.Encoder) {
 		fv.EmitString(key, v.String())
+	})
+}
+
+// LazyFields is an opentracing log.Field that will only call the field-generating
+// function if the trace is collected.
+func LazyFields(lazyFields func() []log.Field) log.Field {
+	return log.Lazy(func(fv log.Encoder) {
+		for _, field := range lazyFields() {
+			field.Marshal(fv)
+		}
 	})
 }
 
@@ -309,5 +325,58 @@ func (e *encoder) EmitObject(key string, value interface{}) {
 }
 
 func (e *encoder) EmitLazyLogger(value log.LazyLogger) {
+	value(e)
+}
+
+// spanTagEncoder wraps the opentracing.Span.SetTags to write values
+// of type log.Field to span tags. The doc string of SetTags notes
+// that it only accepts strings, numeric types, and bools, so these
+// encoder methods convert to those types before writing the tag.
+type spanTagEncoder struct {
+	opentracing.Span
+}
+
+func (e *spanTagEncoder) EmitString(key, value string) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitBool(key string, value bool) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitInt(key string, value int) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitInt32(key string, value int32) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitInt64(key string, value int64) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitUint32(key string, value uint32) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitUint64(key string, value uint64) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitFloat32(key string, value float32) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitFloat64(key string, value float64) {
+	e.SetTag(key, value)
+}
+
+func (e *spanTagEncoder) EmitObject(key string, value interface{}) {
+	s := fmt.Sprintf("%#+v", value)
+	e.EmitString(key, s)
+}
+
+func (e *spanTagEncoder) EmitLazyLogger(value log.LazyLogger) {
 	value(e)
 }

@@ -1,5 +1,7 @@
 package changed
 
+import "path/filepath"
+
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -22,4 +24,8 @@ var clientRootFiles = []string{
 	".percy.yml",
 	".eslintrc.js",
 	"gulpfile.js",
+}
+
+func isRootClientFile(p string) bool {
+	return filepath.Dir(p) == "." && contains(clientRootFiles, p)
 }

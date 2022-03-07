@@ -75,10 +75,6 @@ if git diff --quiet "${latest_minor_release_tag}".."${current_head}" migrations;
   exit 0
 fi
 
-# TODO(efritz) - re-enable
-echo "SKIPPING BACKCOMPAT TEST"
-exit 0
-
 echo "--- Running backwards compatibility tests"
 echo "current_head                = ${current_head}"
 echo "latest_minor_release_tag    = ${latest_minor_release_tag}"
@@ -99,20 +95,7 @@ PROTECTED_FILES=(
 )
 
 # Rewrite the current migrations into a temporary folder that we can force
-# apply over old code. This rewrites the migrations into several different
-# formats for the next few releases.
-#
-# - "flat" should be used for testing pre-3.37 branch cut, and
-# - "dirs" should be used for testing post-3.37 branch cut but for code that
-# does not yet understand non-linear migration definitions.
-#
-# I hope we can deprecate both formats at the same time without having to use
-# "flat" followed by "dirs".
-#
-# Future code should be able to leave this alone and simply checkout the
-# migration defintions as-is; however we've been incrementally relaxing some
-# constraints, so we need to be cautious here for the next month or so.
-MIGRATION_FORMAT="flat"
+# apply over old code.
 go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
 
 # Check out the previous code then immediately restore whatever
@@ -120,20 +103,14 @@ go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
 git checkout "${latest_minor_release_tag}"
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 
+# Remove the languages submodules, because they mess these tests up
+rm -rf ./docker-images/syntax-highlighter/crates/sg-syntax/languages/
+
 for schema in frontend codeintel codeinsights; do
   # Force apply newer schema definitions
   rm -rf "./migrations/${schema}"
-  mv "${MIGRATION_STAGING}/${MIGRATION_FORMAT}/${schema}" "./migrations/${schema}"
+  mv "${MIGRATION_STAGING}/${schema}" "./migrations/${schema}"
 done
-
-# go-test.sh requires python 3.10.0 to calculate the api key value for
-# BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY, but not all versions
-# we check out are guaranteed to have this dependency.
-#
-# Add it by force here.
-#
-# TODO: Remove this once no longer relevant (post-3.37 branch cut)
-grep -qxF 'python 3.10.0' ./.tool-versions || echo 'python 3.10.0' >>./.tool-versions
 
 # If migration files have been renamed or deleted between these commits
 # (which historically we've done in response to reverted migrations), we
@@ -158,16 +135,23 @@ fi
 ./.buildkite/hooks/pre-command
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  echo ""
-  echo "!!! This commit contains database schema definitions that caused an"
-  echo "unexpected failure of one or more unit tests at tagged commit ${latest_minor_release_tag}."
-  echo ""
-  echo "If this backwards incompatibility is intentional or of the test is flaky,"
-  echo "an exception for this text can be added to the following flakefile:"
-  echo ""
-  echo "'${flakefile}'"
-  echo ""
-  echo "Rewrite these schema changes to be backwards compatible. For help,"
-  echo "see docs.sourcegraph.com/dev/background-information/sql/migrations."
+  annotation=$(
+    cat <<EOF
+This commit contains database schema definitions that caused an unexpected
+failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
+Rewrite these schema changes to be backwards compatible. For help,
+see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
+
+If this backwards incompatibility is intentional or if the test is flaky,
+an exception for this test can be added to the following flakefile:
+
+\`\`\`
+${flakefile}
+\`\`\`
+
+EOF
+  )
+  mkdir -p ./annotations/
+  echo "$annotation" | tee './annotations/go-backcompat.md'
   exit 1
 fi

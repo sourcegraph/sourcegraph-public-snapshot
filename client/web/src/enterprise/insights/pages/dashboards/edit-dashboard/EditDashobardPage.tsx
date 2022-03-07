@@ -20,7 +20,7 @@ import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/su
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
-} from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+} from '../creation/components/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
 
@@ -83,7 +83,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
         try {
             const updatedDashboard = await updateDashboard({
-                previousDashboard: dashboard,
+                id: dashboard.id,
                 nextDashboardInput: {
                     name,
                     visibility,
@@ -108,11 +108,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <Link
-                    to="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="/help/code_insights/explanations/viewing_code_insights" target="_blank" rel="noopener">
                     Learn more.
                 </Link>
             </span>

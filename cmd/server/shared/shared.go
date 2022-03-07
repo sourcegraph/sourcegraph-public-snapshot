@@ -149,11 +149,7 @@ func Main() {
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 
-	monitoringLines, err := maybeMonitoring()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(monitoringLines) != 0 {
+	if monitoringLines := maybeMonitoring(); len(monitoringLines) != 0 {
 		procfile = append(procfile, monitoringLines...)
 	}
 
@@ -256,7 +252,7 @@ func runMigrator() {
 		e.Command("migrator", "up", "-db", schemaName)
 
 		if err := e.Error(); err != nil {
-			pgPrintf("Migrating %s schema failed%s", schemaName)
+			pgPrintf("Migrating %s schema failed: %s", schemaName, err)
 			log.Fatal(err.Error())
 		}
 	}

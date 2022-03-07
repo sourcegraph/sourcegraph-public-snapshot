@@ -49,14 +49,14 @@ trivy_scan() {
   trivy image "${TRIVY_ARGS[@]}"
 }
 
-upload_annotation() {
+create_annotation() {
   local path="$1"
   local imageName="$2"
 
   local file
   file="$(basename "${path}")"
 
-  cat <<EOF | buildkite-agent annotate --style warning --context "Docker image security scan" --append
+  cat <<EOF >./annotations/trivy-scan-high-critical.md
 - **${imageName}** high/critical CVE(s): [${file}](artifact://${file})
 EOF
 
@@ -72,7 +72,7 @@ case "${exitCode:-"0"}" in
     ;;
   "${VULNERABILITY_EXIT_CODE}")
     # we found vulnerabilities - upload the annotation
-    upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
+    create_annotation "${ARTIFACT_FILE}" "${IMAGE}"
     exit "${VULNERABILITY_EXIT_CODE}"
     ;;
   *)

@@ -5,7 +5,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -15,10 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -226,7 +224,7 @@ git commit -am amsg
 	cmd := exec.Command("/bin/sh", "-euxc", script)
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("execution error: %v, output %s", err, out)
+		return errors.Newf("execution error: %v, output %s", err, out)
 	}
 	return nil
 }

@@ -15,7 +15,13 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WebStory } from '../../components/WebStory'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
+import {
+    _fetchRecentFileViews,
+    _fetchRecentSearches,
+    _fetchSavedSearches,
+    _fetchCollaborators,
+    authUser,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -44,6 +50,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    fetchCollaborators: _fetchCollaborators,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
@@ -51,7 +58,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     featureFlags: new Map(),
-    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/search/home/SearchPage', module)
@@ -60,7 +66,7 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [544, 577, 769, 993, 1200] },
+        chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
@@ -76,13 +82,23 @@ add('Cloud with panels', () => (
     </WebStory>
 ))
 
-add('Cloud with community search contexts', () => (
+add('Cloud with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
+    </WebStory>
+))
+
+add('Cloud marketing home', () => (
     <WebStory>
         {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
     </WebStory>
 ))
 
-add('Cloud with notebook onboarding', () => (
+add('Cloud marketing home with notebook onboarding', () => (
     <WebStory>
         {webProps => (
             <SearchPage
@@ -95,12 +111,20 @@ add('Cloud with notebook onboarding', () => (
     </WebStory>
 ))
 
-add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
-
 add('Server with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} />
+        }}
+    </WebStory>
+))
+
+add('Server with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return <SearchPage {...defaultProps(webProps)} />
         }}
     </WebStory>

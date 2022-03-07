@@ -4,16 +4,16 @@ import { Subject } from 'rxjs'
 import { withLatestFrom, map, filter } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, property } from '@sourcegraph/common'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
@@ -53,7 +53,12 @@ import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListE
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 
-interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+interface Props
+    extends ThemeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        SettingsCascadeProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -97,6 +102,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     expandByDefault,
     onlyArchived,
     refetchBatchChange,
+    settingsCascade,
 }) => {
     // You might look at this destructuring statement and wonder why this isn't
     // just a single context consumer object. The reason is because making it a
@@ -308,6 +314,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
+                        settingsCascade={settingsCascade}
                     />
                 )}
             </div>

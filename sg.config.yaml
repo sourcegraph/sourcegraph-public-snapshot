@@ -245,11 +245,6 @@ commands:
   symbols:
     cmd: .bin/symbols
     install: |
-      # Remove old pcre libs that might still be lying around.
-      # TODO delete these two lines after 2021-10-24 (1 month after removal of pcre).
-      rm -f libsqlite3-pcre.dylib || true
-      rm -f libsqlite3-pcre.so || true
-
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
@@ -264,6 +259,27 @@ commands:
       - lib
       - internal
       - cmd/symbols
+
+  enterprise-symbols:
+    cmd: .bin/enterprise-symbols
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      ./cmd/symbols/build-ctags.sh &&
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+    checkBinary: .bin/enterprise-symbols
+    env:
+      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      CTAGS_PROCESSES: 2
+      USE_ROCKSKIP: 'false'
+    watch:
+      - lib
+      - internal
+      - cmd/symbols
+      - enterprise/cmd/symbols
+      - enterprise/internal/rockskip
 
   searcher:
     cmd: .bin/searcher
@@ -338,7 +354,7 @@ commands:
         -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
       fi
     env:
-      DOCSITE_VERSION: v1.8.5 # Update DOCSITE_VERSION in all places (including outside this repo)
+      DOCSITE_VERSION: v1.8.6 # Update DOCSITE_VERSION in all places (including outside this repo)
 
   syntax-highlighter:
     ignoreStdout: true
@@ -346,11 +362,13 @@ commands:
     cmd: |
       docker run --name=syntax-highlighter --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
+      sourcegraph/syntax-highlighter:insiders
     install: |
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
+      # Pull syntax-highlighter latest insider image, only during install
+      docker pull -q sourcegraph/syntax-highlighter:insiders
     env:
       # This is not needed actually
       INSECURE_DEV: 1
@@ -423,8 +441,8 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-template: &executor_template
-    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+  executor-template:
+    &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
@@ -448,7 +466,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ":6092"
+      SRC_PROF_HTTP: ':6092'
 
   batches-executor:
     <<: *executor_template
@@ -457,7 +475,7 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
-      SRC_PROF_HTTP: ":6093"
+      SRC_PROF_HTTP: ':6093'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -470,7 +488,7 @@ commands:
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      SRC_PROF_HTTP: ":6093"
+      SRC_PROF_HTTP: ':6093'
 
   minio:
     cmd: |
@@ -491,7 +509,7 @@ commands:
     env:
       MINIO_DISK: $HOME/.sourcegraph-dev/data/minio
       MINIO_LOGS: $HOME/.sourcegraph-dev/logs/minio
-      MINIO_LOG_FILE: $HOME/.sourcegraph-dev/logs/minio/minio.log"
+      MINIO_LOG_FILE: $HOME/.sourcegraph-dev/logs/minio/minio.log
       IMAGE: sourcegraph/minio
       CONTAINER: minio
 
@@ -602,8 +620,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
       CACHE: false
     watch:
       - monitoring
@@ -653,11 +671,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ""
-      DOCKER_NET: ""
+      DOCKER_USER: ''
+      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ""
+      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -684,7 +702,7 @@ commands:
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: "2.3.0"
+      LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   storybook:
@@ -700,55 +718,6 @@ commands:
     cmd: yarn --cwd client/browser dev
     install: yarn
 
-checks:
-  docker:
-    cmd: docker version
-    failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
-
-  docker-compose:
-    cmd: docker-compose version
-    failMessage: "Failed to run 'docker-compose version'. Please make sure Docker is running."
-
-  go:
-    cmd: go version || (echo "➡️ Install Go or make it sure it is in the \$PATH" && exit 1)
-    failMessage: 'Failed to run go'
-
-  go-version:
-    cmd: |
-      go_version=$(go version | cut -d' ' -f 3 | sed 's/go//')
-      tools_version=$(cat .tool-versions | grep golang | sed 's/golang //')
-      [ "$go_version" = "$tools_version" ] || (echo "➡️ Need go version $tools_version, but got $go_version instead" && exit 1)
-    failMessage: 'Incorrect go version'
-
-  redis:
-    cmd: (command -v redis-cli && redis-cli -p 6379 PING) || docker-compose -f dev/redis-postgres.yml exec -T redis redis-cli PING
-    failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'
-
-  postgres:
-    cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
-    failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
-
-  git-version:
-    cmd: |
-      git_version="$(git --version | cut -d' ' -f 3)"
-      git_major_version="$(echo $git_version | cut -d'.' -f 1)"
-      git_minor_version="$(echo $git_version | cut -d'.' -f 2)"
-      git_patch_version="$(echo $git_version | cut -d'.' -f 3)"
-      # See [NOTE: git-version-min-requirement]
-      ERR_MSG="Need git version 2.34.1 or higher but found $git_version."
-      if [[ "$git_major_version" -eq 2 ]]; then
-        if [[ "$git_minor_version" -eq 34 ]]; then
-          if [[ "$git_patch_version" -lt 1 ]]; then
-            echo $ERR_MSG && exit 1
-          fi
-        elif [[ "$git_minor_version" -lt 34 ]]; then
-          echo $ERR_MSG && exit 1
-        fi
-      elif [[ "$git_major_version" -lt 2 ]]; then
-        echo $ERR_MSG && exit 1
-      fi
-    failMessage: 'Incorrect git version'
-
 defaultCommandset: enterprise
 commandsets:
   oss:
@@ -758,7 +727,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - frontend
       - worker
@@ -782,7 +751,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -811,7 +780,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -819,7 +788,7 @@ commandsets:
       - enterprise-web
       - gitserver
       - searcher
-      - symbols
+      - enterprise-symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -841,7 +810,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -869,7 +838,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -889,7 +858,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-worker
@@ -914,7 +883,7 @@ commandsets:
       - docker
       - redis
       - postgres
-      - git-version
+      - git
     commands:
       - enterprise-frontend
       - enterprise-repo-updater
@@ -998,7 +967,7 @@ tests:
     cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-integration:
-    cmd: yarn --cwd client/browser test-integration
+    cmd: POLLYJS_MODE=replay yarn --cwd client/browser test-integration
 
   bext-e2e:
     cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
@@ -1016,4 +985,4 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.5 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
+      DOCSITE_VERSION: v1.8.6 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)

@@ -1,5 +1,4 @@
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { useHistory } from 'react-router-dom'
@@ -43,7 +42,7 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
 
     return (
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
-            <Button className={classNames('btn-icon', styles.closeButton)} onClick={onClose}>
+            <Button variant="icon" className={styles.closeButton} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
             </Button>

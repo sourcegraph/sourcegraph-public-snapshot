@@ -8,10 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // store manages the in-memory storage, access,
@@ -27,6 +26,13 @@ type store struct {
 	ready chan struct{}
 	once  sync.Once
 }
+
+// defaultStore is shared between client and server in the same process,
+// so we can make sure our writes in backend integration tests are immediately
+// effectual. Without a shared store, the client will asynchronously poll
+// for updates from the database, and we have no way to know when it's done,
+// since the state served from the GraphQL API is the one in the server store.
+var defaultStore = newStore()
 
 // newStore returns a new configuration store.
 func newStore() *store {

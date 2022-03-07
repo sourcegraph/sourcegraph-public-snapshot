@@ -3,37 +3,28 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"sort"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
-
+	"github.com/grafana/regexp"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	"github.com/segmentio/ksuid"
 
-	"github.com/graph-gophers/graphql-go/relay"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.InsightViewResolver = &insightViewResolver{}
@@ -199,6 +190,12 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
 	}
 
+	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
+	if err != nil {
+		return nil, errors.Wrap(err, "QueryJobsStatus")
+	}
+	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+
 	var resolvers []graphqlbackend.InsightSeriesResolver
 	for capturedValue, points := range groupedByCapture {
 		sort.Slice(points, func(i, j int) bool {
@@ -213,6 +210,27 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 			label:           capturedValue,
 			filters:         filters,
 			seriesId:        fmt.Sprintf("%s-%s", seriesID, capturedValue),
+			statusResolver:  statusResolver,
+		})
+	}
+	if len(resolvers) == 0 {
+		// We are manually populating a mostly empty resolver here - this slightly hacky solution is to unify the
+		// expectations of the webapp when querying for series state. For a standard search series there is
+		// always a resolver since each series maps one to one with it's definition.
+		// With a capture groups series we derive each unique series dynamically - which means it's possible to have a
+		// series definition with zero resulting series. This most commonly occurs when the insight is just created,
+		// before any data has been generated yet. Without this,
+		// our capture groups insights don't share the loading state behavior.
+		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+			insightsStore:   r.timeSeriesStore,
+			workerBaseStore: r.workerBaseStore,
+			series:          definition,
+			metadataStore:   r.insightStore,
+			statusResolver:  statusResolver,
+			seriesId:        definition.SeriesID,
+			points:          nil,
+			label:           definition.Label,
+			filters:         filters,
 		})
 	}
 	return resolvers, nil

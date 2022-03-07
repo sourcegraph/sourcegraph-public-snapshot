@@ -19,12 +19,12 @@ const Story: Meta = {
         component: Input,
         chromatic: {
             enableDarkMode: true,
+            disableSnapshot: false,
         },
         design: {
             type: 'figma',
             name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A1943',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=875%3A797',
         },
     },
 }

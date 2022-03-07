@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestEncryptAuthenticator(t *testing.T) {

@@ -9,9 +9,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestMain(m *testing.M) {

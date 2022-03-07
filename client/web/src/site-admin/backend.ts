@@ -2,7 +2,7 @@ import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, resetAllMemoizationCaches, repeatUntil } from '@sourcegraph/common'
 import {
     createInvalidGraphQLMutationResponseError,
     dataOrThrowErrors,
@@ -11,8 +11,6 @@ import {
 } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
@@ -58,6 +56,9 @@ import {
     UserRepositoriesTotalCountVariables,
     SetUserTagResult,
     SetUserTagVariables,
+    FeatureFlagsResult,
+    FeatureFlagsVariables,
+    FeatureFlagFields,
 } from '../graphql-operations'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
@@ -1052,5 +1053,47 @@ export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFiel
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.outOfBandMigrations)
+    )
+}
+
+/**
+ * Fetches all feature flags.
+ */
+export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
+    return requestGraphQL<FeatureFlagsResult, FeatureFlagsVariables>(
+        gql`
+            query FeatureFlags {
+                featureFlags {
+                    ...FeatureFlagFields
+                }
+            }
+
+            fragment FeatureFlagFields on FeatureFlag {
+                __typename
+                ... on FeatureFlagBoolean {
+                    name
+                    value
+                    overrides {
+                        ...OverrideFields
+                    }
+                }
+                ... on FeatureFlagRollout {
+                    name
+                    rolloutBasisPoints
+                    overrides {
+                        ...OverrideFields
+                    }
+                }
+            }
+
+            fragment OverrideFields on FeatureFlagOverride {
+                id
+                value
+                # Querying on namespace seems bugged, so we just get id and value for now.
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.featureFlags)
     )
 }

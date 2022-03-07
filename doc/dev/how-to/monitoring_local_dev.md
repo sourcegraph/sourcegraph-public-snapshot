@@ -33,11 +33,17 @@ For Kubernetes deployments, you can accomplish this by creating a [sg.config.ove
 
 ```yaml
 # sg.config.overwrite.yaml
-
 commands:
   prometheus:
-    cmd: |
-      kubectl port-forward svc/prometheus 9090:30090
+    # install can just be set up gcloud credentials for a cluster
+    # e.g. https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/deployments/instances
+    install: gcloud container clusters get-credentials ...
+    # make remote prometheus accessible to local grafana
+    cmd: kubectl port-forward svc/prometheus 9090:30090
+  monitoring-generator:
+    env:
+      # don't reload your production Prometheus!
+      PROMETHEUS_DIR: ''
 ```
 
 Then, you can start up the local dev monitoring stack by using:

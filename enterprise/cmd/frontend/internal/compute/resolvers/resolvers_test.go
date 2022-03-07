@@ -12,15 +12,7 @@ import (
 )
 
 func TestToResultResolverList(t *testing.T) {
-	matches := []result.Match{
-		&result.FileMatch{
-			LineMatches: []*result.LineMatch{
-				{Preview: "a"},
-				{Preview: "b"},
-			},
-		},
-	}
-	test := func(input string) string {
+	test := func(input string, matches []result.Match) string {
 		computeQuery, _ := compute.Parse(input)
 		resolvers, _ := toResultResolverList(
 			context.Background(),
@@ -41,5 +33,16 @@ func TestToResultResolverList(t *testing.T) {
 		return string(v)
 	}
 
-	autogold.Want("resolver copies all match results", `["a","b"]`).Equal(t, test("a|b"))
+	nonNilMatches := []result.Match{
+		&result.FileMatch{
+			LineMatches: []*result.LineMatch{
+				{Preview: "a"},
+				{Preview: "b"},
+			},
+		},
+	}
+	autogold.Want("resolver copies all match results", `["a","b"]`).Equal(t, test("a|b", nonNilMatches))
+
+	producesNilResult := []result.Match{&result.CommitMatch{}}
+	autogold.Want("resolver ignores nil compute result", "[]").Equal(t, test("a|b", producesNilResult))
 }

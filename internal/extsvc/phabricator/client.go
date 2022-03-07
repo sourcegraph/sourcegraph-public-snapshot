@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/uber/gonduit"
@@ -16,6 +15,7 @@ import (
 	"github.com/uber/gonduit/requests"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{

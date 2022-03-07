@@ -8,9 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/segmentio/ksuid"
 
@@ -20,11 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const schemaErrorPrefix = "insights oob migration schema error"
 
-func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) []insights.LangStatsInsight {
+func getLangStatsInsights(settingsRow api.Settings) []insights.LangStatsInsight {
 	prefix := "codeStatsInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.LangStatsInsight, 0)
@@ -50,7 +48,7 @@ func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) []insig
 	return results
 }
 
-func getFrontendInsights(ctx context.Context, settingsRow api.Settings) []insights.SearchInsight {
+func getFrontendInsights(settingsRow api.Settings) []insights.SearchInsight {
 	prefix := "searchInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.SearchInsight, 0)
@@ -77,7 +75,7 @@ func getFrontendInsights(ctx context.Context, settingsRow api.Settings) []insigh
 	return results
 }
 
-func getBackendInsights(ctx context.Context, setting api.Settings) []insights.SearchInsight {
+func getBackendInsights(setting api.Settings) []insights.SearchInsight {
 	prefix := "insights.allrepos"
 
 	results := make([]insights.SearchInsight, 0)
@@ -105,7 +103,7 @@ func getBackendInsights(ctx context.Context, setting api.Settings) []insights.Se
 	return results
 }
 
-func getDashboards(ctx context.Context, settingsRow api.Settings) []insights.SettingDashboard {
+func getDashboards(settingsRow api.Settings) []insights.SettingDashboard {
 	prefix := "insights.dashboards"
 
 	results := make([]insights.SettingDashboard, 0)
@@ -208,7 +206,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 		}
 		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			continue
 		}
 		if len(insight) > 0 {
@@ -218,7 +216,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 		}
 		err = migrateSeries(ctx, m.insightStore, m.workerBaseStore, d, batch)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			continue
 		} else {
 			count++
@@ -240,7 +238,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 		}
 		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			continue
 		}
 		if len(insight) > 0 {
@@ -251,7 +249,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 
 		err = migrateLangStatSeries(ctx, m.insightStore, d)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			continue
 		} else {
 			count++
@@ -454,7 +452,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 		}
 		err := m.migrateDashboard(ctx, d, mc)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		} else {
 			count++
 		}

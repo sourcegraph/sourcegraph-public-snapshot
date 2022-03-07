@@ -11,11 +11,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -47,7 +47,7 @@ type CodeMonitorStore interface {
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results cmtypes.CommitSearchResults) error
+	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
@@ -56,15 +56,15 @@ type CodeMonitorStore interface {
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	UpdateWebhookAction(_ context.Context, id int64, enabled bool, url string) (*WebhookAction, error)
-	CreateWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*WebhookAction, error)
+	UpdateWebhookAction(_ context.Context, id int64, enabled, includeResults bool, url string) (*WebhookAction, error)
+	CreateWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*WebhookAction, error)
 	DeleteWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
 	CountWebhookActions(ctx context.Context, monitorID int64) (int, error)
 	GetWebhookAction(ctx context.Context, id int64) (*WebhookAction, error)
 	ListWebhookActions(context.Context, ListActionsOpts) ([]*WebhookAction, error)
 
-	UpdateSlackWebhookAction(_ context.Context, id int64, enabled bool, url string) (*SlackWebhookAction, error)
-	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*SlackWebhookAction, error)
+	UpdateSlackWebhookAction(_ context.Context, id int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error)
+	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error)
 	DeleteSlackWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
 	CountSlackWebhookActions(ctx context.Context, monitorID int64) (int, error)
 	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)
@@ -169,14 +169,16 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 
 	actions := []*EmailActionArgs{
 		{
-			Enabled:  true,
-			Priority: "NORMAL",
-			Header:   "test header 1",
+			Enabled:        true,
+			IncludeResults: false,
+			Priority:       "NORMAL",
+			Header:         "test header 1",
 		},
 		{
-			Enabled:  true,
-			Priority: "CRITICAL",
-			Header:   "test header 2",
+			Enabled:        true,
+			IncludeResults: false,
+			Priority:       "CRITICAL",
+			Header:         "test header 2",
 		},
 	}
 
@@ -199,9 +201,10 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 
 	for _, a := range actions {
 		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
-			Enabled:  a.Enabled,
-			Priority: a.Priority,
-			Header:   a.Header,
+			Enabled:        a.Enabled,
+			IncludeResults: a.IncludeResults,
+			Priority:       a.Priority,
+			Header:         a.Header,
 		})
 		if err != nil {
 			return nil, err
@@ -244,14 +247,14 @@ func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) 
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }
 
-func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, userContext context.Context) {
 	t.Helper()
 
 	name = "cm-user1"
 	id = insertTestUser(ctx, t, db, name, true)
-	namespace = relay.MarshalID("User", id)
+	_ = relay.MarshalID("User", id)
 	ctx = actor.WithActor(ctx, actor.FromUser(id))
-	return name, id, namespace, ctx
+	return name, id, ctx
 }
 
 func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {

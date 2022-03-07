@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 type Services struct {
@@ -45,11 +44,7 @@ type Services struct {
 	hub             *sentry.Hub
 }
 
-func NewServices(ctx context.Context, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
-	if err := config.UploadStoreConfig.Validate(); err != nil {
-		return nil, errors.Errorf("failed to load config: %s", err)
-	}
-
+func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
@@ -67,7 +62,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.WatchableSiteConfig, 
 	dbStore := store.NewWithDB(db, observationContext)
 	locker := locker.NewWithDB(db, "codeintel")
 	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
-	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
@@ -115,16 +110,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	var (
-		db  *sql.DB
-		err error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		db, err = connections.NewCodeIntelDB(dsn, "frontend", true, &observation.TestContext)
-	} else {
-		db, err = connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
-	}
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

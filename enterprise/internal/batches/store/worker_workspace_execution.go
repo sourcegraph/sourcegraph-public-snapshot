@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
@@ -23,6 +22,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchSpecWorkspaceExecutionJobStalledJobMaximumAge is the maximum allowable
@@ -146,7 +146,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(ctx, events)
+	executionResults, stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return false, err
 	}
@@ -225,7 +225,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf(fmtStr, args...), options)
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(ctx, events)
+	executionResults, stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to extract cache entries: %s", err))
 	}
@@ -355,7 +355,7 @@ SET
 WHERE id = %s
 `
 
-func extractCacheEntries(ctx context.Context, events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
+func extractCacheEntries(events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
 	for _, e := range events {
 		switch m := e.Metadata.(type) {
 		case *batcheslib.CacheResultMetadata:

@@ -62,7 +62,7 @@ Sourcegraph supports several different authentication methods: OAuth (for GitHub
 To get started setting up user authentication and SSO, please reference our [auth documentation](https://docs.sourcegraph.com/admin/auth "auth documentation").
 
 #### Repository Permissions:
-In addition to configuring user authentication to Sourcegraph, you may also want to ensure that users can only view repositories that they would have access to on your code host. Sourcegraph supports the ability to inherit and enforce these repository permissions on a per-user basis and can be configured for connections to GitHub, GitLab, and Bitbucket Server.
+In addition to configuring user authentication to Sourcegraph, you may also want to ensure that users can only view repositories that they would have access to on your code host. Sourcegraph supports the ability to inherit and enforce these repository permissions on a per-user basis and can be configured for connections to GitHub, GitLab, and Bitbucket Server / Bitbucket Data Center.
 
 For more info, check out our complete [repository permission documentation.](https://docs.sourcegraph.com/admin/repo/permissions#repository-permissions "repository permission documentation.")
 

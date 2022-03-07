@@ -19,7 +19,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 			{
@@ -28,7 +28,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_open{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 		},
@@ -39,7 +39,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 			{
@@ -48,7 +48,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_idle{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 		},
@@ -63,9 +63,9 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query: fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[5m])) / `+
 					`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[5m]))`, app, app),
 				Panel:    monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
-				Warning:  monitoring.Alert().GreaterOrEqual(0.05, nil).For(10 * time.Minute),
-				Critical: monitoring.Alert().GreaterOrEqual(0.10, nil).For(15 * time.Minute),
-				Owner:    monitoring.ObservableOwnerCoreApplication,
+				Warning:  monitoring.Alert().GreaterOrEqual(0.05).For(10 * time.Minute),
+				Critical: monitoring.Alert().GreaterOrEqual(0.10).For(15 * time.Minute),
+				Owner:    monitoring.ObservableOwnerDevOps,
 				PossibleSolutions: `
 					- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 					- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -79,7 +79,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 			{
@@ -88,7 +88,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 			{
@@ -97,7 +97,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerCoreApplication,
+				Owner:          monitoring.ObservableOwnerDevOps,
 				Interpretation: "none",
 			},
 		},

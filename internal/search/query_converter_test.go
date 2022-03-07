@@ -258,7 +258,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		}
 		q := plan[0]
 		mode := Batch
-		p := ToTextPatternInfo(q, mode, query.Identity)
+		p := ToTextPatternInfo(q, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
 	}
@@ -359,7 +359,7 @@ func TestToTextPatternInfo(t *testing.T) {
 
 	autogold.Want("48", `{"Pattern":"","IsNegated":false,"IsRegExp":false,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load type:file`))
 
-	autogold.Want("49", `{"Pattern":"(\\ and).*?(/)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`))
+	autogold.Want("49", `{"Pattern":"(?:\\ and).*?(?:/)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`))
 
 	autogold.Want("50", `{"Pattern":"t :=","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["^diff/print\\.go"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:literal`))
 
@@ -379,7 +379,7 @@ func TestToTextPatternInfo(t *testing.T) {
 
 	autogold.Want("62", `{"Pattern":"","IsNegated":false,"IsRegExp":false,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ (m *FileDiff and (data)) patterntype:literal`))
 
-	autogold.Want("63", `{"Pattern":"(t).*?(:=)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["^diff/print\\.go"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp type:file`))
+	autogold.Want("63", `{"Pattern":"(?:t).*?(?::=)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["^diff/print\\.go"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp type:file`))
 
 	autogold.Want("64", `{"Pattern":"","IsNegated":false,"IsRegExp":false,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["^diff/print\\.go"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts and printFileHeader(:[_]) patterntype:structural`))
 
@@ -461,7 +461,35 @@ func TestToTextPatternInfo(t *testing.T) {
 
 	autogold.Want("104", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["deploy"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:sourcegraph-typescript$ type:file file:deploy`))
 
-	autogold.Want("105", `{"Pattern":"(foo\\d).*?(bar\\*)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`foo\d "bar*" patterntype:regexp`))
+	autogold.Want("105", `{"Pattern":"(?:foo\\d).*?(?:bar\\*)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`foo\d "bar*" patterntype:regexp`))
 
 	autogold.Want("106", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["\\.go$"],"ExcludePattern":"(\\.java$)|(\\.jav$)","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":["go"]}`).Equal(t, test(`lang:go -lang:java`))
+
+	autogold.Want("107", `{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`patterntype:regexp // literal slash`))
+}
+
+func Test_toZoektPattern(t *testing.T) {
+	test := func(input string) string {
+		q, err := query.ParseLiteral(input)
+		if err != nil {
+			return err.Error()
+		}
+		b, err := query.ToBasicQuery(q)
+		if err != nil {
+			return err.Error()
+		}
+		zoektQuery, err := toZoektPattern(b.Pattern, false, true, true)
+		if err != nil {
+			return err.Error()
+		}
+		return zoektQuery.String()
+	}
+
+	autogold.Want("basic string",
+		`file_substr:"a"`).
+		Equal(t, test(`a`))
+
+	autogold.Want("basic and-expression",
+		`(or (and file_substr:"a" file_substr:"b" (not file_substr:"c")) file_substr:"d")`).
+		Equal(t, test(`a and b and not c or d`))
 }

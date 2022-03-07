@@ -94,6 +94,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
             <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
@@ -102,7 +103,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     <small className="ml-auto">
                         <span className="text-muted">Default filters applied</span>{' '}
                         <Link
-                            to="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
+                            to="/help/code_insights/explanations/code_insights_filters"
                             target="_blank"
                             rel="noopener"
                             className="small"

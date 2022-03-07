@@ -6,9 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func GitCmd(args ...string) (string, error) {
@@ -49,4 +48,16 @@ func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
 
 func TrimResult(s string, err error) (string, error) {
 	return strings.TrimSpace(s), err
+}
+
+func InteractiveInRoot(cmd *exec.Cmd) error {
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+	cmd.Dir = repoRoot
+	return cmd.Run()
 }

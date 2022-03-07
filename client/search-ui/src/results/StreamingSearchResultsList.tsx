@@ -8,13 +8,18 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { SearchResult } from '@sourcegraph/search-ui'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
@@ -46,10 +51,15 @@ export interface StreamingSearchResultsListProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
     showSearchContext: boolean
+    /** Clicking on a match opens the link in a new tab. */
+    openMatchesInNewTab?: boolean
     /** Available to web app through JS Context */
     assetsRoot?: string
     /** Render prop for `<SearchUserNeedsCodeHost>`  */
     renderSearchUserNeedsCodeHost?: (user: AuthenticatedUser) => JSX.Element
+
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -67,6 +77,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     assetsRoot,
     renderSearchUserNeedsCodeHost,
     platformContext,
+    extensionsController,
+    hoverifier,
+    openMatchesInNewTab,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
@@ -100,6 +113,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
+                            extensionsController={extensionsController}
+                            hoverifier={hoverifier}
+                            openInNewTab={openMatchesInNewTab}
                         />
                     )
                 case 'commit':
@@ -110,6 +126,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
+                            openInNewTab={openMatchesInNewTab}
                         />
                     )
                 case 'repo':
@@ -132,6 +149,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             fetchHighlightedFileLineRanges,
             settingsCascade,
             platformContext,
+            extensionsController,
+            hoverifier,
+            openMatchesInNewTab,
         ]
     )
 

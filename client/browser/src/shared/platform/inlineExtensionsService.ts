@@ -1,9 +1,9 @@
 import { Subscribable, from } from 'rxjs'
 
+import { isFirefox } from '@sourcegraph/common'
 import { checkOk } from '@sourcegraph/http-client'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { isExtension } from '../context'
 

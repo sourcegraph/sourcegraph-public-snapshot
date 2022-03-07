@@ -32,7 +32,6 @@ const DASHBOARDS: InsightDashboard[] = [
         type: InsightsDashboardType.Custom,
         id: '102',
         title: 'Code Insights dashboard',
-        settingsKey: 'codeInsightsDasbhoard',
         insightIds: [],
         owner: {
             id: '101',
@@ -44,7 +43,6 @@ const DASHBOARDS: InsightDashboard[] = [
         type: InsightsDashboardType.Custom,
         id: '103',
         title: 'Experimental Insights dashboard',
-        settingsKey: 'experimentalInsightsDashboard',
         insightIds: [],
         owner: {
             id: '101',
@@ -67,7 +65,6 @@ const DASHBOARDS: InsightDashboard[] = [
         type: InsightsDashboardType.Custom,
         id: '105',
         title: 'Loooong looo0000ong name of dashboard',
-        settingsKey: 'looonglooongDashboard',
         insightIds: [],
         owner: {
             id: '104',
@@ -79,7 +76,6 @@ const DASHBOARDS: InsightDashboard[] = [
         type: InsightsDashboardType.Custom,
         id: '106',
         title: 'Loooong looo0000ong name of dashboard',
-        settingsKey: 'looonglooongDashboard',
         insightIds: [],
         owner: {
             id: '104',

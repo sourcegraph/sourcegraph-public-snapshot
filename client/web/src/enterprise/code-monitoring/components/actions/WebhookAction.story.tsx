@@ -3,17 +3,21 @@ import React from 'react'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../../components/WebStory'
+import { mockAuthenticatedUser } from '../../testing/util'
 import { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
 
-const { add } = storiesOf('web/enterprise/code-monitoring/actions/WebhookAction', module)
+const { add } = storiesOf('web/enterprise/code-monitoring/actions/WebhookAction', module).addParameters({
+    chromatic: { disableSnapshot: false },
+})
 
 const defaultProps: ActionProps = {
     action: undefined,
     setAction: sinon.fake(),
     disabled: false,
     monitorName: 'Example code monitor',
+    authenticatedUser: mockAuthenticatedUser,
 }
 
 const action: ActionProps['action'] = {
@@ -21,6 +25,7 @@ const action: ActionProps['action'] = {
     id: 'id1',
     url: 'https://example.com',
     enabled: true,
+    includeResults: false,
 }
 
 add('WebhookAction', () => (
@@ -41,6 +46,9 @@ add('WebhookAction', () => (
 
                 <h2>Open, populated, enabled</h2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={action} />
+
+                <h2>Open, populated with error, enabled</h2>
+                <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, url: 'mailto:test' }} />
 
                 <h2>Closed, populated, disabled</h2>
                 <WebhookAction {...defaultProps} action={{ ...action, enabled: false }} />

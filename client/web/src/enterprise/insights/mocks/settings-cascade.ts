@@ -1,5 +1,5 @@
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 
 export const SETTINGS_CASCADE_MOCK: SettingsCascade<Settings> = {
     subjects: [
@@ -38,26 +38,3 @@ export const SETTINGS_CASCADE_MOCK: SettingsCascade<Settings> = {
     ],
     final: {},
 }
-
-export const createOrgSubject = (id: string): SettingsSubject => ({
-    __typename: 'Org' as const,
-    id,
-    name: `test_org_${id}`,
-    displayName: `Test organization ${id}`,
-    viewerCanAdminister: true,
-})
-
-export const createUserSubject = (id: string): SettingsSubject => ({
-    __typename: 'User' as const,
-    id,
-    username: `test_username_${id}`,
-    displayName: `Test user ${id}`,
-    viewerCanAdminister: true,
-})
-
-export const createGlobalSubject = (id: string): SettingsSubject => ({
-    __typename: 'Site' as const,
-    id,
-    viewerCanAdminister: true,
-    allowSiteSettingsEdits: true,
-})

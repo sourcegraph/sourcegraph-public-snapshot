@@ -7,12 +7,11 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
@@ -29,9 +28,18 @@ import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
+import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import {
+    Button,
+    ButtonGroup,
+    useLocalStorage,
+    useObservable,
+    Link,
+    Popover,
+    PopoverContent,
+    Position,
+    PopoverTrigger,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -223,8 +231,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             return {
                 key: 'repository',
                 element: (
-                    <>
-                        <div className="d-inline-flex btn-group">
+                    <Popover>
+                        <ButtonGroup className="d-inline-flex">
                             <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
@@ -239,8 +247,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Button>
-                            <Button
-                                id="repo-popover"
+                            <PopoverTrigger
+                                as={Button}
                                 className={styles.repoChange}
                                 aria-label="Change repository"
                                 outline={true}
@@ -248,22 +256,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </Button>
-                        </div>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            fade={false}
-                            popperClassName="border-0"
-                        >
+                            </PopoverTrigger>
+                        </ButtonGroup>
+                        <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 telemetryService={props.telemetryService}
                             />
-                        </UncontrolledPopover>
-                    </>
+                        </PopoverContent>
+                    </Popover>
                 ),
             }
         }, [repoOrError, resolvedRevisionOrError, props.telemetryService])

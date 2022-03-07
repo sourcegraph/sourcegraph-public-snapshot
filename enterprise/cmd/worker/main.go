@@ -14,6 +14,7 @@ import (
 	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -41,6 +42,7 @@ func main() {
 		"insights-job":             workerinsights.NewInsightsJob(),
 		"batches-janitor":          batchesjanitor.NewJanitorJob(),
 		"executors-janitor":        executors.NewJanitorJob(),
+		"codemonitors-job":         codemonitors.NewCodeMonitorJob(),
 	}
 
 	shared.Start(additionalJobs, registerEnterpriseMigrations)
@@ -63,7 +65,7 @@ func setAuthzProviders() {
 
 	ctx := context.Background()
 
-	for range time.NewTicker(5 * time.Second).C {
+	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db))
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}

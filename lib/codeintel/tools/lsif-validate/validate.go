@@ -6,9 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -27,7 +26,7 @@ func validate(indexFile *os.File) error {
 		}
 	}()
 
-	if err := printProgress(ctx, validator, errs); err != nil {
+	if err := printProgress(ctx, errs); err != nil {
 		return err
 	}
 
@@ -42,7 +41,7 @@ func validate(indexFile *os.File) error {
 	return nil
 }
 
-func printProgress(ctx *validation.ValidationContext, validator *validation.Validator, errs <-chan error) error {
+func printProgress(ctx *validation.ValidationContext, errs <-chan error) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 	pending := out.Pending(output.Linef("", output.StylePending, "%d vertices, %d edges", atomic.LoadUint64(&ctx.NumVertices), atomic.LoadUint64(&ctx.NumEdges)))
 	defer func() {

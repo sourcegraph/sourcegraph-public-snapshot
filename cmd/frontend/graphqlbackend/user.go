@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) User(
@@ -204,6 +205,10 @@ func (r *UserResolver) TosAccepted(ctx context.Context) bool {
 	return r.user.TosAccepted
 }
 
+func (r *UserResolver) Searchable(ctx context.Context) bool {
+	return r.user.Searchable
+}
+
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -233,6 +238,19 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	if args.Username != nil {
 		if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(*args.Username); err != nil {
 			return nil, err
+		}
+	}
+
+	if args.AvatarURL != nil {
+		if len(*args.AvatarURL) > 3000 {
+			return nil, errors.New("avatar URL exceeded 3000 characters")
+		}
+
+		u, err := url.Parse(*args.AvatarURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse avatar URL")
+		} else if u.Scheme != "http" && u.Scheme != "https" {
+			return nil, errors.New("avatar URL must be an HTTP or HTTPS URL")
 		}
 	}
 
@@ -411,6 +429,27 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 	}
 
 	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
+	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("no authenticated user")
+	}
+
+	searchable := args.Searchable
+	update := database.UserUpdate{
+		Searchable: &searchable,
+	}
+
+	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 

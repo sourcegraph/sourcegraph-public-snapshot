@@ -1,26 +1,26 @@
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { authenticatedUser } from '@sourcegraph/web/src/auth'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
+import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
 
+import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
 import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
-import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
-import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps extends TelemetryProps {
@@ -37,20 +37,25 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
+    const { getDashboards } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const handleDashboardSelect = useDashboardSelectHandler()
+    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
+        history.push(`/insights/dashboards/${dashboard.id}`)
+
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
     const user = useObservable(authenticatedUser)
+
+    useEffect(() => {
+        telemetryService.logViewEvent('Insights')
+    }, [telemetryService, dashboardID])
 
     if (dashboards === undefined) {
         return (
@@ -60,7 +65,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         )
     }
 
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
+    const permissions = getDashboardPermissions(currentDashboard)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -70,9 +76,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     !isVirtualDashboard(currentDashboard) &&
                     isCustomInsightDashboard(currentDashboard)
                 ) {
-                    const dashboardURL = currentDashboard.settingsKey ?? currentDashboard.id
-
-                    history.push(`/insights/dashboards/${dashboardURL}/edit`)
+                    history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
             }
@@ -105,8 +109,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
     return (
         <div>
-            <section className="d-flex flex-wrap align-items-center">
-                <span className={styles.dashboardSelectLabel}>Dashboard</span>
+            <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
+                <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
                     value={currentDashboard?.id}
@@ -117,19 +121,27 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 />
 
                 <DashboardMenu
-                    subjects={subjects}
                     innerRef={menuReference}
                     tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
                     onSelect={handleSelect}
+                    className="mr-auto"
                 />
-            </section>
 
-            <hr className="mt-2 mb-3" />
+                <Button
+                    outline={true}
+                    variant="secondary"
+                    disabled={!permissions.isConfigurable}
+                    data-tooltip={getTooltipMessage(currentDashboard, permissions)}
+                    data-placement="bottom"
+                    onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                >
+                    Add or remove insights
+                </Button>
+            </DashboardHeader>
 
             {currentDashboard ? (
                 <DashboardInsights
-                    subjects={subjects}
                     dashboard={currentDashboard}
                     telemetryService={telemetryService}
                     onAddInsightRequest={handleAddInsightRequest}

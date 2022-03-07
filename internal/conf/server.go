@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ConfigurationSource provides direct access to read and write to the
@@ -46,7 +46,7 @@ func NewServer(source ConfigurationSource) *Server {
 	fileWrite := make(chan chan struct{}, 1)
 	return &Server{
 		Source:    source,
-		store:     newStore(),
+		store:     defaultStore,
 		fileWrite: fileWrite,
 	}
 }

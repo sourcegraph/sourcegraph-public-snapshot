@@ -158,13 +158,13 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "1 error",
 			kind:    extsvc.KindGitHub,
 			config:  `{"repositoryQuery": ["none"], "token": "fake"}`,
-			wantErr: "1 error occurred:\n\t* url is required\n\n",
+			wantErr: "url is required",
 		},
 		{
 			name:    "2 errors",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* at least one of token or githubAppInstallationID must be set\n\n",
+			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* at least one of token or githubAppInstallationID must be set",
 		},
 		{
 			name:   "no conflicting rate limit",
@@ -199,7 +199,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 					}, nil
 				}
 			},
-			wantErr: "1 error occurred:\n\t* existing external service, \"GITHUB 1\", already has a rate limit set\n\n",
+			wantErr: "existing external service, \"GITHUB 1\", already has a rate limit set",
 		},
 		{
 			name:            "prevent code hosts that are not allowed",
@@ -503,7 +503,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	BeforeCreateExternalService = func(ctx context.Context, _ DB) error {
+	BeforeCreateExternalService = func(ctx context.Context, _ ExternalServiceStore) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
 	t.Cleanup(func() { BeforeCreateExternalService = nil })
@@ -538,11 +538,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 	// NOTE: The order of tests matters
 	tests := []struct {
-		name             string
-		update           *ExternalServiceUpdate
-		wantUnrestricted bool
-		wantCloudDefault bool
-		wantHasWebhooks  bool
+		name               string
+		update             *ExternalServiceUpdate
+		wantUnrestricted   bool
+		wantCloudDefault   bool
+		wantHasWebhooks    bool
+		wantTokenExpiresAt bool
 	}{
 		{
 			name: "update with authorization",
@@ -583,7 +584,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "set cloud_default true",
 			update: &ExternalServiceUpdate{
-				DisplayName:  strptr("GITHUB (updated) #3"),
+				DisplayName:  strptr("GITHUB (updated) #4"),
 				CloudDefault: boolptr(true),
 				Config: strptr(`
 {
@@ -597,6 +598,16 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantUnrestricted: false,
 			wantCloudDefault: true,
 			wantHasWebhooks:  true,
+		},
+		{
+			name: "update token_expires_at",
+			update: &ExternalServiceUpdate{
+				DisplayName:    strptr("GITHUB (updated) #5"),
+				Config:         strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				TokenExpiresAt: timePtr(time.Now()),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
 		},
 	}
 	for _, test := range tests {
@@ -632,6 +643,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				t.Fatal("has_webhooks is unexpectedly null")
 			} else if test.wantHasWebhooks != *got.HasWebhooks {
 				t.Fatalf("Want has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			}
+
+			if (got.TokenExpiresAt != nil) != test.wantTokenExpiresAt {
+				t.Fatalf("Want token_expires_at = %v, but got %v", test.wantTokenExpiresAt, got.TokenExpiresAt)
 			}
 		})
 	}

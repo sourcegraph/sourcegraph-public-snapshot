@@ -1,24 +1,3 @@
-extend type Query {
-    """
-    Runs a code monitor search.
-    """
-    codeMonitorSearch(
-        """
-        PatternType controls the search pattern type, if and only if it is not specified in the query string using
-        the patternType: field.
-        """
-        patternType: SearchPatternType
-        """
-        The search query (such as "foo" or "repo:myrepo foo").
-        """
-        query: String = ""
-        """
-        codeMonitorID is the code monitor associated with this search
-        """
-        codeMonitorID: ID
-    ): Search
-}
-
 extend type Mutation {
     """
     Create a code monitor.
@@ -100,6 +79,20 @@ extend type Mutation {
     Triggers a test email for a code monitor action.
     """
     triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
+
+    """
+    Triggers a test webhook call for a code monitor action.
+    """
+    triggerTestWebhookAction(namespace: ID!, description: String!, webhook: MonitorWebhookInput!): EmptyResponse!
+
+    """
+    Triggers a test Slack webhook message for a code monitor action.
+    """
+    triggerTestSlackWebhookAction(
+        namespace: ID!
+        description: String!
+        slackWebhook: MonitorSlackWebhookInput!
+    ): EmptyResponse!
 }
 
 extend type User {
@@ -251,6 +244,19 @@ type MonitorTriggerEvent implements Node {
     """
     timestamp: DateTime!
     """
+    The query (with after filter) that provides an approximation of the
+    set of results associated with this trigger run. Will always be empty
+    while status is PENDING.
+    """
+    query: String
+
+    """
+    The number of results recorded for this trigger run. Will always be
+    zero until status is SUCCESS.
+    """
+    resultCount: Int!
+
+    """
     A list of actions.
     """
     actions(
@@ -308,6 +314,10 @@ type MonitorEmail implements Node {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in the email message
+    """
+    includeResults: Boolean!
+    """
     The priority of the email action.
     """
     priority: MonitorEmailPriority!
@@ -364,6 +374,10 @@ type MonitorWebhook implements Node {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in webhook payload.
+    """
+    includeResults: Boolean!
+    """
     The endpoint the webhook event will be sent to
     """
     url: String!
@@ -394,6 +408,10 @@ type MonitorSlackWebhook implements Node {
     Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
+    """
+    Whether to include the result contents in Slack notification message.
+    """
+    includeResults: Boolean!
     """
     The endpoint the Slack webhook event will be sent to
     """
@@ -564,6 +582,10 @@ input MonitorEmailInput {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in the email message
+    """
+    includeResults: Boolean!
+    """
     The priority of the email.
     """
     priority: MonitorEmailPriority!
@@ -586,6 +608,10 @@ input MonitorWebhookInput {
     """
     enabled: Boolean!
     """
+    Whether to include the result contents in webhook payload.
+    """
+    includeResults: Boolean!
+    """
     The URL that will receive a payload when the action is triggered.
     """
     url: String!
@@ -599,6 +625,10 @@ input MonitorSlackWebhookInput {
     Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
+    """
+    Whether to include the result contents in Slack notification message.
+    """
+    includeResults: Boolean!
     """
     The URL that will receive a payload when the action is triggered.
     """

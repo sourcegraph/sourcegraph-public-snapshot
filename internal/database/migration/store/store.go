@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Store struct {
@@ -53,16 +52,16 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-const currentMigrationLogSchemaVersion = 1
+const currentMigrationLogSchemaVersion = 2
 
+// EnsureSchemaTable creates the bookeeping tables required to track this schema
+// if they do not already exist. If old versions of the tables exist, this method
+// will attempt to update them in a backward-compatible manner.
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY)`, quote(s.schemaName)),
-		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.schemaName)),
-
 		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS migration_logs_schema_version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
@@ -87,27 +86,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	}
 
 	return nil
-}
-
-func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, err error) {
-	ctx, endObservation := s.operations.version.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.Query(ctx, sqlf.Sprintf(`SELECT version, dirty FROM %s`, quote(s.schemaName)))
-	if err != nil {
-		return 0, false, false, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if rows.Next() {
-		if err := rows.Scan(&version, &dirty); err != nil {
-			return 0, false, false, err
-		}
-
-		return version, dirty, true, nil
-	}
-
-	return 0, false, false, nil
 }
 
 // Versions returns three sets of migration versions that, together, describe the current schema
@@ -147,7 +125,7 @@ const versionsQuery = `
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY started_at DESC) AS row_number
 	FROM migration_logs
 	WHERE schema = %s
 )
@@ -160,35 +138,6 @@ FROM ranked_migration_logs
 WHERE row_number = 1
 ORDER BY version
 `
-
-// Lock creates and holds an advisory lock. This method returns a function that should be called
-// once the lock should be released. This method accepts the current function's error output and
-// wraps any additional errors that occur on close.
-//
-// Note that we don't use the internal/database/locker package here as that uses transactionally
-// scoped advisory locks. We want to be able to hold locks outside of transactions for migrations.
-func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
-	key := s.lockKey()
-
-	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if err := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, key, 0)); err != nil {
-		return false, nil, err
-	}
-
-	close := func(err error) error {
-		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-			err = multierror.Append(err, unlockErr)
-		}
-
-		return err
-	}
-
-	return true, close, nil
-}
 
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output
@@ -214,7 +163,7 @@ func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, e
 	close := func(err error) error {
 		if locked {
 			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
-				err = multierror.Append(err, unlockErr)
+				err = errors.Append(err, unlockErr)
 			}
 
 			// No-op if called more than once
@@ -284,24 +233,11 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	ctx, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	definitionVersion := definition.ID
-	targetVersion := definitionVersion
-	expectedCurrentVersion := definitionVersion - 1
-	if !up {
-		targetVersion = definitionVersion - 1
-		expectedCurrentVersion = definitionVersion
-	}
-
-	logID, err := s.createMigrationLog(ctx, up, expectedCurrentVersion, targetVersion, definitionVersion)
+	logID, err := s.createMigrationLog(ctx, definition.ID, up)
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		if err == nil {
-			err = s.Exec(ctx, sqlf.Sprintf(`UPDATE %s SET dirty = false`, quote(s.schemaName)))
-		}
-	}()
 	defer func() {
 		if execErr := s.Exec(ctx, sqlf.Sprintf(
 			`UPDATE migration_logs SET finished_at = NOW(), success = %s, error_message = %s WHERE id = %d`,
@@ -309,7 +245,7 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 			errMsgPtr(err),
 			logID,
 		)); execErr != nil {
-			err = multierror.Append(err, execErr)
+			err = errors.Append(err, execErr)
 		}
 	}()
 
@@ -320,34 +256,12 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	return nil
 }
 
-func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrentVersion, targetVersion, sourceVersion int) (_ int, err error) {
+func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, up bool) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
-
-	assertionFailure := func(description string, args ...interface{}) error {
-		cta := "This condition should not be reachable by normal use of the migration store via the runner and indicates a bug. Please report this issue."
-		return errors.Errorf(description+"\n\n"+cta+"\n", args...)
-	}
-	if currentVersion, dirty, ok, err := tx.Version(ctx); err != nil {
-		return 0, err
-	} else if dirty {
-		return 0, assertionFailure("dirty database")
-	} else if ok {
-		if currentVersion != expectedCurrentVersion {
-			return 0, assertionFailure("expected schema to have version %d, but has version %d\n", expectedCurrentVersion, currentVersion)
-		}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.schemaName))); err != nil {
-			return 0, err
-		}
-	}
-
-	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.schemaName), targetVersion)); err != nil {
-		return 0, err
-	}
 
 	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		`
@@ -362,7 +276,7 @@ func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrent
 		`,
 		currentMigrationLogSchemaVersion,
 		s.schemaName,
-		sourceVersion,
+		definitionVersion,
 		up,
 	)))
 	if err != nil {
@@ -371,8 +285,6 @@ func (s *Store) createMigrationLog(ctx context.Context, up bool, expectedCurrent
 
 	return id, nil
 }
-
-var quote = sqlf.Sprintf
 
 func errMsgPtr(err error) *string {
 	if err == nil {

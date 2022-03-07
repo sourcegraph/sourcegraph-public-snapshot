@@ -22,8 +22,6 @@ describe('encodeSearchInsightUrl', () => {
             title: 'Insight title',
             allRepos: true,
             groupSearchQuery: 'file:go\\.mod$ go\\s*(\\d\\.\\d+) patterntype:regexp',
-            step: 'days',
-            stepValue: '8',
         })
     })
 })

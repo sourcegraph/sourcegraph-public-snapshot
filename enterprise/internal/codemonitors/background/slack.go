@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/slack-go/slack"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {
@@ -23,15 +25,88 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		return slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", s, false, false), nil, nil)
 	}
 
-	// To see what this looks like:
-	// https://app.slack.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%7B%22type%22:%22section%22,%22text%22:%7B%22text%22:%22*New%20results%20for%20code%20monitor*%22,%22type%22:%22mrkdwn%22%7D%7D,%7B%22type%22:%22section%22,%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%225%20new%20results%20for%20query%20%60%60%60type:diff%20repo:github.com/sourcegraph/sourcegraph$%20BEGIN%20PRIVATE%20KEY%60%60%60%22%7D%7D,%7B%22type%22:%22section%22,%22text%22:%7B%22type%22:%22mrkdwn%22,%22text%22:%22%3Chttps://sourcegraph.com/search?q=context:global+type:diff+repo:github.com/sourcegraph/sourcegraph%2524+BEGIN+PRIVATE+KEY&patternType=literal%7CView%20Search%20Results%3E%20%7C%20%3Chttps://sourcegraph.com/code-monitoring?visible=1%7CView%20Code%20Monitor%3E%22%7D%7D%5D%7D
-	return &slack.WebhookMessage{
-		Blocks: &slack.Blocks{BlockSet: []slack.Block{
-			newMarkdownSection(fmt.Sprintf("*New results for Code Monitor \"%s\"*", args.MonitorDescription)),
-			newMarkdownSection(fmt.Sprintf("%d new results for query: ```%s```", args.NumResults, args.Query)),
-			newMarkdownSection(fmt.Sprintf(`<%s|View search on Sourcegraph> | <%s|View code monitor>`, args.QueryURL, args.MonitorURL)),
-		}},
+	blocks := []slack.Block{
+		newMarkdownSection(fmt.Sprintf(
+			"%s's Sourcegraph Code monitor, *%s*, detected *%d* new matches.",
+			args.MonitorOwnerName,
+			args.MonitorDescription,
+			len(args.Results),
+		)),
 	}
+
+	if args.IncludeResults {
+		truncatedResults, truncatedCount := truncateResults(args.Results, 5)
+		for _, result := range truncatedResults {
+			resultType := "Message"
+			if result.DiffPreview != nil {
+				resultType = "Diff"
+			}
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
+				"%s match: <%s|%s@%s>",
+				resultType,
+				getCommitURL(args.ExternalURL, string(result.Repo.Name), string(result.Commit.ID), args.UTMSource),
+				result.Repo.Name,
+				result.Commit.ID.Short(),
+			)))
+			var contentRaw string
+			if result.DiffPreview != nil {
+				contentRaw = truncateString(result.DiffPreview.Content, 10)
+			} else {
+				contentRaw = truncateString(result.MessagePreview.Content, 10)
+			}
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
+		}
+		if truncatedCount > 0 {
+			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
+				"...and <%s|%d more matches>.",
+				getSearchURL(args.ExternalURL, args.Query, args.UTMSource),
+				truncatedCount,
+			)))
+		}
+	} else {
+		blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
+			"<%s|View results>",
+			getSearchURL(args.ExternalURL, args.Query, args.UTMSource),
+		)))
+	}
+
+	blocks = append(blocks,
+		newMarkdownSection(fmt.Sprintf(
+			`If you are %s, you can <%s|edit your code monitor>`,
+			args.MonitorOwnerName,
+			getCodeMonitorURL(args.ExternalURL, args.MonitorID, args.UTMSource),
+		)),
+	)
+	return &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: blocks}}
+}
+
+func truncateString(input string, lines int) string {
+	splitLines := strings.SplitAfter(input, "\n")
+	if len(splitLines) > lines {
+		splitLines = splitLines[:lines]
+		splitLines = append(splitLines, "...\n")
+	}
+	return strings.Join(splitLines, "")
+}
+
+func truncateResults(results []*result.CommitMatch, maxResults int) ([]*result.CommitMatch, int) {
+	// Convert to type result.Matches
+	matches := make(result.Matches, len(results))
+	for i, res := range results {
+		matches[i] = res
+	}
+
+	totalCount := matches.ResultCount()
+	matches.Limit(maxResults)
+	outputCount := matches.ResultCount()
+
+	// Convert back type []*result.CommitMatch
+	output := make([]*result.CommitMatch, len(matches))
+	for i, match := range matches {
+		output[i] = match.(*result.CommitMatch)
+	}
+
+	return output, totalCount - outputCount
 }
 
 // adapted from slack.PostWebhookCustomHTTPContext
@@ -63,4 +138,23 @@ func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *s
 	}
 
 	return nil
+}
+
+func SendTestSlackWebhook(ctx context.Context, doer httpcli.Doer, description, url string) error {
+	testMessage := &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: []slack.Block{
+		slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn",
+				fmt.Sprintf(
+					"Test message for Code Monitor '%s'",
+					description,
+				),
+				false,
+				false,
+			),
+			nil,
+			nil,
+		),
+	}}}
+
+	return postSlackWebhook(ctx, doer, url, testMessage)
 }

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,7 +46,7 @@ func (p *provider) Config() schema.AuthProviders {
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.oidc, p.refreshErr = newProvider(ctx, p.config.Issuer)
+	p.oidc, p.refreshErr = newProvider(p.config.Issuer)
 	return p.refreshErr
 }
 
@@ -120,7 +120,7 @@ type providerExtraClaims struct {
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newProvider(ctx context.Context, issuerURL string) (*oidcProvider, error) {
+func newProvider(issuerURL string) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}

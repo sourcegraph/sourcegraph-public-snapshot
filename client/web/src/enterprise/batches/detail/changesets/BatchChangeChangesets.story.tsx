@@ -6,6 +6,7 @@ import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -65,6 +66,7 @@ add('List of changesets', () => (
                     platformContext={undefined as any}
                     batchChangeID="batchid"
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             </MockedTestProvider>
         )}
@@ -84,6 +86,7 @@ add('List of expanded changesets', () => (
                     batchChangeID="batchid"
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     expandByDefault={true}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             </MockedTestProvider>
         )}
