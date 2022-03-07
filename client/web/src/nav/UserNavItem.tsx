@@ -22,16 +22,22 @@ import {
     Position,
     AnchorLink,
     Select,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { ThemePreference } from '../stores/themeState'
 import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
+export interface UserNavItemProps
+    extends ThemeProps,
+        ThemePreferenceProps,
+        ExtensionAlertAnimationProps,
+        FeatureFlagProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -103,6 +109,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         position = Position.bottomEnd,
+        featureFlags,
     } = props
 
     const supportsSystemTheme = useMemo(
@@ -123,6 +130,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
+    const openBetaEnabled = featureFlags.get('open-beta-enabled')
 
     return (
         <Menu>
@@ -182,6 +190,14 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                             Saved searches
                         </MenuLink>
+                        {openBetaEnabled && (
+                            <MenuLink
+                                as={Link}
+                                to={`/users/${props.authenticatedUser.username}/settings/organizations`}
+                            >
+                                Your organizations <Badge variant="info">NEW</Badge>
+                            </MenuLink>
+                        )}
                         <MenuDivider />
                         <div className="px-2 py-1">
                             <div className="d-flex align-items-center">
@@ -218,7 +234,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                             ))}
                         </div>
-                        {props.authenticatedUser.organizations.nodes.length > 0 && (
+                        {!openBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                             <>
                                 <MenuDivider />
                                 <MenuHeader>Your organizations</MenuHeader>
