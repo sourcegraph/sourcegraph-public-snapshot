@@ -12,7 +12,6 @@ import {
     BatchSpecExecutionFields,
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
-    BatchSpecWorkspaceFields,
     BatchSpecWorkspacesResult,
     BatchSpecWorkspaceStepFileDiffsResult,
     BatchSpecWorkspaceStepFileDiffsVariables,
@@ -25,32 +24,44 @@ import {
     RetryWorkspaceExecutionVariables,
     RetryBatchSpecExecutionResult,
     RetryBatchSpecExecutionVariables,
-    BatchSpecWorkspaceListFields,
     BatchSpecWorkspaceState,
+    VisibleBatchSpecWorkspaceFields,
+    HiddenBatchSpecWorkspaceFields,
+    VisibleBatchSpecWorkspaceListFields,
+    HiddenBatchSpecWorkspaceListFields,
 } from '../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
     fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
+        __typename
         id
-        steps {
-            ...BatchSpecWorkspaceStepFields
-        }
-        searchResultPaths
         queuedAt
         startedAt
         finishedAt
-        failureMessage
         state
-        changesetSpecs {
-            __typename
-            ...BatchSpecWorkspaceChangesetSpecFields
-        }
         diffStat {
             added
             changed
             deleted
         }
         placeInQueue
+        onlyFetchWorkspace
+        ignored
+        unsupported
+        cachedResultFound
+    }
+
+    fragment VisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
+        ...BatchSpecWorkspaceFields
+        steps {
+            ...BatchSpecWorkspaceStepFields
+        }
+        searchResultPaths
+        failureMessage
+        changesetSpecs {
+            __typename
+            ...BatchSpecWorkspaceChangesetSpecFields
+        }
         repository {
             name
             url
@@ -59,10 +70,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
             abbrevName
         }
         path
-        onlyFetchWorkspace
-        ignored
-        unsupported
-        cachedResultFound
         stages {
             setup {
                 ...BatchSpecWorkspaceExecutionLogEntryFields
@@ -90,6 +97,10 @@ const batchSpecWorkspaceFieldsFragment = gql`
             firstSeenAt
             lastSeenAt
         }
+    }
+
+    fragment HiddenBatchSpecWorkspaceFields on HiddenBatchSpecWorkspace {
+        ...BatchSpecWorkspaceFields
     }
 
     fragment BatchSpecWorkspaceStepFields on BatchSpecWorkspaceStep {
@@ -224,13 +235,20 @@ export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpec
         })
     )
 
-export const fetchBatchSpecWorkspace = (id: Scalars['ID']): Observable<BatchSpecWorkspaceFields | null> =>
+export const fetchBatchSpecWorkspace = (
+    id: Scalars['ID']
+): Observable<HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields | null> =>
     requestGraphQL<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
         gql`
             query BatchSpecWorkspaceByID($id: ID!) {
                 node(id: $id) {
                     __typename
-                    ...BatchSpecWorkspaceFields
+                    ... on HiddenBatchSpecWorkspace {
+                        ...HiddenBatchSpecWorkspaceFields
+                    }
+                    ... on VisibleBatchSpecWorkspace {
+                        ...VisibleBatchSpecWorkspaceFields
+                    }
                 }
             }
             ${batchSpecWorkspaceFieldsFragment}
@@ -242,7 +260,7 @@ export const fetchBatchSpecWorkspace = (id: Scalars['ID']): Observable<BatchSpec
             if (!node) {
                 return null
             }
-            if (node.__typename !== 'BatchSpecWorkspace') {
+            if (node.__typename !== 'HiddenBatchSpecWorkspace' && node.__typename !== 'VisibleBatchSpecWorkspace') {
                 throw new Error(`Node is a ${node.__typename}, not a BatchSpecWorkspace`)
             }
             return node
@@ -266,7 +284,7 @@ export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<Batch
 }
 
 const batchSpecWorkspaceStepFileDiffsFields = gql`
-    fragment BatchSpecWorkspaceStepFileDiffsFields on BatchSpecWorkspace {
+    fragment BatchSpecWorkspaceStepFileDiffsFields on VisibleBatchSpecWorkspace {
         step(index: $step) {
             diff {
                 fileDiffs(first: $first, after: $after) {
@@ -301,7 +319,9 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
             query BatchSpecWorkspaceStepFileDiffs($node: ID!, $step: Int!, $first: Int, $after: String) {
                 node(id: $node) {
                     __typename
-                    ...BatchSpecWorkspaceStepFileDiffsFields
+                    ... on VisibleBatchSpecWorkspace {
+                        ...BatchSpecWorkspaceStepFileDiffsFields
+                    }
                 }
             }
 
@@ -314,7 +334,10 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
             if (!node) {
                 throw new Error(`BatchSpecWorkspace with ID ${nodeID} does not exist`)
             }
-            if (node.__typename !== 'BatchSpecWorkspace') {
+            if (node.__typename === 'HiddenBatchSpecWorkspace') {
+                throw new Error('No access to this workspace')
+            }
+            if (node.__typename !== 'VisibleBatchSpecWorkspace') {
                 throw new Error(`The given ID is a ${node.__typename}, not a BatchSpecWorkspace`)
             }
             if (!node.step) {
@@ -355,11 +378,18 @@ const BATCH_SPEC_WORKSPACES = gql`
             hasNextPage
         }
         nodes {
-            ...BatchSpecWorkspaceListFields
+            __typename
+            ... on HiddenBatchSpecWorkspace {
+                ...HiddenBatchSpecWorkspaceListFields
+            }
+            ... on VisibleBatchSpecWorkspace {
+                ...VisibleBatchSpecWorkspaceListFields
+            }
         }
     }
 
     fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
+        __typename
         id
         state
         diffStat {
@@ -368,6 +398,14 @@ const BATCH_SPEC_WORKSPACES = gql`
             deleted
         }
         placeInQueue
+        ignored
+        unsupported
+        cachedResultFound
+    }
+
+    fragment VisibleBatchSpecWorkspaceListFields on VisibleBatchSpecWorkspace {
+        __typename
+        ...BatchSpecWorkspaceListFields
         repository {
             name
             url
@@ -376,9 +414,11 @@ const BATCH_SPEC_WORKSPACES = gql`
             abbrevName
         }
         path
-        ignored
-        unsupported
-        cachedResultFound
+    }
+
+    fragment HiddenBatchSpecWorkspaceListFields on HiddenBatchSpecWorkspace {
+        __typename
+        ...BatchSpecWorkspaceListFields
     }
 `
 
@@ -386,8 +426,12 @@ export const useWorkspacesListConnection = (
     batchSpecID: Scalars['ID'],
     search: string | null,
     state: BatchSpecWorkspaceState | null
-): UseConnectionResult<BatchSpecWorkspaceListFields> =>
-    useConnection<BatchSpecWorkspacesResult, BatchSpecWorkspacesVariables, BatchSpecWorkspaceListFields>({
+): UseConnectionResult<HiddenBatchSpecWorkspaceListFields | VisibleBatchSpecWorkspaceListFields> =>
+    useConnection<
+        BatchSpecWorkspacesResult,
+        BatchSpecWorkspacesVariables,
+        HiddenBatchSpecWorkspaceListFields | VisibleBatchSpecWorkspaceListFields
+    >({
         query: BATCH_SPEC_WORKSPACES,
         variables: {
             node: batchSpecID,

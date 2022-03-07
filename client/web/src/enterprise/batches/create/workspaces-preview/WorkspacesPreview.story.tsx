@@ -7,7 +7,10 @@ import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graph
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { UseConnectionResult } from '../../../../components/FilteredConnection/hooks/useConnection'
-import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacesPreview } from './WorkspacesPreview'
@@ -17,7 +20,9 @@ const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview',
     .addDecorator(story => <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>)
     .addParameters({ chromatic: { disableSnapshot: true } })
 
-const EMPTY_RESOLUTION_CONNECTION: UseConnectionResult<PreviewBatchSpecWorkspaceFields> = {
+const EMPTY_RESOLUTION_CONNECTION: UseConnectionResult<
+    PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
+> = {
     connection: {
         pageInfo: {
             hasNextPage: false,
@@ -47,7 +52,9 @@ const EMPTY_CHANGESETS_CONNECTION: UseConnectionResult<ImportingChangesetFields>
     stopPolling: noop,
 }
 
-const FULL_RESOLUTION_CONNECTION: UseConnectionResult<PreviewBatchSpecWorkspaceFields> = {
+const FULL_RESOLUTION_CONNECTION: UseConnectionResult<
+    PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
+> = {
     connection: {
         pageInfo: {
             hasNextPage: true,

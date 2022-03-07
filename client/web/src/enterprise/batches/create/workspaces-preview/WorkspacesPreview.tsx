@@ -10,7 +10,11 @@ import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredCon
 import { Button, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
-import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    BatchSpecWorkspaceResolutionState,
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 import { ResolutionState } from '../useWorkspacesPreview'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
@@ -78,7 +82,9 @@ interface WorkspacesPreviewProps {
     /** Any error from `previewBatchSpec` or the workspaces resolution job. */
     error?: string
     /** The current workspaces preview connection result used to render the list. */
-    workspacesConnection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>
+    workspacesConnection: UseConnectionResult<
+        PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
+    >
     /** The current importing changesets connection result used to render the list. */
     importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
     /** Method to invoke to capture a change in the active filters applied. */
@@ -112,7 +118,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     // results will come up empty and overwrite the previous results in the Apollo Client
     // cache while this is happening.
     const [cachedWorkspacesPreview, setCachedWorkspacesPreview] = useState<
-        Connection<PreviewBatchSpecWorkspaceFields>
+        Connection<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields>
     >()
 
     // We copy the results from `connection` to `cachedWorkspacesPreview` whenever a

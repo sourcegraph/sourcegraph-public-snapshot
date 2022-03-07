@@ -82,6 +82,8 @@ func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (btypes.C
 			return
 		}
 
+		// TODO: What if this list doesn't contain repos?
+
 		// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 		// filters out repositories that the user doesn't have access to.
 		r.reposByID, r.err = r.store.Repos().GetReposSetByIDs(ctx, r.changesetSpecs.RepoIDs()...)

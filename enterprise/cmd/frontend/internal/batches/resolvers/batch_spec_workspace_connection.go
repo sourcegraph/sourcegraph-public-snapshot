@@ -65,15 +65,7 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(nodes))
 	for _, w := range nodes {
-		res := &batchSpecWorkspaceResolver{
-			store:         r.store,
-			workspace:     w,
-			preloadedRepo: repos[w.RepoID],
-			batchSpec:     batchSpec.Spec,
-		}
-		if ex, ok := executionsByWorkspaceID[w.ID]; ok {
-			res.execution = ex
-		}
+		res := newBatchSpecWorkspaceResolverWithRepo(r.store, w, executionsByWorkspaceID[w.ID], batchSpec.Spec, repos[w.RepoID])
 		resolvers = append(resolvers, res)
 	}
 

@@ -11,13 +11,18 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import { Connection } from '../../../../components/FilteredConnection'
-import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 
 import { WORKSPACES_PER_PAGE_COUNT } from './useWorkspaces'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
-    workspacesConnection: UseConnectionResult<PreviewBatchSpecWorkspaceFields>
+    workspacesConnection: UseConnectionResult<
+        PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
+    >
     /**
      * Whether or not the workspaces in this list are up-to-date with the current batch
      * spec input YAML in the editor.
@@ -42,7 +47,7 @@ interface WorkspacesPreviewListProps {
      * while this is happening. If data is availabled in `cached` and `showCached` is
      * true, it will be used over the data in the connnection.
      */
-    cached?: Connection<PreviewBatchSpecWorkspaceFields>
+    cached?: Connection<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields>
     /** Error */
     error?: string
 }
@@ -63,7 +68,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
             <ConnectionList className="list-group list-group-flush w-100">
                 {connectionOrCached?.nodes?.map((node, index) => (
                     <WorkspacesPreviewListItem
-                        key={`${node.repository.id}-${node.branch.id}`}
+                        key={node.id}
                         item={node}
                         isStale={isStale}
                         exclude={excludeRepo}

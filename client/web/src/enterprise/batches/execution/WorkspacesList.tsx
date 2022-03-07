@@ -16,7 +16,12 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import { BatchSpecWorkspaceListFields, BatchSpecWorkspaceState, Scalars } from '../../../graphql-operations'
+import {
+    BatchSpecWorkspaceState,
+    HiddenBatchSpecWorkspaceListFields,
+    Scalars,
+    VisibleBatchSpecWorkspaceListFields,
+} from '../../../graphql-operations'
 import { Branch } from '../Branch'
 
 import { useWorkspacesListConnection } from './backend'
@@ -67,11 +72,55 @@ export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({ b
 }
 
 interface WorkspaceNodeProps {
-    node: BatchSpecWorkspaceListFields
+    node: HiddenBatchSpecWorkspaceListFields | VisibleBatchSpecWorkspaceListFields
     selectedNode?: Scalars['ID']
 }
 
-const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, selectedNode }) => (
+const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, selectedNode }) => {
+    if (node.__typename === 'HiddenBatchSpecWorkspace') {
+        return <HiddenWorkspaceNode node={node} selectedNode={selectedNode} />
+    }
+    return <VisibleWorkspaceNode node={node} selectedNode={selectedNode} />
+}
+
+interface HiddenWorkspaceNodeProps {
+    node: HiddenBatchSpecWorkspaceListFields
+    selectedNode?: Scalars['ID']
+}
+
+const HiddenWorkspaceNode: React.FunctionComponent<HiddenWorkspaceNodeProps> = ({ node, selectedNode }) => (
+    <li className={classNames('list-group-item', styles.listGroupItem)}>
+        <Link
+            to={`?workspace=${node.id}`}
+            className={classNames(styles.workspaceListNode, node.id === selectedNode && styles.workspaceSelected)}
+        >
+            <div className="d-flex mb-1">
+                <span>
+                    <WorkspaceStateIcon
+                        cachedResultFound={node.cachedResultFound}
+                        state={node.state}
+                        className={classNames(styles.workspaceListIcon, 'mr-2 flex-shrink-0')}
+                    />
+                </span>
+                <div className="flex-grow-1">
+                    <div className={classNames(styles.workspaceRepo, 'd-flex justify-content-between mb-1')}>
+                        <h4 className={classNames(styles.workspaceName, 'flex-grow-1')}>
+                            Workspace in hidden repository
+                        </h4>
+                        {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
+                    </div>
+                </div>
+            </div>
+        </Link>
+    </li>
+)
+
+interface VisibleWorkspaceNodeProps {
+    node: VisibleBatchSpecWorkspaceListFields
+    selectedNode?: Scalars['ID']
+}
+
+const VisibleWorkspaceNode: React.FunctionComponent<VisibleWorkspaceNodeProps> = ({ node, selectedNode }) => (
     <li className={classNames('list-group-item', styles.listGroupItem)}>
         <Link
             to={`?workspace=${node.id}`}

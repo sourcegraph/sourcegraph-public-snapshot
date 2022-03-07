@@ -7,12 +7,15 @@ import React, { useCallback, useState } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import {
+    PreviewHiddenBatchSpecWorkspaceFields,
+    PreviewVisibleBatchSpecWorkspaceFields,
+} from '../../../../graphql-operations'
 
 import styles from './WorkspacesPreviewListItem.module.scss'
 
 interface WorkspacesPreviewListItemProps {
-    item: PreviewBatchSpecWorkspaceFields
+    item: PreviewVisibleBatchSpecWorkspaceFields | PreviewHiddenBatchSpecWorkspaceFields
     /** Whether or not this item is stale */
     isStale: boolean
     /** Function to automatically update batch spec to exclude this item. */
@@ -31,9 +34,33 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
 
     // TODO: https://github.com/sourcegraph/sourcegraph/issues/25085
     const handleExclude = useCallback(() => {
+        if (item.__typename === 'HiddenBatchSpecWorkspace') {
+            return
+        }
         setToBeExcluded(true)
         exclude(item.repository.name, item.branch.displayName)
     }, [exclude, item])
+
+    if (item.__typename === 'HiddenBatchSpecWorkspace') {
+        return (
+            <li
+                className={classNames(
+                    'd-flex align-items-center px-2 py-3 w-100',
+                    variant === 'light' ? styles.light : styles.dark
+                )}
+                key={item.id}
+            >
+                <div className={classNames(styles.statusContainer, 'mr-2')}>
+                    <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />
+                </div>
+                <div className="flex-1">
+                    <h4 className={classNames(styles.overflow, (toBeExcluded || isStale) && styles.stale)}>
+                        Workspace in hidden repository
+                    </h4>
+                </div>
+            </li>
+        )
+    }
 
     return (
         <li
@@ -41,7 +68,7 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 'd-flex align-items-center px-2 py-3 w-100',
                 variant === 'light' ? styles.light : styles.dark
             )}
-            key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
+            key={item.id}
         >
             <div className={classNames(styles.statusContainer, 'mr-2')}>
                 <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />

@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -205,7 +206,7 @@ type ListBatchSpecWorkspacesOpts struct {
 	TextSearch            []search.TextSearchTerm
 }
 
-func (opts ListBatchSpecWorkspacesOpts) SQLConds(forCount bool) (where *sqlf.Query, joinStatements *sqlf.Query) {
+func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db database.DB, forCount bool) (where *sqlf.Query, joinStatements *sqlf.Query, err error) {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
@@ -254,10 +255,20 @@ func (opts ListBatchSpecWorkspacesOpts) SQLConds(forCount bool) (where *sqlf.Que
 				// TODO: Add more terms here later.
 				sqlf.Sprintf("repo.name"),
 			))
+
+			// If we do text-search, we need to only consider workspaces in repos that are visible to the user.
+			// Otherwise we would leak the existance of repos.
+
+			repoAuthzConds, err := database.AuthzQueryConds(ctx, db)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "ListBatchSpecWorkspacesOpts.SQLConds generating authz query conds")
+			}
+
+			preds = append(preds, repoAuthzConds)
 		}
 	}
 
-	return sqlf.Join(preds, "\n AND "), sqlf.Join(joins, "\n")
+	return sqlf.Join(preds, "\n AND "), sqlf.Join(joins, "\n"), nil
 }
 
 // ListBatchSpecWorkspaces lists batch spec workspaces with the given filters.
@@ -265,7 +276,10 @@ func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecW
 	ctx, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := listBatchSpecWorkspacesQuery(opts)
+	q, err := listBatchSpecWorkspacesQuery(ctx, s.DatabaseDB(), opts)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	cs = make([]*btypes.BatchSpecWorkspace, 0)
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
@@ -294,14 +308,17 @@ WHERE %s
 ORDER BY id ASC
 `
 
-func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
-	where, joins := opts.SQLConds(false)
+func listBatchSpecWorkspacesQuery(ctx context.Context, db database.DB, opts ListBatchSpecWorkspacesOpts) (*sqlf.Query, error) {
+	where, joins, err := opts.SQLConds(ctx, db, false)
+	if err != nil {
+		return nil, err
+	}
 	return sqlf.Sprintf(
 		listBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
 		joins,
 		where,
-	)
+	), nil
 }
 
 // CountBatchSpecWorkspaces counts batch spec workspaces with the given filters.
@@ -309,7 +326,10 @@ func (s *Store) CountBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpec
 	ctx, endObservation := s.operations.countBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := countBatchSpecWorkspacesQuery(opts)
+	q, err := countBatchSpecWorkspacesQuery(ctx, s.DatabaseDB(), opts)
+	if err != nil {
+		return 0, err
+	}
 
 	count, _, err = basestore.ScanFirstInt64(s.Query(ctx, q))
 	return count, err
@@ -326,13 +346,17 @@ INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
 WHERE %s
 `
 
-func countBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
-	where, joins := opts.SQLConds(true)
+func countBatchSpecWorkspacesQuery(ctx context.Context, db database.DB, opts ListBatchSpecWorkspacesOpts) (*sqlf.Query, error) {
+	where, joins, err := opts.SQLConds(ctx, db, true)
+	if err != nil {
+		return nil, err
+	}
+
 	return sqlf.Sprintf(
 		countBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
 		joins,
 		where,
-	)
+	), nil
 }
 
 const markSkippedBatchSpecWorkspacesQueryFmtstr = `

@@ -237,8 +237,6 @@ ON
 type GetBatchSpecOpts struct {
 	ID     int64
 	RandID string
-
-	ExcludeCreatedFromRawNotOwnedByUser int32
 }
 
 // GetBatchSpec gets a BatchSpec matching the given options.
@@ -281,10 +279,6 @@ func getBatchSpecQuery(opts *GetBatchSpecOpts) *sqlf.Query {
 
 	if opts.RandID != "" {
 		preds = append(preds, sqlf.Sprintf("rand_id = %s", opts.RandID))
-	}
-
-	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
-		preds = append(preds, sqlf.Sprintf("(user_id = %s OR created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
 	if len(preds) == 0 {

@@ -222,12 +222,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, nil
 	}
 
-	opts := store.GetBatchSpecOpts{RandID: batchSpecRandID}
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
-	}
-
-	batchSpec, err := r.store.GetBatchSpec(ctx, opts)
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: batchSpecRandID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -235,6 +230,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
+	// Everyone can see batch specs, if they have the ID.
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
@@ -373,21 +369,12 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the requesting user is either an admin or created the spec.
-	//
-	// TODO: Once we introduce finer-grained permissions, this needs to be
-	// changed to check for namespace access and then check repository
-	// permissions and return hidden/visible workspaces accordingly.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), spec.UserID); err != nil {
-		return nil, err
-	}
-
 	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 
-	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex, batchSpec: spec.Spec}, nil
+	return newBatchSpecWorkspaceResolver(ctx, r.store, w, ex, spec.Spec)
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
