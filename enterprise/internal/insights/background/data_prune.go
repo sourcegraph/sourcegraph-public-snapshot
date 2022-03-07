@@ -8,8 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
