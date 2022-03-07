@@ -1,6 +1,5 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
-import { noop } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
@@ -8,7 +7,7 @@ import React, { useEffect, useState } from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -34,21 +33,18 @@ add('GitHub', () => (
                 setTimeout(() => setOpen(true), 0)
             }, [])
             return (
-                <>
-                    <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                    <PopoverTrigger as={Button} id={targetID}>
                         <GithubIcon className="icon-inline" />
-                    </Button>
+                    </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""
                         serviceKind={serviceKind}
                         onClose={onClose}
                         onReject={onReject}
                         onInstall={onInstall}
-                        targetID={targetID}
-                        isOpen={open}
-                        onToggle={noop}
                     />
-                </>
+                </Popover>
             )
         }}
     </WebStory>
@@ -68,21 +64,18 @@ add(
                     setTimeout(() => setOpen(true), 0)
                 }, [])
                 return (
-                    <>
-                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                    <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                        <PopoverTrigger as={Button} id={targetID}>
                             <GitlabIcon className="icon-inline" />
-                        </Button>
+                        </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
                             onReject={onReject}
                             onInstall={onInstall}
-                            targetID={targetID}
-                            isOpen={open}
-                            onToggle={noop}
                         />
-                    </>
+                    </Popover>
                 )
             }}
         </WebStory>
@@ -106,21 +99,18 @@ add(
                     setTimeout(() => setOpen(true), 0)
                 }, [])
                 return (
-                    <>
-                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                    <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                        <PopoverTrigger as={Button} id={targetID}>
                             <PhabricatorIcon className="icon-inline" />
-                        </Button>
+                        </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
                             onReject={onReject}
                             onInstall={onInstall}
-                            targetID={targetID}
-                            isOpen={open}
-                            onToggle={noop}
                         />
-                    </>
+                    </Popover>
                 )
             }}
         </WebStory>
@@ -144,22 +134,18 @@ add(
                     setTimeout(() => setOpen(true), 0)
                 }, [])
                 return (
-                    <>
-                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                    <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
+                        <PopoverTrigger as={Button} id={targetID}>
                             <BitbucketIcon className="icon-inline" />
-                        </Button>
-
+                        </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
                             onReject={onReject}
                             onInstall={onInstall}
-                            targetID={targetID}
-                            isOpen={open}
-                            onToggle={noop}
                         />
-                    </>
+                    </Popover>
                 )
             }}
         </WebStory>

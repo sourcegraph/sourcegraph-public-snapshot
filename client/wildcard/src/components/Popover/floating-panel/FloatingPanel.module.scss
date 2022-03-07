@@ -9,11 +9,14 @@
     top: 0;
     left: 0;
     z-index: 1;
-    overflow: auto;
 
     &-absolute {
         position: absolute;
     }
+}
+
+.floating-panel {
+    overflow: auto;
 }
 
 .tail {
@@ -43,5 +46,29 @@
         z-index: 1;
 
         border-top-color: var(--border-color);
+    }
+
+    &--top-start,
+    &--top,
+    &--top-end {
+        top: -1px;
+    }
+
+    &--left-start,
+    &--left,
+    &--left-end {
+        left: -2px;
+    }
+
+    &--right-start,
+    &--right,
+    &--right-end {
+        left: 1px;
+    }
+
+    &--bottom-start,
+    &--bottom,
+    &--bottom-end {
+        top: 1px;
     }
 }

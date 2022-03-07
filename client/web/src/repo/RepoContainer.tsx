@@ -7,7 +7,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -30,7 +29,17 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    useLocalStorage,
+    useObservable,
+    Link,
+    Popover,
+    PopoverContent,
+    Position,
+    PopoverTrigger,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -222,7 +231,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             return {
                 key: 'repository',
                 element: (
-                    <>
+                    <Popover>
                         <ButtonGroup className="d-inline-flex">
                             <Button
                                 to={
@@ -238,8 +247,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Button>
-                            <Button
-                                id="repo-popover"
+                            <PopoverTrigger
+                                as={Button}
                                 className={styles.repoChange}
                                 aria-label="Change repository"
                                 outline={true}
@@ -247,22 +256,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </Button>
+                            </PopoverTrigger>
                         </ButtonGroup>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            fade={false}
-                            popperClassName="border-0"
-                        >
+                        <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 telemetryService={props.telemetryService}
                             />
-                        </UncontrolledPopover>
-                    </>
+                        </PopoverContent>
+                    </Popover>
                 ),
             }
         }, [repoOrError, resolvedRevisionOrError, props.telemetryService])

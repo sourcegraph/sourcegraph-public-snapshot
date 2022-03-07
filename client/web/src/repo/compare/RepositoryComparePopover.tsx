@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import { Popover } from 'reactstrap'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
@@ -66,27 +65,20 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
     const currentRevision = comparison[type]?.revision || undefined
 
     return (
-        <Button
-            type="button"
-            variant="secondary"
-            outline={true}
-            className="d-flex align-items-center text-nowrap"
-            id={id}
-            aria-label={`Change ${type} Git revspec for comparison`}
-        >
-            <div className="text-muted mr-1">{type}: </div>
-            {comparison[type].revision || defaultBranch}
-            <RepoRevisionChevronDownIcon className="icon-inline" />
-            <Popover
-                isOpen={popoverOpen}
-                toggle={togglePopover}
-                placement="bottom-start"
-                target={id}
-                trigger="legacy"
-                hideArrow={true}
-                fade={false}
-                popperClassName="border-0"
+        <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
+            <PopoverTrigger
+                as={Button}
+                variant="secondary"
+                outline={true}
+                className="d-flex align-items-center text-nowrap"
+                id={id}
+                aria-label={`Change ${type} Git revspec for comparison`}
             >
+                <div className="text-muted mr-1">{type}: </div>
+                {comparison[type].revision || defaultBranch}
+                <RepoRevisionChevronDownIcon className="icon-inline" />
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottomStart}>
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}
@@ -98,7 +90,7 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
                     showSpeculativeResults={true}
                     onSelect={handleSelect}
                 />
-            </Popover>
-        </Button>
+            </PopoverContent>
+        </Popover>
     )
 }
