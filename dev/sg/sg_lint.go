@@ -31,71 +31,70 @@ var lintCommand = &ffcli.Command{
 	FlagSet:    lintFlagSet,
 	Exec: func(ctx context.Context, args []string) error {
 		if len(args) > 0 {
-			return errors.New("unrecognized command, please run 'sg lint --help' to list available linters")
+			writeFailureLinef("unrecognized command %q provided", args[0])
+			return flag.ErrHelp
 		}
 		var fns []lint.Runner
 		for _, c := range allLintTargets {
 			fns = append(fns, c.Linters...)
 		}
-		return runCheckScriptsAndReport(fns...)(ctx, args)
+		return runCheckScriptsAndReport(ctx, fns...)
 	},
 	Subcommands: allLintTargets.Commands(),
 }
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
 // if any of the fns fails.
-func runCheckScriptsAndReport(fns ...lint.Runner) func(context.Context, []string) error {
-	return func(ctx context.Context, _ []string) error {
-		_, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-
-		// We need the Verbose flag to print above the pending indicator.
-		out := output.NewOutput(os.Stdout, output.OutputOpts{
-			ForceColor: true,
-			ForceTTY:   true,
-			Verbose:    true,
-		})
-
-		// Spawn a goroutine for each check and increment count to report completion.
-		var count int64
-		total := len(fns)
-		pending := out.Pending(output.Linef("", output.StylePending, "Running linters (done: 0/%d)", total))
-		var wg sync.WaitGroup
-		reportsCh := make(chan *lint.Report)
-		wg.Add(total)
-		for _, fn := range fns {
-			go func(fn func(context.Context) *lint.Report) {
-				reportsCh <- fn(ctx)
-				wg.Done()
-			}(fn)
-		}
-		go func() {
-			wg.Wait()
-			close(reportsCh)
-		}()
-
-		// consume check reports
-		var hasErr bool
-		var messages []string
-		for report := range reportsCh {
-			count++
-			printLintReport(pending, report)
-			pending.Updatef("Running linters (done: %d/%d)", count, total)
-			if report.Err != nil {
-				messages = append(messages, report.Header)
-				hasErr = true
-			}
-		}
-		pending.Complete(output.Linef("", output.StyleBold, "Done running linters."))
-
-		// return the final error, if any
-		if hasErr {
-			return errors.Newf("failed linters: %s", strings.Join(messages, ", "))
-		}
-		return nil
+func runCheckScriptsAndReport(ctx context.Context, fns ...lint.Runner) error {
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		return err
 	}
+
+	// We need the Verbose flag to print above the pending indicator.
+	out := output.NewOutput(os.Stdout, output.OutputOpts{
+		ForceColor: true,
+		ForceTTY:   true,
+		Verbose:    true,
+	})
+
+	// Spawn a goroutine for each check and increment count to report completion.
+	var count int64
+	total := len(fns)
+	pending := out.Pending(output.Linef("", output.StylePending, "Running linters (done: 0/%d)", total))
+	var wg sync.WaitGroup
+	reportsCh := make(chan *lint.Report)
+	wg.Add(total)
+	for _, fn := range fns {
+		go func(fn func(context.Context) *lint.Report) {
+			reportsCh <- fn(ctx)
+			wg.Done()
+		}(fn)
+	}
+	go func() {
+		wg.Wait()
+		close(reportsCh)
+	}()
+
+	// consume check reports
+	var hasErr bool
+	var messages []string
+	for report := range reportsCh {
+		count++
+		printLintReport(pending, report)
+		pending.Updatef("Running linters (done: %d/%d)", count, total)
+		if report.Err != nil {
+			messages = append(messages, report.Header)
+			hasErr = true
+		}
+	}
+	pending.Complete(output.Linef("", output.StyleBold, "Done running linters."))
+
+	// return the final error, if any
+	if hasErr {
+		return errors.Newf("failed linters: %s", strings.Join(messages, ", "))
+	}
+	return nil
 }
 
 func printLintReport(pending output.Pending, report *lint.Report) {
@@ -130,7 +129,13 @@ func (lt lintTargets) Commands() (cmds []*ffcli.Command) {
 			ShortHelp:  c.Help,
 			LongHelp:   c.Help,
 			FlagSet:    c.FlagSet,
-			Exec:       runCheckScriptsAndReport(c.Linters...),
+			Exec: func(ctx context.Context, args []string) error {
+				if len(args) > 0 {
+					writeFailureLinef("unexpected argument %q provided", args[0])
+					return flag.ErrHelp
+				}
+				return runCheckScriptsAndReport(ctx, c.Linters...)
+			},
 		})
 	}
 	return cmds
