@@ -27,7 +27,7 @@ var allLintTargets = lintTargets{
 		Name:    "urls",
 		Help:    "Check for broken urls in the codebase.",
 		FlagSet: lintURLsFlagSet,
-		Linters: []lint.Func{
+		Linters: []lint.Runner{
 			lint.RunScript("Broken urls", "dev/check/broken-urls.bash"),
 		},
 	},
@@ -35,7 +35,7 @@ var allLintTargets = lintTargets{
 		Name:    "go",
 		Help:    "Check go code for linting errors, forbidden imports, generated files...",
 		FlagSet: lintGoFlagSet,
-		Linters: []lint.Func{
+		Linters: []lint.Runner{
 			lint.RunScript("Go format", "dev/check/gofmt.sh"),
 			lint.RunScript("Go generate", "dev/check/go-generate.sh"),
 			lint.RunScript("Go lint", "dev/check/go-lint.sh"),
@@ -47,7 +47,7 @@ var allLintTargets = lintTargets{
 		Name:    "docsite",
 		Help:    "Check the code powering docs.sourcegraph.com for broken links and linting errors.",
 		FlagSet: lintDocsiteFlagSet,
-		Linters: []lint.Func{
+		Linters: []lint.Runner{
 			lint.RunScript("Docsite lint", "dev/check/docsite.sh"),
 		},
 	},
@@ -55,7 +55,7 @@ var allLintTargets = lintTargets{
 		Name:    "docker",
 		Help:    "Check Dockerfiles for Sourcegraph best practices",
 		FlagSet: lintDockerFlagSet,
-		Linters: []lint.Func{
+		Linters: []lint.Runner{
 			lint.RunScript("Docker lint", "dev/check/docker-lint.sh"),
 			lintDockerfiles(),
 		},
@@ -64,7 +64,7 @@ var allLintTargets = lintTargets{
 		Name:    "client",
 		Help:    "Check client code for linting errors, forbidden imports, ...",
 		FlagSet: lintClientFlagSet,
-		Linters: []lint.Func{
+		Linters: []lint.Runner{
 			lint.RunScript("Typescript imports in OSS", "dev/check/ts-enterprise-import.sh"),
 			lint.RunScript("Inline templates", "dev/check/template-inlines.sh"),
 			lint.RunScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
@@ -75,7 +75,7 @@ var allLintTargets = lintTargets{
 		Name:    "shell",
 		Help:    "Check shell code for linting errors, formatting, ...",
 		FlagSet: lintShellFlagSet,
-		Linters: []lint.Func{
+		Linters: []lint.Runner{
 			lint.RunScript("Shell formatting", "dev/check/shfmt.sh"),
 			lint.RunScript("Shell lint", "dev/check/shellcheck.sh"),
 		},
@@ -83,7 +83,7 @@ var allLintTargets = lintTargets{
 }
 
 // lintDockerfiles runs custom Sourcegraph Dockerfile linters
-func lintDockerfiles() lint.Func {
+func lintDockerfiles() lint.Runner {
 	return func(ctx context.Context) *lint.Report {
 		start := time.Now()
 		var combinedErrors error

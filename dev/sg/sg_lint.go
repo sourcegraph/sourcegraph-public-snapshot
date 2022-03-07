@@ -33,7 +33,7 @@ var lintCommand = &ffcli.Command{
 		if len(args) > 0 {
 			return errors.New("unrecognized command, please run 'sg lint --help' to list available linters")
 		}
-		var fns []lint.Func
+		var fns []lint.Runner
 		for _, c := range allLintTargets {
 			fns = append(fns, c.Linters...)
 		}
@@ -44,7 +44,7 @@ var lintCommand = &ffcli.Command{
 
 // runCheckScriptsAndReport concurrently runs all fns and report as each check finishes. Returns an error
 // if any of the fns fails.
-func runCheckScriptsAndReport(fns ...lint.Func) func(context.Context, []string) error {
+func runCheckScriptsAndReport(fns ...lint.Runner) func(context.Context, []string) error {
 	return func(ctx context.Context, _ []string) error {
 		_, err := root.RepositoryRoot()
 		if err != nil {

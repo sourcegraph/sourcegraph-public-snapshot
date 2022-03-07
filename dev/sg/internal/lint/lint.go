@@ -8,14 +8,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
 
-// Func is a linter.
-type Func func(context.Context) *Report
+// Runner is a linter runner. It can make programmatic checks, call out to a bash script,
+// or anything you want, and should return a report with helpful feedback for the user to
+// act upon.
+type Runner func(context.Context) *Report
 
-// Report describes the result of a lint Func.
+// Report describes the result of a linter runner.
 type Report struct {
 	// Header is the title for this report.
 	Header string
-	// Output will be expanded on failure.
+	// Output will be expanded on failure. This is also used to create annotations with
+	// sg lint -annotate.
 	Output string
 	// Err indicates a failure has been detected.
 	Err error
@@ -28,12 +31,12 @@ type Target struct {
 	Name    string
 	Help    string
 	FlagSet *flag.FlagSet
-	Linters []Func
+	Linters []Runner
 }
 
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.
-func RunScript(header string, script string) Func {
-	return Func(func(ctx context.Context) *Report {
+func RunScript(header string, script string) Runner {
+	return Runner(func(ctx context.Context) *Report {
 		start := time.Now()
 		out, err := run.BashInRoot(ctx, script, nil)
 		return &Report{
