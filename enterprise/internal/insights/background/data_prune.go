@@ -64,6 +64,9 @@ func performPurge(ctx context.Context, postgres dbutil.DB, insightsdb dbutil.DB,
 		}
 
 		err = tx.Done(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	return err
