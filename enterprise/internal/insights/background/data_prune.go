@@ -20,11 +20,10 @@ import (
 // NewInsightsDataPrunerJob will periodically delete recorded data series that have been marked `deleted`.
 func NewInsightsDataPrunerJob(ctx context.Context, postgres dbutil.DB, insightsdb dbutil.DB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 60
-	pruneInterval := time.Microsecond * -1 // records must be soft deleted at least this long
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
 		goroutine.NewHandlerWithErrorMessage("insights_data_prune", func(ctx context.Context) (err error) {
-			return performPurge(ctx, postgres, insightsdb, time.Now().Add(pruneInterval))
+			return performPurge(ctx, postgres, insightsdb, time.Now().Add(interval))
 		}))
 }
 
