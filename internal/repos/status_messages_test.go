@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,18 +36,15 @@ func TestStatusMessages(t *testing.T) {
 		Password:              "p",
 		EmailVerificationCode: "c",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	nonAdmin, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:                 "u1@example.com",
 		Username:              "u1",
 		Password:              "p",
 		EmailVerificationCode: "c",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	siteLevelService := &types.ExternalService{
 		ID:          1,
@@ -55,9 +53,8 @@ func TestStatusMessages(t *testing.T) {
 		DisplayName: "github.com - site",
 	}
 	err = database.ExternalServices(db).Upsert(ctx, siteLevelService)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	userService := &types.ExternalService{
 		ID:              2,
 		Config:          `{}`,
@@ -66,9 +63,7 @@ func TestStatusMessages(t *testing.T) {
 		NamespaceUserID: nonAdmin.ID,
 	}
 	err = database.ExternalServices(db).Upsert(ctx, userService)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	testCases := []struct {
 		name             string
@@ -241,18 +236,15 @@ func TestStatusMessages(t *testing.T) {
 			}
 
 			err := database.Repos(db).Create(ctx, stored...)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			t.Cleanup(func() {
 				ids := make([]api.RepoID, 0, len(stored))
 				for _, r := range stored {
 					ids = append(ids, r.ID)
 				}
 				err := database.Repos(db).Delete(ctx, ids...)
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.NoError(t, err)
 			})
 
 			idMapping := make(map[api.RepoName]api.RepoID)
@@ -272,20 +264,17 @@ func TestStatusMessages(t *testing.T) {
 				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
 					lastError = "Oops"
 				}
-				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+				err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
 					CloneStatus: types.CloneStatusCloned,
 					LastError:   lastError,
-				}); err != nil {
-					t.Fatal(err)
-				}
+				})
+				require.NoError(t, err)
 			}
 			t.Cleanup(func() {
 				err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM gitserver_repos`))
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.NoError(t, err)
 			})
 
 			// Set up ownership of repos
@@ -299,14 +288,11 @@ func TestStatusMessages(t *testing.T) {
 						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
 						VALUES (%s, %s, NULLIF(%s, 0), 'example.com')
 					`, svc.ID, repo.ID, svc.NamespaceUserID))
-					if err != nil {
-						t.Fatal(err)
-					}
+					require.NoError(t, err)
+
 					t.Cleanup(func() {
 						err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID))
-						if err != nil {
-							t.Fatal(err)
-						}
+						require.NoError(t, err)
 					})
 				}
 			}
@@ -317,21 +303,24 @@ func TestStatusMessages(t *testing.T) {
 				Now:   clock.Now,
 			}
 
+			mockDB := database.NewMockDBFrom(database.NewDB(db))
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer
 
 				err = syncer.SyncExternalService(ctx, siteLevelService.ID, time.Millisecond)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error
-				// returned will be stored in the external_service_sync_jobs table so we fake
+				// returned will be stored in the external_service_sync_jobs table, so we fake
 				// that here.
 				if err != nil {
-					defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
-					database.Mocks.ExternalServices.ListSyncErrors = func(ctx context.Context) (map[int64]string, error) {
-						return map[int64]string{
+					externalServices := database.NewMockExternalServiceStore()
+					externalServices.GetAffiliatedSyncErrorsFunc.SetDefaultReturn(
+						map[int64]string{
 							siteLevelService.ID: err.Error(),
-						}, nil
-					}
+						},
+						nil,
+					)
+					mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 				}
 			}
 
@@ -339,14 +328,9 @@ func TestStatusMessages(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			res, err := FetchStatusMessages(ctx, db, tc.user)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("have err: %q, want: %q", have, want)
-			}
-
-			if diff := cmp.Diff(tc.res, res); diff != "" {
-				t.Error(diff)
-			}
+			res, err := FetchStatusMessages(ctx, mockDB, tc.user)
+			assert.Equal(t, tc.err, fmt.Sprint(err))
+			assert.Equal(t, tc.res, res)
 		})
 	}
 }
