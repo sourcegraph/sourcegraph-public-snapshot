@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -210,7 +210,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                                 aria-label="Close info box"
                                 aria-expanded="true"
                             >
-                                ×
+                                <span aria-hidden="true">×</span>
                             </Button>
                         </div>
                         {isSiteAdmin ? (
@@ -221,6 +221,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                                     but no special permissions are granted.
                                 </p>
                                 <p className={classNames(styles.infoBox, 'mb-0')}>
+                                    {/* TODO(#32253): Update the documentation link */}
                                     If you wish to disable this feature, see <Link to="#">this documentation</Link>.
                                 </p>
                             </>
@@ -241,18 +242,15 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
             <div className="flex-grow-1" />
             <div>
                 <InformationOutlineIcon className="icon-inline mr-1 text-muted" />
-                <Link
-                    to="#"
-                    className={styles.info}
-                    onClick={event => {
-                        event.preventDefault()
-                        setInfoShown(true)
-                    }}
+                <Button
+                    variant="link"
+                    className={classNames(styles.info, styles.infoButton)}
+                    onClick={() => setInfoShown(true)}
                     aria-haspopup="true"
                     aria-expanded="false"
                 >
                     What is this?
-                </Link>
+                </Button>
             </div>
         </div>
     )
