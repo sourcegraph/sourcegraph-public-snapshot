@@ -5,7 +5,11 @@ exports[`UserAvatar no avatar URL 1`] = `
   <div
     class="userAvatar"
   >
-    t
+    <span
+      class="initials"
+    >
+      t
+    </span>
   </div>
 </DocumentFragment>
 `;
