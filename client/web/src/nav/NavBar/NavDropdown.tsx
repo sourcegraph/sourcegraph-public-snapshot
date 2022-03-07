@@ -1,11 +1,10 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useMemo, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Menu, MenuButton, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -26,37 +25,8 @@ interface NavDropdownProps {
     items: NavDropdownItem[]
 }
 
-const DROPDOWN_MODIFIERS = {
-    flip: {
-        enabled: false,
-    },
-    offset: {
-        enabled: true,
-        // Offset menu to the top so that the menu overlaps with the toggle button.
-        // This prevents the menu from closing when moving mouse cursor from the button
-        // to the menu.
-        offset: '-10,-2',
-    },
-}
-
 export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
     const location = useLocation()
-    const history = useHistory()
-
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const toggle = (event: React.KeyboardEvent | React.MouseEvent): void => {
-        // Don't toggle dropdown with Enter key; instead, navigate to the home item of the dropdown.
-        // This matches the behavior of the rest of the nav items.
-        if (event.type === 'keydown' && (event as React.KeyboardEvent).key === 'Enter') {
-            history.push(toggleItem.path)
-            return
-        }
-        // For all other events that toggle the dropdown (e.g. space, arrow keys, clicking outside of the dropdown), toggle as normal.
-        setIsDropdownOpen(!isDropdownOpen)
-    }
-
-    const closeDropdown = (): void => setIsDropdownOpen(false)
-
     const isItemSelected = useMemo(
         () =>
             items.some(item => location.pathname.startsWith(item.path)) ||
@@ -64,79 +34,149 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
         [items, toggleItem, location.pathname]
     )
 
+    const menuButtonReference = useRef<HTMLButtonElement>(null)
+    const linkReference = useRef<HTMLAnchorElement>(null)
+
+    const [isOverButton, setIsOverButton] = useState(false)
+    const [isOverList, setIsOverList] = useState(false)
+
+    // Use this func for toggling menu
+    const triggerMenuButtonEvent = useCallback(() => {
+        menuButtonReference.current!.dispatchEvent(new Event('mousedown', { bubbles: true }))
+    }, [])
+
+    useLayoutEffect(() => {
+        const isOpen = menuButtonReference.current!.hasAttribute('aria-expanded')
+
+        if (isOpen && !isOverButton && !isOverList) {
+            triggerMenuButtonEvent()
+
+            return
+        }
+
+        if (!isOpen && (isOverButton || isOverList)) {
+            triggerMenuButtonEvent()
+        }
+    }, [isOverButton, isOverList, triggerMenuButtonEvent])
+
+    useEffect(() => {
+        const currentLink = linkReference.current!
+        const currentMenuButton = menuButtonReference.current!
+
+        const handleMenuButtonTouchEnd = (event: TouchEvent): void => {
+            event.preventDefault()
+            triggerMenuButtonEvent()
+        }
+        const handleLinkTouchEnd = (event: TouchEvent): void => {
+            // preventDefault would help to block navigation when touching on Link
+            event.preventDefault()
+            triggerMenuButtonEvent()
+        }
+
+        // Have to add/remove `touchend` manually like this to prevent
+        // page navigation on touch screen (onTouchEnd binding doesn't work)
+        currentMenuButton.addEventListener('touchend', handleMenuButtonTouchEnd)
+        currentLink.addEventListener('touchend', handleLinkTouchEnd)
+
+        return () => {
+            currentMenuButton.removeEventListener('touchend', handleMenuButtonTouchEnd)
+            currentLink.removeEventListener('touchend', handleLinkTouchEnd)
+        }
+    }, [triggerMenuButtonEvent])
+
     // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
     // and then use CSS @media queries to toggle between them.
     return (
         <>
-            {/* Dropdown nav item for bigger screens */}
-            <NavItem className="d-none d-md-flex">
-                <ButtonDropdown
-                    isOpen={isDropdownOpen}
-                    onPointerLeave={(event: React.PointerEvent) => {
-                        if (event.pointerType === 'mouse') {
-                            closeDropdown()
-                        }
-                    }}
-                    toggle={toggle}
-                >
-                    <DropdownToggle
-                        className={classNames(
-                            navItemStyles.link,
-                            isItemSelected && navItemStyles.active,
-                            'd-flex',
-                            'align-items-center',
-                            'p-0'
-                        )}
-                        nav={true}
-                        onPointerEnter={(event: React.PointerEvent) => {
-                            if (event.pointerType === 'mouse') {
-                                setIsDropdownOpen(true)
-                            }
-                        }}
-                        onPointerDown={(event: React.PointerEvent) => {
-                            // Navigate to toggle item path on mouse click.
-                            if (event.pointerType === 'mouse') {
-                                history.push(toggleItem.path)
-                            }
-                        }}
-                    >
-                        <span className={navItemStyles.linkContent}>
-                            <toggleItem.icon className={classNames('icon-inline', navItemStyles.icon)} />
-                            <span className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}>
-                                {toggleItem.content}
-                            </span>
-                            {isDropdownOpen ? (
-                                <ChevronUpIcon className={classNames('icon-inline', navItemStyles.icon)} />
-                            ) : (
-                                <ChevronDownIcon className={classNames('icon-inline', navItemStyles.icon)} />
-                            )}
-                        </span>
-                    </DropdownToggle>
-                    <DropdownMenu modifiers={DROPDOWN_MODIFIERS}>
+            {/* 
+                Add `position-relative` here for `absolute` position of `MenuButton` below
+                => `MenuButton` won't change its height when hovering + indicator
+                => `MenuList` won't change its position when opening
+            */}
+            <NavItem className="d-none d-md-flex position-relative">
+                <Menu>
+                    {({ isExpanded }) => (
                         <>
-                            {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
-                            <Link
-                                key={toggleItem.path}
-                                to={toggleItem.path}
-                                className={classNames('dropdown-item', styles.showOnTouchScreen)}
-                                onClick={closeDropdown}
+                            <div
+                                className={classNames(
+                                    navItemStyles.link,
+                                    isItemSelected && navItemStyles.active,
+                                    'd-flex',
+                                    'align-items-center',
+                                    'p-0'
+                                )}
+                                onMouseEnter={() => setIsOverButton(true)}
+                                onMouseLeave={() => setIsOverButton(false)}
                             >
-                                {mobileHomeItem.content}
-                            </Link>
-                            {items.map(item => (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className="dropdown-item"
-                                    onClick={closeDropdown}
-                                    role="menuitem"
+                                <div
+                                    className={classNames(
+                                        'h-100 d-flex',
+                                        navItemStyles.linkContent,
+                                        styles.navDropdownWrapper
+                                    )}
                                 >
-                                    {item.content}
-                                </Link>
-                            ))}
+                                    <Link
+                                        to={toggleItem.path}
+                                        className={classNames(styles.navDropdownLink, navItemStyles.itemFocusable)}
+                                        ref={linkReference}
+                                    >
+                                        <span className={navItemStyles.itemFocusableContent}>
+                                            <toggleItem.icon
+                                                className={classNames('icon-inline', navItemStyles.icon)}
+                                            />
+                                            <span
+                                                className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}
+                                            >
+                                                {toggleItem.content}
+                                            </span>
+                                        </span>
+                                    </Link>
+                                    <MenuButton
+                                        className={classNames(
+                                            styles.navDropdownIconButton,
+                                            navItemStyles.itemFocusable
+                                        )}
+                                        ref={menuButtonReference}
+                                    >
+                                        <span className={navItemStyles.itemFocusableContent}>
+                                            {isExpanded ? (
+                                                <ChevronUpIcon
+                                                    className={classNames('icon-inline', navItemStyles.icon)}
+                                                />
+                                            ) : (
+                                                <ChevronDownIcon
+                                                    className={classNames('icon-inline', navItemStyles.icon)}
+                                                />
+                                            )}
+                                        </span>
+                                    </MenuButton>
+                                </div>
+                            </div>
+
+                            <MenuList
+                                position={Position.bottomStart}
+                                className={styles.navDropdownContainer}
+                                onMouseEnter={() => setIsOverList(true)}
+                                onMouseLeave={() => setIsOverList(false)}
+                            >
+                                <MenuLink
+                                    as={Link}
+                                    key={toggleItem.path}
+                                    to={toggleItem.path}
+                                    className={styles.showOnTouchScreen}
+                                    index={-1}
+                                >
+                                    {mobileHomeItem.content}
+                                </MenuLink>
+                                {items.map(item => (
+                                    <MenuLink as={Link} key={item.path} to={item.path}>
+                                        {item.content}
+                                    </MenuLink>
+                                ))}
+                            </MenuList>
                         </>
-                    </DropdownMenu>
-                </ButtonDropdown>
+                    )}
+                </Menu>
             </NavItem>
             {/* All nav items for smaller screens */}
             {/* Render the toggle item separately */}

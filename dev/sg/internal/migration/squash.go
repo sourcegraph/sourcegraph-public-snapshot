@@ -128,9 +128,9 @@ func Squash(database db.Database, commit string) error {
 	}
 
 	for _, files := range files {
-		block.Writef("Up query file: %s", files.UpFile)
-		block.Writef("Down query file: %s", files.DownFile)
-		block.Writef("Metadata file: %s", files.MetadataFile)
+		block.Writef("Up query file: %s", rootRelative(files.UpFile))
+		block.Writef("Down query file: %s", rootRelative(files.DownFile))
+		block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
 	}
 
 	return nil

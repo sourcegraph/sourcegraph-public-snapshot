@@ -60,7 +60,7 @@ Code intelligence provides advanced code navigation features that let developers
    Watch the code intelligence demo video to see it in action on GitHub.
   </a>
 
-  <a href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L37:6$references" class="btn" alt="Try code intelligence on public code">
+  <a href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references" class="btn" alt="Try code intelligence on public code">
    <span>Try on public code</span>
    </br>
    Interested in trying code intelligence out on public code? See this sample file on Sourcegraph Cloud.
