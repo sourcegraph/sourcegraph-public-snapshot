@@ -563,6 +563,22 @@ extend type GitBlob {
     Provides code intelligence within the file.
     """
     localCodeIntel: JSONValue
+
+    symbolInfo(line: Int!, character: Int!): SymbolInfo
+}
+
+type SymbolInfo {
+    definition: SymbolLocation
+    hover: String
+}
+
+type SymbolLocation {
+    repo: String!
+    commit: String!
+    path: String!
+    line: Int!
+    character: Int!
+    length: Int!
 }
 
 """

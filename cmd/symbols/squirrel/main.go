@@ -42,6 +42,7 @@ import (
 	"github.com/smacker/go-tree-sitter/typescript/typescript"
 	"github.com/smacker/go-tree-sitter/yaml"
 
+	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -91,7 +92,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		_ = json.NewEncoder(w).Encode(nil)
-		log15.Error("failed to get definition", "err", err)
+		log15.Error("failed to generate local code intel payload", "err", err)
 		return
 	}
 
@@ -99,8 +100,84 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
 		log15.Error("failed to write response: %s", "error", err)
-		http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("failed to generate local code intel payload: %s", err), http.StatusInternalServerError)
 		return
+	}
+}
+
+func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log15.Error("failed to read request body", "err", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var args types.RepoCommitPathRange
+		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&args); err != nil {
+			log15.Error("failed to decode request body", "err", err, "body", string(body))
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		repo := args.Repo
+		commit := args.Commit
+		path := args.Path
+		row := args.Row
+		column := args.Column
+
+		debug := os.Getenv("SQUIRREL_DEBUG") == "true"
+		debugStringBuilder := &strings.Builder{}
+
+		cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", commit+":"+path)
+		cmd.Repo = api.RepoName(repo)
+		contents, stderr, err := cmd.DividedOutput(r.Context())
+		if err != nil {
+			log15.Error("failed to get file contents", "stdout", contents, "stderr", stderr)
+			http.Error(w, fmt.Sprintf("failed to get file contents: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		readFile := func(repoCommitPath types.RepoCommitPath) ([]byte, error) {
+			cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
+			cmd.Repo = api.RepoName(repoCommitPath.Repo)
+			stdout, stderr, err := cmd.DividedOutput(r.Context())
+			if err != nil {
+				return nil, fmt.Errorf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
+			}
+			return stdout, nil
+		}
+
+		squirrel := NewSquirrel(readFile, symbolSearch)
+
+		result, breadcrumbs, err := squirrel.symbolInfo(r.Context(), args)
+		if debug {
+			fmt.Fprintln(debugStringBuilder, "👉 repo:", repo, "commit:", commit, "path:", path, "row:", row, "column:", column)
+			prettyPrintBreadcrumbs(debugStringBuilder, breadcrumbs, readFile)
+			if result == nil {
+				fmt.Fprintln(debugStringBuilder, "❌ no definition found")
+			} else {
+				fmt.Fprintln(debugStringBuilder, "✅ found definition: ", *result)
+			}
+
+			fmt.Println(" ")
+			fmt.Println(bracket(debugStringBuilder.String()))
+			fmt.Println(" ")
+		}
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(nil)
+			log15.Error("failed to get definition", "err", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(result)
+		if err != nil {
+			log15.Error("failed to write response: %s", "error", err)
+			http.Error(w, fmt.Sprintf("failed to get definition: %s", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -245,6 +322,240 @@ func localCodeIntel(fullPath string, contents string) (*types.LocalCodeIntelPayl
 	}
 
 	return &types.LocalCodeIntelPayload{Symbols: symbols}, nil
+}
+
+type ReadFileFunc func(types.RepoCommitPath) ([]byte, error)
+
+type Squirrel struct {
+	readFile     ReadFileFunc
+	symbolSearch symbolsTypes.SearchFunc
+}
+
+func NewSquirrel(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *Squirrel {
+	return &Squirrel{
+		readFile:     readFile,
+		symbolSearch: symbolSearch,
+	}
+}
+
+func (s *Squirrel) symbolInfo(ctx context.Context, location types.RepoCommitPathRange) (*types.SymbolInfo, []Breadcrumb, error) {
+	ext := strings.TrimPrefix(filepath.Ext(location.Path), ".")
+
+	langName, ok := extToLang[ext]
+	if !ok {
+		return nil, nil, errors.Newf("unrecognized file extension %s", ext)
+	}
+
+	langSpec, ok := langToLangSpec[langName]
+	if !ok {
+		return nil, nil, errors.Newf("unsupported language %s", langName)
+	}
+
+	parser := sitter.NewParser()
+	parser.SetLanguage(langSpec.language)
+
+	startContents, err := s.readFile(location.RepoCommitPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tree, err := parser.ParseCtx(context.Background(), nil, startContents)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse file contents: %s", err)
+	}
+	root := tree.RootNode()
+
+	startNode := root.NamedDescendantForPointRange(
+		sitter.Point{Row: uint32(location.Row), Column: uint32(location.Column)},
+		sitter.Point{Row: uint32(location.Row), Column: uint32(location.Column)},
+	)
+
+	if startNode == nil {
+		return nil, nil, errors.New("node is nil")
+	}
+
+	breadcrumbs := []Breadcrumb{{
+		RepoCommitPathRange: location,
+		length:              1,
+		message:             "start",
+	}}
+
+	defSymbols, err := s.symbolSearch(ctx, symbolsTypes.SearchArgs{
+		Repo:            api.RepoName(location.Repo),
+		CommitID:        api.CommitID(location.Commit),
+		Query:           fmt.Sprintf("^%s$", startNode.Content([]byte(startContents))),
+		IsRegExp:        true,
+		IsCaseSensitive: true,
+		IncludePatterns: nil,
+		ExcludePattern:  "",
+		First:           1,
+	})
+	if err != nil {
+		return nil, breadcrumbs, err
+	}
+
+	if len(defSymbols) == 0 {
+		return nil, breadcrumbs, nil
+	}
+
+	defSymbol := defSymbols[0]
+
+	def := types.RepoCommitPathRange{
+		RepoCommitPath: types.RepoCommitPath{
+			Repo:   location.Repo,
+			Commit: location.Commit,
+			Path:   defSymbol.Path,
+		},
+		Range: types.Range{
+			Row:    int(defSymbol.Line - 1), // TODO check if ctags is 1-indexed
+			Column: 0,                       // TODO symbol search should also return the character
+			Length: len(defSymbol.Name),
+		},
+	}
+
+	hover, err := s.getHoverOnLine(ctx, defSymbol.Name, def.RepoCommitPath, def.Row, parser, langSpec.commentStyle)
+	if err != nil {
+		log15.Error("failed to get hover on a line", "error", err, "symbol", defSymbol.Name, "deflocation", def)
+	}
+
+	return &types.SymbolInfo{
+		Definition: def,
+		Hover:      hover,
+	}, breadcrumbs, nil
+}
+
+func (s *Squirrel) getHoverOnLine(ctx context.Context, name string, repoCommitPath types.RepoCommitPath, line int, parser *sitter.Parser, commentStyle CommentStyle) (*string, error) {
+	endContents, err := s.readFile(repoCommitPath)
+	if err != nil {
+		return nil, err
+	}
+
+	tree, err := parser.ParseCtx(context.Background(), nil, endContents)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse file contents: %s", err)
+	}
+
+	endRoot := tree.RootNode()
+
+	if endRoot == nil {
+		return nil, errors.New("root is nil")
+	}
+
+	lines := strings.Split(string(endContents), "\n")
+	if line < 0 || line >= len(lines) {
+		return nil, errors.Newf("line %d out of range, max %d", line, len(lines))
+	}
+
+	character := strings.Index(lines[line], name)
+	if character == -1 {
+		return nil, errors.Newf("could not find %s on line %d", name, line)
+	}
+
+	endNode := endRoot.NamedDescendantForPointRange(
+		sitter.Point{Row: uint32(line), Column: uint32(character)},
+		sitter.Point{Row: uint32(line), Column: uint32(character)},
+	)
+	if endNode == nil {
+		return nil, errors.Newf("no node at %d:%d", line, character)
+	}
+
+	return getHover(endNode, commentStyle, string(endContents)), nil
+}
+
+type Breadcrumb struct {
+	types.RepoCommitPathRange
+	length  int
+	message string
+}
+
+func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
+	m := map[types.RepoCommitPath]map[int][]Breadcrumb{}
+	for _, breadcrumb := range breadcrumbs {
+		path := breadcrumb.RepoCommitPath
+
+		if _, ok := m[path]; !ok {
+			m[path] = map[int][]Breadcrumb{}
+		}
+
+		m[path][int(breadcrumb.Row)] = append(m[path][int(breadcrumb.Row)], breadcrumb)
+	}
+
+	for repoCommitPath, lineToBreadcrumb := range m {
+		blue := color.New(color.FgBlue).SprintFunc()
+		grey := color.New(color.FgBlack).SprintFunc()
+		fmt.Fprintf(w, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
+		fmt.Fprintln(w)
+
+		contents, err := readFile(repoCommitPath)
+		if err != nil {
+			fmt.Println("Error reading file: ", err)
+			return
+		}
+		lines := strings.Split(string(contents), "\n")
+		for lineNumber, line := range lines {
+			breadcrumbs, ok := lineToBreadcrumb[lineNumber]
+			if !ok {
+				continue
+			}
+
+			fmt.Fprintln(w)
+
+			gutter := fmt.Sprintf("%5d | ", lineNumber)
+
+			columnToMessage := map[int]string{}
+			for _, breadcrumb := range breadcrumbs {
+				for column := int(breadcrumb.Column); column < int(breadcrumb.Column)+breadcrumb.length; column++ {
+					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message
+				}
+
+				gutterPadding := strings.Repeat(" ", len(gutter))
+
+				space := strings.Repeat(" ", lengthInSpaces(line[:breadcrumb.Column]))
+
+				arrows := messageColor(breadcrumb.message)(strings.Repeat("v", breadcrumb.length))
+
+				fmt.Fprintf(w, "%s%s%s %s\n", gutterPadding, space, arrows, messageColor(breadcrumb.message)(breadcrumb.message))
+			}
+
+			fmt.Fprint(w, grey(gutter))
+			lineWithSpaces := strings.ReplaceAll(line, "\t", "    ")
+			for c := 0; c < len(lineWithSpaces); c++ {
+				if message, ok := columnToMessage[c]; ok {
+					fmt.Fprint(w, messageColor(message)(string(lineWithSpaces[c])))
+				} else {
+					fmt.Fprint(w, grey(string(lineWithSpaces[c])))
+				}
+			}
+			fmt.Fprintln(w)
+		}
+	}
+}
+
+func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
+	var picked []Breadcrumb
+	for _, breadcrumb := range breadcrumbs {
+		for _, message := range messages {
+			if strings.Contains(breadcrumb.message, message) {
+				picked = append(picked, breadcrumb)
+				break
+			}
+		}
+	}
+	return picked
+}
+
+func messageColor(message string) colorSprintfFunc {
+	if message == "start" {
+		return color.New(color.FgHiCyan).SprintFunc()
+	} else if message == "found" {
+		return color.New(color.FgRed).SprintFunc()
+	} else if message == "correct" {
+		return color.New(color.FgGreen).SprintFunc()
+	} else if strings.Contains(message, "scope") {
+		return color.New(color.FgHiYellow).SprintFunc()
+	} else {
+		return color.New(color.FgHiMagenta).SprintFunc()
+	}
 }
 
 func getHover(node *sitter.Node, style CommentStyle, contents string) *string {

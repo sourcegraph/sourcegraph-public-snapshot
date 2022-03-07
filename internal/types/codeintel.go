@@ -106,6 +106,11 @@ type LocalCodeIntelPayload struct {
 	Symbols []Symbol `json:"symbols"`
 }
 
+type RepoCommitPathRange struct {
+	RepoCommitPath
+	Range
+}
+
 type Symbol struct {
 	Hover *string `json:"hover,omitempty"`
 	Def   *Range  `json:"def,omitempty"`
@@ -132,4 +137,9 @@ type Range struct {
 
 func (r Range) String() string {
 	return fmt.Sprintf("%d:%d:%d", r.Row, r.Column, r.Length)
+}
+
+type SymbolInfo struct {
+	Definition RepoCommitPathRange `json:"definition"`
+	Hover      *string             `json:"hover,omitempty"`
 }
