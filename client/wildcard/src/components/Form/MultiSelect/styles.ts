@@ -70,19 +70,23 @@ export const STYLES: StylesConfig = {
     option: (provided, state) => ({
         ...provided,
         backgroundColor: state.isSelected
-            ? state.theme.colors.primary
+            ? state.isFocused
+                ? 'var(--primary-3)'
+                : state.theme.colors.primary
             : state.isFocused
             ? 'var(--dropdown-link-hover-bg)'
-            : 'transparent',
+            : undefined,
         color: state.isSelected ? 'var(--light-text)' : undefined,
         ':hover': {
             cursor: 'pointer',
         },
         ':active': {
-            backgroundColor: !state.isDisabled
-                ? state.isSelected
-                    ? state.theme.colors.primary
-                    : 'var(--dropdown-link-hover-bg)'
+            backgroundColor: state.isSelected
+                ? state.isFocused
+                    ? 'var(--primary-3)'
+                    : state.theme.colors.primary
+                : state.isFocused
+                ? 'var(--dropdown-link-hover-bg)'
                 : undefined,
         },
     }),

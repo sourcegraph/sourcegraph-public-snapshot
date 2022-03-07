@@ -19,7 +19,8 @@ import { THEME } from './theme'
 import { MultiSelectOption } from './types'
 
 export type MultiSelectProps<Option = unknown> = AccessibleFieldProps<
-    SelectProps<Option, true> & { options: SelectProps<Option, true>['options'] } & { // Require options
+    SelectProps<Option, true> & { options: SelectProps<Option, true>['options'] } & {
+        // Require options
         /**
          * Optional label position. Default is 'inline'
          */
