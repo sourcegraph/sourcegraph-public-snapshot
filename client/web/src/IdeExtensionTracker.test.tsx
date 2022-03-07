@@ -1,33 +1,16 @@
-import { gql } from '@apollo/client'
-import { createMockClient } from '@apollo/client/testing'
 import { cleanup, render } from '@testing-library/react'
 import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
 
-import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
-import {
-    InMemoryMockSettingsBackend,
-    TemporarySettingsStorage,
-} from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 
 import { IdeExtensionTracker } from './IdeExtensionTracker'
-
-const settingsClient = createMockClient(
-    { contents: JSON.stringify({}) },
-    gql`
-        query {
-            temporarySettings {
-                contents
-            }
-        }
-    `
-)
-
-type ExpectedResult = null | 'vscode' | 'jetbrains'
 
 describe('IdeExtensionTracker', () => {
     afterAll(cleanup)
 
-    const cases: [string, ExpectedResult][] = [
+    const cases: [string, null | 'vscode' | 'jetbrains'][] = [
         [
             'https://sourcegraph.com/-/editor?remote_url=git%40github.com%3Asourcegraph%2Fsourcegraph-jetbrains.git&branch=main&file=src%2Fmain%2Fjava%2FOpenRevisionAction.java&editor=JetBrains&version=v1.2.2&start_row=68&start_col=26&end_row=68&end_col=26&utm_product_name=IntelliJ+IDEA&utm_product_version=2021.3.2',
             'jetbrains',
@@ -42,36 +25,28 @@ describe('IdeExtensionTracker', () => {
         ],
         ['https://sourcegraph.com/?something=different', null],
     ]
-    test.each(cases)('Detects the proper extension for %p', async (url, expectedResult) => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        delete window.location
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        window.location = new URL(url)
-
-        const settingsStorage = new TemporarySettingsStorage(settingsClient, true)
-        const settingsBackend = new InMemoryMockSettingsBackend({})
-        settingsStorage.setSettingsBackend(settingsBackend)
+    test.each(cases)('Detects the proper extension for %p', (url, expectedResult) => {
+        let latestSettings: TemporarySettings = {}
+        const onSettingsChanged = (nextSettings: TemporarySettings) => (latestSettings = nextSettings)
 
         render(
-            <TemporarySettingsContext.Provider value={settingsStorage}>
-                <IdeExtensionTracker />
-            </TemporarySettingsContext.Provider>
+            <MemoryRouter initialEntries={[url]}>
+                <MockTemporarySettings settings={{}} onSettingsChanged={onSettingsChanged}>
+                    <IdeExtensionTracker />
+                </MockTemporarySettings>
+            </MemoryRouter>
         )
 
-        const settings = await settingsBackend.load().toPromise()
-
         if (expectedResult === 'vscode') {
-            expect(settings).toHaveProperty(['integrations.vscode.lastDetectionTimestamp'])
+            expect(latestSettings).toHaveProperty(['integrations.vscode.lastDetectionTimestamp'])
         } else {
-            expect(settings).not.toHaveProperty(['integrations.vscode.lastDetectionTimestamp'])
+            expect(latestSettings).not.toHaveProperty(['integrations.vscode.lastDetectionTimestamp'])
         }
 
         if (expectedResult === 'jetbrains') {
-            expect(settings).toHaveProperty(['integrations.jetbrains.lastDetectionTimestamp'])
+            expect(latestSettings).toHaveProperty(['integrations.jetbrains.lastDetectionTimestamp'])
         } else {
-            expect(settings).not.toHaveProperty(['integrations.jetbrains.lastDetectionTimestamp'])
+            expect(latestSettings).not.toHaveProperty(['integrations.jetbrains.lastDetectionTimestamp'])
         }
     })
 })

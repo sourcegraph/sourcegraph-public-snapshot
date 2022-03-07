@@ -1,18 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react'
-
-const VSCODE_SETTING = 'integrations.vscode.lastDetectionTimestamp'
-const JETBRAINS_SETTING = 'integrations.jetbrains.lastDetectionTimestamp'
-const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
+import { useLocation } from 'react-router'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+
+const ONE_MONTH = 1000 * 60 * 60 * 24 * 30
 
 /**
  * This component uses UTM parameters to detect incoming traffic from our IDE extensions (VS Code
  * and JetBrains) and updates a temporary setting whenever these are found.
  */
 export const IdeExtensionTracker: React.FunctionComponent = () => {
-    const [, setLastVSCodeDetection] = useTemporarySetting(VSCODE_SETTING, 0)
-    const [, setLastJetBrainsDetection] = useTemporarySetting(JETBRAINS_SETTING, 0)
+    const location = useLocation()
+
+    const [, setLastVSCodeDetection] = useTemporarySetting('integrations.vscode.lastDetectionTimestamp', 0)
+    const [, setLastJetBrainsDetection] = useTemporarySetting('integrations.jetbrains.lastDetectionTimestamp', 0)
+
+    // We only want to capture the IDE UTM parameters on the first page load. In order to avoid
+    // rerunning the effect below whenever location change, we instead capture a reference that we
+    // never update.
+    const locationReference = useRef(location)
 
     // We only want to run the below effect once. Since the setter function changes over time, we
     // capture a copy in a ref to avoid passing it into the dependency array of the effect.
@@ -20,7 +26,7 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
     const setLastJetBrainsDetectionReference = useRef(setLastJetBrainsDetection)
 
     useEffect(() => {
-        const parameters = new URLSearchParams(location.search)
+        const parameters = new URLSearchParams(locationReference.current.search)
         const utmProductName = parameters.get('utm_product_name')
         const utmMedium = parameters.get('utm_medium')
         const utmSource = parameters.get('utm_source')
@@ -35,9 +41,9 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
     return null
 }
 
-export const useIsUsingIdeIntegration = (): undefined | boolean => {
-    const [lastVSCodeDetection] = useTemporarySetting(VSCODE_SETTING, 0)
-    const [lastJetBrainsDetection] = useTemporarySetting(JETBRAINS_SETTING, 0)
+export const useIsActiveIdeIntegrationUser = (): undefined | boolean => {
+    const [lastVSCodeDetection] = useTemporarySetting('integrations.vscode.lastDetectionTimestamp', 0)
+    const [lastJetBrainsDetection] = useTemporarySetting('integrations.jetbrains.lastDetectionTimestamp', 0)
     const [now] = useState<number>(Date.now())
 
     if (lastVSCodeDetection === undefined || lastJetBrainsDetection === undefined) {

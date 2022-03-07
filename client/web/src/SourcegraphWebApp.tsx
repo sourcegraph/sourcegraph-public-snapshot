@@ -473,6 +473,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     )}
                                                 />
                                                 <SearchStack />
+                                                <IdeExtensionTracker />
                                             </Router>
                                         </ScrollManager>
                                         <Tooltip key={1} />
@@ -482,7 +483,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                             notificationItemStyleProps={notificationStyles}
                                         />
                                         <UserSessionStores />
-                                        <IdeExtensionTracker />
                                     </SearchQueryStateStoreProvider>
                                 </SearchResultsCacheProvider>
                             </TemporarySettingsProvider>
