@@ -134,10 +134,13 @@ export function render(lsif_json: string, content: string): string {
             startCharacter = end.character
         }
 
-        // If we didn't find any occurences on this line, then just write the line plainly
-        if (startCharacter === 0) {
-            html.plaintext(line)
+        // Highlight the remainder of the line.
+        //  This could be either that some characters at the end of the line didn't match any syntax kinds
+        //  or that some line didn't have any matches at all.
+        if (startCharacter !== line.length) {
+            html.plaintext(line.slice(startCharacter))
         }
+
         closeLine(html)
     }
     html.closeTag('tbody')
