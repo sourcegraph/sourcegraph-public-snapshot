@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 set -eu
 
-created_from=$(date -d "yesterday" '+%Y-%m-%d')
+created_from=$(date -d "7 days ago" '+%Y-%m-%d')
 created_to=$(date '+%Y-%m-%d')
 
 echo "--- Running 'buildchecker history' from $created_from to $created_to"
