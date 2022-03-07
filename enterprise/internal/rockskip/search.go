@@ -178,7 +178,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 
 	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
-		SELECT DISTINCT path
+		SELECT path
 		FROM rockskip_symbols
 		WHERE
 			%s && singleton_integer(repo_id)
@@ -207,14 +207,14 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 		return nil, err
 	}
 
-	paths := []string{}
+	pathSet := map[string]struct{}{}
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		paths = append(paths, path)
+		pathSet[path] = struct{}{}
 	}
 
 	stopErr := errors.New("stop iterating")
@@ -224,6 +224,10 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	parse := s.createParser()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
+	paths := []string{}
+	for path := range pathSet {
+		paths = append(paths, path)
+	}
 	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
