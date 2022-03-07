@@ -20,11 +20,6 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
     // never update.
     const locationReference = useRef(location)
 
-    // We only want to run the below effect once. Since the setter function changes over time, we
-    // capture a copy in a ref to avoid passing it into the dependency array of the effect.
-    const setLastVSCodeDetectionReference = useRef(setLastVSCodeDetection)
-    const setLastJetBrainsDetectionReference = useRef(setLastJetBrainsDetection)
-
     useEffect(() => {
         const parameters = new URLSearchParams(locationReference.current.search)
         const utmProductName = parameters.get('utm_product_name')
@@ -32,11 +27,11 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
         const utmSource = parameters.get('utm_source')
 
         if (utmProductName === 'IntelliJ IDEA') {
-            setLastJetBrainsDetectionReference.current(Date.now())
+            setLastJetBrainsDetection(Date.now())
         } else if (utmMedium === 'VSCIDE' || utmSource?.toLowerCase().startsWith('vscode')) {
-            setLastVSCodeDetectionReference.current(Date.now())
+            setLastVSCodeDetection(Date.now())
         }
-    }, [])
+    }, [setLastJetBrainsDetection, setLastVSCodeDetection])
 
     return null
 }
