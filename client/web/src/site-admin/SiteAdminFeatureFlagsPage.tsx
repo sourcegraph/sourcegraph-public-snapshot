@@ -98,12 +98,12 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminFeatureFlagsPage: React.FC<SiteAdminFeatureFlagsPageProps> = ({
+export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeatureFlagsPageProps> = ({
     fetchFeatureFlags = defaultFetchFeatureFlags,
     productVersion = window.context.version,
     ...props
 }) => {
-    // Try to parse out a giv rev based on the product version, otherwise just fall back
+    // Try to parse out a git rev based on the product version, otherwise just fall back
     // to main.
     const productGitVersion = parseProductReference(productVersion) || 'main'
 
