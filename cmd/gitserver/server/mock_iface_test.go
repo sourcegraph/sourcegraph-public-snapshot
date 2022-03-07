@@ -6,82 +6,87 @@ import (
 	"context"
 	"sync"
 
-	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 )
 
-// MockDBStore is a mock implementation of the DBStore interface (from the
-// package github.com/sourcegraph/sourcegraph/cmd/gitserver/server) used for
-// unit testing.
-type MockDBStore struct {
-	// GetNPMDependencyReposFunc is an instance of a mock function object
-	// controlling the behavior of the method GetNPMDependencyRepos.
-	GetNPMDependencyReposFunc *DBStoreGetNPMDependencyReposFunc
+// MockDependenciesStore is a mock implementation of the DependenciesStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/cmd/gitserver/server) used for unit
+// testing.
+type MockDependenciesStore struct {
+	// ListDependencyReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListDependencyRepos.
+	ListDependencyReposFunc *DependenciesStoreListDependencyReposFunc
 }
 
-// NewMockDBStore creates a new mock of the DBStore interface. All methods
-// return zero values for all results, unless overwritten.
-func NewMockDBStore() *MockDBStore {
-	return &MockDBStore{
-		GetNPMDependencyReposFunc: &DBStoreGetNPMDependencyReposFunc{
-			defaultHook: func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error) {
+// NewMockDependenciesStore creates a new mock of the DependenciesStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockDependenciesStore() *MockDependenciesStore {
+	return &MockDependenciesStore{
+		ListDependencyReposFunc: &DependenciesStoreListDependencyReposFunc{
+			defaultHook: func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
 				return nil, nil
 			},
 		},
 	}
 }
 
-// NewStrictMockDBStore creates a new mock of the DBStore interface. All
-// methods panic on invocation, unless overwritten.
-func NewStrictMockDBStore() *MockDBStore {
-	return &MockDBStore{
-		GetNPMDependencyReposFunc: &DBStoreGetNPMDependencyReposFunc{
-			defaultHook: func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error) {
-				panic("unexpected invocation of MockDBStore.GetNPMDependencyRepos")
+// NewStrictMockDependenciesStore creates a new mock of the
+// DependenciesStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockDependenciesStore() *MockDependenciesStore {
+	return &MockDependenciesStore{
+		ListDependencyReposFunc: &DependenciesStoreListDependencyReposFunc{
+			defaultHook: func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+				panic("unexpected invocation of MockDependenciesStore.ListDependencyRepos")
 			},
 		},
 	}
 }
 
-// NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
-// methods delegate to the given implementation, unless overwritten.
-func NewMockDBStoreFrom(i DBStore) *MockDBStore {
-	return &MockDBStore{
-		GetNPMDependencyReposFunc: &DBStoreGetNPMDependencyReposFunc{
-			defaultHook: i.GetNPMDependencyRepos,
+// NewMockDependenciesStoreFrom creates a new mock of the
+// MockDependenciesStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockDependenciesStoreFrom(i DependenciesStore) *MockDependenciesStore {
+	return &MockDependenciesStore{
+		ListDependencyReposFunc: &DependenciesStoreListDependencyReposFunc{
+			defaultHook: i.ListDependencyRepos,
 		},
 	}
 }
 
-// DBStoreGetNPMDependencyReposFunc describes the behavior when the
-// GetNPMDependencyRepos method of the parent MockDBStore instance is
-// invoked.
-type DBStoreGetNPMDependencyReposFunc struct {
-	defaultHook func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error)
-	hooks       []func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error)
-	history     []DBStoreGetNPMDependencyReposFuncCall
+// DependenciesStoreListDependencyReposFunc describes the behavior when the
+// ListDependencyRepos method of the parent MockDependenciesStore instance
+// is invoked.
+type DependenciesStoreListDependencyReposFunc struct {
+	defaultHook func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)
+	hooks       []func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)
+	history     []DependenciesStoreListDependencyReposFuncCall
 	mutex       sync.Mutex
 }
 
-// GetNPMDependencyRepos delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockDBStore) GetNPMDependencyRepos(v0 context.Context, v1 dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error) {
-	r0, r1 := m.GetNPMDependencyReposFunc.nextHook()(v0, v1)
-	m.GetNPMDependencyReposFunc.appendCall(DBStoreGetNPMDependencyReposFuncCall{v0, v1, r0, r1})
+// ListDependencyRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDependenciesStore) ListDependencyRepos(v0 context.Context, v1 store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
+	r0, r1 := m.ListDependencyReposFunc.nextHook()(v0, v1)
+	m.ListDependencyReposFunc.appendCall(DependenciesStoreListDependencyReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// GetNPMDependencyRepos method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreGetNPMDependencyReposFunc) SetDefaultHook(hook func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error)) {
+// SetDefaultHook sets function that is called when the ListDependencyRepos
+// method of the parent MockDependenciesStore instance is invoked and the
+// hook queue is empty.
+func (f *DependenciesStoreListDependencyReposFunc) SetDefaultHook(hook func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetNPMDependencyRepos method of the parent MockDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *DBStoreGetNPMDependencyReposFunc) PushHook(hook func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error)) {
+// ListDependencyRepos method of the parent MockDependenciesStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DependenciesStoreListDependencyReposFunc) PushHook(hook func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -89,20 +94,20 @@ func (f *DBStoreGetNPMDependencyReposFunc) PushHook(hook func(context.Context, d
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBStoreGetNPMDependencyReposFunc) SetDefaultReturn(r0 []dbstore.NPMDependencyRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error) {
+func (f *DependenciesStoreListDependencyReposFunc) SetDefaultReturn(r0 []store.DependencyRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreGetNPMDependencyReposFunc) PushReturn(r0 []dbstore.NPMDependencyRepo, r1 error) {
-	f.PushHook(func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error) {
+func (f *DependenciesStoreListDependencyReposFunc) PushReturn(r0 []store.DependencyRepo, r1 error) {
+	f.PushHook(func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreGetNPMDependencyReposFunc) nextHook() func(context.Context, dbstore.GetNPMDependencyReposOpts) ([]dbstore.NPMDependencyRepo, error) {
+func (f *DependenciesStoreListDependencyReposFunc) nextHook() func(context.Context, store.ListDependencyReposOpts) ([]store.DependencyRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -115,35 +120,37 @@ func (f *DBStoreGetNPMDependencyReposFunc) nextHook() func(context.Context, dbst
 	return hook
 }
 
-func (f *DBStoreGetNPMDependencyReposFunc) appendCall(r0 DBStoreGetNPMDependencyReposFuncCall) {
+func (f *DependenciesStoreListDependencyReposFunc) appendCall(r0 DependenciesStoreListDependencyReposFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBStoreGetNPMDependencyReposFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreGetNPMDependencyReposFunc) History() []DBStoreGetNPMDependencyReposFuncCall {
+// History returns a sequence of
+// DependenciesStoreListDependencyReposFuncCall objects describing the
+// invocations of this function.
+func (f *DependenciesStoreListDependencyReposFunc) History() []DependenciesStoreListDependencyReposFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreGetNPMDependencyReposFuncCall, len(f.history))
+	history := make([]DependenciesStoreListDependencyReposFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreGetNPMDependencyReposFuncCall is an object that describes an
-// invocation of method GetNPMDependencyRepos on an instance of MockDBStore.
-type DBStoreGetNPMDependencyReposFuncCall struct {
+// DependenciesStoreListDependencyReposFuncCall is an object that describes
+// an invocation of method ListDependencyRepos on an instance of
+// MockDependenciesStore.
+type DependenciesStoreListDependencyReposFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 dbstore.GetNPMDependencyReposOpts
+	Arg1 store.ListDependencyReposOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []dbstore.NPMDependencyRepo
+	Result0 []store.DependencyRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -151,12 +158,12 @@ type DBStoreGetNPMDependencyReposFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreGetNPMDependencyReposFuncCall) Args() []interface{} {
+func (c DependenciesStoreListDependencyReposFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreGetNPMDependencyReposFuncCall) Results() []interface{} {
+func (c DependenciesStoreListDependencyReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

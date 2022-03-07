@@ -13,7 +13,7 @@ services:
       - ./redis.conf:/etc/redis/redis.conf
       - ${REDIS_DATA_DIR:-redis_data}:/data
   postgresql:
-    image: index.docker.io/sourcegraph/postgres-12.6-alpine:insiders
+    image: index.docker.io/sourcegraph/postgres-12-alpine:insiders
     ports:
       - 5432:5432
     environment:

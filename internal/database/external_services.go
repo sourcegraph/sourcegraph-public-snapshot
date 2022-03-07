@@ -145,7 +145,7 @@ type ExternalServiceStore interface {
 type externalServiceStore struct {
 	*basestore.Store
 
-	gitHubValidators          []func(*schema.GitHubConnection) error
+	gitHubValidators          []func(*types.GitHubConnection) error
 	gitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
 	bitbucketServerValidators []func(*schema.BitbucketServerConnection) error
 	perforceValidators        []func(*schema.PerforceConnection) error
@@ -173,7 +173,7 @@ func NewExternalServiceStore(db dbutil.DB) ExternalServiceStore {
 
 func NewExternalServiceStoreWithValidators(
 	db dbutil.DB,
-	gitHubValidators []func(*schema.GitHubConnection) error,
+	gitHubValidators []func(*types.GitHubConnection) error,
 	gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error,
 	bitbucketServerValidators []func(*schema.BitbucketServerConnection) error,
 	perforceValidators []func(*schema.PerforceConnection) error,
@@ -505,7 +505,12 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 func (e *externalServiceStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range e.gitHubValidators {
-		err = errors.Append(err, validate(c))
+		err = errors.Append(err,
+			validate(&types.GitHubConnection{
+				URN:              extsvc.URN(extsvc.KindGitHub, id),
+				GitHubConnection: c,
+			}),
+		)
 	}
 
 	if c.Token == "" && c.GithubAppInstallationID == "" {
@@ -964,9 +969,10 @@ RETURNING
 
 // ExternalServiceUpdate contains optional fields to update.
 type ExternalServiceUpdate struct {
-	DisplayName  *string
-	Config       *string
-	CloudDefault *bool
+	DisplayName    *string
+	Config         *string
+	CloudDefault   *bool
+	TokenExpiresAt *time.Time
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
@@ -1032,45 +1038,45 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		update.Config = &config
 	}
 
-	execUpdate := func(ctx context.Context, tx dbutil.DB, update *sqlf.Query) error {
-		q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at=now() WHERE id=%d AND deleted_at IS NULL", update, id)
-		res, err := tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			return err
-		}
-		affected, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if affected == 0 {
-			return externalServiceNotFoundError{id: id}
-		}
-		return nil
-	}
-	tx, err := e.Store.Handle().Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	// 4 is the number of fields of the ExternalServiceUpdate
+	updates := make([]*sqlf.Query, 0, 4)
 
 	if update.DisplayName != nil {
-		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("display_name=%s", update.DisplayName)); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("display_name = %s", update.DisplayName))
 	}
 
 	if update.Config != nil {
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s`, update.Config, keyID, unrestricted, hasWebhooks)
-		if err := execUpdate(ctx, tx.DB(), q); err != nil {
-			return err
-		}
+		updates = append(updates,
+			sqlf.Sprintf(
+				"config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s",
+				update.Config, keyID, unrestricted, hasWebhooks,
+			))
 	}
 
 	if update.CloudDefault != nil {
-		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("cloud_default=%s", update.CloudDefault)); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("cloud_default = %s", update.CloudDefault))
+	}
+
+	if update.TokenExpiresAt != nil {
+		updates = append(updates, sqlf.Sprintf("token_expires_at = %s", update.TokenExpiresAt))
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
+	res, err := e.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return externalServiceNotFoundError{id: id}
 	}
 	return nil
 }
@@ -1286,7 +1292,23 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks
+		SELECT
+			id,
+			kind,
+			display_name,
+			config,
+			encryption_key_id,
+			created_at,
+			updated_at,
+			deleted_at,
+			last_sync_at,
+			next_sync_at,
+			namespace_user_id,
+			namespace_org_id,
+			unrestricted,
+			cloud_default,
+			has_webhooks,
+			token_expires_at
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -1316,8 +1338,26 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			namespaceOrgID  sql.NullInt32
 			keyID           string
 			hasWebhooks     sql.NullBool
+			tokenExpiresAt  sql.NullTime
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyID, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &namespaceOrgID, &h.Unrestricted, &h.CloudDefault, &hasWebhooks); err != nil {
+		if err := rows.Scan(
+			&h.ID,
+			&h.Kind,
+			&h.DisplayName,
+			&h.Config,
+			&keyID,
+			&h.CreatedAt,
+			&h.UpdatedAt,
+			&deletedAt,
+			&lastSyncAt,
+			&nextSyncAt,
+			&namespaceUserID,
+			&namespaceOrgID,
+			&h.Unrestricted,
+			&h.CloudDefault,
+			&hasWebhooks,
+			&tokenExpiresAt,
+		); err != nil {
 			return nil, err
 		}
 
@@ -1338,6 +1378,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		}
 		if hasWebhooks.Valid {
 			h.HasWebhooks = &hasWebhooks.Bool
+		}
+		if tokenExpiresAt.Valid {
+			h.TokenExpiresAt = &tokenExpiresAt.Time
 		}
 
 		keyIDs[h.ID] = keyID

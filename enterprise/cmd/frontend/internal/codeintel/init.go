@@ -28,7 +28,7 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		},
 	}
 
-	resolver, err := newResolver(ctx, db, config, resolverObservationContext, services)
+	resolver, err := newResolver(db, config, resolverObservationContext, services)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 	return nil
 }
 
-func newResolver(ctx context.Context, db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
+func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
 	policyMatcher := policies.NewMatcher(
 		services.gitserverClient,
 		policies.NoopExtractor,

@@ -295,7 +295,7 @@ func checkGoVersion(versionConstraint string) func(context.Context) error {
 			return errors.Newf("unexpected output from %q: %s", out)
 		}
 
-		haveVersion := strings.TrimLeft(elems[2], "go")
+		haveVersion := strings.TrimPrefix(elems[2], "go")
 
 		return check.Version("go", haveVersion, versionConstraint)
 	}
