@@ -477,19 +477,15 @@ func syncScheduler(ctx context.Context, sched *repos.UpdateScheduler, store *rep
 
 		// Next, move any repos managed by the scheduler that are uncloned to the front
 		// of the queue
-		managed := sched.ListRepos()
+		managed := sched.ListRepoIDs()
 
-		uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{Names: managed, NoCloned: true})
+		uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
 		if err != nil {
 			log15.Warn("failed to fetch list of uncloned repositories", "error", err)
 			return
 		}
-		names := make([]string, len(uncloned))
-		for i := range uncloned {
-			names[i] = string(uncloned[i].Name)
-		}
 
-		sched.PrioritiseUncloned(names)
+		sched.PrioritiseUncloned(uncloned)
 	}
 
 	for ctx.Err() == nil {

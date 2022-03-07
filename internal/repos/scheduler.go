@@ -309,13 +309,13 @@ func (s *UpdateScheduler) UpdateFromDiff(diff Diff) {
 	}
 }
 
-// PrioritiseUncloned will treat any repos listed in names as uncloned, which in effect
-// will move them to the front of he queue for updating ASAP.
+// PrioritiseUncloned will treat any repos listed in ids as uncloned, which in
+// effect will move them to the front of the queue for updating ASAP.
 //
 // This method should be called periodically with the list of all repositories
 // managed by the scheduler that are not cloned on gitserver.
-func (s *UpdateScheduler) PrioritiseUncloned(names []string) {
-	s.schedule.prioritiseUncloned(names)
+func (s *UpdateScheduler) PrioritiseUncloned(repos []types.MinimalRepo) {
+	s.schedule.prioritiseUncloned(repos)
 }
 
 // EnsureScheduled ensures that all repos in repos exist in the scheduler.
@@ -323,16 +323,16 @@ func (s *UpdateScheduler) EnsureScheduled(repos []types.MinimalRepo) {
 	s.schedule.insertNew(repos)
 }
 
-// ListRepos list all repos managed by the scheduler
-func (s *UpdateScheduler) ListRepos() []string {
+// ListRepoIDs lists the ids of all repos managed by the scheduler
+func (s *UpdateScheduler) ListRepoIDs() []api.RepoID {
 	s.schedule.mu.Lock()
 	defer s.schedule.mu.Unlock()
 
-	names := make([]string, len(s.schedule.heap))
+	ids := make([]api.RepoID, len(s.schedule.heap))
 	for i := range s.schedule.heap {
-		names[i] = string(s.schedule.heap[i].Repo.Name)
+		ids[i] = s.schedule.heap[i].Repo.ID
 	}
-	return names
+	return ids
 }
 
 // upsert adds r to the scheduler for periodic updates. If r.ID is already in
@@ -706,11 +706,11 @@ func (s *schedule) upsert(repo configuredRepo) (updated bool) {
 	return false
 }
 
-func (s *schedule) prioritiseUncloned(names []string) {
-	// Set of names created outside of lock for fast checking.
-	uncloned := make(map[string]struct{}, len(names))
-	for _, n := range names {
-		uncloned[strings.ToLower(n)] = struct{}{}
+func (s *schedule) prioritiseUncloned(uncloned []types.MinimalRepo) {
+	// Set of ids created outside of lock for fast checking.
+	ids := make(map[api.RepoID]struct{}, len(uncloned))
+	for _, repo := range uncloned {
+		ids[repo.ID] = struct{}{}
 	}
 
 	// All non-cloned repos will be due for cloning as if they are newly added
@@ -725,7 +725,7 @@ func (s *schedule) prioritiseUncloned(names []string) {
 	// heap.
 	rescheduleTimer := false
 	for _, repoUpdate := range s.index {
-		if _, ok := uncloned[strings.ToLower(string(repoUpdate.Repo.Name))]; !ok {
+		if _, ok := ids[repoUpdate.Repo.ID]; !ok {
 			// It not in the uncloned list, skip
 			continue
 		}
