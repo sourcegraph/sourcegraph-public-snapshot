@@ -201,8 +201,9 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		return nil, err
 	}
 	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme: dependenciesStore.NPMPackagesScheme,
-		Name:   parsedPackage.PackageSyntax(),
+		Scheme:      dependenciesStore.NPMPackagesScheme,
+		Name:        parsedPackage.PackageSyntax(),
+		NewestFirst: true,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get npm dependencies from dbStore")

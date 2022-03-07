@@ -106,12 +106,12 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 		}
 
 		tasklog.Start("AppendHop+")
-		err = AppendHop(ctx, tx, repoId, hops[0:r], AddedAD, commit)
+		err = AppendHop(ctx, tx, repoId, hops[0:r], AddedAD, DeletedAD, commit)
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
 		tasklog.Start("AppendHop-")
-		err = AppendHop(ctx, tx, repoId, hops[0:r], DeletedAD, commit)
+		err = AppendHop(ctx, tx, repoId, hops[0:r], DeletedAD, AddedAD, commit)
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}

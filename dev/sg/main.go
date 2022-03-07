@@ -62,7 +62,6 @@ var (
 			setupCommand,
 			opsCommand,
 			lintCommand,
-			checkCommand, // TODO remove after a while
 			dbCommand,
 			updateCommand,
 		},
