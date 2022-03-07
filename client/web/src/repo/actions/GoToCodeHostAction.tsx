@@ -11,12 +11,12 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, useLocalStorage } from '@sourcegraph/wildcard'
+import { useObservable, useLocalStorage, Popover, PopoverTrigger, PopoverOpenEvent } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
-import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
+import { RepoHeaderActionAnchor, RepoHeaderActionAnchorProps } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
@@ -119,16 +119,23 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
         eventLogger.log('BrowserExtensionPopupClickedInstall')
     }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
-    const onToggle = useCallback(() => {
-        if (isPopoverOpen) {
-            closePopover()
-            return
-        }
+    const onToggle = useCallback(
+        (event: PopoverOpenEvent) => {
+            if (event.isOpen === isPopoverOpen) {
+                return
+            }
 
-        if (hijackLink) {
-            showPopover()
-        }
-    }, [closePopover, hijackLink, isPopoverOpen, showPopover])
+            if (isPopoverOpen) {
+                closePopover()
+                return
+            }
+
+            if (hijackLink) {
+                showPopover()
+            }
+        },
+        [closePopover, hijackLink, isPopoverOpen, showPopover]
+    )
 
     const onClick = useCallback(
         (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
@@ -230,34 +237,39 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
         )
     }
 
-    return (
-        <>
-            <RepoHeaderActionAnchor
-                className="btn-icon test-go-to-code-host"
-                // empty href is OK because we always set tabindex=0
-                to={hijackLink ? '' : url}
-                target="_blank"
-                rel="noopener noreferrer"
-                id={TARGET_ID}
-                onClick={onClick}
-                onAuxClick={onClick}
-                data-tooltip={descriptiveText}
-                aria-label={descriptiveText}
-            >
-                <Icon className="icon-inline" />
-            </RepoHeaderActionAnchor>
+    const commonProps: Partial<RepoHeaderActionAnchorProps> = {
+        to: hijackLink ? '' : url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        id: TARGET_ID,
+        onClick,
+        onAuxClick: onClick,
+        'data-tooltip': descriptiveText,
+        'aria-label': descriptiveText,
+        className: 'btn-icon test-go-to-code-host',
+    }
 
-            <InstallBrowserExtensionPopover
-                url={url}
-                onToggle={onToggle}
-                isOpen={isPopoverOpen}
-                serviceKind={externalURL.serviceKind}
-                onClose={onClose}
-                onReject={onReject}
-                onInstall={onInstall}
-                targetID={TARGET_ID}
-            />
-        </>
+    if (hijackLink) {
+        return (
+            <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
+                <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
+                    <Icon className="icon-inline" />
+                </PopoverTrigger>
+                <InstallBrowserExtensionPopover
+                    url={url}
+                    serviceKind={externalURL.serviceKind}
+                    onClose={onClose}
+                    onReject={onReject}
+                    onInstall={onInstall}
+                />
+            </Popover>
+        )
+    }
+
+    return (
+        <RepoHeaderActionAnchor {...commonProps}>
+            <Icon className="icon-inline" />
+        </RepoHeaderActionAnchor>
     )
 }
 

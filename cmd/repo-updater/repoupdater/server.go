@@ -372,7 +372,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		respond(w, http.StatusBadRequest, errors.New("neither user and repo ids provided"))
+		respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
 		return
 	}
 

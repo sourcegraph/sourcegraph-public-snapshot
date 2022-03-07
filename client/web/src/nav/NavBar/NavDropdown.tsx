@@ -62,27 +62,24 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     useEffect(() => {
         const currentLink = linkReference.current!
         const currentMenuButton = menuButtonReference.current!
-        const handleMenuButtonTouchStart = (event: TouchEvent): void => {
+
+        const handleMenuButtonTouchEnd = (event: TouchEvent): void => {
             event.preventDefault()
             triggerMenuButtonEvent()
         }
         const handleLinkTouchEnd = (event: TouchEvent): void => {
             // preventDefault would help to block navigation when touching on Link
             event.preventDefault()
-        }
-        const handleLinkTouchStart = (): void => {
             triggerMenuButtonEvent()
         }
 
-        // Have to add/remove `touchstart` manually like this to prevent
-        // page navigation on touch screen (onTouchStart binding doesn't work)
-        currentMenuButton.addEventListener('touchstart', handleMenuButtonTouchStart)
-        currentLink.addEventListener('touchstart', handleLinkTouchStart)
+        // Have to add/remove `touchend` manually like this to prevent
+        // page navigation on touch screen (onTouchEnd binding doesn't work)
+        currentMenuButton.addEventListener('touchend', handleMenuButtonTouchEnd)
         currentLink.addEventListener('touchend', handleLinkTouchEnd)
 
         return () => {
-            currentMenuButton.removeEventListener('touchstart', handleMenuButtonTouchStart)
-            currentLink.removeEventListener('touchstart', handleLinkTouchStart)
+            currentMenuButton.removeEventListener('touchend', handleMenuButtonTouchEnd)
             currentLink.removeEventListener('touchend', handleLinkTouchEnd)
         }
     }, [triggerMenuButtonEvent])

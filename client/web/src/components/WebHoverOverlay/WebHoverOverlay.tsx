@@ -6,6 +6,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
@@ -20,7 +21,7 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-interface Props extends HoverOverlayProps, HoverThresholdProps {
+interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeProps {
     hoveredTokenElement?: HTMLElement
     nav?: (url: string) => void
 }
@@ -56,7 +57,13 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
+    const clickToGoToDefinition = getClickToGoToDefinition(props.settingsCascade)
+
     useEffect(() => {
+        if (!clickToGoToDefinition) {
+            return
+        }
+
         const token = props.hoveredTokenElement
 
         const definitionAction =
@@ -105,6 +112,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         props.location.hash,
         props.nav,
         props.telemetryService,
+        clickToGoToDefinition,
         hoveredToken,
     ])
 
@@ -124,3 +132,11 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
 }
 
 WebHoverOverlay.displayName = 'WebHoverOverlay'
+
+const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        const value = settingsCascade.final['codeIntelligence.clickToGoToDefinition'] as boolean
+        return value ?? true
+    }
+    return true
+}

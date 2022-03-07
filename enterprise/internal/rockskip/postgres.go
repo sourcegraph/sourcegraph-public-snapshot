@@ -85,13 +85,14 @@ func InsertSymbol(ctx context.Context, db dbutil.DB, hop CommitId, repoId int, p
 	return id, errors.Wrap(err, "InsertSymbol")
 }
 
-func AppendHop(ctx context.Context, db dbutil.DB, repoId int, hops []CommitId, givenStatus StatusAD, newHop CommitId) error {
-	column := statusADToColumn(givenStatus)
+func AppendHop(ctx context.Context, db dbutil.DB, repoId int, hops []CommitId, positive, negative StatusAD, newHop CommitId) error {
+	pos := statusADToColumn(positive)
+	neg := statusADToColumn(negative)
 	_, err := db.ExecContext(ctx, fmt.Sprintf(`
 		UPDATE rockskip_symbols
 		SET %s = array_append(%s, $1)
-		WHERE $2 && singleton_integer(repo_id) AND $3 && %s
-	`, column, column, column), newHop, pg.Array([]int{repoId}), pg.Array(hops))
+		WHERE $2 && singleton_integer(repo_id) AND $3 && %s AND NOT $3 && %s
+	`, pos, pos, pos, neg), newHop, pg.Array([]int{repoId}), pg.Array(hops))
 	return errors.Wrap(err, "AppendHop")
 }
 
