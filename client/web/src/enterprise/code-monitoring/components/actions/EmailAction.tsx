@@ -147,14 +147,17 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
                     </Button>
                 )}
                 {!monitorName && (
-                    <div className={classNames('mt-2', styles.testActionError)}>
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
                         Please provide a name for the code monitor before sending a test
-                    </div>
+                    </small>
                 )}
                 {error && (
-                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-email-error">
+                    <small
+                        className={classNames('mt-2 form-text', styles.testActionError)}
+                        data-testid="test-email-error"
+                    >
                         {error.message}
-                    </div>
+                    </small>
                 )}
             </div>
         </ActionEditor>

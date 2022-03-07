@@ -1,9 +1,9 @@
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { Alert, Button, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Button, Input, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -41,6 +41,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
     )
 
     const [url, setUrl] = useState(action && action.__typename === 'MonitorSlackWebhook' ? action.url : '')
+    const urlIsValid = useMemo(() => url.startsWith('https://hooks.slack.com/services/'), [url])
 
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
@@ -97,7 +98,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             completedSubtitle="Notification will be sent to the specified Slack webhook URL."
             actionEnabled={webhookEnabled}
             toggleActionEnabled={toggleWebhookEnabled}
-            canSubmit={!!url}
+            canSubmit={urlIsValid}
             onSubmit={onSubmit}
             onCancel={() => {}}
             canDelete={!!action}
@@ -117,10 +118,10 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             </Alert>
             <div className="form-group">
                 <label htmlFor="code-monitor-slack-webhook-url">Webhook URL</label>
-                <input
+                <Input
                     id="code-monitor-slack-webhook-url"
                     type="url"
-                    className="form-control mb-2"
+                    className="mb-2"
                     data-testid="slack-webhook-url"
                     required={true}
                     onChange={event => {
@@ -129,6 +130,8 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                     value={url}
                     autoFocus={true}
                     spellCheck={false}
+                    status={urlIsValid ? 'valid' : url ? 'error' : undefined /* Don't show error state when empty */}
+                    message={!urlIsValid && url && 'Enter a valid Slack webhook URL.'}
                 />
             </div>
             <div className="flex mt-1">
@@ -155,19 +158,22 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                     </Button>
                 )}
                 {!monitorName && (
-                    <div className={classNames('mt-2', styles.testActionError)}>
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
                         Please provide a name for the code monitor before sending a test
-                    </div>
+                    </small>
                 )}
                 {!url && (
-                    <div className={classNames('mt-2', styles.testActionError)}>
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
                         Please provide a webhook URL before sending a test
-                    </div>
+                    </small>
                 )}
                 {error && (
-                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-slack-webhook-error">
+                    <small
+                        className={classNames('mt-2 form-text', styles.testActionError)}
+                        data-testid="test-slack-webhook-error"
+                    >
                         {error.message}
-                    </div>
+                    </small>
                 )}
             </div>
         </ActionEditor>
