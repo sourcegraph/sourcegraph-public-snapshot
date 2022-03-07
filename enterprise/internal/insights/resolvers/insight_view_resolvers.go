@@ -788,7 +788,8 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			args.After = afterID
 		}
 		if r.args.First != nil {
-			args.Limit = int(*r.args.First)
+			// Ask for one more result than needed in order to determine if there is a next page.
+			args.Limit = int(*r.args.First) + 1
 		}
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
@@ -815,8 +816,9 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 
 		r.views = r.insightStore.GroupByView(ctx, viewSeries)
 
-		if len(r.views) > 0 {
-			r.next = r.views[len(r.views)-1].UniqueID
+		if r.args.First != nil && len(r.views) == args.Limit {
+			r.next = r.views[len(r.views)-2].UniqueID
+			r.views = r.views[:args.Limit-1]
 		}
 	})
 	return r.views, r.next, r.err
