@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react'
+import { act, cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 
@@ -6,7 +6,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
-import { SearchStackEntry } from '../stores/searchStack'
+import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
 
 import { SearchStack } from './SearchStack'
 
@@ -146,22 +146,22 @@ describe('Search Stack', () => {
             useSearchStackState.setState({
                 entries: [
                     {
-                        id: 0,
+                        id: 1,
                         type: 'search',
                         query: 'TODO',
                         caseSensitive: false,
                         patternType: SearchPatternType.literal,
                     },
-                    { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+                    { id: 2, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                     {
-                        id: 2,
+                        id: 3,
                         type: 'search',
                         query: 'another query',
                         caseSensitive: true,
                         patternType: SearchPatternType.literal,
                     },
                     {
-                        id: 3,
+                        id: 4,
                         type: 'search',
                         query: 'yet another query',
                         caseSensitive: true,
@@ -430,6 +430,43 @@ describe('Search Stack', () => {
 
             userEvent.keyboard('{shift}{arrowdown}')
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[3]])
+        })
+
+        it('maintains the right selected items when non-selected items get removed', () => {
+            renderSearchStack()
+            open()
+
+            const items = screen.getAllByRole('option')
+            userEvent.click(items[1])
+            userEvent.click(screen.getAllByTitle('Remove entry')[0])
+
+            // Verifies that the item is still the selected one (if not it would
+            // item[2] which is now the second item).
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[1]])
+        })
+
+        it('selectes the newly added item', () => {
+            renderSearchStack()
+            open()
+
+            let items = screen.getAllByRole('option')
+
+            // Selected 2. item
+            userEvent.click(items[1])
+
+            act(() => {
+                addSearchStackEntry({
+                    type: 'search',
+                    patternType: SearchPatternType.literal,
+                    query: 'new TODO',
+                    caseSensitive: false,
+                })
+            })
+
+            // Referesh items
+            items = screen.getAllByRole('option')
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
         })
 
         it('deletes all selected entries', () => {
