@@ -1,9 +1,12 @@
 package squirrel
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestHover(t *testing.T) {
@@ -25,8 +28,17 @@ func f() {}
 		{"test.go", golang, "comment line 1\ncomment line 2\n"},
 	}
 
+	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
+		for _, test := range tests {
+			if test.path == path.Path {
+				return []byte(test.contents), nil
+			}
+		}
+		return nil, fmt.Errorf("path %s not found", path.Path)
+	}
+
 	for _, test := range tests {
-		payload, err := localCodeIntel(test.path, test.contents)
+		payload, err := localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}, readFile)
 		fatalIfError(t, err)
 
 		ok := false
