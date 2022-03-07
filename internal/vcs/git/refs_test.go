@@ -37,6 +37,21 @@ func TestHumanReadableBranchName(t *testing.T) {
 	}
 }
 
+func testBranches(t *testing.T, gitCommands []string, wantBranches []*Branch, options BranchesOptions) {
+	t.Helper()
+
+	repo := MakeGitRepository(t, gitCommands...)
+	gotBranches, err := ListBranches(context.Background(), repo, options)
+	require.Nil(t, err)
+
+	sort.Sort(Branches(wantBranches))
+	sort.Sort(Branches(gotBranches))
+
+	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
+		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestRepository_ListBranches(t *testing.T) {
 	t.Parallel()
 
@@ -48,14 +63,7 @@ func TestRepository_ListBranches(t *testing.T) {
 
 	wantBranches := []*Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
 
-	branches, err := ListBranches(context.Background(), MakeGitRepository(t, gitCommands...), BranchesOptions{})
-	require.Nil(t, err)
-	sort.Sort(Branches(branches))
-	sort.Sort(Branches(wantBranches))
-
-	if diff := cmp.Diff(wantBranches, branches); diff != "" {
-		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
-	}
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
 }
 
 func TestRepository_Branches_MergedInto(t *testing.T) {
@@ -147,23 +155,13 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 		"git checkout old_work",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo9 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	gitBranches := []*Branch{
+	wantBranches := []*Branch{
 		{Counts: &BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
 		{Counts: &BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
 		{Counts: &BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
 	}
-	sort.Sort(Branches(gitBranches))
 
-	repo := MakeGitRepository(t, gitCommands...)
-	wantBranches := gitBranches
-
-	branches, err := ListBranches(context.Background(), repo, BranchesOptions{BehindAheadBranch: "master"})
-	require.Nil(t, err)
-	sort.Sort(Branches(branches))
-
-	if diff := cmp.Diff(wantBranches, branches); diff != "" {
-		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
-	}
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
 }
 
 func TestRepository_Branches_IncludeCommit(t *testing.T) {
@@ -197,13 +195,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 		},
 	}
 
-	branches, err := ListBranches(context.Background(), MakeGitRepository(t, gitCommands...), BranchesOptions{IncludeCommit: true})
-	require.Nil(t, err)
-	sort.Sort(Branches(branches))
-
-	if diff := cmp.Diff(wantBranches, branches); diff != "" {
-		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
-	}
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{IncludeCommit: true})
 }
 
 func TestRepository_ListTags(t *testing.T) {
