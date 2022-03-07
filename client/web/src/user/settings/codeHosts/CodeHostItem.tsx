@@ -35,6 +35,7 @@ interface CodeHostItemProps {
     onDidError: (error: ErrorLike) => void
     loading?: boolean
     useGitHubApp?: boolean
+    reloadComponent?: () => void
 }
 
 export interface ParentWindow extends Window {
@@ -57,6 +58,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidUpsert,
     loading = false,
     useGitHubApp = false,
+    reloadComponent,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -78,6 +80,29 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
+
+    const toGitHubApp = function (): void {
+        setOauthInFlight(true)
+        const browser: ParentWindow = window.self as ParentWindow
+        if (reloadComponent) {
+            browser.onSuccess = () => {
+                reloadComponent()
+            }
+        }
+        const popup = browser.open(
+            `https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${encodeURIComponent(
+                owner.id
+            )}`,
+            'name',
+            `dependent=${1}, alwaysOnTop=${1}, alwaysRaised=${1}, alwaysRaised=${1}, width=${600}, height=${900}`
+        )
+        const popupTick = setInterval(() => {
+            if (popup?.closed) {
+                setOauthInFlight(false)
+                clearInterval(popupTick)
+            }
+        }, 500)
+    }
 
     const isUserOwner = owner.type === 'user'
     const connectAction = isUserOwner ? toAuthProvider : toggleAddConnectionModal
@@ -154,7 +179,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={false}
                         />
                     ) : (
-                        <Button onClick={useGitHubApp ? toAuthProvider : connectAction} variant="primary">
+                        <Button onClick={useGitHubApp ? toGitHubApp : connectAction} variant="primary">
                             Connect
                         </Button>
                     )

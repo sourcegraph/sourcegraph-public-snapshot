@@ -151,6 +151,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
+    const refetchServices = (): void => {
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }
+
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
             eventLogger.log('UserSettingsAddRepositoriesCTAClicked', null, { source })
@@ -323,14 +329,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
                 if (kind !== ExternalServiceKind.GITHUB || !isGitHubAppEnabled) {
                     defaultNavigateToAuthProvider(kind)
-                } else if (owner.type === 'org') {
-                    const secondRedirectURI = `/.auth/github/install-github-app?state=${encodeURIComponent(owner.id)}`
-                    const firstRedirectURI = `/.auth/github/login?pc=${encodeURIComponent(
-                        `https://github.com/::${window.context.githubAppCloudClientID}`
-                    )}&op=createCodeHostConnection&redirect=${encodeURIComponent(secondRedirectURI)}`
-                    window.location.assign(
-                        `${authProvider.authenticationURL as string}&redirect=${encodeURIComponent(firstRedirectURI)}`
-                    )
                 } else {
                     window.location.assign(
                         `/.auth/github/login?pc=${encodeURIComponent(
@@ -340,7 +338,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
             }
         },
-        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled, owner]
+        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled]
     )
 
     return (
@@ -391,6 +389,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        reloadComponent={refetchServices}
                                     />
                                 </CodeHostListItem>
                             ) : null
