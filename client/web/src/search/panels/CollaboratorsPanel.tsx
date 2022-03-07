@@ -34,7 +34,6 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
     fetchCollaborators,
 }) => {
-    console.log(authenticatedUser)
     const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
     const collaborators = useObservable(
         useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
