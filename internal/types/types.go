@@ -1230,7 +1230,7 @@ type InsightsPerDashboardPing struct {
 	Max    int
 	Min    int
 	StdDev float32
-	Median int
+	Median float32
 }
 
 type CodeMonitoringUsageStatistics struct {
