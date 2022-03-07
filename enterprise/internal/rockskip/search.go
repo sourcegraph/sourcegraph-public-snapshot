@@ -370,11 +370,11 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, regexMatch("path", "path_prefixes(path)", "singleton(file_extension)", includePattern, args.IsCaseSensitive))
+		conjunctOrNils = append(conjunctOrNils, regexMatch("path", "path_prefixes(path)", "singleton(get_file_extension(path))", includePattern, args.IsCaseSensitive))
 	}
 
 	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("path", "path_prefixes(path)", "singleton(file_extension)", args.ExcludePattern, args.IsCaseSensitive)))
+	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("path", "path_prefixes(path)", "singleton(get_file_extension(path))", args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}

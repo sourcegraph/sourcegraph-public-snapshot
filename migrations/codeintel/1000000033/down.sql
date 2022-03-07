@@ -1,7 +1,5 @@
 DROP INDEX IF EXISTS rockskip_symbols_gin;
 
-ALTER TABLE rockskip_symbols DROP COLUMN file_extension;
-
 DROP FUNCTION IF EXISTS get_file_extension;
 
 CREATE INDEX IF NOT EXISTS rockskip_symbols_gin ON rockskip_symbols USING GIN (
