@@ -191,13 +191,12 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     // Handles key events on the whole list
     const handleKey = useCallback(
         (event: KeyboardEvent): void => {
-            const macMeta = isMacPlatform_ && event.metaKey
-            const otherMeta = !isMacPlatform_ && event.ctrlKey
+            const hasMeta = (isMacPlatform_ && event.metaKey) || (!isMacPlatform_ && event.ctrlKey)
 
             switch (event.key) {
                 // Select all entries
                 case 'a':
-                    if (macMeta || otherMeta) {
+                    if (hasMeta) {
                         // This prevents text selection
                         event.preventDefault()
                         setSelectedEntries(reversedEntries.map((_value, index) => index))
@@ -227,7 +226,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                     }
 
                     setSelectedEntries(selection => {
-                        if (shiftKey || macMeta || otherMeta) {
+                        if (shiftKey || hasMeta) {
                             // Extend (or shrink) selected entries range
                             // Shift and ctrl modifier are equivalent in this scenario
                             return growOrShrinkSelection(
