@@ -14,10 +14,12 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
+import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
+    ...highlightFileResult,
 }
 
 describe('Search contexts', () => {
@@ -34,7 +36,7 @@ describe('Search contexts', () => {
             directory: __dirname,
         })
         testContext.overrideGraphQL(testContextForSearchContexts)
-        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
+        testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
