@@ -4,16 +4,16 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { CommitMatch, getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
-import { Link } from '@sourcegraph/wildcard'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { CommitMatch, getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
+import { Link } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import styles from './SearchResult.module.scss'
@@ -54,7 +54,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                     </>
                 )}
                 {result.type === 'repo' && (
-                    <a href={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</a>
+                    <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
                 )}
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
