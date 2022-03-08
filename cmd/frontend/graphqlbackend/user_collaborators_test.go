@@ -66,7 +66,44 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		return recentCommitters[i].name < recentCommitters[j].name
 	})
 
-	autogold.Want("calls", nil).Equal(t, calls)
+	autogold.Want("calls", []args{
+		{
+			repoName: api.RepoName("golang/go"),
+			opt: git.CommitsOptions{
+				N:                200,
+				NoEnsureRevision: true,
+				NameOnly:         true,
+			},
+		},
+		{
+			repoName: api.RepoName("gorilla/mux"),
+			opt: git.CommitsOptions{
+				N:                200,
+				NoEnsureRevision: true,
+				NameOnly:         true,
+			},
+		},
+		{
+			repoName: api.RepoName("sourcegraph/sourcegraph"),
+			opt: git.CommitsOptions{
+				N:                200,
+				NoEnsureRevision: true,
+				NameOnly:         true,
+			},
+		},
+	}).Equal(t, calls)
 
-	autogold.Want("recentCommitters", nil).Equal(t, recentCommitters)
+	autogold.Want("recentCommitters", []*invitableCollaboratorResolver{
+		{
+			name: "golang/go-jane",
+		},
+		{name: "golang/go-janet"},
+		{name: "golang/go-joe"},
+		{name: "gorilla/mux-jane"},
+		{name: "gorilla/mux-janet"},
+		{name: "gorilla/mux-joe"},
+		{name: "sourcegraph/sourcegraph-jane"},
+		{name: "sourcegraph/sourcegraph-janet"},
+		{name: "sourcegraph/sourcegraph-joe"},
+	}).Equal(t, recentCommitters)
 }
