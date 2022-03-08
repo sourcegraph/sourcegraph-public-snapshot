@@ -106,6 +106,10 @@ export interface CommitMatch {
     url: string
     detail: MarkdownText
     repository: string
+    oid: string
+    message: string
+    authorName: string
+    authorDate: string
     repoStars?: number
     repoLastFetched?: string
 
@@ -513,6 +517,10 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
     return '/' + encodeURI(label)
 }
 
+export function getCommitMatchUrl(commitMatch: CommitMatch): string {
+    return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
+}
+
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
@@ -520,7 +528,7 @@ export function getMatchUrl(match: SearchMatch): string {
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':
-            return match.url
+            return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
     }
@@ -528,7 +536,10 @@ export function getMatchUrl(match: SearchMatch): string {
 
 export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
     if (match.type === 'commit') {
-        return match.label
+        const repoUrl = '/' + encodeURI(match.repository)
+        const commitUrl = getCommitMatchUrl(match)
+        const subject = match.message.split('\n', 1)[0]
+        return `[${match.repository}](${repoUrl}) › [${match.authorName}](${commitUrl}): [${subject}](${commitUrl})`
     }
 
     return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
