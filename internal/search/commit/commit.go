@@ -346,6 +346,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 			},
 			Message: gitdomain.Message(in.Message.Content),
 			Parents: in.Parents,
+			Tags:    in.Tags,
 		},
 		Repo:           repo,
 		DiffPreview:    diffPreview,

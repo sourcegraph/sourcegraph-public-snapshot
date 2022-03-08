@@ -65,11 +65,12 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	return event
 }
 
-type CommitMatch struct {
+type CommitMatch struct { // TODO: [Varun] Audit places where CommitMatch is used.
 	Oid        api.CommitID
 	Author     Signature      `json:",omitempty"`
 	Committer  Signature      `json:",omitempty"`
 	Parents    []api.CommitID `json:",omitempty"`
+	Tags       []string       `json:",omitempty"`
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
