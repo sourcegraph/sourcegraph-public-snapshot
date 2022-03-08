@@ -106,7 +106,10 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 	}
 
 	var values map[string]interface{}
-	_ = json.Unmarshal(rawValues, &values)
+	err = json.Unmarshal(rawValues, &values)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
+	}
 
 	var images []string
 	extraImages(values, &images)
