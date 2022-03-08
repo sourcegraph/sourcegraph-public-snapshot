@@ -43,7 +43,6 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	options.UserSettings = o.UserSettings
 	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
