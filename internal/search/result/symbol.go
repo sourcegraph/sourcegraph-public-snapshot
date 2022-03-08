@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-lsp"
@@ -117,69 +116,6 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 		return lsp.SKTypeParameter
 	}
 	return 0
-}
-
-func escape(s string) string {
-	isSpecial := func(c rune) bool {
-		switch c {
-		case '\\', '/':
-			return true
-		default:
-			return false
-		}
-	}
-
-	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
-	// but is more efficient since it does it via bytes.
-	count := 0
-	for _, c := range s {
-		if isSpecial(c) {
-			count++
-		}
-	}
-	if count == 0 {
-		return s
-	}
-
-	escaped := make([]rune, 0, len(s)+count)
-	for _, c := range s {
-		if isSpecial(c) {
-			escaped = append(escaped, '\\')
-		}
-		escaped = append(escaped, c)
-	}
-	return string(escaped)
-}
-
-// unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
-// the pattern inside it.
-func unescapePattern(pattern string) string {
-	pattern = strings.TrimSuffix(strings.TrimPrefix(pattern, "/^"), "$/")
-	var start int
-	var r rune
-	var escaped []rune
-	buf := []byte(pattern)
-
-	next := func() rune {
-		r, start := utf8.DecodeRune(buf)
-		buf = buf[start:]
-		return r
-	}
-
-	for len(buf) > 0 {
-		r = next()
-		if r == '\\' && len(buf[start:]) > 0 {
-			r = next()
-			if r == '/' || r == '\\' {
-				escaped = append(escaped, r)
-				continue
-			}
-			escaped = append(escaped, '\\', r)
-			continue
-		}
-		escaped = append(escaped, r)
-	}
-	return string(escaped)
 }
 
 func (s Symbol) Range() lsp.Range {
