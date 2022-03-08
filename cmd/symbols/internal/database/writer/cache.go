@@ -30,7 +30,7 @@ func NewCachedDatabaseWriter(databaseWriter DatabaseWriter, cache diskcache.Stor
 // The version of the symbols database schema. This is included in the database filenames to prevent a
 // newer version of the symbols service from attempting to read from a database created by an older and
 // likely incompatible symbols service. Increment this when you change the database schema.
-const symbolsDBVersion = 4
+const symbolsDBVersion = 5
 
 func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args types.SearchArgs) (string, error) {
 	// set to noop parse originally, this will be overridden if the fetcher func below is called
