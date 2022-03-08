@@ -129,8 +129,7 @@ func formatMarkdown(issues []prAuditIssue, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	err = tmpl.Execute(w, issues)
-	return nil
+	return tmpl.Execute(w, issues)
 }
 
 var auditMarkdownTemplate = `*SOC2 Pull Request missing test plans :alert:*
