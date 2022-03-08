@@ -24,6 +24,15 @@ The number of insights you have does not affect the overall speed at which they 
 
 > NOTE: we have many performance improvements planned. We'll likely release considerable performance gains in the upcoming releases of 2021. 
 
+## Best practices for creating insights over very large repositories 
+
+In some cases, depending on the size of the Sourcegraph instance and the size of the repo, you may see odd behavior or timeout errors if you try to create a code insight running over a single large repository. In this case, it's best to try: 
+
+1. Create the insight, but check the box to "run over all repositories." (This sends the Insight backfilling jobs to the backend Sourcegraph instance worker which will handle them datapoint-by-datapoint. Running over an individual repository otherwise currently runs the jobs in bulk to generate its live preview.)
+2. After the insight has finished running, [filter the insight](code_insights_filters.md#filter-options) to the specific repo you originally wanted to use. The filter resolves instantly. 
+
+If this does not solve your problem, please reach out directly to your Sourcegraph contact or in your shared slack channel, as there are experimental solutions we are currently working on to further improve our handling of large repositories. 
+
 ## Feature parity limitations 
 
 ### Features currently available only on insights over all your repositories
