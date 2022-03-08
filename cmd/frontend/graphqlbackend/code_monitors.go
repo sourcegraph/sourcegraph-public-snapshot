@@ -24,8 +24,6 @@ type CodeMonitorsResolver interface {
 	TriggerTestSlackWebhookAction(ctx context.Context, args *TriggerTestSlackWebhookActionArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
-
-	CodeMonitorSearch(context.Context, *SearchArgs) (SearchImplementer, error)
 }
 
 type MonitorConnectionResolver interface {
@@ -67,6 +65,8 @@ type MonitorTriggerEventResolver interface {
 	Message() *string
 	Timestamp() (DateTime, error)
 	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+	ResultCount() int32
+	Query() *string
 }
 
 type MonitorActionConnectionResolver interface {

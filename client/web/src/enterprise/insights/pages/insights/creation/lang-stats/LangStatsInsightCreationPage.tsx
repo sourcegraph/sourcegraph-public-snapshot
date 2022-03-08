@@ -9,7 +9,6 @@ import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -25,17 +24,6 @@ export interface InsightCreateEvent {
 }
 
 export interface LangStatsInsightCreationPageProps extends TelemetryProps {
-    /**
-     * Set initial value for insight visibility setting.
-     */
-    visibility: string
-
-    /**
-     * List of all supported by code insights subjects that can store insight entities
-     * it's used for visibility setting section.
-     */
-    subjects: SupportedInsightSubject[]
-
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
@@ -56,15 +44,12 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const { visibility, subjects, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined
     )
-
-    // Set the top-level scope value as initial value for the insight visibility
-    const mergedInitialValues = { ...(initialFormValues ?? {}), visibility }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
@@ -125,8 +110,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
             <LangStatsInsightCreationContent
                 className="pb-5"
-                initialValues={mergedInitialValues}
-                subjects={subjects}
+                initialValues={initialFormValues}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onChange={handleChange}

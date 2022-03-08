@@ -62,7 +62,7 @@ func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot strin
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(context.Background(), file, "", getChildrenFunc)
+	bundle, err := Correlate(ctx, file, "", getChildrenFunc)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
 	}
@@ -99,7 +99,7 @@ func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*prec
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(context.Background(), file, relRoot, getChildrenFunc)
+	bundle, err := Correlate(ctx, file, relRoot, getChildrenFunc)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
 	}
@@ -180,7 +180,9 @@ func correlateElement(state *wrappedState, element Element) error {
 	return errors.Errorf("unknown element type %s", element.Type)
 }
 
-var vertexHandlers = map[string]func(state *wrappedState, element Element) error{
+type vertexHandler func(state *wrappedState, element Element) error
+
+var vertexHandlers = map[string]vertexHandler{
 	"metaData":             correlateMetaData,
 	"document":             correlateDocument,
 	"range":                correlateRange,

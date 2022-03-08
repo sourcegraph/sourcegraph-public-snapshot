@@ -155,8 +155,8 @@ func Zoekt() *monitoring.Container {
 							Name:              "average_resolve_revision_duration",
 							Description:       "average resolve revision duration over 5m",
 							Query:             `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(15, nil),
-							Critical:          monitoring.Alert().GreaterOrEqual(30, nil),
+							Warning:           monitoring.Alert().GreaterOrEqual(15),
+							Critical:          monitoring.Alert().GreaterOrEqual(30),
 							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
@@ -171,8 +171,8 @@ func Zoekt() *monitoring.Container {
 							// and this alert will fire during that time. So
 							// we tuned Critical to atleast be as long as a
 							// gitserver rollout. 2022-02-09 ~25m rollout.
-							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(35 * time.Minute),
+							Warning:  monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(100).For(35 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: `
@@ -201,10 +201,40 @@ func Zoekt() *monitoring.Container {
 							Name:              "indexed_search_request_errors",
 							Description:       "indexed search request errors every 5m by code",
 							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							Warning:           monitoring.Alert().GreaterOrEqual(5, nil).For(5 * time.Minute),
+							Warning:           monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
 							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
+				Title: "Git fetch durations",
+				Rows: []monitoring.Row{
+					{
+
+						{
+							Name:        "90th_percentile_successful_git_fetch_durations_5m",
+							Description: "90th percentile successful git fetch durations over 5m",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="true"}[5m])))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Long git fetch times can be a leading indicator of saturation.
+							`,
+						},
+						{
+							Name:        "90th_percentile_failed_git_fetch_durations_5m",
+							Description: "90th percentile failed git fetch durations over 5m",
+							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="false"}[5m])))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Long git fetch times can be a leading indicator of saturation.
+							`,
 						},
 					},
 				},

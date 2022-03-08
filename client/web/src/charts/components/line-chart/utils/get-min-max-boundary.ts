@@ -1,8 +1,7 @@
-import { LineChartSeries } from '../types'
+import { LineChartSeriesWithData } from './data-series-processing'
 
-interface MinMaxBoundariesInput<D extends object> {
-    data: D[]
-    series: LineChartSeries<D>[]
+interface MinMaxBoundariesInput<D> {
+    dataSeries: LineChartSeriesWithData<D>[]
     xAxisKey: keyof D
 }
 
@@ -17,24 +16,21 @@ interface Boundaries {
  * Calculates min/max ranges for Y (across all available data series) and X axis
  * (time interval) global for all lines on the chart.
  */
-export function getMinMaxBoundaries<D extends object>(props: MinMaxBoundariesInput<D>): Boundaries {
-    const { data, series, xAxisKey } = props
+export function getMinMaxBoundaries<D>(props: MinMaxBoundariesInput<D>): Boundaries {
+    const { dataSeries, xAxisKey } = props
 
     let minX
     let maxX
     let minY
     let maxY
 
-    for (const datum of data) {
-        minX = Math.min(+datum[xAxisKey], minX ?? +datum[xAxisKey])
-        maxX = Math.max(+datum[xAxisKey], maxX ?? +datum[xAxisKey])
+    for (const line of dataSeries) {
+        for (const datum of line.data) {
+            minX = Math.min(+datum[xAxisKey], minX ?? +datum[xAxisKey])
+            maxX = Math.max(+datum[xAxisKey], maxX ?? +datum[xAxisKey])
 
-        for (const line of series) {
-            minY ??= +datum[line.dataKey]
-            maxY ??= +datum[line.dataKey]
-
-            minY = Math.min(+datum[line.dataKey], minY)
-            maxY = Math.max(+datum[line.dataKey], maxY)
+            minY = Math.min(+datum[line.dataKey], minY ?? +datum[line.dataKey])
+            maxY = Math.max(+datum[line.dataKey], maxY ?? +datum[line.dataKey])
         }
     }
 

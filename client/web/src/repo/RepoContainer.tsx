@@ -7,7 +7,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -30,7 +29,17 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, useLocalStorage, useObservable, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    useLocalStorage,
+    useObservable,
+    Link,
+    Popover,
+    PopoverContent,
+    Position,
+    PopoverTrigger,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -40,7 +49,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GlobalCoolCodeIntelProps } from '../global/CoolCodeIntel'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
@@ -84,8 +92,7 @@ export interface RepoContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         ExtensionAlertProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -127,8 +134,7 @@ interface RepoContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps,
-        GlobalCoolCodeIntelProps {
+        FeatureFlagProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -225,7 +231,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             return {
                 key: 'repository',
                 element: (
-                    <>
+                    <Popover>
                         <ButtonGroup className="d-inline-flex">
                             <Button
                                 to={
@@ -241,8 +247,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Button>
-                            <Button
-                                id="repo-popover"
+                            <PopoverTrigger
+                                as={Button}
                                 className={styles.repoChange}
                                 aria-label="Change repository"
                                 outline={true}
@@ -250,22 +256,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </Button>
+                            </PopoverTrigger>
                         </ButtonGroup>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            fade={false}
-                            popperClassName="border-0"
-                        >
+                        <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 telemetryService={props.telemetryService}
                             />
-                        </UncontrolledPopover>
-                    </>
+                        </PopoverContent>
+                    </Popover>
                 ),
             }
         }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
@@ -449,9 +448,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                     useActionItemsBar={useActionItemsBar}
-                                    // Experimental ref panel
-                                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
-                                    onTokenClick={props.onTokenClick}
                                 />
                             )}
                         />

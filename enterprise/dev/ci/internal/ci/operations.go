@@ -18,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-var goAthensProxyURL = "http://athens-athens-proxy"
-
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
@@ -73,11 +71,10 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(operations.NewNamedSet("Client checks",
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,   // ~4.5m
-			addWebApp,       // ~3m
-			addBrowserExt,   // ~2m
-			addBrandedTests, // ~1.5m
-			addTsLint))
+			frontendTests,     // ~4.5m
+			addWebApp,         // ~5.5m
+			addBrowserExt,     // ~4.5m
+			addClientLinters)) // ~9m
 	}
 
 	if diff.Has(changed.Go | changed.GraphQL) {
@@ -123,7 +120,9 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{}))
+		bk.AnnotatedCmd("./dev/check/docsite.sh", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{},
+		}))
 }
 
 // Adds the terraform scanner step.  This executes very quickly ~6s
@@ -138,7 +137,7 @@ func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":clipboard: Misc linters",
 		withYarnCache(),
 		bk.AnnotatedCmd("./dev/check/all.sh", bk.AnnotatedCmdOpts{
-			IncludeNames: true,
+			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
 }
 
@@ -166,15 +165,19 @@ func addYarnDeduplicateLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/check/yarn-deduplicate.sh"))
 }
 
-// Adds Typescript linting. (2x ~41s) + ~60s + ~137s + 7s
-func addTsLint(pipeline *bk.Pipeline) {
-	// - yarn 41s (required on all steps)
-	// - build-ts 60s
-	// - eslint 137s
-	// - stylelint 7s
-	pipeline.AddStep(":eslint: Typescript eslint",
+// Adds client linters and Typescript check.
+func addClientLinters(pipeline *bk.Pipeline) {
+	// - ESLint ~9m
+	pipeline.AddStep(":eslint: ESLint",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
+		bk.Cmd("dev/ci/yarn-run.sh all:eslint"))
+
+	// - build-ts ~4m
+	pipeline.AddStep(":typescript: Build TS",
+		withYarnCache(),
+		bk.Cmd("dev/ci/yarn-run.sh build-ts"))
+
+	// - Stylelint ~2m
 	pipeline.AddStep(":stylelint: Stylelint",
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
@@ -200,9 +203,13 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
 
 	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians: Test",
+	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/web"),
+		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+			TestReports: &bk.TestReportOpts{
+				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+			},
+		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
@@ -228,9 +235,13 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	}
 
 	// Browser extension unit tests
-	pipeline.AddStep(":jest::chrome: Test browser extension",
+	pipeline.AddStep(":jest::chrome: Test (client/browser)",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
+		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/browser", bk.AnnotatedCmdOpts{
+			TestReports: &bk.TestReportOpts{
+				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+			},
+		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
@@ -313,25 +324,16 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	}
 }
 
-// Adds the shared frontend tests (shared between the web app and browser extension).
+// Adds the frontend tests (without the web app and browser extension tests).
 func frontendTests(pipeline *bk.Pipeline) {
 	// Shared tests
-	pipeline.AddStep(":jest: Test shared client code",
+	pipeline.AddStep(":jest: Test (all)",
 		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/shared"),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-
-	// Wildcard tests
-	pipeline.AddStep(":jest: Test wildcard client code",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
-
-func addBrandedTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest: Test branded client code",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
+		bk.AnnotatedCmd("dev/ci/yarn-test.sh --testPathIgnorePatterns client/web client/browser", bk.AnnotatedCmdOpts{
+			TestReports: &bk.TestReportOpts{
+				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+			},
+		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
@@ -340,8 +342,12 @@ func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
-			bk.Env("GOPROXY", goAthensProxyURL),
-			bk.Cmd("./dev/ci/go-test.sh "+testSuffix),
+			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+				TestReports: &bk.TestReportOpts{
+					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
+				},
+			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
 		)
 	})
@@ -352,11 +358,9 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 	return func(pipeline *bk.Pipeline) {
 		buildGoTests(func(description, testSuffix string) {
 			pipeline.AddStep(
-				// TODO - set minimum upgradeable version
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.Env("GOPROXY", goAthensProxyURL),
-				bk.Cmd("./dev/ci/go-backcompat/test.sh "+testSuffix),
+				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{}),
 			)
 		})
 	}
@@ -391,16 +395,15 @@ func buildGoTests(f func(description, testSuffix string)) {
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
-		bk.Env("GOPROXY", goAthensProxyURL),
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":docker: Docker checks",
-		bk.AnnotatedCmd("go run ./dev/sg check -annotations docker", bk.AnnotatedCmdOpts{
-			IncludeNames: true,
+	pipeline.AddStep(":docker: Docker linters",
+		bk.AnnotatedCmd("go run ./dev/sg lint -annotations docker", bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{IncludeNames: true},
 		}))
 }
 
@@ -470,9 +473,8 @@ func wait(pipeline *bk.Pipeline) {
 // Trigger the async pipeline to run. See pipeline.async.yaml.
 func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":snail: Trigger async",
+		pipeline.AddTrigger(":snail: Trigger async", "sourcegraph-async",
 			bk.Key("trigger:async"),
-			bk.Trigger("sourcegraph-async"),
 			bk.Async(true),
 			bk.Build(buildOptions),
 		)
@@ -488,8 +490,8 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 			// The previous major.minor-1
 			fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1),
 		} {
-			pipeline.AddTrigger(fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch),
-				bk.Trigger("sourcegraph"),
+			name := fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch)
+			pipeline.AddTrigger(name, "sourcegraph",
 				bk.Async(false),
 				bk.Build(bk.BuildOptions{
 					Branch:  branch,
@@ -518,13 +520,11 @@ func codeIntelQA(candidateTag string) operations.Operation {
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
-			bk.Agent("queue", "baremetal"),
+			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
-			// TODO need doc
-			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
@@ -538,13 +538,11 @@ func serverE2E(candidateTag string) operations.Operation {
 func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
-			bk.Agent("queue", "baremetal"),
+			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
-			// TODO need doc
-			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -560,7 +558,7 @@ func serverQA(candidateTag string) operations.Operation {
 func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-			bk.Agent("queue", "baremetal"),
+			bk.Agent("queue", bk.AgentQueueBaremetal),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -581,9 +579,6 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 func clusterQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
-
-			bk.Skip("flakey: https://github.com/sourcegraph/sourcegraph/issues/31342"),
-
 			bk.DependsOn(candidateImageStepKey("frontend")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
@@ -594,7 +589,10 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
+			// Flakey test we are running to collect more data:
+			// https://github.com/sourcegraph/sourcegraph/issues/31342
+			bk.SoftFail(123))
 	}
 }
 
@@ -677,8 +675,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.SoftFail(vulnerabilityExitCode),
 
 			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
-				Type:            bk.AnnotationTypeWarning,
-				MultiJobContext: "docker-security-scans",
+				Annotations: &bk.AnnotationOpts{
+					Type:            bk.AnnotationTypeWarning,
+					MultiJobContext: "docker-security-scans",
+				},
 			}))
 	}
 }

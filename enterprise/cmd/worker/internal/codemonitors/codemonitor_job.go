@@ -1,0 +1,32 @@
+package codemonitors
+
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+)
+
+type codeMonitorJob struct{}
+
+func NewCodeMonitorJob() job.Job {
+	return &codeMonitorJob{}
+}
+
+func (j *codeMonitorJob) Config() []env.Config {
+	return []env.Config{}
+}
+
+func (j *codeMonitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+	sqlDB, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	return background.NewBackgroundJobs(edb.NewEnterpriseDB(database.NewDB(sqlDB))), nil
+}

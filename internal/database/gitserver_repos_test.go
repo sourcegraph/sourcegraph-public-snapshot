@@ -87,7 +87,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 
 	var noShardCount int
 	// Iterate again against repos with no shard
-	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(repo types.RepoGitserverStatus) error {
+	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(_ types.RepoGitserverStatus) error {
 		noShardCount++
 		return nil
 	})
@@ -291,6 +291,55 @@ func TestGitserverReposGetByID(t *testing.T) {
 
 	// GetByID should now work
 	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestGitserverReposGetByName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	_, err := GitserverRepos(db).GetByID(ctx, 1)
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+
+	repo1 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		Description:  "",
+		ExternalRepo: api.ExternalRepoSpec{},
+		Sources:      nil,
+	}
+
+	// Create one test repo
+	err = Repos(db).Create(ctx, repo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:      repo1.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusNotCloned,
+	}
+
+	// Create GitServerRepo
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// GetByID should now work
+	fromDB, err := GitserverRepos(db).GetByName(ctx, repo1.Name)
 	if err != nil {
 		t.Fatal(err)
 	}

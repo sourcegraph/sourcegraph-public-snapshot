@@ -815,13 +815,14 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 # Table "public.external_service_repos"
 ```
-       Column        |  Type   | Collation | Nullable | Default 
----------------------+---------+-----------+----------+---------
- external_service_id | bigint  |           | not null | 
- repo_id             | integer |           | not null | 
- clone_url           | text    |           | not null | 
- user_id             | integer |           |          | 
- org_id              | integer |           |          | 
+       Column        |           Type           | Collation | Nullable |         Default         
+---------------------+--------------------------+-----------+----------+-------------------------
+ external_service_id | bigint                   |           | not null | 
+ repo_id             | integer                  |           | not null | 
+ clone_url           | text                     |           | not null | 
+ user_id             | integer                  |           |          | 
+ org_id              | integer                  |           |          | 
+ created_at          | timestamp with time zone |           | not null | transaction_timestamp()
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_clone_url_idx" btree (clone_url)
@@ -879,6 +880,7 @@ Foreign-key constraints:
  encryption_key_id | text                     |           | not null | ''::text
  namespace_org_id  | integer                  |           |          | 
  has_webhooks      | boolean                  |           |          | 
+ token_expires_at  | timestamp with time zone |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
@@ -1656,7 +1658,6 @@ Referenced by:
  expires_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
-    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
     "org_invitations_org_id" btree (org_id) WHERE deleted_at IS NULL
     "org_invitations_recipient_user_id" btree (recipient_user_id) WHERE deleted_at IS NULL
 Check constraints:
@@ -2027,7 +2028,6 @@ Triggers:
 ---------------+--------------------------+-----------+----------+-----------------
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
- user_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at    | timestamp with time zone |           | not null | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
@@ -2071,17 +2071,6 @@ Check constraints:
 Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
-
-```
-
-# Table "public.schema_migrations"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "schema_migrations_pkey" PRIMARY KEY, btree (version)
 
 ```
 
@@ -2178,7 +2167,7 @@ Contains security-relevant events with a long time horizon for storage.
 ----------------+--------------------------+-----------+----------+--------------------------------------
  id             | integer                  |           | not null | nextval('settings_id_seq'::regclass)
  org_id         | integer                  |           |          | 
- contents       | text                     |           |          | 
+ contents       | text                     |           | not null | '{}'::text
  created_at     | timestamp with time zone |           | not null | now()
  user_id        | integer                  |           |          | 
  author_user_id | integer                  |           |          | 
@@ -2187,6 +2176,8 @@ Indexes:
     "settings_global_id" btree (id DESC) WHERE user_id IS NULL AND org_id IS NULL
     "settings_org_id_idx" btree (org_id)
     "settings_user_id_idx" btree (user_id)
+Check constraints:
+    "settings_no_empty_contents" CHECK (contents <> ''::text)
 Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -2348,7 +2339,6 @@ Foreign-key constraints:
  bind_id         | text                     |           | not null | 
  permission      | text                     |           | not null | 
  object_type     | text                     |           | not null | 
- object_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at      | timestamp with time zone |           | not null | 
  service_type    | text                     |           | not null | 
  service_id      | text                     |           | not null | 

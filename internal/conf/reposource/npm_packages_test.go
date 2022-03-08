@@ -18,12 +18,15 @@ func TestParseNPMDependency(t *testing.T) {
 		{"package.js@1.2.3", true},
 		{"package-1.2.3", false},
 		{"@scope/package", false},
-		{"@weird.scope/package@1.2.3", false},
+		{"@weird.scope/package@1.2.3", true},
 		{"@scope/package.js@1.2.3", true},
 		{"package@1$%", false},
 		{"@scope-package@1.2.3", false},
 		{"@/package@1.2.3", false},
 		{"@scope/@1.2.3", false},
+		{"@dashed-scope/abc@0", true},
+		{"@a.b-c.d-e/f.g--h.ijk-l@0.1-abc", true},
+		{"@A.B-C.D-E/F.G--H.IJK-L@0.1-ABC", true},
 	}
 	for _, entry := range table {
 		dep, err := ParseNPMDependency(entry.testName)
@@ -37,7 +40,7 @@ func TestParseNPMDependency(t *testing.T) {
 }
 
 func TestSortNPMDependencies(t *testing.T) {
-	dependencies := []NPMDependency{
+	dependencies := []*NPMDependency{
 		parseNPMDependencyOrPanic(t, "ac@1.2.0"),
 		parseNPMDependencyOrPanic(t, "ab@1.2.0.Final"),
 		parseNPMDependencyOrPanic(t, "aa@1.2.0"),
@@ -49,7 +52,7 @@ func TestSortNPMDependencies(t *testing.T) {
 		parseNPMDependencyOrPanic(t, "ab@1.2.0-RC1"),
 		parseNPMDependencyOrPanic(t, "ab@1.1.0"),
 	}
-	expected := []NPMDependency{
+	expected := []*NPMDependency{
 		parseNPMDependencyOrPanic(t, "ac@1.2.0"),
 		parseNPMDependencyOrPanic(t, "ab@1.11.0"),
 		parseNPMDependencyOrPanic(t, "ab@1.2.0"),
@@ -65,10 +68,10 @@ func TestSortNPMDependencies(t *testing.T) {
 	assert.Equal(t, expected, dependencies)
 }
 
-func parseNPMDependencyOrPanic(t *testing.T, value string) NPMDependency {
+func parseNPMDependencyOrPanic(t *testing.T, value string) *NPMDependency {
 	dependency, err := ParseNPMDependency(value)
 	if err != nil {
 		t.Fatalf("error=%s", err)
 	}
-	return *dependency
+	return dependency
 }

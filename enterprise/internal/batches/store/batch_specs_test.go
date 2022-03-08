@@ -115,6 +115,84 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 
 	t.Run("List", func(t *testing.T) {
+		t.Run("NewestFirst", func(t *testing.T) {
+			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, want := ts, batchSpecs
+			if len(have) != len(want) {
+				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			}
+
+			for i := 0; i < len(have); i++ {
+				haveID, wantID := int(have[i].ID), len(have)-i
+				if haveID != wantID {
+					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
+				}
+			}
+		})
+
+		t.Run("OldestFirst", func(t *testing.T) {
+			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: false})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			have, want := ts, batchSpecs
+			if len(have) != len(want) {
+				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			}
+
+			for i := 0; i < len(have); i++ {
+				haveID, wantID := int(have[i].ID), i+1
+				if haveID != wantID {
+					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
+				}
+			}
+		})
+
+		t.Run("NewestFirstWithCursor", func(t *testing.T) {
+			var cursor int64
+			lastID := 99999
+			for i := 1; i <= len(batchSpecs); i++ {
+				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: true}
+				ts, next, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				haveID := int(ts[0].ID)
+				if haveID > lastID {
+					t.Fatalf("found batch specs out of order: expected descending but ID %d was before %d", lastID, haveID)
+				}
+
+				lastID = haveID
+				cursor = next
+			}
+		})
+
+		t.Run("OldestFirstWithCursor", func(t *testing.T) {
+			var cursor int64
+			var lastID int
+			for i := 1; i <= len(batchSpecs); i++ {
+				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: false}
+				ts, next, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				haveID := int(ts[0].ID)
+				if haveID < lastID {
+					t.Fatalf("found batch specs out of order: expected ascending but ID %d was before %d", lastID, haveID)
+				}
+
+				lastID = haveID
+				cursor = next
+			}
+		})
+
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty should return all entries
 			opts := ListBatchSpecsOpts{}

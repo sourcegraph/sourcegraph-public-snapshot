@@ -10,7 +10,7 @@ import { WebStory } from '../../../components/WebStory'
 import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
 
-const { add } = storiesOf('web/batches/BatchChangeListPage', module)
+const { add } = storiesOf('web/batches/list/BatchChangeListPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -43,6 +43,26 @@ add('List of batch changes', () => (
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesLicensed}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+            />
+        )}
+    </WebStory>
+))
+
+add('List of batch changes, server-side execution enabled', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeListPage
+                {...props}
+                headingElement="h1"
+                canCreate={true}
+                queryBatchChanges={queryBatchChanges}
+                areBatchChangesLicensed={batchChangesLicensed}
+                settingsCascade={{
+                    ...EMPTY_SETTINGS_CASCADE,
+                    final: {
+                        experimentalFeatures: { batchChangesExecution: true },
+                    },
+                }}
             />
         )}
     </WebStory>

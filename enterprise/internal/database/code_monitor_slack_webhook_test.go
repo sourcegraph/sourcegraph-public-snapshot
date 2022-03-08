@@ -19,10 +19,9 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		t.Parallel()
 
 		db := database.NewDB(dbtest.NewDB(t))
-		_, _, _, ctx := newTestUser(ctx, t, db)
+		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
-		fixtures, err := s.insertTestMonitor(ctx, t)
-		require.NoError(t, err)
+		fixtures := s.insertTestMonitor(ctx, t)
 
 		action, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
@@ -37,10 +36,9 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		t.Parallel()
 
 		db := database.NewDB(dbtest.NewDB(t))
-		_, _, _, ctx := newTestUser(ctx, t, db)
+		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
-		fixtures, err := s.insertTestMonitor(ctx, t)
-		require.NoError(t, err)
+		fixtures := s.insertTestMonitor(ctx, t)
 
 		action, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
@@ -59,7 +57,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		t.Parallel()
 
 		db := database.NewDB(dbtest.NewDB(t))
-		_, _, _, ctx := newTestUser(ctx, t, db)
+		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
 
 		_, err := s.UpdateSlackWebhookAction(ctx, 383838, false, false, url2)
@@ -70,10 +68,9 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		t.Parallel()
 
 		db := database.NewDB(dbtest.NewDB(t))
-		_, _, _, ctx := newTestUser(ctx, t, db)
+		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
-		fixtures, err := s.insertTestMonitor(ctx, t)
-		require.NoError(t, err)
+		fixtures := s.insertTestMonitor(ctx, t)
 
 		action1, err := s.CreateSlackWebhookAction(ctx, fixtures.monitor.ID, true, false, url1)
 		require.NoError(t, err)
@@ -95,10 +92,9 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		t.Parallel()
 
 		db := database.NewDB(dbtest.NewDB(t))
-		_, _, _, ctx := newTestUser(ctx, t, db)
+		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
-		fixtures, err := s.insertTestMonitor(ctx, t)
-		require.NoError(t, err)
+		fixtures := s.insertTestMonitor(ctx, t)
 
 		count, err := s.CountSlackWebhookActions(ctx, fixtures.monitor.ID)
 		require.NoError(t, err)
@@ -116,10 +112,9 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		t.Parallel()
 
 		db := database.NewDB(dbtest.NewDB(t))
-		_, _, _, ctx := newTestUser(ctx, t, db)
+		_, _, ctx := newTestUser(ctx, t, db)
 		s := CodeMonitors(db)
-		fixtures, err := s.insertTestMonitor(ctx, t)
-		require.NoError(t, err)
+		fixtures := s.insertTestMonitor(ctx, t)
 
 		actions, err := s.ListSlackWebhookActions(ctx, ListActionsOpts{MonitorID: &fixtures.monitor.ID})
 		require.NoError(t, err)

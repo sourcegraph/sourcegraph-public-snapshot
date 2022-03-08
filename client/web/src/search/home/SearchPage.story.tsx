@@ -15,7 +15,13 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WebStory } from '../../components/WebStory'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
+import {
+    _fetchRecentFileViews,
+    _fetchRecentSearches,
+    _fetchSavedSearches,
+    _fetchCollaborators,
+    authUser,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -44,6 +50,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    fetchCollaborators: _fetchCollaborators,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
@@ -51,7 +58,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     featureFlags: new Map(),
-    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/search/home/SearchPage', module)
@@ -71,6 +77,16 @@ add('Cloud with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
+    </WebStory>
+))
+
+add('Cloud with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
         }}
     </WebStory>
@@ -99,6 +115,16 @@ add('Server with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} />
+        }}
+    </WebStory>
+))
+
+add('Server with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return <SearchPage {...defaultProps(webProps)} />
         }}
     </WebStory>
