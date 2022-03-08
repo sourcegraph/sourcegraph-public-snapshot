@@ -77,7 +77,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     if (window.opener) {
         const parentWindow: ParentWindow = window.opener as ParentWindow
         if (parentWindow.onSuccess) {
-            parentWindow.onSuccess()
+            const urlParameters = new URLSearchParams(window.location.search)
+            const reason = urlParameters.get('reason')
+
+            parentWindow.onSuccess(reason)
         }
         window.close()
     }
@@ -88,14 +91,48 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
 
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !(owner.type === 'org'),
+        }
+    )
+
+    const useGitHubApp = data?.organizationFeatureFlagValue || false
+
+    const flagsOverridesResult = useFlagsOverrides()
+    const isGitHubAppEnabled = flagsOverridesResult.data
+        ?.filter(orgFlag => orgFlag.flagName === GITHUB_APP_FEATURE_FLAG_NAME)
+        .some(orgFlag => orgFlag.value)
+    const isGitHubAppLoading = flagsOverridesResult.loading
+
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
-    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(owner.tags, scopes.github) : false
+    const isGitHubTokenUpdateRequired = scopes.github
+        ? !isGitHubAppEnabled && githubRepoScopeRequired(owner.tags, scopes.github)
+        : false
     const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(owner.tags, scopes.gitlab) : false
 
     const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
         [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(owner.tags, scopes.github),
         [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(owner.tags, scopes.gitlab),
+    }
+
+    const [githubAppInstallRequestSuccess, setGitHubAppInstallRequestSuccess] = useState(false)
+
+    if (localStorage.getItem('githubInstallationRequest') && isServicesByKind(statusOrError)) {
+        if (statusOrError[ExternalServiceKind.GITHUB]) {
+            localStorage.removeItem('githubInstallationRequest')
+            setGitHubAppInstallRequestSuccess(false)
+        }
+    }
+
+    if (!githubAppInstallRequestSuccess && localStorage.getItem('githubInstallationRequest') === 'success') {
+        setGitHubAppInstallRequestSuccess(true)
     }
 
     useEffect(() => {
@@ -151,12 +188,34 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
+    const refetchServices = useCallback(
+        (reason: string | null): void => {
+            fetchExternalServices().catch(error => {
+                setStatusOrError(asError(error))
+            })
+
+            if (reason === 'request') {
+                localStorage.setItem('githubInstallationRequest', 'success')
+                setGitHubAppInstallRequestSuccess(true)
+            }
+        },
+        [fetchExternalServices]
+    )
+
     const logAddRepositoriesClicked = useCallback(
         (source: string) => () => {
             eventLogger.log('UserSettingsAddRepositoriesCTAClicked', null, { source })
         },
         []
     )
+
+    const getRequestSuccessBanner = (requestSuccess: boolean): JSX.Element | null =>
+        requestSuccess ? (
+            <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
+                An installation request has been sent to your GitHub organization administrators. Once the installation
+                has been approved, click on Connect again to finish connecting your code host connection.
+            </Alert>
+        ) : null
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
@@ -234,6 +293,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return [
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
+            getRequestSuccessBanner(githubAppInstallRequestSuccess),
             getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
             getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
         ]
@@ -279,25 +339,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return accumulator
     }, {})
 
-    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        GET_ORG_FEATURE_FLAG_VALUE,
-        {
-            variables: { orgID: owner.id, flagName: GITHUB_APP_FEATURE_FLAG_NAME },
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
-            skip: !(owner.type === 'org'),
-        }
-    )
-
-    const useGitHubApp = data?.organizationFeatureFlagValue || false
-
-    const flagsOverridesResult = useFlagsOverrides()
-    const isGitHubAppEnabled = flagsOverridesResult.data
-        ?.filter(orgFlag => orgFlag.flagName === GITHUB_APP_FEATURE_FLAG_NAME)
-        .some(orgFlag => orgFlag.value)
-    const isGitHubAppLoading = flagsOverridesResult.loading
-
     const defaultNavigateToAuthProvider = useCallback(
         (kind: ExternalServiceKind): void => {
             const authProvider = authProvidersByKind[kind]
@@ -328,9 +369,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     const firstRedirectURI = `/.auth/github/login?pc=${encodeURIComponent(
                         `https://github.com/::${window.context.githubAppCloudClientID}`
                     )}&op=createCodeHostConnection&redirect=${encodeURIComponent(secondRedirectURI)}`
-                    window.location.assign(
-                        `${authProvider.authenticationURL as string}&redirect=${encodeURIComponent(firstRedirectURI)}`
+
+                    const browser: ParentWindow = window.self as ParentWindow
+
+                    browser.onSuccess = (reason: string | null) => {
+                        refetchServices(reason)
+                    }
+                    const popup = browser.open(
+                        `${authProvider.authenticationURL as string}&redirect=${encodeURIComponent(firstRedirectURI)}`,
+                        'name',
+                        `dependent=${1}, alwaysOnTop=${1}, alwaysRaised=${1}, alwaysRaised=${1}, width=${600}, height=${900}`
                     )
+
+                    const popupTick = setInterval(() => {
+                        if (popup?.closed) {
+                            clearInterval(popupTick)
+                        }
+                    }, 500)
                 } else {
                     window.location.assign(
                         `/.auth/github/login?pc=${encodeURIComponent(
@@ -340,7 +395,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
             }
         },
-        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled, owner]
+        [authProvidersByKind, defaultNavigateToAuthProvider, isGitHubAppEnabled, owner, refetchServices]
     )
 
     return (
@@ -380,7 +435,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
-                                        isTokenUpdateRequired={isTokenUpdateRequired[kind]}
+                                        isTokenUpdateRequired={
+                                            isTokenUpdateRequired[kind] &&
+                                            !(kind === ExternalServiceKind.GITHUB && isGitHubAppEnabled)
+                                        }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         isUpdateModalOpen={isUpdateModalOpen}
@@ -391,6 +449,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidError={handleError}
                                         loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
+                                        reloadComponent={refetchServices}
+                                        pending={
+                                            githubAppInstallRequestSuccess &&
+                                            kind === ExternalServiceKind.GITHUB &&
+                                            useGitHubApp
+                                        }
                                     />
                                 </CodeHostListItem>
                             ) : null
