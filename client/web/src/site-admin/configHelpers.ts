@@ -26,7 +26,7 @@ const addSearchScopeToSettings: ConfigInsertionFunction = config => {
 
 const addQuickLinkToSettings: ConfigInsertionFunction = config => {
     const value: { name: string; url: string } = {
-        name: '<human-readable name>',
+        name: '<name>',
         url: '<URL>',
     }
     const edits = modify(config, ['quicklinks', -1], value, options)
