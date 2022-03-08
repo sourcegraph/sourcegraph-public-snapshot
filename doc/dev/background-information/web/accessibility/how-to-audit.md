@@ -18,8 +18,7 @@ Before starting your audit, you should ensure the following statements are true:
 2. Enable a screen reader. Navigate through the user journey **without** looking at your screen.
     - Would a user be able to understand the **content** of the journey?
     - Would a user be able to correctly and predictably perform each important **action**?
-    - Are headings used correctly? Would a user be able to predictably navigate between each heading within the journey?
-    - Are images correctly described? Any graphical content that is important for the journey should be read out by the screen reader.
+    - Note: Use the cheatsheet in [How to use a screen reader](how-to-screen-reader.md) to help you navigate.
 3. Run through the [detailed checklist](#detailed-checklist) and ensure that there are no major issues.
 
 ## Raising an issue
