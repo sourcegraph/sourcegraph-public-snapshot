@@ -78,7 +78,7 @@ func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo,
 		goroutine.Go(func() {
 			defer wg.Done()
 
-			recentCommits, err := git.Commits(ctx, repo.Name, git.CommitsOptions{
+			recentCommits, err := gitCommits(ctx, repo.Name, git.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true, // Don't try to fetch missing commits.
 				NameOnly:         true, // Don't fetch detailed info like commit diffs.
