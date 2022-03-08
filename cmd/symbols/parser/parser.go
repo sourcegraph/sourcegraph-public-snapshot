@@ -170,7 +170,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	}
 	trace.Log(log.Int("numEntries", len(entries)))
 
-	lines := strings.Split(string(parseRequest.Data), "/")
+	lines := strings.Split(string(parseRequest.Data), "\n")
 
 	for _, e := range entries {
 		if !shouldPersistEntry(e) {
