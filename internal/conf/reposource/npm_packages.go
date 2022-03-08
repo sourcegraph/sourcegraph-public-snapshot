@@ -221,7 +221,7 @@ func SortNPMDependencies(dependencies []*NPMDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
 		iPkg, jPkg := dependencies[i].NPMPackage, dependencies[j].NPMPackage
 		if iPkg.Equal(jPkg) {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
+			return VersionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}
 		if iPkg.scope == jPkg.scope {
 			return iPkg.name > jPkg.name

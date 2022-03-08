@@ -147,8 +147,8 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	return r.urlPath(url).String(), nil
 }
 
-func (r *GitTreeEntryResolver) CanonicalURL() string {
-	url := r.commit.canonicalRepoRevURL()
+func (r *GitTreeEntryResolver) CanonicalURL(ctx context.Context) string {
+	url := r.commit.canonicalRepoRevURL(ctx)
 	return r.urlPath(url).String()
 }
 

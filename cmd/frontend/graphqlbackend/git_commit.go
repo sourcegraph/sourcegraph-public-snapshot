@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"sort"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -351,9 +353,28 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 	return &url
 }
 
-func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
+func (r *GitCommitResolver) canonicalRepoRevURL(ctx context.Context) *url.URL {
 	// Dereference to copy the URL to avoid mutation
 	url := *r.repoResolver.RepoMatch.URL()
+	if r.repoResolver.IsPackageRepo() { // See https://github.com/sourcegraph/sourcegraph/issues/31937
+		tags, err := r.resolveTags(ctx)
+		if err == nil && len(tags) >= 1 {
+			sort.Slice(tags, func(i, j int) bool {
+				// tags for package repos are formatted as 'v<version>'
+				return reposource.VersionGreaterThan(tags[i], tags[j])
+			})
+			url.Path += "@" + tags[len(tags)-1]
+			return &url
+		}
+	}
 	url.Path += "@" + string(r.oid)
 	return &url
+}
+
+func (r *GitCommitResolver) resolveTags(ctx context.Context) ([]string, error) {
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return commit.Tags, nil
 }
