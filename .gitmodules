@@ -11,5 +11,5 @@
 	url = https://github.com/tree-sitter/tree-sitter-c-sharp
 	shallow = true
 [submodule "cmd/symbols/squirrel/nvim-treesitter"]
-	path = cmd/symbols/squirrel/nvim-treesitter
+	path = cmd/symbols/squirrel/external/nvim-treesitter
 	url = https://github.com/nvim-treesitter/nvim-treesitter

@@ -39,7 +39,7 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 	}
 
 	// Load the tree-sitter query.
-	localsPath := path.Join("nvim-treesitter", "queries", root.LangSpec.nvimQueryDir, "locals.scm")
+	localsPath := path.Join("external", "nvim-treesitter", "queries", root.LangSpec.nvimQueryDir, "locals.scm")
 	queriesBytes, err := queriesFs.ReadFile(localsPath)
 	if err != nil {
 		return nil, errors.Newf("could not read %d: %s", localsPath, err)
