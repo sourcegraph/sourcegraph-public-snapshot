@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -245,25 +246,26 @@ func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, erro
 	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
 		return false, nil
 	}
-	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{NamespaceOrgID: o.OrgID()})
+	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: o.OrgID()})
 	if err != nil {
 		return false, err
 	}
-	// no need to update
 	if len(orgServices) == 0 {
+		// no need to update
 		return false, nil
 	}
-	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{NamespaceUserID: actor.UID})
+	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceUserID: actor.UID})
 	if err != nil {
 		return false, err
 	}
 	// no need to update
 	if len(userServices) == 0 {
+		// no need to update
 		return false, nil
 	}
 	for _, os := range orgServices {
 		for _, us := range userServices {
-			if os.Kind == us.Kind {
+			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
 				if os.UpdatedAt.After(us.UpdatedAt) {
 					return true, nil
 				}

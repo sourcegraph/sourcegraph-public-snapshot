@@ -34,6 +34,7 @@ import {
     CodeHostSyncDueResult,
     CodeHostSyncDueVariables,
     RepositoriesResult,
+    OrgAreaOrganizationFields,
 } from '../../../graphql-operations'
 import {
     listUserRepositories,
@@ -45,6 +46,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
 import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
+import { OrgUserNeedsGithubUpgrade } from '../codeHosts/OrgUserNeedsGithubUpgrade'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
@@ -56,6 +58,7 @@ interface Props
     owner: Owner
     routingPrefix: string
     authenticatedUser: AuthenticatedUser
+    org?: OrgAreaOrganizationFields
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -69,6 +72,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
     authenticatedUser,
+    org,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -325,6 +329,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     orgExternalServices={externalServices}
                     orgDisplayName={owner.name}
                 />
+            )}
+            {!isUserOwner && authenticatedUser && org && org.viewerNeedsCodeHostUpdate && (
+                <OrgUserNeedsGithubUpgrade user={authenticatedUser} />
             )}
 
             <PageTitle title="Your repositories" />
