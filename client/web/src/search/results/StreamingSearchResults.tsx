@@ -136,12 +136,7 @@ function useCtaAlert(
             return 'browser'
         }
 
-        if (
-            isUsingIdeIntegration === false &&
-            displayIDEExtensionCTABasedOnCadence &&
-            !hasDismissedIDEExtensionAlert &&
-            true
-        ) {
+        if (isUsingIdeIntegration === false && displayIDEExtensionCTABasedOnCadence && !hasDismissedIDEExtensionAlert) {
             return 'ide'
         }
 
