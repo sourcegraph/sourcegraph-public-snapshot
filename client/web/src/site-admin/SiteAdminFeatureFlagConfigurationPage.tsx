@@ -25,27 +25,36 @@ export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentPr
 }
 
 export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminFeatureFlagConfigurationProps> = ({
-    match: {
-        params: { name },
-    },
+    match: { params },
     fetchFeatureFlags = defaultFetchFeatureFlags,
     productVersion = window.context.version,
 }) => {
     const history = useHistory()
     const productGitVersion = parseProductReference(productVersion)
+    const isCreateFeatureFlag = params.name === 'new'
+
+    // Load the initial feature flag, unless we are creating a new feature flag.
     const featureFlagOrError = useObservable(
         useMemo(
             () =>
-                name !== 'new'
-                    ? fetchFeatureFlags().pipe(
-                          map(flags => flags.find(flag => flag.name === name)),
+                isCreateFeatureFlag
+                    ? of(undefined)
+                    : fetchFeatureFlags().pipe(
+                          map(flags => flags.find(flag => flag.name === params.name)),
+                          map(flag => {
+                              if (flag === undefined) {
+                                  throw new Error(`Could not find feature flag with name '${params.name}'.`)
+                              }
+                              return flag
+                          }),
                           catchError((error): [ErrorLike] => [asError(error)])
-                      )
-                    : of(undefined),
-            [name, fetchFeatureFlags]
+                      ),
+            [isCreateFeatureFlag, params.name, fetchFeatureFlags]
         )
     )
 
+    // Split feature flag fields into parts that can be individually updated during
+    // feature flag creation or management of an existing feature flag.
     const [flagName, setFlagName] = useState<string>()
     const [flagType, setFlagType] = useState<FeatureFlagType>()
     const [flagValue, setFlagValue] = useState<FeatureFlagValue>()
@@ -59,6 +68,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
         }
     }, [featureFlagOrError])
 
+    // Set up mutations for creation or management of this feature flag.
     const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
         CREATE_FEATURE_FLAG_MUTATION
     )
@@ -69,9 +79,11 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
         DELETE_FEATURE_FLAG_MUTATION
     )
 
+    // Create the main form fields and action buttons based on the state of the page.
     let body: React.ReactElement
     let actions: React.ReactElement | undefined
-    if (name === 'new') {
+    if (isCreateFeatureFlag) {
+        // Create new feature flag state
         body = (
             <CreateFeatureFlag
                 name={flagName}
@@ -107,8 +119,10 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
             </Button>
         )
     } else if (isErrorLike(featureFlagOrError)) {
-        body = <ErrorAlert prefix="Error fetching feature flag policy" error={featureFlagOrError} />
+        // Error occured state
+        body = <ErrorAlert prefix="Error fetching feature flag" error={featureFlagOrError} />
     } else if (flagName && flagType && flagValue) {
+        // Found existing feature flag state
         body = (
             <ManageFeatureFlag
                 name={flagName}
@@ -172,7 +186,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
         body = <LoadingSpinner className="mt-2" />
     }
 
-    const verb = name === 'new' ? 'Create' : 'Manage'
+    const verb = isCreateFeatureFlag ? 'Create' : 'Manage'
     return (
         <>
             <PageTitle title={`${verb} feature flag`} />
@@ -196,14 +210,12 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                 <ReferencesCollapsible flagName={flagName} productGitVersion={productGitVersion} />
             </Container>
 
-            {actions && (
-                <div className="mt-3">
-                    {actions}
-                    <Button type="button" className="ml-2" variant="secondary" onClick={() => history.push('../')}>
-                        Cancel
-                    </Button>
-                </div>
-            )}
+            <div className="mt-3">
+                {actions}
+                <Button type="button" className="ml-2" variant="secondary" onClick={() => history.push('../')}>
+                    Cancel
+                </Button>
+            </div>
         </>
     )
 }
@@ -225,6 +237,9 @@ interface FeatureFlagRolloutValue {
 
 type FeatureFlagValue = FeatureFlagBooleanValue | FeatureFlagRolloutValue
 
+/**
+ * Component with form fields for managing an existing feature flag.
+ */
 const ManageFeatureFlag: FunctionComponent<{
     name: string
     type: FeatureFlagType
@@ -258,10 +273,10 @@ const ManageFeatureFlag: FunctionComponent<{
 
                         <span className={classNames('py-1 pl-2', styles.nodeGridCode)}>
                             {/*
-                                            TODO: querying for namespace connection seems to
-                                            error out often, so just present the ID for now.
-                                            https://github.com/sourcegraph/sourcegraph/issues/32238
-                                        */}
+                                TODO: querying for namespace connection seems to
+                                error out often, so just present the ID for now.
+                                https://github.com/sourcegraph/sourcegraph/issues/32238
+                            */}
                             <code>{override.id}</code>
                         </span>
                     </React.Fragment>
@@ -271,6 +286,9 @@ const ManageFeatureFlag: FunctionComponent<{
     </>
 )
 
+/**
+ * Component with form fields for creating a feature flag.
+ */
 const CreateFeatureFlag: React.FunctionComponent<{
     name?: string
     setFlagName: (s: string) => void
@@ -419,6 +437,12 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
     )
 }
 
+/**
+ * Searches for potential references and renders them in a collapsible, or returns an
+ * empty fragment - this allows references to works seamlessly in case the flag has not
+ * been implemented yet, or if this Sourcegraph instance does not have a copy of the
+ * Sourcegraph repository.
+ */
 const ReferencesCollapsible: React.FunctionComponent<{
     flagName: string | undefined
     productGitVersion: string
