@@ -1,24 +1,6 @@
-# How to conduct an accessibility audit
+# Detailed Checklist
 
-Before starting an audit, you should ensure you can confidently [control accessibility tools](tooling.md).
-
-## Preparation
-
-Before starting your audit, you should ensure the following statements are true:
-
-- The page or journey you are about to audit feels appropriately scoped.
-  - Example: Instead of auditing the entirety of code insights, the audit should be focused on a specific part, such as creating a new code insight.
-- A relevant GitHub issue has been created for this audit, and it is attached to the [WCAG 2.1 auditing tracking issue](https://github.com/sourcegraph/sourcegraph/issues/31475).
-
-
-Needs adding:
-- Tooltips. Need to decide if global or local
-
-
-
-## Content
-
-### Headings are used correctly and in the correct order
+## Headings are used correctly and in the correct order
 
 - Headings must use the correct semantic `<hX>` tag (e.g. `<h1>`).
 - There should only be one `<h1>` element per page.
@@ -32,26 +14,6 @@ Needs adding:
 - If we have to use a `<h2>` need the styles of a `<h3>`, we can easily select the correct styles using the [Wildcard Heading components](https://storybook.sgdev.org/?path=/story/wildcard-typography-all--simple).
   - Example: `<H3 as={H2}>Hello</H3>`
 - We should be able to use some tooling to help find this. TODO UPDATE
-
-
-## Keyboard navigation
-
-### The entire user journey is keyboard navigable
-
-- It is possible for a user to correctly complete the user journey using **only** the keyboard (no mouse).
-
-### The keyboard focus order follows a logical sequence that is predictable
-
-- It should be easy to guess where next
-
-### All interactive elements have a visible focus style
-
-- blah blah
-
-### Invisible elements are never focused
-
-- blajh blah
-
 
 ## Images
 
