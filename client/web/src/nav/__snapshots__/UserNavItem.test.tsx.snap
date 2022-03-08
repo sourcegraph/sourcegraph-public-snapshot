@@ -20,7 +20,11 @@ exports[`UserNavItem simple 1`] = `
           class="userAvatar icon-inline avatar"
           id="target-user-avatar"
         >
-          ad
+          <span
+            class="initials"
+          >
+            ad
+          </span>
         </div>
         <svg
           class="mdi-icon icon-inline"

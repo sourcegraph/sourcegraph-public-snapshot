@@ -46,7 +46,7 @@ func NewServer(source ConfigurationSource) *Server {
 	fileWrite := make(chan chan struct{}, 1)
 	return &Server{
 		Source:    source,
-		store:     newStore(),
+		store:     defaultStore,
 		fileWrite: fileWrite,
 	}
 }

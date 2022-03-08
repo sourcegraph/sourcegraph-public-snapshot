@@ -292,7 +292,6 @@ DO UPDATE SET
   synced_at = excluded.synced_at
 `
 
-	p.IDs.RunOptimize()
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	} else if p.SyncedAt.IsZero() {
@@ -473,7 +472,6 @@ DO UPDATE SET
   synced_at = excluded.synced_at
 `
 
-	p.UserIDs.RunOptimize()
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	} else if p.SyncedAt.IsZero() {
@@ -505,7 +503,6 @@ DO UPDATE SET
   updated_at = excluded.updated_at
 `
 
-	p.UserIDs.RunOptimize()
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	}
@@ -903,6 +900,7 @@ AND object_type = %s
 // Because there could be multiple external services and bind IDs that are associated with a single user
 // (e.g. same user on different code hosts, multiple email addresses), it merges data from "repo_pending_permissions"
 // and "user_pending_permissions" tables to "repo_permissions" and "user_permissions" tables for the user.
+//
 // Therefore, permissions are unioned not replaced, which is one of the main differences from SetRepoPermissions
 // and SetRepoPendingPermissions methods. Another main difference is that multiple calls to this method
 // are not idempotent as it conceptually does nothing when there is no data in the pending permissions
@@ -1401,6 +1399,7 @@ FROM user_external_accounts
 WHERE service_type = %s
 AND service_id = %s
 AND account_id IN (%s)
+AND deleted_at IS NULL
 `, accounts.ServiceType, accounts.ServiceID, sqlf.Join(items, ","))
 	rows, err := s.Query(ctx, q)
 	if err != nil {

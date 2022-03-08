@@ -1,3 +1,5 @@
+import escape from 'escape-html'
+
 import { JsonDocument, Occurrence, SyntaxKind } from './lsif-typed'
 
 class HtmlBuilder {
@@ -14,7 +16,7 @@ class HtmlBuilder {
     }
     public element(element: string, attributes: string, value: string): void {
         this.openTag(element + ' ' + attributes)
-        this.raw(value)
+        this.raw(escape(value))
         this.closeTag(element)
     }
     public raw(html: string): void {
@@ -103,7 +105,7 @@ export function render(lsif_json: string, content: string): string {
             // At this time, the syntax highlighter only returns non-overlapping ranges so this
             // is OK.
             if (start.line !== end.line) {
-                html.plaintext(line.slice(start.character))
+                highlightSlice(html, occ.kind, line.slice(start.character))
                 closeLine(html)
 
                 // Move to the next line
@@ -132,10 +134,13 @@ export function render(lsif_json: string, content: string): string {
             startCharacter = end.character
         }
 
-        // If we didn't find any occurences on this line, then just write the line plainly
-        if (startCharacter === 0) {
-            html.plaintext(line)
+        // Highlight the remainder of the line.
+        //  This could be either that some characters at the end of the line didn't match any syntax kinds
+        //  or that some line didn't have any matches at all.
+        if (startCharacter !== line.length) {
+            html.plaintext(line.slice(startCharacter))
         }
+
         closeLine(html)
     }
     html.closeTag('tbody')

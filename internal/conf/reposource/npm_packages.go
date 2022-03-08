@@ -14,9 +14,9 @@ import (
 const (
 	// Exported for [NOTE: npm-tarball-filename-workaround].
 	// . is allowed in scope names: for example https://www.npmjs.com/package/@dinero.js/core
-	NPMScopeRegexString = `(?P<scope>[0-9a-z_\-\.]+)`
+	NPMScopeRegexString = `(?P<scope>[\w\-\.]+)`
 	// . is allowed in package names: for example https://www.npmjs.com/package/highlight.js
-	npmPackageNameRegexString = `(?P<name>[0-9a-z_\-]+(\.[0-9a-z_\-]+)*)`
+	npmPackageNameRegexString = `(?P<name>[\w\-]+(\.[\w\-]+)*)`
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 	scopedPackageNameRegex = lazyregexp.New(
 		`^(@` + NPMScopeRegexString + `/)?` +
 			npmPackageNameRegexString +
-			`@(?P<version>[0-9a-zA-Z_\-]+(\.[0-9a-zA-Z_\-]+)*)$`)
+			`@(?P<version>[\w\-]+(\.[\w\-]+)*)$`)
 	npmURLRegex = lazyregexp.New(
 		`^npm/(` + NPMScopeRegexString + `/)?` +
 			npmPackageNameRegexString + `$`)
@@ -45,10 +45,10 @@ type NPMPackage struct {
 
 func NewNPMPackage(scope string, name string) (*NPMPackage, error) {
 	if scope != "" && !npmScopeRegex.MatchString(scope) {
-		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, _, -)", scope)
+		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, A-Z, _, -)", scope)
 	}
 	if !npmPackageNameRegex.MatchString(name) {
-		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, _, -)", name)
+		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, A-Z, _, -)", name)
 	}
 	return &NPMPackage{scope, name}, nil
 }

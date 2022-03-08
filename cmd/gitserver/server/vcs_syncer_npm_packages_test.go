@@ -20,6 +20,7 @@ import (
 
 	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -100,7 +101,18 @@ func TestNPMCloneCommand(t *testing.T) {
 	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
 
 	client := npmtest.MockClient{
-		TarballMap: map[string]string{exampleNPMVersionedPackage: tgzPath, exampleNPMVersionedPackage2: tgzPath2},
+		Packages: map[string]*npm.PackageInfo{
+			"example": {
+				Versions: map[string]*npm.DependencyInfo{
+					exampleNPMVersion: {
+						Dist: npm.DependencyInfoDist{TarballURL: tgzPath},
+					},
+					exampleNPMVersion2: {
+						Dist: npm.DependencyInfoDist{TarballURL: tgzPath2},
+					},
+				},
+			},
+		},
 	}
 	s := NewNPMPackagesSyncer(
 		schema.NPMPackagesConnection{Dependencies: []string{}},
