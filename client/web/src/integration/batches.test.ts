@@ -9,7 +9,7 @@ import {
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
     ChangesetCheckState,
@@ -401,19 +401,19 @@ function mockCommonGraphQLResponses(
 
 describe('Batches', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            getCurrentTitle: () => expect.getState().currentTestName,
             directory: __dirname,
         })
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     const batchChangeLicenseGraphQlResults = {

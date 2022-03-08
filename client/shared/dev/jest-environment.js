@@ -31,11 +31,19 @@ module.exports = class JSDOMEnvironmentGlobal extends JSDOMEnvironment {
     this.dom.window.document.queryCommandSupported = () => false
 
     this.global.jsdom = this.dom
+    this.global.hasTestFailures = false
   }
 
   teardown() {
     this.global.jsdom = null
+    this.global.hasTestFailures = false
 
     return super.teardown()
+  }
+
+  handleTestEvent(event) {
+    if (event.name === 'test_fn_failure') {
+      this.global.hasTestFailures = true
+    }
   }
 }

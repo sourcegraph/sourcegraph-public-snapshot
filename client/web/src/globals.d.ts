@@ -22,3 +22,9 @@ declare module '*.yml' {
     const ymlModule: string
     export default ymlModule
 }
+
+/**
+ * Set by shared/dev/jest-environment.js
+ */
+declare var jsdom: import('jsdom').JSDOM
+declare var hasTestFailures: boolean

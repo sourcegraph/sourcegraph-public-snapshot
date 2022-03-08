@@ -1,7 +1,7 @@
 import delay from 'delay'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
@@ -23,14 +23,14 @@ describe('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            getCurrentTitle: () => expect.getState().currentTestName,
             directory: __dirname,
             customContext: {
                 // Enforce using a new gql API for code insights pages
@@ -39,9 +39,9 @@ describe('[VISUAL] Code insights page', () => {
         })
     })
 
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     afterEach(() => testContext?.dispose())
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
@@ -198,7 +198,6 @@ describe('[VISUAL] Code insights page', () => {
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/add-dashboard')
             await driver.page.waitForSelector('input[name="name"]')
-
             await percySnapshotWithVariants(driver.page, 'Code insights add new dashboard page')
         })
     })

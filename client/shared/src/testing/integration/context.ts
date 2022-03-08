@@ -87,8 +87,13 @@ export interface IntegrationTestOptions {
     /**
      * The value of `this.currentTest` in the `beforeEach()` hook.
      * Make sure the hook function is not an arrow function to access it.
+     *
+     *
+     * @deprecated Should be removed after migrated all tests to Jest
      */
-    currentTest: Test
+    currentTest?: Test
+
+    getCurrentTitle?: () => string
 
     /**
      * The directory (value of `__dirname`) of the test file.
@@ -113,10 +118,15 @@ export const createSharedIntegrationTestContext = async <
 >({
     driver,
     currentTest,
+    getCurrentTitle = () => '',
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
-    const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
+    const recordingsDirectory = path.join(
+        directory,
+        '__fixtures__',
+        snakeCase(currentTest ? currentTest.fullTitle() : getCurrentTitle())
+    )
     if (pollyMode === 'record') {
         await mkdir(recordingsDirectory, { recursive: true })
     }
@@ -124,7 +134,7 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapterOptions: CdpAdapterOptions = {
         browser: driver.browser,
     }
-    const polly = new Polly(snakeCase(currentTest.title), {
+    const polly = new Polly(snakeCase(currentTest ? currentTest.title : getCurrentTitle()), {
         adapters: [CdpAdapter.id],
         adapterOptions: {
             [CdpAdapter.id]: cdpAdapterOptions,
@@ -153,8 +163,12 @@ export const createSharedIntegrationTestContext = async <
     // e.g. because a request had no mock defined.
     const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
     subscriptions.add(
-        cdpAdapter.errors.subscribe(error => {
-            currentTest.emit('error', error)
+        cdpAdapter.errors.subscribe((error: any) => {
+            if (currentTest) {
+                currentTest.emit('error', error)
+            } else {
+                throw new Error(error)
+            }
         })
     )
 

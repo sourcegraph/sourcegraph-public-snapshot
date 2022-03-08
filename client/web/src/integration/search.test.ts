@@ -6,7 +6,7 @@ import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
@@ -63,15 +63,15 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
+            getCurrentTitle: () => expect.getState().currentTestName!,
             directory: __dirname,
         })
         testContext.overrideGraphQL({
@@ -92,7 +92,7 @@ describe('Search', () => {
             }),
         })
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     const waitAndFocusInput = async () => {
