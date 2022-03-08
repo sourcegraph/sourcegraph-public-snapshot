@@ -4,14 +4,14 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link } from '@sourcegraph/wildcard'
+import { CommitMatch, getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
+import { Link } from '@sourcegraph/wildcard'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
@@ -58,11 +58,11 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 )}
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
-                    <a href={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                    <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
                         <code>{result.oid.slice(0, 7)}</code>
                         &nbsp;
                         <Timestamp date={result.authorDate} noAbout={true} />
-                    </a>
+                    </Link>
                 )}
                 {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
                     <div className={styles.divider} />
