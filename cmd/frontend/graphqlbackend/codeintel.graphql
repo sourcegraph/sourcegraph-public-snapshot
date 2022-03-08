@@ -561,11 +561,15 @@ extend type GitBlob {
 
     """
     Provides code intelligence within the file.
+
+    Experimental: This API is likely to change in the future.
     """
     localCodeIntel: JSONValue
 
     """
     A wrapper around syntactic hover and definition query methods.
+
+    Experimental: This API is likely to change in the future.
     """
     symbolInfo(line: Int!, character: Int!): SymbolInfo
 }
