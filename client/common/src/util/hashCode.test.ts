@@ -1,7 +1,6 @@
 import { hashCode } from './hashCode'
 
-// TODOD #31952: Some of these tests are failing. They should be fixed and made to run in CI, or deleted.
-describe.skip('hashCode', () => {
+describe('hashCode', () => {
     const testCaseUUIDs = {
         'd3e406d5-a359-4b88-b0d3-db025a957811': 'EvvIjqiG1H71c2DNHbO4m2E/hvN2cYpGVRH+hcLW4uM=',
         'd3f07658-2629-45ad-9159-86b738f0b6bf': 'k+mqeb0pK+eT3TbvrR2IEsyhty5NJHKNeNr9AdmlwMc=',
