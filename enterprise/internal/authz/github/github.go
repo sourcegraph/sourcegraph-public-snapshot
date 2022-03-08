@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -275,11 +277,13 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			}
 			if github.IsNotFound(err) {
 				// If we get a 404 here, something funky is going on and this is very
-				// unexpected. Instead of bailing out and potentially causing unbounded
-				// retries later, we let this result proceed to cache. This is safe
-				// because the cache will eventually get invalidated at which point we
-				// can retry this group, or a sync can be triggered that marks the cached
-				// group as invalidated.
+				// unexpected. Since this is likely not transient, instead of bailing out
+				// and potentially causing unbounded retries later, we let this result
+				// proceed to cache. This is safe because the cache will eventually get
+				// invalidated, at which point we can retry this group, or a sync can be
+				// triggered that marks the cached group as invalidated.
+				log15.Debug("list repos for group: unexpected 404, persisting to cache",
+					"error", err)
 			} else if err != nil {
 				// Add and return what we've found on this page but don't persist group
 				// to cache
