@@ -131,7 +131,7 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	}
 
 	if enabled, ok := ffs["cc-repo-aware-monitors"]; ok && enabled {
-		planJob, err = mapJob(planJob)
+		planJob, err = mapJobTree(planJob)
 		if err != nil {
 			return nil, err
 		}
@@ -155,13 +155,13 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	return results, nil
 }
 
-func mapJob(in job.Job) (_ job.Job, err error) {
+func mapJobTree(in job.Job) (_ job.Job, err error) {
 	addErr := func(j interface{}) {
 		err = errors.Append(err, errors.Errorf("found invalid leaf job %T", j))
 	}
 
 	mapper := job.Mapper{
-		// Ignore any leaf nodes that aren't commit/diff searches
+		// Error on any leaf nodes that aren't commit/diff searches
 		MapRepoSearchJob:               func(j *run.RepoSearch) *run.RepoSearch { addErr(j); return nil },
 		MapRepoSubsetTextSearchJob:     func(j *textsearch.RepoSubsetTextSearch) *textsearch.RepoSubsetTextSearch { addErr(j); return nil },
 		MapRepoUniverseTextSearchJob:   func(j *textsearch.RepoUniverseTextSearch) *textsearch.RepoUniverseTextSearch { addErr(j); return nil },
