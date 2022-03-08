@@ -47,6 +47,13 @@ add('SlackWebhookAction', () => (
                 <h2>Open, populated, enabled</h2>
                 <SlackWebhookAction {...defaultProps} _testStartOpen={true} action={action} />
 
+                <h2>Open, populated with error, enabled</h2>
+                <SlackWebhookAction
+                    {...defaultProps}
+                    _testStartOpen={true}
+                    action={{ ...action, url: 'https://example.com' }}
+                />
+
                 <h2>Closed, populated, disabled</h2>
                 <SlackWebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
 

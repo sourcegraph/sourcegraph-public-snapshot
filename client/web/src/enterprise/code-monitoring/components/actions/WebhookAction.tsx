@@ -1,9 +1,9 @@
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { Alert, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Alert, Button, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -41,6 +41,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
     )
 
     const [url, setUrl] = useState(action && action.__typename === 'MonitorWebhook' ? action.url : '')
+    const urlIsValid = useMemo(() => !!url.match(/^https?:\/\//), [url])
 
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
@@ -96,7 +97,7 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             completedSubtitle="The webhook at the specified URL will be called."
             actionEnabled={webhookEnabled}
             toggleActionEnabled={toggleWebhookEnabled}
-            canSubmit={!!url}
+            canSubmit={!!urlIsValid}
             onSubmit={onSubmit}
             onCancel={() => {}}
             canDelete={!!action}
@@ -109,10 +110,10 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
             </Alert>
             <div className="form-group">
                 <label htmlFor="code-monitor-webhook-url">Webhook URL</label>
-                <input
+                <Input
                     id="code-monitor-webhook-url"
                     type="url"
-                    className="form-control mb-2"
+                    className="mb-2"
                     data-testid="webhook-url"
                     required={true}
                     onChange={event => {
@@ -121,6 +122,8 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                     value={url}
                     autoFocus={true}
                     spellCheck={false}
+                    status={urlIsValid ? 'valid' : url ? 'error' : undefined /* Don't show error state when empty */}
+                    message={!urlIsValid && url && 'Enter a valid webhook URL.'}
                 />
             </div>
             <div className="flex mt-1">
@@ -147,19 +150,22 @@ export const WebhookAction: React.FunctionComponent<ActionProps> = ({
                     </Button>
                 )}
                 {!monitorName && (
-                    <div className={classNames('mt-2', styles.testActionError)}>
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
                         Please provide a name for the code monitor before making a test call
-                    </div>
+                    </small>
                 )}
                 {!url && (
-                    <div className={classNames('mt-2', styles.testActionError)}>
+                    <small className={classNames('mt-2 form-text', styles.testActionError)}>
                         Please provide a webhook URL before making a test call
-                    </div>
+                    </small>
                 )}
                 {error && (
-                    <div className={classNames('mt-2', styles.testActionError)} data-testid="test-webhook-error">
+                    <small
+                        className={classNames('mt-2 form-text', styles.testActionError)}
+                        data-testid="test-webhook-error"
+                    >
                         {error.message}
-                    </div>
+                    </small>
                 )}
             </div>
         </ActionEditor>
