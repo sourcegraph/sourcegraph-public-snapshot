@@ -95,14 +95,9 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Soft or hard deletes an organization.
-    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
-    Only site admins may perform this mutation.
-    - When the second argument is true, it hard deletes an organization and its associated resources.
-    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
+    Deletes an organization. Only site admins may perform this mutation.
     """
-    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
-
+    deleteOrganization(organization: ID!): EmptyResponse
     """
     Adds a external service. Only site admins may perform this mutation.
     """
