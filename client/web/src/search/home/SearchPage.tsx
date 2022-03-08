@@ -67,8 +67,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         [hasSearchQuery, isGettingStartedTourEnabled, isExperimentalOnboardingTourEnabled]
     )
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
-    const showCollaborators =
-        window.context.allowSignup && homepageUserInvitation && window.context.sourcegraphDotComMode
+    const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
