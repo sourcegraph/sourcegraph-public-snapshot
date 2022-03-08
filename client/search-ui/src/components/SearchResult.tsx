@@ -4,9 +4,8 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { renderMarkdown } from '@sourcegraph/common'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
@@ -41,21 +40,26 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
                 {result.type === 'commit' && (
                     <>
-                        <a href={'/'+encodeURI(result.repository)}>{result.repository}</a>
-                        <span> › </span>
-                        <a href={'/'+encodeURI(result.repository)+'/-/commit/'+result.oid}>{result.authorName}</a>
-                        <span>: </span>
-                        <a href={'/'+encodeURI(result.repository)+'/-/commit/'+result.oid}>{result.message.split('\n', 1)[0]}</a>
+                        &nbsp;
+                        <a href={'/' + encodeURI(result.repository)}>{result.repository}</a>
+                        &nbsp;›&nbsp;
+                        <a href={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>{result.authorName}</a>
+                        :&nbsp;
+                        <a href={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                            {result.message.split('\n', 1)[0]}
+                        </a>
                     </>
                 )}
                 {result.type === 'repo' && (
                     <a href={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</a>
                 )}
                 <span className={styles.spacer} />
-                {result.type === 'commit' && result.detail && (
-                    <>
-                        <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
-                    </>
+                {result.type === 'commit' && (
+                    <a href={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                        <code>{result.oid.slice(0, 7)}</code>
+                        &nbsp;
+                        <Timestamp date={result.authorDate} noAbout={true} />
+                    </a>
                 )}
                 {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
                     <div className={styles.divider} />
