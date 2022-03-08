@@ -63,19 +63,10 @@ func (s *NPMPackagesSyncer) Type() string {
 	return "npm_packages"
 }
 
-// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
-// error indicates there is a problem.
+// IsCloneable always returns nil for NPM package repos. We check which versions of a
+// package are cloneable in Fetch, and clone those, ignoring versions that are not
+// cloneable.
 func (s *NPMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
-	if err != nil {
-		return err
-	}
-
-	for _, dependency := range dependencies {
-		if err := npm.Exists(ctx, s.client, dependency); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -108,6 +99,14 @@ func (s *NPMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	if err != nil {
 		return err
 	}
+
+	cloneable := dependencies[:0] // in place filtering
+	for _, dependency := range dependencies {
+		if err := npm.Exists(ctx, s.client, dependency); err == nil {
+			cloneable = append(cloneable, dependency)
+		}
+	}
+	dependencies = cloneable
 
 	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), placeholderNPMDependency)
 	if err != nil {
@@ -167,70 +166,45 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		return nil, err
 	}
 
-	var (
-		timedout []*reposource.NPMDependency
-	)
 	for _, configDependencyString := range s.npmDependencies() {
 		if repoPackage.MatchesDependencyString(configDependencyString) {
 			dep, err := reposource.ParseNPMDependency(configDependencyString)
 			if err != nil {
+				log15.Warn("skipping malformed npm dependency", "package", configDependencyString, "error", err)
 				return nil, err
 			}
-
-			if err := npm.Exists(ctx, s.client, dep); err != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					timedout = append(timedout, dep)
-					continue
-				} else {
-					return nil, err
-				}
-			}
 			matchingDependencies = append(matchingDependencies, dep)
-			// Silently ignore non-existent dependencies because
-			// they are already logged out in the `GetRepo` method
-			// in internal/repos/jvm_packages.go.
 		}
 	}
-	if len(timedout) > 0 {
-		log15.Warn("non-zero number of timed-out npm invocations", "count", len(timedout), "dependencies", timedout)
-	}
-	var totalConfigMatched = len(matchingDependencies)
 
-	parsedPackage, err := reposource.ParseNPMPackageFromRepoURL(repoUrlPath)
-	if err != nil {
-		return nil, err
-	}
 	dbDeps, err := s.depsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
 		Scheme:      dependenciesStore.NPMPackagesScheme,
-		Name:        parsedPackage.PackageSyntax(),
+		Name:        repoPackage.PackageSyntax(),
 		NewestFirst: true,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get npm dependencies from dbStore")
+		return nil, errors.Wrap(err, "failed to list npm dependencies from db")
 	}
 
 	for _, dbDep := range dbDeps {
 		parsedDbPackage, err := reposource.ParseNPMPackageFromPackageSyntax(dbDep.Name)
 		if err != nil {
-			log15.Error("failed to parse npm package", "package", dbDep.Name, "message", err)
+			log15.Warn("skipping malformed npm dependency", "package", dbDep.Name, "error", err)
 			continue
 		}
-		if repoPackage.Equal(parsedDbPackage) {
-			matchingDependencies = append(matchingDependencies, &reposource.NPMDependency{
-				NPMPackage: parsedDbPackage,
-				Version:    dbDep.Version,
-			})
-		}
+
+		matchingDependencies = append(matchingDependencies, &reposource.NPMDependency{
+			NPMPackage: parsedDbPackage,
+			Version:    dbDep.Version,
+		})
 	}
-	var totalDBMatched = len(matchingDependencies) - totalConfigMatched
 
 	if len(matchingDependencies) == 0 {
 		return nil, errors.Errorf("no NPM dependencies for URL path %s", repoUrlPath)
 	}
 
-	log15.Info("fetched npm artifact for repo path", "repoPath", repoUrlPath,
-		"totalDB", totalDBMatched, "totalConfig", totalConfigMatched)
 	reposource.SortNPMDependencies(matchingDependencies)
+
 	return matchingDependencies, nil
 }
 
