@@ -12,6 +12,10 @@ export const diffSearchStreamEvents: SearchEvent[] = [
                 type: 'commit',
                 label:
                     '[sourcegraph/sourcegraph-lightstep](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep) › [Quinn Slack](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42): [build: set up test deps and scripts](/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42)',
+                oid: '65dba23797be9e0ce1941f92c5385a7856bc5a42',
+                message: 'build: set up test deps and scripts\n',
+                authorName: 'Quinn Slack',
+                authorDate: '2019-10-29T20:59:15Z',
                 url:
                     '/gitlab.sgdev.org/sourcegraph/sourcegraph-lightstep/-/commit/65dba23797be9e0ce1941f92c5385a7856bc5a42',
                 detail:
@@ -50,6 +54,10 @@ export const commitSearchStreamEvents: SearchEvent[] = [
                 type: 'commit',
                 label:
                     '[sourcegraph/sourcegraph-sentry](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry) › [Vanesa](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1): [add more tests, use the Sourcegraph stubs api and improve repo matching. (#13)](/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1)',
+                oid: '7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
+                message: 'add more tests, use the Sourcegraph stubs api and improve repo matching. (#13)',
+                authorName: 'Vanesa',
+                authorDate: '2019-10-29T20:59:15Z',
                 url:
                     '/gitlab.sgdev.org/sourcegraph/sourcegraph-sentry/-/commit/7e69ceb49adc30cb46bbe50335e1a371a0f2f6b1',
                 detail:
