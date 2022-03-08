@@ -254,13 +254,15 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			}
 		}
 
-		// If a valid cached value was found, use it and continue
-		if len(group.Repositories) > 0 {
+		// If a valid cached value was found, use it and continue. Check for a nil,
+		// because it is possible this cached group does not have any repositories, in
+		// which case it should have a non-nil length 0 slice of repositories.
+		if group.Repositories == nil {
 			addRepoToUserPerms(group.Repositories...)
 			continue
 		}
 
-		// Perform full sync
+		// Perform full sync. Start with instantiating the repos slice.
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 		isOrg := group.Team == ""
 		hasNextPage = true
