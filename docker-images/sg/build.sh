@@ -21,8 +21,8 @@ pkg="github.com/sourcegraph/sourcegraph/dev/sg"
 go build -trimpath -ldflags "-X main.BuildCommit=$BUILD_COMMIT" -o "$OUTPUT/sg" -buildmode exe "$pkg"
 
 
-echo "--- docker build sg"
-docker build -f dev/sg/Dockerfile -t "sg" "$OUTPUT" \
+echo "--- docker build $IMAGE"
+docker build -f dev/sg/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
