@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,6 +23,12 @@ var (
 	fileWithAccess    = "file-with-access"
 	fileWithoutAccess = "file-without-access"
 )
+
+func TestLogPartsPerCommitInSync(t *testing.T) {
+	require.Equal(t, 2*partsPerCommitBasic, strings.Count(logFormatWithoutRefs, "%"),
+		"Expected (2 * %0d) %% signs in log format string (%0d fields, %0d %%x00 separators)",
+		partsPerCommitBasic)
+}
 
 func TestRepository_GetCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
