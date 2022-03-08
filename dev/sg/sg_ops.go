@@ -37,7 +37,7 @@ var (
 		Name:        "update-images",
 		ShortUsage:  "sg ops update-images [flags] <dir>",
 		ShortHelp:   "Updates images in given directory to latest published image",
-		LongHelp:    "Updates images in given directory to latest published image",
+		LongHelp:    "Updates images in given directory to latest published image.\nEx: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`",
 		UsageFunc:   nil,
 		FlagSet:     opsUpdateImagesFlagSet,
 		Options:     nil,
