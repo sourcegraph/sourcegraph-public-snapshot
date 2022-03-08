@@ -15,6 +15,7 @@
   },
   "files.exclude": {
     "**/*.scss.d.ts": true,
+    "cmd/symbols/squirrel/nvim-treesitter": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
