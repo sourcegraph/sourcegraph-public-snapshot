@@ -11,7 +11,8 @@ import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { CommitMatch, getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
@@ -38,10 +39,18 @@ export const SearchResult: React.FunctionComponent<Props> = ({
         return (
             <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
-                <Markdown
-                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
-                />
+                {result.type === 'commit' && (
+                    <>
+                        <a href={'/'+encodeURI(result.repository)}>{result.repository}</a>
+                        <span> › </span>
+                        <a href={'/'+encodeURI(result.repository)+'/-/commit/'+result.oid}>{result.authorName}</a>
+                        <span>: </span>
+                        <a href={'/'+encodeURI(result.repository)+'/-/commit/'+result.oid}>{result.message.split('\n', 1)[0]}</a>
+                    </>
+                )}
+                {result.type === 'repo' && (
+                    <a href={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</a>
+                )}
                 <span className={styles.spacer} />
                 {result.type === 'commit' && result.detail && (
                     <>

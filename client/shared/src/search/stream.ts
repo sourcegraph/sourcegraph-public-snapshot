@@ -5,7 +5,6 @@ import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
@@ -532,15 +531,4 @@ export function getMatchUrl(match: SearchMatch): string {
         case 'repo':
             return getRepoMatchUrl(match)
     }
-}
-
-export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
-    if (match.type === 'commit') {
-        const repoUrl = '/' + encodeURI(match.repository)
-        const commitUrl = getCommitMatchUrl(match)
-        const subject = match.message.split('\n', 1)[0]
-        return `[${match.repository}](${repoUrl}) › [${match.authorName}](${commitUrl}): [${subject}](${commitUrl})`
-    }
-
-    return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
 }
