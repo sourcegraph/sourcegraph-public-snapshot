@@ -14,11 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Up(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
+func Up(commandName string, factory RunnerFactory, out *output.Output, development bool) *ffcli.Command {
 	var (
-		flagSet              = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
-		schemaNameFlag       = flagSet.String("db", "all", `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
-		unprivilegedOnlyFlag = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
+		flagSet                  = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
+		schemaNameFlag           = flagSet.String("db", "all", `The target schema(s) to modify. Comma-separated values are accepted. Supply "all" (the default) to migrate all schemas.`)
+		unprivilegedOnlyFlag     = flagSet.Bool("unprivileged-only", false, `Do not apply privileged migrations.`)
+		ignoreSingleDirtyLogFlag = flagSet.Bool("ignore-single-dirty-log", development, `Ignore a previously failed attempt if it will be immediately retried by this operation.`)
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -51,8 +52,9 @@ func Up(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Co
 		}
 
 		return r.Run(ctx, runner.Options{
-			Operations:       operations,
-			UnprivilegedOnly: *unprivilegedOnlyFlag,
+			Operations:           operations,
+			UnprivilegedOnly:     *unprivilegedOnlyFlag,
+			IgnoreSingleDirtyLog: *ignoreSingleDirtyLogFlag,
 		})
 	}
 
