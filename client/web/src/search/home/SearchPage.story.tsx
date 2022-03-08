@@ -13,6 +13,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import {
@@ -59,6 +60,12 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     featureFlags: new Map(),
 })
+
+if (!window.context) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
+window.context.allowSignup = true
 
 const { add } = storiesOf('web/search/home/SearchPage', module)
     .addParameters({

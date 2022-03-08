@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
@@ -33,6 +34,11 @@ jest.mock('./LoggedOutHomepage.constants', () => ({
 
 describe('SearchPage', () => {
     afterAll(cleanup)
+
+    beforeEach(() => {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+    })
 
     let container: HTMLElement
 
