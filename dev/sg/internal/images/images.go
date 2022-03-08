@@ -106,7 +106,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 	}
 
 	var values map[string]interface{}
-	json.Unmarshal(rawValues, &values)
+	_ = json.Unmarshal(rawValues, &values)
 
 	var images []string
 	extraImages(values, &images)
@@ -178,7 +178,6 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		return err
 	}
 	if containers == nil && initContainers == nil {
-
 		return ErrNoImage{
 			Kind: r.GetKind(),
 			Name: r.GetName(),
@@ -354,7 +353,6 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 }
 
 func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *imageRepository, err error) {
-
 	repo = &imageRepository{name: ref.Name, imageRef: ref}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
 	if err != nil {
@@ -475,7 +473,7 @@ func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		data, _ := io.ReadAll(resp.Body)
-		return "", errors.New(resp.Status + ": " + string(data))
+		return "", errors.Newf("GET https://index.docker.io/v2/%s/manifests/%s %s: %s", i.name, tag, resp.Status, string(data))
 	}
 
 	d := resp.Header.Get("Docker-Content-Digest")
