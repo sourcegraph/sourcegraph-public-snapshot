@@ -107,7 +107,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         </li>
                         <li>
                             Opening pull requests and syncing their metadata as part of{' '}
-                            <Link to="/help/user/batch_changes" target="_blank" rel="noopener noreferrer">
+                            <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
                                 batch changes
                             </Link>
                             , if you have enabled this feature.

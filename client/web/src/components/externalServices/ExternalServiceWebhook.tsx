@@ -59,7 +59,7 @@ export const ExternalServiceWebhook: React.FunctionComponent<Props> = ({ externa
             <CopyableText className="mb-2" text={webhookURL} size={webhookURL.length} />
             <p className="mb-0">
                 Note that only{' '}
-                <Link to="/help/user/batch_changes" target="_blank" rel="noopener noreferrer">
+                <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
                     batch changes
                 </Link>{' '}
                 make use of this webhook. To enable webhooks to trigger repository updates on Sourcegraph,{' '}
