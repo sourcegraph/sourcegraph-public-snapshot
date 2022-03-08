@@ -589,11 +589,34 @@ type SymbolInfo {
 SymbolLocation is a single-line range within a repository. It's returned by SymbolInfo.definition.
 """
 type SymbolLocation {
+    """
+    The repo.
+    """
     repo: String!
+
+    """
+    The commit.
+    """
     commit: String!
+
+    """
+    The path.
+    """
     path: String!
+
+    """
+    The line.
+    """
     line: Int!
+
+    """
+    The character.
+    """
     character: Int!
+
+    """
+    The length.
+    """
     length: Int!
 }
 
