@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 
 import { useObservable } from '@sourcegraph/wildcard'
 
@@ -37,17 +37,25 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
         )
     )
 
+    // We want to avoid the setter function to be recreated whenever the
+    // temporary settings value changes. To do this, we create a reference that
+    // always points to the latest updated value.
+    const updatedValueReference = useRef<TemporarySettings[K] | undefined>(updatedValue)
+    useEffect(() => {
+        updatedValueReference.current = updatedValue
+    }, [updatedValue])
+
     const setValueAndSave = useCallback(
         (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])): void => {
             let finalValue: TemporarySettings[K]
             if (typeof newValue === 'function') {
-                finalValue = newValue(updatedValue)
+                finalValue = newValue(updatedValueReference.current)
             } else {
                 finalValue = newValue
             }
             temporarySettings.set(key, finalValue)
         },
-        [key, temporarySettings, updatedValue]
+        [key, temporarySettings]
     )
 
     return [updatedValue, setValueAndSave]
