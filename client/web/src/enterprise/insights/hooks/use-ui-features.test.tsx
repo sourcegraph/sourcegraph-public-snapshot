@@ -22,8 +22,8 @@ const UiFeatureWrapper: React.FunctionComponent<UiFeatureWrapperProps> = ({ mock
 
 describe('useUiFeatures', () => {
     test.each([true, false])('should return licensed: %s', licensed => {
-        const mockApi = {
-            isCodeInsightsLicensed: () => of(licensed),
+        const mockApi: Partial<CodeInsightsBackend> = {
+            getUiFeatures: () => of({ licensed }),
         }
         const wrapper: React.FunctionComponent = ({ children }) => (
             <UiFeatureWrapper mockApi={mockApi}>{children}</UiFeatureWrapper>

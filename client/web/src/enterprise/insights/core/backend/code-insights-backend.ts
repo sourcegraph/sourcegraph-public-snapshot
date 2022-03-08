@@ -148,11 +148,6 @@ export interface CodeInsightsBackend {
      */
     getFirstExampleRepository: () => Observable<string>
 
-    /*
-     * Returns whether Code Insights is licensed
-     */
-    isCodeInsightsLicensed: () => Observable<boolean>
-
     /**
      * Returns a feaures object used to show/hide and enable/disable UI elements
      */

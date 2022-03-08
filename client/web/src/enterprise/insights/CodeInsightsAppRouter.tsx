@@ -1,4 +1,3 @@
-import { useApolloClient } from '@apollo/client'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
@@ -15,8 +14,7 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
-import { CodeInsightsGqlBackendLimited } from './core/backend/gql-api/code-insights-gql-backend-limited'
+import { useGetApi } from './hooks/use-get-api'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
@@ -54,12 +52,11 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const { telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
-    const apolloClient = useApolloClient()
+    const api = useGetApi()
 
-    const fullApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
-    const limitedApi = useMemo(() => new CodeInsightsGqlBackendLimited(apolloClient), [apolloClient])
-    const uiFeatures = useObservable(useMemo(() => fullApi.getUiFeatures(), [fullApi]))
-    const api = uiFeatures?.licensed ? fullApi : limitedApi
+    if (!api) {
+        return <div>Loading...</div>
+    }
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
