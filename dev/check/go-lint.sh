@@ -43,6 +43,7 @@ run() {
 # shellcheck disable=SC2034
 declare -A IGNORED_DIRS=(
     ["./docker-images/syntax-highlighter"]=1
+    ["./cmd/symbols/squirrel/external/nvim-treesitter"]=1
 )
 
 # If no args are given, traverse through each project with a `go.mod`
