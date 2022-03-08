@@ -31,8 +31,11 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	squirrel := NewSquirrelService(readFileFromGitserver, nil)
+	defer squirrel.Close()
+
 	// Compute the local code intel payload.
-	payload, err := localCodeIntel(r.Context(), args, readFileFromGitserver)
+	payload, err := squirrel.localCodeIntel(r.Context(), args, readFileFromGitserver)
 	if payload != nil && os.Getenv("SQUIRREL_DEBUG") == "true" {
 		debugStringBuilder := &strings.Builder{}
 		fmt.Fprintln(debugStringBuilder, "👉 /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
@@ -83,6 +86,7 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 
 		// Find the symbol.
 		squirrel := NewSquirrelService(readFileFromGitserver, symbolSearch)
+		defer squirrel.Close()
 		result, err := squirrel.symbolInfo(r.Context(), args)
 		if os.Getenv("SQUIRREL_DEBUG") == "true" {
 			debugStringBuilder := &strings.Builder{}

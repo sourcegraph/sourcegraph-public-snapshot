@@ -22,6 +22,8 @@ type SquirrelService struct {
 	readFile     ReadFileFunc
 	symbolSearch symbolsTypes.SearchFunc
 	breadcrumbs  []Breadcrumb
+	parser       *sitter.Parser
+	closables    []func()
 }
 
 // Creates a new SquirrelService.
@@ -33,13 +35,21 @@ func NewSquirrelService(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchF
 	}
 }
 
+// Remember to free memory allocated by tree-sitter.
+func (squirrel *SquirrelService) Close() {
+	for _, close := range squirrel.closables {
+		close()
+	}
+	squirrel.parser.Close()
+}
+
 // symbolInfo finds the symbol at the given point in a file.
 func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
 	// First, find the definition.
 	var def *types.RepoCommitPathRange
 	{
 		// Parse the file and find the starting node.
-		root, err := parse(ctx, point.RepoCommitPath, squirrel.readFile)
+		root, err := squirrel.parse(ctx, point.RepoCommitPath, squirrel.readFile)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +81,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	var hover *string
 	{
 		// Parse the END file and find the end node.
-		root, err := parse(ctx, def.RepoCommitPath, squirrel.readFile)
+		root, err := squirrel.parse(ctx, def.RepoCommitPath, squirrel.readFile)
 		if err != nil {
 			return nil, err
 		}

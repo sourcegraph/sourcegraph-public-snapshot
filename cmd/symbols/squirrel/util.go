@@ -112,7 +112,9 @@ func forEachCapture(query string, node Node, f func(captureName string, node Nod
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
 	}
+	defer sitterQuery.Close()
 	cursor := sitter.NewQueryCursor()
+	defer cursor.Close()
 	cursor.Exec(sitterQuery, node.Node)
 
 	match, _, hasCapture := cursor.NextCapture()
@@ -198,8 +200,11 @@ func WithNodePtr(other Node, newNode *sitter.Node) *Node {
 	}
 }
 
+// A single parser
+var parser = sitter.NewParser()
+
 // Parses a file and returns info about it.
-func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*Node, error) {
+func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*Node, error) {
 	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 
 	langName, ok := extToLang[ext]
@@ -212,7 +217,6 @@ func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile Re
 		return nil, errors.Newf("unsupported language %s", langName)
 	}
 
-	parser := sitter.NewParser()
 	parser.SetLanguage(langSpec.language)
 
 	contents, err := readFile(ctx, repoCommitPath)

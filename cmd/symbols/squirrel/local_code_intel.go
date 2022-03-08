@@ -31,9 +31,9 @@ type PartialSymbol struct {
 }
 
 // Computes the local code intel payload, which is a list of symbols.
-func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*types.LocalCodeIntelPayload, error) {
+func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*types.LocalCodeIntelPayload, error) {
 	// Parse the file.
-	root, err := parse(ctx, repoCommitPath, readFile)
+	root, err := squirrel.parse(ctx, repoCommitPath, readFile)
 	if err != nil {
 		return nil, err
 	}

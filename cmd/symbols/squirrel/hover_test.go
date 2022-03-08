@@ -37,8 +37,11 @@ func f() {}
 		return nil, fmt.Errorf("path %s not found", path.Path)
 	}
 
+	squirrel := NewSquirrelService(readFile, nil)
+	defer squirrel.Close()
+
 	for _, test := range tests {
-		payload, err := localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}, readFile)
+		payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}, readFile)
 		fatalIfError(t, err)
 
 		ok := false

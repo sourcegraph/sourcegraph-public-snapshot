@@ -219,6 +219,10 @@ func (s *SquirrelService) getTypeDef(ctx context.Context, node *Node) (*PkgOrNod
 
 // getDefInPkg returns the definition of the symbol within the given package.
 func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolName, pkg string) (*Node, error) {
+	if s.symbolSearch == nil {
+		return nil, nil
+	}
+
 	defSymbols, err := s.symbolSearch(ctx, symbolsTypes.SearchArgs{
 		Repo:            api.RepoName(repo),
 		CommitID:        api.CommitID(commit),
@@ -257,7 +261,7 @@ func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolN
 		return nil, err
 	}
 
-	root, err := parse(ctx, def.RepoCommitPath, s.readFile)
+	root, err := s.parse(ctx, def.RepoCommitPath, s.readFile)
 	lines := strings.Split(string(contents), "\n")
 	column := strings.Index(lines[def.Range.Row], defSymbol.Name)
 	if column == -1 {
