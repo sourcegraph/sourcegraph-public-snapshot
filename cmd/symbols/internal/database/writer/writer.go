@@ -59,7 +59,7 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchArgs) (dbFile string, commit string, ok bool, err error) {
 	components := []string{}
 	components = append(components, w.path)
-	components = append(components, diskcache.EncodeKeyComponents([]string{string(args.Repo)})...)
+	components = append(components, diskcache.EncodeKeyComponents(repoKey(args.Repo))...)
 
 	newest, err := findNewestFile(filepath.Join(components...))
 	if err != nil || newest == "" {
