@@ -78,6 +78,6 @@ export const LegendItem: React.FunctionComponent<LegendItemProps> = props => (
             style={{ backgroundColor: props.color }}
             className={styles.legendMark}
         />
-        {props.children}
+        <span className={styles.legendItemText}>{props.children}</span>
     </li>
 )
