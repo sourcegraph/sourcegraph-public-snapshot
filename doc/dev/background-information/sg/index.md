@@ -414,11 +414,12 @@ Have questions or need help? Feel free to [open a discussion](https://github.com
 
 ## Dockerized sg
 
-A `sourcegraph/sg` Docker image is available. 
+A `sourcegraph/sg` Docker image is available: 
 
 ```
 # ... 
-COPY --from sourcegraph/sg:latest /usr/local/bin/sg ./sg
+COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
+# ...
 ```
 
 ### Development tips
