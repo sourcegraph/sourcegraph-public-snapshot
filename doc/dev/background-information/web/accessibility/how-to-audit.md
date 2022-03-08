@@ -1,6 +1,6 @@
 # How to conduct an accessibility audit
 
-## Preparation
+## Prerequisites
 
 Before starting your audit, you should ensure the following statements are true:
 
@@ -9,6 +9,7 @@ Before starting your audit, you should ensure the following statements are true:
   - Example: Instead of auditing the entirety of code insights, the audit should be focused on a specific part, such as creating a new code insight.
 - You have read and understood [How to use a screen reader](how-to-screen-reader.md).
 
+<i>If you have any issues, please contact the Frontend Platform team.</i>>
 
 ## Auditing a user journey
 
@@ -18,8 +19,15 @@ Before starting your audit, you should ensure the following statements are true:
 2. Enable a screen reader. Navigate through the user journey **without** looking at your screen.
     - Would a user be able to understand the **content** of the journey?
     - Would a user be able to correctly and predictably perform each important **action**?
-    - Note: Use the cheatsheet in [How to use a screen reader](how-to-screen-reader.md) to help you navigate.
-3. Run through the [detailed checklist](#detailed-checklist) and ensure that there are no major issues.
+    - **Note:** Use the cheatsheet in [How to use a screen reader](how-to-screen-reader.md) to help you navigate.
+3. Navigate through the user journey using a viewport that has a **width of 320px**.
+    - Would a user be able to sufficiently read all required content in the journey?
+    - Would a user be able to correctly and predictably perform each important **action**?
+      - Keep in mind that it is typically harder to select small buttons and icons using a touch device.
+    - **Note:** You don't need to use a physical mobile device to test this. Most browsers support simulating a mobile viewport - just ensure it is set to **320px**.
+      - [Chrome documentation](https://developer.chrome.com/docs/devtools/device-mode/#viewport)
+      - [Firefox documentation](https://developer.mozilla.org/en-US/docs/Tools/Responsive_Design_Mode)
+4. Work through relevant sections from the [detailed checklist](detailed-checklist.md) and ensure that there are no issues.
 
 ## Raising an issue
 

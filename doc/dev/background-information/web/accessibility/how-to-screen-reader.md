@@ -2,7 +2,7 @@
 
 Screen readers are tools that are used by users who are blind or have limited vision to navigate and describe webpages. It is important that we understand how to correctly use them when building our application.
 
-Depending on the platform, there are two widely used screen readers. Although they provide different controls, they ultimately parse webpages in a similar manner. You should not feel like you need to test a page using both screen readers, one is sufficient.
+Depending on the platform, there are two widely used screen readers. Although they provide different controls, they ultimately parse webpages in a similar manner. You should not feel that you need to test a page using both screen readers, one is sufficient.
 
 ## VoiceOver (MacOS)
 
