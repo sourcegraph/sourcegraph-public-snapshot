@@ -152,23 +152,23 @@
 
 ;; Builtin functions
 
-((identifier) @function.builtin
-  (#any-of? @function.builtin
-            "append"
-            "cap"
-            "close"
-            "complex"
-            "copy"
-            "delete"
-            "imag"
-            "len"
-            "make"
-            "new"
-            "panic"
-            "print"
-            "println"
-            "real"
-            "recover"))
+; ((identifier) @function.builtin
+;   (#any-of? @function.builtin
+;             "append"
+;             "cap"
+;             "close"
+;             "complex"
+;             "copy"
+;             "delete"
+;             "imag"
+;             "len"
+;             "make"
+;             "new"
+;             "panic"
+;             "print"
+;             "println"
+;             "real"
+;             "recover"))
 
 
 ; Delimiters
@@ -208,27 +208,24 @@
 (ERROR) @error
 
 
-(
- (const_spec
-  name: (identifier) @_id
-  value: (expression_list (raw_string_literal) @keyword))
-
- (#match? @_id ".*Query$")
-)
+; (
+;  (const_spec
+;   name: (identifier) @_id
+;   value: (expression_list (raw_string_literal) @keyword))
+;
+;  (#match? @_id ".*Query$")
+; )
 
 ;;
 ; Identifiers
 
+((identifier) @constant (#eq? @constant "_"))
+((identifier) @constant (#match? @constant "^[A-Z][A-Z\\d_]+$"))
+
 (package_identifier) @variable.module
 (type_identifier) @type
+(field_identifier) @property
 (identifier) @variable
 
-; (field_identifier) @property
 
-(
- (identifier) @constant
-  (#eq? @constant "_"))
-
-; ((identifier) @constant
-;  (#vim-match? @constant "^[A-Z][A-Z\\d_]+$"))
 

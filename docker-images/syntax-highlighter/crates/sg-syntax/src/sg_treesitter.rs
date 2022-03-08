@@ -46,7 +46,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("method",                  SyntaxKind::IdentifierFunction),
     ("number",                  SyntaxKind::NumericLiteral),
     ("operator",                SyntaxKind::IdentifierOperator),
-    ("property",                SyntaxKind::Identifier),
+    ("property",                SyntaxKind::IdentifierAttribute),
     ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),

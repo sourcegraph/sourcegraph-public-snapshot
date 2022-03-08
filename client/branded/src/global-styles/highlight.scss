@@ -486,7 +486,7 @@
     // .hl-typed-$SYNTAX_KIND
 
     .hl-typed-Comment {
-        color: var(--hl-dark-green);
+        color: var(--hl-gray-0);
     }
     .hl-typed-PunctuationDelimiter {
         color: var(--hl-orange);
@@ -515,7 +515,7 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-yellow);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--hl-dark-blue-1);
@@ -567,7 +567,7 @@
     // }
 
     .hl-typed-StringLiteral {
-        color: var(--hl-red);
+        color: var(--hl-cyan);
     }
     .hl-typed-StringLiteralEscape {
         color: var(--hl-red);
@@ -576,13 +576,13 @@
         color: var(--hl-red);
     }
     .hl-typed-StringLiteralKey {
-        color: var(--hl-red);
+        color: var(--hl-cyan);
     }
     .hl-typed-CharacterLiteral {
-        color: var(--hl-red);
+        color: var(--hl-orange);
     }
     .hl-typed-NumericLiteral {
-        color: var(--hl-green-1);
+        color: var(--hl-purple);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
@@ -939,6 +939,7 @@
     }
     .hl-typed-IdentifierParameter {
         color: var(--hl-blue);
+        font-weight: bold;
     }
     .hl-typed-IdentifierLocal {
         color: var(--hl-blue);

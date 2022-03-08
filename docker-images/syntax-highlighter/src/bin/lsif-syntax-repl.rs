@@ -1,18 +1,29 @@
 use std::fs;
+use std::path::Path;
 
 use rustyline::config::Configurer;
 use rustyline::Config;
+use sg_syntax::determine_filetype;
 use sg_syntax::dump_document_range;
 use sg_syntax::lsif_index_with_config;
 use sg_syntax::make_highlight_config;
 use sg_syntax::DocumentFileRange;
+use sg_syntax::SourcegraphQuery;
 
 fn main() {
     println!("========================================");
     println!("  Welcome to lsif-syntax-repl");
     println!("========================================");
 
+    let mut extension = String::new();
     let contents = if let Some(path) = std::env::args().nth(1) {
+        extension = Path::new(&path)
+            .extension()
+            .expect("Must have valid extension for filepath")
+            .to_str()
+            .unwrap()
+            .to_string();
+
         match fs::read_to_string(&path) {
             Ok(contents) => contents,
             Err(err) => {
@@ -57,12 +68,21 @@ fn main() {
     eprintln!("- <Up> / <Down> to cycle through history");
     eprintln!("");
 
+    let filetype = determine_filetype(&SourcegraphQuery {
+        extension,
+        filepath: "".to_string(),
+        filetype: None,
+        css: false,
+        line_length_limit: None,
+        theme: "".to_string(),
+        code: "".to_string(),
+    });
     while let Ok(line) = rl.readline("Query >> ") {
         if line.is_empty() {
             break;
         }
 
-        let config = match make_highlight_config("c_sharp", &line) {
+        let config = match make_highlight_config(&filetype, &line) {
             Some(config) => config,
             None => {
                 eprintln!("=> Error when constructing configuration, probably invalid query.");
