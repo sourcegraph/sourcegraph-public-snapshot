@@ -5,6 +5,7 @@ import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
+import { Link } from '@sourcegraph/wildcard'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
@@ -41,13 +42,15 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 {result.type === 'commit' && (
                     <>
                         &nbsp;
-                        <a href={'/' + encodeURI(result.repository)}>{result.repository}</a>
+                        <Link to={'/' + encodeURI(result.repository)}>{result.repository}</Link>
                         &nbsp;›&nbsp;
-                        <a href={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>{result.authorName}</a>
+                        <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                            {result.authorName}
+                        </Link>
                         :&nbsp;
-                        <a href={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                        <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
                             {result.message.split('\n', 1)[0]}
-                        </a>
+                        </Link>
                     </>
                 )}
                 {result.type === 'repo' && (
