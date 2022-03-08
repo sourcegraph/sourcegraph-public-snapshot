@@ -366,15 +366,15 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, regexMatch("name", "", args.Query, args.IsCaseSensitive))
+	conjunctOrNils = append(conjunctOrNils, regexMatch("name", "", "", args.Query, args.IsCaseSensitive))
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, regexMatch("path", "path_prefixes(path)", includePattern, args.IsCaseSensitive))
+		conjunctOrNils = append(conjunctOrNils, regexMatch("path", "path_prefixes(path)", "singleton(get_file_extension(path))", includePattern, args.IsCaseSensitive))
 	}
 
 	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("path", "path_prefixes(path)", args.ExcludePattern, args.IsCaseSensitive)))
+	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("path", "path_prefixes(path)", "singleton(get_file_extension(path))", args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
@@ -391,7 +391,7 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	return sqlf.Join(conjuncts, "AND")
 }
 
-func regexMatch(column, columnForLiteralPrefix, regex string, isCaseSensitive bool) *sqlf.Query {
+func regexMatch(column, columnForLiteralPrefix, columnForFileExtension, regex string, isCaseSensitive bool) *sqlf.Query {
 	if regex == "" || regex == "^" {
 		return nil
 	}
@@ -404,6 +404,11 @@ func regexMatch(column, columnForLiteralPrefix, regex string, isCaseSensitive bo
 	// Prefix match optimization
 	if literal, ok, err := isLiteralPrefix(regex); err == nil && ok && isCaseSensitive && columnForLiteralPrefix != "" {
 		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForLiteralPrefix), pg.Array([]string{literal}))
+	}
+
+	// File extension match optimization
+	if exts := isFileExtensionMatch(regex); exts != nil && isCaseSensitive && columnForFileExtension != "" {
+		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForFileExtension), pg.Array(exts))
 	}
 
 	// Regex match
@@ -462,6 +467,26 @@ func isLiteralPrefix(expr string) (string, bool, error) {
 	}
 
 	return "", false, nil
+}
+
+// isFileExtensionMatch returns true if the given regex matches file extensions. If so, this function
+// returns true along with the extensions. If not, this function returns false.
+func isFileExtensionMatch(expr string) []string {
+	if !strings.HasPrefix(expr, `\.(`) {
+		return nil
+	}
+
+	expr = strings.TrimPrefix(expr, `\.(`)
+
+	if !strings.HasSuffix(expr, `)$`) {
+		return nil
+	}
+
+	expr = strings.TrimSuffix(expr, `)$`)
+
+	exts := strings.Split(expr, `|`)
+
+	return exts
 }
 
 func negate(query *sqlf.Query) *sqlf.Query {
