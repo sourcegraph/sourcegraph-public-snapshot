@@ -190,6 +190,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     isLightTheme?: Observable<boolean>
 
     /**
+     * An Observable to indicate when client-side route has been changed.
+     */
+    routeChange?: (mutations: Observable<MutationRecordLike[]>) => Observable<unknown>
+
+    /**
      * Mount getter for the repository "View on Sourcegraph" button.
      *
      * If undefined, the "View on Sourcegraph" button won't be rendered on the code host.
@@ -894,7 +899,7 @@ export async function handleCodeHost({
             subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
         }
         if (enhanceSearchPage) {
-            subscriptions.add(enhanceSearchPage(sourcegraphURL, mutations))
+            subscriptions.add(enhanceSearchPage(sourcegraphURL))
         }
     }
 

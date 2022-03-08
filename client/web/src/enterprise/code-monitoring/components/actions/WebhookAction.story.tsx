@@ -47,6 +47,9 @@ add('WebhookAction', () => (
                 <h2>Open, populated, enabled</h2>
                 <WebhookAction {...defaultProps} _testStartOpen={true} action={action} />
 
+                <h2>Open, populated with error, enabled</h2>
+                <WebhookAction {...defaultProps} _testStartOpen={true} action={{ ...action, url: 'mailto:test' }} />
+
                 <h2>Closed, populated, disabled</h2>
                 <WebhookAction {...defaultProps} action={{ ...action, enabled: false }} />
 

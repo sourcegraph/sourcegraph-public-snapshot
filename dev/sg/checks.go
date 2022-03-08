@@ -78,6 +78,15 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 		return err
 	}
 
+	// Scripts used in various CheckFuncs are typically written with bash-compatible shells in mind.
+	// Because of this, we throw a warning in non-compatible shells and ask that
+	// users set up environments in both their shell and bash to avoid issues.
+	if !usershell.IsSupportedShell(ctx) {
+		shell := usershell.ShellType(ctx)
+		writeWarningLinef("You're running on unsupported shell '%s'.", shell)
+		writeWarningLinef("If you run into error, you may run 'SHELL=(which bash) sg setup' to setup your environment.")
+	}
+
 	var failed []string
 
 	for name, check := range checks {
