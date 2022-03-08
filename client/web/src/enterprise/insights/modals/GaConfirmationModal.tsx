@@ -44,31 +44,37 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
 
     return (
         <>
-            <h1 className={styles.title}>Code Insights is Generally Available</h1>
+            <h1 className={styles.title}>Thank you for trying Code Insights!</h1>
 
-            <div className={styles.mediaHeroContent}>
-                <ThreeLineChart className={styles.chart} />
-                <FourLineChart className={styles.chart} />
-                <LangStatsInsightChart className={styles.chart} />
+            <div className={styles.mediaHeroWrapper}>
+                <div className={styles.mediaHeroContent}>
+                    <ThreeLineChart className={styles.chart} />
+                    <FourLineChart className={styles.chart} />
+                    <LangStatsInsightChart className={styles.chart} />
+                </div>
+                <div className={styles.mediaHeroOverlay}>Your trial has expired</div>
             </div>
 
             <div className={styles.textContent}>
                 <p>
-                    Code Insights is a new analytics product that transforms your code into a queryable database so you
-                    can create customizable, visual dashboards to understand your codebase at a high level.
+                    <b>Your instance is now using the limited access version of Code Insights.</b> This version is
+                    limited to 2 code insights.
                 </p>
 
                 <p>
-                    Code Insights is now Generally Available.{' '}
-                    <b>You can create unlimited insights and dashboards while on this version of Sourcegraph.</b> In the
-                    next version upgrade, you will either need to purchase Code Insights to continue using its full
-                    functionality, or you can use{' '}
-                    <Link to="/help/code_insights/references/license">a limited number of insights for free</Link>.
+                    If your team has created more than 2 insights during the trial, some insights will be hidden.{' '}
+                    <b>All of the insights you’ve created are preserved and will be displayed as locked.</b> All
+                    insights will be visible again after upgrading your license.
                 </p>
 
                 <p>
-                    Reach out to your Sourcegraph admin or account team to purchase Code Insights. Questions? Please{' '}
-                    <Link to="mailto:support@sourcegraph.com">contact us</Link>.
+                    Contact your admin or reach out to us to upgrade your licence for unlimited insights and dashboards.
+                </p>
+
+                <p>
+                    Questions? Learn more about the{' '}
+                    <Link to="/help/code_insights/references/license">Code Insights limited access</Link> or contact us
+                    directly.
                 </p>
             </div>
 
