@@ -10,6 +10,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
@@ -237,14 +238,28 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 			return err
 		}
 
+		lines := strings.Split(string(contents), "\n")
+
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
+				if symbol.Line < 0 || symbol.Line >= len(lines) {
+					log15.Warn("symbol.Line out of range, skipping", "symbol", symbol, "lines", len(lines))
+					continue
+				}
+
+				character := strings.Index(lines[symbol.Line], symbol.Name)
+				if character == -1 {
+					log15.Warn("symbol.Name not found in line, setting to 0", "path", path, "symbol", symbol.Name, "line", lines[symbol.Line])
+					character = 0
+				}
+
 				symbols = append(symbols, result.Symbol{
-					Name:   symbol.Name,
-					Path:   path,
-					Line:   symbol.Line,
-					Kind:   symbol.Kind,
-					Parent: symbol.Parent,
+					Name:      symbol.Name,
+					Path:      path,
+					Line:      symbol.Line,
+					Character: character,
+					Kind:      symbol.Kind,
+					Parent:    symbol.Parent,
 				})
 
 				if len(symbols) >= limit {

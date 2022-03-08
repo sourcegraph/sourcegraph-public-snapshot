@@ -118,7 +118,7 @@ func createParserWithConfig(config types.CtagsConfig) rockskip.ParseSymbolsFunc 
 				Name:   entry.Name,
 				Parent: entry.Parent,
 				Kind:   entry.Kind,
-				Line:   entry.Line,
+				Line:   entry.Line - 1,
 			})
 		}
 
