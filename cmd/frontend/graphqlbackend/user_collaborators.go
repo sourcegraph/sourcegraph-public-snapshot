@@ -55,6 +55,12 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	}
 
 	userExistsByUsername := func(username string) bool {
+		// We do not actually have usernames, gitserverParallelRecentCommitters does not produce
+		// them and so we always have an empty string here. However, we leave this function
+		// implemented for the future where we may.
+		if username == "" {
+			return false
+		}
 		_, err := r.db.Users().GetByUsername(ctx, username)
 		return err == nil
 	}
