@@ -16,7 +16,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
   <div>
     <div
       aria-modal="true"
-      class="floatingPanel dropdown-menu menu"
+      class="floatingPanel dropdownMenu menu"
       role="dialog"
     >
       <div
@@ -281,7 +281,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
   <div>
     <div
       aria-modal="true"
-      class="floatingPanel dropdown-menu menu"
+      class="floatingPanel dropdownMenu menu"
       hidden=""
       role="dialog"
     >
@@ -562,7 +562,7 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
   <div>
     <div
       aria-modal="true"
-      class="floatingPanel dropdown-menu menu"
+      class="floatingPanel dropdownMenu menu"
       hidden=""
       role="dialog"
     >

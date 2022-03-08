@@ -147,7 +147,6 @@ export const PopoverContent = forwardRef((props, reference) => {
         if (targetElement?.contains(event.target as Node)) {
             return
         }
-
         setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
     })
 
@@ -184,7 +183,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             target={anchor?.current ?? targetElement}
             role={role}
             aria-modal={ariaModel}
-            className={classNames('dropdown-menu', otherProps.className)}
+            className={classNames(styles.dropdownMenu, otherProps.className)}
             tailClassName={classNames(styles.dropdownMenuTail, otherProps.tailClassName)}
         >
             {focusLocked ? (

@@ -1,4 +1,29 @@
+:root {
+    --dropdown-min-width: 10rem;
+    --dropdown-padding-y: $dropdown-padding-y;
+    --dropdown-spacer: 0.125rem;
+    --dropdown-font-size: 0.875rem;
+    --dropdown-color: var(--body-color);
+    --dropdown-border-radius: var(--border-radius);
+    --dropdown-border-width: 0.06rem;
+}
+
+// The dropdown menu
 .dropdown-menu {
+    float: left;
+    min-width: var(--dropdown-min-width);
+    padding: var(--dropdown-padding-y) 0;
+    margin: var(--dropdown-spacer) 0 0; // override default ul
+    font-size: var(--dropdown-font-size);
+    color: var(--dropdown-color);
+    text-align: left; // Ensures proper alignment if parent has it changed (e.g., modal footer)
+    list-style: none;
+    background-color: var(--dropdown-bg);
+    background-clip: padding-box;
+    border: var(--dropdown-border-width) solid var(--dropdown-border-color);
+    border-radius: var(--popover-border-radius);
+    box-shadow: var(--dropdown-shadow);
+
     &-tail {
         &::before {
             border-left-color: transparent;
@@ -11,5 +36,14 @@
             border-top-color: var(--dropdown-bg);
             border-right-color: transparent;
         }
+    }
+
+    // When enabled Popper.js, reset basic dropdown position
+    &[x-placement^='top'],
+    &[x-placement^='right'],
+    &[x-placement^='bottom'],
+    &[x-placement^='left'] {
+        right: auto;
+        bottom: auto;
     }
 }
