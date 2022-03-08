@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
@@ -319,13 +320,20 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 }
 
 func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) {
-	optFns := []func(*awsconfig.LoadOptions) error{
-		awsconfig.WithRegion(s3config.Region),
-		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+	var credentialsProvider aws.CredentialsProvider
+	if s3config.AccessKeyID != "" {
+		credentialsProvider = credentials.NewStaticCredentialsProvider(
 			s3config.AccessKeyID,
 			s3config.SecretAccessKey,
 			s3config.SessionToken,
-		)),
+		)
+	} else {
+		credentialsProvider = ec2rolecreds.New()
+	}
+
+	optFns := []func(*awsconfig.LoadOptions) error{
+		awsconfig.WithRegion(s3config.Region),
+		awsconfig.WithCredentialsProvider(aws.NewCredentialsCache(credentialsProvider)),
 	}
 
 	return awsconfig.LoadDefaultConfig(ctx, optFns...)

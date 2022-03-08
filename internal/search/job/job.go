@@ -440,7 +440,6 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		MinusRepoFilters:  minusRepoFilters,
 		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
-		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
 		OnlyArchived:      archived == query.Only,
