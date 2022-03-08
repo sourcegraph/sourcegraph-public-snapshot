@@ -199,6 +199,7 @@ type pingRequest struct {
 	InitialAdminEmail             string          `json:"initAdmin"`
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
+	TotalOrgs                     int32           `json:"totalOrgs"`
 	HasRepos                      bool            `json:"repos"`
 	EverSearched                  bool            `json:"searched"`
 	EverFindRefs                  bool            `json:"refs"`

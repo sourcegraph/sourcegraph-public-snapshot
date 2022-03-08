@@ -101,6 +101,11 @@ func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) 
 	return database.Users(db).Count(ctx, &database.UsersListOptions{})
 }
 
+func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
+	defer recordOperation("getTotalUsersCount")(&err)
+	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+}
+
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
@@ -413,6 +418,12 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getUsersActiveToday failed", "error", err)
 		}
 		r.UniqueUsers = int32(count)
+
+		totalOrgs, err := getTotalOrgsCount(ctx, db)
+		if err != nil {
+			logFunc("telemetry: database.Orgs.Count failed", "error", err)
+		}
+		r.TotalOrgs = int32(totalOrgs)
 
 		r.HasRepos, err = hasRepos(ctx, db)
 		if err != nil {
