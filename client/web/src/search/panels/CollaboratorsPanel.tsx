@@ -174,7 +174,7 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 'h-100'
             )}
         >
-            <div className="text-center">No collaborators found in sampled repositories.</div>
+            {emailEnabled ? <div className="text-center">No collaborators found in sampled repositories.</div> : null}
             <div className="text-muted mt-3 text-center">
                 You can invite people to Sourcegraph with this direct link:
             </div>
