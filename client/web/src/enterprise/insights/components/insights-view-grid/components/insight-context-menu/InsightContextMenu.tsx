@@ -6,16 +6,17 @@ import React from 'react'
 
 import { Link, Button } from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, isSearchBasedInsight } from '../../../../core/types'
+import { Insight, InsightDashboard, isSearchBasedInsight, isVirtualDashboard } from '../../../../core/types'
 
 import styles from './InsightContextMenu.module.scss'
 
 export interface InsightCardMenuProps {
     insight: Insight
-    dashboard?: InsightDashboard | null
+    dashboard: InsightDashboard | null
     zeroYAxisMin: boolean
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
+    onRemoveFromDashboard: (dashboard: InsightDashboard) => unknown
     onToggleZeroYAxisMin?: () => void
 }
 
@@ -23,12 +24,22 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin = noop } = props
+    const {
+        insight,
+        dashboard,
+        zeroYAxisMin,
+        menuButtonClassName,
+        onDelete,
+        onRemoveFromDashboard,
+        onToggleZeroYAxisMin = noop,
+    } = props
 
     const insightID = insight.id
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
+
+    const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
 
     return (
         <Menu>
@@ -79,6 +90,22 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                         tabIndex={-1}
                                     />
                                     <span>Start Y Axis at 0</span>
+                                </MenuItem>
+                            )}
+
+                            {dashboard && (
+                                <MenuItem
+                                    data-testid="insight-context-remove-from-dashboard-button"
+                                    onSelect={() => onRemoveFromDashboard(dashboard)}
+                                    disabled={withinVirtualDashboard}
+                                    data-tooltip={
+                                        withinVirtualDashboard
+                                            ? "Removing insight isn't available for the All insights dashboard"
+                                            : undefined
+                                    }
+                                    className={styles.item}
+                                >
+                                    Remove from this dashboard
                                 </MenuItem>
                             )}
 
