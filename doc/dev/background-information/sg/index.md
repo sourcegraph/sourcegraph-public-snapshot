@@ -412,6 +412,16 @@ Have questions or need help? Feel free to [open a discussion](https://github.com
 
 > NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
 
+## Dockerized sg
+
+A `sourcegraph/sg` Docker image is available: 
+
+```
+# ... 
+COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
+# ...
+```
+
 ### Development tips
 
 - Due to [#29222](https://github.com/sourcegraph/sourcegraph/issues/29222), you might need to set `CONFIGURATION_MODE: 'empty'` if you encounter errors where `sg` tries to connect to `frontend`.
