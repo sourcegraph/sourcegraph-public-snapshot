@@ -170,21 +170,34 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	}
 	trace.Log(log.Int("numEntries", len(entries)))
 
+	lines := strings.Split(string(parseRequest.Data), "/")
+
 	for _, e := range entries {
 		if !shouldPersistEntry(e) {
 			continue
+		}
+
+		if e.Line < 0 || e.Line >= len(lines) {
+			log15.Warn("Invalid line number", "entry", e)
+			continue
+		}
+
+		character := strings.Index(lines[e.Line], e.Name)
+		if character == -1 {
+			log15.Warn("Could not find symbol on line", "symbol", e.Name, "line", e.Line)
+			character = 0
 		}
 
 		symbol := result.Symbol{
 			Name:        e.Name,
 			Path:        e.Path,
 			Line:        e.Line,
+			Character:   character,
 			Kind:        e.Kind,
 			Language:    e.Language,
 			Parent:      e.Parent,
 			ParentKind:  e.ParentKind,
 			Signature:   e.Signature,
-			Pattern:     e.Pattern,
 			FileLimited: e.FileLimited,
 		}
 

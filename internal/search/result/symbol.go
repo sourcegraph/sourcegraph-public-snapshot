@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-lsp"
 )
 
@@ -19,31 +20,40 @@ type Symbol struct {
 	// merge Symbol and SymbolMatch.
 	Path       string
 	Line       int
+	Character  int
 	Kind       string
 	Language   string
 	Parent     string
 	ParentKind string
 	Signature  string
-	Pattern    string
 
 	FileLimited bool
 }
 
-func NewSymbolMatch(file *File, lineNumber int, name, kind, parent, parentKind, language, line string, fileLimited bool) *SymbolMatch {
+// NewSymbolMatch returns a new SymbolMatch. Passing -1 as the character will make NewSymbolMatch infer
+// the column from the line and symbol name.
+func NewSymbolMatch(file *File, lineNumber, character int, name, kind, parent, parentKind, language, line string, fileLimited bool) *SymbolMatch {
+	if character == -1 {
+		// The caller is requesting we infer the character position.
+		character = strings.Index(line, name)
+
+		if character == -1 {
+			// We couldn't find the symbol in the line, so set the column to 0.
+			log15.Warn("Could not infer symbol column", "file", file.Path, "line", lineNumber, "name", name)
+			character = 0
+		}
+	}
+
 	return &SymbolMatch{
 		Symbol: Symbol{
-			Name:       name,
-			Kind:       kind,
-			Parent:     parent,
-			ParentKind: parentKind,
-			Path:       file.Path,
-			Line:       lineNumber,
-			Language:   language,
-			// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
-			// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
-			// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
-			// It must escape `/` or `\` in the line.
-			Pattern:     fmt.Sprintf("/^%s$/", escape(line)),
+			Name:        name,
+			Kind:        kind,
+			Parent:      parent,
+			ParentKind:  parentKind,
+			Path:        file.Path,
+			Line:        lineNumber,
+			Character:   character,
+			Language:    language,
 			FileLimited: fileLimited,
 		},
 		File: file,
@@ -105,21 +115,6 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 		return lsp.SKOperator
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
-	}
-	return 0
-}
-
-// offset calculates a symbol offset based on the the only Symbol
-// data member that currently exposes line content: the symbols Pattern member,
-// which has the form /^ ... $/. We find the offset of the symbol name in this
-// line, after escaping the Pattern.
-func (s *Symbol) offset() int {
-	if s.Pattern == "" {
-		return 0
-	}
-	i := strings.Index(unescapePattern(s.Pattern), s.Name)
-	if i >= 0 {
-		return i
 	}
 	return 0
 }
@@ -188,10 +183,9 @@ func unescapePattern(pattern string) string {
 }
 
 func (s Symbol) Range() lsp.Range {
-	offset := s.offset()
 	return lsp.Range{
-		Start: lsp.Position{Line: s.Line - 1, Character: offset},
-		End:   lsp.Position{Line: s.Line - 1, Character: offset + len(s.Name)},
+		Start: lsp.Position{Line: s.Line - 1, Character: s.Character},
+		End:   lsp.Position{Line: s.Line - 1, Character: s.Character + len(s.Name)},
 	}
 }
 
