@@ -45,14 +45,27 @@ type CommitsOptions struct {
 
 	// When true return the names of the files changed in the commit
 	NameOnly bool
+
+	// When true, return the tags attached to this commit
+	Tags bool
 }
 
 func (opt *CommitsOptions) partsPerCommit() int {
 	p := partsPerCommitBasic
+	if opt.Tags {
+		p++
+	}
 	if opt.NameOnly {
 		p++
 	}
 	return p
+}
+
+func (opt *CommitsOptions) tagsIndex() int {
+	if opt.Tags {
+		return partsPerCommitBasic
+	}
+	return -312877 // sentinel value to catch errors
 }
 
 func (opt *CommitsOptions) fileNamesIndex() int {
@@ -467,6 +480,11 @@ func commitLogArgs(initialArgs []string, formatString string, opt CommitsOptions
 	if opt.Range != "" {
 		args = append(args, opt.Range)
 	}
+	if opt.Tags {
+		// Use %D instead of %(describe:tags) (introduced in git v2.5.0) as the
+		// latter only returns a single tag even if there are multiple tags.
+		formatString += "%D%x00"
+	}
 	if opt.NameOnly {
 		args = append(args, "--name-only")
 	}
@@ -609,6 +627,8 @@ func parseCommitFromLog(data []byte, opt CommitsOptions) (commit *wrappedCommit,
 		}
 	}
 
+	tags := parseCommitTags(opt, parts)
+
 	fileNames, nextCommit := parseCommitFileNames(opt, parts)
 
 	commit = &wrappedCommit{
@@ -618,6 +638,7 @@ func parseCommitFromLog(data []byte, opt CommitsOptions) (commit *wrappedCommit,
 			Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
 			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 			Parents:   parents,
+			Tags:      tags,
 		}, files: fileNames,
 	}
 
@@ -630,6 +651,29 @@ func parseCommitFromLog(data []byte, opt CommitsOptions) (commit *wrappedCommit,
 	}
 
 	return commit, rest, nil
+}
+
+// parseCommitTags parses tags formatted using git log --format's %D specifier.
+//
+// Non-tag refs are ignored.
+func parseCommitTags(opt CommitsOptions, parts [][]byte) []string {
+	var tags []string
+	tagsIndex := opt.tagsIndex()
+	if tagsIndex < 0 {
+		return tags
+	}
+	// Assuming that refs don't have commas in them.
+	refs := bytes.Split(parts[tagsIndex], []byte{','})
+	for _, ref := range refs {
+		ref = bytes.TrimSpace(ref)
+		if !bytes.HasPrefix(ref, []byte("tag:")) {
+			continue
+		}
+		ref = ref[4:]
+		ref = bytes.TrimSpace(ref)
+		tags = append(tags, string(ref))
+	}
+	return tags
 }
 
 // If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this

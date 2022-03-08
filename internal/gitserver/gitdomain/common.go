@@ -56,6 +56,11 @@ type Commit struct {
 	Message   Message      `json:"Message,omitempty"`
 	// Parents are the commit IDs of this commit's parent commits.
 	Parents []api.CommitID `json:"Parents,omitempty"`
+	// Tags represents the git tags (annotated or lightweight) attached to this commit.
+	//
+	// Depending on how the Commit object may have been created, this value may be
+	// unset (i.e. it may have len == 0 but the commit might actually have tags).
+	Tags []string `json:"Tags,omitempty"`
 }
 
 // Message represents a git commit message
