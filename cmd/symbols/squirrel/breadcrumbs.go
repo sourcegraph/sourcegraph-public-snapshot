@@ -10,39 +10,64 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// Breadcrumb is an arbitrary annotation on a token in a file. It's used as a way to log where Squirrel
+// has been traversing through trees and files for debugging..
 type Breadcrumb struct {
 	types.RepoCommitPathRange
 	length  int
 	message string
 }
 
+// Prints breadcrumbs like this:
+//
+//             v 4. found
+//             v 5. goTypeDef
+//               vvv 6. goDef
+// 78 | func f(f Foo) {
+//
+//                           vvvvv 1. goDef
+//                           vvvvv 2. goField
+//                         v 3. goTypeDef
+//                         v 4. goDef
+// 79 | 	   fmt.Println(f.field)
+//
+//           vvv 6. found
+// 90 | type Foo struct {
+//          vvvvv 2. found
+// 91 |     field *int
 func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
-	m := map[types.RepoCommitPath]map[int][]Breadcrumb{}
+	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.
+	pathToLineToBreadcrumbs := map[types.RepoCommitPath]map[int][]Breadcrumb{}
 	for _, breadcrumb := range breadcrumbs {
 		path := breadcrumb.RepoCommitPath
 
-		if _, ok := m[path]; !ok {
-			m[path] = map[int][]Breadcrumb{}
+		if _, ok := pathToLineToBreadcrumbs[path]; !ok {
+			pathToLineToBreadcrumbs[path] = map[int][]Breadcrumb{}
 		}
 
-		m[path][int(breadcrumb.Row)] = append(m[path][int(breadcrumb.Row)], breadcrumb)
+		pathToLineToBreadcrumbs[path][int(breadcrumb.Row)] = append(pathToLineToBreadcrumbs[path][int(breadcrumb.Row)], breadcrumb)
 	}
 
-	for repoCommitPath, lineToBreadcrumb := range m {
+	// Loop over each path, printing the breadcrumbs for each line.
+	for repoCommitPath, lineToBreadcrumb := range pathToLineToBreadcrumbs {
+		// Print the path header.
 		blue := color.New(color.FgBlue).SprintFunc()
 		grey := color.New(color.FgBlack).SprintFunc()
 		fmt.Fprintf(w, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
 		fmt.Fprintln(w)
 
+		// Read the file.
 		contents, err := readFile(context.Background(), repoCommitPath)
 		if err != nil {
 			fmt.Println("Error reading file: ", err)
 			return
 		}
-		lines := strings.Split(string(contents), "\n")
-		for lineNumber, line := range lines {
+
+		// Print the breadcrumbs for each line.
+		for lineNumber, line := range strings.Split(string(contents), "\n") {
 			breadcrumbs, ok := lineToBreadcrumb[lineNumber]
 			if !ok {
+				// No breadcrumbs on this line.
 				continue
 			}
 
@@ -79,6 +104,7 @@ func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFi
 	}
 }
 
+// Returns breadcrumbs that have one of the given messages.
 func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
 	var picked []Breadcrumb
 	for _, breadcrumb := range breadcrumbs {
@@ -92,6 +118,7 @@ func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
 	return picked
 }
 
+// Returns the color to be used to print a message.
 func messageColor(message string) colorSprintfFunc {
 	if message == "start" {
 		return color.New(color.FgHiCyan).SprintFunc()

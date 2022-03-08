@@ -7,6 +7,7 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 )
 
+// Returns the markdown hover message for the given node if it exists.
 func findHover(node *sitter.Node, style CommentStyle, contents string) *string {
 	hover := ""
 	hover += "```" + style.codeFenceName + "\n"

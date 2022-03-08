@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// The ID of a tree-sitter node.
-type Id = string
+// Nominal type for the ID of a tree-sitter node.
+type Id string
 
-// walk walks every node in the tree-sitter tree, calling f on each node.
+// walk walks every node in the tree-sitter tree, calling f(node) on each node.
 func walk(node *sitter.Node, f func(node *sitter.Node)) {
 	f(node)
 	for i := 0; i < int(node.ChildCount()); i++ {
@@ -23,10 +23,12 @@ func walk(node *sitter.Node, f func(node *sitter.Node)) {
 	}
 }
 
+// nodeId returns the ID of the node.
 func nodeId(node *sitter.Node) Id {
-	return fmt.Sprint(nodeToRange(node))
+	return Id(fmt.Sprint(nodeToRange(node)))
 }
 
+// getRoot returns the root node of the tree-sitter tree, given any node inside it.
 func getRoot(node *sitter.Node) *sitter.Node {
 	var top *sitter.Node
 	for cur := node; cur != nil; cur = cur.Parent() {
@@ -35,6 +37,7 @@ func getRoot(node *sitter.Node) *sitter.Node {
 	return top
 }
 
+// isLessRange compares ranges.
 func isLessRange(a, b types.Range) bool {
 	if a.Row == b.Row {
 		return a.Column < b.Column
@@ -42,15 +45,19 @@ func isLessRange(a, b types.Range) bool {
 	return a.Row < b.Row
 }
 
+// tabsToSpaces converts tabs to spaces.
 func tabsToSpaces(s string) string {
 	return strings.Replace(s, "\t", "    ", -1)
 }
 
+const TAB_SIZE = 4
+
+// lengthInSpaces returns the length of the string in spaces (using TAB_SIZE).
 func lengthInSpaces(s string) int {
 	total := 0
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\t' {
-			total += 4
+			total += TAB_SIZE
 		} else {
 			total++
 		}
@@ -58,15 +65,16 @@ func lengthInSpaces(s string) int {
 	return total
 }
 
-func spacesToColumn(s string, ix int) int {
+// spacesToColumn measures the length in spaces from the start of the string to the given column.
+func spacesToColumn(s string, column int) int {
 	total := 0
 	for i := 0; i < len(s); i++ {
-		if total >= ix {
+		if total >= column {
 			return i
 		}
 
 		if s[i] == '\t' {
-			total += 4
+			total += TAB_SIZE
 		} else {
 			total++
 		}
@@ -74,8 +82,10 @@ func spacesToColumn(s string, ix int) int {
 	return total
 }
 
+// colorSprintfFunc is a color printing function.
 type colorSprintfFunc func(a ...interface{}) string
 
+// bracket prefixes all the lines of the given string with pretty brackets.
 func bracket(text string) string {
 	lines := strings.Split(strings.TrimSpace(text), "\n")
 	if len(lines) == 1 {
@@ -95,13 +105,15 @@ func bracket(text string) string {
 	return strings.Join(lines, "\n")
 }
 
-func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f func(captureName string, node *sitter.Node)) error {
+// forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
+// each capture.
+func forEachCapture(query string, node *sitter.Node, lang *sitter.Language, f func(captureName string, node *sitter.Node)) error {
 	sitterQuery, err := sitter.NewQuery([]byte(query), lang)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
 	}
 	cursor := sitter.NewQueryCursor()
-	cursor.Exec(sitterQuery, root)
+	cursor.Exec(sitterQuery, node)
 
 	match, _, hasCapture := cursor.NextCapture()
 	for hasCapture {
@@ -109,13 +121,13 @@ func forEachCapture(query string, root *sitter.Node, lang *sitter.Language, f fu
 			captureName := sitterQuery.CaptureNameForId(capture.Index)
 			f(captureName, capture.Node)
 		}
-		// Next capture
 		match, _, hasCapture = cursor.NextCapture()
 	}
 
 	return nil
 }
 
+// nodeToRange returns the range of the node.
 func nodeToRange(node *sitter.Node) types.Range {
 	length := 1
 	if node.StartPoint().Row == node.EndPoint().Row {
@@ -128,6 +140,7 @@ func nodeToRange(node *sitter.Node) types.Range {
 	}
 }
 
+// nodeLength returns the length of the node.
 func nodeLength(node *sitter.Node) int {
 	length := 1
 	if node.StartPoint().Row == node.EndPoint().Row {
@@ -136,6 +149,7 @@ func nodeLength(node *sitter.Node) int {
 	return length
 }
 
+// Of course.
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -143,6 +157,7 @@ func min(a, b int) int {
 	return b
 }
 
+// When generic?
 func contains(slice []string, str string) bool {
 	for _, s := range slice {
 		if s == str {
@@ -152,11 +167,13 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
+// Combines a node and its path.
 type NodeWithRepoCommitPath struct {
 	RepoCommitPath types.RepoCommitPath
 	Node           *sitter.Node
 }
 
+// Parses a file and returns info about it.
 func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*sitter.Node, []byte, *LangSpec, error) {
 	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 

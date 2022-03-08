@@ -13,12 +13,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// PkgOrNode is a union type that can either be a package or a node.
+//
+// - It's usually   a Node, e.g. when finding the definition of an "identifier"
+// - It's sometimes a Pkg , e.g. when finding the definition of a  "package_identifier"
+//
+// It's the return type of definition calls.
 type PkgOrNode struct {
 	Pkg  *types.RepoCommitPath
 	Node *NodeWithRepoCommitPath
 }
 
-func (s *Squirrel) getDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
+// getDef returns the definition of the given node.
+func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
 	if node == nil {
 		return nil, nil
 	}
@@ -32,6 +39,7 @@ func (s *Squirrel) getDef(ctx context.Context, lang *sitter.Language, repoCommit
 		message: "getDef",
 	})
 
+	// TODO bundle contents, repo, commit, path, and node into a struct
 	contents, err := s.readFile(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
@@ -114,7 +122,8 @@ func (s *Squirrel) getDef(ctx context.Context, lang *sitter.Language, repoCommit
 	return nil, nil
 }
 
-func (s *Squirrel) getField(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node, field string) (*PkgOrNode, error) {
+// getField returns the definition of the field on the given node.
+func (s *SquirrelService) getField(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node, field string) (*PkgOrNode, error) {
 	if node == nil {
 		return nil, nil
 	}
@@ -137,7 +146,7 @@ func (s *Squirrel) getField(ctx context.Context, lang *sitter.Language, repoComm
 	}
 
 	if typePkgOrNode.Pkg != nil {
-		result, err := s.getDefInRepoDir(ctx, typePkgOrNode.Pkg.Repo, typePkgOrNode.Pkg.Commit, field, typePkgOrNode.Pkg.Path)
+		result, err := s.getDefInPkg(ctx, typePkgOrNode.Pkg.Repo, typePkgOrNode.Pkg.Commit, field, typePkgOrNode.Pkg.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +186,8 @@ func (s *Squirrel) getField(ctx context.Context, lang *sitter.Language, repoComm
 	}
 }
 
-func (s *Squirrel) getTypeDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
+// getTypeDef returns the definition of the type of the given node.
+func (s *SquirrelService) getTypeDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
 	if node == nil {
 		return nil, nil
 	}
@@ -240,14 +250,15 @@ func (s *Squirrel) getTypeDef(ctx context.Context, lang *sitter.Language, repoCo
 	return nil, nil
 }
 
-func (s *Squirrel) getDefInRepoDir(ctx context.Context, repo, commit, symbolName, dir string) (*NodeWithRepoCommitPath, error) {
+// getDefInPkg returns the definition of the symbol within the given package.
+func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolName, pkg string) (*NodeWithRepoCommitPath, error) {
 	defSymbols, err := s.symbolSearch(ctx, symbolsTypes.SearchArgs{
 		Repo:            api.RepoName(repo),
 		CommitID:        api.CommitID(commit),
 		Query:           fmt.Sprintf("^%s$", symbolName),
 		IsRegExp:        true,
 		IsCaseSensitive: true,
-		IncludePatterns: []string{"^" + dir},
+		IncludePatterns: []string{"^" + pkg},
 		ExcludePattern:  "",
 		First:           1,
 	})

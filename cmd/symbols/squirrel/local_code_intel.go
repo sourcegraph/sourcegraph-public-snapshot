@@ -16,7 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type SymbolName = string
+// Nominal type for symbol names.
+type SymbolName string
 
 // Scope is a mapping from symbol name to symbol.
 type Scope = map[SymbolName]*PartialSymbol // pointer for mutability
@@ -29,9 +30,12 @@ type PartialSymbol struct {
 	Refs map[types.Range]struct{}
 }
 
+// Computes the local code intel payload, which is a list of symbols.
 func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*types.LocalCodeIntelPayload, error) {
+	// Parse the file.
 	root, contents, langSpec, err := parse(ctx, repoCommitPath, readFile)
 
+	// Load the tree-sitter query.
 	localsPath := path.Join("nvim-treesitter", "queries", langSpec.nvimQueryDir, "locals.scm")
 	queriesBytes, err := queriesFs.ReadFile(localsPath)
 	if err != nil {
@@ -48,7 +52,7 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 	}
 	err = forEachCapture(queryString, root, langSpec.language, func(captureName string, node *sitter.Node) {
 		if captureName == "scope" {
-			scopes[nodeId(node)] = map[string]*PartialSymbol{}
+			scopes[nodeId(node)] = map[SymbolName]*PartialSymbol{}
 			return
 		}
 	})
@@ -65,7 +69,7 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 				// Found the scope.
 				if scope, ok := scopes[nodeId(cur)]; ok {
 					// Get the symbol name.
-					symbolName := node.Content(contents)
+					symbolName := SymbolName(node.Content(contents))
 
 					// Print a debug message if the symbol is already defined.
 					if symbol, ok := scope[symbolName]; ok && debug {
@@ -104,7 +108,7 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 		}
 
 		// Get the symbol name.
-		symbolName := node.Content([]byte(contents))
+		symbolName := SymbolName(node.Content([]byte(contents)))
 
 		// Find the nearest scope (if it exists).
 		for cur := node; cur != nil; cur = cur.Parent() {
@@ -130,7 +134,7 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 		scopes[rootScopeId][symbolName].Refs[nodeToRange(node)] = struct{}{}
 	})
 
-	// Collect the symbols
+	// Collect the symbols.
 	symbols := []types.Symbol{}
 	for _, scope := range scopes {
 		for _, partialSymbol := range scope {
@@ -153,6 +157,7 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 	return &types.LocalCodeIntelPayload{Symbols: symbols}, nil
 }
 
+// Pretty prints the local code intel payload for debugging.
 func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
 	lines := strings.Split(contents, "\n")
 

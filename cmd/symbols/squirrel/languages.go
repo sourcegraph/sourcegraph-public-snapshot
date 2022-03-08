@@ -31,21 +31,13 @@ import (
 	"github.com/smacker/go-tree-sitter/yaml"
 )
 
-type CommentStyle struct {
-	placedBelow   bool
-	ignoreRegex   *regexp.Regexp
-	stripRegex    *regexp.Regexp
-	skipNodeTypes []string
-	nodeTypes     []string
-	codeFenceName string
-}
-
 //go:embed nvim-treesitter
 var queriesFs embed.FS
 
 //go:embed language-file-extensions.json
 var languageFileExtensionsJson string
 
+// Mapping from langauge name to file extensions.
 var langToExts = func() map[string][]string {
 	var m map[string][]string
 	err := json.Unmarshal([]byte(languageFileExtensionsJson), &m)
@@ -55,6 +47,7 @@ var langToExts = func() map[string][]string {
 	return m
 }()
 
+// Mapping from file extension to language name.
 var extToLang = func() map[string]string {
 	m := map[string]string{}
 	for lang, exts := range langToExts {
@@ -68,12 +61,24 @@ var extToLang = func() map[string]string {
 	return m
 }()
 
+// Info about a language.
 type LangSpec struct {
 	nvimQueryDir string
 	language     *sitter.Language
 	commentStyle CommentStyle
 }
 
+// Info about comments in a language.
+type CommentStyle struct {
+	placedBelow   bool
+	ignoreRegex   *regexp.Regexp
+	stripRegex    *regexp.Regexp
+	skipNodeTypes []string
+	nodeTypes     []string
+	codeFenceName string
+}
+
+// Mapping from language name to language specification.
 var langToLangSpec = map[string]LangSpec{
 	"cpp": {
 		nvimQueryDir: "cpp",
