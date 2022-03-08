@@ -41,6 +41,7 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     ReachableInsight,
+    RemoveInsightFromDashboardInput,
 } from '../code-insights-backend-types'
 import { getBuiltInInsight } from '../core/api/get-built-in-insight'
 import { getLangStatsInsightContent } from '../core/api/get-lang-stats-insight-content'
@@ -170,6 +171,33 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 },
             })
         )
+
+    public removeInsightFromDashboard = (input: RemoveInsightFromDashboardInput): Observable<unknown> => {
+        const { insightId, dashboardId } = input
+
+        return from(
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
+                mutation: gql`
+                    mutation RemoveInsightViewFromDashboard($insightId: ID!, $dashboardId: ID!) {
+                        removeInsightViewFromDashboard(
+                            input: { insightViewId: $insightId, dashboardId: $dashboardId }
+                        ) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightId, dashboardId },
+                update(cache: ApolloCache<RemoveInsightViewFromDashboardResult>) {
+                    const deletedInsightReference = cache.identify({ __typename: 'InsightView', id: insightId })
+
+                    // Remove deleted insights from the apollo cache
+                    cache.evict({ id: deletedInsightReference })
+                },
+            })
+        )
+    }
 
     // Dashboards
     public getDashboards = (id?: string): Observable<InsightDashboard[]> =>
