@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -170,18 +171,28 @@ func mapJob(in job.Job) (_ job.Job, err error) {
 		MapComputeExcludedReposJob:     func(j *repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos { addErr(j); return nil },
 
 		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
-			c, commitErr := mapCommitJob(c)
-			if commitErr != nil {
-				err = errors.Append(err, commitErr)
-			}
-			return c
+			jobCopy := *c
+			jobCopy.ExpandRefs = expandRefs
+			jobCopy.OnSuccess = onSuccess
+			return &jobCopy
 		},
 	}
 
 	return mapper.Map(in), err
 }
 
-func mapCommitJob(*commit.CommitSearch) (*commit.CommitSearch, error)
+func expandRefs(
+	ctx context.Context,
+	db database.DB,
+	gs commit.GitserverSearcher,
+	req *gitprotocol.SearchRequest,
+) ([]gitprotocol.RevisionSpecifier, error) {
+	panic("unimplemented")
+}
+
+func onSuccess(context.Context, database.DB, *gitprotocol.SearchRequest) error {
+	panic("unimplemented")
+}
 
 func gqlURL(queryName string) (string, error) {
 	u, err := url.Parse(internalapi.Client.URL)

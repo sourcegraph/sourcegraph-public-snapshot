@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -33,14 +32,14 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
-	Gitserver            gitserverSearcher `json:"-"`
+	Gitserver            GitserverSearcher `json:"-"`
 
-	ExpandRefs func(context.Context, database.DB, gitserverSearcher, *protocol.SearchRequest) ([]gitprotocol.RevisionSpecifier, error)
-	OnSuccess  func(context.Context, database.DB, *protocol.SearchRequest) error
+	ExpandRefs func(context.Context, database.DB, GitserverSearcher, *gitprotocol.SearchRequest) ([]gitprotocol.RevisionSpecifier, error)
+	OnSuccess  func(context.Context, database.DB, *gitprotocol.SearchRequest) error
 }
 
-type gitserverSearcher interface {
-	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+type GitserverSearcher interface {
+	Search(_ context.Context, _ *gitprotocol.SearchRequest, onMatches func([]gitprotocol.CommitMatch)) (limitHit bool, _ error)
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
@@ -86,7 +85,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 			continue
 		}
 
-		args := &protocol.SearchRequest{
+		args := &gitprotocol.SearchRequest{
 			Repo:                 repoRev.Repo.Name,
 			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
 			Query:                j.Query,
@@ -95,7 +94,7 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
-		onMatches := func(in []protocol.CommitMatch) {
+		onMatches := func(in []gitprotocol.CommitMatch) {
 			res := make([]result.Match, 0, len(in))
 			for _, protocolMatch := range in {
 				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
@@ -153,16 +152,16 @@ func (j *CommitSearch) Tags() []log.Field {
 }
 
 func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
-	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
+	gitprotocol.ReduceWith(j.Query, func(n gitprotocol.Node) gitprotocol.Node {
 		if err != nil {
 			return n
 		}
 
 		var expr *string
 		switch v := n.(type) {
-		case *protocol.AuthorMatches:
+		case *gitprotocol.AuthorMatches:
 			expr = &v.Expr
-		case *protocol.CommitterMatches:
+		case *gitprotocol.CommitterMatches:
 			expr = &v.Expr
 		default:
 			return n
@@ -339,7 +338,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	return newPred
 }
 
-func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
+func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in gitprotocol.CommitMatch) *result.CommitMatch {
 	var diffPreview, messagePreview *result.MatchedString
 	if diff {
 		diffPreview = &in.Diff
