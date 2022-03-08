@@ -7,7 +7,7 @@ import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/teleme
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button, ButtonLink } from '@sourcegraph/wildcard'
 
-import { OnboardingTourLanguage, useOnboardingTourState } from '../stores/onboardingTourState'
+import { OnboardingTourLanguage, OnboardingTourState, useOnboardingTourState } from '../stores/onboardingTourState'
 
 import { OnboardingTourStepItem, ONBOARDING_STEP_ITEMS } from './data'
 import styles from './OnboardingTour.module.scss'
@@ -93,6 +93,11 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
         logTourEvent('TourGetStartedClicked')
     }, [logTourEvent])
 
+    const onRestart = useCallback(() => {
+        logTourEvent('TourRestartClicked')
+        restart()
+    }, [logTourEvent, restart])
+
     return (
         <>
             <p className={styles.text}>
@@ -108,7 +113,7 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
                 >
                     Get started
                 </ButtonLink>
-                <Button variant="link" size="sm" className="align-self-start text-left pl-0" onClick={restart}>
+                <Button variant="link" size="sm" className="align-self-start text-left pl-0" onClick={onRestart}>
                     Restart
                 </Button>
             </div>
@@ -116,10 +121,12 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
     )
 }
 
-function useSteps(telemetryService: TelemetryService): OnboardingTourStepItem[] {
+function useTourManager(
+    telemetryService: TelemetryService
+): { steps: OnboardingTourStepItem[]; onClose: () => void; status: OnboardingTourState['status'] } {
     const logTourEvent = useLogTourEvent(telemetryService)
-    const { status, complete, completedIDs } = useOnboardingTourState(
-        useCallback(({ status, complete, completedIDs }) => ({ status, complete, completedIDs }), [])
+    const { status, complete, completedIDs, close } = useOnboardingTourState(
+        useCallback(({ status, complete, completedIDs, close }) => ({ status, complete, completedIDs, close }), [])
     )
 
     const steps = useMemo(
@@ -131,14 +138,32 @@ function useSteps(telemetryService: TelemetryService): OnboardingTourStepItem[] 
         [completedIDs]
     )
 
+    // Handle on complete
     useEffect(() => {
-        if (status !== 'completed' && steps.filter(step => step.isCompleted).length === steps.length) {
+        if (
+            !['completed', 'closed'].includes(status as string) &&
+            steps.filter(step => step.isCompleted).length === steps.length
+        ) {
             logTourEvent('TourComplete')
             complete()
         }
     }, [complete, status, steps, logTourEvent])
 
-    return steps
+    // Handle on initial view
+    useEffect(() => {
+        if (status !== 'closed') {
+            logTourEvent('TourShown')
+        }
+        // NOTE: intentionally excluding status to fire only once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const onClose = useCallback(() => {
+        logTourEvent('TourClosed')
+        close()
+    }, [close, logTourEvent])
+
+    return { steps, onClose, status }
 }
 
 export interface OnboardingTourManagerProps extends TelemetryProps {
@@ -151,8 +176,7 @@ export const OnboardingTourManager: React.FunctionComponent<OnboardingTourManage
     isFixedHeight,
     telemetryService,
 }) => {
-    const steps = useSteps(telemetryService)
-    const { close, status } = useOnboardingTourState(useCallback(({ close, status }) => ({ close, status }), []))
+    const { steps, onClose, status } = useTourManager(telemetryService)
 
     if (status === 'closed') {
         return null
@@ -161,7 +185,7 @@ export const OnboardingTourManager: React.FunctionComponent<OnboardingTourManage
     return (
         <Card
             title={status === 'completed' ? 'Tour complete!' : 'Getting Started'}
-            onClose={close}
+            onClose={onClose}
             showDivider={status !== 'completed'}
             className={className}
         >

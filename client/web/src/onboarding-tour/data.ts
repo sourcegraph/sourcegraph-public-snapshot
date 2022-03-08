@@ -117,7 +117,7 @@ export const ONBOARDING_STEP_ITEMS: Omit<OnboardingTourStepItem, 'isCompleted'>[
             [OnboardingTourLanguage.Go]:
                 '/github.com/sourcegraph/sourcegraph/-/blob/internal/featureflag/featureflag.go?L9:6',
             [OnboardingTourLanguage.Java]:
-                '/github.com/square/okhttp/-/blob/samples/guide/src/main/java/okhttp3/recipes/PrintEvents.java?L126:27#tab=def',
+                '/github.com/square/okhttp/-/blob/samples/guide/src/main/java/okhttp3/recipes/PrintEvents.java?L126:27',
             [OnboardingTourLanguage.Javascript]:
                 '/github.com/mozilla/pdf.js/-/blob/src/display/display_utils.js?L261:16',
             [OnboardingTourLanguage.Php]:
@@ -135,15 +135,14 @@ export const ONBOARDING_STEP_ITEMS: Omit<OnboardingTourStepItem, 'isCompleted'>[
             Hover over a token in the highlighted line to open code intel, then click ‘Go to definition’ to locate a token definition.`,
         completeAfterEvents: ['goToDefinition', 'goToDefinition.preloaded'],
         url: {
-            [OnboardingTourLanguage.C]:
-                '/github.com/torvalds/linux/-/blob/arch/arm/kernel/bios32.c?L417:8#tab=references',
+            [OnboardingTourLanguage.C]: '/github.com/torvalds/linux/-/blob/arch/arm/kernel/bios32.c?L417:8',
             [OnboardingTourLanguage.Go]:
                 '/github.com/sourcegraph/sourcegraph/-/blob/internal/repos/observability.go?L192:22',
             [OnboardingTourLanguage.Java]:
                 '/github.com/square/okhttp/-/blob/samples/guide/src/main/java/okhttp3/recipes/CustomCipherSuites.java?L132:14',
             [OnboardingTourLanguage.Javascript]: '/github.com/mozilla/pdf.js/-/blob/src/pdf.js?L101:5',
             [OnboardingTourLanguage.Php]:
-                '/github.com/square/connect-api-examples/-/blob/connect-examples/v1/php/payments-report.php?L164:32#tab=references',
+                '/github.com/square/connect-api-examples/-/blob/connect-examples/v1/php/payments-report.php?L164:32',
             [OnboardingTourLanguage.Python]:
                 '/github.com/netdata/netdata@1c2465c816071ff767982116a4b19bad1d8b0c82/-/blob/collectors/python.d.plugin/python_modules/bases/charts.py?L303:48',
             [OnboardingTourLanguage.Typescript]:
