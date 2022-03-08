@@ -18,7 +18,7 @@ To target a managed object storage service, you will need to set a handful of en
 
 ### Using S3
 
-To target an S3 bucket you've already provisioned, set the following environment variables. Authentication is done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token).
+To target an S3 bucket you've already provisioned, set the following environment variables. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token), or via the EC2 metadata API.
 
 **_Warning:_** Remember never to commit aws access keys in git. Consider using a secret handling service offered by your cloud provider. 
 
@@ -28,6 +28,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID=<your access key>`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY=<your secret key>`
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SESSION_TOKEN=<your session token>` (optional)
+- `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` (optional; set to use EC2 metadata API over static credentials)
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_REGION=us-east-1` (default)
 
 **_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
