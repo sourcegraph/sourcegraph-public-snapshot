@@ -271,7 +271,14 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			} else {
 				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
-			if err != nil {
+			if github.IsNotFound(err) {
+				// If we get a 404 here, something funky is going on and this is very
+				// unexpected. Instead of bailing out and potentially causing unbounded
+				// retries later, we let this result proceed to cache. This is safe
+				// because the cache will eventually get invalidated at which point we
+				// can retry this group, or a sync can be triggered that marks the cached
+				// group as invalidated.
+			} else if err != nil {
 				// Add and return what we've found on this page but don't persist group
 				// to cache
 				for _, r := range repos {
