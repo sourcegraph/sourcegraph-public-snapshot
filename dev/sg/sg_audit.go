@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"text/template"
@@ -12,17 +13,15 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/slack-go/slack"
+	sgslack "github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
 )
 
 var (
-	auditFlagSet         = flag.NewFlagSet("sg audit", flag.ExitOnError)
-	auditPRFlagSet       = flag.NewFlagSet("sg audit pr", flag.ExitOnError)
-	auditFormatFlag      = auditPRFlagSet.String("format", "terminal", "Format to use for audit logs output")
-	auditGitHubTokenFlag = auditPRFlagSet.String("github.token", "", "GitHub token to use to fetch the trail")
-	auditSlackTokenFlag  = auditPRFlagSet.String("slack.token", "", "Slack token used to resolve Slack usernames")
+	auditFlagSet    = flag.NewFlagSet("sg audit", flag.ExitOnError)
+	auditPRFlagSet  = flag.NewFlagSet("sg audit pr", flag.ExitOnError)
+	auditFormatFlag = auditPRFlagSet.String("format", "terminal", "Format to use for audit logs output")
 )
 
 var auditCommand = &ffcli.Command{
@@ -37,31 +36,31 @@ var auditCommand = &ffcli.Command{
 		Name:    "pr",
 		FlagSet: auditPRFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
-			if *auditGitHubTokenFlag == "" {
-				return errors.New("-github.token is required")
-			}
-			ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-				&oauth2.Token{AccessToken: *auditGitHubTokenFlag},
-			)))
+			ghc := github.NewClient(nil)
 
 			issues, err := fetchIssues(ctx, ghc)
+			if err != nil {
+				return err
+			}
+			slack, err := sgslack.NewClient(ctx)
+			if err != nil {
+				return err
+			}
+			prAuditIssues, err := presentIssues(ctx, ghc, slack, issues)
 			if err != nil {
 				return err
 			}
 
 			switch *auditFormatFlag {
 			case "terminal":
-				formatTerminal(issues)
-			case "markdown":
-				if *auditSlackTokenFlag == "" {
-					return errors.New("-slack.token is required")
-				}
-				slack := slack.New(*auditSlackTokenFlag)
-				prAuditIssues, err := presentIssues(ctx, ghc, slack, issues)
+				var sb strings.Builder
+				err = formatMarkdown(prAuditIssues, &sb)
 				if err != nil {
 					return err
 				}
-				err = formatMarkdown(prAuditIssues)
+				writePrettyMarkdown(sb.String())
+			case "markdown":
+				err = formatMarkdown(prAuditIssues, os.Stdout)
 				if err != nil {
 					return err
 				}
@@ -87,19 +86,6 @@ func fetchIssues(ctx context.Context, ghc *github.Client) ([]*github.Issue, erro
 		}
 	}
 	return issues, nil
-}
-
-func formatTerminal(issues []*github.Issue) {
-	for _, issue := range issues {
-		var author string
-		user := issue.GetAssignee()
-		if user == nil {
-			author = "NONE"
-		}
-		author = user.GetLogin()
-		fmt.Printf("%10s %s %s\n", issue.GetCreatedAt().Format("2006-01-02"), author, issue.GetTitle())
-		fmt.Printf("%80s\n", issue.GetHTMLURL())
-	}
 }
 
 type prAuditIssue struct {
@@ -138,12 +124,12 @@ func presentIssues(ctx context.Context, ghc *github.Client, slack *slack.Client,
 	return res, nil
 }
 
-func formatMarkdown(issues []prAuditIssue) error {
+func formatMarkdown(issues []prAuditIssue, w io.Writer) error {
 	tmpl, err := template.New("pr-audit-report").Parse(auditMarkdownTemplate)
 	if err != nil {
 		return err
 	}
-	err = tmpl.Execute(os.Stdout, issues)
+	err = tmpl.Execute(w, issues)
 	return nil
 }
 
