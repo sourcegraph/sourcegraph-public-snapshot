@@ -93,6 +93,7 @@ function useCtaAlert(
     ctaToDisplay?: CtaToDisplay
     onCtaAlertDismissed: () => void
 } {
+    return { ctaToDisplay: 'browser', onCtaAlertDismissed: () => {} }
     const [hasDismissedSignupAlert, setHasDismissedSignupAlert] = useLocalStorage<boolean>(
         'StreamingSearchResults.hasDismissedSignupAlert',
         false
