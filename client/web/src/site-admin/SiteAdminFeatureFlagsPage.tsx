@@ -1,14 +1,14 @@
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useHistory } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -123,6 +123,8 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
     productVersion = window.context.version,
     ...props
 }) => {
+    const history = useHistory()
+
     // Try to parse out a git rev based on the product version, otherwise just fall back
     // to main.
     const productGitVersion = parseProductReference(productVersion)
@@ -179,31 +181,39 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
     return (
         <>
             <PageTitle title="Feature flags - Admin" />
-            <PageHeader
-                headingElement="h2"
-                path={[
-                    {
-                        text: <>Feature flags</>,
-                    },
-                ]}
-                description={
-                    <>
-                        <p>
-                            Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
-                            They are designed to be useful for A/B testing, and the values of all active feature flags
-                            are added to every event log for the purpose of analytics.
-                        </p>
-                        <p>
-                            To learn more, refer to{' '}
-                            <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
-                                How to use feature flags
-                            </Link>
-                            .
-                        </p>
-                    </>
-                }
-                className="mb-3"
-            />
+
+            <div className={styles.headerGrid}>
+                <PageHeader
+                    headingElement="h2"
+                    path={[
+                        {
+                            text: <>Feature flags</>,
+                        },
+                    ]}
+                    description={
+                        <>
+                            <p>
+                                Feature flags, as opposed to experimental features, are intended to be strictly
+                                short-lived. They are designed to be useful for A/B testing, and the values of all
+                                active feature flags are added to every event log for the purpose of analytics. To learn
+                                more, refer to{' '}
+                                <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
+                                    How to use feature flags
+                                </Link>
+                                .
+                            </p>
+                        </>
+                    }
+                    className="mb-3"
+                />
+                <Button
+                    className="justify-content-end align-self-start"
+                    variant="primary"
+                    onClick={() => history.push('./feature-flags/configuration/new')}
+                >
+                    Create feature flag
+                </Button>
+            </div>
 
             <Container>
                 <FilteredConnection<FeatureFlagAndReferences, {}>
