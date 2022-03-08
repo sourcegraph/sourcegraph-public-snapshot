@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -243,7 +243,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                 <InformationOutlineIcon className="icon-inline mr-1 text-muted" />
                 <Button
                     variant="link"
-                    className={classNames(styles.info, styles.infoButton)}
+                    className={classNames(styles.info, 'p-0')}
                     onClick={() => setInfoShown(true)}
                     aria-haspopup="true"
                     aria-expanded="false"
