@@ -17,7 +17,7 @@ import { RadioButtons } from '../components/RadioButtons'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
-import { getFeatureFlagReferences, parseProductReference, Reference } from './SiteAdminFeatureFlagsPage'
+import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentProps<{ name: string }>, TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
@@ -58,13 +58,6 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
             setOverrides(featureFlagOrError.overrides)
         }
     }, [featureFlagOrError])
-
-    const references = useObservable(
-        useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
-            flagName,
-            productGitVersion,
-        ])
-    )
 
     const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
         CREATE_FEATURE_FLAG_MUTATION
@@ -122,7 +115,6 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                 type={flagType}
                 value={flagValue}
                 overrides={flagOverrides}
-                references={references}
                 setFlagValue={setFlagValue}
             />
         )
@@ -198,7 +190,11 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
             {updateFlagError && <ErrorAlert prefix="Error updating feature flag" error={updateFlagError} />}
             {deleteFlagError && <ErrorAlert prefix="Error deleting feature flag" error={deleteFlagError} />}
 
-            <Container>{body}</Container>
+            <Container>
+                {body}
+
+                <ReferencesCollapsible flagName={flagName} productGitVersion={productGitVersion} />
+            </Container>
 
             {actions && (
                 <div className="mt-3">
@@ -234,9 +230,8 @@ const ManageFeatureFlag: FunctionComponent<{
     type: FeatureFlagType
     value: FeatureFlagValue
     overrides?: FeatureFlagOverride[]
-    references?: Reference[]
     setFlagValue: (flag: FeatureFlagValue) => void
-}> = ({ name, type, value, overrides, references, setFlagValue }) => (
+}> = ({ name, type, value, overrides, setFlagValue }) => (
     <>
         <h3>Name</h3>
         <p>{name}</p>
@@ -273,30 +268,6 @@ const ManageFeatureFlag: FunctionComponent<{
                 ))}
             </div>
         </Collapsible>
-
-        {references && references.length > 0 && (
-            <>
-                <br />
-                <Collapsible
-                    title={<h3>References</h3>}
-                    detail={`${references.length} ${references.length > 1 ? 'references' : 'reference'}`}
-                    className="p-0 font-weight-normal"
-                    buttonClassName="mb-0"
-                    titleAtStart={true}
-                    defaultExpanded={false}
-                >
-                    <div className="pt-2">
-                        {references.map(reference => (
-                            <div key={name + reference.file}>
-                                <Link target="_blank" rel="noopener noreferrer" to={reference.searchURL}>
-                                    <code>{reference.file}</code>
-                                </Link>
-                            </div>
-                        ))}
-                    </div>
-                </Collapsible>
-            </>
-        )}
     </>
 )
 
@@ -445,6 +416,42 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
             />
             <small className="form-text text-muted">Required.</small>
         </div>
+    )
+}
+
+const ReferencesCollapsible: React.FunctionComponent<{
+    flagName: string | undefined
+    productGitVersion: string
+}> = ({ flagName, productGitVersion }) => {
+    const references = useObservable(
+        useMemo(() => (flagName ? getFeatureFlagReferences(flagName, productGitVersion) : of([])), [
+            flagName,
+            productGitVersion,
+        ])
+    )
+    return references && references.length > 0 ? (
+        <Collapsible
+            title={<h3>References</h3>}
+            detail={`${references.length} potential feature flag ${
+                references.length > 1 ? 'references' : 'reference'
+            } in sourcegraph@${productGitVersion}`}
+            className="p-0 font-weight-normal mt-3"
+            buttonClassName="mb-0"
+            titleAtStart={true}
+            defaultExpanded={false}
+        >
+            <div className="pt-2">
+                {references.map(reference => (
+                    <div key={(flagName || '') + reference.file}>
+                        <Link target="_blank" rel="noopener noreferrer" to={reference.searchURL}>
+                            <code>{reference.file}</code>
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        </Collapsible>
+    ) : (
+        <></>
     )
 }
 
