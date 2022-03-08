@@ -84,37 +84,45 @@ func TestSearchWithFiltering(t *testing.T) {
 }
 
 func TestDefinitionWithFiltering(t *testing.T) {
-	ctx := context.Background()
-	fixture := types.SquirrelLocation{
-		Repo:   "somerepo",
-		Commit: "somecommit",
-		Path:   "path1",
-		Row:    0,
-		Column: 0,
+	path1 := types.RepoCommitPathPoint{
+		RepoCommitPath: types.RepoCommitPath{
+			Repo:   "somerepo",
+			Commit: "somecommit",
+			Path:   "path1",
+		},
+		Point: types.Point{Row: 0, Column: 0},
 	}
+
+	path2 := types.RepoCommitPathPoint{
+		RepoCommitPath: types.RepoCommitPath{
+			Repo:   "somerepo",
+			Commit: "somecommit",
+			Path:   "path2",
+		},
+		Point: types.Point{Row: 0, Column: 0},
+	}
+
+	// Start an HTTP server that responds with path1.
+	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(fixture)
+		json.NewEncoder(w).Encode(path1)
 	}))
 	t.Cleanup(func() {
 		srv.Close()
 	})
 	DefaultClient.URL = srv.URL
 
-	results, err := DefaultClient.Definition(ctx, types.SquirrelLocation{
-		Repo:   "somrepo",
-		Commit: "somecommit",
-		Path:   "path2",
-		Row:    0,
-		Column: 0,
-	})
+	// Request path1.
+	results, err := DefaultClient.SymbolInfo(ctx, path2)
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Make sure we get results.
 	if results == nil {
 		t.Fatal("nil result")
 	}
 
-	// With filtering
+	// Now do the same but with perms filtering.
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -126,17 +134,11 @@ func TestDefinitionWithFiltering(t *testing.T) {
 		return authz.None, nil
 	})
 	authz.DefaultSubRepoPermsChecker = checker
-
-	results, err = DefaultClient.Definition(ctx, types.SquirrelLocation{
-		Repo:   "somrepo",
-		Commit: "somecommit",
-		Path:   "path2",
-		Row:    0,
-		Column: 0,
-	})
+	results, err = DefaultClient.SymbolInfo(ctx, path2)
 	if err == nil {
 		t.Fatal("expected error when getting a definition for an unauthorized path")
 	}
+	// Make sure we do not get results.
 	if results != nil {
 		t.Fatal("expected nil result when getting a definition for an unauthorized path")
 	}
