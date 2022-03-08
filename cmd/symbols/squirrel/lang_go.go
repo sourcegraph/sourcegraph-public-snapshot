@@ -21,33 +21,20 @@ import (
 // It's the return type of definition calls.
 type PkgOrNode struct {
 	Pkg  *types.RepoCommitPath
-	Node *NodeWithRepoCommitPath
+	Node *Node
 }
 
 // getDef returns the definition of the given node.
-func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
+func (s *SquirrelService) getDef(ctx context.Context, node *Node) (*PkgOrNode, error) {
 	if node == nil {
 		return nil, nil
 	}
 
-	s.breadcrumbs = append(s.breadcrumbs, Breadcrumb{
-		RepoCommitPathRange: types.RepoCommitPathRange{
-			RepoCommitPath: repoCommitPath,
-			Range:          nodeToRange(node),
-		},
-		length:  nodeLength(node),
-		message: "getDef",
-	})
-
-	// TODO bundle contents, repo, commit, path, and node into a struct
-	contents, err := s.readFile(ctx, repoCommitPath)
-	if err != nil {
-		return nil, err
-	}
+	addBreadcrumb(&s.breadcrumbs, *node, "getDef")
 
 	switch node.Type() {
 	case "identifier":
-		for cur := node; cur != nil; cur = cur.Parent() {
+		for cur := node.Node; cur != nil; cur = cur.Parent() {
 			parent := cur.Parent()
 			if parent == nil {
 				break
@@ -58,8 +45,8 @@ func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, rep
 					if cur2.Type() == "var_declaration" {
 						if cur2.NamedChild(0).Type() == "var_spec" {
 							found := cur2.NamedChild(0).ChildByFieldName("name")
-							if found.Content(contents) == node.Content(contents) {
-								return &PkgOrNode{Node: &NodeWithRepoCommitPath{RepoCommitPath: repoCommitPath, Node: found}}, nil
+							if found.Content(node.Contents) == node.Content(node.Contents) {
+								return &PkgOrNode{Node: WithNodePtr(*node, found)}, nil
 							}
 						}
 					}
@@ -73,7 +60,7 @@ func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, rep
 		}
 		switch parent.Type() {
 		case "qualified_type":
-			return s.getField(ctx, lang, repoCommitPath, parent.ChildByFieldName("package"), node.Content(contents))
+			return s.getField(ctx, WithNodePtr(*node, parent.ChildByFieldName("package")), node.Content(node.Contents))
 		default:
 			return nil, errors.Newf("unrecognized parent type %s", parent.Type())
 		}
@@ -85,16 +72,15 @@ func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, rep
 
 		switch parent.Type() {
 		case "selector_expression":
-			return s.getField(ctx, lang, repoCommitPath, parent.ChildByFieldName("operand"), node.Content(contents))
+			return s.getField(ctx, WithNodePtr(*node, parent.ChildByFieldName("operand")), node.Content(node.Contents))
 		default:
 			return nil, errors.Newf("unexpected parent type %s", parent.Type())
 		}
 	case "package_identifier":
-		top := getRoot(node)
-		pkg := node.Content(contents)
+		pkg := node.Content(node.Contents)
 		dir := ""
-		forEachCapture("(import_spec path: (interpreted_string_literal) @import)", top, lang, func(name string, node *sitter.Node) {
-			path := node.Content(contents)
+		forEachCapture("(import_spec path: (interpreted_string_literal) @import)", WithNode(*node, getRoot(node.Node)), func(name string, node Node) {
+			path := node.Content(node.Contents)
 			path = strings.TrimPrefix(path, `"`)
 			path = strings.TrimSuffix(path, `"`)
 
@@ -113,8 +99,8 @@ func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, rep
 			return nil, nil
 		}
 		return &PkgOrNode{Pkg: &types.RepoCommitPath{
-			Repo:   repoCommitPath.Repo,
-			Commit: repoCommitPath.Commit,
+			Repo:   node.RepoCommitPath.Repo,
+			Commit: node.RepoCommitPath.Commit,
 			Path:   dir,
 		}}, nil
 	}
@@ -123,21 +109,14 @@ func (s *SquirrelService) getDef(ctx context.Context, lang *sitter.Language, rep
 }
 
 // getField returns the definition of the field on the given node.
-func (s *SquirrelService) getField(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node, field string) (*PkgOrNode, error) {
+func (s *SquirrelService) getField(ctx context.Context, node *Node, field string) (*PkgOrNode, error) {
 	if node == nil {
 		return nil, nil
 	}
 
-	s.breadcrumbs = append(s.breadcrumbs, Breadcrumb{
-		RepoCommitPathRange: types.RepoCommitPathRange{
-			RepoCommitPath: repoCommitPath,
-			Range:          nodeToRange(node),
-		},
-		length:  nodeLength(node),
-		message: fmt.Sprintf("getField(%s)", field),
-	})
+	addBreadcrumb(&s.breadcrumbs, *node, fmt.Sprintf("getField(%s)", field))
 
-	typePkgOrNode, err := s.getTypeDef(ctx, lang, repoCommitPath, node)
+	typePkgOrNode, err := s.getTypeDef(ctx, node)
 	if err != nil {
 		return nil, err
 	}
@@ -172,41 +151,29 @@ func (s *SquirrelService) getField(ctx context.Context, lang *sitter.Language, r
 		}
 
 		var foundMethod *sitter.Node
-		forEachCapture("(method_declaration name: (field_identifier) @method)", getRoot(ty), lang, func(captureName string, node *sitter.Node) {
+		forEachCapture("(method_declaration name: (field_identifier) @method)", WithNode(*node, getRoot(ty)), func(captureName string, node Node) {
 			if node.Content(contents) == field {
-				foundMethod = node
+				foundMethod = node.Node
 			}
 		})
 		if foundMethod == nil {
 			return nil, nil
 		}
-		return &PkgOrNode{Node: &NodeWithRepoCommitPath{RepoCommitPath: typePkgOrNode.Node.RepoCommitPath, Node: foundMethod}}, nil
+		return &PkgOrNode{Node: WithNodePtr(*typePkgOrNode.Node, foundMethod)}, nil
 	default:
 		return nil, errors.Newf("unrecognized type %s", typeDef.Type())
 	}
 }
 
 // getTypeDef returns the definition of the type of the given node.
-func (s *SquirrelService) getTypeDef(ctx context.Context, lang *sitter.Language, repoCommitPath types.RepoCommitPath, node *sitter.Node) (*PkgOrNode, error) {
+func (s *SquirrelService) getTypeDef(ctx context.Context, node *Node) (*PkgOrNode, error) {
 	if node == nil {
 		return nil, nil
 	}
 
-	s.breadcrumbs = append(s.breadcrumbs, Breadcrumb{
-		RepoCommitPathRange: types.RepoCommitPathRange{
-			RepoCommitPath: repoCommitPath,
-			Range:          nodeToRange(node),
-		},
-		length:  nodeLength(node),
-		message: "getTypeDef",
-	})
+	addBreadcrumb(&s.breadcrumbs, *node, "getTypeDef")
 
-	_, err := s.readFile(ctx, repoCommitPath)
-	if err != nil {
-		return nil, err
-	}
-
-	defPkgOrNode, err := s.getDef(ctx, lang, repoCommitPath, node)
+	defPkgOrNode, err := s.getDef(ctx, node)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +206,7 @@ func (s *SquirrelService) getTypeDef(ctx context.Context, lang *sitter.Language,
 		}
 		switch ty.Type() {
 		case "qualified_type":
-			return s.getTypeDef(ctx, lang, defPkgOrNode.Node.RepoCommitPath, ty.ChildByFieldName("name"))
+			return s.getTypeDef(ctx, WithNodePtr(*defPkgOrNode.Node, ty.ChildByFieldName("name")))
 		}
 	case "type_spec":
 		return defPkgOrNode, nil
@@ -251,7 +218,7 @@ func (s *SquirrelService) getTypeDef(ctx context.Context, lang *sitter.Language,
 }
 
 // getDefInPkg returns the definition of the symbol within the given package.
-func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolName, pkg string) (*NodeWithRepoCommitPath, error) {
+func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolName, pkg string) (*Node, error) {
 	defSymbols, err := s.symbolSearch(ctx, symbolsTypes.SearchArgs{
 		Repo:            api.RepoName(repo),
 		CommitID:        api.CommitID(commit),
@@ -290,7 +257,7 @@ func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolN
 		return nil, err
 	}
 
-	root, _, _, err := parse(ctx, def.RepoCommitPath, s.readFile)
+	root, err := parse(ctx, def.RepoCommitPath, s.readFile)
 	lines := strings.Split(string(contents), "\n")
 	column := strings.Index(lines[def.Range.Row], defSymbol.Name)
 	if column == -1 {
@@ -306,5 +273,5 @@ func (s *SquirrelService) getDefInPkg(ctx context.Context, repo, commit, symbolN
 		return nil, nil
 	}
 
-	return &NodeWithRepoCommitPath{RepoCommitPath: def.RepoCommitPath, Node: node}, nil
+	return WithNodePtr(*root, node), nil
 }

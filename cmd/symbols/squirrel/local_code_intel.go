@@ -33,10 +33,13 @@ type PartialSymbol struct {
 // Computes the local code intel payload, which is a list of symbols.
 func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*types.LocalCodeIntelPayload, error) {
 	// Parse the file.
-	root, contents, langSpec, err := parse(ctx, repoCommitPath, readFile)
+	root, err := parse(ctx, repoCommitPath, readFile)
+	if err != nil {
+		return nil, err
+	}
 
 	// Load the tree-sitter query.
-	localsPath := path.Join("nvim-treesitter", "queries", langSpec.nvimQueryDir, "locals.scm")
+	localsPath := path.Join("nvim-treesitter", "queries", root.LangSpec.nvimQueryDir, "locals.scm")
 	queriesBytes, err := queriesFs.ReadFile(localsPath)
 	if err != nil {
 		return nil, errors.Newf("could not read %d: %s", localsPath, err)
@@ -46,13 +49,13 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 
 	// Collect scopes
-	rootScopeId := nodeId(root)
+	rootScopeId := nodeId(root.Node)
 	scopes := map[Id]Scope{
 		rootScopeId: {},
 	}
-	err = forEachCapture(queryString, root, langSpec.language, func(captureName string, node *sitter.Node) {
+	err = forEachCapture(queryString, *root, func(captureName string, node Node) {
 		if captureName == "scope" {
-			scopes[nodeId(node)] = map[SymbolName]*PartialSymbol{}
+			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}
 			return
 		}
 	})
@@ -61,29 +64,29 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 	}
 
 	// Collect defs
-	err = forEachCapture(queryString, root, langSpec.language, func(captureName string, node *sitter.Node) {
+	err = forEachCapture(queryString, *root, func(captureName string, node Node) {
 		// Only collect "definition*" captures.
 		if strings.HasPrefix(captureName, "definition") {
 			// Find the nearest scope (if it exists).
-			for cur := node; cur != nil; cur = cur.Parent() {
+			for cur := node.Node; cur != nil; cur = cur.Parent() {
 				// Found the scope.
 				if scope, ok := scopes[nodeId(cur)]; ok {
 					// Get the symbol name.
-					symbolName := SymbolName(node.Content(contents))
+					symbolName := SymbolName(node.Contents)
 
 					// Print a debug message if the symbol is already defined.
 					if symbol, ok := scope[symbolName]; ok && debug {
-						lines := strings.Split(string(contents), "\n")
+						lines := strings.Split(string(node.Contents), "\n")
 						fmt.Printf("duplicate definition for %q in %s (using second)\n", symbolName, repoCommitPath.Path)
 						fmt.Printf("  %4d | %s\n", symbol.Def.Row, lines[symbol.Def.Row])
 						fmt.Printf("  %4d | %s\n", node.StartPoint().Row, lines[node.StartPoint().Row])
 					}
 
 					// Get the hover.
-					hover := findHover(node, langSpec.commentStyle, string(contents))
+					hover := findHover(node)
 
 					// Put the symbol in the scope.
-					def := nodeToRange(node)
+					def := nodeToRange(node.Node)
 					scope[symbolName] = &PartialSymbol{
 						Hover: hover,
 						Def:   &def,
@@ -101,14 +104,14 @@ func localCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath, re
 	}
 
 	// Collect refs by walking the entire tree.
-	walk(root, func(node *sitter.Node) {
+	walk(root.Node, func(node *sitter.Node) {
 		// Only collect identifiers.
 		if !strings.Contains(node.Type(), "identifier") {
 			return
 		}
 
 		// Get the symbol name.
-		symbolName := SymbolName(node.Content([]byte(contents)))
+		symbolName := SymbolName(node.Content(root.Contents))
 
 		// Find the nearest scope (if it exists).
 		for cur := node; cur != nil; cur = cur.Parent() {

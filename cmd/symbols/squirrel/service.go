@@ -39,7 +39,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	var def *types.RepoCommitPathRange
 	{
 		// Parse the file and find the starting node.
-		root, _, langSpec, err := parse(ctx, point.RepoCommitPath, squirrel.readFile)
+		root, err := parse(ctx, point.RepoCommitPath, squirrel.readFile)
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +52,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the definition.
-		foundPkgOrNode, err := squirrel.getDef(ctx, langSpec.language, point.RepoCommitPath, startNode)
+		foundPkgOrNode, err := squirrel.getDef(ctx, WithNodePtr(*root, startNode))
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	var hover *string
 	{
 		// Parse the END file and find the end node.
-		root, endContents, langSpec, err := parse(ctx, def.RepoCommitPath, squirrel.readFile)
+		root, err := parse(ctx, def.RepoCommitPath, squirrel.readFile)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 		}
 
 		// Now find the hover.
-		hover = findHover(endNode, langSpec.commentStyle, string(endContents))
+		hover = findHover(WithNode(*root, endNode))
 	}
 
 	// We have a def, and maybe a hover.

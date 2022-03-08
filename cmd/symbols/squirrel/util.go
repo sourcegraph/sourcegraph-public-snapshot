@@ -107,19 +107,24 @@ func bracket(text string) string {
 
 // forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
 // each capture.
-func forEachCapture(query string, node *sitter.Node, lang *sitter.Language, f func(captureName string, node *sitter.Node)) error {
-	sitterQuery, err := sitter.NewQuery([]byte(query), lang)
+func forEachCapture(query string, node Node, f func(captureName string, node Node)) error {
+	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
 	}
 	cursor := sitter.NewQueryCursor()
-	cursor.Exec(sitterQuery, node)
+	cursor.Exec(sitterQuery, node.Node)
 
 	match, _, hasCapture := cursor.NextCapture()
 	for hasCapture {
 		for _, capture := range match.Captures {
 			captureName := sitterQuery.CaptureNameForId(capture.Index)
-			f(captureName, capture.Node)
+			f(captureName, Node{
+				RepoCommitPath: node.RepoCommitPath,
+				Node:           capture.Node,
+				Contents:       node.Contents,
+				LangSpec:       node.LangSpec,
+			})
 		}
 		match, _, hasCapture = cursor.NextCapture()
 	}
@@ -167,24 +172,44 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// Combines a node and its path.
-type NodeWithRepoCommitPath struct {
+// A sitter.Node plus convenient info.
+type Node struct {
 	RepoCommitPath types.RepoCommitPath
-	Node           *sitter.Node
+	*sitter.Node
+	Contents []byte
+	LangSpec LangSpec
+}
+
+func WithNode(other Node, newNode *sitter.Node) Node {
+	return Node{
+		RepoCommitPath: other.RepoCommitPath,
+		Node:           newNode,
+		Contents:       other.Contents,
+		LangSpec:       other.LangSpec,
+	}
+}
+
+func WithNodePtr(other Node, newNode *sitter.Node) *Node {
+	return &Node{
+		RepoCommitPath: other.RepoCommitPath,
+		Node:           newNode,
+		Contents:       other.Contents,
+		LangSpec:       other.LangSpec,
+	}
 }
 
 // Parses a file and returns info about it.
-func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*sitter.Node, []byte, *LangSpec, error) {
+func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*Node, error) {
 	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, nil, nil, errors.Newf("unrecognized file extension %s", ext)
+		return nil, errors.Newf("unrecognized file extension %s", ext)
 	}
 
 	langSpec, ok := langToLangSpec[langName]
 	if !ok {
-		return nil, nil, nil, errors.Newf("unsupported language %s", langName)
+		return nil, errors.Newf("unsupported language %s", langName)
 	}
 
 	parser := sitter.NewParser()
@@ -192,18 +217,18 @@ func parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile Re
 
 	contents, err := readFile(ctx, repoCommitPath)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	tree, err := parser.ParseCtx(context.Background(), nil, contents)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to parse file contents: %s", err)
+		return nil, fmt.Errorf("failed to parse file contents: %s", err)
 	}
 
 	root := tree.RootNode()
 	if root == nil {
-		return nil, nil, nil, errors.New("root is nil")
+		return nil, errors.New("root is nil")
 	}
 
-	return root, contents, &langSpec, nil
+	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
 }

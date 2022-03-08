@@ -3,18 +3,18 @@ package squirrel
 import (
 	"math"
 	"strings"
-
-	sitter "github.com/smacker/go-tree-sitter"
 )
 
 // Returns the markdown hover message for the given node if it exists.
-func findHover(node *sitter.Node, style CommentStyle, contents string) *string {
+func findHover(node Node) *string {
+	style := node.LangSpec.commentStyle
+
 	hover := ""
 	hover += "```" + style.codeFenceName + "\n"
-	hover += strings.Split(contents, "\n")[node.StartPoint().Row] + "\n"
+	hover += strings.Split(string(node.Contents), "\n")[node.StartPoint().Row] + "\n"
 	hover += "```"
 
-	for cur := node; cur != nil && cur.StartPoint().Row == node.StartPoint().Row; cur = cur.Parent() {
+	for cur := node.Node; cur != nil && cur.StartPoint().Row == node.StartPoint().Row; cur = cur.Parent() {
 		prev := cur.PrevNamedSibling()
 
 		// Skip over Java annotations and the like.
@@ -36,7 +36,7 @@ func findHover(node *sitter.Node, style CommentStyle, contents string) *string {
 				lastStartRow = int(prev.StartPoint().Row)
 			}
 
-			comment := prev.Content([]byte(contents))
+			comment := prev.Content(node.Contents)
 
 			// Strip line noise and delete garbage lines.
 			lines := []string{}

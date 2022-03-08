@@ -18,6 +18,18 @@ type Breadcrumb struct {
 	message string
 }
 
+// addBreadcrumb adds a breadcrumb to the given slice.
+func addBreadcrumb(breadcrumbs *[]Breadcrumb, node Node, message string) {
+	*breadcrumbs = append(*breadcrumbs, Breadcrumb{
+		RepoCommitPathRange: types.RepoCommitPathRange{
+			RepoCommitPath: node.RepoCommitPath,
+			Range:          nodeToRange(node.Node),
+		},
+		length:  nodeLength(node.Node),
+		message: message,
+	})
+}
+
 // Prints breadcrumbs like this:
 //
 //             v 4. found
