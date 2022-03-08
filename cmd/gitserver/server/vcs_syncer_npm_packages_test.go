@@ -80,10 +80,10 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 
 func createMaliciousTgz(t *testing.T, tgzPath string) {
 	fileInfos := []fileInfo{
-		{harmlessPath, []byte{}},
+		{harmlessPath, []byte("harmless")},
 	}
 	for _, filepath := range maliciousPaths {
-		fileInfos = append(fileInfos, fileInfo{filepath, []byte{}})
+		fileInfos = append(fileInfos, fileInfo{filepath, []byte("malicious")})
 	}
 	createTgz(t, tgzPath, fileInfos)
 }

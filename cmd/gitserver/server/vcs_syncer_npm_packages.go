@@ -415,24 +415,27 @@ func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error
 			if err == io.EOF {
 				return nil
 			}
-			switch header.Typeflag {
-			case tar.TypeDir:
-				continue // We will create directories later; empty directories don't matter for git.
-			case tar.TypeReg:
-				name := header.Name
-				if commonSuperfluousDirectory {
-					name = strings.SplitN(name, string(os.PathSeparator), 2)[1]
-				}
-				cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(name, destinationDir)
-				if isPotentiallyMalicious {
-					continue
-				}
-				err = copyTarFileEntry(header, tarReader, cleanedOutputPath)
-				if err != nil {
-					return err
-				}
-			default:
-				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
+
+			fi := header.FileInfo()
+			mode := fi.Mode()
+
+			if !mode.IsRegular() || fi.Size() == 0 {
+				continue
+			}
+
+			name := header.Name
+			if commonSuperfluousDirectory {
+				name = strings.SplitN(name, string(os.PathSeparator), 2)[1]
+			}
+
+			cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(name, destinationDir)
+			if isPotentiallyMalicious {
+				continue
+			}
+
+			err = copyTarFileEntry(header, tarReader, cleanedOutputPath)
+			if err != nil {
+				return err
 			}
 		}
 	})
