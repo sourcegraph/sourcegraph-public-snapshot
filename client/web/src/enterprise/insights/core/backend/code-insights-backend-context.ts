@@ -54,6 +54,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
 
     // License check
     public isCodeInsightsLicensed = errorMockMethod('isCodeInsightsLicensed')
+    public getUiFeatures = errorMockMethod('getUiFeatures')
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

@@ -56,15 +56,13 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
-    let gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
-    const uiFeatures = useObservable(useMemo(() => gqlApi.getUiFeatures(), [gqlApi]))
-
-    if (!uiFeatures?.licensed) {
-        gqlApi = useMemo(() => new CodeInsightsGqlBackendLimited(apolloClient), [apolloClient])
-    }
+    const fullApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
+    const limitedApi = useMemo(() => new CodeInsightsGqlBackendLimited(apolloClient), [apolloClient])
+    const uiFeatures = useObservable(useMemo(() => fullApi.getUiFeatures(), [fullApi]))
+    const api = uiFeatures?.licensed ? fullApi : limitedApi
 
     return (
-        <CodeInsightsBackendContext.Provider value={gqlApi}>
+        <CodeInsightsBackendContext.Provider value={api}>
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
