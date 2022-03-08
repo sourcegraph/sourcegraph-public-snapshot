@@ -469,7 +469,7 @@ const getSourcegraphResultType = (): SourcegraphResultType | '' => {
         case 'code':
             return ''
         default:
-            return isSimpleSearchPage() ? 'repo' : ''
+            return isSimpleSearchPage() || isAdvancedSearchPage() ? 'repo' : ''
     }
 }
 
@@ -553,6 +553,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
                 className={classNames('btn', 'm-auto', className)}
                 iconClassName={classNames('mr-1', 'v-align-middle', styles.icon)}
                 href={sourcegraphSearchURL.href}
+                dataTestId="search-on-sourcegraph"
                 onClick={event => {
                     const searchQuery = buildSourcegraphQuery(getSearchQuery())
 
