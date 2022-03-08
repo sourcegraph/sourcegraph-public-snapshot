@@ -1,4 +1,6 @@
+import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
@@ -64,6 +66,16 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
         ])
     )
 
+    const [createFeatureFlag, { loading: createFlagLoading, error: createFlagError }] = useMutation(
+        CREATE_FEATURE_FLAG_MUTATION
+    )
+    const [updateFeatureFlag, { loading: updateFlagLoading, error: updateFlagError }] = useMutation(
+        UPDATE_FEATURE_FLAG_MUTATION
+    )
+    const [deleteFeatureFlag, { loading: deleteFlagLoading, error: deleteFlagError }] = useMutation(
+        DELETE_FEATURE_FLAG_MUTATION
+    )
+
     let body: React.ReactElement
     let actions: React.ReactElement | undefined
     if (name === 'new') {
@@ -78,8 +90,27 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
             />
         )
         actions = (
-            <Button variant="primary" disabled={true}>
-                Create feature flag
+            <Button
+                variant="primary"
+                disabled={!flagName || !flagType || createFlagLoading}
+                onClick={() =>
+                    createFeatureFlag({
+                        variables: {
+                            name: flagName,
+                            ...flagValue,
+                        },
+                    }).then(() => {
+                        history.push(`./${flagName || 'new'}`)
+                    })
+                }
+            >
+                {createFlagLoading ? (
+                    <>
+                        <LoadingSpinner /> Creating...
+                    </>
+                ) : (
+                    'Create flag'
+                )}
             </Button>
         )
     } else if (isErrorLike(featureFlagOrError)) {
@@ -97,11 +128,51 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
         )
         actions = (
             <>
-                <Button className="mr-2" variant="primary" disabled={true}>
-                    Update feature flag
+                <Button
+                    className="mr-2"
+                    variant="primary"
+                    disabled={updateFlagLoading || deleteFlagLoading}
+                    onClick={() =>
+                        updateFeatureFlag({
+                            variables: {
+                                name: flagName,
+                                ...flagValue,
+                            },
+                        }).then(() => {
+                            history.push(`./${flagName}`)
+                        })
+                    }
+                >
+                    {updateFlagLoading ? (
+                        <>
+                            <LoadingSpinner /> Updating...
+                        </>
+                    ) : (
+                        'Update flag'
+                    )}
                 </Button>
-                <Button variant="danger" disabled={true}>
-                    Delete feature flag
+                <Button
+                    variant="danger"
+                    disabled={updateFlagLoading || deleteFlagLoading}
+                    onClick={() =>
+                        deleteFeatureFlag({
+                            variables: {
+                                name: flagName,
+                            },
+                        }).then(() => {
+                            history.push('../')
+                        })
+                    }
+                >
+                    {deleteFlagLoading ? (
+                        <>
+                            <LoadingSpinner /> Deleting...
+                        </>
+                    ) : (
+                        <>
+                            <DeleteIcon className="icon-inline" /> Delete flag
+                        </>
+                    )}
                 </Button>
             </>
         )
@@ -122,6 +193,10 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                 ]}
                 className="mb-3"
             />
+
+            {createFlagError && <ErrorAlert prefix="Error creating feature flag" error={createFlagError} />}
+            {updateFlagError && <ErrorAlert prefix="Error updating feature flag" error={updateFlagError} />}
+            {deleteFlagError && <ErrorAlert prefix="Error deleting feature flag" error={deleteFlagError} />}
 
             <Container>{body}</Container>
 
@@ -266,15 +341,23 @@ const CreateFeatureFlag: React.FunctionComponent<{
     </>
 )
 
+/**
+ * Displays a modal for configuring the flag value as a certain type. Can be provided an
+ * undefined value to instantiate it based on type.
+ */
 const FeatureFlagValueSettings: React.FunctionComponent<{
     type: FeatureFlagType
     value?: FeatureFlagValue
     setFlagValue: (next: FeatureFlagValue) => void
 }> = ({ type, value, setFlagValue }) => {
     if (type === 'FeatureFlagRollout') {
+        if (!value) {
+            value = { rolloutBasisPoints: 0 }
+            setFlagValue({ ...value })
+        }
         return (
             <FeatureFlagRolloutValueSettings
-                value={(value as FeatureFlagRolloutValue) || { rolloutBasisPoints: 0 }}
+                value={value as FeatureFlagRolloutValue}
                 update={next => {
                     setFlagValue({
                         ...value,
@@ -285,9 +368,13 @@ const FeatureFlagValueSettings: React.FunctionComponent<{
         )
     }
 
+    if (!value) {
+        value = { value: false }
+        setFlagValue({ ...value })
+    }
     return (
         <FeatureFlagBooleanValueSettings
-            value={(value as FeatureFlagBooleanValue) || { value: 0 }}
+            value={value as FeatureFlagBooleanValue}
             update={next => {
                 setFlagValue({
                     ...value,
@@ -360,3 +447,27 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
         </div>
     )
 }
+
+const CREATE_FEATURE_FLAG_MUTATION = gql`
+    mutation create($name: String!, $value: Boolean, $rolloutBasisPoints: Int) {
+        createFeatureFlag(name: $name, value: $value, rolloutBasisPoints: $rolloutBasisPoints) {
+            __typename
+        }
+    }
+`
+
+const UPDATE_FEATURE_FLAG_MUTATION = gql`
+    mutation update($name: String!, $value: Boolean, $rolloutBasisPoints: Int) {
+        updateFeatureFlag(name: $name, value: $value, rolloutBasisPoints: $rolloutBasisPoints) {
+            __typename
+        }
+    }
+`
+
+const DELETE_FEATURE_FLAG_MUTATION = gql`
+    mutation delete($name: String!) {
+        deleteFeatureFlag(name: $name) {
+            alwaysNil
+        }
+    }
+`
