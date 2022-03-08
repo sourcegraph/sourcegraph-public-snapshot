@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import React from 'react'
 import { render } from 'react-dom'
-import { defer, Observable, of, Subscription } from 'rxjs'
+import { defer, of } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
@@ -25,7 +25,7 @@ import { background } from '../../../browser-extension/web-extension-api/runtime
 import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { getPlatformName } from '../../util/context'
-import { MutationRecordLike, querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
+import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -39,7 +39,7 @@ import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
-import { getFileContainers, parseURL } from './util'
+import { getFileContainers, parseURL, getFilePath } from './util'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -425,7 +425,7 @@ export interface GithubCodeHost extends CodeHost {
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
 
-    enhanceSearchPage: (sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>) => Subscription
+    enhanceSearchPage: (sourcegraphURL: string) => void
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
@@ -523,9 +523,9 @@ const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
 /**
  * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
-function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<MutationRecordLike[]>): Subscription {
+function enhanceSearchPage(sourcegraphURL: string): void {
     if (!isSearchPage()) {
-        return new Subscription()
+        return
     }
 
     // TODO: cleanup button on unsubscribe
@@ -568,7 +568,12 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
     }
 
     if (isSearchResultsPage()) {
-        const renderSearchResultsPageButtons = (): void => {
+        const githubResultType = getGithubResultType()
+
+        if (
+            ['repositories', 'commits', 'code'].includes(githubResultType) ||
+            (githubResultType === '' && (isSimpleSearchPage() || isRepoSearchPage()))
+        ) {
             /*
                 Separate search form is visible for screen sizes xs-md, so we add a Sourcegraph button
                 next to form submit button and track search query changes from the corresponding form input.
@@ -629,22 +634,7 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
             }
         }
 
-        return mutations
-            .pipe(
-                map(() => document.querySelector('.codesearch-results h3')?.textContent?.trim()),
-                filter(Boolean),
-                distinctUntilChanged(),
-                filter(() => {
-                    const githubResultType = getGithubResultType()
-                    return (
-                        githubResultType === 'repositories' ||
-                        githubResultType === 'commits' ||
-                        githubResultType === 'code' ||
-                        (githubResultType === '' && (isSimpleSearchPage() || isRepoSearchPage()))
-                    )
-                })
-            )
-            .subscribe(() => renderSearchResultsPageButtons())
+        return
     }
 
     /* Simple and advanced search pages */
@@ -663,8 +653,6 @@ function enhanceSearchPage(sourcegraphURL: string, mutations: Observable<Mutatio
             getSearchQuery: () => inputElement.value.split(' '),
         })
     }
-
-    return new Subscription()
 }
 
 export const githubCodeHost: GithubCodeHost = {
@@ -675,6 +663,28 @@ export const githubCodeHost: GithubCodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
+    routeChange: mutations =>
+        mutations.pipe(
+            map(() => {
+                const { pathname } = window.location
+
+                // repository file tree navigation
+                const pageType = pathname.slice(1).split('/')[2]
+                if (pageType === 'blob' || pageType === 'tree') {
+                    return pathname.endsWith(getFilePath()) ? pathname : undefined
+                }
+
+                // search results page filters being applied
+                if (isSearchResultsPage()) {
+                    return document.querySelector('.codesearch-results h3')?.textContent?.trim()
+                }
+
+                // other pages
+                return pathname
+            }),
+            filter(Boolean),
+            distinctUntilChanged()
+        ),
     getContext: async () => {
         const { repoName, rawRepoName, pageType } = parseURL()
 
