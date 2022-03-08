@@ -99,12 +99,30 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
+		setupAction := r.URL.Query().Get("setup_action")
+
 		state := r.URL.Query().Get("state")
 		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`The "state" is not a valid graphql.ID of an organization`))
 			return
+		}
+
+		responseServerError := func(msg string, err error) {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(msg))
+			log15.Error(msg, "error", err)
+		}
+
+		org, err := db.Orgs().GetByID(r.Context(), orgID)
+		if err != nil {
+			responseServerError("Failed to get organization", err)
+			return
+		}
+
+		if setupAction == "request" {
+			http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts?reason=request", org.Name), http.StatusFound)
 		}
 
 		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
@@ -125,18 +143,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))
-			return
-		}
-
-		responseServerError := func(msg string, err error) {
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(msg))
-			log15.Error(msg, "error", err)
-		}
-
-		org, err := db.Orgs().GetByID(r.Context(), orgID)
-		if err != nil {
-			responseServerError("Failed to get organization", err)
 			return
 		}
 

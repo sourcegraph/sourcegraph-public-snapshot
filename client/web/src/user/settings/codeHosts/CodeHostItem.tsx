@@ -4,7 +4,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -35,10 +35,12 @@ interface CodeHostItemProps {
     onDidError: (error: ErrorLike) => void
     loading?: boolean
     useGitHubApp?: boolean
+    reloadComponent?: (reason: string | null) => void
+    pending?: boolean
 }
 
 export interface ParentWindow extends Window {
-    onSuccess?: () => void
+    onSuccess?: (reason: string | null) => void
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
@@ -57,6 +59,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidUpsert,
     loading = false,
     useGitHubApp = false,
+    reloadComponent,
+    pending,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -132,7 +136,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 <Icon className="mb-0 mr-1" as={ItemIcon} />
             </div>
             <div className="flex-1 align-self-center">
-                <h3 className="m-0">{name}</h3>
+                <h3 className="m-0">
+                    {name} {pending ? <Badge color="secondary">Pending</Badge> : null}
+                </h3>
             </div>
             <div className="align-self-center">
                 {/* Show one of: update, updating, connect, connecting buttons */}
