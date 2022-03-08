@@ -54,15 +54,15 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 		return nil, err
 	}
 
-	userExists := func(username, email string) bool {
-		if username != "" {
-			_, err := r.db.Users().GetByUsername(ctx, username)
-			return err == nil
-		}
+	userExistsByUsername := func(username string) bool {
+		_, err := r.db.Users().GetByUsername(ctx, username)
+		return err == nil
+	}
+	userExistsByEmail := func(email string) bool {
 		_, err := r.db.Users().GetByVerifiedEmail(ctx, email)
 		return err == nil
 	}
-	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExists), nil
+	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExistsByUsername, userExistsByEmail), nil
 }
 
 type GitCommitsFunc func(context.Context, api.RepoName, git.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
