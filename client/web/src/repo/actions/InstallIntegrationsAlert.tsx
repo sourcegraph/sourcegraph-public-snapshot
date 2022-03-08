@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react'
 import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { usePersistentCadence } from '../../hooks'
+import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
 import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
 import { HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../RepoContainer'
 
@@ -42,6 +43,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
         IDE_CTA_CADENCE_SHIFT
     )
     const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
+    const isUsingIdeIntegration = useIsActiveIdeIntegrationUser()
     const [hoverCount] = useLocalStorage<number>(HOVER_COUNT_KEY, 0)
     const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useLocalStorage<boolean>(
         HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
@@ -63,7 +65,11 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
                 return 'browser'
             }
 
-            if (displayIDEExtensionCTABasedOnCadence && !hasDismissedIDEExtensionAlert) {
+            if (
+                isUsingIdeIntegration === false &&
+                displayIDEExtensionCTABasedOnCadence &&
+                !hasDismissedIDEExtensionAlert
+            ) {
                 return 'ide'
             }
 
@@ -80,6 +86,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             hasDismissedBrowserExtensionAlert,
             hasDismissedIDEExtensionAlert,
             isBrowserExtensionInstalled,
+            isUsingIdeIntegration,
         ]
     )
 
