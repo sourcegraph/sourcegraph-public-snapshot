@@ -105,24 +105,24 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	Hard         *bool
 }) (*EmptyResponse, error) {
 
-	orgID, err := UnmarshalOrgID(args.Organization)
-	if err != nil {
-		return nil, err
-	}
-
 	if args.Hard != nil && *args.Hard {
-		return r.hardDelete(ctx, orgID)
+		return r.hardDelete(ctx, args.Organization)
 	} else {
-		return r.softDelete(ctx, orgID)
+		return r.softDelete(ctx, args.Organization)
 	}
 }
 
-func (r *schemaResolver) hardDelete(ctx context.Context, orgID int32) (*EmptyResponse, error) {
+func (r *schemaResolver) hardDelete(ctx context.Context, org graphql.ID) (*EmptyResponse, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("hard deleting organization is only supported on Sourcegraph.com")
 	}
 
-	// 🚨 SECURITY: Only org members can hard delete orgs.
+	orgID, err := UnmarshalOrgID(org)
+	if err != nil {
+		return nil, err
+	}
+
+	//🚨 SECURITY: Only org members can hard delete orgs.
 	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (r *schemaResolver) hardDelete(ctx context.Context, orgID int32) (*EmptyRes
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) softDelete(ctx context.Context, orgID int32) (*EmptyResponse, error) {
+func (r *schemaResolver) softDelete(ctx context.Context, org graphql.ID) (*EmptyResponse, error) {
 	// For Cloud, orgs can only be hard deleted.
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("soft deleting organization in not supported on Sourcegraph.com")
@@ -151,6 +151,11 @@ func (r *schemaResolver) softDelete(ctx context.Context, orgID int32) (*EmptyRes
 
 	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	orgID, err := UnmarshalOrgID(org)
+	if err != nil {
 		return nil, err
 	}
 
