@@ -30,6 +30,13 @@ func TestLogPartsPerCommitInSync(t *testing.T) {
 		partsPerCommitBasic)
 }
 
+func TestParseCommitTags(t *testing.T) {
+	opt := CommitsOptions{IncludeTags: true}
+	parts := make([][]byte, opt.tagsIndex()+1)
+	parts[opt.tagsIndex()] = []byte("HEAD -> main, tag: v0.4, origin/main, tag: v0.3")
+	require.Equal(t, []string{"v0.4", "v0.3"}, parseCommitTags(opt, parts))
+}
+
 func TestRepository_GetCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,

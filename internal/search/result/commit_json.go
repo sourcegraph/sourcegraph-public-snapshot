@@ -26,6 +26,7 @@ type stableCommitMatchJSON struct {
 	CommitCommitter *stableSignatureMarshaler `json:"committer,omitempty"`
 	Message         string                    `json:"message"`
 	Parents         []string                  `json:"parents,omitempty"`
+	Tags            []string                  `json:"tags,omitempty"`
 	Refs            []string                  `json:"refs,omitempty"`
 	SourceRefs      []string                  `json:"sourceRefs,omitempty"`
 	MessagePreview  *MatchedString            `json:"messagePreview,omitempty"`
@@ -54,6 +55,11 @@ func (cm CommitMatch) MarshalJSON() ([]byte, error) {
 		parents[i] = string(parent)
 	}
 
+	tags := make([]string, len(cm.Commit.Tags))
+	for i, tag := range cm.Commit.Tags {
+		tags[i] = tag
+	}
+
 	marshaler := stableCommitMatchJSON{
 		RepoID:    int32(cm.Repo.ID),
 		RepoName:  string(cm.Repo.Name),
@@ -67,6 +73,7 @@ func (cm CommitMatch) MarshalJSON() ([]byte, error) {
 		CommitCommitter: committer,
 		Message:         string(cm.Commit.Message),
 		Parents:         parents,
+		Tags:            tags,
 		Refs:            cm.Refs,
 		SourceRefs:      cm.SourceRefs,
 		MessagePreview:  cm.MessagePreview,
@@ -97,6 +104,11 @@ func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
 		parents[i] = api.CommitID(parent)
 	}
 
+	tags := make([]string, len(unmarshaler.Tags))
+	for i, tag := range unmarshaler.Tags {
+		tags[i] = tag
+	}
+
 	*cm = CommitMatch{
 		Commit: gitdomain.Commit{
 			ID: api.CommitID(unmarshaler.CommitID),
@@ -108,6 +120,7 @@ func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
 			Committer: committer,
 			Message:   gitdomain.Message(unmarshaler.Message),
 			Parents:   parents,
+			Tags:      tags,
 		},
 		Repo: types.MinimalRepo{
 			ID:    api.RepoID(unmarshaler.RepoID),

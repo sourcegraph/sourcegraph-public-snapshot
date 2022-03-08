@@ -29,6 +29,7 @@ func TestCommitMatchMarshaling(t *testing.T) {
 				},
 				Message: "add documentation for hot beverages",
 				Parents: []api.CommitID{"coffeeae", "coffea", "arabica"},
+				Tags:    []string{"cappuccino", "latte"},
 			},
 			Repo: types.MinimalRepo{
 				ID:    42,
