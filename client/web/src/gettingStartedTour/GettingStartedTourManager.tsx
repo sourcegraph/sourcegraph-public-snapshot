@@ -7,12 +7,16 @@ import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/teleme
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Button, ButtonLink } from '@sourcegraph/wildcard'
 
-import { OnboardingTourLanguage, OnboardingTourState, useOnboardingTourState } from '../stores/onboardingTourState'
+import {
+    GettingStartedTourLanguage,
+    GettingStartedTourState,
+    useGettingStartedTourState,
+} from '../stores/gettingStartedTourState'
 
-import { OnboardingTourStepItem, ONBOARDING_STEP_ITEMS } from './data'
-import styles from './OnboardingTour.module.scss'
-import { OnboardingTourSteps } from './OnboardingTourSteps'
-import { useLogTourEvent } from './useOnboardingTour'
+import { GettingStartedTourStepItem, GETTING_STARTED_TOUR_STEP_ITEMS } from './data'
+import styles from './GettingStartedTour.module.scss'
+import { GettingStartedTourSteps } from './GettingStartedTourSteps'
+import { useGettingStartedTourLogEvent } from './useGettingStartedTourLogEvent'
 import { buildURIMarkers, isExternalURL } from './utils'
 
 interface CardProps {
@@ -35,18 +39,21 @@ const Card: React.FunctionComponent<CardProps> = ({ title, children, onClose, cl
     </article>
 )
 
-interface LanguagePickerProps extends TelemetryProps {
-    steps: OnboardingTourStepItem[]
+interface GettingStartedTourLanguagePickerProps extends TelemetryProps {
+    steps: GettingStartedTourStepItem[]
 }
 
-const LanguagePicker: React.FunctionComponent<LanguagePickerProps> = ({ steps, telemetryService }) => {
-    const logTourEvent = useLogTourEvent(telemetryService)
-    const { continueID, addCompletedID, setLanguage } = useOnboardingTourState(
+const GettingStartedTourLanguagePicker: React.FunctionComponent<GettingStartedTourLanguagePickerProps> = ({
+    steps,
+    telemetryService,
+}) => {
+    const logTourEvent = useGettingStartedTourLogEvent(telemetryService)
+    const { continueID, addCompletedID, setLanguage } = useGettingStartedTourState(
         useCallback(({ continueID, addCompletedID, setLanguage }) => ({ continueID, addCompletedID, setLanguage }), [])
     )
     const history = useHistory()
     const createOnClickHandler = useCallback(
-        (language: OnboardingTourLanguage) => () => {
+        (language: GettingStartedTourLanguage) => () => {
             setLanguage(language)
             const step = steps.find(step => step.id === continueID)
             if (!step) {
@@ -70,7 +77,7 @@ const LanguagePicker: React.FunctionComponent<LanguagePickerProps> = ({ steps, t
                 This guide is available in the following languages:
             </p>
             <div className="d-flex flex-wrap mt-3 mb-1">
-                {Object.values(OnboardingTourLanguage).map(language => (
+                {Object.values(GettingStartedTourLanguage).map(language => (
                     <Button
                         key={language}
                         onClick={createOnClickHandler(language)}
@@ -85,9 +92,9 @@ const LanguagePicker: React.FunctionComponent<LanguagePickerProps> = ({ steps, t
     )
 }
 
-const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
-    const logTourEvent = useLogTourEvent(telemetryService)
-    const restart = useOnboardingTourState(useCallback(state => state.restart, []))
+const GettingStartedTourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
+    const logTourEvent = useGettingStartedTourLogEvent(telemetryService)
+    const restart = useGettingStartedTourState(useCallback(state => state.restart, []))
 
     const onGetStarted = useCallback(() => {
         logTourEvent('TourGetStartedClicked')
@@ -107,7 +114,7 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
             <div className="d-flex flex-column">
                 <ButtonLink
                     className="align-self-start mb-2"
-                    to={buildGetStartedURL('onboarding-tour')}
+                    to={buildGetStartedURL('getting-started-tour')}
                     onClick={onGetStarted}
                     variant="primary"
                 >
@@ -121,17 +128,17 @@ const TourComplete: React.FunctionComponent<TelemetryProps> = ({ telemetryServic
     )
 }
 
-function useTourManager(
+function useGettingStartedTourManager(
     telemetryService: TelemetryService
-): { steps: OnboardingTourStepItem[]; onClose: () => void; status: OnboardingTourState['status'] } {
-    const logTourEvent = useLogTourEvent(telemetryService)
-    const { status, complete, completedIDs, close } = useOnboardingTourState(
+): { steps: GettingStartedTourStepItem[]; onClose: () => void; status: GettingStartedTourState['status'] } {
+    const logTourEvent = useGettingStartedTourLogEvent(telemetryService)
+    const { status, complete, completedIDs, close } = useGettingStartedTourState(
         useCallback(({ status, complete, completedIDs, close }) => ({ status, complete, completedIDs, close }), [])
     )
 
     const steps = useMemo(
         () =>
-            ONBOARDING_STEP_ITEMS.map(step => ({
+            GETTING_STARTED_TOUR_STEP_ITEMS.map(step => ({
                 ...step,
                 isCompleted: !!completedIDs?.includes(step.id),
             })),
@@ -166,17 +173,17 @@ function useTourManager(
     return { steps, onClose, status }
 }
 
-export interface OnboardingTourManagerProps extends TelemetryProps {
+export interface GettingStartedTourManagerProps extends TelemetryProps {
     isFixedHeight?: boolean
     className?: string
 }
 
-export const OnboardingTourManager: React.FunctionComponent<OnboardingTourManagerProps> = ({
+export const GettingStartedTourManager: React.FunctionComponent<GettingStartedTourManagerProps> = ({
     className,
     isFixedHeight,
     telemetryService,
 }) => {
-    const { steps, onClose, status } = useTourManager(telemetryService)
+    const { steps, onClose, status } = useGettingStartedTourManager(telemetryService)
 
     if (status === 'closed') {
         return null
@@ -191,17 +198,17 @@ export const OnboardingTourManager: React.FunctionComponent<OnboardingTourManage
         >
             {status === 'steps' ? (
                 // Main tour steps
-                <OnboardingTourSteps
+                <GettingStartedTourSteps
                     steps={steps}
                     telemetryService={telemetryService}
                     className={classNames({ [styles.isFixedHeight]: isFixedHeight })}
                 />
             ) : status === 'languages' ? (
                 // Pick language for the tour
-                <LanguagePicker steps={steps} telemetryService={telemetryService} />
+                <GettingStartedTourLanguagePicker steps={steps} telemetryService={telemetryService} />
             ) : (
                 // Sign-up or restart
-                <TourComplete telemetryService={telemetryService} />
+                <GettingStartedTourComplete telemetryService={telemetryService} />
             )}
         </Card>
     )

@@ -8,7 +8,7 @@ import { Card, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
+import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
@@ -66,9 +66,9 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
-                <OnboardingTour
+                <GettingStartedTour
                     isFixedHeight={true}
-                    className={styles.onboardingTour}
+                    className={styles.gettingStartedTour}
                     telemetryService={props.telemetryService}
                 />
                 <div className={styles.videoCard}>
