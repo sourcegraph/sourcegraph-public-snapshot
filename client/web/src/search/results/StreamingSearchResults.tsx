@@ -327,8 +327,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }, [telemetryService])
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const showOnboardingTour =
-        props.isSourcegraphDotCom && !props.authenticatedUser && props.featureFlags.get('getting-started-tour')
+    const showOnboardingTour = props.isSourcegraphDotCom && !props.authenticatedUser
     const { ctaToDisplay, onCtaAlertDismissed } = useCtaAlert(!!authenticatedUser, resultsFound)
 
     // Log view event when signup CTA is shown

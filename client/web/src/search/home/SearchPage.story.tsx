@@ -13,6 +13,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
@@ -58,7 +59,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
+    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
 
 if (!window.context) {
@@ -112,7 +113,7 @@ add('Cloud marketing home with notebook onboarding', () => (
                 {...defaultProps(webProps)}
                 isSourcegraphDotCom={true}
                 authenticatedUser={null}
-                featureFlags={new Map([['search-notebook-onboarding', true]])}
+                featureFlags={new Map([])}
             />
         )}
     </WebStory>

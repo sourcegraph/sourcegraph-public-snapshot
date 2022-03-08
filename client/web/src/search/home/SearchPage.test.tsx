@@ -18,6 +18,7 @@ import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -28,8 +29,7 @@ jest.mock('./SearchPageInput', () => ({
 // CommonJS).
 jest.mock('./LoggedOutHomepage.constants', () => ({
     fonts: [],
-    exampleQueries: [],
-    exampleNotebooks: [],
+    exampleTripsAndTricks: [],
 }))
 
 describe('SearchPage', () => {
@@ -73,7 +73,7 @@ describe('SearchPage', () => {
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        featureFlags: new Map(),
+        featureFlags: new Map<FeatureFlagName, boolean>(),
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

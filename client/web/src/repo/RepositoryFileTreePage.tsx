@@ -53,8 +53,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
 
     const mode = getModeFromPath(filePath)
 
-    const showOnboardingTour =
-        context.isSourcegraphDotCom && !context.authenticatedUser && featureFlags.get('getting-started-tour')
+    const showOnboardingTour = context.isSourcegraphDotCom && !context.authenticatedUser
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
     const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
