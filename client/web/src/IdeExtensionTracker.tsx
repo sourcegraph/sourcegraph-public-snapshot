@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -15,13 +15,8 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
     const [, setLastVSCodeDetection] = useTemporarySetting('integrations.vscode.lastDetectionTimestamp', 0)
     const [, setLastJetBrainsDetection] = useTemporarySetting('integrations.jetbrains.lastDetectionTimestamp', 0)
 
-    // We only want to capture the IDE UTM parameters on the first page load. In order to avoid
-    // rerunning the effect below whenever location change, we instead capture a reference that we
-    // never update.
-    const locationReference = useRef(location)
-
     useEffect(() => {
-        const parameters = new URLSearchParams(locationReference.current.search)
+        const parameters = new URLSearchParams(location.search)
         const utmProductName = parameters.get('utm_product_name')
         const utmMedium = parameters.get('utm_medium')
         const utmSource = parameters.get('utm_source')
@@ -31,6 +26,10 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
         } else if (utmMedium === 'VSCIDE' || utmSource?.toLowerCase().startsWith('vscode')) {
             setLastVSCodeDetection(Date.now())
         }
+
+        // We only want to capture the IDE UTM parameters on the first page load. In order to avoid
+        // rerunning the effect whenever location change, we skip it from the dependecy array.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setLastJetBrainsDetection, setLastVSCodeDetection])
 
     return null
