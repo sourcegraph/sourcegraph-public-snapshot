@@ -34,6 +34,9 @@ type CommitSearch struct {
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
 	Gitserver            gitserverSearcher `json:"-"`
+
+	ExpandRefs func(context.Context, database.DB, gitserverSearcher, *protocol.SearchRequest) ([]gitprotocol.RevisionSpecifier, error)
+	OnSuccess  func(context.Context, database.DB, *protocol.SearchRequest) error
 }
 
 type gitserverSearcher interface {
@@ -103,12 +106,26 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 		}
 
 		bounded.Go(func() error {
+			if j.ExpandRefs != nil {
+				args.Revisions, err = j.ExpandRefs(ctx, db, j.Gitserver, args)
+				if err != nil {
+					return err
+				}
+			}
+
 			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
+			if err != nil {
+				return err
+			}
+
+			if j.OnSuccess != nil {
+				err = j.OnSuccess(ctx, db, args)
+			}
 
 			return err
 		})

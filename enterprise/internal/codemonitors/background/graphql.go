@@ -130,7 +130,10 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	}
 
 	if enabled, ok := ffs["cc-repo-aware-monitors"]; ok && enabled {
-		planJob = mapJob(planJob)
+		planJob, err = mapJob(planJob)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	agg := streaming.NewAggregatingStream()
