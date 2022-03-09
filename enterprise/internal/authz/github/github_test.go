@@ -248,7 +248,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("user in orgs", func(t *testing.T) {
-			mockClient := &mockClient{
+			mc := &mockClient{
 				MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
 				MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
 				MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
@@ -258,9 +258,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				MockListOrgRepositories: mockListOrgRepositories,
 			}
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-			p.client = mockClientFunc(mockClient)
-			p.groupsCache = memGroupsCache()
+			p := setupProvider(t, mc)
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -284,7 +282,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		})
 
 		t.Run("user in orgs and teams", func(t *testing.T) {
-			mockClient := &mockClient{
+			mc := &mockClient{
 				MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
 				MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
 				MockGetAuthenticatedUserTeams: func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
@@ -328,9 +326,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 			}
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-			p.client = mockClientFunc(mockClient)
-			p.groupsCache = memGroupsCache()
+			p := setupProvider(t, mc)
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -352,6 +348,60 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("special case: ListTeamRepositories returns 404", func(t *testing.T) {
+			mc := &mockClient{
+				MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
+				MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
+				MockGetAuthenticatedUserTeams: func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
+					switch page {
+					case 1:
+						return []*github.Team{
+							// should not get repos from this team because parent org has default read permissions
+							{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
+							// should not get repos from this team since it has no repos
+							{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
+						}, true, 1, nil
+					case 2:
+						return []*github.Team{
+							// should get repos from this team
+							{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+						}, false, 1, nil
+					}
+					return nil, false, 1, nil
+				},
+				MockListOrgRepositories: mockListOrgRepositories,
+				MockListTeamRepositories: func(_ context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+					return nil, false, 1, &github.APIError{Code: 404}
+				},
+			}
+
+			p := setupProvider(t, mc)
+
+			repoIDs, err := p.FetchUserPerms(context.Background(),
+				mockAccount,
+				authz.FetchPermsOptions{InvalidateCaches: true},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantRepoIDs := []extsvc.RepoID{
+				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // from ListAffiliatedRepos
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // from ListOrgRepositories
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
+			}
+			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			}
+			_, found := p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
+			if !found {
+				t.Error("expected to find group in cache")
 			}
 		})
 
@@ -1179,4 +1229,11 @@ func TestProvider_ValidateConnection(t *testing.T) {
 			}
 		})
 	})
+}
+
+func setupProvider(t *testing.T, mc *mockClient) *Provider {
+	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+	p.client = mockClientFunc(mc)
+	p.groupsCache = memGroupsCache()
+	return p
 }
