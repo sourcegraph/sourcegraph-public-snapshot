@@ -4,15 +4,13 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useMemo } from 'react'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 
-import { PathMatch, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { PathMatch, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange } from '../../serialize'
+import { fetchSuggestions } from '../suggestions'
 
 import { NotebookFileBlockInput } from './NotebookFileBlockInput'
 import styles from './NotebookFileBlockInputs.module.scss'
@@ -42,16 +40,6 @@ function getFilePathSuggestionsQuery(repositoryName: string, revision: string, f
     const repoFilter = repositoryName.trim() ? `repo:${repositoryName}` : ''
     const revisionFilter = revision.trim() ? `rev:${revision}` : ''
     return `${repoFilter} ${revisionFilter} ${filePath} type:path count:${MAX_SUGGESTIONS} fork:yes`
-}
-
-function fetchSuggestions<T extends RepositoryMatch | PathMatch>(
-    query: string,
-    filterSuggestionFn: (match: SearchMatch) => match is T,
-    mapSuggestionFn: (match: T) => string
-): Observable<string[]> {
-    return fetchStreamSuggestions(query).pipe(
-        map(suggestions => suggestions.filter(filterSuggestionFn).map(mapSuggestionFn))
-    )
 }
 
 export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
