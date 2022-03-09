@@ -75,7 +75,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 
 type GitCommitsFunc func(context.Context, api.RepoName, git.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
 
-func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver, err error) {
+func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
