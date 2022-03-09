@@ -166,6 +166,7 @@ Some common failure modes:
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled.
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
+- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 yarn build-web` or `ENTERPRISE=1 yarn watch-web`
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
