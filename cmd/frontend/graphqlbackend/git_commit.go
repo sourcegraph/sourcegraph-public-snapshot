@@ -336,6 +336,8 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
+//
+// The returned string is not guaranteed to be URL-safe and must be escaped by the caller.
 func (r *GitCommitResolver) repoRevURL() *url.URL {
 	// Dereference to copy to avoid mutation
 	url := *r.repoResolver.RepoMatch.URL()
