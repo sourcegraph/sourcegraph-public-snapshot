@@ -64,6 +64,7 @@ var (
 			lintCommand,
 			dbCommand,
 			updateCommand,
+			auditCommand,
 		},
 	}
 )
