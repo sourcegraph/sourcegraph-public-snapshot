@@ -317,7 +317,7 @@ const CreateFeatureFlag: React.FunctionComponent<{
 
         <Select
             id="type"
-            label={(<h3>Type</h3>)}
+            label={<h3>Type</h3>}
             value={type}
             onChange={({ target: { value } }) => setFlagType(value as FeatureFlagType)}
             message="Required."
@@ -410,33 +410,31 @@ const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
     value: FeatureFlagBooleanValue
     update: (next: FeatureFlagBooleanValue) => void
 }> = ({ value, update }) => (
-        <div className="form-group d-flex flex-column">
-            <label htmlFor="bool-value">
-                <h3>Value</h3>
-            </label>
-            <div className="d-flex">
-                <div>
-                    <Toggle
-                        title="Value"
-                        value={value.value}
-                        onToggle={isTrue => {
-                            update({ value: isTrue })
-                        }}
-                        className="mr-2"
-                        aria-describedby="feature-flag-toggle-description"
-                    />{' '}
-                </div>
-                <div className="flex-column" id="feature-flag-toggle-description">
-                    <div>{value.value ? 'True' : 'False'}</div>
-                    <div className="text-muted">
-                        {value.value
-                            ? 'This feature is enabled.'
-                            : 'This feature is disabled.'}
-                    </div>
+    <div className="form-group d-flex flex-column">
+        <label htmlFor="bool-value">
+            <h3>Value</h3>
+        </label>
+        <div className="d-flex">
+            <div>
+                <Toggle
+                    title="Value"
+                    value={value.value}
+                    onToggle={isTrue => {
+                        update({ value: isTrue })
+                    }}
+                    className="mr-2"
+                    aria-describedby="feature-flag-toggle-description"
+                />{' '}
+            </div>
+            <div className="flex-column" id="feature-flag-toggle-description">
+                <div>{value.value ? 'True' : 'False'}</div>
+                <div className="text-muted">
+                    {value.value ? 'This feature is enabled.' : 'This feature is disabled.'}
                 </div>
             </div>
         </div>
-    )
+    </div>
+)
 
 /**
  * Searches for potential references and renders them in a collapsible, or returns an
