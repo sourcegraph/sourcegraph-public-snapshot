@@ -21,12 +21,21 @@ var (
 	generateFlagSet     = flag.NewFlagSet("sg generate", flag.ExitOnError)
 	generateVerboseFlag = generateFlagSet.Bool("v", false, "Display output from go generate")
 	generateQuietFlag   = generateFlagSet.Bool("q", false, "Suppress all output but errors from go generate")
+	generateGoFlagSet   = flag.NewFlagSet("sg generate go", flag.ExitOnError)
 
 	generateCommand = &ffcli.Command{
 		Name:       "generate",
 		ShortUsage: "sg generate",
 		FlagSet:    generateFlagSet,
 		Exec:       generateExec,
+		Subcommands: []*ffcli.Command{{
+			Name:       "go",
+			ShortUsage: "sg generate go [|packages...]",
+			ShortHelp:  "Run go generate on all packages, with exceptions",
+			LongHelp:   "Run go generate on all packages, with the exceptions of doc/cli/references",
+			FlagSet:    generateGoFlagSet,
+			Exec:       generateGoExec,
+		}},
 	}
 )
 
@@ -39,19 +48,23 @@ const (
 )
 
 func generateExec(ctx context.Context, args []string) error {
+	return generateGoExec(ctx, args)
+}
+
+func generateGoExec(ctx context.Context, args []string) error {
 	if *generateVerboseFlag && *generateQuietFlag {
 		return errors.Errorf("-q and -v flags are exclusive")
 	}
 	if *generateVerboseFlag {
-		return generateDo(ctx, generateVerbose)
+		return generateDo(ctx, args, generateVerbose)
 	} else if *generateQuietFlag {
-		return generateDo(ctx, generateQuiet)
+		return generateDo(ctx, args, generateQuiet)
 	} else {
-		return generateDo(ctx, generateNormal)
+		return generateDo(ctx, args, generateNormal)
 	}
 }
 
-func generateDo(ctx context.Context, verbosity generateVerbosityType) error {
+func generateDo(ctx context.Context, args []string, verbosity generateVerbosityType) error {
 	// Save working directory
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -77,17 +90,27 @@ func generateDo(ctx context.Context, verbosity generateVerbosityType) error {
 	}
 
 	// Run go generate on the packages list
-	if verbosity != generateQuiet {
-		stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
-	}
-	pkgPaths := strings.Split(string(out), "\n")
-	filtered := make([]string, 0, len(pkgPaths))
-	for _, pkgPath := range pkgPaths {
-		if !strings.Contains(pkgPath, "doc/cli/references") {
-			filtered = append(filtered, pkgPath)
+	if len(args) == 0 {
+		// If no packages are given, go for everything but the exception.
+		pkgPaths := strings.Split(string(out), "\n")
+		filtered := make([]string, 0, len(pkgPaths))
+		for _, pkgPath := range pkgPaths {
+			if !strings.Contains(pkgPath, "doc/cli/references") {
+				filtered = append(filtered, pkgPath)
+			}
 		}
+		if verbosity != generateQuiet {
+			stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
+		}
+		err = generateGoGenerate(filtered, verbosity)
+	} else {
+		// Use the given packages.
+		if verbosity != generateQuiet {
+			stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate %s", strings.Join(args, " ")))
+		}
+		err = generateGoGenerate(args, verbosity)
 	}
-	err = generateGoGenerate(filtered, verbosity)
+
 	if err != nil {
 		return errors.Wrap(err, "could not run go generate ./...")
 	}
