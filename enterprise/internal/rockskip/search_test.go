@@ -35,3 +35,36 @@ func TestIsFileExtensionMatch(t *testing.T) {
 		}
 	}
 }
+
+func TestIsLiteralPrefix(t *testing.T) {
+	ptr := func(s string) *string { return &s }
+
+	tests := []struct {
+		expr   string
+		prefix *string
+	}{
+		{``, nil},
+		{`^`, ptr(``)},
+		{`^foo`, ptr(`foo`)},
+		{`^foo/bar\.go`, ptr(`foo/bar.go`)},
+		{`foo/bar\.go`, nil},
+	}
+
+	for _, test := range tests {
+		prefix, isPrefix, err := isLiteralPrefix(test.expr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if test.prefix == nil {
+			if isPrefix {
+				t.Fatalf("expected isLiteralPrefix(%q) to return false", test.expr)
+			}
+			continue
+		}
+
+		if prefix != *test.prefix {
+			t.Errorf("isLiteralPrefix(%q) = %v, want %v", test.expr, prefix, *test.prefix)
+		}
+	}
+}
