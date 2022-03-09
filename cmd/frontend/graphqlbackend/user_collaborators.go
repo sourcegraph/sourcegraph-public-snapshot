@@ -5,6 +5,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"crypto/md5"
+	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -101,11 +103,20 @@ func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo,
 					if collaborator == nil {
 						continue
 					}
+
+					// We cannot do anything better than a Gravatar profile picture for the
+					// collaborator. GitHub does not provide an API that allows us to lookup a user
+					// by email effectively: only their older search API can do so, and it is rate
+					// limited *heavily* to just 30 req/min per API token. For an enterprise instance
+					// that token is shared between all Sourcegraph users, and so is a non-viable
+					// approach.
+					gravatarURL := fmt.Sprintf("https://www.gravatar.com/avatar/%x?d=mp", md5.Sum([]byte(collaborator.Email)))
+
 					allRecentCommitters = append(allRecentCommitters, &invitableCollaboratorResolver{
 						likelySourcegraphUsername: "",
 						email:                     collaborator.Email,
 						name:                      collaborator.Name,
-						avatarURL:                 "",
+						avatarURL:                 gravatarURL,
 						date:                      commit.Author.Date,
 					})
 				}

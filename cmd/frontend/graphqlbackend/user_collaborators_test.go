@@ -95,15 +95,40 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 
 	autogold.Want("recentCommitters", []*invitableCollaboratorResolver{
 		{
-			name: "golang/go-jane",
+			name:      "golang/go-jane",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
-		{name: "golang/go-janet"},
-		{name: "golang/go-joe"},
-		{name: "gorilla/mux-jane"},
-		{name: "gorilla/mux-janet"},
-		{name: "gorilla/mux-joe"},
-		{name: "sourcegraph/sourcegraph-jane"},
-		{name: "sourcegraph/sourcegraph-janet"},
-		{name: "sourcegraph/sourcegraph-joe"},
+		{
+			name:      "golang/go-janet",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "golang/go-joe",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "gorilla/mux-jane",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "gorilla/mux-janet",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "gorilla/mux-joe",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "sourcegraph/sourcegraph-jane",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "sourcegraph/sourcegraph-janet",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
+		{
+			name:      "sourcegraph/sourcegraph-joe",
+			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+		},
 	}).Equal(t, recentCommitters)
 }
