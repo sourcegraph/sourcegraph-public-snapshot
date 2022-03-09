@@ -233,13 +233,14 @@ interface FeatureFlagNodeProps {
 
 const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }) => {
     const { name, overrides, references } = node
+    const hasOverridesOrReferences = (overrides.length > 0 || references.length > 0)
     return (
         <React.Fragment key={name}>
             <div className={classNames('d-flex flex-column', styles.information)}>
                 <div>
-                    <h3>{name}</h3>
+                    <h3 className={classNames(!hasOverridesOrReferences && 'm-0')}>{name}</h3>
 
-                    {(overrides.length > 0 || references.length > 0) && (
+                    {hasOverridesOrReferences && (
                         <p className="m-0">
                             <span className="text-muted">
                                 {overrides.length > 0 &&
