@@ -60,7 +60,7 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
 
-	html, document, aborted, err := highlight.Code(ctx, highlight.Params{
+	response, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
@@ -69,20 +69,27 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		Metadata:           metadata,
 		TreeSitterEnabled:  args.TreeSitterEnabled,
 	})
-	result.html = html
 	result.aborted = aborted
 
-	if document != nil {
+	// TODO: This section seems so ugly :'(
+	// Should I just highlight this in the backend as well?
+	// I'm not sure...
+	if response.LSIF() != nil {
 		marshaller := &jsonpb.Marshaler{
 			EnumsAsInts:  true,
 			EmitDefaults: false,
 		}
 
-		result.lsif, err = marshaller.MarshalToString(document)
-	}
+		result.lsif, err = marshaller.MarshalToString(response.LSIF())
+		return result, err
+	} else {
+		html, err := response.HTML()
+		result.html = html
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		return result, nil
 	}
-	return result, nil
 }

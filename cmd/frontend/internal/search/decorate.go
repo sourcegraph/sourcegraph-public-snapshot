@@ -101,7 +101,8 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 	if err != nil {
 		return "", err
 	}
-	result, _, aborted, err := highlight.Code(ctx, highlight.Params{
+
+	highlightResponse, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            content,
 		Filepath:           path,
 		DisableTimeout:     false, // use default 3 second timeout
@@ -110,16 +111,19 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 			RepoName: string(repo),
 			Revision: string(commit),
 		},
+		TreeSitterEnabled: true,
 	})
 	if err != nil {
 		return "", err
 	}
+
+	// TODO: Can I remove this?
 	if aborted {
 		// code decoration aborted, returns plaintext HTML.
-		return result, nil
+		return highlightResponse.HTML()
 	}
 
-	return result, nil
+	return highlightResponse.HTML()
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.

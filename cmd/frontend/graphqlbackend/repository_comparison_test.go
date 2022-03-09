@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -719,14 +718,18 @@ func TestFileDiffHighlighter(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">new2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
 
-	highlight.Mocks.Code = func(p highlight.Params) (template.HTML, *lsiftyped.Document, bool, error) {
+	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightResponse, bool, error) {
+		response := &highlight.HighlightResponse{}
+
 		switch p.Filepath {
 		case file1.path:
-			return template.HTML(highlightedOld), nil, false, nil
+			response.SetHTML(template.HTML(highlightedOld))
+			return response, false, nil
 		case file2.path:
-			return template.HTML(highlightedNew), nil, false, nil
+			response.SetHTML(template.HTML(highlightedNew))
+			return response, false, nil
 		default:
-			return "", nil, false, errors.Errorf("unknown file: %s", p.Filepath)
+			return nil, false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
 	}
 	t.Cleanup(highlight.ResetMocks)

@@ -1841,7 +1841,7 @@ type SubRepoPermissions struct {
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
-	Filetypes SyntaxHighlightingFiletype `json:"filetypes"`
+	Languages SyntaxHighlightingLanguage `json:"languages"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use
@@ -1849,15 +1849,15 @@ type SyntaxHighlightingEngine struct {
 	// Overrides description: Manually specify overrides for syntax highlighting engine per language
 	Overrides map[string]string `json:"overrides,omitempty"`
 }
-type SyntaxHighlightingFiletype struct {
-	// Extensions description: Map of extension to filetype
+type SyntaxHighlightingLanguage struct {
+	// Extensions description: Map of extension to language
 	Extensions map[string]string `json:"extensions"`
-	// Patterns description: Map of patterns to filetype. Will return after first match, if any.
-	Patterns []*SyntaxHighlightingFiletypePatterns `json:"patterns"`
+	// Patterns description: Map of patterns to language. Will return after first match, if any.
+	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns"`
 }
-type SyntaxHighlightingFiletypePatterns struct {
-	// Filetype description: Name of the filetype if pattern matches
-	Filetype string `json:"filetype"`
+type SyntaxHighlightingLanguagePatterns struct {
+	// Language description: Name of the language if pattern matches
+	Language string `json:"language"`
 	// Pattern description: Regular expression which matches the filepath
 	Pattern string `json:"pattern"`
 }

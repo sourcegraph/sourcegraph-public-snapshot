@@ -626,7 +626,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "filetypes"],
+      "required": ["engine", "languages"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -645,31 +645,31 @@
             }
           }
         },
-        "filetypes": {
-          "title": "SyntaxHighlightingFiletype",
+        "languages": {
+          "title": "SyntaxHighlightingLanguage",
           "type": "object",
           "required": ["extensions", "patterns"],
           "properties": {
             "extensions": {
-              "description": "Map of extension to filetype",
+              "description": "Map of extension to language",
               "type": "object",
               "additionalProperties": { "type": "string" }
             },
             "patterns": {
-              "description": "Map of patterns to filetype. Will return after first match, if any.",
+              "description": "Map of patterns to language. Will return after first match, if any.",
               "type": "array",
               "items": {
-                "title": "SyntaxHighlightingFiletypePatterns",
+                "title": "SyntaxHighlightingLanguagePatterns",
                 "type": "object",
-                "required": ["pattern", "filetype"],
+                "required": ["pattern", "language"],
                 "properties": {
                   "pattern": {
                     "description": "Regular expression which matches the filepath",
                     "type": "string",
                     "format": "regex"
                   },
-                  "filetype": {
-                    "description": "Name of the filetype if pattern matches",
+                  "language": {
+                    "description": "Name of the language if pattern matches",
                     "type": "string"
                   }
                 }

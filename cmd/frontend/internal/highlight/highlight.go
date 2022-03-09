@@ -113,6 +113,34 @@ type Metadata struct {
 // ErrBinary is returned when a binary file was attempted to be highlighted.
 var ErrBinary = errors.New("cannot render binary file")
 
+var engineToDisplay map[EngineType]string = map[EngineType]string{
+	EngineInvalid:    "invalid",
+	EngineSyntect:    "syntect",
+	EngineTreeSitter: "tree-sitter",
+}
+
+type HighlightResponse struct {
+	code     string
+	html     template.HTML
+	document *lsiftyped.Document
+}
+
+func (h *HighlightResponse) HTML() (template.HTML, error) {
+	if h.document == nil {
+		return h.html, nil
+	}
+
+	return lsifToHTML(h.code, h.document)
+}
+
+func (h *HighlightResponse) SetHTML(html template.HTML) {
+	h.html = html
+}
+
+func (h *HighlightResponse) LSIF() *lsiftyped.Document {
+	return h.document
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -121,16 +149,22 @@ var ErrBinary = errors.New("cannot render binary file")
 // to timeout. In this scenario, a plain text table is returned.
 //
 // In the event the input content is binary, ErrBinary is returned.
-func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document, aborted bool, err error) {
+func Code(ctx context.Context, p Params) (response *HighlightResponse, aborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
 
 	p.Filepath = normalizeFilepath(p.Filepath)
 
-	filetypeQuery := DetectSyntaxHighlightingFiletype(p.Filepath, string(p.Content))
-	// TODO: Remove TreeSitterEnabled from this statement
-	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetypeQuery.Filetype) && filetypeQuery.Engine == EngineTreeSitter
+	filetypeQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
+
+	// Only send tree sitter requests for the languages that we support.
+	// TODO: It could be worthwhile to log that this language isn't supported or something
+	// like that? Otherwise there is no feedback that this configuration isn't currently working,
+	// which is a bit of a confusing situation for the user.
+	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+		filetypeQuery.Engine = EngineSyntect
+	}
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
@@ -140,8 +174,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		otlog.Int("sizeBytes", len(p.Content)),
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.Bool("treeSitterEnabled", p.TreeSitterEnabled),
-		otlog.Bool("useTreeSitter", useTreeSitter),
+		otlog.String("syntaxEngine", engineToDisplay[filetypeQuery.Engine]),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -169,7 +202,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 
 	// Never pass binary files to the syntax highlighter.
 	if IsBinary(p.Content) {
-		return "", nil, false, ErrBinary
+		return nil, false, ErrBinary
 	}
 	code := string(p.Content)
 
@@ -206,10 +239,18 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
 	}
-	if filetypeQuery.FiletypeOverride || useTreeSitter {
-		query.Filetype = filetypeQuery.Filetype
+
+	// Set the Filetype part of the command if:
+	//    1. We are overriding the config, because then we don't want syntect to try and
+	//       guess the filetype (but otherwise we want to maintain backwards compat with
+	//       whatever we were calculating before)
+	//    2. We are using treesitter. Always have syntect use the language provided in that
+	//       case to make sure that we have normalized the names of the language by then.
+	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == EngineTreeSitter {
+		query.Filetype = filetypeQuery.Language
 	}
-	resp, err := client.Highlight(ctx, query, useTreeSitter)
+
+	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -224,8 +265,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
-		table, err := generatePlainTable(code)
-		return table, nil, true, err
+		plainResponse, err := generatePlainTable(code)
+		return plainResponse, true, err
 	} else if err != nil {
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
@@ -259,26 +300,54 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 			trace.Log(otlog.Bool(problem, true))
 			errCollector.Collect(&err)
 			prometheusStatus = problem
-			table, err := generatePlainTable(code)
-			return table, nil, false, err
+			plainResponse, err := generatePlainTable(code)
+			return plainResponse, false, err
 		}
-		return "", nil, false, err
+
+		return nil, false, err
 	}
 
-	if useTreeSitter {
+	if filetypeQuery.Engine == EngineTreeSitter {
 		document := new(lsiftyped.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
+
+		// TODO: Should we generate the plaintext table here?
 		if err != nil {
-			return "", nil, false, err
+			return nil, false, err
 		}
 		err = proto.Unmarshal(data, document)
 		if err != nil {
-			return "", nil, false, err
+			return nil, false, err
 		}
-		return "", document, false, nil
+
+		// TODO(probably not this PR): I would like to not
+		// have to convert this in the hotpath for every
+		// syntax highlighting request, but instead that we
+		// would *ONLY* pass around the document until someone
+		// needs the HTML.
+		//
+		// This would also allow us to only have to do the HTML
+		// rendering for the amount of lines that we wanted
+		// (for example, in search results)
+		//
+		// Until then though, this is basically a port of the typescript
+		// version that I wrote before, so it should work just as well as
+		// that.
+		// respData, err := lsifToHTML(code, document)
+		// if err != nil {
+		// 	return nil, true, err
+		// }
+
+		return &HighlightResponse{
+			html:     "",
+			document: document,
+		}, false, nil
 	}
 
-	return template.HTML(resp.Data), nil, false, nil
+	return &HighlightResponse{
+		html:     template.HTML(resp.Data),
+		document: nil,
+	}, false, nil
 }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
@@ -301,7 +370,7 @@ func firstCharacters(s string, n int) string {
 	return string(v[:n])
 }
 
-func generatePlainTable(code string) (template.HTML, error) {
+func generatePlainTable(code string) (*HighlightResponse, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	for row, line := range strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files
@@ -329,9 +398,13 @@ func generatePlainTable(code string) (template.HTML, error) {
 
 	var buf bytes.Buffer
 	if err := html.Render(&buf, table); err != nil {
-		return "", err
+		return nil, err
 	}
-	return template.HTML(buf.String()), nil
+
+	return &HighlightResponse{
+		html:     template.HTML(buf.String()),
+		document: nil,
+	}, nil
 }
 
 // CodeAsLines highlights the file and returns a list of highlighted lines.
@@ -340,11 +413,14 @@ func generatePlainTable(code string) (template.HTML, error) {
 //
 // In the event the input content is binary, ErrBinary is returned.
 func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
-	html, _, aborted, err := Code(ctx, p)
+	highlightResponse, aborted, err := Code(ctx, p)
 	if err != nil {
 		return nil, aborted, err
 	}
-	lines, err := SplitHighlightedLines(html, false)
+
+	htmlText, err := highlightResponse.HTML()
+	lines, err := SplitHighlightedLines(htmlText, false)
+
 	return lines, aborted, err
 }
 

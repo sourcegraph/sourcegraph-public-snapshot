@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
 )
 
 func TestVirtualFile(t *testing.T) {
@@ -77,8 +76,11 @@ func TestVirtualFile(t *testing.T) {
 	t.Run("Highlight", func(t *testing.T) {
 		testHighlight := func(aborted bool) {
 			highlightedContent := template.HTML("highlight of the file")
-			highlight.Mocks.Code = func(p highlight.Params) (template.HTML, *lsiftyped.Document, bool, error) {
-				return highlightedContent, nil, aborted, nil
+			highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightResponse, bool, error) {
+				response := &highlight.HighlightResponse{}
+				response.SetHTML(highlightedContent)
+
+				return response, aborted, nil
 			}
 			t.Cleanup(highlight.ResetMocks)
 			highlightedFile, err := vfr.Highlight(context.Background(), &HighlightArgs{})

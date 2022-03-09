@@ -19,9 +19,9 @@ const (
 	EngineSyntect               = 2
 )
 
-type ftPattern struct {
+type languagePattern struct {
 	pattern  *regexp.Regexp
-	filetype string
+	language string
 }
 
 // TODO: Decide on capitalization, cause it's a nightmare otherwise.
@@ -33,10 +33,7 @@ type syntaxHighlightConfig struct {
 
 	// Order matters for this. First matching pattern matches.
 	// Matches against the entire string.
-	Patterns []ftPattern
-
-	// TODO:
-	// Shebang
+	Patterns []languagePattern
 }
 
 type syntaxEngineConfig struct {
@@ -46,8 +43,8 @@ type syntaxEngineConfig struct {
 
 type SyntaxEngineQuery struct {
 	Engine           EngineType
-	Filetype         string
-	FiletypeOverride bool
+	Language         string
+	LanguageOverride bool
 }
 
 var highlightConfig = syntaxHighlightConfig{}
@@ -70,7 +67,7 @@ func init() {
 		}
 		// TODO: Probably should validate the other ones?... but they are validated in schema
 
-		for _, pattern := range highlights.Filetypes.Patterns {
+		for _, pattern := range highlights.Languages.Patterns {
 			if _, err := regexp.Compile(pattern.Pattern); err != nil {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
 			}
@@ -101,11 +98,11 @@ func init() {
 				}
 			}
 
-			highlightConfig.Extensions = config.Highlights.Filetypes.Extensions
-			highlightConfig.Patterns = []ftPattern{}
-			for _, pattern := range config.Highlights.Filetypes.Patterns {
+			highlightConfig.Extensions = config.Highlights.Languages.Extensions
+			highlightConfig.Patterns = []languagePattern{}
+			for _, pattern := range config.Highlights.Languages.Patterns {
 				if re, err := regexp.Compile(pattern.Pattern); err == nil {
-					highlightConfig.Patterns = append(highlightConfig.Patterns, ftPattern{pattern: re, filetype: pattern.Filetype})
+					highlightConfig.Patterns = append(highlightConfig.Patterns, languagePattern{pattern: re, language: pattern.Language})
 				}
 			}
 		})
@@ -123,8 +120,8 @@ func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
 	}
 }
 
-// Matches against config, otherwise uses enry to get default
-func matchConfig(path string) (string, bool) {
+// Matches against config. Only returns values if there is a match.
+func getLanguageFromConfig(path string) (string, bool) {
 	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
 	if ft, ok := highlightConfig.Extensions[extension]; ok {
 		return ft, true
@@ -132,15 +129,17 @@ func matchConfig(path string) (string, bool) {
 
 	for _, pattern := range highlightConfig.Patterns {
 		if pattern.pattern != nil && pattern.pattern.MatchString(path) {
-			return pattern.filetype, true
+			return pattern.language, true
 		}
 	}
 
 	return "", false
 }
 
-func getFiletype(path string, contents string) (string, bool) {
-	ft, found := matchConfig(path)
+// getLanguage will return the name of the language and default back to enry if
+// no language could be found.
+func getLanguage(path string, contents string) (string, bool) {
+	ft, found := getLanguageFromConfig(path)
 	if found {
 		return ft, true
 	}
@@ -149,17 +148,17 @@ func getFiletype(path string, contents string) (string, bool) {
 }
 
 // TODO: Expose as an endpoint so you can type in a path and get the result in the front end?
-func DetectSyntaxHighlightingFiletype(path string, contents string) SyntaxEngineQuery {
-	ft, override := getFiletype(path, contents)
+func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngineQuery {
+	lang, override := getLanguage(path, contents)
 
 	engine := engineConfig.Default
-	if overrideEngine, ok := engineConfig.Overrides[ft]; ok {
+	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {
 		engine = overrideEngine
 	}
 
 	return SyntaxEngineQuery{
-		Filetype:         ft,
-		FiletypeOverride: override,
+		Language:         lang,
+		LanguageOverride: override,
 		Engine:           engine,
 	}
 }

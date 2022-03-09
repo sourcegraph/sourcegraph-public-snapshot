@@ -41,10 +41,12 @@ line 2
 	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>line 1</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>line 2</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
 </span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
 </span></td></tr></table>`)
-	got, err := generatePlainTable(input)
+	response, err := generatePlainTable(input)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got, _ := response.HTML()
 	if got != want {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
@@ -58,10 +60,12 @@ func TestGeneratePlainTableSecurity(t *testing.T) {
 	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>&lt;strong&gt;line 1&lt;/strong&gt;</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>&lt;script&gt;alert(&#34;line 2&#34;)&lt;/script&gt;</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
 </span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
 </span></td></tr></table>`)
-	got, err := generatePlainTable(input)
+	response, err := generatePlainTable(input)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	got, _ := response.HTML()
 	if got != want {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
@@ -109,8 +113,10 @@ line3`
 	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
-	Mocks.Code = func(p Params) (h template.HTML, l *lsiftyped.Document, aborted bool, err error) {
-		return template.HTML(highlightedCode), nil, false, nil
+	Mocks.Code = func(p Params) (response *HighlightResponse, aborted bool, err error) {
+		return &HighlightResponse{
+			html: template.HTML(highlightedCode),
+		}, false, nil
 	}
 	t.Cleanup(ResetMocks)
 
