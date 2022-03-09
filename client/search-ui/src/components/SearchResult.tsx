@@ -39,23 +39,24 @@ export const SearchResult: React.FunctionComponent<Props> = ({
         return (
             <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
-                {result.type === 'commit' && (
-                    <>
-                        &nbsp;
-                        <Link to={'/' + encodeURI(result.repository)}>{result.repository}</Link>
-                        &nbsp;›&nbsp;
-                        <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
-                            {result.authorName}
-                        </Link>
-                        :&nbsp;
-                        <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
-                            {result.message.split('\n', 1)[0]}
-                        </Link>
-                    </>
-                )}
-                {result.type === 'repo' && (
-                    <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
-                )}
+                    <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                        {result.type === 'commit' && (
+                            <>
+                                <Link to={'/' + encodeURI(result.repository)}>{result.repository}</Link>
+                                &nbsp;›&nbsp;
+                                <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                                    {result.authorName}
+                                </Link>
+                                :&nbsp;
+                                <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                                    {result.message.split('\n', 1)[0]}
+                                </Link>
+                            </>
+                        )}
+                        {result.type === 'repo' && (
+                            <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                        )}
+                    </span>
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
                     <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
