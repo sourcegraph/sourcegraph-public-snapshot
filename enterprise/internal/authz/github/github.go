@@ -259,7 +259,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		// If a valid cached value was found, use it and continue. Check for a nil,
 		// because it is possible this cached group does not have any repositories, in
 		// which case it should have a non-nil length 0 slice of repositories.
-		if group.Repositories == nil {
+		if group.Repositories != nil {
 			addRepoToUserPerms(group.Repositories...)
 			continue
 		}
