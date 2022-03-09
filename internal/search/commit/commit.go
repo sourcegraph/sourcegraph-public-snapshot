@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -40,7 +41,7 @@ type CommitSearch struct {
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *gitprotocol.SearchRequest, onMatches func([]gitprotocol.CommitMatch)) (limitHit bool, _ error)
-	ResolveRevisions(_ context.Context, repo string, _ []gitprotocol.RevisionSpecifier) ([]string, error)
+	ResolveRevisions(_ context.Context, repo api.RepoName, _ []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {

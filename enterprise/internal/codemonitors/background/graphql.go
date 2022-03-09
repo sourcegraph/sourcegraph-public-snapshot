@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -183,7 +184,7 @@ func mapJobTree(in job.Job) (_ job.Job, err error) {
 
 func expandRefs(
 	ctx context.Context,
-	db database.DB,
+	db edb.EnterpriseDB,
 	gs commit.GitserverClient,
 	req *gitprotocol.SearchRequest,
 ) ([]gitprotocol.RevisionSpecifier, error) {
@@ -192,12 +193,16 @@ func expandRefs(
 		return nil, err
 	}
 
-	// TODO exclude last searched
+	// TODO BEFORE MERGE exclude last searched
 
-	panic("unimplemented")
+	res := make([]gitprotocol.RevisionSpecifier, 0, len(hashes))
+	for _, hash := range hashes {
+		res = append(res, gitprotocol.RevisionSpecifier{RevSpec: res})
+	}
+	return res, nil
 }
 
-func onSuccess(context.Context, database.DB, *gitprotocol.SearchRequest) error {
+func onSuccess(context.Context, edb.EnterpriseDB, *gitprotocol.SearchRequest) error {
 	panic("unimplemented")
 }
 
