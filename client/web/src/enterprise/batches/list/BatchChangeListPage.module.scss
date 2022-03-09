@@ -24,3 +24,8 @@
 .narrow {
     grid-template-columns: [state] 70px [info] minmax(auto, 1fr) [open] min-content [closed] min-content [merged] min-content [end];
 }
+
+.status-dropdown {
+    margin: 0;
+    width: 17rem;
+}
