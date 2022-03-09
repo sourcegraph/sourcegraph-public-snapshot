@@ -39,15 +39,15 @@ func performPurge(ctx context.Context, postgres dbutil.DB, insightsdb dbutil.DB,
 	}
 
 	for _, id := range seriesIds {
+		// We will always delete the series definition last, such that any possible partial state
+		// the series definition will always be referencable and therefore can be re-attempted. This operation
+		// isn't across the same database currently, so there isn't a single transaction across all the
+		// tables.
 		log15.Info("pruning insight series", "seriesId", id)
 		err := deleteQueuedRecords(ctx, postgres, id)
 		if err != nil {
 			return errors.Wrap(err, "deleteQueuedRecords")
 		}
-		// We will always delete the series definition last, such that any possible partial state
-		// the series definition will always be referencable and therefore can be re-attempted. This operation
-		// isn't across the same database currently, so there isn't a single transaction across all the
-		// tables.
 		tx, err := timeseriesStore.Transact(ctx)
 		if err != nil {
 			return err
