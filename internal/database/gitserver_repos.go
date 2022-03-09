@@ -60,13 +60,14 @@ func (s *gitserverRepoStore) Transact(ctx context.Context) (GitserverRepoStore, 
 func (s *gitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, now())",
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, now())",
 			gr.RepoID,
 			gr.CloneStatus,
 			dbutil.NewNullString(gr.ShardID),
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
 			gr.LastChanged,
+			gr.RepoSizeBytes,
 		)
 
 		values = append(values, q)
@@ -75,11 +76,11 @@ func (s *gitserverRepoStore) Upsert(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.Upsert
 INSERT INTO
-    gitserver_repos(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, updated_at)
+    gitserver_repos(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
-    SET (clone_status, shard_id, last_error, last_fetched, last_changed, updated_at) =
-        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, now())
+    SET (clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at) =
+        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.repo_size_bytes, now())
 `, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "creating GitserverRepo")
@@ -198,6 +199,7 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 			&dbutil.NullString{S: &gr.LastError},
 			&dbutil.NullTime{Time: &gr.LastFetched},
 			&dbutil.NullTime{Time: &gr.LastChanged},
+			&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 			&dbutil.NullTime{Time: &gr.UpdatedAt},
 		); err != nil {
 			return errors.Wrap(err, "scanning row")
@@ -235,6 +237,7 @@ SELECT
 	gr.last_error,
 	gr.last_fetched,
 	gr.last_changed,
+	gr.repo_size_bytes,
 	gr.updated_at
 FROM repo
 LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
@@ -252,6 +255,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		NULL AS last_error,
 		NULL AS last_fetched,
 		NULL AS last_changed,
+		NULL AS repo_size_bytes,
 		NULL AS updated_at
 	FROM repo
 	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
@@ -264,6 +268,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		gr.last_error,
 		gr.last_fetched,
 		gr.last_changed,
+		gr.repo_size_bytes,
 		gr.updated_at
 	FROM repo
 	JOIN gitserver_repos gr ON gr.repo_id = repo.id
@@ -281,6 +286,7 @@ SELECT
        last_error,
        last_fetched,
        last_changed,
+	   repo_size_bytes,
        updated_at
 FROM gitserver_repos
 WHERE repo_id = %s
@@ -299,6 +305,7 @@ SELECT
        g.last_error,
        g.last_fetched,
        g.last_changed,
+	   g.repo_size_bytes,
        g.updated_at
 FROM gitserver_repos g
 JOIN repo r on r.id = g.repo_id
@@ -321,6 +328,7 @@ func scanSingleGitserverRepo(row *sql.Row) (*types.GitserverRepo, error) {
 		&dbutil.NullString{S: &gr.LastError},
 		&dbutil.NullTime{Time: &gr.LastFetched},
 		&dbutil.NullTime{Time: &gr.LastChanged},
+		&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		&gr.UpdatedAt,
 	)
 	if err != nil {

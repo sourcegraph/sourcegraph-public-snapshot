@@ -47,9 +47,10 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	createTestRepos(ctx, t, db, repos)
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repos[0].ID,
-		ShardID:     "gitserver1",
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repos[0].ID,
+		ShardID:       "gitserver1",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create one GitServerRepo
@@ -279,9 +280,10 @@ func TestGitserverReposGetByID(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repo1.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo1.ID,
+		ShardID:       "test",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create GitServerRepo
@@ -328,9 +330,10 @@ func TestGitserverReposGetByName(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repo1.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo1.ID,
+		ShardID:       "test",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create GitServerRepo
@@ -371,9 +374,10 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repo1.ID,
-		ShardID:     shardID,
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo1.ID,
+		ShardID:       shardID,
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create GitServerRepo
@@ -471,9 +475,10 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repo1.ID,
-		ShardID:     shardID,
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo1.ID,
+		ShardID:       shardID,
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create GitServerRepo
@@ -566,9 +571,10 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repo1.ID,
-		ShardID:     "",
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo1.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create one GitServerRepo
@@ -600,9 +606,10 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repo1.ID,
-		ShardID:     "abc",
-		CloneStatus: types.CloneStatusNotCloned,
+		RepoID:        repo1.ID,
+		ShardID:       "abc",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
 	}
 
 	// Create one GitServerRepo
