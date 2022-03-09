@@ -32,6 +32,8 @@
     --input-placeholder-color: var(--gray-07);
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
+    --input-focus-box-shadow-valid: 0 0 0 2px var(--success-2);
+    --input-focus-box-shadow-invalid: 0 0 0 2px var(--danger-2);
 
     // Checkbox margins
     --form-check-input-margin-y: 0.2rem;
@@ -45,6 +47,8 @@
     --input-placeholder-color: var(--gray-05);
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
+    --input-focus-box-shadow-valid: 0 0 0 2px var(--success-3);
+    --input-focus-box-shadow-invalid: 0 0 0 2px var(--danger-3);
 
     // Checkbox margins
     --form-check-input-margin-y: 0.2rem;
@@ -372,10 +376,10 @@ textarea.form-control.is-valid {
 
     &:focus {
         @at-root #{selector-append('.theme-light', &)} {
-            box-shadow: 0 0 0 2px var(--success-2);
+            box-shadow: var(--input-focus-box-shadow-valid);
         }
         @at-root #{selector-append('.theme-dark', &)} {
-            box-shadow: 0 0 0 2px var(--success-3);
+            box-shadow: var(--input-focus-box-shadow-valid);
         }
     }
 }
@@ -389,10 +393,10 @@ textarea.form-control.is-valid {
 
     &:focus {
         @at-root #{selector-append('.theme-light', &)} {
-            box-shadow: 0 0 0 2px var(--danger-2);
+            box-shadow: var(--input-focus-box-shadow-invalid);
         }
         @at-root #{selector-append('.theme-dark', &)} {
-            box-shadow: 0 0 0 2px var(--danger-3);
+            box-shadow: var(--input-focus-box-shadow-invalid);
         }
     }
 }
