@@ -16,7 +16,7 @@ import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
 import blockStyles from '../NotebookBlock.module.scss'
@@ -173,18 +173,14 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlo
                         Filter symbols by file path
                     </Button>
                 </div>
-                {symbolSuggestionsCount !== undefined && (
-                    <div className="mt-3 mb-1">
+                <div className="mt-3 mb-1">
+                    {symbolSuggestionsCount !== undefined && (
                         <strong>
                             {symbolSuggestionsCount} matching {pluralize('symbol', symbolSuggestionsCount)} found
                         </strong>
-                    </div>
-                )}
-                {symbolSuggestions === LOADING && (
-                    <div className="d-flex justify-content-center py-3">
-                        <LoadingSpinner inline={false} />
-                    </div>
-                )}
+                    )}
+                    {symbolSuggestions === LOADING && <strong>Searching for symbols...</strong>}
+                </div>
                 {symbolSuggestions && symbolSuggestions !== LOADING && (
                     <SymbolSuggestions suggestions={symbolSuggestions} onSymbolSelected={onSymbolSelected} />
                 )}
