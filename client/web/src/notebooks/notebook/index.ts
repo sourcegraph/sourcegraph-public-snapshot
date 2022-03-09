@@ -1,15 +1,19 @@
+import { escapeRegExp } from 'lodash'
 import { Observable, forkJoin, of } from 'rxjs'
-import { startWith, catchError, mapTo, map } from 'rxjs/operators'
+import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
-import { renderMarkdown, asError } from '@sourcegraph/common'
+import { renderMarkdown, asError, isErrorLike } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { aggregateStreamingSearch, emptyAggregateResults } from '@sourcegraph/shared/src/search/stream'
+import { aggregateStreamingSearch, emptyAggregateResults, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection } from '..'
+import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
 import { NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { LATEST_VERSION } from '../../search/results/StreamingSearchResults'
+import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
+import { fetchSuggestions } from '../blocks/suggestions'
 import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
 
 const DONE = 'DONE' as const
@@ -31,6 +35,39 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
     })
 }
 
+function findSymbolAtRevision(
+    input: Omit<SymbolBlockInput, 'revision'>,
+    revision: string
+): Observable<{ range: UIRangeSpec['range']; revision: string } | Error> {
+    const { repositoryName, filePath, symbolName, symbolContainerName, symbolKind } = input
+    return fetchSuggestions(
+        `repo:${escapeRegExp(repositoryName)} file:${escapeRegExp(
+            filePath
+        )} rev:${revision} ${symbolName} type:symbol count:50`,
+        (suggestion): suggestion is SymbolMatch => suggestion.type === 'symbol',
+        symbol => symbol
+    ).pipe(
+        map(results => {
+            const matchingFile = results.find(file => file.repository === repositoryName && file.path === filePath)
+            const matchingSymbol = matchingFile?.symbols.find(
+                symbol =>
+                    symbol.name === symbolName &&
+                    symbol.containerName === symbolContainerName &&
+                    symbol.kind === symbolKind
+            )
+            if (!matchingSymbol) {
+                return new Error('Symbol not found')
+            }
+
+            const { range } = parseBrowserRepoURL(matchingSymbol.url)
+            if (!range) {
+                return new Error('Symbol not found')
+            }
+            return { range, revision }
+        })
+    )
+}
+
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
@@ -41,9 +78,9 @@ export class Notebook {
         this.blocks = new Map(blocks.map(block => [block.id, block]))
         this.blockOrder = blocks.map(block => block.id)
 
-        // Pre-run the markdown and file blocks, for a better user experience.
+        // Pre-run certain blocks, for a better user experience.
         for (const block of blocks) {
-            if (block.type === 'md' || block.type === 'file') {
+            if (block.type === 'md' || block.type === 'file' || block.type === 'symbol') {
                 this.runBlockById(block.id)
             }
         }
@@ -117,6 +154,53 @@ export class Notebook {
                         ),
                 })
                 break
+            case 'symbol': {
+                // Start by searching for the symbol at the latest HEAD (main) revision. If not found,
+                // look at the revision stored in the block input (should always be found).
+                const output = findSymbolAtRevision(block.input, 'HEAD').pipe(
+                    switchMap(rangeOrError =>
+                        isErrorLike(rangeOrError)
+                            ? findSymbolAtRevision(block.input, block.input.revision)
+                            : of(rangeOrError)
+                    ),
+                    switchMap(rangeOrError => {
+                        if (isErrorLike(rangeOrError)) {
+                            return of(rangeOrError)
+                        }
+                        const { repositoryName, filePath, lineContext } = block.input
+                        const { range, revision } = rangeOrError
+                        const highlightLineRange = {
+                            startLine: Math.max(range.start.line - 1 - lineContext, 0),
+                            endLine: range.end.line + lineContext,
+                        }
+                        const highlightSymbolRange = {
+                            line: range.start.line - 1,
+                            character: range.start.character - 1,
+                            highlightLength: range.end.character - range.start.character,
+                        }
+                        return this.dependencies
+                            .fetchHighlightedFileLineRanges({
+                                repoName: repositoryName,
+                                commitID: revision,
+                                filePath,
+                                ranges: [highlightLineRange],
+                                disableTimeout: false,
+                            })
+                            .pipe(
+                                map(ranges => ({
+                                    highlightedLines: ranges[0],
+                                    highlightLineRange,
+                                    highlightSymbolRange,
+                                    symbolRange: range,
+                                    effectiveRevision: revision,
+                                }))
+                            )
+                    }),
+                    catchError(error => [asError(error)])
+                )
+                this.blocks.set(block.id, { ...block, output })
+                break
+            }
         }
     }
 
