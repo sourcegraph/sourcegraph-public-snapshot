@@ -7,7 +7,6 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { EXTERNAL_SERVICES_WITH_COLLABORATORS } from '../components/externalServices/backend'
 import {
     EventLogsDataResult,
     EventLogsDataVariables,
@@ -18,8 +17,8 @@ import {
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
     Scalars,
-    ExternalServicesWithCollaboratorsResult,
-    ExternalServicesWithCollaboratorsVariables,
+    InvitableCollaboratorsResult,
+    InvitableCollaboratorsVariables,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -278,16 +277,27 @@ export function fetchCollaborators(userId: Scalars['ID']): Observable<InvitableC
         return of([])
     }
 
-    // @todo(#32125) Change this API to use the new backend added as part of #31777
-    const result = requestGraphQL<ExternalServicesWithCollaboratorsResult, ExternalServicesWithCollaboratorsVariables>(
-        EXTERNAL_SERVICES_WITH_COLLABORATORS,
-        { namespace: userId, first: null, after: null }
+    const result = requestGraphQL<InvitableCollaboratorsResult, InvitableCollaboratorsVariables>(
+        gql`
+            query InvitableCollaborators {
+                currentUser {
+                    invitableCollaborators {
+                        name
+                        email
+                        displayName
+                        avatarURL
+                    }
+                }
+            }
+        `,
+        {}
     )
 
     return result.pipe(
         map(dataOrThrowErrors),
-        map((data: ExternalServicesWithCollaboratorsResult): InvitableCollaborator[] =>
-            data.externalServices.nodes.flatMap(repo => repo.invitableCollaborators)
+        map(
+            (data: InvitableCollaboratorsResult): InvitableCollaborator[] =>
+                data.currentUser?.invitableCollaborators ?? []
         )
     )
 }
