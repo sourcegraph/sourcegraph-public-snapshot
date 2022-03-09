@@ -55,7 +55,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const api = useGetApi()
 
     if (!api) {
-        return <div>Loading...</div>
+        return null
     }
 
     return (
