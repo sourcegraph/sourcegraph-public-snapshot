@@ -7,6 +7,6 @@ import { CodeInsightsGqlBackend } from './code-insights-gql-backend'
 export class CodeInsightsGqlBackendLimited extends CodeInsightsGqlBackend {
     public getUiFeatures = (): Observable<UiFeatures> =>
         forkJoin({
-            licensed: of(true),
+            licensed: of(false),
         })
 }
