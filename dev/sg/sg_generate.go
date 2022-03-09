@@ -43,15 +43,15 @@ func generateExec(ctx context.Context, args []string) error {
 		return errors.Errorf("-q and -v flags are exclusive")
 	}
 	if *generateVerboseFlag {
-		return generateDo(ctx, args, generateVerbose)
+		return generateDo(ctx, generateVerbose)
 	} else if *generateQuietFlag {
-		return generateDo(ctx, args, generateQuiet)
+		return generateDo(ctx, generateQuiet)
 	} else {
-		return generateDo(ctx, args, generateNormal)
+		return generateDo(ctx, generateNormal)
 	}
 }
 
-func generateDo(ctx context.Context, args []string, verbosity generateVerbosityType) error {
+func generateDo(ctx context.Context, verbosity generateVerbosityType) error {
 	// Save working directory
 	cwd, err := os.Getwd()
 	if err != nil {
