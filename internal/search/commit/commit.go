@@ -38,8 +38,9 @@ type CommitSearch struct {
 	OnSuccess  func(context.Context, database.DB, *gitprotocol.SearchRequest) error
 }
 
-type GitserverSearcher interface {
+type GitserverClient interface {
 	Search(_ context.Context, _ *gitprotocol.SearchRequest, onMatches func([]gitprotocol.CommitMatch)) (limitHit bool, _ error)
+	ResolveRevisions(context.Context, string)
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {

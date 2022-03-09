@@ -127,6 +127,9 @@ type Client interface {
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
+	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes
+	ResolveRevisions(_ context.Context, repo string, _ []protocol.RevisionSpecifier) ([]string, error)
+
 	// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
 	// a user-provided command.
 	GetGitolitePhabricatorMetadata(_ context.Context, gitoliteHost string, _ api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
@@ -1170,4 +1173,41 @@ func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	}
 
 	return &res.Object, nil
+}
+
+func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo string, revs []protocol.RevisionSpecifier) ([]string, error) {
+	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
+
+	cmd := c.Command("git", args...)
+	cmd.Repo = repo
+	stdout, stderr, err := cmd.DividedOutput(ctx)
+	if err != nil {
+		log15.Warn("rev-parse command failed", "err", err.Error(), "stderr", string(stderr))
+		return nil, err
+	}
+
+	split := strings.Split(string(stdout), "\n")
+	split = split[:len(split)-1] // remove the last, empty string
+	return split
+}
+
+func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
+	args := make([]string, 0, len(revSpecs))
+	for _, r := range revSpecs {
+		if r.RevSpec != "" {
+			args = append(args, r.RevSpec)
+		} else if r.RefGlob != "" {
+			args = append(args, "--glob="+r.RefGlob)
+		} else if r.ExcludeRefGlob != "" {
+			args = append(args, "--exclude="+r.ExcludeRefGlob)
+		} else {
+			args = append(args, "HEAD")
+		}
+	}
+
+	// If revSpecs is empty, git treats it as equivalent to HEAD
+	if len(revSpecs) == 0 {
+		args = append(args, "HEAD")
+	}
+	return args
 }
