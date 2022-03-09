@@ -391,10 +391,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			wantRepoIDs := []extsvc.RepoID{
 				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
 				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // this one is associated w/ the ListTeamRepos call... why is it showing up here TODO: investigate why this is showing up
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // org repo
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // org repo
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // org repo
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // from ListAffiliatedRepos
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // from ListOrgRepositories
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
 			}
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
