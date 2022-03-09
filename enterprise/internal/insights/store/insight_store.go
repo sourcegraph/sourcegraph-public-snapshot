@@ -222,6 +222,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			},
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
+			IsFrozen:         seriesSet[0].IsFrozen,
 		})
 	}
 

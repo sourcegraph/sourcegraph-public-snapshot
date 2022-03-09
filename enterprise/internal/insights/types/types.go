@@ -45,6 +45,7 @@ type Insight struct {
 	Filters          InsightViewFilters
 	OtherThreshold   *float64
 	PresentationType PresentationType
+	IsFrozen         bool
 }
 
 type InsightViewFilters struct {
