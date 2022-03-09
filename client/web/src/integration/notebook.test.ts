@@ -100,6 +100,8 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookBlock
                     },
                 },
             }
+        case NotebookBlockType.SYMBOL:
+            throw new Error('Not implemented.')
     }
 }
 
