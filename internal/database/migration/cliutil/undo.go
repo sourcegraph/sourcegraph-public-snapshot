@@ -11,10 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Undo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.Command {
+func Undo(commandName string, factory RunnerFactory, out *output.Output, development bool) *ffcli.Command {
 	var (
-		flagSet        = flag.NewFlagSet(fmt.Sprintf("%s undo", commandName), flag.ExitOnError)
-		schemaNameFlag = flagSet.String("db", "", `The target schema to modify.`)
+		flagSet                  = flag.NewFlagSet(fmt.Sprintf("%s undo", commandName), flag.ExitOnError)
+		schemaNameFlag           = flagSet.String("db", "", `The target schema to modify.`)
+		ignoreSingleDirtyLogFlag = flagSet.Bool("ignore-single-dirty-log", development, `Ignore a previously failed attempt if it will be immediately retried by this operation.`)
 	)
 
 	exec := func(ctx context.Context, args []string) error {
@@ -40,6 +41,7 @@ func Undo(commandName string, factory RunnerFactory, out *output.Output) *ffcli.
 					Type:       runner.MigrationOperationTypeRevert,
 				},
 			},
+			IgnoreSingleDirtyLog: *ignoreSingleDirtyLogFlag,
 		})
 	}
 

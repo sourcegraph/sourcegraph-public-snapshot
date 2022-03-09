@@ -92,33 +92,46 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 
 // GetAll returns all matching viewable insight series for the provided context, including associated insights (dashboards).
 func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0, 3)
-	var viewConditions []*sqlf.Query
+	preds := make([]*sqlf.Query, 0, 5)
 
+	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
 		for _, id := range args.UniqueIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
+		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(args.UniqueID) > 0 {
-		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id = %s", args.UniqueID))
+		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
 	if args.DashboardID > 0 {
-		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
 	}
-	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
-
-	cursor := insightViewPageCursor{
-		after: args.After,
-		limit: args.Limit,
+	if args.After != "" {
+		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
 	}
 
-	q := sqlf.Sprintf(getInsightsVisibleToUserSql,
-		insightViewQuery(cursor, viewConditions),
+	limit := sqlf.Sprintf("")
+	if args.Limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %d", args.Limit)
+	}
+
+	q := sqlf.Sprintf(getInsightIdsVisibleToUserSql,
 		visibleDashboardsQuery(args.UserID, args.OrgID),
-		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
+		visibleViewsQuery(args.UserID, args.OrgID),
+		sqlf.Join(preds, "AND"),
+		limit)
+	insightIds, err := scanInsightViewIds(s.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	insightIdElems := make([]*sqlf.Query, 0, len(insightIds))
+	for _, id := range insightIds {
+		insightIdElems = append(insightIdElems, sqlf.Sprintf("%s", id))
+	}
+
+	q = sqlf.Sprintf(getInsightsWithSeriesSql, sqlf.Join(insightIdElems, ","))
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -213,7 +226,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	}
 
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].ViewID < results[j].ViewID
+		return results[i].UniqueID < results[j].UniqueID
 	})
 	return results
 }
@@ -368,6 +381,25 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			return []types.InsightSeries{}, err
 		}
 		results = append(results, temp)
+	}
+	return results, nil
+}
+
+func scanInsightViewIds(rows *sql.Rows, queryErr error) (_ []string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]string, 0)
+	for rows.Next() {
+		var temp types.InsightViewSeries
+		if err := rows.Scan(
+			&temp.UniqueID,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, temp.UniqueID)
 	}
 	return results, nil
 }
@@ -863,23 +895,33 @@ from insight_series
 WHERE %s
 `
 
-const getInsightsVisibleToUserSql = `
+const getInsightIdsVisibleToUserSql = `
+SELECT DISTINCT iv.unique_id
+FROM insight_view iv
+JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE (iv.id IN (SELECT insight_view_id
+			 FROM dashboard db
+			 JOIN dashboard_insight_view div ON db.id = div.dashboard_id
+				 WHERE deleted_at IS NULL AND db.id IN (%s))
+   OR iv.id IN (%s))
+AND %s
+ORDER BY iv.unique_id
+%s
+`
+
+const getInsightsWithSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
-FROM (%s) iv
+FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
-WHERE (iv.id IN (SELECT insight_view_id
-             FROM dashboard db
-             JOIN dashboard_insight_view div ON db.id = div.dashboard_id
-				 WHERE deleted_at IS NULL AND db.id IN (%s))
-   OR iv.id IN (%s))
-AND %s
-ORDER BY iv.id
+WHERE iv.unique_id IN (%s)
+ORDER BY iv.unique_id
 `
 
 const countSeriesReferencesSql = `

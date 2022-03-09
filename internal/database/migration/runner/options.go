@@ -17,6 +17,12 @@ type Options struct {
 	// credentials, or if an error should be printed so the site admin can apply manulaly the
 	// privileged migration file with a superuser.
 	UnprivilegedOnly bool
+
+	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
+	// case when the _next_ migration application is the only failure. This is meant to enable
+	// a short development loop where the user can re-apply the `up` command without having to
+	// create a dummy migration log to proceed.
+	IgnoreSingleDirtyLog bool
 }
 
 type MigrationOperation struct {
