@@ -37,7 +37,7 @@ If the bug is very small, and you are confident you can quickly fix it - then go
     - Provide as much detail as possible about the bug you found, and the behavior you expected to happen.
     - Make sure that anyone reading the issue would be able to reproduce the behavior. Screenshots, URLs or videos are helpful!
 2. The issue will be automatically added to the [WCAG 2.1 Tracking Issue](https://github.com/sourcegraph/sourcegraph/issues/31476) and the [Accessibility project](https://github.com/orgs/sourcegraph/projects/238) on GitHub.
-3. If you team has capacity to address the issue, then please assign yourself to it.
+3. If your team has capacity to address the issue, then please assign yourself to it.
     - The Frontend Platform team will triage any unassigned issues and either fix them or assign them to one of our external contractors.
 
 **Note:** If you created an issue without using the issue template above, please add the following GitHub labels to your issue to ensure we can still track it: `accessibility`, `wcag/2.1`, `wcag/2.1/fixing`.

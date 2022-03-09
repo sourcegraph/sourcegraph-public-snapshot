@@ -51,9 +51,7 @@
 - All `<svg>` elements have an appropriate descriptive attribute
   - If it adds value to the user journey, it should include a `<title>` element within the SVG. This element should be referenced through `aria-labelledby` on the `svg` element.
     - Example: `<svg aria-labelledby="svgtitle1"><title id="svgtitle1">Settings</title> [other svg code]</svg>`
-    - TODO - Check - what about imported SVGs? We can't modify - so we need a label somehow?
-- All `video` elements have an appropriate descriptive attribute.
-  - TODO
+    - **Note:** Our `mdi-react` icons currently do not support injecting a `<title>` element. We are currently investigating a solution in [this issue](https://github.com/sourcegraph/sourcegraph/issues/32379). 
 
 **How to test:**
 
