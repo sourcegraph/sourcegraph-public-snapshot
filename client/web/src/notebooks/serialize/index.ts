@@ -23,6 +23,7 @@ export function serializeBlockToMarkdown(block: Block, sourcegraphURL: string): 
             return `\`\`\`sourcegraph\n${serializedInput}\n\`\`\``
         case 'file':
         case 'compute':
+        case 'symbol':
             return serializedInput
     }
 }
@@ -45,6 +46,8 @@ export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): 
                       }
                     : undefined,
             })
+        case 'symbol':
+            throw new Error('Not implemented.')
     }
 }
 
@@ -82,6 +85,8 @@ export function deserializeBlockInput(type: Block['type'], input: string): Block
             return { type, input }
         case 'file':
             return { type, input: parseFileBlockInput(input) }
+        case 'symbol':
+            throw new Error('Not implemented.')
     }
 }
 
@@ -119,6 +124,8 @@ export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
             return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.input }
         case 'file':
             return { id: block.id, type: NotebookBlockType.FILE, fileInput: block.input }
+        case 'symbol':
+            return { id: block.id, type: NotebookBlockType.SYMBOL, symbolInput: block.input }
         case 'compute':
             throw new Error('Unreachable: Compute block deserialization not supported yet.')
     }
@@ -137,7 +144,11 @@ export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInp
                 fileInput: block.fileInput,
             }
         case 'SymbolBlock':
-            throw new Error('Not implemented.')
+            return {
+                id: block.id,
+                type: NotebookBlockType.SYMBOL,
+                symbolInput: block.symbolInput,
+            }
     }
 }
 
