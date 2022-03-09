@@ -29,7 +29,6 @@ import {
 
 export interface UiFeaturesConfig {
     licensed: boolean
-    permissions: DashboardPermissions
 }
 
 /**
