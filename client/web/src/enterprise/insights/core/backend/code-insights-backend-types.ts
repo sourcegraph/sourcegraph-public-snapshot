@@ -49,6 +49,11 @@ export interface InsightUpdateInput {
     newInsight: Insight
 }
 
+export interface RemoveInsightFromDashboardInput {
+    insightId: string
+    dashboardId: string
+}
+
 export interface SearchInsightSettings {
     series: SearchBasedInsightSeries[]
     step: Duration
