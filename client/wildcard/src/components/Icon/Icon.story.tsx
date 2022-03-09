@@ -1,10 +1,10 @@
+import { mdiCheck } from '@mdi/js'
 import { Story, Meta } from '@storybook/react'
+import CheckIcon from 'mdi-react/CheckIcon'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
-import { SourcegraphIcon } from '../SourcegraphIcon'
 
 import { Icon } from './Icon'
 
@@ -34,10 +34,16 @@ export default config
 
 export const Simple: Story = () => (
     <>
+        <h1>Providing SVG element</h1>
         <h3>Small Icon</h3>
-        <Icon as={SourcegraphIcon} size="sm" />
-
+        <Icon as={CheckIcon} size="sm" />
         <h3>Medium Icon</h3>
-        <Icon as={SourcegraphIcon} size="md" />
+        <Icon as={CheckIcon} size="md" />
+        <h1>Providing SVG path</h1>
+        <h3>Small Icon</h3>
+        {console.log(mdiCheck)}
+        <Icon path={mdiCheck} size="sm" />
+        <h3>Medium Icon</h3>
+        <Icon path={mdiCheck} size="md" />
     </>
 )
