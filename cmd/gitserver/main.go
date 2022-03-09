@@ -42,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -331,8 +332,8 @@ func editGitHubAppExternalServiceConfigToken(
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
-
-	client := github.NewV3Client(apiURL, auther, cli)
+	newCache := func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
+	client := github.NewV3Client(apiURL, auther, cli, newCache)
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
 	if err != nil {
