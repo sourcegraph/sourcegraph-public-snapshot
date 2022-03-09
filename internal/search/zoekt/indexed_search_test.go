@@ -619,21 +619,21 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}
 
 	want := []result.Symbol{{
-		Name:    "a",
-		Line:    10,
-		Pattern: "/^symbol a symbol b$/",
+		Name:      "a",
+		Line:      10,
+		Character: 7,
 	}, {
-		Name:    "b",
-		Line:    10,
-		Pattern: "/^symbol a symbol b$/",
+		Name:      "b",
+		Line:      10,
+		Character: 3,
 	}, {
-		Name:    "c",
-		Line:    15,
-		Pattern: "/^symbol c$/",
+		Name:      "c",
+		Line:      15,
+		Character: 7,
 	}, {
-		Name:    "baz",
-		Line:    20,
-		Pattern: `/^bar() { var regex = \/.*\\\/\/; function baz() { }  } $/`,
+		Name:      "baz",
+		Line:      20,
+		Character: 37,
 	},
 	}
 	for i := range want {
