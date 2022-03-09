@@ -3,7 +3,7 @@ import { persist, StoreApiWithPersist } from 'zustand/middleware'
 
 export const ONBOARDING_TOUR_LOCAL_STORAGE_KEY = 'getting-started-tour'
 
-export enum OnboardingTourLanguage {
+export enum GettingStartedTourLanguage {
     C = 'C',
     Go = 'Go',
     Java = 'Java',
@@ -13,28 +13,28 @@ export enum OnboardingTourLanguage {
     Typescript = 'TypeScript',
 }
 
-export interface OnboardingTourState {
+export interface GettingStartedTourState {
     completedIDs?: string[]
     continueID?: string
     status?: 'steps' | 'languages' | 'closed' | 'completed'
-    language?: OnboardingTourLanguage
+    language?: GettingStartedTourLanguage
 
     addCompletedID: (id: string) => void
-    setLanguage: (id: OnboardingTourState['language']) => void
+    setLanguage: (id: GettingStartedTourState['language']) => void
     setLanguageStatus: (continueID: string) => void
     restart: () => void
     close: () => void
     complete: () => void
 }
 
-export const useOnboardingTourState = create<OnboardingTourState>(
+export const useGettingStartedTourState = create<GettingStartedTourState>(
     persist<
-        OnboardingTourState,
-        SetState<OnboardingTourState>,
-        GetState<OnboardingTourState>,
-        StoreApiWithPersist<OnboardingTourState>
+        GettingStartedTourState,
+        SetState<GettingStartedTourState>,
+        GetState<GettingStartedTourState>,
+        StoreApiWithPersist<GettingStartedTourState>
     >(
-        (set, get): OnboardingTourState => ({
+        (set, get): GettingStartedTourState => ({
             status: 'steps',
             setLanguage: language => set({ language, status: 'steps' }),
             setLanguageStatus: continueID => set({ status: 'languages', continueID }),

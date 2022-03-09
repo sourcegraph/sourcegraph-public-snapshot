@@ -409,6 +409,7 @@
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
     "react-scroll-manager": "^1.0.3",
+    "react-select": "^5.2.2",
     "react-spring": "^9.4.2",
     "react-sticky-box": "^0.9.3",
     "react-stripe-elements": "^6.1.2",
