@@ -51,7 +51,7 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         to: '/organizations',
         condition: context => context.openBetaEnabled,
         status: 'new',
-        exact: true
+        exact: true,
     },
     {
         label: 'Privacy',

@@ -106,6 +106,7 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
+        FeatureFlagProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string
