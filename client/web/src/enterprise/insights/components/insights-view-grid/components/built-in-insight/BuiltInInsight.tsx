@@ -12,6 +12,7 @@ import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
+import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
 import { useInsightData } from '../../hooks/use-insight-data'
@@ -56,6 +57,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
+    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
 
     const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
         telemetryService,
@@ -75,6 +77,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                         menuButtonClassName="ml-1 d-inline-flex"
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
                         onDelete={() => handleDelete(insight)}
                     />
                 )
@@ -87,6 +90,8 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                 <View.Banner>Resizing</View.Banner>
             ) : !data || loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
+            ) : isRemoving ? (
+                <View.LoadingContent text="Removing insight from the dashboard" />
             ) : isErrorLike(data.view) ? (
                 <View.ErrorContent error={data.view} title={insight.id} />
             ) : (

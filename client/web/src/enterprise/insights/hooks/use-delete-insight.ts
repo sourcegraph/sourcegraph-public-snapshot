@@ -1,8 +1,6 @@
 import { useCallback, useContext, useState } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
@@ -10,8 +8,6 @@ import { Insight } from '../core/types'
 import { getTrackingTypeByInsightType } from '../pings'
 
 type DeletionInsight = Pick<Insight, 'id' | 'title' | 'viewType'>
-
-export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
 export interface UseDeleteInsightAPI {
     delete: (insight: DeletionInsight) => Promise<void>

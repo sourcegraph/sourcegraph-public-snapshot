@@ -22,6 +22,7 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     ReachableInsight,
+    RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
 } from './code-insights-backend-types'
 
@@ -93,6 +94,8 @@ export interface CodeInsightsBackend {
 
     deleteInsight: (insightId: string) => Observable<unknown>
 
+    removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
+
     /**
      * Returns backend insight (via gql API handler)
      */
@@ -123,7 +126,7 @@ export interface CodeInsightsBackend {
     getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
 
     /**
-     * Returns a list of suggestions for the repositories field in the insight creation UI.
+     * Returns a list of suggestions for the repositories' field in the insight creation UI.
      *
      * @param query - A string with a possible value for the repository name
      */

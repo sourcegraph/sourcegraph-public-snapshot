@@ -30,13 +30,11 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
-            <div>
-                {insights.length > 0 ? (
-                    <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
-                ) : (
-                    <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
-                )}
-            </div>
+            {insights.length > 0 ? (
+                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
+            ) : (
+                <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
+            )}
         </DashboardInsightsContext.Provider>
     )
 }
