@@ -25,6 +25,7 @@ type GitserverRepoStore interface {
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
+	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
 	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 }
@@ -377,6 +378,25 @@ WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
 `, ns, shardID, name))
 
 	return errors.Wrap(err, "setting last error")
+}
+
+// SetRepoSize will attempt to update ONLY the repo size of a GitServerRepo. If
+// a matching row does not yet exist a new one will be created.
+// If the size value hasn't changed, the row will not be updated.
+func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
+	err := s.Exec(ctx, sqlf.Sprintf(`
+	-- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetRepoSize
+	INSERT INTO gitserver_repos(repo_id, repo_size_bytes, shard_id, updated_at)
+	SELECT id, %s, %s, now()
+	FROM repo
+	WHERE name = %s
+	ON CONFLICT (repo_id) DO UPDATE
+	       SET (repo_size_bytes, updated_at) =
+	                       (EXCLUDED.repo_size_bytes, now())
+	WHERE gitserver_repos.repo_size_bytes IS DISTINCT FROM EXCLUDED.repo_size_bytes
+	`, size, shardID, name))
+
+	return errors.Wrap(err, "setting repo size")
 }
 
 // GitserverFetchData is the metadata associated with a fetch operation on
