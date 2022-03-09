@@ -9,7 +9,7 @@ Before starting your audit, you should ensure the following statements are true:
   - Example: Instead of auditing the entirety of code insights, the audit should be focused on a specific part, such as creating a new code insight.
 - You have read and understood [How to use a screen reader](how-to-screen-reader.md).
 
-<i>If you have any issues, please contact the Frontend Platform team.</i>>
+<i>If you run into any problems, please contact the Frontend Platform team.</i>
 
 ## Auditing a user journey
 
@@ -29,6 +29,17 @@ Before starting your audit, you should ensure the following statements are true:
       - [Firefox documentation](https://developer.mozilla.org/en-US/docs/Tools/Responsive_Design_Mode)
 4. Work through relevant sections from the [detailed checklist](detailed-checklist.md) and ensure that there are no issues.
 
-## Raising an issue
+## Raising an bug
 
-TODO
+If the bug is very small, and you are confident you can quickly fix it - then go ahead and make a PR! If you aren't able to immediately address the bug, then we should create a new GitHub issue using the following steps:
+
+1. Open [this GitHub Issue template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=accessibility%2Cwcag%2F2.1%2Cwcag%2F2.1%2Ffixing%2Cestimate%2F3d&template=accessibility_issue.yaml&title=%5BAccessibility%5D%3A+)
+    - Provide as much detail as possible about the bug you found, and the behavior you expected to happen.
+    - Make sure that anyone reading the issue would be able to reproduce the behavior. Screenshots, URLs or videos are helpful!
+2. The issue will be automatically added to the [WCAG 2.1 Tracking Issue](https://github.com/sourcegraph/sourcegraph/issues/31476) and the [Accessibility project](https://github.com/orgs/sourcegraph/projects/238) on GitHub.
+3. If you team has capacity to address the issue, then please assign yourself to it.
+    - The Frontend Platform team will triage any unassigned issues and either fix them or assign them to one of our external contractors.
+
+**Note:** If you created an issue without using the issue template above, please add the following GitHub labels to your issue to ensure we can still track it: `accessibility`, `wcag/2.1`, `wcag/2.1/fixing`.
+
+<i>If you run into any problems, please contact the Frontend Platform team.</i>
