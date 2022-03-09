@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SymbolsParameters struct {
@@ -263,7 +262,6 @@ type RepoOptions struct {
 	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	UserSettings             *schema.Settings
 	NoForks                  bool
 	OnlyForks                bool
 	NoArchived               bool
