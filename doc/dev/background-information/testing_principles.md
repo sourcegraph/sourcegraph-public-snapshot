@@ -132,7 +132,7 @@ To indicate exceptions like these, simply write `n/a` within your pull request's
 ### Pull request review exceptions
 
 Certain workflows leverage PRs that deploy already-tested changes or boilerplate work.
-For these PRs a review may not be required. This can be indicated by creating a section within your test plan indicating `No review required`, like so:
+For these PRs a review may not be required. This can be indicated by creating a section within your test plan indicating `No review required:`, like so:
 
 ```md
 ## Test plan
@@ -148,11 +148,11 @@ No review required: deploys tested changes.
 
 ### Flaky tests
 
-**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./continuous_integration.md) should immediately [disable the flaky test](continuous_integration.md#flaky-tests).
+**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./ci/index.md) should immediately [disable the flaky test](ci/index.md#flaky-tests).
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
 
-Other kinds of flakes include [flaky steps](continuous_integration.md#flaky-steps) and [flaky infrastructure](continuous_integration.md#laky-infrastructure)
+Other kinds of flakes include [flaky steps](ci/index.md#flaky-steps) and [flaky infrastructure](ci/index.md#laky-infrastructure)
 
 ## Ownership
 
@@ -162,7 +162,7 @@ Other kinds of flakes include [flaky steps](continuous_integration.md#flaky-step
 
 ## Reference
 
-- [Continuous integration](continuous_integration.md)
+- [Continuous integration](ci/index.md)
 - [How to write and run tests](../how-to/testing.md)
 - [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)

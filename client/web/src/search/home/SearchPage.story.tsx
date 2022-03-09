@@ -13,9 +13,17 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
+import {
+    _fetchRecentFileViews,
+    _fetchRecentSearches,
+    _fetchSavedSearches,
+    _fetchCollaborators,
+    authUser,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -44,15 +52,21 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    fetchCollaborators: _fetchCollaborators,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
-    extensionViews: () => null,
+    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
+
+if (!window.context) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
+window.context.allowSignup = true
 
 const { add } = storiesOf('web/search/home/SearchPage', module)
     .addParameters({
@@ -76,22 +90,19 @@ add('Cloud with panels', () => (
     </WebStory>
 ))
 
-add('Cloud marketing home', () => (
+add('Cloud with panels and collaborators', () => (
     <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
     </WebStory>
 ))
 
-add('Cloud marketing home with notebook onboarding', () => (
+add('Cloud marketing home', () => (
     <WebStory>
-        {webProps => (
-            <SearchPage
-                {...defaultProps(webProps)}
-                isSourcegraphDotCom={true}
-                authenticatedUser={null}
-                featureFlags={new Map([['search-notebook-onboarding', true]])}
-            />
-        )}
+        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
     </WebStory>
 ))
 
@@ -99,6 +110,16 @@ add('Server with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} />
+        }}
+    </WebStory>
+))
+
+add('Server with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return <SearchPage {...defaultProps(webProps)} />
         }}
     </WebStory>

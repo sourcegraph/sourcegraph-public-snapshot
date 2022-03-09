@@ -1,9 +1,9 @@
 import { Location } from 'history'
 import React from 'react'
 import { match } from 'react-router'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Link } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'

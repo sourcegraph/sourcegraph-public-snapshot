@@ -1,4 +1,5 @@
 import * as React from 'react'
+// eslint-disable-next-line no-restricted-imports
 import { Link } from 'react-router-dom'
 
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'

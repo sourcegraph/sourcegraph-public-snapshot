@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SymbolsParameters struct {
@@ -137,9 +136,7 @@ type TextParameters struct {
 
 	Repos []*RepositoryRevisions
 
-	// perf: For global queries, we only resolve private repos.
-	UserPrivateRepos []types.MinimalRepo
-	Mode             GlobalSearchMode
+	Mode GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
@@ -265,7 +262,6 @@ type RepoOptions struct {
 	Dependencies             []string
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
-	UserSettings             *schema.Settings
 	NoForks                  bool
 	OnlyForks                bool
 	NoArchived               bool

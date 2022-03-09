@@ -36,6 +36,7 @@ import {
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
+import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
 import { NotebookContent } from './NotebookContent'
@@ -61,6 +62,7 @@ interface NotebookPageProps
     deleteNotebook?: typeof _deleteNotebook
     createNotebookStar?: typeof _createNotebookStar
     deleteNotebookStar?: typeof _deleteNotebookStar
+    copyNotebook?: typeof _copyNotebook
 }
 
 const LOADING = 'loading' as const
@@ -77,6 +79,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     deleteNotebook = _deleteNotebook,
     createNotebookStar = _createNotebookStar,
     deleteNotebookStar = _deleteNotebookStar,
+    copyNotebook = _copyNotebook,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
@@ -147,7 +150,12 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     }, [updateQueue, latestNotebook, onUpdateNotebook, setUpdateQueue])
 
     const onUpdateBlocks = useCallback(
-        (blocks: Block[]) => setUpdateQueue(queue => queue.concat([{ blocks: blocks.map(blockToGQLInput) }])),
+        (blocks: Block[]) =>
+            setUpdateQueue(queue =>
+                queue.concat([
+                    { blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])) },
+                ])
+            ),
         [setUpdateQueue]
     )
 
@@ -159,6 +167,11 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
         (isPublic: boolean, namespace: string) =>
             setUpdateQueue(queue => queue.concat([{ public: isPublic, namespace }])),
         [setUpdateQueue]
+    )
+
+    const onCopyNotebook = useCallback(
+        (props: Omit<CopyNotebookProps, 'title'>) => copyNotebook({ title: `Copy of ${notebookTitle}`, ...props }),
+        [notebookTitle, copyNotebook]
     )
 
     return (
@@ -262,6 +275,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             onUpdateBlocks={onUpdateBlocks}
                             fetchRepository={fetchRepository}
                             resolveRevision={resolveRevision}
+                            onCopyNotebook={onCopyNotebook}
                             exportedFileName={exportedFileName}
                         />
                         <div className={styles.spacer} />

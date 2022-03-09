@@ -77,7 +77,8 @@ func TestExtractCloneURL(t *testing.T) {
 				}
 			}
 
-			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			ess := database.NewMockExternalServiceStore()
+			ess.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				services := make([]*types.ExternalService, 0, len(opt.IDs))
 				for _, id := range opt.IDs {
 					services = append(services, &types.ExternalService{
@@ -86,14 +87,10 @@ func TestExtractCloneURL(t *testing.T) {
 						Config: tc.configs[int(id)],
 					})
 				}
-
 				return services, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.ExternalServices.List = nil
 			})
 
-			have, err := extractCloneURL(context.Background(), database.ExternalServices(nil), repo)
+			have, err := extractCloneURL(context.Background(), ess, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -164,7 +161,8 @@ func TestLoadExternalService(t *testing.T) {
 		},
 	}
 
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	ess := database.NewMockExternalServiceStore()
+	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		sources := make([]*types.ExternalService, 0)
 		if _, ok := repo.Sources[noToken.URN()]; ok {
 			sources = append(sources, &noToken)
@@ -179,13 +177,10 @@ func TestLoadExternalService(t *testing.T) {
 			sources = append(sources, &withTokenNewer)
 		}
 		return sources, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices.List = nil
 	})
 
 	// Expect the newest public external service with a token to be returned.
-	svc, err := loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	svc, err := loadExternalService(ctx, ess, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
@@ -196,7 +191,7 @@ func TestLoadExternalService(t *testing.T) {
 	// Now delete the global external services and expect the user owned external service to be returned.
 	delete(repo.Sources, withTokenNewer.URN())
 	delete(repo.Sources, withToken.URN())
-	svc, err = loadExternalService(ctx, database.ExternalServices(nil), database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
+	svc, err = loadExternalService(ctx, ess, database.ExternalServicesListOptions{IDs: repo.ExternalServiceIDs()})
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
@@ -513,7 +508,8 @@ func TestGitserverPushConfig(t *testing.T) {
 				ID: "::1", // see SourceInfo.ExternalServiceID
 			}
 
-			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			ess := database.NewMockExternalServiceStore()
+			ess.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				services := make([]*types.ExternalService, 0, len(opt.IDs))
 				for _, id := range opt.IDs {
 					services = append(services, &types.ExternalService{
@@ -524,12 +520,9 @@ func TestGitserverPushConfig(t *testing.T) {
 				}
 
 				return services, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.ExternalServices.List = nil
 			})
 
-			havePushConfig, haveErr := gitserverPushConfig(context.Background(), database.ExternalServices(database.NewDB(nil)), repo, tt.authenticator)
+			havePushConfig, haveErr := gitserverPushConfig(context.Background(), ess, repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

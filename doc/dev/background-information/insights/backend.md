@@ -16,9 +16,7 @@
         - [Inserting data](#inserting-data)
 - [Creating DB migrations](#creating-db-migrations)
 
-## Beta state of the backend
-
-The current code insights backend is a beta version contributed by [Coury](https://handbook.sourcegraph.com/company/team#coury-clark) (based on previous work by [Stephen](https://handbook.sourcegraph.com/company/team#stephen-gutekanst)) - it:
+## State of the backend
 
 * Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
 * Is backed by a [TimescaleDB](https://www.timescale.com) instance. See the [database section](#database) below for more information.
@@ -48,7 +46,7 @@ This flag should be used judiciously and should generally be considered a last r
 With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
 
 ### Sourcegraph Setting
-Code Insights is currently behind an experimental feature on Sourcegraph. You can enable it in settings.
+Code Insights is currently enabled by default on customer instances 3.32 and later, but can be disabled from appearing in the UI by setting this flag to false. 
 
 ```json
   "experimentalFeatures": {
@@ -65,96 +63,62 @@ Additionally, we have many customers running on managed databases for Postgres (
 Recently our distribution team has started to encourage customers to use managed DB solutions as the product grows. Given entire categories of customers
 would be excluded from using Code Insights, we have decided we must move away from TimescaleDB.
 
-A final decision has not yet been made, but a very likely candidate is falling back to vanilla Postgres. This will simplify our operations, support, and likely
+We are currently in progress to retire TimescaleDB in favor of the standard vanilla Postgres image that ships with Sourcegraph. This will simplify our operations, support, and likely
 will not present a performance problem given the primary constraint on Code Insights is search throughput.
 
-It is reasonable to expect this migration to occur some time during the beta period for Code Insights.
+The current timeline is planned such that this migration will begin in 3.37, and finish in 3.38.
 
 ## Insight Metadata
 Historically, insights ran entirely within the Sourcegraph extensions API on the browser. These insights are limited to small sets of manually defined repositories
 since they execute in real time on page load with no persistence of the timeseries data. Sourcegraph extensions have access to settings (user / org / global) ,
 so the original storage location for extension based insight metadata (query string, labels, title, etc) was settings.
 
-This storage location persisted for the backend MVP, but is in the process of being deprecated by moving the metadata to the database. Given roadmap constraints
-an API does not currently exist to synchronously interact with the database for metadata. A background process attempts to sync insight metadata that is flagged as
-"backend compatible" on a regular interval.
+During beta, insight metadata were stored in Sourcegraph settings files, and periodically synced to the backend database.
 
-As expected, this async process causes many strange UX / UI bugs that are difficult or impossible to solve. An API to fully deprecate the settings storage is a priority
-for Q3.
-
-As an additional note, [extension based insights are read from settings](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@43062781be6c648f40b5baec32ce8241c03cbd18/-/blob/internal/usagestats/code_insights.go?L179) for the purposes of sending aggregated pings.
+As of 3.35, Code Insights data is stored entirely in the `codeinsights-db` database, and exposed through a GraphQL API. Settings are deprecated as a storage
+option, although the text in the settings will persist unless deleted. In this release Code Insights shipped an [out of band migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/migration/migration.go) that automatically migrates
+all data from settings to the database for the last time. 3.35 also disabled the previously running sync jobs by default, which can be re-enabled using an environment variable feature flag `ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE` on the `worker` and `frontend` services. This flag is not meant to be used and is only provided as a last resort option for any users unable to use Code Insights.
 
 ## Life of an insight
 
-### (1) User defines insight in settings
-
-A user creates a code insight using the creation UI, and selects the option to run the insight over all repositories. The Code Insights will create a JSON object
-in the appropriate settings (user / org) and place it in the `insights.allrepos` dictionary. Note: only insights placed in the `insights.allrepos` dictionary are considered eligible for 
-sync to prevent conflicts with extensions insights.
-
-An example backend-compatible insight definition in settings:
-```json
-"insights.allrepos": {
-    "searchInsights.insight.soManyInsights": {
-      "title": "So many insights",
-      "series": [
-        {
-          "name": "\"insights\" insights",
-          "stroke": "var(--oc-blue-7)",
-          "query": "insights"
-        }
-      ]
-    },
-}
-```
-
 ### Unique ID
-An Insight View is defined to have a globally unique referencable ID. For the time being to match feature parity with extensions insights the ID is generated as the
-chart title prefixed with `searchInsights.insight.`.
-
-In the above example, the ID is `searchInsights.insight.soManyInsights`.
+An Insight View is defined to have a globally unique referencable ID. Each ID is [generated when the view is created](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+UniqueID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
 
 [Read more about Insight Views](./insight_view.md)
 
-### Sync to the database
-
-The settings sync [job](https://sourcegraph.com/github.coem/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/discovery.go?L138:6)
-will execute and attempt to migrate the defined insight. Currently, the sync job does not handle updates and will only sync if the insight view unique ID is not found.
-
-Until the insight metadata is synced, the GraphQL response will not return any information if given the unique ID. Temporarily, the frontend treats all `404` errors
-as a transient "Insight is processing" error to solve for this weird UX.
-
-Once the sync job is complete, the following database rows will have been created:
-1. An Insight View (`insight_view`) with UniqueID `searchInsights.insight.soManyInsights`
-2. An Insight Series (`insight_series`) with metadata required to generate the data series
-3. A link from the view to the data series (`insight_view_series`)
-
 #### A note about data series
-Currently, data series are defined without scope for specific repositories or any other subset of repositories (all data series iterate over all repos). Data series are uniquely identified
-by [hashing the query string](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/series_id.go?L32:6), with the `s:` prefix.
-This field is known as the `series_id`. It must be globally unique, and any collisions will be assumed to be the same exact data series.
+Currently, data series are can be defined with a repository scope that will ultimately define how the series is generated. Any series that is provided a repository scope will be executed
+just-in-time, whereas any series missing a repository scope will be assumed to be global and will be recorded in the background. This is an area of improvement in Q1, where we will likely
+integrate with other "repository group" objects such as Search Contexts.
 
-In the medium term this semantic will change to include repository scopes (assigning specific repos to a datseries), and may possibly change entirely. This is one important area
-of design and work for Q3.
+Data series are [uniquely identified by a randomly generated unique ID](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+SeriesID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
+Data series are also identified by a [compound key](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/store/insight_store.go?L709) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.
 
-The `series_id` for the example Insight data above series would be `s:7F1FE30EF252BF75FAB0C9680C7BCFFF648154165AFE718155091051255A0A99`
+Data series are defined with a [recording interval](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/types/types.go?L86-87) that will define the frequency of samples that are taken for the series.
 
-The `series_id` is how the underlying data series is referenced throughout the system; however, it is not currently exposed in the GraphQL API. The current model
-prefers to obfuscate the underlying data series behind an [Insight View](./insight_view.md). This model is not highly validated, and may need to change in the future
-to expose more direct functionality around data series.
+Data series are also given a field that describes how the series can be populated, called [generation_method](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/types/types.go?L106-110#tab=references).
+These `generation_method` types will allow the insights backend to select different behaviors depending on the series definition, for example, to execute a `compute` query instead of a standard search.
+
+#### A note about capture group insight series
+A standard search series will execute Sourcegraph searches, and tabulate the count based on the number of matches in the response. A highly requested feature from our customers
+was to be able to derive the series themselves from the results; that is to say a result of `(result: 1.17, count: 5) (result: 1.13, count: 3)` would generate two individual time series,
+one for each unique result.
+
+We support this behavior by tabulating the results of a `compute` [search](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/query/graphql_compute.go), and dynamically modifying the series that are returned. These series can be calculated both [globally](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L160:6&subtree=true), and 
+[just-in-time](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L221-244&subtree=true).
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects the new insight
 
-The _insight enqueuer_ ([code](https://sourcegraph.com/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
-Its job is to periodically schedule a recording of 'current' values for Insights by queuing a snapshot recording using an indexed query. This only requires a single query per insight regardless of the number of repositories,
+The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
+Its job is to periodically schedule a recording of 'current' values for Insights by enqueuing a recording using a global query. This only requires a single query per insight regardless of the number of repositories,
 and will return results for all the matched repositories. Each repository will still be recorded individually. These queries are placed on the same queue as historical queries (`insights_query_runner_jobs`) and can
 be identified by the lack of a revision and repo filter on the query string. 
-For example, `insights` might be an indexed recording, where `insights repo:^codehost\.com/myorg/somerepo@ref$` would be a historical recording for a specific repo / revision.
+For example, `insights` might be an global recording, where `insights repo:^codehost\.com/myorg/somerepo@ref$` would be a historical recording for a specific repo / revision.
 You can find these search queries for queued jobs on the (primary postgres) table `insights_query_runner_jobs.search_query`
 
 Insight recordings are scheduled using the database field (codeinsights-db) `insight_series.next_recording_after`, and will only be taken if the field time is less than the execution time of the job.
-Recordings are currently always scheduled to occur on the first day of the following month, after `00:00:00`. For example, if a recording was taken at `2021-08-27T15:29:00.000Z` the next
-recording will be scheduled for `2021-09-01T00:00:00.000Z`. The first indexed recording after insight creation will occur on the same interval.
+Recordings are scheduled to occur one interval (per series definition) following the execution time. For example, if a recording was taken at `2021-08-27T15:29:00.000Z` 
+with an interval definition of 1 day, the next recording will be scheduled for `2021-08-28T15:29:00.000Z`. The first recording after insight creation will occur on the same interval.
 
 Note: There is a field (codeinsights-db) `insight_series.recording_interval_days` that was intended to provide some configurable value to this recording interval. We have limited
 product validation with respect to time intervals and the granularity of recordings, so beta has launched with fixed `first-of-month` scheduling. 
@@ -162,7 +126,7 @@ This will be an area of development throughout Q3 and into Q4.
 
 ### (3) The historical data enqueuer (historical recorder) gets to work
 
-If we only record one data point per repo every month, it would take months or longer for users to get any value out of backend insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
+If we only record data starting when the series were created, it would take months or longer for users to get any value out of backend insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
 
 Similar to the _insight enqueuer_, the _historical insight enqueuer_ is a background goroutine ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L75:6)) which locates and enqueues work to populate historical data points.
 
@@ -190,10 +154,10 @@ periodically [refreshed](https://sourcegraph.com/github.com/sourcegraph/sourcegr
 with changes since its previous refresh. Metadata for each repositories refresh is tracked in a table `commit_index_metadata`. 
 
 To avoid race conditions with the index, data frames are only [filtered](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)
-out if the `commit_index_metadata.last_updated_at` is greater than the data point we are attempting to compress.
+out if the `commit_index_metadata.last_updated_at` is greater than the data point we are attempting to compress. Additionally, if the index does not contain enough history (the commit
+falls before the oldest commit in the index), all of the data frames prior to the history will be uncompressed.
 
-Currently, we only generate 12 months of history for this commit index to keep it reasonably sized. We do not currently do any pruning, but that is likely an area
-we will need to expand in Q3 - Q4.
+Currently, we only generate 12 months of history for this commit index to keep it reasonably sized. We do not currently do any pruning, but is an area that will need development in the future.
 
 #### Limiting to a scope of repositories
 Naturally, some insights will not need or want to execute over all repositories and would prefer to execute over a subset to generate faster. As a trade off to reach beta
@@ -205,9 +169,10 @@ This is non-trivial problem to solve, and raises many questions:
 2. What happens if users change the set of repositories after we have already backfilled?
 3. What does the architecture of this look like internally? How do we balance the priority of backfilling other larger insights with much smaller ones?
 
-This is also a blocker to migrate all functionality away from extensions and to the backend, because the extesions *do* support small numbers of repositories at this time.
+Additionally, Search Contexts now support query prefixes (for example a `repo` prefix `repo:github\./com/sourcegraph/.*`) which are a popular and highly requested feature we would like to integrate
+into the Code Insights repository scope.
 
-This will be an area of work for Q3 - Q4.
+This will be an area of improvement in FY23.
 
 #### Detecting if an insight is _complete_
 Given the large possible cardinality of required queries to backfill an insight, it is clear this process can take some time. Through dogfooding we have found
@@ -218,22 +183,21 @@ One important piece of information that needs to be surfaced to users is the ans
 This is a non-trivial question to answer:
 1. Work is processed asynchronously, so querying the state of the queue is necessary
 2. Iterating many thousands of repositories can result in some transient errors causing individual repositories to fail, and ultimately not be included in the queue [issue](https://github.com/sourcegraph/sourcegraph/issues/23844)
-3. The current shared state between settings and the database leaves a lot of intermediate undefined states, such as prior to the sync
 
 As a temporary measure to try and answer this question with some degree of accuracy, the historical backfiller applies the following semantic:
 Flag an insight as `completed backfill` if the insight was able to complete one full iteration of all repositories without any `hard` errors (such as low level DB errors, etc).
 This flag is represented as the database field `insight_series.backfill_queued_at` and is [set](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%4055be905+StampBackfill&patternType=literal) at the end of the complete repository iteration.
 
 This semantic does not fully capture all possible states. For example, if a repository encounters a `soft` error (unable to fetch git metadata, for example)
-it will be skipped and ultimately not populate in the data series. Improving this is an area of design and work for Q3 - Q4.
+it will be skipped and ultimately not populate in the data series. Improving this is an area of design and work in FY23.
 
 ### (4) The queryrunner worker gets work and runs the search query
 
 The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L42:6)), it is responsible for:
 
-1. Dequeueing search queries that have been queued by the either the indexed or historical recorder. Queries are stored with a `priority` field that 
+1. Dequeueing search queries that have been queued by the either the current, snapshot, or historical recorder. Queries are stored with a `priority` field that 
    [dequeues](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be905/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L134) queries in ascending priority order (0 is higher priority than 100).
-2. Executing a search against Sourcegraph with the provided query. These queries are executed against the `internal` GraphQL endpoint, meaning they are *unauthorized* and can see all results. This allows us to build global results and filter based on user permissions at query time.
+2. Executing a search against Sourcegraph with the provided query. These queries are executed against the `internal` API, meaning they are *unauthorized* and can see all results. This allows us to build global results and filter based on user permissions at query time.
 3. Flagging any error states (such as limitHit, meaning there was some reason the search did not return all possible results) as a `dirty query`.
    These queries are stored in a table `insight_dirty_queries` that allow us to surface some information to the end user about the data series.
    Not all error states are currently collected here, and this will be an area of work for Q3.
@@ -253,9 +217,10 @@ installations `Searcher` service.
 
 The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([cpde](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
 
-1. A GraphQL _series_ resolver returns all of the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Series%28&patternType=literal))
-2. A GraphQL resolver ultimately provides data points for a single series of data ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Points%28&patternType=literal))
-3. The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the TimescaleDB database to get the datapoints ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
+1. A GraphQL resolver `insightViewResolver` returns all the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+insightViewResolver+struct&patternType=literal))
+2. A [resolver is selected](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L98-118) depending on the type of series, and whether or not dynamic search results need to be expanded.
+3. A GraphQL resolver ultimately provides data points for a single series of data ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Points%28&patternType=literal))
+4. The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the database to get the datapoints ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
 
 Note: There are other better developer docs which explain the general reasoning for why we have a "store" abstraction. Insights usage of it is pretty minimal, we mostly follow it to separate SQL operations from GraphQL resolver code and to remain consistent with the rest of Sourcegraph's architecture.
 
@@ -284,6 +249,26 @@ one insight series can be aggregated to form the total result. Given that the pr
 exist within a unique timeseries. A simple deduplication is performed at query time.
 
 Read more about the [history](https://github.com/sourcegraph/sourcegraph/issues/23690) of this format.
+
+## Running Locally
+
+Using [`sg`](../sg.md), run the `enterprise-codeinsights` to run everything needed for code insights.
+```
+sg start enterprise-codeinsights
+```
+
+Insights can then be [created either via the locally running webapp](../../../code_insights/how-tos/creating_a_custom_dashboard_of_code_insights.md), or [created via the GraphQL API](../../../api/graphql/managing-code-insights-with-api.md).
+
+If you've created an insight that needs to generate series data on the backend, be aware of [the time interval](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L122) at which these series will be picked up for backfilling. You may want to restart the service so that the new series will be picked up right away for processing.
+
+
+
+### Unit Tests
+
+The `codeinsights-db` must be running in order for tests against any of the insight related `stores` to work correctly, as these interact with the database. You can run the following command to start the `codeinsights-db`:
+```
+sg run codeinsights-db
+```
 
 ## Debugging
 
@@ -328,7 +313,7 @@ docker logs worker | grep insights
 
 ### Inspecting the Timescale database
 
-Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001_initial_schema.up.sql) which contains all of the tables we create in TimescaleDB and describes them in detail. This will explain the general layout of the database schema, etc.
+Read the [initial schema migration](https://github.com/sourcegraph/sourcegraph/blob/main/migrations/codeinsights/1000000001/up.sql) which contains all of the tables we create in TimescaleDB and describes them in detail. This will explain the general layout of the database schema, etc.
 
 The most important table in TimescaleDB is `series_points`, that's where the actual data is stored. It's a [hypertable](https://docs.timescale.com/latest/using-timescaledb/hypertables).
 

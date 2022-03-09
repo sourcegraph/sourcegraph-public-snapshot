@@ -14,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -140,8 +139,8 @@ func TestNoMaliciousFiles(t *testing.T) {
 	createMaliciousJar(t, jarPath)
 
 	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DBStore: &simpleJVMPackageDBStoreMock{},
+		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsStore: NewMockDependenciesStore(),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -192,8 +191,8 @@ func TestJVMCloneCommand(t *testing.T) {
 	coursier.CoursierBinary = coursierScript(t, dir)
 
 	s := JVMPackagesSyncer{
-		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		DBStore: &simpleJVMPackageDBStoreMock{},
+		Config:    &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DepsStore: NewMockDependenciesStore(),
 	}
 	bareGitDirectory := path.Join(dir, "git")
 
@@ -252,12 +251,6 @@ func TestJVMCloneCommand(t *testing.T) {
 		bareGitDirectory,
 		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
 	)
-}
-
-type simpleJVMPackageDBStoreMock struct{}
-
-func (m *simpleJVMPackageDBStoreMock) GetJVMDependencyRepos(ctx context.Context, filter dbstore.GetJVMDependencyReposOpts) ([]dbstore.JVMDependencyRepo, error) {
-	return []dbstore.JVMDependencyRepo{}, nil
 }
 
 // Sanity check errors.HasType

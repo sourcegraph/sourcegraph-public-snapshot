@@ -121,7 +121,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		newCacheFunc:     newCache,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
-		orgsCache:        newOrgsCache(apiURL, a, newCache),
+		orgsCache:        newOrgsCache(a, newCache),
 		repoCache:        newRepoCache(apiURL, a, newCache),
 		resource:         resource,
 	}
@@ -171,6 +171,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 	return c.request(ctx, req, result)
 }
 
+//nolint:unparam // Return *httpResponseState for consistency with other methods
 func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -219,7 +220,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
-func newOrgsCache(apiURL *url.URL, a auth.Authenticator, newCache NewCacheFunc) Cache {
+func newOrgsCache(a auth.Authenticator, newCache NewCacheFunc) Cache {
 	if a == nil {
 		log15.Warn("Cannot initialize orgsCache for nil auth")
 		return nil
@@ -522,12 +523,12 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 	orgsKey := fmt.Sprintf("%s-orgs-%d", hash, page)
 	etagKey := fmt.Sprintf("%s-orgs-etag-%d", hash, page)
 
-	if c.orgsCache == nil {
-		return nil, false, errors.New("ListOrganizations cannot be invoked if orgsCache is nil (client belongs to either github.com or has no authenticator")
-	}
-
 	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
 	updateOrgsCache := func(r *httpResponseState) error {
+		if c.orgsCache == nil {
+			return nil
+		}
+
 		newEtag := r.headers.Get("Etag")
 		c.orgsCache.Set(etagKey, []byte(newEtag))
 
@@ -548,6 +549,16 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		}
 
 		return updateOrgsCache(respState)
+	}
+
+	if c.orgsCache == nil {
+		log15.Warn("ListOrganizations invoked with a nil orgsCache (client probably has no authenticator) and this could be bad for API rate limits")
+
+		if err := getOrgsFromAPI(); err != nil {
+			return nil, false, err
+		}
+
+		return orgs, len(orgs) > 0, nil
 	}
 
 	etag, cacheHit := c.orgsCache.Get(etagKey)
@@ -574,9 +585,8 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		return orgs, len(orgs) > 0, nil
 	}
 
-	var rawOrgs []byte
-	var ok bool
-	if rawOrgs, ok = c.orgsCache.Get(orgsKey); !ok {
+	rawOrgs, ok := c.orgsCache.Get(orgsKey)
+	if !ok {
 		// Reading the orgs from the cache failed even though the API call to GitHub succeeded. This
 		// isn't ideal and is our fault. Treat this as a cache miss and make a regular API call
 		// anyway.
@@ -626,7 +636,7 @@ func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *V3Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
+func (c *V3Client) getRepositoryFromCache(key string) *cachedRepo {
 	b, ok := c.repoCache.Get(strings.ToLower(key))
 	if !ok {
 		return nil
@@ -816,7 +826,16 @@ func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
 // - /user/repos
 func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
-	if _, err := c.get(ctx, requestURI, &restRepos); err != nil {
+	if res, err := c.get(ctx, requestURI, &restRepos); err != nil {
+		if res != nil {
+			link := res.headers.Get("Link")
+			// If we've reached beyond the last page then GitHub API returns 404 with link to
+			// the first page, but does NOT contain link to the next page. link to the next
+			// page is typically included in 200 response Link header
+			if res.statusCode == http.StatusNotFound && strings.Contains(link, `rel="first"`) && !strings.Contains(link, `rel="next"`) {
+				return []*Repository{}, nil
+			}
+		}
 		return nil, err
 	}
 	repos := make([]*Repository, 0, len(restRepos))

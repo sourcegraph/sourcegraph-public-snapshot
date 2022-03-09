@@ -101,6 +101,11 @@ func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) 
 	return database.Users(db).Count(ctx, &database.UsersListOptions{})
 }
 
+func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
+	defer recordOperation("getTotalUsersCount")(&err)
+	return database.Orgs(db).Count(ctx, database.OrgsListOptions{})
+}
+
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
 func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
@@ -139,6 +144,16 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ j
 		return nil, err
 	}
 	return json.Marshal(growthStatistics)
+}
+
+func getAndMarshalCTAUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCTAUsageJSON")(&err)
+
+	ctaUsage, err := usagestats.GetCTAUsage(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(ctaUsage)
 }
 
 func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -270,7 +285,7 @@ func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.
 	return json.Marshal(codeHostIntegrationUsage)
 }
 
-func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()
@@ -357,6 +372,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		SearchUsage:              []byte("{}"),
 		BatchChangesUsage:        []byte("{}"),
 		GrowthStatistics:         []byte("{}"),
+		CTAUsage:                 []byte("{}"),
 		SavedSearches:            []byte("{}"),
 		HomepagePanels:           []byte("{}"),
 		Repositories:             []byte("{}"),
@@ -403,6 +419,12 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		}
 		r.UniqueUsers = int32(count)
 
+		totalOrgs, err := getTotalOrgsCount(ctx, db)
+		if err != nil {
+			logFunc("telemetry: database.Orgs.Count failed", "error", err)
+		}
+		r.TotalOrgs = int32(totalOrgs)
+
 		r.HasRepos, err = hasRepos(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.hasRepos failed", "error", err)
@@ -423,6 +445,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
+		}
+
+		r.CTAUsage, err = getAndMarshalCTAUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalCTAUsageJSON failed", "error", err)
 		}
 
 		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
