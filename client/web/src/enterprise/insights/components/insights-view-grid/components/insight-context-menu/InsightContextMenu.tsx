@@ -55,11 +55,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             size={16}
                         />
                     </MenuButton>
-                    <MenuList
-                        position={Position.bottomEnd}
-                        data-testid={`context-menu.${insightID}`}
-                        className={styles.panel}
-                    >
+                    <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insightID}`}>
                         <MenuLink
                             as={Link}
                             data-testid="InsightContextMenuEditLink"
