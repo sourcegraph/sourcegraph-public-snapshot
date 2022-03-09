@@ -212,8 +212,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const getRequestSuccessBanner = (requestSuccess: boolean): JSX.Element | null =>
         requestSuccess ? (
             <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
-                An installation request has been sent to your GitHub organization administrators. Once the installation
-                has been approved, click on Connect again to finish connecting your code host connection.
+                <h4>GitHub code host connection pending</h4>
+                An installation request was sent to your GitHub organization’s owners. After the request is approved, finish connecting with GitHub to choose repositories to sync with Sourcegraph.
             </Alert>
         ) : null
 
