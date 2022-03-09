@@ -1,10 +1,9 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { BatchChangesResult } from '../../../graphql-operations'
-
 const listBatchChangeFragment = gql`
     fragment BatchChangesFields on BatchChangeConnection {
         nodes {
+            __typename
             ...ListBatchChange
         }
         pageInfo {
@@ -36,27 +35,23 @@ const listBatchChangeFragment = gql`
         }
         batchSpecs(first: 1) {
             nodes {
+                __typename
                 ...ListBatchChangeLatestSpecFields
             }
         }
     }
 
     fragment ListBatchChangeLatestSpecFields on BatchSpec {
-        __typename
         id
         state
         applyURL
     }
 `
 
-export interface ListBatchChangesResult {
-    batchChanges: BatchChangesResult['batchChanges']
-    totalCount: number
-}
-
 export const BATCH_CHANGES = gql`
     query BatchChanges($first: Int, $after: String, $states: [BatchChangeState!], $viewerCanAdminister: Boolean) {
         batchChanges(first: $first, after: $after, states: $states, viewerCanAdminister: $viewerCanAdminister) {
+            __typename
             ...BatchChangesFields
         }
     }
@@ -75,11 +70,13 @@ export const BATCH_CHANGES_BY_NAMESPACE = gql`
             __typename
             ... on User {
                 batchChanges(first: $first, after: $after, states: $states, viewerCanAdminister: $viewerCanAdminister) {
+                    __typename
                     ...BatchChangesFields
                 }
             }
             ... on Org {
                 batchChanges(first: $first, after: $after, states: $states, viewerCanAdminister: $viewerCanAdminister) {
+                    __typename
                     ...BatchChangesFields
                 }
             }
