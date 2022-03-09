@@ -7,7 +7,7 @@ import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable } from '@sourcegraph/wildcard'
@@ -456,9 +456,7 @@ const ReferencesCollapsible: React.FunctionComponent<{
     return references && references.length > 0 ? (
         <Collapsible
             title={<h3>References</h3>}
-            detail={`${references.length} potential feature flag ${
-                references.length > 1 ? 'references' : 'reference'
-            } in sourcegraph@${productGitVersion}`}
+            detail={`${references.length} potential feature flag ${pluralize('reference', references.length)} in sourcegraph@${productGitVersion}`}
             className="p-0 font-weight-normal mt-3"
             buttonClassName="mb-0"
             titleAtStart={true}

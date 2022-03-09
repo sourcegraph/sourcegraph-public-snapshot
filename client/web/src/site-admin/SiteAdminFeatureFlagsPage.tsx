@@ -5,7 +5,7 @@ import { RouteComponentProps, useHistory } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, Container, Button } from '@sourcegraph/wildcard'
@@ -251,7 +251,7 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
                                     `${overrides.length} ${overrides.length !== 1 ? 'overrides' : 'override'}`}
                                 {overrides.length > 0 && references.length > 0 && ', '}
                                 {references.length > 0 &&
-                                    `${references.length} ${references.length !== 1 ? 'references' : 'reference'}`}
+                                    `${references.length} ${pluralize('reference', references.length)}`}
                             </span>
                         </p>
                     )}
