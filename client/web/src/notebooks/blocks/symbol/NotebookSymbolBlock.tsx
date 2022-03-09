@@ -134,10 +134,17 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         commonMenuActions,
     ])
 
-    const codeIntelViewerUpdatesProps = useMemo(() => ({ extensionsController, ...input }), [
-        extensionsController,
-        input,
-    ])
+    const codeIntelViewerUpdatesProps = useMemo(
+        () => ({
+            extensionsController,
+            ...input,
+            revision:
+                symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput)
+                    ? symbolOutput.effectiveRevision
+                    : input.revision,
+        }),
+        [symbolOutput, extensionsController, input]
+    )
 
     const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
