@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { Menu, MenuLink, MenuList, MenuItem, MenuButton, Link, MenuDivider } from '@sourcegraph/wildcard'
+import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, isSearchBasedInsight, isVirtualDashboard } from '../../../../core/types'
 
@@ -55,7 +55,11 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             size={16}
                         />
                     </MenuButton>
-                    <MenuList data-testid={`context-menu.${insightID}`} className={styles.panel}>
+                    <MenuList
+                        position={Position.bottomEnd}
+                        data-testid={`context-menu.${insightID}`}
+                        className={styles.panel}
+                    >
                         <MenuLink
                             as={Link}
                             data-testid="InsightContextMenuEditLink"
