@@ -70,7 +70,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 
     const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
     const onSymbolSelected = useCallback(
-        input => {
+        (input: SymbolBlockInput) => {
             onBlockInputChange(id, { type: 'symbol', input })
             onRunBlock(id)
         },
