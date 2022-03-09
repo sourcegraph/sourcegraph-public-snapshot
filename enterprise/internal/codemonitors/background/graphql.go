@@ -184,9 +184,16 @@ func mapJobTree(in job.Job) (_ job.Job, err error) {
 func expandRefs(
 	ctx context.Context,
 	db database.DB,
-	gs commit.GitserverSearcher,
+	gs commit.GitserverClient,
 	req *gitprotocol.SearchRequest,
 ) ([]gitprotocol.RevisionSpecifier, error) {
+	hashes, err := gs.ResolveRevisions(ctx, req.Repo, req.Revisions)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO exclude last searched
+
 	panic("unimplemented")
 }
 

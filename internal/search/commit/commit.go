@@ -32,15 +32,15 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
-	Gitserver            GitserverSearcher `json:"-"`
+	Gitserver            GitserverClient `json:"-"`
 
-	ExpandRefs func(context.Context, database.DB, GitserverSearcher, *gitprotocol.SearchRequest) ([]gitprotocol.RevisionSpecifier, error)
+	ExpandRefs func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest) ([]gitprotocol.RevisionSpecifier, error)
 	OnSuccess  func(context.Context, database.DB, *gitprotocol.SearchRequest) error
 }
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *gitprotocol.SearchRequest, onMatches func([]gitprotocol.CommitMatch)) (limitHit bool, _ error)
-	ResolveRevisions(context.Context, string)
+	ResolveRevisions(_ context.Context, repo string, _ []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
