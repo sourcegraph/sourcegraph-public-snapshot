@@ -5,7 +5,7 @@ import { subDays } from 'date-fns'
 import expect from 'expect'
 
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { NotebookBlock } from '@sourcegraph/shared/src/schema'
+import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -101,7 +101,20 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookBlock
                 },
             }
         case NotebookBlockType.SYMBOL:
-            throw new Error('Not implemented.')
+            return {
+                __typename: 'SymbolBlock',
+                id: block.id,
+                symbolInput: {
+                    __typename: 'SymbolBlockInput',
+                    repositoryName: block.symbolInput?.repositoryName ?? '',
+                    filePath: block.symbolInput?.filePath ?? '',
+                    revision: block.symbolInput?.revision ?? '',
+                    lineContext: block.symbolInput?.lineContext ?? 3,
+                    symbolName: block.symbolInput?.symbolName ?? '',
+                    symbolContainerName: block.symbolInput?.symbolContainerName ?? '',
+                    symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
+                },
+            }
     }
 }
 
