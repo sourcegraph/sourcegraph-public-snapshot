@@ -10,10 +10,12 @@ are added to every event log for the purpose of analytics.
 
 ## How it works
 
-Each feature flag is either a static feature flag, or a "rollout" flag.
+Each feature flag is either a boolean feature flag, or a "rollout" flag.
 
-- A static feature flag has a single value (currently only "true" or "false") for all users that haven't overriden it.
-- A rollout flag assigns a random (but stable) value to each user. Each rollout flag is created with a percentage of users that should be randomly assigned the value "true".
+- A **boolean flag** has a single value (`true` or `false`) for all users that haven't [overriden](#feature-flag-overrides) it.
+- A **rollout flag** assigns a random (but stable) value to each user. Each rollout flag is created with a percentage of users that should be randomly assigned the value `true`.
+  - The percentage is measured in increments of 0.01% (a "rollout basis point").
+  - For example, to create a feature flag that applies to 50% of users, set the rollout basis points of the flag to 5000.
 
 A user is identified either by their user ID (if logged in), or by an anonymous user ID in local storage.
 
@@ -90,11 +92,7 @@ When writing code that uses feature flags, you may wish to avoid needing to pass
 Depending on how you implement a feature flag, you can disable a feature flag to turn off a feature.
 To do so, go to `/site-admin/feature-flags`, click "Create feature flag", and create a flag corresponding to your feature flag name.
 
-There are two types of feature flags:
-
-- Boolean flags, which represent a simple `true` or `false` value.
-- Rollout flags, which represent a numerical `rolloutBasisPoints` value. This value is measured in increments of 0.01% (a basis point).
-  - For example, to create a feature flag that applies to 50% of users, set `rolloutBasisPoints` to 5000.
+There are two types of feature flags - see [How it works](#how-it-works) for more details.
 
 Creating a feature flag can also be done with a GraphQL query like the following from `/api/console`:
 
