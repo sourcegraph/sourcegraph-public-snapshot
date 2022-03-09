@@ -50,9 +50,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                     {result.type === 'commit' && (
                         <>
                             <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
-                            &nbsp;›&nbsp;
+                            {' › '}
                             <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
-                            :&nbsp;
+                            {': '}
                             <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
                         </>
                     )}
@@ -64,7 +64,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 {result.type === 'commit' && (
                     <Link to={getCommitMatchUrl(result)}>
                         <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>
-                        &nbsp;
+                        {' '}
                         <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                     </Link>
                 )}
