@@ -60,6 +60,8 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
                                 revision: block.fileInput.revision ?? '',
                             },
                         }
+                    case 'SymbolBlock':
+                        throw new Error('Not implemented.')
                 }
             }),
         [blocks]

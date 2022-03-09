@@ -136,6 +136,8 @@ export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInp
                 type: NotebookBlockType.FILE,
                 fileInput: block.fileInput,
             }
+        case 'SymbolBlock':
+            throw new Error('Not implemented.')
     }
 }
 

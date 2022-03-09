@@ -217,6 +217,9 @@ type SymbolBlockInput {
     symbolKind: SymbolKind!
 }
 
+"""
+FileBlock specifies a symbol to display within the block.
+"""
 type SymbolBlock {
     """
     ID of the block.
