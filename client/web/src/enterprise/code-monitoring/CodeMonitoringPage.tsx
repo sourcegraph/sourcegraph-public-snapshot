@@ -8,7 +8,15 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, LoadingSpinner, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    ProductStatusBadge,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -163,12 +171,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                             event.preventDefault()
                                             setCurrentTab('logs')
                                         }}
-                                        className={classNames('nav-link', currentTab === 'logs' && 'active')}
+                                        className={classNames('nav-link flex-row', currentTab === 'logs' && 'active')}
                                         role="button"
                                     >
                                         <span className="text-content" data-tab-content="Logs">
                                             Logs
                                         </span>
+                                        <ProductStatusBadge status="beta" className="ml-2" />
                                     </Link>
                                 </div>
                             )}
