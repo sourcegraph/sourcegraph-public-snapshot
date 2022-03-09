@@ -25,6 +25,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
     public updateInsight = errorMockMethod('updateInsight')
     public deleteInsight = errorMockMethod('deleteInsight')
+    public removeInsightFromDashboard = errorMockMethod('removeInsightFromDashboard')
 
     // Dashboards
     public getDashboards = errorMockMethod('getDashboards')
@@ -53,7 +54,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
 
     // License check
-    public isCodeInsightsLicensed = errorMockMethod('isCodeInsightsLicensed')
+    public getUiFeatures = errorMockMethod('getUiFeatures')
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

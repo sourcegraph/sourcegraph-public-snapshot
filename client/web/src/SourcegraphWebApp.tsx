@@ -68,6 +68,7 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { OverrideFeatureFlagsAgent } from './featureFlags/OverrideFeatureFlagsAgent'
+import { IdeExtensionTracker } from './IdeExtensionTracker'
 import { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -472,6 +473,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     )}
                                                 />
                                                 <SearchStack />
+                                                <IdeExtensionTracker />
                                             </Router>
                                         </ScrollManager>
                                         <Tooltip key={1} />

@@ -13,6 +13,8 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import {
@@ -57,8 +59,14 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
+    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
+
+if (!window.context) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
+window.context.allowSignup = true
 
 const { add } = storiesOf('web/search/home/SearchPage', module)
     .addParameters({
@@ -98,33 +106,10 @@ add('Cloud marketing home', () => (
     </WebStory>
 ))
 
-add('Cloud marketing home with notebook onboarding', () => (
-    <WebStory>
-        {webProps => (
-            <SearchPage
-                {...defaultProps(webProps)}
-                isSourcegraphDotCom={true}
-                authenticatedUser={null}
-                featureFlags={new Map([['search-notebook-onboarding', true]])}
-            />
-        )}
-    </WebStory>
-))
-
 add('Server with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            return <SearchPage {...defaultProps(webProps)} />
-        }}
-    </WebStory>
-))
-
-add('Server with panels and collaborators', () => (
-    <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return <SearchPage {...defaultProps(webProps)} />
         }}
     </WebStory>

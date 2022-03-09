@@ -172,9 +172,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 			setup: func(t *testing.T) {
 				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
+					Mocks.externalServices.List = nil
 				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				Mocks.externalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 					return nil, nil
 				}
 			},
@@ -186,9 +186,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
 			setup: func(t *testing.T) {
 				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
+					Mocks.externalServices.List = nil
 				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				Mocks.externalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 					return []*types.ExternalService{
 						{
 							ID:          1,
@@ -250,9 +250,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			namespaceUserID: 1,
 			setup: func(t *testing.T) {
 				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
+					Mocks.externalServices.List = nil
 				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				Mocks.externalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 					return []*types.ExternalService{
 						{
 							ID:          1,
@@ -272,9 +272,9 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			namespaceOrgID: 1,
 			setup: func(t *testing.T) {
 				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
+					Mocks.externalServices.List = nil
 				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				Mocks.externalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
 					return []*types.ExternalService{
 						{
 							ID:          1,
