@@ -379,7 +379,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			p := setupProvider(t, mc)
-			_, found := p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
 
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				mockAccount,
@@ -400,7 +399,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
-			_, found = p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
+			_, found := p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
 			if !found {
 				t.Error("expected to find group in cache")
 			}
