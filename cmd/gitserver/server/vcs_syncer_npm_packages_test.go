@@ -274,7 +274,7 @@ func TestDecompressTgz(t *testing.T) {
 		tgzFile, err := os.Open(tgzPath)
 		require.Nil(t, err)
 		defer tgzFile.Close()
-		assert.Nil(t, decompressTgz(namedReadSeeker{tgzPath, tgzFile}, dir))
+		assert.Nil(t, decompressTgz(tgzFile, dir))
 		dirEntries, err := os.ReadDir(dir)
 		assert.Nil(t, err)
 		dirEntryNames := []string{}
@@ -325,13 +325,13 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 	tarWriter.Close()
 	gzipWriter.Close()
 
-	readSeeker := bytes.NewReader(buffer.Bytes())
+	reader := bytes.NewReader(buffer.Bytes())
 
 	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
 	require.Nil(t, err)
 	defer os.RemoveAll(outDir)
 
 	require.NotPanics(t, func() {
-		decompressTgz(namedReadSeeker{"buffer", readSeeker}, outDir)
+		decompressTgz(reader, outDir)
 	})
 }

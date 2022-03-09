@@ -62,7 +62,7 @@ func (m *MockClient) DoesDependencyExist(ctx context.Context, dep *reposource.NP
 	return pkg.Versions[dep.Version] != nil, nil
 }
 
-func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (closer io.ReadSeekCloser, err error) {
+func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (io.ReadCloser, error) {
 	info, ok := m.Packages[dep.PackageSyntax()]
 	if !ok {
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
