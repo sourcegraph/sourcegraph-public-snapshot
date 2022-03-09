@@ -3,7 +3,7 @@ import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -84,7 +84,7 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
             outline={true}
             as={BatchSpecDownloadLink}
         >
-            <FileDownloadIcon className="icon-inline" /> Download YAML
+            <Icon as={FileDownloadIcon} /> Download YAML
         </Button>
     )
 })

@@ -199,17 +199,18 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 
 // path returns the path for key.
 func (s *store) path(key []string) string {
-	encoded := []string{s.dir}
-	for _, k := range key {
-		encoded = append(encoded, EncodeKeyComponent(k))
-	}
+	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
 	return filepath.Join(encoded...) + ".zip"
 }
 
-// EncodeKeyComponent uses a sha256 hash of the key since we want to use it for the disk name.
-func EncodeKeyComponent(component string) string {
-	h := sha256.Sum256([]byte(component))
-	return hex.EncodeToString(h[:])
+// EncodeKeyComponents uses a sha256 hash of the key since we want to use it for the disk name.
+func EncodeKeyComponents(components []string) []string {
+	encoded := []string{}
+	for _, component := range components {
+		h := sha256.Sum256([]byte(component))
+		encoded = append(encoded, hex.EncodeToString(h[:]))
+	}
+	return encoded
 }
 
 func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace observation.TraceLogger) (file *File, err error) {

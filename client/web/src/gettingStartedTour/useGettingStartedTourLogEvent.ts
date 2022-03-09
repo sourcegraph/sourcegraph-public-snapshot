@@ -2,10 +2,12 @@ import { useCallback } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { useOnboardingTourState } from '../stores/onboardingTourState'
+import { useGettingStartedTourState } from '../stores/gettingStartedTourState'
 
-export function useLogTourEvent(telemetryService: TelemetryProps['telemetryService']): (eventName: string) => void {
-    const language = useOnboardingTourState(useCallback(state => state.language, []))
+export function useGettingStartedTourLogEvent(
+    telemetryService: TelemetryProps['telemetryService']
+): (eventName: string) => void {
+    const language = useGettingStartedTourState(useCallback(state => state.language, []))
 
     return useCallback(
         (eventName: string) => {

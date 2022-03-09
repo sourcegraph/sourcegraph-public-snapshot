@@ -12,6 +12,8 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
@@ -27,12 +29,16 @@ jest.mock('./SearchPageInput', () => ({
 // CommonJS).
 jest.mock('./LoggedOutHomepage.constants', () => ({
     fonts: [],
-    exampleQueries: [],
-    exampleNotebooks: [],
+    exampleTripsAndTricks: [],
 }))
 
 describe('SearchPage', () => {
     afterAll(cleanup)
+
+    beforeEach(() => {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+    })
 
     let container: HTMLElement
 
@@ -67,7 +73,7 @@ describe('SearchPage', () => {
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        featureFlags: new Map(),
+        featureFlags: new Map<FeatureFlagName, boolean>(),
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

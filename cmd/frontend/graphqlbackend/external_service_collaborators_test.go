@@ -215,10 +215,10 @@ func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T)
 	}
 	for _, tst := range tests {
 		t.Run(tst.want.Name(), func(t *testing.T) {
-			userExists := func(username, email string) bool {
-				return strings.Contains(username, "exists") || strings.Contains(email, "exists")
+			userExists := func(usernameOrEmail string) bool {
+				return strings.Contains(usernameOrEmail, "exists")
 			}
-			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails, userExists)
+			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails, userExists, userExists)
 			tst.want.Equal(t, got)
 		})
 	}

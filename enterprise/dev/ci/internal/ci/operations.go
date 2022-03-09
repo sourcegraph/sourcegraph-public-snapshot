@@ -225,6 +225,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+			bk.Cmd("git-lfs fetch"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
@@ -360,7 +361,9 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 			pipeline.AddStep(
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{}),
+				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{},
+				}),
 			)
 		})
 	}
