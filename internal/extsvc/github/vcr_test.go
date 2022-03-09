@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 // vcrToken is the OAuthBearerToken used for updating VCR fixtures used in tests in this
@@ -21,6 +22,8 @@ var vcrToken = &auth.OAuthBearerToken{
 var gheToken = &auth.OAuthBearerToken{
 	Token: os.Getenv("GHE_TOKEN"),
 }
+
+var newCache = func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
 
