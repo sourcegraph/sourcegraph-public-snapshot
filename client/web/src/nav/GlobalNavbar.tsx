@@ -44,6 +44,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -74,6 +75,7 @@ interface Props
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        FeatureFlagProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
