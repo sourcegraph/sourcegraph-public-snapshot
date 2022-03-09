@@ -232,7 +232,7 @@ type SymbolBlock {
 }
 
 """
-Notebook blocks are represented as a union between three distinct block types: Markdown, Query, File, and Symbol.
+Notebook blocks are represented as a union between four distinct block types: Markdown, Query, File, and Symbol.
 """
 union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock | SymbolBlock
 
@@ -370,7 +370,7 @@ input CreateFileBlockInput {
 }
 
 """
-CreateSymbolBlockInput contains the information necessary to create a file block.
+CreateSymbolBlockInput contains the information necessary to create a symbol block.
 """
 input CreateSymbolBlockInput {
     """
