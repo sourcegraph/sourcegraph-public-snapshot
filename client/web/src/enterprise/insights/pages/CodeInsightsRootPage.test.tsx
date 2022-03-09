@@ -93,7 +93,7 @@ describe('CodeInsightsRootPage', () => {
             {
                 route: '/insights/dashboards/',
                 api: {
-                    isCodeInsightsLicensed: () => of(true),
+                    getUiFeatures: () => of({ licensed: true }),
                 },
             }
         )
@@ -112,7 +112,7 @@ describe('CodeInsightsRootPage', () => {
                 api: {
                     getDashboardSubjects: () => of([]),
                     getDashboards: () => of([]),
-                    isCodeInsightsLicensed: () => of(true),
+                    getUiFeatures: () => of({ licensed: true }),
                 },
             }
         )
@@ -131,7 +131,7 @@ describe('CodeInsightsRootPage', () => {
                 api: {
                     getDashboardSubjects: () => of([]),
                     getDashboards: () => of([]),
-                    isCodeInsightsLicensed: () => of(true),
+                    getUiFeatures: () => of({ licensed: true }),
                 },
             }
         )
