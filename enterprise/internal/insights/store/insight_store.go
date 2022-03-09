@@ -775,11 +775,34 @@ func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFron
 }
 
 func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCount, id)))
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCountSql, id)))
 	if err != nil {
 		return 0, nil
 	}
 	return count, nil
+}
+
+func (s *InsightStore) GetFrozenInsightCount(ctx context.Context) (globalCount int, nonGlobalCount int, err error) {
+	rows := s.QueryRow(ctx, sqlf.Sprintf(getFrozenInsightCountSql))
+	if err = rows.Scan(
+		&globalCount,
+		&nonGlobalCount,
+	); err != nil {
+		return
+	}
+	return
+}
+
+func (s *InsightStore) FreezeAllInsights(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(freezeAllInsightsSql))
+}
+
+func (s *InsightStore) UnfreezeAllInsights(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(unfreezeAllInsightsSql))
+}
+
+func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) error {
+	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
 }
 
 const setSeriesStatusSql = `
@@ -938,8 +961,57 @@ SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_va
 WHERE series_id = %s
 `
 
-const getReferenceCount = `
+const getReferenceCountSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
 SELECT COUNT(*) from dashboard_insight_view
 WHERE insight_view_id = %s
+`
+
+const freezeAllInsightsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:FreezeAllInsights
+UPDATE insight_view SET is_frozen = TRUE
+`
+
+const unfreezeAllInsightsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UnfreezeAllInsights
+UPDATE insight_view SET is_frozen = FALSE
+`
+
+const getFrozenInsightCountSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetFrozenInsightCounts
+SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenNonGlobal.total as unfrozenNonGlobal FROM (
+	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
+	JOIN insight_view_grants as ivg on ivg.insight_view_id = iv.id
+	LEFT JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	LEFT JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE
+		iv.is_frozen = FALSE
+		AND (ivg.global = TRUE OR dg.global = TRUE)
+) as unfrozenGlobal
+JOIN
+(
+	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
+	JOIN insight_view_grants as ivg on ivg.insight_view_id = iv.id
+	LEFT JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	LEFT JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE
+		iv.is_frozen = FALSE
+		AND (ivg.org_id IS NOT NULL OR ivg.user_id IS NOT NULL)
+		AND (dg.org_id IS NOT NULL OR dg.user_id IS NOT NULL)
+) as unfrozenNonGlobal
+on TRUE
+`
+
+const unfreezeGlobalInsightsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
+UPDATE insight_view SET is_frozen = FALSE
+WHERE id IN (
+	SELECT DISTINCT(iv.id) from insight_view as iv
+	JOIN insight_view_grants as ivg on ivg.insight_view_id = iv.id
+	LEFT JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	LEFT JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE ivg.global = TRUE OR dg.global = TRUE
+	ORDER BY iv.id ASC
+	LIMIT %s
+)
 `
