@@ -11,12 +11,12 @@ interface Props {
     onAlertDismissed: () => void
 }
 
-const UA = navigator.userAgent
-const BROWSER: 'chrome' | 'safari' | 'firefox' | 'other' = UA.match(/chrome|chromium|crios/i)
+const USER_AGENT = navigator.userAgent
+const BROWSER: 'chrome' | 'safari' | 'firefox' | 'other' = USER_AGENT.match(/chrome|chromium|crios/i)
     ? 'chrome'
-    : UA.match(/firefox|fxios/i)
+    : USER_AGENT.match(/firefox|fxios/i)
     ? 'firefox'
-    : UA.match(/safari/i)
+    : USER_AGENT.match(/safari/i)
     ? 'safari'
     : 'other'
 
