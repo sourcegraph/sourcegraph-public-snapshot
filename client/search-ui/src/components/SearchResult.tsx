@@ -60,9 +60,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
                     <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
-                        <code>{result.oid.slice(0, 7)}</code>
+                        <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>
                         &nbsp;
-                        <Timestamp date={result.authorDate} noAbout={true} />
+                        <Timestamp date={result.authorDate} noAbout={true} strict={true}/>
                     </Link>
                 )}
                 {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
