@@ -11,7 +11,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -74,9 +74,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 onClick={toggleIsExpanded}
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}
             </Button>
             {selectable ? (
@@ -126,7 +126,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <CardTextOutlineIcon data-tooltip="The commit message changed" className="icon-inline" />
+                        <Icon data-tooltip="The commit message changed" as={CardTextOutlineIcon} />
                         <span className="text-nowrap">Message</span>
                     </div>
                 )}
@@ -137,7 +137,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <FileDocumentEditOutlineIcon data-tooltip="The diff changed" className="icon-inline" />
+                        <Icon data-tooltip="The diff changed" as={FileDocumentEditOutlineIcon} />
                         <span className="text-nowrap">Diff</span>
                     </div>
                 )}
@@ -148,7 +148,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <AccountEditIcon data-tooltip="The commit author details changed" className="icon-inline" />
+                        <Icon data-tooltip="The commit author details changed" as={AccountEditIcon} />
                         <span className="text-nowrap">Author</span>
                     </div>
                 )}
@@ -173,9 +173,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 variant="secondary"
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
@@ -309,11 +309,9 @@ const ExpandedSection: React.FunctionComponent<
                             </span>
                             {node.delta.diffChanged && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    <CheckboxBlankCircleIcon
-                                        className={classNames(
-                                            styles.visibleChangesetApplyPreviewNodeChangeIndicator,
-                                            'icon-inline'
-                                        )}
+                                    <Icon
+                                        className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                        as={CheckboxBlankCircleIcon}
                                     />
                                 </small>
                             )}
@@ -336,11 +334,9 @@ const ExpandedSection: React.FunctionComponent<
                             </span>
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    <CheckboxBlankCircleIcon
-                                        className={classNames(
-                                            styles.visibleChangesetApplyPreviewNodeChangeIndicator,
-                                            'icon-inline'
-                                        )}
+                                    <Icon
+                                        className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                        as={CheckboxBlankCircleIcon}
                                     />
                                 </small>
                             )}
@@ -365,11 +361,9 @@ const ExpandedSection: React.FunctionComponent<
                                 node.delta.authorNameChanged ||
                                 node.delta.commitMessageChanged) && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                                    <CheckboxBlankCircleIcon
-                                        className={classNames(
-                                            styles.visibleChangesetApplyPreviewNodeChangeIndicator,
-                                            'icon-inline'
-                                        )}
+                                    <Icon
+                                        className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                        as={CheckboxBlankCircleIcon}
                                     />
                                 </small>
                             )}

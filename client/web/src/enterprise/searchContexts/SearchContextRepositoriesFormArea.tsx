@@ -9,7 +9,7 @@ import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
@@ -167,9 +167,9 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
             >
                 {isValidConfig ? (
                     <span className="d-flex align-items-center">
-                        <span data-testid="repositories-config-success" className="icon-inline text-success mr-1">
+                        <Icon as="span" data-testid="repositories-config-success" className="text-success mr-1">
                             <CheckIcon />{' '}
-                        </span>
+                        </Icon>
                         <span>Valid configuration</span>
                     </span>
                 ) : (

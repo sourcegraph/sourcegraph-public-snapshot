@@ -3,7 +3,7 @@ import AccountQuestionIcon from 'mdi-react/AccountQuestionIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
 export interface ForkTarget {
@@ -28,7 +28,7 @@ export const Branch: React.FunctionComponent<BranchProps> = ({ className, delete
             name
         ) : (
             <>
-                <SourceForkIcon className="icon-inline mr-1" />
+                <Icon className="mr-1" as={SourceForkIcon} />
                 <BranchNamespace target={forkTarget} />
                 {name}
             </>
@@ -62,9 +62,9 @@ const BranchNamespace: React.FunctionComponent<BranchNamespaceProps> = ({ target
     if (target.pushUser) {
         return (
             <>
-                <AccountQuestionIcon
-                    className="icon-inline"
+                <Icon
                     data-tooltip="This branch will be pushed to a user fork. If you have configured a credential for yourself in the Batch Changes settings, this will be a fork in your code host account; otherwise the fork will be in the code host account associated with the site credential used to open changesets."
+                    as={AccountQuestionIcon}
                 />
                 :
             </>

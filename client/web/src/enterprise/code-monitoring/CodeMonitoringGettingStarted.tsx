@@ -3,7 +3,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, CardBody, Card } from '@sourcegraph/wildcard'
+import { Link, Button, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -87,7 +87,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     </ul>
                     {isSignedIn ? (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
-                            <PlusIcon className="icon-inline mr-2" />
+                            <Icon className="mr-2" as={PlusIcon} />
                             Create a code monitor
                         </Button>
                     ) : (

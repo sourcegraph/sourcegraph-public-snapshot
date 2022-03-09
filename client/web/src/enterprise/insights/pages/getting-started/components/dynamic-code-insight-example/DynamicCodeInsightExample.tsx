@@ -4,7 +4,7 @@ import React, { useContext, useMemo, useEffect } from 'react'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { FormInput } from '../../../../components/form/form-input/FormInput'
@@ -182,7 +182,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                 </ul>
 
                 <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                    <PlusIcon className="icon-inline" /> Create your first insight
+                    <Icon as={PlusIcon} /> Create your first insight
                 </Button>
 
                 <CalloutArrow className={styles.calloutBlockHorizontal} />

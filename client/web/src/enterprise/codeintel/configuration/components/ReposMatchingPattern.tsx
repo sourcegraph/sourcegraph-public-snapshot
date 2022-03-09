@@ -3,7 +3,7 @@ import { debounce } from 'lodash'
 import TrashIcon from 'mdi-react/TrashIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './ReposMatchingPattern.module.scss'
 
@@ -49,7 +49,7 @@ export const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> 
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
                 <Button onClick={() => onDelete()} className="p-0 m-0 pt-2" disabled={disabled}>
-                    <TrashIcon className="icon-inline text-danger" data-tooltip="Delete the repository pattern" />
+                    <Icon className="text-danger" data-tooltip="Delete the repository pattern" as={TrashIcon} />
                 </Button>
             </span>
         </>

@@ -7,7 +7,7 @@ import { animated, useSpring } from 'react-spring'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
-import { Button, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
@@ -158,7 +158,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             data-tooltip={typeof previewDisabled === 'string' ? previewDisabled : undefined}
             onClick={preview}
         >
-            <SearchIcon className="icon-inline mr-1" />
+            <Icon className="mr-1" as={SearchIcon} />
             {error ? 'Retry preview' : 'Preview workspaces'}
         </Button>
     )
@@ -208,9 +208,10 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             <h4 className={styles.header}>
                 Workspaces preview{' '}
                 {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
-                    <WarningIcon
+                    <Icon
                         className={classNames('icon-inline text-muted ml-1', styles.warningIcon)}
                         data-tooltip="The workspaces previewed below may not be up-to-date."
+                        as={WarningIcon}
                     />
                 )}
             </h4>

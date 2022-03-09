@@ -13,7 +13,7 @@ import React, { useCallback, useState } from 'react'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
@@ -47,9 +47,9 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
                 onClick={toggleIsExpanded}
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
@@ -60,7 +60,7 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
                 <h3 className="pr-2">
                     {currentSpecID === node.id && (
                         <>
-                            <StarIcon className="icon-inline text-warning" data-tooltip="Currently applied spec" />{' '}
+                            <Icon className="text-warning" data-tooltip="Currently applied spec" as={StarIcon} />{' '}
                         </>
                     )}
                     {currentSpecID && (
@@ -111,19 +111,19 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({
 const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }) => {
     switch (state) {
         case BatchSpecState.COMPLETED:
-            return <CheckCircleIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-success mb-1')} />
+            return <Icon className={classNames(styles.nodeStateIcon, 'text-success mb-1')} as={CheckCircleIcon} />
 
         case BatchSpecState.PROCESSING:
         case BatchSpecState.QUEUED:
-            return <TimerSandIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-muted mb-1')} />
+            return <Icon className={classNames(styles.nodeStateIcon, 'text-muted mb-1')} as={TimerSandIcon} />
 
         case BatchSpecState.CANCELED:
         case BatchSpecState.CANCELING:
-            return <CancelIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-muted mb-1')} />
+            return <Icon className={classNames(styles.nodeStateIcon, 'text-muted mb-1')} as={CancelIcon} />
 
         case BatchSpecState.FAILED:
         default:
-            return <AlertCircleIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
+            return <Icon className={classNames(styles.nodeStateIcon, 'text-danger mb-1')} as={AlertCircleIcon} />
     }
 }
 

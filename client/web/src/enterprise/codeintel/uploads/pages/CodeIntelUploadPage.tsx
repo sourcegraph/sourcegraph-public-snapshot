@@ -15,7 +15,7 @@ import {
     FilteredConnection,
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Button, Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -215,9 +215,8 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for
-                                the tip of the default branch and are targets of cross-repository find reference
-                                operations.
+                                <Icon as={InformationOutlineIcon} /> This upload can answer queries for the tip of the
+                                default branch and are targets of cross-repository find reference operations.
                             </div>
                         )}
                     </Container>

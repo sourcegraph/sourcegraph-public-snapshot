@@ -11,6 +11,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './ImportingChangesetsPreviewList.module.scss'
 import { ImportingChangesetFields } from './useImportingChangesets'
@@ -44,7 +45,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<ImportingCh
                                     : undefined
                             }
                         >
-                            <ImportIcon className="icon-inline" />{' '}
+                            <Icon as={ImportIcon} />{' '}
                             {node.description.__typename === 'ExistingChangesetReference' &&
                                 node.description.baseRepository.name}
                         </LinkOrSpan>{' '}

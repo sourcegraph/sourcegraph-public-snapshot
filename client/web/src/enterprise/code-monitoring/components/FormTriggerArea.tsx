@@ -9,7 +9,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Card } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -39,14 +39,12 @@ const ValidQueryChecklistItem: React.FunctionComponent<{
         <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
 
         {checked ? (
-            <CheckIcon
-                className={classNames('icon-inline text-success', styles.checklistCheckbox)}
-                aria-hidden={true}
-            />
+            <Icon className={classNames('text-success', styles.checklistCheckbox)} aria-hidden={true} as={CheckIcon} />
         ) : (
-            <RadioboxBlankIcon
-                className={classNames('icon-inline', styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
+            <Icon
+                className={classNames(styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
                 aria-hidden={true}
+                as={RadioboxBlankIcon}
             />
         )}
 
@@ -57,13 +55,10 @@ const ValidQueryChecklistItem: React.FunctionComponent<{
                 <span className="sr-only"> {hint}</span>
 
                 <span data-tooltip={hint} data-placement="bottom" className="d-flex">
-                    <HelpCircleIcon
-                        className={classNames(
-                            styles.checklistHint,
-                            'icon-inline',
-                            checked && styles.checklistHintFaded
-                        )}
+                    <Icon
+                        className={classNames(styles.checklistHint, checked && styles.checklistHintFaded)}
                         aria-hidden={true}
+                        as={HelpCircleIcon}
                     />
                 </span>
             </>
@@ -266,8 +261,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     className={classNames('test-preview-link', styles.queryInputPreviewLinkText)}
                                 >
                                     Preview results{' '}
-                                    <OpenInNewIcon
-                                        className={classNames('ml-1 icon-inline', styles.queryInputPreviewLinkIcon)}
+                                    <Icon
+                                        className={classNames('ml-1', styles.queryInputPreviewLinkIcon)}
+                                        as={OpenInNewIcon}
                                     />
                                 </Link>
                             </div>

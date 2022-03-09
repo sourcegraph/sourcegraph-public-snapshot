@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -130,11 +130,12 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                     <div>
                         <h4 className="mb-0">
                             {node.active ? (
-                                <CheckboxBlankCircleIcon className="icon-inline text-success mr-2" />
+                                <Icon className="text-success mr-2" as={CheckboxBlankCircleIcon} />
                             ) : (
-                                <CheckboxBlankCircleIcon
-                                    className="icon-inline text-warning mr-2"
+                                <Icon
+                                    className="text-warning mr-2"
                                     data-tooltip="This executor missed at least three heartbeats."
+                                    as={CheckboxBlankCircleIcon}
                                 />
                             )}
                             {node.hostname}{' '}

@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Link, PageHeader, Tabs, TabList, Tab, Badge, useObservable } from '@sourcegraph/wildcard'
+import { Button, Link, PageHeader, Tabs, TabList, Tab, Badge, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { CodeInsightsIcon } from '../../../insights/Icons'
@@ -85,7 +85,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 actions={
                     <>
                         <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
-                            <PlusIcon className="icon-inline" /> Add dashboard
+                            <Icon as={PlusIcon} /> Add dashboard
                         </Button>
                         <Button
                             as={Link}
@@ -93,7 +93,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                             variant="primary"
                             onClick={() => telemetryService.log('InsightAddMoreClick')}
                         >
-                            <PlusIcon className="icon-inline" /> Create insight
+                            <Icon as={PlusIcon} /> Create insight
                         </Button>
                     </>
                 }

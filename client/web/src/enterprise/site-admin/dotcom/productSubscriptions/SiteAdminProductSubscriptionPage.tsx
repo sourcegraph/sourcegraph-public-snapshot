@@ -19,6 +19,7 @@ import {
     CardHeader,
     CardBody,
     Card,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -142,7 +143,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
             <PageTitle title="Product subscription" />
             <div className="mb-2">
                 <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <ArrowLeftIcon className="icon-inline" /> All subscriptions
+                    <Icon as={ArrowLeftIcon} /> All subscriptions
                 </Button>
             </div>
             {productSubscription === LOADING ? (
@@ -215,7 +216,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 </Button>
                             ) : (
                                 <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <AddIcon className="icon-inline" /> Generate new license manually
+                                    <Icon as={AddIcon} /> Generate new license manually
                                 </Button>
                             )}
                         </CardHeader>

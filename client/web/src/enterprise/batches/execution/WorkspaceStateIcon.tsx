@@ -6,7 +6,7 @@ import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../graphql-operations'
 
@@ -27,59 +27,67 @@ export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps
             return null
         case BatchSpecWorkspaceState.QUEUED:
             return (
-                <TimerSandIcon
-                    className={classNames('icon-inline text-muted', className)}
+                <Icon
+                    className={classNames('text-muted', className)}
                     data-tooltip="Waiting to be processed"
+                    as={TimerSandIcon}
                 />
             )
         case BatchSpecWorkspaceState.PROCESSING:
             return (
-                <LoadingSpinner
-                    className={classNames('icon-inline text-muted', className)}
+                <Icon
+                    className={classNames('text-muted', className)}
                     data-tooltip="Currently executing"
+                    as={LoadingSpinner}
                 />
             )
         case BatchSpecWorkspaceState.SKIPPED:
             return (
-                <LinkVariantRemoveIcon
-                    className={classNames('icon-inline text-muted', className)}
+                <Icon
+                    className={classNames('text-muted', className)}
                     data-tooltip="The workspace has been skipped"
+                    as={LinkVariantRemoveIcon}
                 />
             )
         case BatchSpecWorkspaceState.CANCELED:
             return (
-                <AlertCircleIcon
-                    className={classNames('icon-inline text-muted', className)}
+                <Icon
+                    className={classNames('text-muted', className)}
                     data-tooltip="The execution has been canceled"
+                    as={AlertCircleIcon}
                 />
             )
         case BatchSpecWorkspaceState.CANCELING:
             return (
-                <AlertCircleIcon
-                    className={classNames('icon-inline text-muted', className)}
+                <Icon
+                    className={classNames('text-muted', className)}
                     data-tooltip="The execution is being canceled"
+                    as={AlertCircleIcon}
                 />
             )
         case BatchSpecWorkspaceState.FAILED:
             return (
-                <AlertCircleIcon
-                    className={classNames('icon-inline text-danger', className)}
+                <Icon
+                    className={classNames('text-danger', className)}
                     data-tooltip="The execution has failed"
+                    as={AlertCircleIcon}
                 />
             )
         case BatchSpecWorkspaceState.COMPLETED:
             if (cachedResultFound) {
                 return (
-                    <ContentSaveIcon
-                        className={classNames('icon-inline text-success', className)}
+                    <Icon
+                        className={classNames('text-success', className)}
                         data-tooltip="Cached result found"
+                        as={ContentSaveIcon}
                     />
                 )
             }
             return (
-                <CheckCircleIcon
-                    className={classNames('icon-inline text-success', className)}
+                <Icon
+                    className={classNames('text-success', className)}
                     data-tooltip="Successfully executed"
+                    as={CheckCircleIcon}
                 />
             )
     }

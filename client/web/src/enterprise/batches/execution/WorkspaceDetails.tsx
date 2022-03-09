@@ -29,6 +29,7 @@ import {
     Link,
     CardBody,
     Card,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
@@ -107,16 +108,16 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                     <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                     {workspace.repository.name}{' '}
                     <Link to={workspace.repository.url}>
-                        <ExternalLinkIcon className="icon-inline" />
+                        <Icon as={ExternalLinkIcon} />
                     </Link>
                 </h3>
                 <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
-                    <CloseIcon className="icon-inline" />
+                    <Icon as={CloseIcon} />
                 </Button>
             </div>
             <div className="text-muted">
                 {workspace.path && <>{workspace.path} | </>}
-                <SourceBranchIcon className="icon-inline" /> base: <strong>{workspace.branch.abbrevName}</strong>
+                <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.abbrevName}</strong>
                 {workspace.startedAt && (
                     <>
                         {' '}
@@ -129,7 +130,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                 {typeof workspace.placeInQueue === 'number' && (
                     <>
                         {' '}
-                        | <SyncIcon className="icon-inline" />{' '}
+                        | <Icon as={SyncIcon} />{' '}
                         <strong>
                             <NumberInQueue number={workspace.placeInQueue} />
                         </strong>{' '}
@@ -158,7 +159,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                             outline={true}
                             variant="danger"
                         >
-                            <SyncIcon className="icon-inline" /> Retry
+                            <Icon as={SyncIcon} /> Retry
                         </Button>
                     </div>
                     {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
@@ -167,7 +168,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
             {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored && (
                 <p className="text-muted text-center py-3 mb-0">
                     <strong>
-                        <LinkVariantRemoveIcon className="icon-inline" /> This workspace has been skipped because a{' '}
+                        <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because a{' '}
                         <code>.batchignore</code> file was found.
                     </strong>
                 </p>
@@ -175,8 +176,8 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
             {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.unsupported && (
                 <p className="text-muted text-center py-3 mb-0">
                     <strong>
-                        <LinkVariantRemoveIcon className="icon-inline" /> This workspace has been skipped because it is
-                        on an unsupported code host.
+                        <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because it is on an
+                        unsupported code host.
                     </strong>
                 </p>
             )}
@@ -276,7 +277,7 @@ const ChangesetSpecNode: React.FunctionComponent<
                             )}{' '}
                         </h4>
                         <span className="text-muted">
-                            <SourceBranchIcon className="icon-inline" />
+                            <Icon as={SourceBranchIcon} />
                             changeset branch: <strong>{node.description.headRef}</strong>
                         </span>
                     </div>
@@ -480,28 +481,30 @@ interface StepStateIconProps {
 const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) => {
     if (step.cachedResultFound) {
         return (
-            <ContentSaveIcon
-                className="icon-inline text-success"
+            <Icon
+                className="text-success"
                 data-tooltip="A cached result for this step has been found"
+                as={ContentSaveIcon}
             />
         )
     }
     if (step.skipped) {
-        return <LinkVariantRemoveIcon className="icon-inline text-muted" data-tooltip="The step has been skipped" />
+        return <Icon className="text-muted" data-tooltip="The step has been skipped" as={LinkVariantRemoveIcon} />
     }
     if (!step.startedAt) {
-        return <TimerSandIcon className="icon-inline text-muted" data-tooltip="Waiting to be processed" />
+        return <Icon className="text-muted" data-tooltip="Waiting to be processed" as={TimerSandIcon} />
     }
     if (!step.finishedAt) {
-        return <LoadingSpinner className="icon-inline text-muted" data-tooltip="Currently running" />
+        return <Icon className="text-muted" data-tooltip="Currently running" as={LoadingSpinner} />
     }
     if (step.exitCode === 0) {
-        return <CheckCircleIcon className="icon-inline text-success" data-tooltip="Ran successfully" />
+        return <Icon className="text-success" data-tooltip="Ran successfully" as={CheckCircleIcon} />
     }
     return (
-        <AlertCircleIcon
-            className="icon-inline text-danger"
+        <Icon
+            className="text-danger"
             data-tooltip={`Step failed with exit code ${String(step.exitCode)}`}
+            as={AlertCircleIcon}
         />
     )
 }

@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
@@ -60,15 +60,17 @@ export const MonitorLogNode: React.FunctionComponent<{
                     <ChevronRightIcon className="mr-2 flex-shrink-0" />
                 )}
                 {hasError ? (
-                    <AlertCircleIcon
-                        className={classNames(styles.errorIcon, 'icon-inline mr-1 flex-shrink-0')}
+                    <Icon
+                        as={AlertCircleIcon}
+                        className={classNames(styles.errorIcon, 'mr-1 flex-shrink-0')}
                         aria-label="One or more runs of this code monitor have an error"
                         data-tooltip="One or more runs of this code monitor have an error"
                         data-placement="top"
                     />
                 ) : (
-                    <CheckBoldIcon
-                        className={classNames(styles.checkIcon, 'icon-inline mr-1 flex-shrink-0')}
+                    <Icon
+                        as={CheckBoldIcon}
+                        className={classNames(styles.checkIcon, 'mr-1 flex-shrink-0')}
                         aria-label="Monitor running as normal"
                         data-tooltip="Monitor running as normal"
                         data-placement="top"

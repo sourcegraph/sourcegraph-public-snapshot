@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button, TextArea, Link } from '@sourcegraph/wildcard'
+import { Button, TextArea, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -50,7 +50,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                 <label htmlFor={LABEL_ID}>{label}</label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
-                        <ContentCopyIcon className="icon-inline" />
+                        <Icon as={ContentCopyIcon} />
                         {copied ? 'Copied!' : 'Copy'}
                     </Button>
                 )}

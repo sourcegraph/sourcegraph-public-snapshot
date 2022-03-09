@@ -14,7 +14,7 @@ exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
       >
         View billing subscription 
         <externallinkicon
-          class="icon-inline ml-1"
+          class="iconInline ml-1"
         />
       </a>
       <button

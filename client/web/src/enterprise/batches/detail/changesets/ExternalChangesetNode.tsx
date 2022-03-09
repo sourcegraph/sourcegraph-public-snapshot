@@ -15,7 +15,7 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Button, Alert } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
@@ -88,9 +88,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 onClick={toggleIsExpanded}
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}
             </Button>
             {selectable ? (
@@ -173,9 +173,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 variant="secondary"
             >
                 {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    <Icon aria-label="Close section" as={ChevronDownIcon} />
                 ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
@@ -272,11 +272,9 @@ const RetryChangesetButton: React.FunctionComponent<{
         <>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} prefix="Error re-enqueueing changeset" />}
             <Button className="mb-1" onClick={onRetry} disabled={isLoading === true} variant="link">
-                <SyncIcon
-                    className={classNames(
-                        'icon-inline',
-                        isLoading === true && styles.externalChangesetNodeRetrySpinning
-                    )}
+                <Icon
+                    className={classNames(isLoading === true && styles.externalChangesetNodeRetrySpinning)}
+                    as={SyncIcon}
                 />{' '}
                 Retry
             </Button>

@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -55,7 +55,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="d-flex align-items-center mb-0">
-                    <ChartLineIcon className="icon-inline mr-2" /> Code statistics{' '}
+                    <Icon className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
                     <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>
