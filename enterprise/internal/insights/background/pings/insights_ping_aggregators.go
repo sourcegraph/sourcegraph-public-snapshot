@@ -242,11 +242,11 @@ SELECT COUNT(*) FROM dashboard WHERE deleted_at IS NULL;
 
 const insightsPerDashboardQuery = `
 SELECT
-	AVG(count) AS average,
-	MIN(count) AS min,
-	MAX(count) AS max,
-	STDDEV(count) AS stddev,
-	PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY count) AS median FROM
+	COALESCE(AVG(count), 0) AS average,
+	COALESCE(MIN(count), 0) AS min,
+	COALESCE(MAX(count), 0) AS max,
+	COALESCE(STDDEV(count), 0) AS stddev,
+	COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY count), 0) AS median FROM
 	(
 		SELECT DISTINCT(dashboard_id), COUNT(insight_view_id) FROM dashboard_insight_view GROUP BY dashboard_id
 	) counts;
