@@ -548,6 +548,106 @@ func TestSetLastError(t *testing.T) {
 	}
 }
 
+func TestSetRepoSize(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+	const shardID = "test"
+
+	repo1 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo1",
+		URI:          "github.com/sourcegraph/repo1",
+		ExternalRepo: api.ExternalRepoSpec{},
+	}
+
+	// Create one test repo
+	err := Repos(db).Create(ctx, repo1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:        repo1.ID,
+		ShardID:       shardID,
+		RepoSizeBytes: 100,
+	}
+
+	// Create GitServerRepo
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Get it back
+	fromDB, err := GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Set repo size
+	err = GitserverRepos(db).SetRepoSize(ctx, repo1.Name, 200, shardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fromDB, err = GitserverRepos(db).GetByID(ctx, gitserverRepo.RepoID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitserverRepo.RepoSizeBytes = 200
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Setting repo size should work even if no row exists
+	repo2 := &types.Repo{
+		Name:         "github.com/sourcegraph/repo2",
+		URI:          "github.com/sourcegraph/repo2",
+		ExternalRepo: api.ExternalRepoSpec{},
+	}
+
+	// Create one test repo
+	err = Repos(db).Create(ctx, repo2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := GitserverRepos(db).SetRepoSize(ctx, repo2.Name, 300, shardID); err != nil {
+		t.Fatal(err)
+	}
+	fromDB, err = GitserverRepos(db).GetByID(ctx, repo2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gitserverRepo2 := &types.GitserverRepo{
+		RepoID:        repo2.ID,
+		ShardID:       shardID,
+		RepoSizeBytes: 300,
+	}
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CloneStatus")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Setting the same size should not touch the row
+	if err := GitserverRepos(db).SetRepoSize(ctx, repo2.Name, 300, shardID); err != nil {
+		t.Fatal(err)
+	}
+	after, err := GitserverRepos(db).GetByID(ctx, repo2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(fromDB, after); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
