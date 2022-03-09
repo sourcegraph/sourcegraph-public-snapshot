@@ -6,22 +6,22 @@ import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { useOnboardingTourState } from '../stores/onboardingTourState'
+import { useGettingStartedTourState } from '../stores/gettingStartedTourState'
 
-import { OnboardingTourStepItem } from './data'
-import styles from './OnboardingTour.module.scss'
-import { ONBOARDING_TOUR_MARKER } from './OnboardingTourInfo'
+import { GettingStartedTourStepItem } from './data'
+import styles from './GettingStartedTour.module.scss'
+import { GETTING_STARTED_TOUR_MARKER } from './GettingStartedTourInfo'
 import { parseURIMarkers } from './utils'
 
-interface OnboardingTourCompletionAgentProps extends Partial<TelemetryProps> {
-    steps: OnboardingTourStepItem[]
+interface GettingStartedTourCompletionAgentProps extends Partial<TelemetryProps> {
+    steps: GettingStartedTourStepItem[]
 }
 /**
  * Agent component that tracks step completions
  */
-export const OnboardingTourCompletionAgent: React.FunctionComponent<OnboardingTourCompletionAgentProps> = React.memo(
+export const GettingStartedTourCompletionAgent: React.FunctionComponent<GettingStartedTourCompletionAgentProps> = React.memo(
     ({ steps, telemetryService }) => {
-        const addCompletedID = useOnboardingTourState(useCallback(state => state.addCompletedID, []))
+        const addCompletedID = useGettingStartedTourState(useCallback(state => state.addCompletedID, []))
 
         useEffect(() => {
             const filteredSteps = steps.filter(step => step.completeAfterEvents)
@@ -36,15 +36,15 @@ export const OnboardingTourCompletionAgent: React.FunctionComponent<OnboardingTo
         return null
     }
 )
-interface OnboardingTourInfoAgentProps {
-    steps: OnboardingTourStepItem[]
+interface GettingStartedTourInfoAgentProps {
+    steps: GettingStartedTourStepItem[]
 }
 /**
  * Agent component that shows info dialogs
  */
-export const OnboardingTourInfoAgent: React.FunctionComponent<OnboardingTourInfoAgentProps> = React.memo(
+export const GettingStartedTourInfoAgent: React.FunctionComponent<GettingStartedTourInfoAgentProps> = React.memo(
     ({ steps }) => {
-        const [info, setInfo] = useState<OnboardingTourStepItem['info'] | undefined>()
+        const [info, setInfo] = useState<GettingStartedTourStepItem['info'] | undefined>()
 
         const location = useLocation()
 
@@ -64,7 +64,7 @@ export const OnboardingTourInfoAgent: React.FunctionComponent<OnboardingTourInfo
             return null
         }
 
-        const domNode = document.querySelector('.' + ONBOARDING_TOUR_MARKER)
+        const domNode = document.querySelector('.' + GETTING_STARTED_TOUR_MARKER)
         if (!domNode) {
             return null
         }

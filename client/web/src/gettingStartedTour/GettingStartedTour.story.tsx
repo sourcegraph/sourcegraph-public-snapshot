@@ -5,18 +5,22 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../components/WebStory'
 
-import { OnboardingTour } from './OnboardingTour'
+import { GettingStartedTour } from './GettingStartedTour'
 
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
-    title: 'web/OnboardingTour',
+    title: 'web/GettingStartedTour',
     decorators: [decorator],
     parameters: {
-        component: OnboardingTour,
+        component: GettingStartedTour,
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
     },
 }
 
 export default config
 
-export const Default: React.FunctionComponent = () => <OnboardingTour telemetryService={NOOP_TELEMETRY_SERVICE} />
+export const Default: React.FunctionComponent = () => <GettingStartedTour telemetryService={NOOP_TELEMETRY_SERVICE} />

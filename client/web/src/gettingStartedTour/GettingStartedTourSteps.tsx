@@ -10,12 +10,12 @@ import { useLocation } from 'react-router-dom'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
 
-import { useOnboardingTourState } from '../stores/onboardingTourState'
+import { useGettingStartedTourState } from '../stores/gettingStartedTourState'
 
-import { OnboardingTourStepItem } from './data'
-import styles from './OnboardingTour.module.scss'
-import { OnboardingTourInfoAgent, OnboardingTourCompletionAgent } from './OnboardingTourAgents'
-import { useLogTourEvent } from './useOnboardingTour'
+import { GettingStartedTourStepItem } from './data'
+import styles from './GettingStartedTour.module.scss'
+import { GettingStartedTourInfoAgent, GettingStartedTourCompletionAgent } from './GettingStartedTourAgents'
+import { useGettingStartedTourLogEvent } from './useGettingStartedTourLogEvent'
 import { buildURIMarkers, isExternalURL, parseURIMarkers } from './utils'
 
 interface LinkOrAnchorProps {
@@ -30,9 +30,9 @@ const LinkOrAnchor: React.FunctionComponent<LinkOrAnchorProps> = ({ href, childr
     </Link>
 )
 
-interface OnboardingTourStepProps extends OnboardingTourStepItem, TelemetryProps {}
+interface GettingStartedTourStepProps extends GettingStartedTourStepItem, TelemetryProps {}
 
-const OnboardingTourStep: React.FunctionComponent<OnboardingTourStepProps> = ({
+const GettingStartedTourStep: React.FunctionComponent<GettingStartedTourStepProps> = ({
     completeAfterEvents,
     isCompleted,
     url,
@@ -40,8 +40,8 @@ const OnboardingTourStep: React.FunctionComponent<OnboardingTourStepProps> = ({
     id,
     telemetryService,
 }) => {
-    const logTourEvent = useLogTourEvent(telemetryService)
-    const { language, addCompletedID, setLanguageStatus } = useOnboardingTourState(
+    const logTourEvent = useGettingStartedTourLogEvent(telemetryService)
+    const { language, addCompletedID, setLanguageStatus } = useGettingStartedTourState(
         useCallback(
             ({ language, addCompletedID, setLanguageStatus }) => ({ language, addCompletedID, setLanguageStatus }),
             []
@@ -79,11 +79,11 @@ const OnboardingTourStep: React.FunctionComponent<OnboardingTourStepProps> = ({
         </div>
     )
 }
-interface OnboardingTourStepsProps extends TelemetryProps {
+interface GettingStartedTourStepsProps extends TelemetryProps {
     className?: string
-    steps: OnboardingTourStepItem[]
+    steps: GettingStartedTourStepItem[]
 }
-export const OnboardingTourSteps: React.FunctionComponent<OnboardingTourStepsProps> = ({
+export const GettingStartedTourSteps: React.FunctionComponent<GettingStartedTourStepsProps> = ({
     steps,
     className,
     telemetryService,
@@ -141,7 +141,7 @@ export const OnboardingTourSteps: React.FunctionComponent<OnboardingTourStepsPro
                         </AccordionButton>
                         <AccordionPanel>
                             {steps.map(step => (
-                                <OnboardingTourStep key={step.id} telemetryService={telemetryService} {...step} />
+                                <GettingStartedTourStep key={step.id} telemetryService={telemetryService} {...step} />
                             ))}
                         </AccordionPanel>
                     </AccordionItem>
@@ -154,8 +154,8 @@ export const OnboardingTourSteps: React.FunctionComponent<OnboardingTourStepsPro
                     {completedCount} of {steps.length}
                 </span>
             </footer>
-            <OnboardingTourInfoAgent steps={steps} />
-            <OnboardingTourCompletionAgent steps={steps} telemetryService={telemetryService} />
+            <GettingStartedTourInfoAgent steps={steps} />
+            <GettingStartedTourCompletionAgent steps={steps} telemetryService={telemetryService} />
         </>
     )
 }
