@@ -11,6 +11,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -34,7 +35,12 @@ import {
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 
-interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+interface Props
+    extends ThemeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        SettingsCascadeProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -66,6 +72,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     onUpdate,
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
+    settingsCascade,
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -174,6 +181,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
+                        settingsCascade={settingsCascade}
                     />
                 )}
             </Container>

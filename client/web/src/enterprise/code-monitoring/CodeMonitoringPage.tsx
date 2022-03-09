@@ -8,7 +8,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, LoadingSpinner, useObservable, Button, Link } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -98,7 +98,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <PlusIcon className="icon-inline" />
+                            <Icon as={PlusIcon} />
                             Create
                         </Button>
                     )

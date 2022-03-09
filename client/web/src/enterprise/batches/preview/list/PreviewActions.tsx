@@ -12,6 +12,8 @@ import UploadIcon from 'mdi-react/UploadIcon'
 import UploadNetworkIcon from 'mdi-react/UploadNetworkIcon'
 import React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 
 export interface PreviewActionsProps {
@@ -90,7 +92,7 @@ export const PreviewActionPublish: React.FunctionComponent<{ label?: string; cla
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <UploadIcon className="icon-inline mr-1" data-tooltip="This changeset will be published to its code host" />
+        <Icon className="mr-1" data-tooltip="This changeset will be published to its code host" as={UploadIcon} />
         <span>{label}</span>
     </div>
 )
@@ -99,9 +101,10 @@ export const PreviewActionPublishDraft: React.FunctionComponent<{ label?: string
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <UploadIcon
-            className="text-muted mr-1 icon-inline"
+        <Icon
+            className="text-muted mr-1"
             data-tooltip="This changeset will be published as a draft to its code host"
+            as={UploadIcon}
         />
         <span>{label}</span>
     </div>
@@ -111,9 +114,10 @@ export const PreviewActionImport: React.FunctionComponent<{ label?: string; clas
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <ImportIcon
-            className="icon-inline mr-1"
+        <Icon
+            className="mr-1"
             data-tooltip="This changeset will be imported and tracked in this batch change"
+            as={ImportIcon}
         />
         <span>{label}</span>
     </div>
@@ -123,9 +127,10 @@ export const PreviewActionClose: React.FunctionComponent<{ label?: string; class
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <CloseCircleOutlineIcon
-            className="text-danger mr-1 icon-inline"
+        <Icon
+            className="text-danger mr-1"
             data-tooltip="This changeset will be closed on the code host"
+            as={CloseCircleOutlineIcon}
         />
         <span>{label}</span>
     </div>
@@ -135,9 +140,10 @@ export const PreviewActionDetach: React.FunctionComponent<{ label?: string; clas
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <TrashIcon
-            className="text-danger mr-1 icon-inline"
+        <Icon
+            className="text-danger mr-1"
             data-tooltip="This changeset will be removed from the batch change"
+            as={TrashIcon}
         />
         <span>{label}</span>
     </div>
@@ -147,9 +153,10 @@ export const PreviewActionReopen: React.FunctionComponent<{ label?: string; clas
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <SourceBranchRefreshIcon
-            className="icon-inline text-success mr-1"
+        <Icon
+            className="text-success mr-1"
             data-tooltip="This changeset will be reopened on the code host"
+            as={SourceBranchRefreshIcon}
         />
         <span>{label}</span>
     </div>
@@ -159,9 +166,10 @@ export const PreviewActionUndraft: React.FunctionComponent<{ label?: string; cla
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <SourceBranchCheckIcon
-            className="icon-inline text-success mr-1"
+        <Icon
+            className="text-success mr-1"
             data-tooltip="This changeset will be marked as ready for review on the code host"
+            as={SourceBranchCheckIcon}
         />
         <span>{label}</span>
     </div>
@@ -171,9 +179,10 @@ export const PreviewActionUpdate: React.FunctionComponent<{ label?: string; clas
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <SourceBranchSyncIcon
-            className="icon-inline mr-1"
+        <Icon
+            className="mr-1"
             data-tooltip="This changeset will be updated on the code host"
+            as={SourceBranchSyncIcon}
         />
         <span>{label}</span>
     </div>
@@ -183,7 +192,7 @@ export const PreviewActionPush: React.FunctionComponent<{ label?: string; classN
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <UploadNetworkIcon className="icon-inline mr-1" data-tooltip="A new commit will be pushed to the code host" />
+        <Icon className="mr-1" data-tooltip="A new commit will be pushed to the code host" as={UploadNetworkIcon} />
         <span>{label}</span>
     </div>
 )
@@ -192,9 +201,10 @@ export const PreviewActionUnknown: React.FunctionComponent<{ className?: string;
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <BeakerQuestionIcon
-            className="icon-inline mr-1"
+        <Icon
+            className="mr-1"
             data-tooltip={`The operation ${operations} can't yet be displayed.`}
+            as={BeakerQuestionIcon}
         />
         <span>Unknown</span>
     </div>
@@ -204,9 +214,10 @@ export const PreviewActionArchive: React.FunctionComponent<{ label?: string; cla
     className,
 }) => (
     <div className={classNames(className, iconClassNames)}>
-        <ArchiveIcon
-            className="text-muted mr-1 icon-inline"
+        <Icon
+            className="text-muted mr-1"
             data-tooltip="This changeset will be kept and marked as archived in this batch change"
+            as={ArchiveIcon}
         />
         <span>{label}</span>
     </div>
@@ -222,7 +233,7 @@ export const PreviewActionNoAction: React.FunctionComponent<{ className?: string
     reason,
 }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <BlankCircleIcon className="icon-inline mr-1" data-tooltip={reason} />
+        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} />
         <span>No action</span>
     </div>
 )

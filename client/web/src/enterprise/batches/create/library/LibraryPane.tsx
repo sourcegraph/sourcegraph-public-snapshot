@@ -3,7 +3,7 @@ import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useState, useCallback } from 'react'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../yaml-util'
@@ -114,11 +114,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                             onClick={() => toggleCollapse(!collapsed)}
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
-                            {collapsed ? (
-                                <ChevronDoubleRightIcon className="icon-inline" />
-                            ) : (
-                                <ChevronDoubleLeftIcon className="icon-inline" />
-                            )}
+                            <Icon as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
                         </Button>
                     </div>
                 </div>
