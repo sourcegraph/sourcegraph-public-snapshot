@@ -2037,8 +2037,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20220211090549-756e833d8ebe h1:Eh4QsOq1jXT3RCwflCxHIGGvFEylFYoqZnxiK2ED1wo=
-github.com/sourcegraph/zoekt v0.0.0-20220211090549-756e833d8ebe/go.mod h1:7ch4x99rdVR1l7wn4D/LIK4q+0bkXhJUC8C37QISsDY=
+github.com/sourcegraph/zoekt v0.0.0-20220308084307-10a1f8a8d471 h1:Ejlg+FTCXKAw6Eeug8R3Vd/FoyGpZdHLM4vqZKXDpKg=
+github.com/sourcegraph/zoekt v0.0.0-20220308084307-10a1f8a8d471/go.mod h1:SfsXv9hUd4wJv9/h4J16OxEv7k0r/6YtoLLePkKIQZI=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
@@ -3006,8 +3006,6 @@ google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp0
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 google.golang.org/protobuf v1.27.1 h1:SnqbnDw1V7RiZcXPx5MEeqPv2s79L9i7BJUlG/+RurQ=
 google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
-gopkg.in/DataDog/dd-trace-go.v1 v1.36.0 h1:t2KEcCXajtchpvoIGm0xU+Ytj8KkRyxsXVhWOGg6lEk=
-gopkg.in/DataDog/dd-trace-go.v1 v1.36.0/go.mod h1:Cv0Bzs/zTzzrUDSw8Q+q/vC+uwPD+R530npGo0lfiCE=
 gopkg.in/DataDog/dd-trace-go.v1 v1.36.2 h1:eDbrrRNAHY15yoftLKGMtgq0vuTXp897QEzAJh368jY=
 gopkg.in/DataDog/dd-trace-go.v1 v1.36.2/go.mod h1:Cv0Bzs/zTzzrUDSw8Q+q/vC+uwPD+R530npGo0lfiCE=
 gopkg.in/airbrake/gobrake.v2 v2.0.9/go.mod h1:/h5ZAUhDkGaJfjzjKLSjv6zCL6O0LLBxU4K+aSYdM/U=

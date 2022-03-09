@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	insightTypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -112,6 +113,44 @@ func (e *InsightsPingEmitter) GetOrgVisibleInsightCounts(ctx context.Context) (_
 	return results, nil
 }
 
+func (e *InsightsPingEmitter) GetTotalOrgsWithDashboard(ctx context.Context) (int, error) {
+	total, _, err := basestore.ScanFirstInt(e.insightsDb.QueryContext(ctx, totalOrgsWithDashboardsQuery))
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func (e *InsightsPingEmitter) GetTotalDashboards(ctx context.Context) (int, error) {
+	total, _, err := basestore.ScanFirstInt(e.insightsDb.QueryContext(ctx, totalDashboardsQuery))
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func (e *InsightsPingEmitter) GetInsightsPerDashboard(ctx context.Context) (types.InsightsPerDashboardPing, error) {
+	rows, err := e.insightsDb.QueryContext(ctx, insightsPerDashboardQuery)
+	if err != nil {
+		return types.InsightsPerDashboardPing{}, err
+	}
+	defer func() { err = rows.Close() }()
+
+	var insightsPerDashboardStats types.InsightsPerDashboardPing
+	rows.Next()
+	if err := rows.Scan(
+		&insightsPerDashboardStats.Avg,
+		&insightsPerDashboardStats.Min,
+		&insightsPerDashboardStats.Max,
+		&insightsPerDashboardStats.StdDev,
+		&insightsPerDashboardStats.Median,
+	); err != nil {
+		return types.InsightsPerDashboardPing{}, err
+	}
+
+	return insightsPerDashboardStats, nil
+}
+
 func getDays(intervalValue int, intervalUnit insightTypes.IntervalUnit) int {
 	switch intervalUnit {
 	case insightTypes.Month:
@@ -191,4 +230,24 @@ SELECT iv.presentation_type, COUNT(iv.presentation_type) FROM insight_view AS iv
 JOIN insight_view_grants AS ivg ON iv.id = ivg.insight_view_id
 WHERE ivg.org_id IS NOT NULL
 GROUP BY iv.presentation_type;
+`
+
+const totalOrgsWithDashboardsQuery = `
+SELECT COUNT(DISTINCT(org_id)) FROM dashboard_grants WHERE org_id IS NOT NULL;
+`
+
+const totalDashboardsQuery = `
+SELECT COUNT(*) FROM dashboard WHERE deleted_at IS NULL;
+`
+
+const insightsPerDashboardQuery = `
+SELECT
+	AVG(count) AS average,
+	MIN(count) AS min,
+	MAX(count) AS max,
+	STDDEV(count) AS stddev,
+	PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY count) AS median FROM
+	(
+		SELECT DISTINCT(dashboard_id), COUNT(insight_view_id) FROM dashboard_insight_view GROUP BY dashboard_id
+	) counts;
 `

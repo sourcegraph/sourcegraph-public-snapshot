@@ -10,10 +10,10 @@ import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaAccepted', false)
-    const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
-    const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
+    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
 
-    const showConfirmationModal = isLicensed === false && isGaAccepted === false
+    const showConfirmationModal = !features?.licensed && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null
