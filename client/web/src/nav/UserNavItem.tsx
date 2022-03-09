@@ -254,7 +254,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         {codeHostIntegrationMessaging === 'browser-extension' && (
                             <MenuLink
                                 as={AnchorLink}
-                                to="https://docs.sourcegraph.com/integration/browser_extension"
+                                to="/help/integration/browser_extension"
                                 target="_blank"
                                 rel="noopener"
                             >

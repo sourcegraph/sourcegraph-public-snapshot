@@ -215,7 +215,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                             <ButtonLink
                                 target="_blank"
                                 rel="noopener"
-                                to="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                to="/help/code_intelligence/apidocs"
                                 className="mr-1 text-decoration-none"
                                 variant="secondary"
                                 outline={true}
@@ -256,11 +256,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 repository.
                             </p>
                             <h3>
-                                <Link
-                                    target="_blank"
-                                    rel="noopener"
-                                    to="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                >
+                                <Link target="_blank" rel="noopener" to="/help/code_intelligence/apidocs">
                                     Learn more
                                 </Link>
                             </h3>

@@ -18,7 +18,7 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish, isSkippable }
         <div className="d-flex align-items-center justify-content-end mt-4 w-100">
             {!currentStep.isLastStep && (
                 <Link
-                    to="https://docs.sourcegraph.com/code_search/explanations/code_visibility_on_sourcegraph_cloud"
+                    to="/help/code_search/explanations/code_visibility_on_sourcegraph_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mr-auto"

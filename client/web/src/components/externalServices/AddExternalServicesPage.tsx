@@ -100,22 +100,14 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         <li>Periodically pulling cloned repositories to ensure search results are current.</li>
                         <li>
                             Fetching{' '}
-                            <Link
-                                to="https://docs.sourcegraph.com/admin/repo/permissions"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
+                            <Link to="/help/admin/repo/permissions" target="_blank" rel="noopener noreferrer">
                                 user repository access permissions
                             </Link>
                             , if you have enabled this feature.
                         </li>
                         <li>
                             Opening pull requests and syncing their metadata as part of{' '}
-                            <Link
-                                to="https://docs.sourcegraph.com/user/batch_changes"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
+                            <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
                                 batch changes
                             </Link>
                             , if you have enabled this feature.

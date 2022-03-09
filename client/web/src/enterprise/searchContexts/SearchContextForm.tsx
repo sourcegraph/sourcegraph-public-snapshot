@@ -413,7 +413,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         <Link
                             target="_blank"
                             rel="noopener"
-                            to="https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
                         >
                             search query
                         </Link>

@@ -164,11 +164,7 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
         </ol>
         <p>
             See{' '}
-            <Link
-                rel="noopener noreferrer"
-                target="_blank"
-                to="https://docs.sourcegraph.com/admin/external_service/github#configuration"
-            >
+            <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/github#configuration">
                 the docs for more options
             </Link>
             , or try one of the buttons below.
@@ -232,11 +228,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
         </ol>
         <p>
             See{' '}
-            <Link
-                rel="noopener noreferrer"
-                target="_blank"
-                to="https://docs.sourcegraph.com/admin/external_service/gitlab#configuration"
-            >
+            <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/gitlab#configuration">
                 the docs for more options
             </Link>
             , or try one of the buttons below.
@@ -593,7 +585,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration"
+                    to="/help/admin/external_service/aws_codecommit#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -722,7 +714,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration"
+                    to="/help/admin/external_service/bitbucket_cloud#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -811,7 +803,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration"
+                    to="/help/admin/external_service/bitbucket_server#configuration"
                 >
                     the docs for more options
                 </Link>
@@ -990,7 +982,7 @@ const GITOLITE: AddExternalServiceOptions = {
                 <Link
                     rel="noopener noreferrer"
                     target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/gitolite#configuration"
+                    to="/help/admin/external_service/gitolite#configuration"
                 >
                     the docs for more advanced options
                 </Link>
@@ -1092,11 +1084,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <Link
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    to="https://docs.sourcegraph.com/admin/external_service/other#configuration"
-                >
+                <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/other#configuration">
                     the docs for more options
                 </Link>
                 , or try one of the buttons below.
@@ -1151,11 +1139,7 @@ const PERFORCE: AddExternalServiceOptions = {
             </ol>
             <p>
                 See{' '}
-                <Link
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    to="https://docs.sourcegraph.com/admin/repo/perforce#configuration"
-                >
+                <Link rel="noopener noreferrer" target="_blank" to="/help/admin/repo/perforce#configuration">
                     the docs for more advanced options
                 </Link>
                 , or try one of the buttons below.

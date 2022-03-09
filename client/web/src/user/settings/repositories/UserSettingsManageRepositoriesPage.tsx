@@ -787,7 +787,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.
                 <Link
-                    to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
+                    to="/help/code_search/how-to/adding_repositories_to_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                 >

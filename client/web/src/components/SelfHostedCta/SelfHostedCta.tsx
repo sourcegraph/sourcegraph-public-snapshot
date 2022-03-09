@@ -48,18 +48,14 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
 
                 <ul>
                     <li>
-                        <Link
-                            onClick={gettingStartedCTAOnClick}
-                            to="https://docs.sourcegraph.com/admin/install"
-                            {...linkProps}
-                        >
+                        <Link onClick={gettingStartedCTAOnClick} to="/help/admin/install" {...linkProps}>
                             Learn how to install
                         </Link>
                     </li>
                     <li>
                         <Link
                             onClick={selfVsCloudDocumentsLinkOnClick}
-                            to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#who-is-sourcegraph-cloud-for-why-should-i-use-this-over-sourcegraph-self-hosted"
+                            to="/help/code_search/explanations/sourcegraph_cloud#who-is-sourcegraph-cloud-for-why-should-i-use-this-over-sourcegraph-self-hosted"
                             {...linkProps}
                         >
                             Self-hosted vs. cloud features
