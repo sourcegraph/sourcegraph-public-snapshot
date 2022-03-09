@@ -183,9 +183,13 @@ type FileBlock {
 }
 
 """
-SymbolBlockInput contains the information necessary to find the symbol.
+SymbolBlock specifies a symbol to display within the block.
 """
-type SymbolBlockInput {
+type SymbolBlock {
+    """
+    ID of the block.
+    """
+    id: String!
     """
     Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
     """
@@ -215,20 +219,6 @@ type SymbolBlockInput {
     The symbol kind.
     """
     symbolKind: SymbolKind!
-}
-
-"""
-FileBlock specifies a symbol to display within the block.
-"""
-type SymbolBlock {
-    """
-    ID of the block.
-    """
-    id: String!
-    """
-    Symbol block input.
-    """
-    symbolInput: SymbolBlockInput!
 }
 
 """

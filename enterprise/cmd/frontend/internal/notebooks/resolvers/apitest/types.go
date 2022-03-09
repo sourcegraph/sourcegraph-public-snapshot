@@ -1,5 +1,7 @@
 package apitest
 
+import "encoding/json"
+
 type Notebook struct {
 	ID              string
 	Title           string
@@ -23,6 +25,22 @@ type NotebookBlock struct {
 	QueryInput    string
 	FileInput     FileInput
 	SymbolInput   SymbolInput
+}
+
+func (n *NotebookBlock) UnmarshalJSON(b []byte) error {
+	type NotebookWithoutUnmarshal NotebookBlock
+	var nwu NotebookWithoutUnmarshal
+	if err := json.Unmarshal(b, &nwu); err != nil {
+		return err
+	}
+
+	if nwu.Typename == "SymbolBlock" {
+		if err := json.Unmarshal(b, &nwu.SymbolInput); err != nil {
+			return err
+		}
+	}
+	*n = NotebookBlock(nwu)
+	return nil
 }
 
 type FileInput struct {

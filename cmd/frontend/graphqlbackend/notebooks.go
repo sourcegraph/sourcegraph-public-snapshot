@@ -92,7 +92,7 @@ type FileBlockInputResolver interface {
 
 type SymbolBlockResolver interface {
 	ID() string
-	SymbolInput() SymbolBlockInputResolver
+	SymbolBlockInputResolver
 }
 
 type SymbolBlockInputResolver interface {

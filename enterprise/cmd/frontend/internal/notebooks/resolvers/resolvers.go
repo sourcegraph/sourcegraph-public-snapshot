@@ -567,45 +567,37 @@ func (r *fileBlockLineRangeResolver) EndLine() int32 {
 
 type symbolBlockResolver struct {
 	// block.type == NotebookSymbolBlockType
-	block notebooks.NotebookBlock
+	notebooks.NotebookBlock
 }
 
 func (r *symbolBlockResolver) ID() string {
-	return r.block.ID
+	return r.NotebookBlock.ID
 }
 
-func (r *symbolBlockResolver) SymbolInput() graphqlbackend.SymbolBlockInputResolver {
-	return &symbolBlockInputResolver{*r.block.SymbolInput}
+func (r *symbolBlockResolver) RepositoryName() string {
+	return r.NotebookBlock.SymbolInput.RepositoryName
 }
 
-type symbolBlockInputResolver struct {
-	input notebooks.NotebookSymbolBlockInput
+func (r *symbolBlockResolver) FilePath() string {
+	return r.NotebookBlock.SymbolInput.FilePath
 }
 
-func (r *symbolBlockInputResolver) RepositoryName() string {
-	return r.input.RepositoryName
+func (r *symbolBlockResolver) Revision() *string {
+	return r.NotebookBlock.SymbolInput.Revision
 }
 
-func (r *symbolBlockInputResolver) FilePath() string {
-	return r.input.FilePath
+func (r *symbolBlockResolver) LineContext() int32 {
+	return r.NotebookBlock.SymbolInput.LineContext
 }
 
-func (r *symbolBlockInputResolver) Revision() *string {
-	return r.input.Revision
+func (r *symbolBlockResolver) SymbolName() string {
+	return r.NotebookBlock.SymbolInput.SymbolName
 }
 
-func (r *symbolBlockInputResolver) LineContext() int32 {
-	return r.input.LineContext
+func (r *symbolBlockResolver) SymbolContainerName() string {
+	return r.NotebookBlock.SymbolInput.SymbolContainerName
 }
 
-func (r *symbolBlockInputResolver) SymbolName() string {
-	return r.input.SymbolName
-}
-
-func (r *symbolBlockInputResolver) SymbolContainerName() string {
-	return r.input.SymbolContainerName
-}
-
-func (r *symbolBlockInputResolver) SymbolKind() string {
-	return r.input.SymbolKind
+func (r *symbolBlockResolver) SymbolKind() string {
+	return r.NotebookBlock.SymbolInput.SymbolKind
 }

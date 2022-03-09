@@ -62,15 +62,13 @@ const notebookFields = `
 		... on SymbolBlock {
 			__typename
 			id
-			symbolInput {
-				repositoryName
-				filePath
-				revision
-				lineContext
-				symbolName
-				symbolContainerName
-				symbolKind
-			}
+			repositoryName
+			filePath
+			revision
+			lineContext
+			symbolName
+			symbolContainerName
+			symbolKind
 		}
 	}
 `
