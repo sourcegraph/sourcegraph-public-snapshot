@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"sort"
 	"testing"
 
@@ -65,5 +66,14 @@ func TestFilterRepositories(t *testing.T) {
 				t.Errorf("unexpected repository result (want/got): %v", diff)
 			}
 		})
+	}
+}
+
+func TestFrozenInsightDataSeriesResolver(t *testing.T) {
+	ctx := context.Background()
+	ivr := insightViewResolver{view: &types.Insight{IsFrozen: true}}
+	resolvers, err := ivr.DataSeries(ctx)
+	if err != nil || resolvers != nil {
+		t.Errorf("unexpected results from frozen data series resolver")
 	}
 }
