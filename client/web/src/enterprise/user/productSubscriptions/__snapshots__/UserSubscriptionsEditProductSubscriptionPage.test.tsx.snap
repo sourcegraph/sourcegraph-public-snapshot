@@ -10,7 +10,7 @@ exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
       href="/s"
     >
       <arrowlefticon
-        class="icon-inline"
+        class="iconInline"
       />
        Subscription
     </a>

@@ -47,10 +47,10 @@ var (
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
-	upCommand       = cliutil.Up("sg migration", makeRunner, stdout.Out)
-	upToCommand     = cliutil.UpTo("sg migration", makeRunner, stdout.Out)
-	UndoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out)
-	downToCommand   = cliutil.DownTo("sg migration", makeRunner, stdout.Out)
+	upCommand       = cliutil.Up("sg migration", makeRunner, stdout.Out, true)
+	upToCommand     = cliutil.UpTo("sg migration", makeRunner, stdout.Out, true)
+	UndoCommand     = cliutil.Undo("sg migration", makeRunner, stdout.Out, true)
+	downToCommand   = cliutil.DownTo("sg migration", makeRunner, stdout.Out, true)
 	validateCommand = cliutil.Validate("sg validate", makeRunner, stdout.Out)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, stdout.Out)
 

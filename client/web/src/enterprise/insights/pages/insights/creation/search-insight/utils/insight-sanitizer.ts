@@ -52,7 +52,6 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
         type: InsightExecutionType.Runtime,
         viewType: InsightType.SearchBased,
-        visibility: '',
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
         series: getSanitizedSeries(rawInsight.series),

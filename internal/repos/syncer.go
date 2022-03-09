@@ -704,6 +704,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
 
+		*sourced = *stored[0]
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
 		if !svc.IsSiteOwned() { // enforce user and org repo limits

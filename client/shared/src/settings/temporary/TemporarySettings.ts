@@ -19,6 +19,9 @@ export interface TemporarySettingsSchema {
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'codemonitor.info.visible': boolean
+    'homepage.userInvites.tab': number
+    'integrations.vscode.lastDetectionTimestamp': number
+    'integrations.jetbrains.lastDetectionTimestamp': number
 }
 
 /**

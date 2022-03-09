@@ -5,7 +5,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Container } from '@sourcegraph/wildcard'
+import { Badge, Container, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import {
@@ -58,7 +58,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
         <BatchChangeTabList>
             <BatchChangeTab index={0} name="previewchangesets">
                 <span>
-                    <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                    <Icon className="text-muted mr-1" as={SourceBranchIcon} />
                     <span className="text-content" data-tab-content="Preview changesets">
                         Preview changesets
                     </span>{' '}
@@ -69,7 +69,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
             </BatchChangeTab>
             <BatchChangeTab index={1} name="spec">
                 <span>
-                    <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
+                    <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                     <span className="text-content" data-tab-content="Spec">
                         Spec
                     </span>

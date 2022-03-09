@@ -10,14 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -34,14 +32,13 @@ func TestServeStream_empty(t *testing.T) {
 	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
 	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
 
+	mock := client.NewMockSearchClient()
+	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
+
 	ts := httptest.NewServer(&streamHandler{
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
-		newSearchClient: func(zoekt.Streamer, *endpoint.Map) client.SearchClient {
-			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
-			return mock
-		},
+		searchClient:        mock,
 	})
 	defer ts.Close()
 
@@ -120,14 +117,14 @@ func TestDisplayLimit(t *testing.T) {
 
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ database.DB, _ string, _ *string, queryString string, _ search.Protocol, _ *schema.Settings, _ bool) (*run.SearchInputs, error) {
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Protocol, _ *schema.Settings, _ bool) (*run.SearchInputs, error) {
 				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
 				return &run.SearchInputs{
 					Query: q,
 				}, nil
 			})
-			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, _ database.DB, stream streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
+			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
 				event := <-mockInput
 				stream.Send(event)
 				return nil, nil
@@ -150,9 +147,7 @@ func TestDisplayLimit(t *testing.T) {
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
-				newSearchClient: func(zoekt.Streamer, *endpoint.Map) client.SearchClient {
-					return mock
-				},
+				searchClient:        mock,
 			})
 			defer ts.Close()
 

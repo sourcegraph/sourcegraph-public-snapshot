@@ -62,9 +62,9 @@ var (
 			setupCommand,
 			opsCommand,
 			lintCommand,
-			checkCommand, // TODO remove after a while
 			dbCommand,
 			updateCommand,
+			auditCommand,
 		},
 	}
 )
@@ -160,6 +160,15 @@ func main() {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+// parseConfAndReset parses the config file, return it and resets the global config.
+// It doesn't use the flagset because it needs to be called before the command.
+func parseConfAndReset() *Config {
+	_, _ = parseConf(defaultConfigFile, defaultConfigOverwriteFile)
+	cfg := globalConf
+	globalConf = nil
+	return cfg
 }
 
 // parseConf parses the config file and the optional overwrite file.

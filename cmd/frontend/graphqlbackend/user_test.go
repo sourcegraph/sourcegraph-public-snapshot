@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -465,6 +466,42 @@ func TestUpdateUser(t *testing.T) {
 		}
 	})
 
+	t.Run("bad avatarURL", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		tests := []struct {
+			name      string
+			avatarURL string
+			wantErr   string
+		}{
+			{
+				name:      "exceeded 3000 characters",
+				avatarURL: strings.Repeat("bad", 1001),
+				wantErr:   "avatar URL exceeded 3000 characters",
+			},
+			{
+				name:      "not HTTP nor HTTPS",
+				avatarURL: "ftp://avatars3.githubusercontent.com/u/404",
+				wantErr:   "avatar URL must be an HTTP or HTTPS URL",
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				_, err := newSchemaResolver(db).UpdateUser(
+					context.Background(),
+					&updateUserArgs{
+						User:      MarshalUserID(1),
+						AvatarURL: &test.avatarURL,
+					},
+				)
+				got := fmt.Sprintf("%v", err)
+				assert.Equal(t, test.wantErr, got)
+			})
+		}
+	})
+
 	t.Run("success", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -484,7 +521,8 @@ func TestUpdateUser(t *testing.T) {
 			mutation {
 				updateUser(
 					user: "VXNlcjox",
-					username: "alice.bob-chris-"
+					username: "alice.bob-chris-",
+					avatarURL: "https://avatars3.githubusercontent.com/u/404"
 				) {
 					username
 				}

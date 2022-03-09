@@ -7,6 +7,7 @@ import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
+    AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
@@ -21,8 +22,13 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     ReachableInsight,
+    RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
 } from './code-insights-backend-types'
+
+export interface UiFeatures {
+    licensed: boolean
+}
 
 /**
  * The main interface for code insights backend. Each backend versions should
@@ -52,7 +58,7 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
-    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+    assignInsightsToDashboard: (input: AssignInsightsToDashboardInput) => Observable<unknown>
 
     /**
      * Return all accessible for a user insights that are filtered by ids param.
@@ -88,6 +94,8 @@ export interface CodeInsightsBackend {
 
     deleteInsight: (insightId: string) => Observable<unknown>
 
+    removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
+
     /**
      * Returns backend insight (via gql API handler)
      */
@@ -118,7 +126,7 @@ export interface CodeInsightsBackend {
     getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
 
     /**
-     * Returns a list of suggestions for the repositories field in the insight creation UI.
+     * Returns a list of suggestions for the repositories' field in the insight creation UI.
      *
      * @param query - A string with a possible value for the repository name
      */
@@ -143,8 +151,8 @@ export interface CodeInsightsBackend {
      */
     getFirstExampleRepository: () => Observable<string>
 
-    /*
-     * Returns whether Code Insights is licensed
+    /**
+     * Returns a feaures object used to show/hide and enable/disable UI elements
      */
-    isCodeInsightsLicensed: () => Observable<boolean>
+    getUiFeatures: () => Observable<UiFeatures>
 }

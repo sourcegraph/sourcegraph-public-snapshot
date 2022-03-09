@@ -76,7 +76,7 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 		_, err := coursier.FetchSources(ctx, s.Config, dependency)
 		if err != nil {
 			// Temporary: We shouldn't need both these checks but we're continuing to see the
-			// error in production logs which implies `Is` is not matching.
+			// error in production logs which implies `HasType` is not matching.
 			if errors.HasType(err, &coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
 				// We can't do anything and it's leading to increases in our
 				// src_repoupdater_sched_error alert firing more often.
@@ -208,8 +208,9 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	}
 
 	dbDeps, err := s.DepsStore.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-		Scheme: dependenciesStore.JVMPackagesScheme,
-		Name:   repoUrlPath,
+		Scheme:      dependenciesStore.JVMPackagesScheme,
+		Name:        repoUrlPath,
+		NewestFirst: true,
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get JVM dependency repos from database", "repoPath", repoUrlPath)
@@ -256,6 +257,13 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 
 	sourceCodeJarPath, err := coursier.FetchSources(ctx, s.Config, dependency)
 	if err != nil {
+		// Temporary: We shouldn't need both these checks but we're continuing to see the
+		// error in production logs which implies `HasType` is not matching.
+		if errors.HasType(err, &coursier.ErrNoSources{}) || strings.Contains(err.Error(), "no sources for dependency") {
+			// We can't do anything and it's leading to increases in our
+			// src_repoupdater_sched_error alert firing more often.
+			return nil
+		}
 		return err
 	}
 

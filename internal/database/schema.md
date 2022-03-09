@@ -963,15 +963,16 @@ Referenced by:
 
 # Table "public.gitserver_repos"
 ```
-    Column    |           Type           | Collation | Nullable |      Default       
---------------+--------------------------+-----------+----------+--------------------
- repo_id      | integer                  |           | not null | 
- clone_status | text                     |           | not null | 'not_cloned'::text
- shard_id     | text                     |           | not null | 
- last_error   | text                     |           |          | 
- updated_at   | timestamp with time zone |           | not null | now()
- last_fetched | timestamp with time zone |           | not null | now()
- last_changed | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |      Default       
+-----------------+--------------------------+-----------+----------+--------------------
+ repo_id         | integer                  |           | not null | 
+ clone_status    | text                     |           | not null | 'not_cloned'::text
+ shard_id        | text                     |           | not null | 
+ last_error      | text                     |           |          | 
+ updated_at      | timestamp with time zone |           | not null | now()
+ last_fetched    | timestamp with time zone |           | not null | now()
+ last_changed    | timestamp with time zone |           | not null | now()
+ repo_size_bytes | bigint                   |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -2028,7 +2029,6 @@ Triggers:
 ---------------+--------------------------+-----------+----------+-----------------
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
- user_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at    | timestamp with time zone |           | not null | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
@@ -2340,7 +2340,6 @@ Foreign-key constraints:
  bind_id         | text                     |           | not null | 
  permission      | text                     |           | not null | 
  object_type     | text                     |           | not null | 
- object_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at      | timestamp with time zone |           | not null | 
  service_type    | text                     |           | not null | 
  service_id      | text                     |           | not null | 

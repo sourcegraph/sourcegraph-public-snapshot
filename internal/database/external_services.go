@@ -205,9 +205,6 @@ func (e *externalServiceStore) WithEncryptionKey(key encryption.Key) ExternalSer
 }
 
 func (e *externalServiceStore) Transact(ctx context.Context) (ExternalServiceStore, error) {
-	if Mocks.ExternalServices.Transact != nil {
-		return Mocks.ExternalServices.Transact(ctx)
-	}
 	return e.transact(ctx)
 }
 
@@ -219,9 +216,6 @@ func (e *externalServiceStore) transact(ctx context.Context) (*externalServiceSt
 }
 
 func (e *externalServiceStore) Done(err error) error {
-	if Mocks.ExternalServices.Done != nil {
-		return Mocks.ExternalServices.Done(err)
-	}
 	return e.Store.Done(err)
 }
 
@@ -677,10 +671,6 @@ func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
-	if Mocks.ExternalServices.Create != nil {
-		return Mocks.ExternalServices.Create(ctx, confGet, es)
-	}
-
 	normalized, err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
 		Config:          es.Config,
@@ -777,9 +767,6 @@ func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 }
 
 func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
-	if Mocks.ExternalServices.Upsert != nil {
-		return Mocks.ExternalServices.Upsert(ctx, svcs...)
-	}
 	if len(svcs) == 0 {
 		return nil
 	}
@@ -1038,52 +1025,45 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		update.Config = &config
 	}
 
-	// FIXME: UPDATEs are executed N times if N fields are marked.
-	execUpdate := func(ctx context.Context, tx dbutil.DB, update *sqlf.Query) error {
-		q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at=now() WHERE id=%d AND deleted_at IS NULL", update, id)
-		res, err := tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			return err
-		}
-		affected, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if affected == 0 {
-			return externalServiceNotFoundError{id: id}
-		}
-		return nil
-	}
-	tx, err := e.Store.Handle().Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	// 4 is the number of fields of the ExternalServiceUpdate
+	updates := make([]*sqlf.Query, 0, 4)
 
 	if update.DisplayName != nil {
-		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("display_name=%s", update.DisplayName)); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("display_name = %s", update.DisplayName))
 	}
 
 	if update.Config != nil {
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s`, update.Config, keyID, unrestricted, hasWebhooks)
-		if err := execUpdate(ctx, tx.DB(), q); err != nil {
-			return err
-		}
+		updates = append(updates,
+			sqlf.Sprintf(
+				"config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s",
+				update.Config, keyID, unrestricted, hasWebhooks,
+			))
 	}
 
 	if update.CloudDefault != nil {
-		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("cloud_default=%s", update.CloudDefault)); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("cloud_default = %s", update.CloudDefault))
 	}
 
 	if update.TokenExpiresAt != nil {
-		if err := execUpdate(ctx, tx.DB(), sqlf.Sprintf("token_expires_at=%s", update.TokenExpiresAt)); err != nil {
-			return err
-		}
+		updates = append(updates, sqlf.Sprintf("token_expires_at = %s", update.TokenExpiresAt))
+	}
+
+	if len(updates) == 0 {
+		return nil
+	}
+
+	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
+	res, err := e.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return externalServiceNotFoundError{id: id}
 	}
 	return nil
 }
@@ -1238,9 +1218,6 @@ LIMIT 1
 }
 
 func (e *externalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error) {
-	if Mocks.ExternalServices.ListSyncErrors != nil {
-		return Mocks.ExternalServices.ListSyncErrors(ctx)
-	}
 	if u == nil {
 		return nil, errors.New("nil user")
 	}
@@ -1280,8 +1257,8 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	if Mocks.ExternalServices.List != nil {
-		return Mocks.ExternalServices.List(opt)
+	if Mocks.externalServices.List != nil {
+		return Mocks.externalServices.List(opt)
 	}
 
 	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
@@ -1442,10 +1419,6 @@ WHERE deleted_at IS NULL
 }
 
 func (e *externalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
-	if Mocks.ExternalServices.Count != nil {
-		return Mocks.ExternalServices.Count(ctx, opt)
-	}
-
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
 	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
@@ -1536,11 +1509,5 @@ func configurationHasWebhooks(config interface{}) bool {
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create         func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	ListSyncErrors func(ctx context.Context) (map[int64]string, error)
-	List           func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Count          func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
-	Upsert         func(ctx context.Context, services ...*types.ExternalService) error
-	Transact       func(ctx context.Context) (ExternalServiceStore, error)
-	Done           func(error) error
+	List func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
