@@ -74,11 +74,11 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> = prop
                 <p className="pt-3">
                     <strong>You are going to delete {org.name} from Sourcegraph.</strong>
                     This cannot be undone. Deleting an organization will remove all of its synced repositories from
-                    Sourcegraph, along with the organization's code insights, batch changes, code monitors and other
+                    Sourcegraph, along with the organization’s code insights, batch changes, code monitors and other
                     resources.
                 </p>
-                <p className="text-mutedpt-3">Please type the organization's name to continue</p>
                 <Input
+                    label="Please type the organization’s name to continue"
                     autoFocus={true}
                     value={orgNameInput}
                     placeholder={org.name}
