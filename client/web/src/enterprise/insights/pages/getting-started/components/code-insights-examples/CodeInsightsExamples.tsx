@@ -2,7 +2,6 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
 import { useLocation } from 'react-router'
-import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,14 +13,28 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+import { InsightType } from '../../../../core/types'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../pings'
 import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
-import { DATA_SERIES_COLORS, encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
+import { encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
 import styles from './CodeInsightsExamples.module.scss'
+import { ALPINE_VERSIONS_INSIGHT, CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT } from './examples'
+import { CaptureGroupExampleContent, SearchInsightExampleContent } from './types'
 
 export interface CodeInsightsExamplesProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
+
+const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
+    title: CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT.title,
+    series: CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT.series,
+})
+
+const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
+    title: ALPINE_VERSIONS_INSIGHT.title,
+    allRepos: true,
+    groupSearchQuery: ALPINE_VERSIONS_INSIGHT.groupSearch,
+})
 
 export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesProps> = props => {
     const { telemetryService, ...otherProps } = props
@@ -36,62 +49,51 @@ export const CodeInsightsExamples: React.FunctionComponent<CodeInsightsExamplesP
             </p>
 
             <div className={styles.section}>
-                <CodeInsightSearchExample telemetryService={telemetryService} className={styles.card} />
-                <CodeInsightCaptureExample telemetryService={telemetryService} className={styles.card} />
+                <CodeInsightExample
+                    type={InsightType.SearchBased}
+                    content={CSS_MODULES_VS_GLOBAL_STYLES_INSIGHT}
+                    templateLink={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                    telemetryService={telemetryService}
+                    className={styles.card}
+                />
+
+                <CodeInsightExample
+                    type={InsightType.CaptureGroup}
+                    content={ALPINE_VERSIONS_INSIGHT}
+                    templateLink={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
+                    telemetryService={telemetryService}
+                    className={styles.card}
+                />
             </div>
         </section>
     )
 }
 
-interface ExampleCardProps extends TelemetryProps {
+interface CodeInsightExampleCommonProps {
+    templateLink?: string
     className?: string
 }
 
-interface SeriesWithQuery extends LineChartSeries<any> {
-    query: string
-    name: string
+export type CodeInsightExampleProps = (CodeInsightSearchExampleProps | CodeInsightCaptureExampleProps) &
+    CodeInsightExampleCommonProps
+
+export const CodeInsightExample: React.FunctionComponent<CodeInsightExampleProps> = props => {
+    if (props.type === InsightType.SearchBased) {
+        return <CodeInsightSearchExample {...props} />
+    }
+
+    return <CodeInsightCaptureExample {...props} />
 }
 
-type Content = Omit<LineChartContentType<any, string>, 'chart' | 'series'> & { series: SeriesWithQuery[] }
-
-const SEARCH_INSIGHT_EXAMPLES_DATA: Content = {
-    data: [
-        { x: new Date('May 7, 2021'), a: 88, b: 410 },
-        { x: new Date('June 7, 2021'), a: 95, b: 410 },
-        { x: new Date('July 7, 2021'), a: 110, b: 315 },
-        { x: new Date('August 7, 2021'), a: 160, b: 180 },
-        { x: new Date('September 7, 2021'), a: 310, b: 90 },
-        { x: new Date('October 7, 2021'), a: 520, b: 45 },
-        { x: new Date('November 7, 2021'), a: 700, b: 10 },
-    ],
-    series: [
-        {
-            dataKey: 'a',
-            name: 'CSS Modules',
-            stroke: DATA_SERIES_COLORS.GREEN,
-            query: 'select:file lang:scss file:module.scss patterntype:regexp archived:no fork:no',
-        },
-        {
-            dataKey: 'b',
-            name: 'Global CSS',
-            stroke: DATA_SERIES_COLORS.RED,
-            query: 'select:file lang:scss -file:module.scss patterntype:regexp archived:no fork:no',
-        },
-    ],
-    xAxis: {
-        dataKey: 'x',
-        scale: 'time',
-        type: 'number',
-    },
+interface CodeInsightSearchExampleProps extends TelemetryProps {
+    type: InsightType.SearchBased
+    content: SearchInsightExampleContent
+    templateLink?: string
+    className?: string
 }
 
-const SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeSearchInsightUrl({
-    title: 'Migration to CSS modules',
-    series: SEARCH_INSIGHT_EXAMPLES_DATA.series,
-})
-
-const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = props => {
-    const { telemetryService, className } = props
+const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExampleProps> = props => {
+    const { templateLink, className, content, telemetryService } = props
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
         insightType: CodeInsightTrackType.InProductLandingPageInsight,
@@ -103,44 +105,42 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
 
     return (
         <View.Root
-            title="Migration to CSS modules"
+            title={content.title}
             subtitle={
                 <CodeInsightsQueryBlock
                     as={SyntaxHighlightedSearchQuery}
-                    query="repo:github.com/wildcard-org/wc-repo"
+                    query={content.repositories}
                     className="mt-1"
                 />
             }
-            className={classNames(className)}
+            className={className}
             actions={
-                <Button
-                    as={Link}
-                    variant="link"
-                    size="sm"
-                    className={styles.actionLink}
-                    to={`/insights/create/search?${SEARCH_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
-                    onClick={handleTemplateLinkClick}
-                >
-                    Use as template
-                </Button>
+                templateLink && (
+                    <Button
+                        as={Link}
+                        variant="link"
+                        size="sm"
+                        className={styles.actionLink}
+                        to={templateLink}
+                        onClick={handleTemplateLinkClick}
+                    >
+                        Use as template
+                    </Button>
+                )
             }
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
             <div className={styles.chart}>
                 <ParentSize>
-                    {({ width, height }) => (
-                        <LineChart {...SEARCH_INSIGHT_EXAMPLES_DATA} width={width} height={height} />
-                    )}
+                    {({ width, height }) => <LineChart {...content} width={width} height={height} />}
                 </ParentSize>
             </div>
 
             <LegendBlock className={styles.legend}>
-                {SEARCH_INSIGHT_EXAMPLES_DATA.series.map(line => (
+                {content.series.map(line => (
                     <LegendItem key={line.dataKey.toString()} color={getLineStroke<any>(line)}>
-                        <span className={classNames(styles.legendMigrationItem, 'flex-shrink-0 mr-2')}>
-                            {line.name}
-                        </span>
+                        <span className={classNames(styles.legendItem, 'flex-shrink-0 mr-2')}>{line.name}</span>
                         <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={line.query} />
                     </LegendItem>
                 ))}
@@ -149,69 +149,15 @@ const CodeInsightSearchExample: React.FunctionComponent<ExampleCardProps> = prop
     )
 }
 
-const CAPTURE_INSIGHT_EXAMPLES_DATA: LineChartContent<any, string> = {
-    chart: 'line' as const,
-    data: [
-        { x: new Date('May 7, 2021'), a: 100, b: 160, c: 90, d: 75, e: 85, f: 20, g: 150 },
-        { x: new Date('June 7, 2021'), a: 90, b: 155, c: 95, d: 85, e: 80, f: 25, g: 155 },
-        { x: new Date('July 7, 2021'), a: 85, b: 150, c: 110, d: 90, e: 60, f: 40, g: 165 },
-        { x: new Date('August 7, 2021'), a: 85, b: 150, c: 125, d: 80, e: 50, f: 50, g: 165 },
-        { x: new Date('September 7, 2021'), a: 70, b: 155, c: 125, d: 75, e: 45, f: 55, g: 160 },
-        { x: new Date('October 7, 2021'), a: 50, b: 150, c: 145, d: 70, e: 35, f: 60, g: 155 },
-        { x: new Date('November 7, 2021'), a: 35, b: 160, c: 175, d: 75, e: 45, f: 65, g: 145 },
-    ],
-    series: [
-        {
-            dataKey: 'a',
-            name: '3.1',
-            stroke: DATA_SERIES_COLORS.INDIGO,
-        },
-        {
-            dataKey: 'b',
-            name: '3.5',
-            stroke: DATA_SERIES_COLORS.RED,
-        },
-        {
-            dataKey: 'c',
-            name: '3.15',
-            stroke: DATA_SERIES_COLORS.GREEN,
-        },
-        {
-            dataKey: 'd',
-            name: '3.8',
-            stroke: DATA_SERIES_COLORS.GRAPE,
-        },
-        {
-            dataKey: 'e',
-            name: '3.9',
-            stroke: DATA_SERIES_COLORS.ORANGE,
-        },
-        {
-            dataKey: 'f',
-            name: '3.9.2',
-            stroke: DATA_SERIES_COLORS.TEAL,
-        },
-        {
-            dataKey: 'g',
-            name: '3.14',
-            stroke: DATA_SERIES_COLORS.PINK,
-        },
-    ],
-    xAxis: {
-        dataKey: 'x',
-        scale: 'time' as const,
-        type: 'number',
-    },
+interface CodeInsightCaptureExampleProps extends TelemetryProps {
+    type: InsightType.CaptureGroup
+    content: CaptureGroupExampleContent
+    templateLink?: string
+    className?: string
 }
 
-const CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS = encodeCaptureInsightURL({
-    title: 'Alpine versions over all repos',
-    allRepos: true,
-    groupSearchQuery: 'patterntype:regexp FROM\\s+alpine:([\\d\\.]+) file:Dockerfile',
-})
-
-const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = props => {
-    const { telemetryService, className } = props
+const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExampleProps> = props => {
+    const { content, templateLink, className, telemetryService } = props
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
         insightType: CodeInsightTrackType.InProductLandingPageInsight,
@@ -223,21 +169,27 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
 
     return (
         <View.Root
-            title="Alpine versions over all repos"
+            title={content.title}
             subtitle={
-                <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query="All repositories" className="mt-1" />
+                <CodeInsightsQueryBlock
+                    as={SyntaxHighlightedSearchQuery}
+                    query={content.repositories}
+                    className="mt-1"
+                />
             }
             actions={
-                <Button
-                    as={Link}
-                    variant="link"
-                    size="sm"
-                    className={styles.actionLink}
-                    to={`/insights/create/capture-group?${CAPTURE_GROUP_INSIGHT_CREATION_UI_URL_PARAMETERS}`}
-                    onClick={handleTemplateLinkClick}
-                >
-                    Use as template
-                </Button>
+                templateLink && (
+                    <Button
+                        as={Link}
+                        variant="link"
+                        size="sm"
+                        className={styles.actionLink}
+                        to={templateLink}
+                        onClick={handleTemplateLinkClick}
+                    >
+                        Use as template
+                    </Button>
+                )
             }
             className={className}
             onMouseEnter={trackMouseEnter}
@@ -246,25 +198,19 @@ const CodeInsightCaptureExample: React.FunctionComponent<ExampleCardProps> = pro
             <div className={styles.captureGroup}>
                 <div className={styles.chart}>
                     <ParentSize className={styles.chartContent}>
-                        {({ width, height }) => (
-                            <LineChart {...CAPTURE_INSIGHT_EXAMPLES_DATA} width={width} height={height} />
-                        )}
+                        {({ width, height }) => <LineChart {...content} width={width} height={height} />}
                     </ParentSize>
                 </div>
 
-                <LegendBlock className={styles.legendHorizontal}>
-                    {CAPTURE_INSIGHT_EXAMPLES_DATA.series.map(line => (
+                <LegendBlock className={styles.legend}>
+                    {content.series.map(line => (
                         <LegendItem key={line.dataKey.toString()} color={getLineStroke<any>(line)}>
                             {line.name}
                         </LegendItem>
                     ))}
                 </LegendBlock>
             </div>
-            <CodeInsightsQueryBlock
-                as={SyntaxHighlightedSearchQuery}
-                query="patterntype:regexp FROM\s+alpine:([\d\.]+) file:Dockerfile"
-                className="mt-2"
-            />
+            <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={content.groupSearch} className="mt-2" />
         </View.Root>
     )
 }

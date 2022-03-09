@@ -9,68 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var MockSearchFilesInRepos func() ([]result.Match, *streaming.Stats, error)
-
-// SearchFilesInRepos searches a set of repos for a pattern.
-func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, notSearcherOnly bool, stream streaming.Sender) (err error) {
-	if MockSearchFilesInRepos != nil {
-		matches, mockStats, err := MockSearchFilesInRepos()
-		stream.Send(streaming.SearchEvent{
-			Results: matches,
-			Stats:   mockStats.Deref(),
-		})
-		return err
-	}
-
-	g, ctx := errgroup.WithContext(ctx)
-
-	if notSearcherOnly {
-		// Run literal and regexp searches on indexed repositories.
-		g.Go(func() error {
-			return zoektArgs.Search(ctx, stream)
-		})
-	}
-
-	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
-	g.Go(func() error {
-		return searcher.SearchOverRepos(ctx, searcherArgs, stream, zoektArgs.UnindexedRepos(), false)
-	})
-
-	return g.Wait()
-}
-
-// SearchFilesInReposBatch is a convenience function around searchFilesInRepos
-// which collects the results from the stream.
-func SearchFilesInReposBatch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, searcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
-	agg := streaming.NewAggregatingStream()
-	err := SearchFilesInRepos(ctx, zoektArgs, searcherArgs, searcherOnly, agg)
-
-	fms, fmErr := matchesToFileMatches(agg.Results)
-	if fmErr != nil && err == nil {
-		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
-	}
-	return fms, agg.Stats, err
-}
-
-func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
-	fms := make([]*result.FileMatch, 0, len(matches))
-	for _, match := range matches {
-		fm, ok := match.(*result.FileMatch)
-		if !ok {
-			return nil, errors.Errorf("expected only file match results")
-		}
-		fms = append(fms, fm)
-	}
-	return fms, nil
-}
 
 type RepoSubsetTextSearch struct {
 	ZoektArgs        *search.ZoektParameters
@@ -91,19 +34,54 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, db database.DB, stream s
 
 	repos := &searchrepos.Resolver{DB: db, Opts: t.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, zoektutil.MissingRepoRevStatus(stream))
+
+		indexed, unindexed, err := zoektutil.PartitionRepos(
+			ctx,
+			page.RepoRevs,
+			t.ZoektArgs.Zoekt,
+			search.TextRequest,
+			t.UseIndex,
+			t.ContainsRefGlobs,
+			zoektutil.MissingRepoRevStatus(stream),
+		)
 		if err != nil {
 			return err
 		}
 
-		if !ok {
-			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, zoektutil.MissingRepoRevStatus(stream))
-			if err != nil {
-				return err
+		g, ctx := errgroup.WithContext(ctx)
+
+		if t.NotSearcherOnly {
+			zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+				Repos:          indexed,
+				Query:          t.ZoektArgs.Query,
+				Typ:            search.TextRequest,
+				FileMatchLimit: t.ZoektArgs.FileMatchLimit,
+				Select:         t.ZoektArgs.Select,
+				Zoekt:          t.ZoektArgs.Zoekt,
+				Since:          nil,
 			}
+
+			// Run literal and regexp searches on indexed repositories.
+			g.Go(func() error {
+				_, err := zoektJob.Run(ctx, db, stream)
+				return err
+			})
 		}
 
-		return SearchFilesInRepos(ctx, request, t.SearcherArgs, t.NotSearcherOnly, stream)
+		// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+		g.Go(func() error {
+			searcherJob := &searcher.Searcher{
+				PatternInfo:     t.SearcherArgs.PatternInfo,
+				Repos:           unindexed,
+				Indexed:         false,
+				SearcherURLs:    t.SearcherArgs.SearcherURLs,
+				UseFullDeadline: t.SearcherArgs.UseFullDeadline,
+			}
+			_, err := searcherJob.Run(ctx, db, stream)
+			return err
+		})
+
+		return g.Wait()
 	})
 }
 

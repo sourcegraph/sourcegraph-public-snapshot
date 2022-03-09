@@ -1,0 +1,17 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 396
+expression: "dump_document(document, src)"
+
+---
+  package main
+//^^^^^^^ IdentifierKeyword
+//        ^^^^ IdentifierModule
+  
+  const MySqlQuery = `
+//^^^^^ IdentifierKeyword
+//      ^^^^^^^^^^ IdentifierConstant
+//                 ^ IdentifierOperator
+  SELECT * FROM my_table
+  `
+

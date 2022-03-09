@@ -52,8 +52,8 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         }) ?? {}
 
     const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
-    const { isCodeInsightsLicensed } = useContext(CodeInsightsBackendContext)
-    const isLicensed = useObservable(useMemo(() => isCodeInsightsLicensed(), [isCodeInsightsLicensed]))
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
+    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
@@ -75,7 +75,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
 
     return (
         <Page>
-            {isLicensed === false && (
+            {!features?.licensed && (
                 <Badge variant="info" className="mb-2">
                     Free trial
                 </Badge>

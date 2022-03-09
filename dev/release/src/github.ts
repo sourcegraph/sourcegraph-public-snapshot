@@ -37,6 +37,7 @@ export enum IssueLabel {
     RELEASE = 'release',
     PATCH = 'patch',
     MANAGED = 'managed-instances',
+    DELIVERY_TEAM = 'team/delivery',
 }
 
 enum IssueTitleSuffix {
@@ -115,7 +116,7 @@ const getTemplates = () => {
         repo: 'handbook',
         path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DELIVERY_TEAM],
     }
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
 }
@@ -661,7 +662,7 @@ export async function createLatestRelease(
     }
 
     const updateURL = 'https://docs.sourcegraph.com/admin/updates'
-    const releasePostURL = `https://about.sourcegraph.com/blog/release/${release.major}.${release.minor}`
+    const releasePostURL = `https://about.sourcegraph.com/blog/release/${release.major}.${release.minor}` // CI:URL_OK
 
     const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {
         owner,

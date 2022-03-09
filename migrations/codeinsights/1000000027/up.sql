@@ -1,5 +1,3 @@
-BEGIN;
-
 DO
 $$
     DECLARE
@@ -31,5 +29,3 @@ $$
         END IF;
     END
 $$;
-
-COMMIT;

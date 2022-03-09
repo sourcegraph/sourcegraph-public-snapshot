@@ -16,11 +16,11 @@ func TestToSearchInputs(t *testing.T) {
 		q, _ := parser(input)
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
-				UserSettings: &schema.Settings{},
-				PatternType:  query.SearchTypeLiteral,
-				Protocol:     protocol,
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteral,
+				Protocol:            protocol,
+				OnSourcegraphDotCom: true,
 			},
-			OnSourcegraphDotCom: true,
 		}
 
 		j, _ := ToSearchJob(args, q)
@@ -155,11 +155,11 @@ func TestToEvaluateJob(t *testing.T) {
 		q, _ := query.ParseLiteral(input)
 		args := &Args{
 			SearchInputs: &run.SearchInputs{
-				UserSettings: &schema.Settings{},
-				PatternType:  query.SearchTypeLiteral,
-				Protocol:     protocol,
+				UserSettings:        &schema.Settings{},
+				PatternType:         query.SearchTypeLiteral,
+				Protocol:            protocol,
+				OnSourcegraphDotCom: true,
 			},
-			OnSourcegraphDotCom: true,
 		}
 
 		b, _ := query.ToBasicQuery(q)
@@ -168,24 +168,26 @@ func TestToEvaluateJob(t *testing.T) {
 	}
 
 	autogold.Want("root limit for streaming search", `
-(TIMEOUT
-  20s
-  (LIMIT
-    500
-    (PARALLEL
-      RepoUniverseText
-      Repo
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      500
+      (PARALLEL
+        RepoUniverseText
+        Repo
+        ComputeExcludedRepos))))
 `).Equal(t, test("foo", search.Streaming))
 
 	autogold.Want("root limit for batch search", `
-(TIMEOUT
-  20s
-  (LIMIT
-    30
-    (PARALLEL
-      RepoUniverseText
-      Repo
-      ComputeExcludedRepos)))
+(ALERT
+  (TIMEOUT
+    20s
+    (LIMIT
+      30
+      (PARALLEL
+        RepoUniverseText
+        Repo
+        ComputeExcludedRepos))))
 `).Equal(t, test("foo", search.Batch))
 }

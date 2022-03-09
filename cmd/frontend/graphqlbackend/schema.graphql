@@ -95,9 +95,14 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Deletes an organization. Only site admins may perform this mutation.
+    Soft or hard deletes an organization.
+    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+    Only site admins may perform this mutation.
+    - When the second argument is true, it hard deletes an organization and its associated resources.
+    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
     """
-    deleteOrganization(organization: ID!): EmptyResponse
+    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
+
     """
     Adds a external service. Only site admins may perform this mutation.
     """
@@ -1513,6 +1518,20 @@ type Query {
         """
         organization: ID!
     ): [OrganizationInvitation!]!
+
+    """
+    Search for users that opt-in to search autocomplete.
+    """
+    autocompleteMembersSearch(
+        """
+        The organization ID
+        """
+        organization: ID!
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String!
+    ): [AutocompleteMemberSearchItem!]!
 }
 
 """
@@ -3138,6 +3157,7 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        treeSitterEnabled: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -4138,6 +4158,8 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+
+        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4201,6 +4223,7 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4302,6 +4325,7 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -4364,6 +4388,10 @@ type HighlightedFile {
     The HTML table that can be used to display the highlighted file.
     """
     html: String!
+    """
+    Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
+    """
+    lsif: String!
     """
     A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
     table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
@@ -5130,6 +5158,31 @@ type OrganizationInvitation implements Node {
     Boolean flag which returns true if the email on the invite matches a verified email of the user
     """
     isVerifiedEmail: Boolean
+}
+"""
+Result user returned by invite members autocomplete search.
+"""
+type AutocompleteMemberSearchItem {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    The user's username.
+    """
+    username: String!
+    """
+    The display name chosen by the user.
+    """
+    displayName: String
+    """
+    The URL of the user's avatar image.
+    """
+    avatarURL: String
+    """
+    If the user belongs to current Organization.
+    """
+    inOrg: Boolean
 }
 
 """

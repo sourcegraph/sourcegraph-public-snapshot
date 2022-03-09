@@ -1,4 +1,4 @@
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
@@ -37,8 +37,6 @@ describe('After install page', () => {
 
     it('renders after install page content', async () => {
         await driver.openBrowserExtensionPage('after_install')
-        await driver.page.waitForSelector("[data-testid='after-install-page-content']")
-        await percySnapshot(driver.page, 'Browser Extension: After install page')
-        // TODO: check dark theme too
+        await driver.page.$("[data-testid='after-install-page-content']")
     })
 })

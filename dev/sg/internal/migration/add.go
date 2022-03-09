@@ -15,27 +15,20 @@ const newMetadataFileTemplate = `name: %s
 parents: [%s]
 `
 
-const newUpMigrationFileTemplate = `BEGIN;
-
--- Perform migration here.
+const newUpMigrationFileTemplate = `-- Perform migration here.
 --
 -- See /migrations/README.md. Highlights:
 --  * Make migrations idempotent (use IF EXISTS)
 --  * Make migrations backwards-compatible (old readers/writers must continue to work)
---  * Wrap your changes in a transaction
 --  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement
 --    is defined per file, and that each such statement is NOT wrapped in a transaction.
 --    Each such migration must also declare "createIndexConcurrently: true" in their
 --    associated metadata.yaml file.
-
-COMMIT;
+--  * If you are modifying Postgres extensions, you must also declare "privileged: true"
+--    in the associated metadata.yaml file.
 `
 
-const newDownMigrationFileTemplate = `BEGIN;
-
--- Undo the changes made in the up migration
-
-COMMIT;
+const newDownMigrationFileTemplate = `-- Undo the changes made in the up migration
 `
 
 // Add creates a new directory with stub migration files in the given schema and returns the
@@ -71,9 +64,9 @@ func add(database db.Database, migrationName, upMigrationFileTemplate, downMigra
 	}
 
 	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
-	block.Writef("Up query file: %s", files.UpFile)
-	block.Writef("Down query file: %s", files.DownFile)
-	block.Writef("Metadata file: %s", files.MetadataFile)
+	block.Writef("Up query file: %s", rootRelative(files.UpFile))
+	block.Writef("Down query file: %s", rootRelative(files.DownFile))
+	block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
 	block.Close()
 
 	return nil

@@ -7,6 +7,7 @@ import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
+    AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
@@ -23,6 +24,10 @@ import {
     ReachableInsight,
     RepositorySuggestionData,
 } from './code-insights-backend-types'
+
+export interface UiFeatures {
+    licensed: boolean
+}
 
 /**
  * The main interface for code insights backend. Each backend versions should
@@ -52,7 +57,7 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
-    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+    assignInsightsToDashboard: (input: AssignInsightsToDashboardInput) => Observable<unknown>
 
     /**
      * Return all accessible for a user insights that are filtered by ids param.
@@ -87,12 +92,6 @@ export interface CodeInsightsBackend {
     updateInsight: (event: InsightUpdateInput) => Observable<unknown>
 
     deleteInsight: (insightId: string) => Observable<unknown>
-
-    /**
-     * Returns all available for users subjects (sharing levels, historically it was introduced
-     * from the setting cascade subject levels - global, org levels, personal)
-     */
-    getInsightSubjects: () => Observable<SupportedInsightSubject[]>
 
     /**
      * Returns backend insight (via gql API handler)
@@ -141,7 +140,7 @@ export interface CodeInsightsBackend {
 
     /**
      * Used for the dynamic insight example on the insights landing page.
-     * Attempts to return a repoository that contains the string "TODO"
+     * Attempts to return a repository that contains the string "TODO"
      * If a repository is not found it then returns the first repository it finds.
      *
      * Under the hood this is calling the search API with "select:repo TODO count:1"
@@ -149,8 +148,8 @@ export interface CodeInsightsBackend {
      */
     getFirstExampleRepository: () => Observable<string>
 
-    /*
-     * Returns whether Code Insights is licensed
+    /**
+     * Returns a feaures object used to show/hide and enable/disable UI elements
      */
-    isCodeInsightsLicensed: () => Observable<boolean>
+    getUiFeatures: () => Observable<UiFeatures>
 }

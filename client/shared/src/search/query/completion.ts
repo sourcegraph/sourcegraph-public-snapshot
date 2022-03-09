@@ -18,6 +18,8 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
+export const REPO_DEPS_PREDICATE_REGEX = /^(deps|dependencies)\((.*?)\)?$/
+
 /**
  * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
  * This allows us to be notified and run custom code when a user selects a suggestion.
@@ -67,10 +69,17 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
 
 const repositoryToCompletion = (
     { repository }: RepositoryMatch,
-    options: { isFilterValue: boolean; globbing: boolean }
+    options: { isFilterValue: boolean; globbing: boolean; filterValue?: string }
 ): PartialCompletionItem => {
     let insertText = options.globbing ? repository : `^${escapeRegExp(repository)}$`
     insertText = escapeSpaces(insertText)
+
+    const depsPredicateMatches = options.filterValue ? options.filterValue.match(REPO_DEPS_PREDICATE_REGEX) : null
+    if (depsPredicateMatches) {
+        // depsPredicateMatches[1] contains either `deps` or `dependencies` predicate based on the matched value.
+        insertText = `${depsPredicateMatches[1]}(${insertText})`
+    }
+
     insertText = (options.isFilterValue ? insertText : `${FilterType.repo}:${insertText}`) + ' '
     return {
         label: repository,
@@ -144,7 +153,7 @@ const symbolToCompletion = (
 
 const suggestionToCompletionItems = (
     suggestion: SearchMatch,
-    options: { isFilterValue: boolean; globbing: boolean }
+    options: { isFilterValue: boolean; globbing: boolean; filterValue?: string }
 ): PartialCompletionItem[] => {
     switch (suggestion.type) {
         case 'path':
@@ -274,7 +283,9 @@ async function completeFilter(
         const suggestions = await serverSuggestions.toPromise()
         dynamicSuggestions = suggestions
             .filter(({ type }) => type === resolvedFilter.definition.suggestions)
-            .flatMap(suggestion => suggestionToCompletionItems(suggestion, { isFilterValue: true, globbing }))
+            .flatMap(suggestion =>
+                suggestionToCompletionItems(suggestion, { isFilterValue: true, globbing, filterValue: value?.value })
+            )
             .filter(isDefined)
             .map((partialCompletionItem, index) => ({
                 ...partialCompletionItem,

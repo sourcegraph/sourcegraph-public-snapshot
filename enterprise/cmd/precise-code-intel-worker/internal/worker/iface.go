@@ -21,6 +21,7 @@ type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 
+	RepoName(ctx context.Context, id int) (string, error)
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
 	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []precise.PackageReference) error
 	UpdateReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType dbstore.DependencyReferenceCountUpdateType) (updatedUploads int, err error)

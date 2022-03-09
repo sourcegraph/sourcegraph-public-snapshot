@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -25,22 +26,36 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-// SearchOverRepos calls searcher on searcherRepos.
-func SearchOverRepos(
-	ctx context.Context,
-	args *search.SearcherParameters,
-	stream streaming.Sender,
-	searcherRepos []*search.RepositoryRevisions,
-	index bool,
-) (err error) {
-	tr, ctx := trace.New(ctx, "searcher.SearchOverRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
+type Searcher struct {
+	PatternInfo *search.TextPatternInfo
+	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
+
+	// Indexed represents whether the set of repositories are indexed (used
+	// to communicate whether searcher should call Zoekt search on these
+	// repos).
+	Indexed      bool
+	SearcherURLs *endpoint.Map
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
+}
+
+// Run calls the searcher service on a set of repositories.
+func (s *Searcher) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "searcher.Run", fmt.Sprintf("query: %s", s.PatternInfo.Pattern))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	var fetchTimeout time.Duration
-	if len(searcherRepos) == 1 || args.UseFullDeadline {
+	if len(s.Repos) == 1 || s.UseFullDeadline {
 		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
 		deadline, ok := ctx.Deadline()
 		if ok {
@@ -57,25 +72,25 @@ func SearchOverRepos(
 
 	tr.LogFields(
 		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		otlog.Int64("repos_count", int64(len(searcherRepos))),
+		otlog.Int64("repos_count", int64(len(s.Repos))),
 	)
 
-	if len(searcherRepos) == 0 {
-		return nil
+	if len(s.Repos) == 0 {
+		return nil, nil
 	}
 
 	// The number of searcher endpoints can change over time. Inform our
 	// limiter of the new limit, which is a multiple of the number of
 	// searchers.
-	eps, err := args.SearcherURLs.Endpoints()
+	eps, err := s.SearcherURLs.Endpoints()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	textSearchLimiter.SetLimit(len(eps) * 32)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		for _, repoAllRevs := range searcherRepos {
+		for _, repoAllRevs := range s.Repos {
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
@@ -97,7 +112,7 @@ func SearchOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := searchFilesInRepo(ctx, s.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -118,7 +133,11 @@ func SearchOverRepos(
 		return nil
 	})
 
-	return g.Wait()
+	return nil, g.Wait()
+}
+
+func (s *Searcher) Name() string {
+	return "Searcher"
 }
 
 var MockSearchFilesInRepo func(

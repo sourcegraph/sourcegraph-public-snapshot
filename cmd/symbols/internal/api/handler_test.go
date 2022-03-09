@@ -9,18 +9,21 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -37,7 +40,21 @@ func TestHandler(t *testing.T) {
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
 	parserFactory := func() (ctags.Parser, error) {
-		return newMockParser("x", "y"), nil
+		pathToEntries := map[string][]*ctags.Entry{
+			"a.js": {
+				{
+					Name: "x",
+					Path: "a.js",
+					Line: 1, // ctags line numbers are 1-based
+				},
+				{
+					Name: "y",
+					Path: "a.js",
+					Line: 2,
+				},
+			},
+		}
+		return newMockParser(pathToEntries), nil
 	}
 	parserPool, err := parser.NewParserPool(parserFactory, 15)
 	if err != nil {
@@ -45,15 +62,15 @@ func TestHandler(t *testing.T) {
 	}
 
 	files := map[string]string{
-		"a.js": "var x = 1",
+		"a.js": "var x = 1\nvar y = 2",
 	}
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
 
-	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
-	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
+	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
+	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(cachedDatabaseWriter, &observation.TestContext)
+	handler := NewHandler(MakeSqliteSearchFunc(sharedobservability.NewOperations(&observation.TestContext), cachedDatabaseWriter), nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -63,8 +80,8 @@ func TestHandler(t *testing.T) {
 		HTTPClient: httpcli.InternalDoer,
 	}
 
-	x := result.Symbol{Name: "x", Path: "a.js"}
-	y := result.Symbol{Name: "y", Path: "a.js"}
+	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
+	y := result.Symbol{Name: "y", Path: "a.js", Line: 1, Character: 4}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
@@ -131,20 +148,18 @@ func TestHandler(t *testing.T) {
 }
 
 type mockParser struct {
-	names []string
+	pathToEntries map[string][]*ctags.Entry
 }
 
-func newMockParser(names ...string) ctags.Parser {
-	return &mockParser{names: names}
+func newMockParser(pathToEntries map[string][]*ctags.Entry) ctags.Parser {
+	return &mockParser{pathToEntries: pathToEntries}
 }
 
-func (m *mockParser) Parse(name string, content []byte) ([]*ctags.Entry, error) {
-	entries := make([]*ctags.Entry, 0, len(m.names))
-	for _, name := range m.names {
-		entries = append(entries, &ctags.Entry{Name: name, Path: "a.js"})
+func (m *mockParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
+	if entries, ok := m.pathToEntries[path]; ok {
+		return entries, nil
 	}
-
-	return entries, nil
+	return nil, errors.Newf("no mock entries for %s", path)
 }
 
 func (m *mockParser) Close() {}

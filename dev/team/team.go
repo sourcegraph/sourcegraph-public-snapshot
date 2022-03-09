@@ -90,9 +90,13 @@ func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle str
 		return nil, errors.Newf("getTeamData: %w", err)
 	}
 
+	// Normalize and match against lowercased handle - GitHub handles are not case-sensitive
+	handle = strings.ToLower(handle)
+
+	// Scan for teammates
 	var teammate *Teammate
 	for _, tm := range team {
-		if tm.GitHub == handle {
+		if strings.ToLower(tm.GitHub) == handle {
 			teammate = tm
 			break
 		}

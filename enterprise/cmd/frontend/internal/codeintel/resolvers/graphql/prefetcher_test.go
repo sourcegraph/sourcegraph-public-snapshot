@@ -22,7 +22,7 @@ func TestPrefetcherUploads(t *testing.T) {
 		5: {ID: 5},
 	}
 
-	mockResolver.GetUploadsByIDsFunc.SetDefaultHook(func(ctx context.Context, ids ...int) ([]dbstore.Upload, error) {
+	mockResolver.GetUploadsByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]dbstore.Upload, error) {
 		matching := make([]dbstore.Upload, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, uploads[id])
@@ -93,7 +93,7 @@ func TestPrefetcherIndexes(t *testing.T) {
 		5: {ID: 5},
 	}
 
-	mockResolver.GetIndexesByIDsFunc.SetDefaultHook(func(ctx context.Context, ids ...int) ([]dbstore.Index, error) {
+	mockResolver.GetIndexesByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...int) ([]dbstore.Index, error) {
 		matching := make([]dbstore.Index, 0, len(ids))
 		for _, id := range ids {
 			matching = append(matching, indexes[id])

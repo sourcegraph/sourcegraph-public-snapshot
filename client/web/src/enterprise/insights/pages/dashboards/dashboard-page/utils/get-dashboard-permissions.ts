@@ -1,6 +1,4 @@
-import { InsightDashboard, InsightsDashboardScope, isRealDashboard, isVirtualDashboard } from '../../../../core/types'
-import { isCustomInsightDashboard } from '../../../../core/types/dashboard/real-dashboard'
-import { isGlobalSubject, SupportedInsightSubject } from '../../../../core/types/subjects'
+import { InsightDashboard, InsightsDashboardScope, isVirtualDashboard } from '../../../../core/types'
 
 enum DashboardReasonDenied {
     AllVirtualDashboard,
@@ -23,10 +21,7 @@ const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
     reason: DashboardReasonDenied.UnknownDashboard,
 }
 
-export function getDashboardPermissions(
-    dashboard: InsightDashboard | undefined,
-    supportedSubjects?: SupportedInsightSubject[]
-): DashboardPermissions {
+export function getDashboardPermissions(dashboard: InsightDashboard | undefined): DashboardPermissions {
     if (dashboard && 'grants' in dashboard) {
         // This means we're using the graphql api.
         // Since the api only returns info the user can see
@@ -40,52 +35,10 @@ export function getDashboardPermissions(
         return DEFAULT_DASHBOARD_PERMISSIONS
     }
 
-    if (!dashboard) {
-        return DEFAULT_DASHBOARD_PERMISSIONS
-    }
-
     if (isVirtualDashboard(dashboard)) {
         return {
             isConfigurable: false,
             reason: DashboardReasonDenied.AllVirtualDashboard,
-        }
-    }
-
-    if (!supportedSubjects) {
-        return DEFAULT_DASHBOARD_PERMISSIONS
-    }
-
-    const dashboardOwner = supportedSubjects.find(subject => subject.id === dashboard?.owner?.id)
-
-    // No dashboard can't be modified
-    if (!dashboard || !dashboardOwner) {
-        return DEFAULT_DASHBOARD_PERMISSIONS
-    }
-
-    if (isRealDashboard(dashboard)) {
-        // Settings based insights dashboards (custom dashboards created by users)
-        if (isCustomInsightDashboard(dashboard)) {
-            // Global scope permission handling
-            if (isGlobalSubject(dashboardOwner)) {
-                const canBeEdited = dashboardOwner.viewerCanAdminister
-
-                if (!canBeEdited) {
-                    return {
-                        isConfigurable: false,
-                        reason: DashboardReasonDenied.PermissionDenied,
-                    }
-                }
-            }
-
-            return {
-                isConfigurable: true,
-            }
-        }
-
-        // Not settings based dashboard (built-in-dashboard case)
-        return {
-            isConfigurable: false,
-            reason: DashboardReasonDenied.BuiltInCantBeEdited,
         }
     }
 

@@ -36,16 +36,6 @@ var (
 		FlagSet: startFlagSet,
 		Exec:    startExec,
 	}
-
-	// run-set is the deprecated older version of `start`
-	runSetFlagSet = flag.NewFlagSet("sg run-set", flag.ExitOnError)
-	runSetCommand = &ffcli.Command{
-		Name:       "run-set",
-		ShortUsage: "sg run-set <commandset>",
-		ShortHelp:  "DEPRECATED. Use 'sg start' instead. Run the given commandset.",
-		FlagSet:    runSetFlagSet,
-		Exec:       runSetExec,
-	}
 )
 
 func constructStartCmdLongHelp() string {
@@ -60,14 +50,14 @@ Use this to start your Sourcegraph environment!
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+	cfg := parseConfAndReset()
 
-	if globalConf != nil {
+	if cfg != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
 		var names []string
-		for name := range globalConf.Commandsets {
+		for name := range cfg.Commandsets {
 			switch name {
 			case "enterprise-codeintel":
 				names = append(names, fmt.Sprintf("  %s 🧠", name))
@@ -131,8 +121,8 @@ func startExec(ctx context.Context, args []string) error {
 		if !exists {
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: dev-private repository not found!"))
 			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph employee you probably want to run: sg start oss"))
-			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph employee, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
+			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
 
 			stdout.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
@@ -148,15 +138,19 @@ func startExec(ctx context.Context, args []string) error {
 		}
 	}
 
+	return startCommandSet(ctx, set, globalConf, *addToMacOSFirewall)
+}
+
+func startCommandSet(ctx context.Context, set *Commandset, conf *Config, addToMacOSFirewall bool) error {
 	if err := runChecksWithName(ctx, set.Checks); err != nil {
 		return err
 	}
 
 	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
-		cmd, ok := globalConf.Commands[name]
+		cmd, ok := conf.Commands[name]
 		if !ok {
-			return errors.Errorf("command %q not found in commandset %q", name, args[0])
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
 
 		cmds = append(cmds, cmd)
@@ -172,12 +166,12 @@ func startExec(ctx context.Context, args []string) error {
 		enrichWithLogLevels(&cmd, levelOverrides)
 	}
 
-	env := globalConf.Env
+	env := conf.Env
 	for k, v := range set.Env {
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, *addToMacOSFirewall, *verboseFlag, cmds...)
+	return run.Commands(ctx, env, addToMacOSFirewall, *verboseFlag, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
@@ -221,29 +215,6 @@ func parseCsv(input string) []string {
 		results = append(results, strings.TrimSpace(token))
 	}
 	return results
-}
-
-var deprecationStyle = output.CombineStyles(output.Fg256Color(255), output.Bg256Color(124))
-
-func runSetExec(ctx context.Context, args []string) error {
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, " _______________________________________________________________________ "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "/         `sg run-set` is deprecated - use `sg start` instead!          \\"))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "!                                                                       !"))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "!         Run `sg start -help` for usage information.                   !"))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "\\_______________________________________________________________________/"))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               L_ !                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                              / _)!                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                             / /__L                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                       _____/ (____)                                     "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                              (____)                                     "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                       _____  (____)                                     "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                            \\_(____)                                     "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
-	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               \\__/                                      "))
-	return startExec(ctx, args)
 }
 
 func pathExists(path string) (bool, error) {

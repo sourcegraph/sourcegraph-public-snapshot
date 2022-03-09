@@ -15,19 +15,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Added new "Getting started onboarding tour" for not authenticated users on Sourcegraph.com instead of "Search onboarding tour" [#32263](https://github.com/sourcegraph/sourcegraph/pull/32263)
+- Pings now include code host integration usage metrics [#31379](https://github.com/sourcegraph/sourcegraph/pull/31379)
+- Added `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS` environment variable to enable EC2 metadata API authentication to an external S3 bucket storing precise code intelligence uploads. [#31820](https://github.com/sourcegraph/sourcegraph/pull/31820)
+- LSIF upload pages now include a section listing the reasons and retention policies resulting in an upload being retained and not expired. [#30864](https://github.com/sourcegraph/sourcegraph/pull/30864)
+- Timestamps in the history panel can now be formatted as absolute timestamps by using user setting `history.preferAbsoluteTimestamps`
+- Timestamps in the history panel can now be formatted as absolute timestamps by using user setting `history.preferAbsoluteTimestamps` [#31837](https://github.com/sourcegraph/sourcegraph/pull/31837)
+- Notebooks from private enterprise instances can now be embedded in external sites by enabling the `enable-embed-route` feature flag. [#31628](https://github.com/sourcegraph/sourcegraph/issues/31628)
 
 ### Changed
 
 - Searching for the pattern `//` with regular expression search is now interpreted literally and will search for `//`. Previously, the `//` pattern was interpreted as our regular expression syntax `/<regexp>/` which would in turn be intrpreted as the empty string. Since searching for an empty string offers little practically utility, we now instead interpret `//` to search for its literal meaning in regular expression search. [#31520](https://github.com/sourcegraph/sourcegraph/pull/31520)
+- Timestamps in the webapp will now display local time on hover instead of UTC time [#31672](https://github.com/sourcegraph/sourcegraph/pull/31672)
+- Updated Postgres version from 12.6 to 12.7 [#31933](https://github.com/sourcegraph/sourcegraph/pull/31933)
 
 ### Fixed
 
--
+- Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
 
 ### Removed
 
 -
+- The deprecated GraphQL field `SearchResults.resultCount` has been removed in favor of its replacement, `matchCount`. [#31573](https://github.com/sourcegraph/sourcegraph/pull/31573)
+- The deprecated site-config field `UseJaeger` has been removed. Use `"observability.tracing": { "sampling": "all" }` instead [#31294](https://github.com/sourcegraph/sourcegraph/pull/31294/commits/6793220d6cf1200535a2610d79d2dd9e18c67dca)
 
 ## 3.37.0
 
@@ -35,13 +45,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Code in search results is now selectable (e.g. for copying). Just clicking on the code continues to open the corresponding file as it did before. [#30033](https://github.com/sourcegraph/sourcegraph/pull/30033)
 - Search Notebooks now support importing and exporting Markdown-formatted files. [#28586](https://github.com/sourcegraph/sourcegraph/issues/28586)
-- Pings now include code host integration usage metrics [https://github.com/sourcegraph/sourcegraph/pull/31379]
+- Added standalone migrator service that can be used to run database migrations independently of an upgrade. For more detail see the [standalone migrator docs](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations) and the [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#database-migrations) or [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/update#database-migrations) upgrade docs.
 
 ### Changed
 
 - Syntax highlighting for JSON now uses a distinct color for strings in object key positions. [#30105](https://github.com/sourcegraph/sourcegraph/pull/30105)
-- GraphQL API: The order of events returned by `MonitorTriggerEventConnection` has been reversed so newer events are returned first. The `after` parameter has been modified accordingly to return events older the one specified, to allow for pagination. [TODO](https://github.com/sourcegraph/sourcegraph/pull/)
+- GraphQL API: The order of events returned by `MonitorTriggerEventConnection` has been reversed so newer events are returned first. The `after` parameter has been modified accordingly to return events older the one specified, to allow for pagination. [31219](https://github.com/sourcegraph/sourcegraph/pull/31219)
 - [Query based search contexts](https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts) are now enabled by default as a [beta feature](https://docs.sourcegraph.com/admin/beta_and_experimental_features). [#30888](https://github.com/sourcegraph/sourcegraph/pull/30888)
+- The symbols sidebar loads much faster on old commits (after processing it) when scoped to a subdirectory in a big repository. [#31300](https://github.com/sourcegraph/sourcegraph/pull/31300)
 
 ### Fixed
 
@@ -51,6 +62,9 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed LSIF uploads not being expired according to retention policies when the repository contained tags and branches with the same name but pointing to different commits. [#31108](https://github.com/sourcegraph/sourcegraph/pull/31108)
 - Service discovery for the symbols service can transition from no endpoints to endpoints. Previously we always returned an error after the first empty state. [#31225](https://github.com/sourcegraph/sourcegraph/pull/31225)
 - Fixed performance issue in LSIF upload processing, reducing the latency between uploading an LSIF index and accessing precise code intel in the UI. ([#30978](https://github.com/sourcegraph/sourcegraph/pull/30978), [#31143](https://github.com/sourcegraph/sourcegraph/pull/31143))
+- Fixed symbols not appearing when no files changed between commits. [#31295](https://github.com/sourcegraph/sourcegraph/pull/31295)
+- Fixed symbols not appearing when too many files changed between commits. [#31110](https://github.com/sourcegraph/sourcegraph/pull/31110)
+- Fixed runaway disk usage in the `symbols` service. [#30647](https://github.com/sourcegraph/sourcegraph/pull/30647)
 
 ### Removed
 
@@ -88,6 +102,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights creation UI query field now supports different syntax highlight modes based on `patterntype` filter. [#29733](https://github.com/sourcegraph/sourcegraph/pull/29733)
 - Code Insights creation UI query field now has live-preview button that leads to the search page with predefined query value. [#29698](https://github.com/sourcegraph/sourcegraph/pull/29698)
 - Code Insights creation UI detect and track patterns can now search across all repositories. [#29906](https://github.com/sourcegraph/sourcegraph/pull/29906)
+- Pings now contain aggregated CTA metrics. [#29966](https://github.com/sourcegraph/sourcegraph/pull/29966)
+- Pings now contain aggregated CTA metrics. [#29966](https://github.com/sourcegraph/sourcegraph/pull/29966) and [#31389](https://github.com/sourcegraph/sourcegraph/pull/31389)
 
 ### Changed
 
@@ -97,6 +113,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A new janitor job, "sg maintenance" was added to gitserver. The new job replaces "garbage collect" with the goal to optimize the performance of git operations for large repositories. You can choose to enable "garbage collect" again by setting the environment variables "SRC_ENABLE_GC_AUTO" to "true" and "SRC_ENABLE_SG_MAINTENANCE" to "false" for gitserver. Note that you must not enable both options at the same time. [#28224](https://github.com/sourcegraph/sourcegraph/pull/28224).
 - Search results across repositories are now ordered by repository rank by default. By default the rank is the number of stars a repository has. An administrator can inflate the rank of a repository via `experimentalFeatures.ranking.repoScores`. If you notice increased latency in results, you can disable this feature by setting `experimentalFeatures.ranking.maxReorderQueueSize` to 0. [#29856](https://github.com/sourcegraph/sourcegraph/pull/29856)
 - Search results within the same file are now ordered by relevance instead of line number. To order by line number, update the setting `experimentalFeatures.clientSearchResultRanking: "by-line-number"`. [#29046](https://github.com/sourcegraph/sourcegraph/pull/29046)
+- Bumped the symbols processing timeout from 20 minutes to 2 hours and made it configurable. [#29891](https://github.com/sourcegraph/sourcegraph/pull/29891)
 
 ### Fixed
 
@@ -137,6 +154,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/references/code_insights_graphql_api)
 - The `SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND` environment variable to control the egress throughput of gitserver's git service (e.g. used by zoekt-index-server to clone repos to index). Set to -1 for no limit. [#29197](https://github.com/sourcegraph/sourcegraph/pull/29197)
 - Search suggestions via the GraphQL API were deprecated last release and are now no longer available. Suggestions now work only with the search streaming API. [#29283](https://github.com/sourcegraph/sourcegraph/pull/29283)
+- Clicking on a token will now jump to its definition. [#28520](https://github.com/sourcegraph/sourcegraph/pull/28520)
 
 ### Changed
 
@@ -190,6 +208,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The search indexer only polls repositories that have been marked as changed. This reduces a large source of load in installations with a large number of repositories. If you notice index staleness, you can try disabling by setting the environment variable `SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED` on `sourcegraph-frontend`. [#27058](https://github.com/sourcegraph/sourcegraph/issues/27058)
 - Pings include instance wide total counts of Code Insights grouped by presentation type, series type, and presentation-series type. [#27602](https://github.com/sourcegraph/sourcegraph/pull/27602)
 - Added logging of incoming Batch Changes webhooks, which can be viewed by site admins. By default, sites without encryption will log webhooks for three days, while sites with encryption will not log webhooks without explicit configuration. [See the documentation for more details](https://docs.sourcegraph.com/admin/config/batch_changes#incoming-webhooks). [#26669](https://github.com/sourcegraph/sourcegraph/issues/26669)
+- Added support for finding implementations of interfaces and methods. [#24854](https://github.com/sourcegraph/sourcegraph/pull/24854)
 
 ### Changed
 
@@ -237,6 +256,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Bloom filters have been added to the zoekt indexing backend to accelerate queries with code fragments matching `\w{4,}`. [zoekt#126](https://github.com/sourcegraph/zoekt/pull/126)
 - For short search queries containing no filters but the name of a supported programming language we are now suggesting to run the query with a language filter. [#25792](https://github.com/sourcegraph/sourcegraph/pull/25792)
 - The API scope used by GitLab OAuth can now optionally be configured in the provider. [#26152](https://github.com/sourcegraph/sourcegraph/pull/26152)
+- Added Apex language support for syntax highlighting and search-based code intelligence. [#25268](https://github.com/sourcegraph/sourcegraph/pull/25268)
 
 ### Changed
 

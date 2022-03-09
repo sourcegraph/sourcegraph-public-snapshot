@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -29,10 +30,9 @@ import (
 )
 
 type Args struct {
-	SearchInputs        *run.SearchInputs
-	OnSourcegraphDotCom bool
-	Zoekt               zoekt.Streamer
-	SearcherURLs        *endpoint.Map
+	SearchInputs *run.SearchInputs
+	Zoekt        zoekt.Streamer
+	SearcherURLs *endpoint.Map
 }
 
 // ToSearchJob converts a query parse tree to the _internal_ representation
@@ -47,55 +47,19 @@ type Args struct {
 // toSearchJob.
 func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
-
-	b, err := query.ToBasicQuery(q)
+	args, err := toTextParameters(jargs, q)
 	if err != nil {
 		return nil, err
 	}
-
-	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol, query.Identity)
-
-	forceResultTypes := result.TypeEmpty
-	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
-		if p.Pattern == "" {
-			// Fallback to literal search for searching repos and files if
-			// the structural search pattern is empty.
-			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-			p.IsStructuralPat = false
-			forceResultTypes = result.Types(0)
-		} else {
-			forceResultTypes = result.TypeStructural
-		}
-	}
-
-	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       q,
-		Features:    toFeatures(jargs.SearchInputs.Features),
-		Timeout:     search.TimeoutDuration(b),
-
-		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
-
-		Zoekt:        jargs.Zoekt,
-		SearcherURLs: jargs.SearcherURLs,
-	}
-	args = withResultTypes(args, forceResultTypes)
-	args = withMode(args, jargs.SearchInputs.PatternType)
-	repoOptions := toRepoOptions(args.Query, jargs.SearchInputs.UserSettings)
+	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
+	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(args, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
+
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
-		// Filter out any jobs that aren't commit jobs as they are added
-		if jargs.SearchInputs.CodeMonitorID != nil {
-			if _, ok := job.(*commit.CommitSearch); !ok {
-				return
-			}
-		}
-
 		if required {
 			requiredJobs = append(requiredJobs, job)
 		} else {
@@ -110,26 +74,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
 
-		globalSearch := args.Mode == search.ZoektGlobalSearch
-		// skipUnindexed is a value that controls whether to run
-		// unindexed search in a specific scenario of queries that
-		// contain no repo-affecting filters (global mode). When on
-		// sourcegraph.com, we resolve only a subset of all indexed
-		// repos to search. This control flow implies len(searcherRepos)
-		// is always 0, meaning that we should not create jobs to run
-		// unindexed searcher.
-		skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && jargs.OnSourcegraphDotCom)
-		// searcherOnly is a value that controls whether to run
-		// unindexed search in one of two scenarios. The first scenario
-		// depends on if index:no is set (value true). The second
-		// scenario happens if queries contain no repo-affecting filters
-		// (global mode). When NOT on sourcegraph.com the we _may_
-		// resolve some subset of nonindexed repos to search, so wemay
-		// generate jobs that run searcher, but it is conditional on
-		// whether global zoekt search will run (value true).
-		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !jargs.OnSourcegraphDotCom)
-
-		if globalSearch {
+		if repoUniverseSearch {
 			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
 			if err != nil {
 				return nil, err
@@ -193,67 +138,63 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			}
 		}
 
-		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-			if !skipUnindexed {
-				typ := search.TextRequest
-				// TODO(rvantonder): we don't always have to run
-				// this converter. It depends on whether we run
-				// a zoekt search at all.
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-				if err != nil {
-					return nil, err
-				}
-				zoektArgs := &search.ZoektParameters{
-					Query:          zoektQuery,
-					Typ:            typ,
-					FileMatchLimit: args.PatternInfo.FileMatchLimit,
-					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
-				}
-
-				searcherArgs := &search.SearcherParameters{
-					SearcherURLs:    args.SearcherURLs,
-					PatternInfo:     args.PatternInfo,
-					UseFullDeadline: args.UseFullDeadline,
-				}
-
-				addJob(true, &textsearch.RepoSubsetTextSearch{
-					ZoektArgs:        zoektArgs,
-					SearcherArgs:     searcherArgs,
-					NotSearcherOnly:  !searcherOnly,
-					UseIndex:         args.PatternInfo.Index,
-					ContainsRefGlobs: query.ContainsRefGlobs(q),
-					RepoOpts:         repoOptions,
-				})
+		if args.ResultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
+			typ := search.TextRequest
+			// TODO(rvantonder): we don't always have to run
+			// this converter. It depends on whether we run
+			// a zoekt search at all.
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+			if err != nil {
+				return nil, err
 			}
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            typ,
+				FileMatchLimit: args.PatternInfo.FileMatchLimit,
+				Select:         args.PatternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			searcherArgs := &search.SearcherParameters{
+				SearcherURLs:    args.SearcherURLs,
+				PatternInfo:     args.PatternInfo,
+				UseFullDeadline: args.UseFullDeadline,
+			}
+
+			addJob(true, &textsearch.RepoSubsetTextSearch{
+				ZoektArgs:        zoektArgs,
+				SearcherArgs:     searcherArgs,
+				NotSearcherOnly:  !onlyRunSearcher,
+				UseIndex:         args.PatternInfo.Index,
+				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				RepoOpts:         repoOptions,
+			})
 		}
 
-		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-			if !skipUnindexed {
-				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-				if err != nil {
-					return nil, err
-				}
-				zoektArgs := &search.ZoektParameters{
-					Query:          zoektQuery,
-					Typ:            typ,
-					FileMatchLimit: args.PatternInfo.FileMatchLimit,
-					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
-				}
-
-				required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
-				addJob(required, &symbol.RepoSubsetSymbolSearch{
-					ZoektArgs:        zoektArgs,
-					PatternInfo:      args.PatternInfo,
-					Limit:            maxResults,
-					NotSearcherOnly:  !searcherOnly,
-					UseIndex:         args.PatternInfo.Index,
-					ContainsRefGlobs: query.ContainsRefGlobs(q),
-					RepoOpts:         repoOptions,
-				})
+		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" && !skipRepoSubsetSearch {
+			typ := search.SymbolRequest
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+			if err != nil {
+				return nil, err
 			}
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            typ,
+				FileMatchLimit: args.PatternInfo.FileMatchLimit,
+				Select:         args.PatternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
+			addJob(required, &symbol.RepoSubsetSymbolSearch{
+				ZoektArgs:        zoektArgs,
+				PatternInfo:      args.PatternInfo,
+				Limit:            maxResults,
+				NotSearcherOnly:  !onlyRunSearcher,
+				UseIndex:         args.PatternInfo.Index,
+				ContainsRefGlobs: query.ContainsRefGlobs(q),
+				RepoOpts:         repoOptions,
+			})
 		}
 
 		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
@@ -272,12 +213,12 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Diff:                 diff,
 				HasTimeFilter:        commit.HasTimeFilter(args.Query),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
-				CodeMonitorID:        jargs.SearchInputs.CodeMonitorID,
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Gitserver:            gitserver.DefaultClient,
 			})
 		}
 
-		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && p.Pattern != "" {
+		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && args.PatternInfo.Pattern != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 			if err != nil {
@@ -301,7 +242,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
-				NotSearcherOnly:  !searcherOnly,
+				NotSearcherOnly:  !onlyRunSearcher,
 				UseIndex:         args.PatternInfo.Index,
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
 				RepoOpts:         repoOptions,
@@ -384,6 +325,15 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
 					args.RepoOptions = repoOptions
+					// Note: downstream logic relies on
+					// args.Mode for repoHasFile, so we set
+					// it here. It is slated for removal.
+					if repoUniverseSearch {
+						args.Mode = search.ZoektGlobalSearch
+					}
+					if skipRepoSubsetSearch {
+						args.Mode = search.SkipUnindexed
+					}
 					addJob(true, &run.RepoSearch{
 						Args: &args,
 					})
@@ -407,6 +357,43 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	}
 
 	return job, nil
+}
+
+func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
+	b, err := query.ToBasicQuery(q)
+	if err != nil {
+		return search.TextParameters{}, err
+	}
+
+	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
+
+	forceResultTypes := result.TypeEmpty
+	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
+		if p.Pattern == "" {
+			// Fallback to literal search for searching repos and files if
+			// the structural search pattern is empty.
+			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
+			p.IsStructuralPat = false
+			forceResultTypes = result.Types(0)
+		} else {
+			forceResultTypes = result.TypeStructural
+		}
+	}
+
+	args := search.TextParameters{
+		PatternInfo: p,
+		Query:       q,
+		Features:    toFeatures(jargs.SearchInputs.Features),
+		Timeout:     search.TimeoutDuration(b),
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
+
+		Zoekt:        jargs.Zoekt,
+		SearcherURLs: jargs.SearcherURLs,
+	}
+	args = withResultTypes(args, forceResultTypes)
+	return args, nil
 }
 
 func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions {
@@ -451,8 +438,8 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
+		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
-		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
 		OnlyArchived:      archived == query.Only,
@@ -463,7 +450,7 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	}
 }
 
-func withMode(args search.TextParameters, st query.SearchType) search.TextParameters {
+func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
 			return false
@@ -480,8 +467,7 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 			case query.FieldRepo:
 				// We allow -repo: in global search.
 				return n.Negated
-			case
-				query.FieldRepoHasFile:
+			case query.FieldRepoHasFile:
 				return false
 			default:
 				return true
@@ -492,13 +478,23 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
-	if isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty {
-		args.Mode = search.ZoektGlobalSearch
-	}
-	if isEmpty {
-		args.Mode = search.SkipUnindexed
-	}
-	return args
+
+	repoUniverseSearch = isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
+	// skipRepoSubsetSearch is a value that controls whether to
+	// run unindexed search in a specific scenario of queries that
+	// contain no repo-affecting filters (global mode). When on
+	// sourcegraph.com, we resolve only a subset of all indexed
+	// repos to search. This control flow implies len(searcherRepos)
+	// is always 0, meaning that we should not create jobs to run
+	// unindexed searcher.
+	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && onSourcegraphDotCom)
+	// onlyRunSearcher is a value that controls whether to run unindexed
+	// search if a query triggers repoUniverseSearch. We want to run
+	// searcher on unindexed repos when we run a repoUniverseSearch, but
+	// only on instances where we are NOT on sourcegraph.com.
+	onlyRunSearcher = repoUniverseSearch && !onSourcegraphDotCom
+
+	return repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher
 }
 
 func toFeatures(flags featureflag.FlagSet) search.Features {
@@ -631,7 +627,7 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 		job = NewSelectJob(sp, job)
 	}
 
-	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), err
+	return NewAlertJob(args.SearchInputs, NewTimeoutJob(timeout, NewLimitJob(maxResults, job))), err
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,

@@ -28,7 +28,7 @@ const settingsClient = createMockClient(
 )
 
 class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
-    public isCodeInsightsLicensed = () => of(false)
+    public getUiFeatures = () => of({ licensed: false })
 }
 const api = new CodeInsightExampleBackend({} as any)
 

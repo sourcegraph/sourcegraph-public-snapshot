@@ -476,9 +476,10 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	Unrestricted    bool  // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool  // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool // Whether this external service has webhooks configured; calculated from Config
+	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
@@ -662,6 +663,14 @@ type User struct {
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
+}
+
+type OrgMemberAutocompleteSearchItem struct {
+	ID          int32
+	Username    string
+	DisplayName string
+	AvatarURL   string
+	InOrg       int32
 }
 
 type Org struct {
@@ -1062,6 +1071,30 @@ type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	TotalCount   int32
 }
 
+// UserAndEventCount represents the number of events triggered in a given
+// time frame per user and overall.
+type UserAndEventCount struct {
+	UserCount  int32
+	EventCount int32
+}
+
+// FileAndSearchPageUserAndEventCounts represents the number of events triggered
+// on the "search result" and "file" pages in a given time frame.
+type FileAndSearchPageUserAndEventCounts struct {
+	StartTime             time.Time
+	DisplayedOnFilePage   UserAndEventCount
+	DisplayedOnSearchPage UserAndEventCount
+	ClickedOnFilePage     UserAndEventCount
+	ClickedOnSearchPage   UserAndEventCount
+}
+
+// CTAUsage represents the total number of CTAs displayed and clicked
+// on the "search result" and "file" pages over the current month.
+type CTAUsage struct {
+	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
+	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
+}
+
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
@@ -1159,6 +1192,9 @@ type CodeInsightsUsageStatistics struct {
 	InsightTimeIntervals                    []InsightTimeIntervalPing
 	InsightOrgVisible                       []OrgVisibleInsightPing
 	InsightTotalCounts                      InsightTotalCounts
+	TotalOrgsWithDashboard                  *int32
+	TotalDashboardCount                     *int32
+	InsightsPerDashboard                    InsightsPerDashboardPing
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1220,6 +1256,14 @@ type InsightTotalCounts struct {
 	ViewCounts       []InsightViewsCountPing
 	SeriesCounts     []InsightSeriesCountPing
 	ViewSeriesCounts []InsightViewSeriesCountPing
+}
+
+type InsightsPerDashboardPing struct {
+	Avg    float32
+	Max    int
+	Min    int
+	StdDev float32
+	Median float32
 }
 
 type CodeMonitoringUsageStatistics struct {

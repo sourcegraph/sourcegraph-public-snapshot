@@ -23,9 +23,8 @@ FROM cm_trigger_jobs;
 func TestDeleteOldJobLogs(t *testing.T) {
 	retentionInDays := 7
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	_, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	_ = s.insertTestMonitor(userCTX, t)
 
 	// Add 1 job and date it back to a long time ago.
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)

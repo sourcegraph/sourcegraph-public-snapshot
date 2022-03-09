@@ -4,6 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 )
 
-type DBStore interface {
-	repos.NPMPackagesRepoStore
+type DependenciesStore interface {
+	repos.DependenciesStore
 }

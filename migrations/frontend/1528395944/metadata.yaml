@@ -1,2 +1,5 @@
-name: 'reenable code monitors'
-parent: 1528395943
+name: squashed migrations (unprivileged)
+parents:
+  - 1528395943
+privileged: false
+nonIdempotent: true
