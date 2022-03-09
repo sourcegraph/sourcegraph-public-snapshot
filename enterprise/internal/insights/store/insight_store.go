@@ -782,6 +782,14 @@ func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, erro
 	return count, nil
 }
 
+func (s *InsightStore) GetSoftDeletedSeries(ctx context.Context, deletedBefore time.Time) ([]string, error) {
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getSoftDeletedSeries, deletedBefore)))
+}
+
+func (s *InsightStore) HardDeleteSeries(ctx context.Context, seriesId string) error {
+	return s.Exec(ctx, sqlf.Sprintf(hardDeleteSeries, seriesId))
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -942,4 +950,19 @@ const getReferenceCount = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
 SELECT COUNT(*) from dashboard_insight_view
 WHERE insight_view_id = %s
+`
+
+const getSoftDeletedSeries = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetSoftDeletedSeries
+SELECT series_id
+FROM insight_series i
+LEFT JOIN insight_view_series ivs ON i.id = ivs.insight_series_id
+WHERE i.deleted_at IS NOT NULL
+  AND i.deleted_at < %s
+  AND ivs.insight_series_id IS NULL;
+`
+
+const hardDeleteSeries = `
+-- source: enterprise/internal/insights/store/insight_store.go:HardDeleteSeries
+DELETE FROM insight_series WHERE series_id = %s;
 `
