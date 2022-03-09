@@ -114,13 +114,3 @@ add('Server with panels', () => (
         }}
     </WebStory>
 ))
-
-add('Server with panels and collaborators', () => (
-    <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            useExperimentalFeatures.setState({ homepageUserInvitation: true })
-            return <SearchPage {...defaultProps(webProps)} />
-        }}
-    </WebStory>
-))

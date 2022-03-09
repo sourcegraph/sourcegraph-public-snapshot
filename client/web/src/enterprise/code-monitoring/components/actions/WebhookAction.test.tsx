@@ -152,6 +152,41 @@ describe('WebhookAction', () => {
         })
     })
 
+    test('open, edit, cancel, open again', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <WebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-webhook'))
+
+        expect(getByTestId('enable-action-toggle-expanded-webhook')).toBeChecked()
+        userEvent.click(getByTestId('enable-action-toggle-expanded-webhook'))
+        expect(getByTestId('enable-action-toggle-expanded-webhook')).not.toBeChecked()
+
+        userEvent.type(getByTestId('webhook-url'), 'https://example2.com')
+
+        userEvent.click(getByTestId('cancel-action-webhook'))
+
+        userEvent.click(getByTestId('form-action-toggle-webhook'))
+        expect(getByTestId('webhook-url')).toHaveValue('https://example.com')
+        expect(getByTestId('enable-action-toggle-expanded-webhook')).toBeChecked()
+
+        sinon.assert.notCalled(setActionSpy)
+    })
+
     describe('Send test message', () => {
         const mockAction: MonitorAction = {
             __typename: 'MonitorWebhook',

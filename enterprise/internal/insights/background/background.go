@@ -81,6 +81,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
 	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
+	routines = append(routines, NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB))
 
 	return routines
 }
