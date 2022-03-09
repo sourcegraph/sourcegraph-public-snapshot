@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -85,7 +86,9 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			newCache := func(key string, ttl int) extsvcGitHub.Cache { return rcache.NewWithTTL(key, ttl) }
+
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer, newCache)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -166,7 +169,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			newCache := func(key string, ttl int) extsvcGitHub.Cache { return rcache.NewWithTTL(key, ttl) }
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer, newCache)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -270,7 +274,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			newCache := func(key string, ttl int) extsvcGitHub.Cache { return rcache.NewWithTTL(key, ttl) }
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer, newCache)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
@@ -354,7 +359,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+			newCache := func(key string, ttl int) extsvcGitHub.Cache { return rcache.NewWithTTL(key, ttl) }
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer, newCache)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())
