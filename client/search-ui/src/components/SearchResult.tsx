@@ -10,7 +10,7 @@ import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { CommitMatch, getCommitMatchUrl, getRepoMatchLabel, getRepoMatchUrl, getRepositoryUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link } from '@sourcegraph/wildcard'
@@ -42,13 +42,13 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
                     {result.type === 'commit' && (
                         <>
-                            <Link to={'/' + encodeURI(result.repository)}>{displayRepoName(result.repository)}</Link>
+                            <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                             &nbsp;›&nbsp;
-                            <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                            <Link to={getCommitMatchUrl(result)}>
                                 {result.authorName}
                             </Link>
                             :&nbsp;
-                            <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                            <Link to={getCommitMatchUrl(result)}>
                                 {result.message.split('\n', 1)[0]}
                             </Link>
                         </>
@@ -59,7 +59,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 </span>
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
-                    <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
+                    <Link to={getCommitMatchUrl(result)}>
                         <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>
                         &nbsp;
                         <Timestamp date={result.authorDate} noAbout={true} strict={true} />
