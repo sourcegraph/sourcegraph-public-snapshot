@@ -67,6 +67,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     isMacPlatform,
     sourcegraphSearchLanguageId,
     hoverifier,
+    onBlockInputChange,
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onSelectBlock,
@@ -89,7 +90,19 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         [isSelected, onRunBlock, onSelectBlock]
     )
 
-    const { isInputFocused } = useMonacoBlockInput({ editor, id, onRunBlock: runBlock, onSelectBlock, ...props })
+    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
+        id,
+        onBlockInputChange,
+    ])
+
+    const { isInputFocused } = useMonacoBlockInput({
+        editor,
+        id,
+        onRunBlock: runBlock,
+        onSelectBlock,
+        onInputChange,
+        ...props,
+    })
 
     // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {

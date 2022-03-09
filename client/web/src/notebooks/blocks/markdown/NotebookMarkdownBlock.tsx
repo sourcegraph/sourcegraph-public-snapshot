@@ -31,6 +31,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     isLightTheme,
     isMacPlatform,
     isReadOnly,
+    onBlockInputChange,
     onRunBlock,
     onSelectBlock,
     ...props
@@ -47,10 +48,16 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         [onRunBlock, setIsEditing]
     )
 
+    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
+        id,
+        onBlockInputChange,
+    ])
+
     const { isInputFocused } = useMonacoBlockInput({
         editor,
         id,
         ...props,
+        onInputChange,
         onSelectBlock,
         onRunBlock: runBlock,
     })
