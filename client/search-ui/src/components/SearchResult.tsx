@@ -62,7 +62,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                     <Link to={'/' + encodeURI(result.repository) + '/-/commit/' + result.oid}>
                         <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>
                         &nbsp;
-                        <Timestamp date={result.authorDate} noAbout={true} strict={true}/>
+                        <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                     </Link>
                 )}
                 {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
