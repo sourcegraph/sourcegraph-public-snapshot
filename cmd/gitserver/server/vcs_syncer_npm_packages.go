@@ -330,8 +330,8 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposourc
 //
 // Additionally, if all the files in the tarball have paths of the form
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
-func decompressTgz(targz io.Reader, destination string) error {
-	err := unpack.Targz(targz, destination, unpack.Opts{
+func decompressTgz(tgz io.Reader, destination string) error {
+	err := unpack.Tgz(tgz, destination, unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(file fs.FileInfo) bool {
 			size := file.Size()

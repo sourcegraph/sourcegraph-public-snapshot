@@ -34,8 +34,8 @@ type Opts struct {
 	Filter func(file fs.FileInfo) bool
 }
 
-// Targz unpacks the contents of the given gzip compressed tarball under dir.
-func Targz(r io.Reader, dir string, opt Opts) error {
+// Tgz unpacks the contents of the given gzip compressed tarball under dir.
+func Tgz(r io.Reader, dir string, opt Opts) error {
 	gzr, err := gzip.NewReader(r)
 	if err != nil {
 		return err
