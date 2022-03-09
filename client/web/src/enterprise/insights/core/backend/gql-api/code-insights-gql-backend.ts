@@ -468,7 +468,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getUiFeatures = (): Observable<UiFeatures> =>
         forkJoin({
-            licensed: true,
+            licensed: of(true),
         })
 }
 
