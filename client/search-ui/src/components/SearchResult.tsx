@@ -63,8 +63,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 <span className={styles.spacer} />
                 {result.type === 'commit' && (
                     <Link to={getCommitMatchUrl(result)}>
-                        <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>
-                        {' '}
+                        <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>{' '}
                         <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                     </Link>
                 )}
