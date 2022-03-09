@@ -54,6 +54,11 @@
 .legend-item {
     display: flex;
     align-items: baseline;
+    min-width: 0;
+}
+
+.legend-item-text {
+    overflow: hidden;
 }
 
 .legend-mark {
