@@ -39,6 +39,7 @@ import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
+import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
@@ -75,6 +76,7 @@ function countBlockTypes(blocks: Block[]): BlockCounts {
         file: 0,
         query: 0,
         compute: 0,
+        symbol: 0,
     })
 }
 
@@ -437,6 +439,16 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     )
                 case 'compute':
                     return <NotebookComputeBlock {...block} {...blockProps} />
+                case 'symbol':
+                    return (
+                        <NotebookSymbolBlock
+                            {...block}
+                            {...blockProps}
+                            hoverifier={hoverifier}
+                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            extensionsController={extensionsController}
+                        />
+                    )
             }
         },
         [

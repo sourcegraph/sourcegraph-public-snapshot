@@ -55,13 +55,14 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
                         return {
                             id: block.id,
                             type: 'file',
-                            input: {
-                                ...block.fileInput,
-                                revision: block.fileInput.revision ?? '',
-                            },
+                            input: { ...block.fileInput, revision: block.fileInput.revision ?? '' },
                         }
                     case 'SymbolBlock':
-                        throw new Error('Not implemented.')
+                        return {
+                            id: block.id,
+                            type: 'symbol',
+                            input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
+                        }
                 }
             }),
         [blocks]
