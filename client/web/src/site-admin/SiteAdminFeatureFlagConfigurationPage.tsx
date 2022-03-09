@@ -135,7 +135,6 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
         actions = (
             <>
                 <Button
-                    className="mr-2"
                     variant="primary"
                     disabled={updateFlagLoading || deleteFlagLoading}
                     onClick={() =>
@@ -154,11 +153,13 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                             <LoadingSpinner /> Updating...
                         </>
                     ) : (
-                        'Update flag'
+                        'Update'
                     )}
                 </Button>
                 <Button
                     variant="danger"
+                    outline={true}
+                    className="float-right"
                     disabled={updateFlagLoading || deleteFlagLoading}
                     onClick={() =>
                         deleteFeatureFlag({
@@ -176,7 +177,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                         </>
                     ) : (
                         <>
-                            <DeleteIcon className="icon-inline" /> Delete flag
+                            <DeleteIcon className="icon-inline" /> Delete
                         </>
                     )}
                 </Button>
@@ -340,13 +341,13 @@ const FeatureFlagValueSettings: React.FunctionComponent<{
     setFlagValue: (next: FeatureFlagValue) => void
 }> = ({ type, value, setFlagValue }) => {
     if (type === 'FeatureFlagRollout') {
-        if (!value) {
+        if (!value || !('rolloutBasisPoints' in value)) {
             value = { rolloutBasisPoints: 0 }
             setFlagValue({ ...value })
         }
         return (
             <FeatureFlagRolloutValueSettings
-                value={value as FeatureFlagRolloutValue}
+                value={value}
                 update={next => {
                     setFlagValue({
                         ...value,
@@ -357,13 +358,13 @@ const FeatureFlagValueSettings: React.FunctionComponent<{
         )
     }
 
-    if (!value) {
+    if (!value || !('value' in value)) {
         value = { value: false }
         setFlagValue({ ...value })
     }
     return (
         <FeatureFlagBooleanValueSettings
-            value={value as FeatureFlagBooleanValue}
+            value={value}
             update={next => {
                 setFlagValue({
                     ...value,

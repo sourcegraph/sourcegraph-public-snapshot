@@ -267,7 +267,7 @@ const FeatureFlagNode: React.FunctionComponent<FeatureFlagNodeProps> = ({ node }
                                 max={1}
                                 optimum={1}
                                 value={node.rolloutBasisPoints / (100 * 100)}
-                                data-tooltip={`${Math.floor(node.rolloutBasisPoints / 100)}%`}
+                                data-tooltip={`${Math.floor(node.rolloutBasisPoints / 100) || 0}%`}
                                 aria-label="rollout progress"
                                 data-placement="bottom"
                             />
