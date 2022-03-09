@@ -39,6 +39,7 @@ type OrgStore interface {
 	GetByName(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
 	GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
+	HardDelete(ctx context.Context, id int32) (err error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
 	Update(ctx context.Context, id int32, displayName *string) (*types.Org, error)
@@ -304,6 +305,52 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 	}
 	if _, err := tx.Handle().DB().ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
+	// Check if the org exists even if it has been previously soft deleted
+	orgs, err := o.getBySQL(ctx, "WHERE id=$1 LIMIT 1", id)
+	if err != nil {
+		return err
+	}
+
+	if len(orgs) == 0 {
+		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
+	}
+
+	tx, err := o.Transact(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	// Some tables that reference the "orgs" table do not have ON DELETE CASCADE set, so we need to manually delete their entries before
+	// hard deleting an org.
+	tablesAndKeys := map[string]string{
+		"org_members":         "org_id",
+		"org_invitations":     "org_id",
+		"registry_extensions": "publisher_org_id",
+		"saved_searches":      "org_id",
+		"notebooks":           "namespace_org_id",
+		"settings":            "org_id",
+		"orgs":                "id",
+	}
+
+	// 🚨 SECURITY: Be cautious about changing order here.
+	tables := []string{"org_members", "org_invitations", "registry_extensions", "saved_searches", "notebooks", "settings", "orgs"}
+	for _, t := range tables {
+		query := sqlf.Sprintf(fmt.Sprintf("DELETE FROM %s WHERE %s=%d", t, tablesAndKeys[t], id))
+
+		_, err := tx.Handle().DB().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
