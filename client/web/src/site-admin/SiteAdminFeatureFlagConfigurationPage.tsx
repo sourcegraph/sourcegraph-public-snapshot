@@ -7,13 +7,13 @@ import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
-import { RadioButtons } from '../components/RadioButtons'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
@@ -316,7 +316,7 @@ const CreateFeatureFlag: React.FunctionComponent<{
 
         <Select
             id="type"
-            label="Type"
+            label={(<h3>Type</h3>)}
             value={type}
             onChange={({ target: { value } }) => setFlagType(value as FeatureFlagType)}
             message="Required."
@@ -382,9 +382,6 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<{
         <label htmlFor="rollout-value">
             <h3>Value</h3>
         </label>
-        <output>
-            {value.rolloutBasisPoints} basis points ({Math.floor(value.rolloutBasisPoints / 100)}%)
-        </output>
         <input
             type="range"
             id="rollout-value"
@@ -392,50 +389,53 @@ const FeatureFlagRolloutValueSettings: React.FunctionComponent<{
             step="10"
             min="0"
             max="10000"
-            className="w-50"
+            className="w-25"
             value={value.rolloutBasisPoints}
             onChange={({ target }) => {
                 update({ rolloutBasisPoints: parseInt(target.value, 10) })
             }}
+            aria-describedby="feature-flag-rollout-description"
         />
-        <small className="form-text text-muted">Required.</small>
+        <div className="flex-column mt-3" id="feature-flag-rollout-description">
+            <div>{value.rolloutBasisPoints} basis points</div>
+            <div className="text-muted">
+                This feature is enabled for {Math.floor(value.rolloutBasisPoints / 100) || 0}% of users.
+            </div>
+        </div>
     </div>
 )
 
 const FeatureFlagBooleanValueSettings: React.FunctionComponent<{
     value: FeatureFlagBooleanValue
     update: (next: FeatureFlagBooleanValue) => void
-}> = ({ value, update }) => {
-    const radioButtons = [
-        {
-            id: 'true',
-            label: 'True',
-            tooltip: 'Enable this feature flag.',
-        },
-        {
-            id: 'false',
-            label: 'False',
-            tooltip: 'Disable this feature flag.',
-        },
-    ]
-    return (
+}> = ({ value, update }) => (
         <div className="form-group d-flex flex-column">
             <label htmlFor="bool-value">
                 <h3>Value</h3>
             </label>
-            <RadioButtons
-                nodes={radioButtons}
-                name="bool-value"
-                className="pt-0"
-                selected={value.value ? 'true' : 'false'}
-                onChange={({ target }) => {
-                    update({ value: target.value === 'true' })
-                }}
-            />
-            <small className="form-text text-muted">Required.</small>
+            <div className="d-flex">
+                <div>
+                    <Toggle
+                        title="Value"
+                        value={value.value}
+                        onToggle={isTrue => {
+                            update({ value: isTrue })
+                        }}
+                        className="mr-2"
+                        aria-describedby="feature-flag-toggle-description"
+                    />{' '}
+                </div>
+                <div className="flex-column" id="feature-flag-toggle-description">
+                    <div>{value.value ? 'True' : 'False'}</div>
+                    <div className="text-muted">
+                        {value.value
+                            ? 'This feature is enabled.'
+                            : 'This feature is disabled.'}
+                    </div>
+                </div>
+            </div>
         </div>
     )
-}
 
 /**
  * Searches for potential references and renders them in a collapsible, or returns an
