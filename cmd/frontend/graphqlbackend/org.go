@@ -238,12 +238,12 @@ func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, erro
 	if !actor.IsAuthenticated() {
 		return false, nil
 	}
-	// enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
-	// if err != nil {
-	// 	return false, err
-	// } else if !enabled {
-	// 	return false, nil
-	// }
+	enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
+	if err != nil {
+		return false, err
+	} else if !enabled {
+		return false, nil
+	}
 	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
 		return false, nil
 	}

@@ -15,7 +15,6 @@ export const OrgUserNeedsGithubUpgrade: React.FunctionComponent<OrgUserNeedsGith
     orgDisplayName,
 }) => (
     <Container className="mb-4">
-        <h3>Just one more step...</h3>
         <p>
             Upgrade your GitHub code-host connection to start searching across the {orgDisplayName} organization's
             private repositories on Sourcegraph.
