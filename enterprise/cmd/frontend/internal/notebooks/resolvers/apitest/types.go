@@ -22,6 +22,7 @@ type NotebookBlock struct {
 	MarkdownInput string
 	QueryInput    string
 	FileInput     FileInput
+	SymbolInput   SymbolInput
 }
 
 type FileInput struct {
@@ -29,6 +30,16 @@ type FileInput struct {
 	FilePath       string
 	Revision       *string
 	LineRange      *LineRange
+}
+
+type SymbolInput struct {
+	RepositoryName      string
+	FilePath            string
+	Revision            *string
+	LineContext         int32
+	SymbolName          string
+	SymbolContainerName string
+	SymbolKind          string
 }
 
 type LineRange struct {

@@ -5,8 +5,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-lsp"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSymbolRange(t *testing.T) {
@@ -44,7 +45,7 @@ func TestSymbolURL(t *testing.T) {
 					Pattern: `/^abc testsymbol def$/`,
 				},
 			},
-			url: "/repo/A/-/blob/A#L3:5-3:15",
+			url: "/repo/A/-/blob/A?L3:5-3:15",
 		},
 		{
 			name: "with rev",
@@ -56,7 +57,7 @@ func TestSymbolURL(t *testing.T) {
 					Pattern: `/^abc testsymbol def$/`,
 				},
 			},
-			url: "/repo/A@testrev/-/blob/B#L3:5-3:15",
+			url: "/repo/A@testrev/-/blob/B?L3:5-3:15",
 		},
 	}
 
