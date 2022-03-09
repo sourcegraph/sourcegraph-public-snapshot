@@ -16,6 +16,7 @@ import {
     InsightSubjectsResult,
     IsCodeInsightsLicensedResult,
     RemoveInsightViewFromDashboardResult,
+    RemoveInsightViewFromDashboardVariables,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
 } from 'src/graphql-operations'
@@ -56,6 +57,7 @@ import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } fro
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
+import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createInsight } from './methods/create-insight/create-insight'
 import { getBackendInsightData } from './methods/get-backend-insight-data/get-backend-insight-data'
 import { getCaptureGroupInsightsPreview } from './methods/get-capture-group-insight-preivew'
@@ -176,18 +178,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         const { insightId, dashboardId } = input
 
         return from(
-            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
-                mutation: gql`
-                    mutation RemoveInsightViewFromDashboard($insightId: ID!, $dashboardId: ID!) {
-                        removeInsightViewFromDashboard(
-                            input: { insightViewId: $insightId, dashboardId: $dashboardId }
-                        ) {
-                            dashboard {
-                                id
-                            }
-                        }
-                    }
-                `,
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult, RemoveInsightViewFromDashboardVariables>({
+                mutation: REMOVE_INSIGHT_FROM_DASHBOARD_GQL,
                 variables: { insightId, dashboardId },
                 update(cache: ApolloCache<RemoveInsightViewFromDashboardResult>) {
                     const deletedInsightReference = cache.identify({ __typename: 'InsightView', id: insightId })
@@ -435,20 +427,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 variables: { insightViewId, dashboardId },
             })
 
-        const removeInsightViewFromDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
-            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
-                mutation: gql`
-                    mutation RemoveInsightViewFromDashboard($insightViewId: ID!, $dashboardId: ID!) {
-                        removeInsightViewFromDashboard(
-                            input: { insightViewId: $insightViewId, dashboardId: $dashboardId }
-                        ) {
-                            dashboard {
-                                id
-                            }
-                        }
-                    }
-                `,
-                variables: { insightViewId, dashboardId },
+        const removeInsightViewFromDashboard = (insightId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult, RemoveInsightViewFromDashboardVariables>({
+                mutation: REMOVE_INSIGHT_FROM_DASHBOARD_GQL,
+                variables: { insightId, dashboardId },
             })
 
         const addedInsightIds = nextInsightIds.filter(insightId => !prevInsightIds.includes(insightId)) || []
