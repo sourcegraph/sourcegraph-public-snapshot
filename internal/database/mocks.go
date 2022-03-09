@@ -15744,6 +15744,9 @@ type MockGitserverRepoStore struct {
 	// SetLastFetchedFunc is an instance of a mock function object
 	// controlling the behavior of the method SetLastFetched.
 	SetLastFetchedFunc *GitserverRepoStoreSetLastFetchedFunc
+	// SetRepoSizeFunc is an instance of a mock function object controlling
+	// the behavior of the method SetRepoSize.
+	SetRepoSizeFunc *GitserverRepoStoreSetRepoSizeFunc
 	// TotalErroredCloudDefaultReposFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// TotalErroredCloudDefaultRepos.
@@ -15798,6 +15801,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
 			defaultHook: func(context.Context, api.RepoName, GitserverFetchData) error {
+				return nil
+			},
+		},
+		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
+			defaultHook: func(context.Context, api.RepoName, int64, string) error {
 				return nil
 			},
 		},
@@ -15864,6 +15872,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastFetched")
 			},
 		},
+		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
+			defaultHook: func(context.Context, api.RepoName, int64, string) error {
+				panic("unexpected invocation of MockGitserverRepoStore.SetRepoSize")
+			},
+		},
 		TotalErroredCloudDefaultReposFunc: &GitserverRepoStoreTotalErroredCloudDefaultReposFunc{
 			defaultHook: func(context.Context) (int, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.TotalErroredCloudDefaultRepos")
@@ -15910,6 +15923,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
 			defaultHook: i.SetLastFetched,
+		},
+		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
+			defaultHook: i.SetRepoSize,
 		},
 		TotalErroredCloudDefaultReposFunc: &GitserverRepoStoreTotalErroredCloudDefaultReposFunc{
 			defaultHook: i.TotalErroredCloudDefaultRepos,
@@ -16794,6 +16810,119 @@ func (c GitserverRepoStoreSetLastFetchedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreSetLastFetchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreSetRepoSizeFunc describes the behavior when the
+// SetRepoSize method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreSetRepoSizeFunc struct {
+	defaultHook func(context.Context, api.RepoName, int64, string) error
+	hooks       []func(context.Context, api.RepoName, int64, string) error
+	history     []GitserverRepoStoreSetRepoSizeFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepoSize delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) SetRepoSize(v0 context.Context, v1 api.RepoName, v2 int64, v3 string) error {
+	r0 := m.SetRepoSizeFunc.nextHook()(v0, v1, v2, v3)
+	m.SetRepoSizeFunc.appendCall(GitserverRepoStoreSetRepoSizeFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetRepoSize method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, int64, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepoSize method of the parent MockGitserverRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreSetRepoSizeFunc) PushHook(hook func(context.Context, api.RepoName, int64, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, int64, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreSetRepoSizeFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, int64, string) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreSetRepoSizeFunc) nextHook() func(context.Context, api.RepoName, int64, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreSetRepoSizeFunc) appendCall(r0 GitserverRepoStoreSetRepoSizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreSetRepoSizeFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreSetRepoSizeFunc) History() []GitserverRepoStoreSetRepoSizeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreSetRepoSizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreSetRepoSizeFuncCall is an object that describes an
+// invocation of method SetRepoSize on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreSetRepoSizeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreSetRepoSizeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreSetRepoSizeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -21357,6 +21486,9 @@ type MockOrgStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *OrgStoreHandleFunc
+	// HardDeleteFunc is an instance of a mock function object controlling
+	// the behavior of the method HardDelete.
+	HardDeleteFunc *OrgStoreHardDeleteFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *OrgStoreListFunc
@@ -21417,6 +21549,11 @@ func NewMockOrgStore() *MockOrgStore {
 		},
 		HandleFunc: &OrgStoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
+				return nil
+			},
+		},
+		HardDeleteFunc: &OrgStoreHardDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
 				return nil
 			},
 		},
@@ -21492,6 +21629,11 @@ func NewStrictMockOrgStore() *MockOrgStore {
 				panic("unexpected invocation of MockOrgStore.Handle")
 			},
 		},
+		HardDeleteFunc: &OrgStoreHardDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockOrgStore.HardDelete")
+			},
+		},
 		ListFunc: &OrgStoreListFunc{
 			defaultHook: func(context.Context, *OrgsListOptions) ([]*types.Org, error) {
 				panic("unexpected invocation of MockOrgStore.List")
@@ -21545,6 +21687,9 @@ func NewMockOrgStoreFrom(i OrgStore) *MockOrgStore {
 		},
 		HandleFunc: &OrgStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		HardDeleteFunc: &OrgStoreHardDeleteFunc{
+			defaultHook: i.HardDelete,
 		},
 		ListFunc: &OrgStoreListFunc{
 			defaultHook: i.List,
@@ -22512,6 +22657,110 @@ func (c OrgStoreHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// OrgStoreHardDeleteFunc describes the behavior when the HardDelete method
+// of the parent MockOrgStore instance is invoked.
+type OrgStoreHardDeleteFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []OrgStoreHardDeleteFuncCall
+	mutex       sync.Mutex
+}
+
+// HardDelete delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockOrgStore) HardDelete(v0 context.Context, v1 int32) error {
+	r0 := m.HardDeleteFunc.nextHook()(v0, v1)
+	m.HardDeleteFunc.appendCall(OrgStoreHardDeleteFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the HardDelete method of
+// the parent MockOrgStore instance is invoked and the hook queue is empty.
+func (f *OrgStoreHardDeleteFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HardDelete method of the parent MockOrgStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *OrgStoreHardDeleteFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OrgStoreHardDeleteFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OrgStoreHardDeleteFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *OrgStoreHardDeleteFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgStoreHardDeleteFunc) appendCall(r0 OrgStoreHardDeleteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgStoreHardDeleteFuncCall objects
+// describing the invocations of this function.
+func (f *OrgStoreHardDeleteFunc) History() []OrgStoreHardDeleteFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgStoreHardDeleteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgStoreHardDeleteFuncCall is an object that describes an invocation of
+// method HardDelete on an instance of MockOrgStore.
+type OrgStoreHardDeleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgStoreHardDeleteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgStoreHardDeleteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

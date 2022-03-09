@@ -27,12 +27,12 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 			&symbol.Name,
 			&symbol.Path,
 			&symbol.Line,
+			&symbol.Character,
 			&symbol.Kind,
 			&symbol.Language,
 			&symbol.Parent,
 			&symbol.ParentKind,
 			&symbol.Signature,
-			&symbol.Pattern,
 			&symbol.FileLimited,
 		); err != nil {
 			return nil, err
@@ -51,12 +51,12 @@ func (s *store) Search(ctx context.Context, args types.SearchArgs) ([]result.Sym
 				name,
 				path,
 				line,
+				character,
 				kind,
 				language,
 				parent,
 				parentkind,
 				signature,
-				pattern,
 				filelimited
 			FROM symbols
 			WHERE %s

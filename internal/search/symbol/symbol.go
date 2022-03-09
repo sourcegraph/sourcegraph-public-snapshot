@@ -217,6 +217,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 				res = append(res, result.NewSymbolMatch(
 					newFile,
 					l.LineNumber,
+					-1, // -1 means infer the column
 					m.SymbolInfo.Sym,
 					m.SymbolInfo.Kind,
 					m.SymbolInfo.Parent,

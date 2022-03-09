@@ -1,11 +1,11 @@
 :global(.theme-light) {
-    --onboarding-tour-oc-blue-bg: var(--oc-blue-1);
-    --onboarding-tour-oc-blue-border: var(--oc-blue-2);
+    --getting-started-tour-oc-blue-bg: var(--oc-blue-1);
+    --getting-started-tour-oc-blue-border: var(--oc-blue-2);
 }
 
 :global(.theme-dark) {
-    --onboarding-tour-oc-blue-bg: var(--oc-blue-7);
-    --onboarding-tour-oc-blue-border: var(--oc-blue-8);
+    --getting-started-tour-oc-blue-bg: var(--oc-blue-7);
+    --getting-started-tour-oc-blue-border: var(--oc-blue-8);
 }
 
 .card {
@@ -143,8 +143,8 @@
 .info-panel {
     padding: 0.5rem;
     border-radius: 3px;
-    background-color: var(--onboarding-tour-oc-blue-bg);
-    border: 1px solid var(--onboarding-tour-oc-blue-border);
+    background-color: var(--getting-started-tour-oc-blue-bg);
+    border: 1px solid var(--getting-started-tour-oc-blue-border);
 }
 
 .icon-muted {
@@ -170,7 +170,7 @@
     &:active,
     &:focus,
     &:hover {
-        background-color: var(--onboarding-tour-oc-blue-bg);
+        background-color: var(--getting-started-tour-oc-blue-bg);
     }
 
     &:hover {

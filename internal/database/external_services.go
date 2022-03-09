@@ -205,9 +205,6 @@ func (e *externalServiceStore) WithEncryptionKey(key encryption.Key) ExternalSer
 }
 
 func (e *externalServiceStore) Transact(ctx context.Context) (ExternalServiceStore, error) {
-	if Mocks.ExternalServices.Transact != nil {
-		return Mocks.ExternalServices.Transact(ctx)
-	}
 	return e.transact(ctx)
 }
 
@@ -219,9 +216,6 @@ func (e *externalServiceStore) transact(ctx context.Context) (*externalServiceSt
 }
 
 func (e *externalServiceStore) Done(err error) error {
-	if Mocks.ExternalServices.Done != nil {
-		return Mocks.ExternalServices.Done(err)
-	}
 	return e.Store.Done(err)
 }
 
@@ -677,10 +671,6 @@ func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
-	if Mocks.ExternalServices.Create != nil {
-		return Mocks.ExternalServices.Create(ctx, confGet, es)
-	}
-
 	normalized, err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
 		Config:          es.Config,
@@ -777,9 +767,6 @@ func (e *externalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 }
 
 func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
-	if Mocks.ExternalServices.Upsert != nil {
-		return Mocks.ExternalServices.Upsert(ctx, svcs...)
-	}
 	if len(svcs) == 0 {
 		return nil
 	}
@@ -1231,9 +1218,6 @@ LIMIT 1
 }
 
 func (e *externalServiceStore) GetAffiliatedSyncErrors(ctx context.Context, u *types.User) (map[int64]string, error) {
-	if Mocks.ExternalServices.ListSyncErrors != nil {
-		return Mocks.ExternalServices.ListSyncErrors(ctx)
-	}
 	if u == nil {
 		return nil, errors.New("nil user")
 	}
@@ -1273,8 +1257,8 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	if Mocks.ExternalServices.List != nil {
-		return Mocks.ExternalServices.List(opt)
+	if Mocks.externalServices.List != nil {
+		return Mocks.externalServices.List(opt)
 	}
 
 	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
@@ -1435,10 +1419,6 @@ WHERE deleted_at IS NULL
 }
 
 func (e *externalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
-	if Mocks.ExternalServices.Count != nil {
-		return Mocks.ExternalServices.Count(ctx, opt)
-	}
-
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
 	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
@@ -1529,11 +1509,5 @@ func configurationHasWebhooks(config interface{}) bool {
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create         func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	ListSyncErrors func(ctx context.Context) (map[int64]string, error)
-	List           func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Count          func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
-	Upsert         func(ctx context.Context, services ...*types.ExternalService) error
-	Transact       func(ctx context.Context) (ExternalServiceStore, error)
-	Done           func(error) error
+	List func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 }
