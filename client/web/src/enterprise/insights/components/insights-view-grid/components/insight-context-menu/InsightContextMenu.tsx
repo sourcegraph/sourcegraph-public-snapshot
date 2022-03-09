@@ -1,10 +1,9 @@
-import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@reach/menu-button'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Menu, MenuLink, MenuList, MenuItem, MenuButton, Link, MenuDivider } from '@sourcegraph/wildcard'
 
 import { Insight, InsightDashboard, isSearchBasedInsight, isVirtualDashboard } from '../../../../core/types'
 
@@ -46,7 +45,6 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
             {({ isOpen }) => (
                 <>
                     <MenuButton
-                        as={Button}
                         data-testid="InsightContextMenuButton"
                         className={classNames(menuButtonClassName, 'p-1', styles.button)}
                         aria-label="Insight options"
@@ -57,67 +55,62 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             size={16}
                         />
                     </MenuButton>
-                    <MenuPopover portal={false}>
-                        <MenuItems
-                            data-testid={`context-menu.${insightID}`}
-                            className={classNames(styles.panel, 'dropdown-menu')}
+                    <MenuList data-testid={`context-menu.${insightID}`} className={styles.panel}>
+                        <MenuLink
+                            as={Link}
+                            data-testid="InsightContextMenuEditLink"
+                            className={styles.item}
+                            to={editUrl}
                         >
-                            <MenuLink
-                                as={Link}
-                                data-testid="InsightContextMenuEditLink"
-                                className={styles.item}
-                                to={editUrl}
-                            >
-                                Edit
-                            </MenuLink>
+                            Edit
+                        </MenuLink>
 
-                            {isSearchBasedInsight(insight) && (
-                                <MenuItem
-                                    role="menuitemcheckbox"
-                                    data-testid="InsightContextMenuEditLink"
-                                    className={classNames(
-                                        'd-flex align-items-center justify-content-between',
-                                        styles.item
-                                    )}
-                                    onSelect={onToggleZeroYAxisMin}
-                                    aria-checked={zeroYAxisMin}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        aria-hidden="true"
-                                        checked={zeroYAxisMin}
-                                        onChange={noop}
-                                        tabIndex={-1}
-                                    />
-                                    <span>Start Y Axis at 0</span>
-                                </MenuItem>
-                            )}
-
-                            {dashboard && (
-                                <MenuItem
-                                    data-testid="insight-context-remove-from-dashboard-button"
-                                    onSelect={() => onRemoveFromDashboard(dashboard)}
-                                    disabled={withinVirtualDashboard}
-                                    data-tooltip={
-                                        withinVirtualDashboard
-                                            ? "Removing insight isn't available for the All insights dashboard"
-                                            : undefined
-                                    }
-                                    className={styles.item}
-                                >
-                                    Remove from this dashboard
-                                </MenuItem>
-                            )}
-
+                        {isSearchBasedInsight(insight) && (
                             <MenuItem
-                                data-testid="insight-context-menu-delete-button"
-                                onSelect={() => onDelete(insightID)}
+                                role="menuitemcheckbox"
+                                data-testid="InsightContextMenuEditLink"
+                                className={classNames('d-flex align-items-center justify-content-between', styles.item)}
+                                onSelect={onToggleZeroYAxisMin}
+                                aria-checked={zeroYAxisMin}
+                            >
+                                <input
+                                    type="checkbox"
+                                    aria-hidden="true"
+                                    checked={zeroYAxisMin}
+                                    onChange={noop}
+                                    tabIndex={-1}
+                                />
+                                <span>Start Y Axis at 0</span>
+                            </MenuItem>
+                        )}
+
+                        {dashboard && (
+                            <MenuItem
+                                data-testid="insight-context-remove-from-dashboard-button"
+                                onSelect={() => onRemoveFromDashboard(dashboard)}
+                                disabled={withinVirtualDashboard}
+                                data-tooltip={
+                                    withinVirtualDashboard
+                                        ? "Removing insight isn't available for the All insights dashboard"
+                                        : undefined
+                                }
+                                data-placement="left"
                                 className={styles.item}
                             >
-                                Delete
+                                Remove from this dashboard
                             </MenuItem>
-                        </MenuItems>
-                    </MenuPopover>
+                        )}
+
+                        <MenuDivider />
+
+                        <MenuItem
+                            data-testid="insight-context-menu-delete-button"
+                            onSelect={() => onDelete(insightID)}
+                            className={styles.item}
+                        >
+                            Delete
+                        </MenuItem>
+                    </MenuList>
                 </>
             )}
         </Menu>
