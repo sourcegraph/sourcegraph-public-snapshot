@@ -182,38 +182,36 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
         <>
             <PageTitle title="Feature flags - Admin" />
 
-            <div className={styles.headerGrid}>
-                <PageHeader
-                    headingElement="h2"
-                    path={[
-                        {
-                            text: <>Feature flags</>,
-                        },
-                    ]}
-                    description={
-                        <>
-                            <p>
-                                Feature flags, as opposed to experimental features, are intended to be strictly
-                                short-lived. They are designed to be useful for A/B testing, and the values of all
-                                active feature flags are added to every event log for the purpose of analytics. To learn
-                                more, refer to{' '}
-                                <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
-                                    How to use feature flags
-                                </Link>
-                                .
-                            </p>
-                        </>
-                    }
-                    className="mb-3"
-                />
-                <Button
-                    className="justify-content-end align-self-start"
-                    variant="primary"
-                    onClick={() => history.push('./feature-flags/configuration/new')}
-                >
-                    Create feature flag
-                </Button>
-            </div>
+            <PageHeader
+                headingElement="h2"
+                path={[
+                    {
+                        text: <>Feature flags</>,
+                    },
+                ]}
+                description={
+                    <>
+                        <p>
+                            Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
+                            They are designed to be useful for A/B testing, and the values of all active feature flags
+                            are added to every event log for the purpose of analytics. To learn more, refer to{' '}
+                            <Link target="_blank" rel="noopener noreferrer" to="/help/dev/how-to/use_feature_flags">
+                                How to use feature flags
+                            </Link>
+                            .
+                        </p>
+                    </>
+                }
+                className="mb-3"
+                actions={
+                    <Button
+                        variant="primary"
+                        onClick={() => history.push('./feature-flags/configuration/new')}
+                    >
+                        Create feature flag
+                    </Button>
+                }
+            />
 
             <Container>
                 <FilteredConnection<FeatureFlagAndReferences, {}>

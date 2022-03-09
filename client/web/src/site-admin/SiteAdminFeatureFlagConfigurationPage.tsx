@@ -456,7 +456,10 @@ const ReferencesCollapsible: React.FunctionComponent<{
     return references && references.length > 0 ? (
         <Collapsible
             title={<h3>References</h3>}
-            detail={`${references.length} potential feature flag ${pluralize('reference', references.length)} in sourcegraph@${productGitVersion}`}
+            detail={`${references.length} potential feature flag ${pluralize(
+                'reference',
+                references.length
+            )} in sourcegraph@${productGitVersion}`}
             className="p-0 font-weight-normal mt-3"
             buttonClassName="mb-0"
             titleAtStart={true}
