@@ -12,7 +12,6 @@ import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
@@ -39,9 +38,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards } = useContext(CodeInsightsBackendContext)
+    const { getDashboards, getUiFeatures } = useContext(CodeInsightsBackendContext)
 
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -68,7 +68,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     }
 
     const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
-    const permissions = getDashboardPermissions(currentDashboard)
+    const dashboardFeatures = features.getDashboardsContent(currentDashboard)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -133,8 +133,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <Button
                     outline={true}
                     variant="secondary"
-                    disabled={!permissions.isConfigurable}
-                    data-tooltip={getTooltipMessage(currentDashboard, permissions)}
+                    disabled={dashboardFeatures.addRemoveInsightsButton.disabled}
+                    data-tooltip={dashboardFeatures.addRemoveInsightsButton.tooltip}
                     data-placement="bottom"
                     onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
                 >

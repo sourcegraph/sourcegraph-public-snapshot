@@ -28,6 +28,14 @@ import {
 
 export interface UiFeatures {
     licensed: boolean
+    getDashboardsContent: (
+        currentDashboard?: InsightDashboard
+    ) => {
+        addRemoveInsightsButton: {
+            disabled: boolean
+            tooltip: string | undefined
+        }
+    }
 }
 
 /**

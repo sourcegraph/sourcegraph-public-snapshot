@@ -37,3 +37,28 @@
         margin-top: -0.25rem;
     }
 }
+
+.limited-access {
+    background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.25) 3.11%, rgba(215, 240, 253, 0.25) 83.64%);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+
+    h3 {
+        margin-bottom: 0.25rem;
+        color: var(--purple);
+        text-transform: uppercase;
+        font-size: 0.6875rem;
+        font-weight: 500;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.75rem;
+    }
+}
+
+.limited-access-wrapper {
+    margin-bottom: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}

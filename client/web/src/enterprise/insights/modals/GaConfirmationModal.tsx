@@ -14,7 +14,7 @@ export const GaConfirmationModal: React.FunctionComponent = () => {
     const { getUiFeatures } = useContext(CodeInsightsBackendContext)
     const features = useMemo(() => getUiFeatures(), [getUiFeatures])
 
-    const showConfirmationModal = !features?.licensed && isGaAccepted === false
+    const showConfirmationModal = !features.licensed && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null

@@ -1,11 +1,18 @@
-import React from 'react'
-
-import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
+import {
+    ListboxGroup,
+    ListboxGroupLabel,
+    ListboxInput,
+    ListboxList,
+    ListboxOption,
+    ListboxPopover,
+} from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
+import React, { useContext, useMemo } from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
 
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     InsightDashboard,
     InsightDashboardOwner,
@@ -19,7 +26,6 @@ import {
 
 import { MenuButton } from './components/menu-button/MenuButton'
 import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
-
 import styles from './DashboardSelect.module.scss'
 
 const LABEL_ID = 'insights-dashboards--select'
@@ -38,6 +44,11 @@ export interface DashboardSelectProps {
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { value, dashboards, onSelect, className, user } = props
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
+
+    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+
+    const licensed = features.licensed
 
     if (!user) {
         return null
@@ -119,6 +130,20 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 ))}
                             </ListboxGroup>
                         ))}
+
+                        {!licensed && (
+                            <ListboxGroup>
+                                <ListboxOption
+                                    className={classNames(styles.option, styles.limitedAccessWrapper)}
+                                    value="na"
+                                >
+                                    <div className={classNames(styles.limitedAccess)}>
+                                        <h3>Limited access</h3>
+                                        <p>Unlock for unlimited dashboards custom dashboards.</p>
+                                    </div>
+                                </ListboxOption>
+                            </ListboxGroup>
+                        )}
                     </ListboxList>
                 </ListboxPopover>
             </ListboxInput>
