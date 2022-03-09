@@ -26,18 +26,14 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { FlagSet } from '../featureFlags/featureFlags'
 import { ThemePreference } from '../stores/themeState'
 import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps
-    extends ThemeProps,
-        ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
-        FeatureFlagProps {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -48,6 +44,7 @@ export interface UserNavItemProps
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
+    featureFlags?: FlagSet
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -130,7 +127,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
-    const openBetaEnabled = featureFlags.get('open-beta-enabled')
+    const openBetaEnabled = featureFlags?.get('open-beta-enabled')
 
     return (
         <Menu>
