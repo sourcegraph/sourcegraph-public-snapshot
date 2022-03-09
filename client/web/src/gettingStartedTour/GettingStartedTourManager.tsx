@@ -117,6 +117,8 @@ const GettingStartedTourComplete: React.FunctionComponent<TelemetryProps> = ({ t
                     to={buildGetStartedURL('getting-started-tour')}
                     onClick={onGetStarted}
                     variant="primary"
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
                     Get started
                 </ButtonLink>
