@@ -54,10 +54,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		{Name: "golang/go"},
 		{Name: "sourcegraph/sourcegraph"},
 	}
-	recentCommitters, err := gitserverParallelRecentCommitters(ctx, repos, gitCommitsFunc)
-	if err != nil {
-		t.Fatal(err)
-	}
+	recentCommitters := gitserverParallelRecentCommitters(ctx, repos, gitCommitsFunc)
 
 	sort.Slice(calls, func(i, j int) bool {
 		return calls[i].repoName < calls[j].repoName

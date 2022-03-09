@@ -44,10 +44,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters, err := gitserverParallelRecentCommitters(ctx, pickedRepos, git.Commits)
-	if err != nil {
-		return nil, err
-	}
+	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, git.Commits)
 
 	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
