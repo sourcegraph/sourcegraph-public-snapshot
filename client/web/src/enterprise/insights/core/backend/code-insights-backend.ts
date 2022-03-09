@@ -25,6 +25,10 @@ import {
     RepositorySuggestionData,
 } from './code-insights-backend-types'
 
+export interface UiFeatures {
+    licensed: boolean
+}
+
 /**
  * The main interface for code insights backend. Each backend versions should
  * implement this interface in order to support all functionality that code insights
@@ -144,8 +148,8 @@ export interface CodeInsightsBackend {
      */
     getFirstExampleRepository: () => Observable<string>
 
-    /*
-     * Returns whether Code Insights is licensed
+    /**
+     * Returns a feaures object used to show/hide and enable/disable UI elements
      */
-    isCodeInsightsLicensed: () => Observable<boolean>
+    getUiFeatures: () => Observable<UiFeatures>
 }
