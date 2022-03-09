@@ -48,7 +48,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         [onRunBlock, setIsEditing]
     )
 
-    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
+    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'md', input }), [
         id,
         onBlockInputChange,
     ])
