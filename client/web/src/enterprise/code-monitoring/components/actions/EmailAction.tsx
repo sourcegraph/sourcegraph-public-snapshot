@@ -29,18 +29,14 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
 }) => {
     const [emailNotificationEnabled, setEmailNotificationEnabled] = useState(action ? action.enabled : true)
 
-    const toggleEmailNotificationEnabled: (enabled: boolean) => void = useCallback(
-        enabled => {
+    const toggleEmailNotificationEnabled: (enabled: boolean, saveImmediately: boolean) => void = useCallback(
+        (enabled, saveImmediately) => {
             setEmailNotificationEnabled(enabled)
-            setAction({
-                __typename: 'MonitorEmail',
-                id: action?.id ?? '',
-                recipients: { nodes: [{ id: authenticatedUser.id }] },
-                enabled,
-                includeResults: false,
-            })
+            if (action && saveImmediately) {
+                setAction({ ...action, enabled })
+            }
         },
-        [action?.id, authenticatedUser.id, setAction]
+        [action, setAction]
     )
 
     const onSubmit: React.FormEventHandler = useCallback(
@@ -53,13 +49,17 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
                     __typename: 'MonitorEmail',
                     id: '',
                     recipients: { nodes: [{ id: authenticatedUser.id }] },
-                    enabled: true,
+                    enabled: emailNotificationEnabled,
                     includeResults: false,
                 })
             }
         },
-        [action, authenticatedUser.id, setAction]
+        [action, authenticatedUser.id, emailNotificationEnabled, setAction]
     )
+
+    const onCancel: React.FormEventHandler = useCallback(() => {
+        setEmailNotificationEnabled(action ? action.enabled : true)
+    }, [action])
 
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
@@ -76,7 +76,7 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
                 namespace: authenticatedUser.id,
                 description: monitorName,
                 email: {
-                    enabled: true,
+                    enabled: emailNotificationEnabled,
                     includeResults: false,
                     priority: MonitorEmailPriority.NORMAL,
                     recipients: [authenticatedUser.id],
@@ -84,7 +84,7 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
                 },
             },
         }).catch(noop) // Ignore errors, they will be handled with the error state from useMutation
-    }, [authenticatedUser.id, monitorName, sendTestEmail])
+    }, [authenticatedUser.id, emailNotificationEnabled, monitorName, sendTestEmail])
 
     const sendTestEmailButtonText = loading
         ? 'Sending email...'
@@ -104,6 +104,7 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
             actionEnabled={emailNotificationEnabled}
             toggleActionEnabled={toggleEmailNotificationEnabled}
             onSubmit={onSubmit}
+            onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
             _testStartOpen={_testStartOpen}

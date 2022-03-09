@@ -16,7 +16,7 @@ export interface ActionEditorProps {
     idName: string // Name used for generating IDs, including form control IDs and test IDs
 
     actionEnabled: boolean
-    toggleActionEnabled: (enabled: boolean) => void
+    toggleActionEnabled: (enabled: boolean, saveImmediately: boolean) => void
 
     canSubmit?: boolean
     onSubmit: React.FormEventHandler
@@ -94,7 +94,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                             <Toggle
                                 title="Enabled"
                                 value={actionEnabled}
-                                onToggle={toggleActionEnabled}
+                                onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                 className="mr-2"
                                 aria-labelledby={`code-monitoring-${idName}-form-actions-enable-toggle`}
                                 data-testid={`enable-action-toggle-expanded-${idName}`}
@@ -172,7 +172,7 @@ export const ActionEditor: React.FunctionComponent<ActionEditorProps> = ({
                                     <Toggle
                                         title="Enabled"
                                         value={actionEnabled}
-                                        onToggle={toggleActionEnabled}
+                                        onToggle={enabled => toggleActionEnabled(enabled, !expanded)}
                                         className="mr-3"
                                         data-testid={`enable-action-toggle-collapsed-${idName}`}
                                     />
