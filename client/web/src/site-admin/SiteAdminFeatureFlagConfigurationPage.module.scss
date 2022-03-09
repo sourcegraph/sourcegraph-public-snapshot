@@ -1,0 +1,9 @@
+.node-grid {
+    display: grid;
+    grid-template-columns: [date] max-content [error] minmax(auto, 1fr) [end];
+    align-items: center;
+
+    &-code {
+        border-left: 1px solid var(--border-color-2);
+    }
+}
