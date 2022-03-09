@@ -453,7 +453,10 @@ const ReferencesCollapsible: React.FunctionComponent<{
             productGitVersion,
         ])
     )
-    return references && references.length > 0 ? (
+    if (references === undefined || references.length === 0) {
+        return <></>
+    }
+    return (
         <Collapsible
             title={<h3>References</h3>}
             detail={`${references.length} potential feature flag ${pluralize(
@@ -475,8 +478,6 @@ const ReferencesCollapsible: React.FunctionComponent<{
                 ))}
             </div>
         </Collapsible>
-    ) : (
-        <></>
     )
 }
 

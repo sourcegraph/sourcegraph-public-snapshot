@@ -204,10 +204,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<SiteAdminFeature
                 }
                 className="mb-3"
                 actions={
-                    <Button
-                        variant="primary"
-                        onClick={() => history.push('./feature-flags/configuration/new')}
-                    >
+                    <Button variant="primary" onClick={() => history.push('./feature-flags/configuration/new')}>
                         Create feature flag
                     </Button>
                 }
