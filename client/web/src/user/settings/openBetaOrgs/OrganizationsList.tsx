@@ -6,11 +6,11 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ButtonLink, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
+import { refreshAuthenticatedUser } from '../../../auth'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './organizationList.module.scss'
-
 export interface OrganizationsListProps extends ThemeProps, FeatureFlagProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -53,12 +53,7 @@ const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
                 <span className="text-muted">Admin</span>
             </div>
             <div>
-                <ButtonLink
-                    className={styles.orgSettings}
-                    variant="secondary"
-                    to="/organizations/joinopenbeta"
-                    size="sm"
-                >
+                <ButtonLink className={styles.orgSettings} variant="secondary" to={org.settingsURL as string} size="sm">
                     Settings
                 </ButtonLink>
             </div>
@@ -66,9 +61,18 @@ const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
     </li>
 )
 
+const refreshOrganizationList = (): void => {
+    refreshAuthenticatedUser()
+        .toPromise()
+        .then(() => {
+            eventLogger.logViewEvent('OrganizationsList')
+        })
+        .catch(() => eventLogger.logViewEvent('ErrorOrgListLoading'))
+}
+
 export const OrganizationsListPage: React.FunctionComponent<OrganizationsListProps> = ({ authenticatedUser }) => {
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationsList')
+        refreshOrganizationList()
     }, [])
 
     const orgs = authenticatedUser.organizations.nodes
