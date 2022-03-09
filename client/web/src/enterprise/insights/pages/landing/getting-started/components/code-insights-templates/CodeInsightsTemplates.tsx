@@ -1,6 +1,6 @@
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { MouseEvent, useContext, useState } from 'react'
+import React, { MouseEvent, useContext, useMemo, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -18,8 +18,10 @@ import {
     TooltipController,
     Icon,
     Link,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightType } from '../../../../../core/types'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
@@ -135,6 +137,9 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
+    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
+
     const series =
         template.type === InsightType.SearchBased
             ? template.templateValues.series ?? []
@@ -167,7 +172,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
                     className="mr-auto"
                     onClick={handleUseTemplateLinkClick}
                 >
-                    Use this template
+                    {features?.licensed ? 'Use this template' : 'Explore template'}
                 </Button>
             )}
         </Card>

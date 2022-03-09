@@ -1,11 +1,11 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
-import React, { useContext } from 'react'
+import React, { useContext, useMemo } from 'react'
 import { useLocation } from 'react-router'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, useObservable } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../../views'
 import { LegendBlock, LegendItem } from '../../../../../../../views'
@@ -13,6 +13,7 @@ import {
     getLineStroke,
     LineChart,
 } from '../../../../../../../views/components/view/content/chart-view-content/charts/line/components/LineChartContent'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightType } from '../../../../../core/types'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
@@ -103,6 +104,9 @@ const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExample
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
+    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
+
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
         insightType:
@@ -136,7 +140,7 @@ const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExample
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        Use as template
+                        {features?.licensed ? 'Use as template' : 'Explore template'}
                     </Button>
                 )
             }
@@ -174,6 +178,9 @@ const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExamp
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
+
+    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
+    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
         insightType:
@@ -206,7 +213,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExamp
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        Use as template
+                        {features?.licensed ? 'Use as template' : 'Explore template'}
                     </Button>
                 )
             }
