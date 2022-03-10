@@ -19,7 +19,6 @@ import React, {
     useEffect,
     useLayoutEffect,
 } from 'react'
-import { useHistory } from 'react-router-dom'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -31,8 +30,6 @@ import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/ut
 import { Button, Link, TextArea } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
-import { serializeBlocksToURL } from '../notebooks/serialize'
-import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import {
     useSearchStackState,
@@ -75,9 +72,12 @@ function useHasNewEntry(entries: SearchStackEntry[]): boolean {
     return previous !== undefined && previous < entries.length
 }
 
-export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
-    const history = useHistory()
+export interface SearchStackProps {
+    initialOpen?: boolean
+    onCreateNotebook: (blocks: BlockInput[]) => void
+}
 
+export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initialOpen = false, onCreateNotebook }) => {
     const [open, setOpen] = useState(initialOpen)
     const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const addableEntry = useSearchStackState(state => state.addableEntry)
@@ -170,13 +170,8 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                     break
             }
         }
-
-        const location = {
-            pathname: PageRoutes.NotebookCreate,
-            hash: serializeBlocksToURL(blocks, window.location.origin),
-        }
-        history.push(location)
-    }, [entries, history])
+        onCreateNotebook(blocks)
+    }, [entries, onCreateNotebook])
 
     const toggleOpen = useCallback(() => {
         setOpen(open => {

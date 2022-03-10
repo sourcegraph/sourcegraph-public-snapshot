@@ -5,15 +5,6 @@ import { Block, BlockInit, BlockInput, FileBlockInput } from '..'
 import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 
-export function serializeBlocksToURL(blocks: BlockInput[], sourcegraphURL: string): string {
-    return blocks
-        .map(
-            block =>
-                `${encodeURIComponent(block.type)}:${encodeURIComponent(serializeBlockInput(block, sourcegraphURL))}`
-        )
-        .join(',')
-}
-
 export function serializeBlockToMarkdown(block: Block, sourcegraphURL: string): string {
     const serializedInput = serializeBlockInput(block, sourcegraphURL)
     switch (block.type) {

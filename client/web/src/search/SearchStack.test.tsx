@@ -1,6 +1,8 @@
 import { act, cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { noop } from 'lodash'
 import React from 'react'
+import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
@@ -8,11 +10,11 @@ import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourc
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
 import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
 
-import { SearchStack } from './SearchStack'
+import { SearchStack, SearchStackProps } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithBrandedContextResult =>
-        renderWithBrandedContext(<SearchStack {...props} />)
+    const renderSearchStack = (props?: Partial<SearchStackProps>): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(<SearchStack onCreateNotebook={noop} {...props} />)
 
     function open() {
         userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
@@ -111,15 +113,13 @@ describe('Search Stack', () => {
         })
 
         it('creates notebooks', () => {
-            const result = renderSearchStack()
+            const onCreateNotebook = sinon.spy()
+            renderSearchStack({ onCreateNotebook })
             open()
 
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
 
-            expect(result.history.location.pathname).toMatchInlineSnapshot('"/notebooks/new"')
-            expect(result.history.location.hash).toMatchInlineSnapshot(
-                '"#query:TODO,file:http%3A%2F%2Flocalhost%2Ftest%40master%2F-%2Fblob%2Fpath%2Fto%2Ffile"'
-            )
+            sinon.assert.calledOnce(onCreateNotebook)
         })
 
         it('allows to delete entries', () => {
