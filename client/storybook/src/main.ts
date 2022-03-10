@@ -181,6 +181,18 @@ const config = {
             type: 'asset/source',
         })
 
+        config.module.rules.push({
+            test: /\.elm$/,
+            exclude: /elm-stuff/,
+            use: {
+                loader: 'elm-webpack-loader',
+                options: {
+                    cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+                    report: 'json',
+                },
+            },
+        })
+
         // Disable `CaseSensitivePathsPlugin` by default to speed up development build.
         // Similar discussion: https://github.com/vercel/next.js/issues/6927#issuecomment-480579191
         remove(config.plugins, plugin => plugin instanceof CaseSensitivePathsPlugin)

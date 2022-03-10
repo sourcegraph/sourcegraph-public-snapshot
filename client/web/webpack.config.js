@@ -231,6 +231,17 @@ const config = {
       },
       { test: /\.ya?ml$/, type: 'asset/source' },
       { test: /\.(png|woff2)$/, type: 'asset/resource' },
+      {
+        test: /\.elm$/,
+        exclude: /elm-stuff/,
+        use: {
+          loader: 'elm-webpack-loader',
+          options: {
+            cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+            report: 'json',
+          },
+        },
+      },
     ],
   },
 }
