@@ -116,15 +116,15 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             this.apolloClient.query<HasAvailableCodeInsightResult>({
                 query: gql`
                     query HasAvailableCodeInsight {
-                        insightViews {
-                            pageInfo {
-                                hasNextPage
+                        insightViews(first: 1) {
+                            nodes {
+                                id
                             }
                         }
                     }
                 `,
             })
-        ).pipe(map(({ data }) => data.insightViews.pageInfo.hasNextPage))
+        ).pipe(map(({ data }) => data.insightViews.nodes.length > 0))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for
