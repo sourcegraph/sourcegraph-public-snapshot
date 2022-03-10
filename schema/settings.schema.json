@@ -159,6 +159,14 @@
             "pointer": true
           }
         },
+        "showComputeComponent": {
+          "description": "Enables display of compute components (currently Notebook blocks)",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showQueryBuilder": {
           "description": "REMOVED. Previously, enabled the search query builder page. This page has been removed.",
           "type": "boolean",
