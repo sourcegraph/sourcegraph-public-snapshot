@@ -35,7 +35,6 @@ type HighlightArgs struct {
 	DisableTimeout     bool
 	IsLightTheme       *bool
 	HighlightLongLines bool
-	TreeSitterEnabled  bool
 }
 
 type highlightedFileResolver struct {
@@ -67,7 +66,6 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		HighlightLongLines: args.HighlightLongLines,
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,
-		TreeSitterEnabled:  args.TreeSitterEnabled,
 	})
 	result.aborted = aborted
 

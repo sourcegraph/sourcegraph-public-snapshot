@@ -90,11 +90,6 @@ type Params struct {
 	// respond.
 	SimulateTimeout bool
 
-	// Whether to use tree-sitter to power syntax highlighting instead of
-	// syntect (default). Tree-sitter support is only available for a small
-	// number of programming languages.
-	TreeSitterEnabled bool
-
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 }

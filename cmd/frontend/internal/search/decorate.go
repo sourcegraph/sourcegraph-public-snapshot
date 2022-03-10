@@ -111,7 +111,6 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 			RepoName: string(repo),
 			Revision: string(commit),
 		},
-		TreeSitterEnabled: true,
 	})
 	if err != nil {
 		return nil, err

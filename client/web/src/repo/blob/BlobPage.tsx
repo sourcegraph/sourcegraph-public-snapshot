@@ -28,7 +28,6 @@ import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
-import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { fetchRepository, resolveRevision } from '../backend'
@@ -131,9 +130,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
-    const settings = getExperimentalFeatures(props.settingsCascade.final)
-    const treeSitterEnabled = !!settings.treeSitterEnabled
-
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
     // components to use current file props while blob hasn't updated, since all information
@@ -153,7 +149,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             commitID,
                             filePath,
                             disableTimeout,
-                            treeSitterEnabled,
                         })
                     ),
                     map(blob => {
@@ -182,7 +177,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode, treeSitterEnabled]
+            [repoName, revision, commitID, filePath, mode]
         )
     )
 
