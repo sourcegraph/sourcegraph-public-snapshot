@@ -183,8 +183,7 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; i
                 <div className="text-center">No collaborators found in sampled repositories.</div>
             ) : isSiteAdmin ? (
                 <div className="text-center">
-                    This server is not configured to send emails.{' '}
-                    <Link to="https://docs.sourcegraph.com/admin/config/site_config#email-smtp">Learn more</Link>
+                    This server is not configured to send emails. <Link to="/help/admin/config/email">Learn more</Link>
                 </div>
             ) : null}
             <div className="text-muted mt-3 text-center">
