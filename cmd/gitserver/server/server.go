@@ -1594,7 +1594,7 @@ type cloneOptions struct {
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
 
-	// CloneFromShard is the name of the gitserver instance which is the current owner of the
+	// CloneFromShard is the hostname of the gitserver instance which is the current owner of the
 	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
 	// that gitserver instance instead of the upstream repo URL of the external service.
 	CloneFromShard string
