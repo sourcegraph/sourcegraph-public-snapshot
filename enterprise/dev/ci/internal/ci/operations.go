@@ -596,9 +596,6 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
-			// Flakey test we are running to collect more data:
-			// https://github.com/sourcegraph/sourcegraph/issues/31342
-			bk.SoftFail(123),
 		)...)
 	}
 }
