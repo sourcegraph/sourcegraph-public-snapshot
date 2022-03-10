@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SaveToolbar.module.scss'
 
@@ -57,7 +57,7 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
         <>
             {error && willShowError() && (
                 <div className={styles.error}>
-                    <AlertCircleIcon className={classNames('icon-inline', styles.errorIcon)} />
+                    <Icon className={styles.errorIcon} as={AlertCircleIcon} />
                     {error.message}
                 </div>
             )}
@@ -70,7 +70,7 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                     variant="success"
                     size="sm"
                 >
-                    <CheckIcon className="icon-inline" style={{ marginRight: '0.1em' }} /> Save changes
+                    <Icon style={{ marginRight: '0.1em' }} as={CheckIcon} /> Save changes
                 </Button>
                 <Button
                     disabled={disabled}
@@ -80,7 +80,7 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                     variant="secondary"
                     size="sm"
                 >
-                    <CloseIcon className="icon-inline" /> Discard
+                    <Icon as={CloseIcon} /> Discard
                 </Button>
                 {children}
                 {saving && (

@@ -137,6 +137,10 @@ type EventCommitMatch struct {
 	Detail          string     `json:"detail"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
+	OID             string     `json:"oid"`
+	Message         string     `json:"message"`
+	AuthorName      string     `json:"authorName"`
+	AuthorDate      time.Time  `json:"authorDate"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Content         string     `json:"content"`

@@ -4,7 +4,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
@@ -183,7 +183,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     variant="secondary"
                     onClick={onCreateInsightRequest}
                 >
-                    <PlusIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={PlusIcon} />
                     Save as new view
                 </Button>
             </footer>

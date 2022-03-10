@@ -19,7 +19,7 @@ interface LegacyIconProps extends BaseIconProps, SVGProps<SVGSVGElement> {
 
 interface NewIconProps extends BaseIconProps, Omit<React.ComponentProps<typeof MDIIcon>, 'size'> {}
 
-type IconProps = LegacyIconProps | NewIconProps
+export type IconProps = LegacyIconProps | NewIconProps
 
 export const Icon: React.FunctionComponent<IconProps> = ({ children, className, size, ...props }) => {
     const sharedProps = {
