@@ -71,6 +71,13 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 	})
 	result.aborted = aborted
 
+	html, err := response.HTML()
+	result.html = html
+
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO: This section seems so ugly :'(
 	// Should I just highlight this in the backend as well?
 	// I'm not sure...
@@ -81,15 +88,10 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		}
 
 		result.lsif, err = marshaller.MarshalToString(response.LSIF())
-		return result, err
-	} else {
-		html, err := response.HTML()
-		result.html = html
-
 		if err != nil {
 			return nil, err
 		}
-
-		return result, nil
 	}
+
+	return result, nil
 }

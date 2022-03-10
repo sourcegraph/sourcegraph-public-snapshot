@@ -2,7 +2,7 @@ package search
 
 import (
 	"context"
-	"html/template"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -96,10 +96,10 @@ func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, p
 // DecorateFileHTML returns decorated HTML rendering of file content. If
 // successful and within bounds of timeout and line size, it returns HTML marked
 // up with highlight classes. In other cases, it returns plaintext HTML.
-func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (template.HTML, error) {
+func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightResponse, error) {
 	content, err := fetchContent(ctx, repo, commit, path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	highlightResponse, aborted, err := highlight.Code(ctx, highlight.Params{
@@ -114,26 +114,29 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 		TreeSitterEnabled: true,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// TODO: Can I remove this?
 	if aborted {
 		// code decoration aborted, returns plaintext HTML.
-		return highlightResponse.HTML()
+		return highlightResponse, nil
 	}
 
-	return highlightResponse.HTML()
+	return highlightResponse, nil
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
 func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
-	html, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
+	fmt.Println("==> DecorateFileHunksHTML")
+
+	response, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
 	if err != nil {
 		log15.Warn("stream result decoration could not highlight file", "error", err)
 		return nil
 	}
-	lines, err := highlight.SplitHighlightedLines(html, true)
+
+	lines, err := response.SplitHighlightedLines(true)
 	if err != nil {
 		log15.Warn("stream result decoration could not split highlighted file", "error", err)
 		return nil

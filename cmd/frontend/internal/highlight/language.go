@@ -94,7 +94,7 @@ func init() {
 			engineConfig.Overrides = map[string]EngineType{}
 			for name, engine := range config.Highlights.Engine.Overrides {
 				if overrideEngine, ok := engineNameToEngineType(engine); ok {
-					engineConfig.Overrides[name] = overrideEngine
+					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
 				}
 			}
 
@@ -149,7 +149,10 @@ func getLanguage(path string, contents string) (string, bool) {
 
 // TODO: Expose as an endpoint so you can type in a path and get the result in the front end?
 func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngineQuery {
+	fmt.Println("DETECT:", path, engineConfig.Overrides)
+
 	lang, override := getLanguage(path, contents)
+	lang = strings.ToLower(lang)
 
 	engine := engineConfig.Default
 	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {

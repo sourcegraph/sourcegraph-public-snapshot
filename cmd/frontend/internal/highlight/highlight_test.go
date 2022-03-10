@@ -97,7 +97,9 @@ func TestSplitHighlightedLines(t *testing.T) {
 		`<div><span style="color:#323232;">
 </span></div>`,
 		`<div></div>`}
-	have, err := SplitHighlightedLines(template.HTML(input), false)
+
+	response := &HighlightResponse{html: template.HTML(input)}
+	have, err := response.SplitHighlightedLines(false)
 	if err != nil {
 		t.Fatal(err)
 	}

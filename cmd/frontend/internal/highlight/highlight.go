@@ -130,7 +130,21 @@ func (h *HighlightResponse) HTML() (template.HTML, error) {
 		return h.html, nil
 	}
 
-	return lsifToHTML(h.code, h.document)
+	formatter := &lsifHTML{
+		table: &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()},
+	}
+
+	err := lsifToHTML(h.code, h.document, formatter)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, formatter.table); err != nil {
+		return "", err
+	}
+
+	return template.HTML(buf.String()), nil
 }
 
 func (h *HighlightResponse) SetHTML(html template.HTML) {
@@ -139,6 +153,74 @@ func (h *HighlightResponse) SetHTML(html template.HTML) {
 
 func (h *HighlightResponse) LSIF() *lsiftyped.Document {
 	return h.document
+}
+
+// SplitHighlightedLines takes the highlighted HTML table and returns a slice
+// of highlighted strings, where each string corresponds a single line in the
+// original, highlighted file.
+func (h *HighlightResponse) SplitHighlightedLines(wholeRow bool) ([]template.HTML, error) {
+	if h.document != nil {
+		formatter := &lsifLined{
+			rows: make([]*html.Node, 0),
+		}
+
+		lsifToHTML(h.code, h.document, formatter)
+
+		lines := make([]template.HTML, 0, len(formatter.rows))
+		for _, line := range formatter.rows {
+
+			var lineHTML bytes.Buffer
+			if err := html.Render(&lineHTML, line); err != nil {
+				return nil, err
+			}
+
+			lines = append(lines, template.HTML(lineHTML.String()))
+			// return template.HTML(buf.String()), nil
+			// lineHTML, err :=
+		}
+
+		return lines, nil
+	}
+
+	fmt.Printf("Current response: doc: %+v, \n", h.document)
+
+	input, err := h.HTML()
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := html.Parse(strings.NewReader(string(input)))
+	if err != nil {
+		return nil, err
+	}
+
+	lines := make([]template.HTML, 0)
+
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return nil, errors.Errorf("expected html->body->table, found %+v", table)
+	}
+
+	// Iterate over each table row and extract content
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		var render *html.Node
+		if wholeRow {
+			render = tr
+		} else {
+			render = tr.LastChild.FirstChild // tr > td > div
+		}
+		err = html.Render(&buf, render)
+		if err != nil {
+			return nil, err
+		}
+		lines = append(lines, template.HTML(buf.String()))
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	return lines, nil
 }
 
 // Code highlights the given file content with the given filepath (must contain
@@ -165,6 +247,8 @@ func Code(ctx context.Context, p Params) (response *HighlightResponse, aborted b
 	if !client.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
+
+	fmt.Println("ENGINE ENGINE:", filetypeQuery.Engine)
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
@@ -339,12 +423,14 @@ func Code(ctx context.Context, p Params) (response *HighlightResponse, aborted b
 		// }
 
 		return &HighlightResponse{
+			code:     code,
 			html:     "",
 			document: document,
 		}, false, nil
 	}
 
 	return &HighlightResponse{
+		code:     code,
 		html:     template.HTML(resp.Data),
 		document: nil,
 	}, false, nil
@@ -402,6 +488,7 @@ func generatePlainTable(code string) (*HighlightResponse, error) {
 	}
 
 	return &HighlightResponse{
+		code:     code,
 		html:     template.HTML(buf.String()),
 		document: nil,
 	}, nil
@@ -418,48 +505,10 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 		return nil, aborted, err
 	}
 
-	htmlText, err := highlightResponse.HTML()
-	lines, err := SplitHighlightedLines(htmlText, false)
+	// htmlText, err := highlightResponse.HTML()
+	lines, err := highlightResponse.SplitHighlightedLines(false)
 
 	return lines, aborted, err
-}
-
-// SplitHighlightedLines takes the highlighted HTML table and returns a slice
-// of highlighted strings, where each string corresponds a single line in the
-// original, highlighted file.
-func SplitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
-	doc, err := html.Parse(strings.NewReader(string(input)))
-	if err != nil {
-		return nil, err
-	}
-
-	lines := make([]template.HTML, 0)
-
-	table := doc.FirstChild.LastChild.FirstChild // html > body > table
-	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
-		return nil, errors.Errorf("expected html->body->table, found %+v", table)
-	}
-
-	// Iterate over each table row and extract content
-	var buf bytes.Buffer
-	tr := table.FirstChild.FirstChild // table > tbody > tr
-	for tr != nil {
-		var render *html.Node
-		if wholeRow {
-			render = tr
-		} else {
-			render = tr.LastChild.FirstChild // tr > td > div
-		}
-		err = html.Render(&buf, render)
-		if err != nil {
-			return nil, err
-		}
-		lines = append(lines, template.HTML(buf.String()))
-		buf.Reset()
-		tr = tr.NextSibling
-	}
-
-	return lines, nil
 }
 
 // normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
@@ -498,7 +547,12 @@ type LineRange struct {
 //
 // Input line ranges will automatically be clamped within the bounds of the file.
 func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
-	lines, err := SplitHighlightedLines(html, true)
+	// TODO: HACK
+	response := &HighlightResponse{
+		html: html,
+	}
+
+	lines, err := response.SplitHighlightedLines(true)
 	if err != nil {
 		return nil, err
 	}
