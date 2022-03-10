@@ -207,9 +207,6 @@ func WithNodePtr(other Node, newNode *sitter.Node) *Node {
 	}
 }
 
-// A single parser
-var parser = sitter.NewParser()
-
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*Node, error) {
 	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
@@ -224,14 +221,14 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		return nil, errors.Newf("unsupported language %s", langName)
 	}
 
-	parser.SetLanguage(langSpec.language)
+	s.parser.SetLanguage(langSpec.language)
 
 	contents, err := readFile(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := parser.ParseCtx(context.Background(), nil, contents)
+	tree, err := s.parser.ParseCtx(context.Background(), nil, contents)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse file contents: %s", err)
 	}

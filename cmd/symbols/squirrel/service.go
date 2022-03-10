@@ -22,6 +22,7 @@ type SquirrelService struct {
 	readFile     ReadFileFunc
 	symbolSearch symbolsTypes.SearchFunc
 	breadcrumbs  []Breadcrumb
+	parser       *sitter.Parser
 	closables    []func()
 }
 
@@ -31,6 +32,8 @@ func NewSquirrelService(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchF
 		readFile:     readFile,
 		symbolSearch: symbolSearch,
 		breadcrumbs:  []Breadcrumb{},
+		parser:       sitter.NewParser(),
+		closables:    []func(){},
 	}
 }
 
@@ -39,6 +42,7 @@ func (squirrel *SquirrelService) Close() {
 	for _, close := range squirrel.closables {
 		close()
 	}
+	squirrel.parser.Close()
 }
 
 // symbolInfo finds the symbol at the given point in a file.
