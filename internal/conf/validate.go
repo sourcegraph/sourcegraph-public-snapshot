@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -252,11 +254,15 @@ func getSecretsMap(cfg *Unified) map[string]string {
 	return secretsMap
 }
 
-func RedactSecrets(raw conftypes.RawUnified) (conftypes.RawUnified, error) {
+// RedactSecrets redacts defined list of secrets from the given configuration. It
+// returns empty configuration if any error occurs during redacting process to
+// prevent accidental leak of secrets in the configuration.
+func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
 	cfg, err := ParseConfig(raw)
 	if err != nil {
-		return raw, err
+		return empty, errors.Wrap(err, "parse config")
 	}
+
 	for _, ap := range cfg.AuthProviders {
 		if ap.Openidconnect != nil {
 			ap.Openidconnect.ClientSecret = RedactedSecret
@@ -268,15 +274,36 @@ func RedactSecrets(raw conftypes.RawUnified) (conftypes.RawUnified, error) {
 			ap.Gitlab.ClientSecret = RedactedSecret
 		}
 	}
-	newSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+	redactedSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
 	if err != nil {
-		return raw, err
+		return empty, errors.Wrap(err, `redact "auth.providers"`)
 	}
-	if cfg.ExecutorsAccessToken != "" {
-		newSite, err = jsonc.Edit(newSite, RedactedSecret, "executors.accessToken")
+
+	secrets := []struct {
+		readPath  string // gjson uses "." as path separator, uses "\" to escape.
+		editPaths []string
+	}{
+		{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
+		{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
+		{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
+		{readPath: `authGitHubClientSecret`, editPaths: []string{"authGitHubClientSecret"}},
+		{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
+		{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
 	}
+	for _, secret := range secrets {
+		v := gjson.Get(redactedSite, secret.readPath).String()
+		if v == "" {
+			continue
+		}
+
+		redactedSite, err = jsonc.Edit(redactedSite, RedactedSecret, secret.editPaths...)
+		if err != nil {
+			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
+		}
+	}
+
 	return conftypes.RawUnified{
-		Site: newSite,
+		Site: redactedSite,
 	}, err
 }
 
