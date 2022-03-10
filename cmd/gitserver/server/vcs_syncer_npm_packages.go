@@ -1,11 +1,10 @@
 package server
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -252,23 +252,18 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 	defer os.RemoveAll(tmpDirectory)
 
-	tgzReadSeeker, err := npm.FetchSources(ctx, s.client, dependency)
+	tgz, err := npm.FetchSources(ctx, s.client, dependency)
 	if err != nil {
 		return err
 	}
-	defer tgzReadSeeker.Close()
+	defer tgz.Close()
 
-	cmd := exec.CommandContext(ctx, "git", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
-		return err
-	}
-
-	err = s.commitTgz(ctx, dependency, tmpDirectory, tgzReadSeeker)
+	err = s.commitTgz(ctx, dependency, tmpDirectory, tgz)
 	if err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
+	cmd := exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
@@ -294,19 +289,23 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-// commitTgz creates a git commit in the given working directory that adds all
-// the file contents of the given tgz file.
+// commitTgz initializes a git repository in the given working directory and creates
+// a git commit in that contains all the file contents of the given tgz.
 func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposource.NPMDependency,
-	workingDirectory string, tgzReadSeeker io.ReadSeeker) error {
-	namedReadSeeker := namedReadSeeker{dependency.PackageManagerSyntax(), tgzReadSeeker}
-	if err := decompressTgz(namedReadSeeker, workingDirectory); err != nil {
+	workingDirectory string, tgz io.Reader) error {
+	if err := decompressTgz(tgz, workingDirectory); err != nil {
 		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dependency.PackageManagerSyntax())
 	}
 
 	// See [NOTE: LSIF-config-json] for why we don't create a JSON file here
 	// like we do for Java.
 
-	cmd := exec.CommandContext(ctx, "git", "add", ".")
+	cmd := exec.CommandContext(ctx, "git", "init")
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
+		return err
+	}
+
+	cmd = exec.CommandContext(ctx, "git", "add", ".")
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
@@ -327,147 +326,71 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposourc
 	return nil
 }
 
-// withTgz is a helper function to handling IO-related actions
-// so that the action argument can focus on reading the tarball.
-func withTgz(tgzReadSeeker namedReadSeeker, action func(*tar.Reader) error) (err error) {
-	gzipReader, err := gzip.NewReader(tgzReadSeeker.value)
-	if err != nil {
-		return errors.Wrapf(err, "unable to decompress tar.gz (label=%s) with package source", tgzReadSeeker.name)
-	}
-
-	defer func() {
-		err = errors.Append(err, gzipReader.Close())
-	}()
-
-	tarReader := tar.NewReader(gzipReader)
-	return action(tarReader)
-}
-
-type namedReadSeeker struct {
-	name  string
-	value io.ReadSeeker
-}
-
 // Decompress a tarball at tgzPath, putting the files under destination.
 //
 // Additionally, if all the files in the tarball have paths of the form
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
-func decompressTgz(tgzReadSeeker namedReadSeeker, destination string) (err error) {
-	// [NOTE: npm-strip-outermost-directory]
-	// In practice, NPM tarballs seem to contain a superfluous directory which
-	// contains the files. For example, if you extract react's tarball,
-	// all files will be under a package/ directory, and if you extract
-	// @types/lodash's files, all files are under lodash/.
-	//
-	// However, this additional directory has no meaning. Moreover, it makes
-	// the UX slightly worse, as when you navigate to a repo, you would see
-	// that it contains just 1 folder, and you'd need to click again to drill
-	// down further. So we strip the superfluous directory if we detect one.
-	//
-	// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
-	var superfluousDirName *string = nil
-	commonSuperfluousDirectory := true
-	err = withTgz(tgzReadSeeker, func(reader *tar.Reader) (err error) {
-		for {
-			header, err := reader.Next()
-			if err == io.EOF {
-				return nil
+func decompressTgz(tgz io.Reader, destination string) error {
+	err := unpack.Tgz(tgz, destination, unpack.Opts{
+		SkipInvalid: true,
+		Filter: func(path string, file fs.FileInfo) bool {
+			size := file.Size()
+
+			const sizeLimit = 15 * 1024 * 1024
+			if size >= sizeLimit {
+				log15.Warn("skipping large file in npm package",
+					"path", file.Name(),
+					"size", size,
+					"limit", sizeLimit,
+				)
+				return false
 			}
-			if err != nil {
-				return errors.Wrapf(err, "failed to read tar file %s", tgzReadSeeker.name)
-			}
-			switch header.Typeflag {
-			case tar.TypeReg:
-				components := strings.SplitN(header.Name, string(os.PathSeparator), 2)
-				if len(components) != 2 {
-					commonSuperfluousDirectory = false
-					return nil
-				}
-				outermostDir := components[0]
-				if superfluousDirName == nil {
-					superfluousDirName = &outermostDir
-				} else if *superfluousDirName != outermostDir {
-					commonSuperfluousDirectory = false
-					return nil
-				}
-			default:
-				continue
-			}
-		}
+
+			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, destination)
+			return !malicious
+		},
 	})
+
 	if err != nil {
 		return err
 	}
-	if _, err := tgzReadSeeker.value.Seek(0, io.SeekStart); err != nil {
-		return err
-	}
-	if !commonSuperfluousDirectory {
-		log15.Warn("found npm tarball which doesn't have all files in one top-level directory", "label", tgzReadSeeker.name)
-	}
-	// Post-condition: if commonSuperfluousDirectory is true
-	// then for all files in the tarball, the path (in header.Name)
-	// has at least one path separator.
 
-	return withTgz(tgzReadSeeker, func(tarReader *tar.Reader) (err error) {
-		destinationDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
-		for {
-			header, err := tarReader.Next()
-			if err == io.EOF {
-				return nil
-			}
-			switch header.Typeflag {
-			case tar.TypeDir:
-				continue // We will create directories later; empty directories don't matter for git.
-			case tar.TypeReg:
-				name := header.Name
-				if commonSuperfluousDirectory {
-					name = strings.SplitN(name, string(os.PathSeparator), 2)[1]
-				}
-				cleanedOutputPath, isPotentiallyMalicious := isPotentiallyMaliciousFilepathInArchive(name, destinationDir)
-				if isPotentiallyMalicious {
-					continue
-				}
-				err = copyTarFileEntry(header, tarReader, cleanedOutputPath)
-				if err != nil {
-					return err
-				}
-			default:
-				return errors.Errorf("unrecognized type of header %+v in tarball for %s", header.Typeflag, tgzReadSeeker.name)
-			}
-		}
-	})
+	return stripSingleOutermostDirectory(destination)
 }
 
-func copyTarFileEntry(header *tar.Header, tarReader *tar.Reader, outputPath string) (err error) {
-	if header.Size < 0 {
-		return errors.Errorf("corrupt tar header with negative size %d bytes for %s",
-			header.Size, path.Base(outputPath))
+// stripSingleOutermostDirectory strips a single outermost directory in dir
+// if it has no sibling files or directories.
+//
+// In practice, NPM tarballs seem to contain a superfluous directory which
+// contains the files. For example, if you extract react's tarball,
+// all files will be under a package/ directory, and if you extract
+// @types/lodash's files, all files are under lodash/.
+//
+// However, this additional directory has no meaning. Moreover, it makes
+// the UX slightly worse, as when you navigate to a repo, you would see
+// that it contains just 1 folder, and you'd need to click again to drill
+// down further. So we strip the superfluous directory if we detect one.
+//
+// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
+func stripSingleOutermostDirectory(dir string) error {
+	dirEntries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
 	}
-	// For reference, "pathological" code like SQLite's amalgamation file is
-	// about 7.9 MiB. So a 15 MiB limit seems good enough.
-	const sizeLimit = 15 * 1024 * 1024
-	if header.Size >= sizeLimit {
-		log15.Warn("skipping large file in npm package",
-			"path", outputPath,
-			"size", header.Size,
-			"limit", sizeLimit,
-		)
+
+	if len(dirEntries) != 1 || !dirEntries[0].IsDir() {
 		return nil
 	}
 
-	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
-		return err
-	}
-	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	outermostDir := dirEntries[0].Name()
+	tmpDir := dir + ".tmp"
+
+	// mv $dir $tmpDir
+	err = os.Rename(dir, tmpDir)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		errClose := outputFile.Close()
-		if err != nil {
-			err = errClose
-		}
-	}()
-	_, err = io.CopyN(outputFile, tarReader, header.Size)
-	return err
+
+	// mv $tmpDir/$(basename $outermostDir) $dir
+	return os.Rename(path.Join(tmpDir, outermostDir), dir)
 }

@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -46,11 +47,10 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	assert.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	tgzPath := path.Join(dir, "malicious.tgz")
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
-	createMaliciousTgz(t, tgzPath)
+	tgz := bytes.NewReader(createMaliciousTgz(t))
 
 	s := NewNPMPackagesSyncer(
 		schema.NPMPackagesConnection{Dependencies: []string{}},
@@ -59,15 +59,13 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	tgzFile, err := os.Open(tgzPath)
-	require.Nil(t, err)
-	defer func() { require.Nil(t, tgzFile.Close()) }()
+
 	dep := &reposource.NPMDependency{NPMPackage: &reposource.NPMPackage{}}
-	err = s.commitTgz(ctx, dep, extractPath, tgzFile)
+	err = s.commitTgz(ctx, dep, extractPath, tgz)
 	require.NotNil(t, err, "malicious tarball should not be committed successfully")
 
 	dirEntries, err := os.ReadDir(extractPath)
-	baseline := []string{"src"}
+	baseline := []string{"harmless.java"}
 	assert.Nil(t, err)
 	paths := []string{}
 	for _, dirEntry := range dirEntries {
@@ -78,40 +76,43 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	}
 }
 
-func createMaliciousTgz(t *testing.T, tgzPath string) {
+func createMaliciousTgz(t *testing.T) []byte {
 	fileInfos := []fileInfo{
-		{harmlessPath, []byte{}},
+		{harmlessPath, []byte("harmless")},
 	}
 	for _, filepath := range maliciousPaths {
-		fileInfos = append(fileInfos, fileInfo{filepath, []byte{}})
+		fileInfos = append(fileInfos, fileInfo{filepath, []byte("malicious")})
 	}
-	createTgz(t, tgzPath, fileInfos)
+	return createTgz(t, fileInfos)
 }
 
 func TestNPMCloneCommand(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer func() { assert.Nil(t, os.RemoveAll(dir)) }()
+	require.NoError(t, err)
 
-	tgzPath := path.Join(dir, exampleTgz)
-	createTgz(t, tgzPath, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
-	defer func() { assert.Nil(t, os.Remove(tgzPath)) }()
-	tgzPath2 := path.Join(dir, exampleTgz2)
-	createTgz(t, tgzPath2, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
-	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
+	t.Cleanup(func() {
+		require.NoError(t, os.RemoveAll(dir))
+	})
+
+	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
+	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
 
 	client := npmtest.MockClient{
 		Packages: map[string]*npm.PackageInfo{
 			"example": {
 				Versions: map[string]*npm.DependencyInfo{
 					exampleNPMVersion: {
-						Dist: npm.DependencyInfoDist{TarballURL: tgzPath},
+						Dist: npm.DependencyInfoDist{TarballURL: exampleNPMVersion},
 					},
 					exampleNPMVersion2: {
-						Dist: npm.DependencyInfoDist{TarballURL: tgzPath2},
+						Dist: npm.DependencyInfoDist{TarballURL: exampleNPMVersion2},
 					},
 				},
 			},
+		},
+		Tarballs: map[string][]byte{
+			exampleNPMVersion:  tgz1,
+			exampleNPMVersion2: tgz2,
 		},
 	}
 	s := NewNPMPackagesSyncer(
@@ -198,24 +199,25 @@ func (s NPMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string
 	packageURL := vcs.URL{URL: url.URL{Path: exampleNPMPackageURL}}
 	s.connection.Dependencies = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &packageURL, bareGitDirectory)
-	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
+	require.NoError(t, err)
+	require.NoError(t, cmd.Run())
 }
 
-func createTgz(t *testing.T, tgzPath string, fileInfos []fileInfo) {
+func createTgz(t *testing.T, fileInfos []fileInfo) []byte {
 	t.Helper()
-	ioWriter, err := os.Create(tgzPath)
-	assert.Nil(t, err)
-	gzipWriter := gzip.NewWriter(ioWriter)
+
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzipWriter)
-	defer func() {
-		assert.Nil(t, tarWriter.Close())
-		assert.Nil(t, gzipWriter.Close())
-		assert.Nil(t, ioWriter.Close())
-	}()
+
 	for _, fileinfo := range fileInfos {
-		assert.Nil(t, addFileToTarball(t, tarWriter, fileinfo))
+		require.NoError(t, addFileToTarball(t, tarWriter, fileinfo))
 	}
+
+	require.NoError(t, tarWriter.Close())
+	require.NoError(t, gzipWriter.Close())
+
+	return buf.Bytes()
 }
 
 func addFileToTarball(t *testing.T, tarWriter *tar.Writer, info fileInfo) error {
@@ -256,35 +258,29 @@ func TestDecompressTgz(t *testing.T) {
 		{[]string{"d/f1", "d/f2"}, []string{"f1", "f2"}},
 		{[]string{"d1/d2/f1", "d1/d2/f2"}, []string{"d2"}},
 		{[]string{"d1/f1", "d2/f2", "d3/f3"}, []string{"d1", "d2", "d3"}},
+		{[]string{"f1", "d1/f2", "d1/f3"}, []string{"d1", "f1"}},
 	}
 
-	for _, testData := range table {
-		dir, err := os.MkdirTemp("", "")
-		assert.Nil(t, err)
-		defer func() { assert.Nil(t, os.RemoveAll(dir)) }()
+	for i, testData := range table {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			dir, err := os.MkdirTemp("", "")
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
 
-		tarballName := "test.tgz"
-		tgzPath := path.Join(dir, tarballName)
-		// Creating a tarball with empty files fails???
-		fileInfos := []fileInfo{}
-		for _, path := range testData.paths {
-			fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
-		}
-		createTgz(t, tgzPath, fileInfos)
-		tgzFile, err := os.Open(tgzPath)
-		require.Nil(t, err)
-		defer tgzFile.Close()
-		assert.Nil(t, decompressTgz(namedReadSeeker{tgzPath, tgzFile}, dir))
-		dirEntries, err := os.ReadDir(dir)
-		assert.Nil(t, err)
-		dirEntryNames := []string{}
-		for _, entry := range dirEntries {
-			if entry.Name() == tarballName {
-				continue
+			var fileInfos []fileInfo
+			for _, path := range testData.paths {
+				fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
 			}
-			dirEntryNames = append(dirEntryNames, entry.Name())
-		}
-		assert.True(t, reflect.DeepEqual(dirEntryNames, testData.expect))
+
+			tgz := bytes.NewReader(createTgz(t, fileInfos))
+
+			require.NoError(t, decompressTgz(tgz, dir))
+
+			have, err := fs.Glob(os.DirFS(dir), "*")
+			require.NoError(t, err)
+
+			require.Equal(t, testData.expect, have)
+		})
 	}
 }
 
@@ -325,13 +321,13 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 	tarWriter.Close()
 	gzipWriter.Close()
 
-	readSeeker := bytes.NewReader(buffer.Bytes())
+	reader := bytes.NewReader(buffer.Bytes())
 
 	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
 	require.Nil(t, err)
 	defer os.RemoveAll(outDir)
 
 	require.NotPanics(t, func() {
-		decompressTgz(namedReadSeeker{"buffer", readSeeker}, outDir)
+		decompressTgz(reader, outDir)
 	})
 }
