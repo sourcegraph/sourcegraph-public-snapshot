@@ -104,7 +104,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 // deleteAccessToken tries to delete the associated internal access
 // token. If the token cannot be found it does *not* return an error.
 func deleteAccessToken(ctx context.Context, batchesStore *Store, tokenID int64) error {
-	err := database.AccessTokensWith(batchesStore).HardDeleteByID(ctx, tokenID)
+	err := batchesStore.DatabaseDB().AccessTokens().HardDeleteByID(ctx, tokenID)
 	if err != nil && err != database.ErrAccessTokenNotFound {
 		return err
 	}

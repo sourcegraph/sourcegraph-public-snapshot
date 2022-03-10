@@ -26,8 +26,8 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
-
-	s := New(db, &observation.TestContext, nil)
+	mockDB := database.NewMockDBFrom(db)
+	s := New(db, &observation.TestContext, nil).With(mockDB)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	// Setup all the associations
@@ -92,7 +92,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	attachAccessToken := func(t *testing.T) int64 {
 		t.Helper()
-		tokenID, _, err := database.AccessTokens(db).CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
+		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -172,7 +172,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			}
 		}
 
-		_, err = database.AccessTokens(db).GetByID(ctx, tokenID)
+		_, err = db.AccessTokens().GetByID(ctx, tokenID)
 		if err != database.ErrAccessTokenNotFound {
 			t.Fatalf("access token was not deleted")
 		}
@@ -193,13 +193,15 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		setProcessing(t)
 		tokenID := attachAccessToken(t)
 
-		database.Mocks.AccessTokens.HardDeleteByID = func(id int64) error {
+		accessTokens := database.NewMockAccessTokenStore()
+		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
+			panic("shit")
 			if id != tokenID {
 				t.Fatalf("wrong token deleted")
 			}
 			return errors.New("internal database error")
-		}
-		defer func() { database.Mocks.AccessTokens.HardDeleteByID = nil }()
+		})
+		mockDB.AccessTokensFunc.SetDefaultReturn(accessTokens)
 
 		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 		if !ok || err != nil {
@@ -263,7 +265,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 	attachAccessToken := func(t *testing.T) int64 {
 		t.Helper()
-		tokenID, _, err := database.AccessTokens(db).CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
+		tokenID, _, err := db.AccessTokens().CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -304,7 +306,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 	}
 
-	_, err = database.AccessTokens(db).GetByID(ctx, tokenID)
+	_, err = db.AccessTokens().GetByID(ctx, tokenID)
 	if err != database.ErrAccessTokenNotFound {
 		t.Fatalf("access token was not deleted")
 	}
