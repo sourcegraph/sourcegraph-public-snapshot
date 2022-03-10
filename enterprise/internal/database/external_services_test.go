@@ -1298,8 +1298,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				tc.ps = conf.Get().AuthProviders
 			}
 
-			s := NewExternalServicesStore(d)
-			_, err := s.ValidateConfig(context.Background(), database.ValidateExternalServiceConfigOptions{
+			s := database.ExternalServices(d)
+			_, err := ValidateExternalServiceConfig(context.Background(), s, database.ValidateExternalServiceConfigOptions{
 				Kind:          tc.kind,
 				Config:        tc.config,
 				AuthProviders: tc.ps,

@@ -306,7 +306,8 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				test.setup(t)
 			}
 
-			_, err := ExternalServices(db).ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			ess := ExternalServices(db)
+			_, err := ValidateExternalServiceConfig(context.Background(), ess, ValidateExternalServiceConfigOptions{
 				Kind:            test.kind,
 				Config:          test.config,
 				NamespaceUserID: test.namespaceUserID,
