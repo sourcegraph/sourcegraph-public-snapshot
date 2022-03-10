@@ -31,7 +31,7 @@ function getExtensionCoreConfiguration(targetType) {
     target: targetType,
     entry: {
       extension: path.resolve(__dirname, 'src', 'extension.ts'),
-      uninstall: path.resolve(__dirname, 'src', 'uninstall.ts')
+      uninstall: path.resolve(__dirname, 'src', 'uninstall.ts'),
     }, // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/

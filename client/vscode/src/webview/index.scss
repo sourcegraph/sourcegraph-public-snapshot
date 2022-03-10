@@ -107,3 +107,9 @@ code {
         background-color: var(--vscode-button-secondaryBackground) !important;
     }
 }
+
+.btn-text-link {
+    color: var(--vscode-textLink-foreground);
+    height: 0;
+    padding: 0;
+}

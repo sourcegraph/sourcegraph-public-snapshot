@@ -1,4 +1,5 @@
 import 'cross-fetch/polyfill'
+
 import { of, ReplaySubject } from 'rxjs'
 import vscode, { env } from 'vscode'
 
@@ -20,7 +21,7 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
@@ -114,6 +115,7 @@ export function activate(context: vscode.ExtensionContext): void {
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
+        setEndpointUri: uri => updateEndpointSetting(uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,
@@ -141,3 +143,21 @@ export function activate(context: vscode.ExtensionContext): void {
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
 }
+
+// TODO
+// Names of uninstalled extension will be included in the .obsolete file
+// Including upgrades
+// export function deactivate(): void {
+//     const extensionPath = vscode.extensions.getExtension('sourcegraph.sourcegraph')?.extensionPath
+//     const pathComponents = extensionPath?.split('/').slice(0, -1)
+//     pathComponents?.push('.obsolete')
+//     const filePath = pathComponents?.join('/')
+//     if (filePath !== undefined) {
+//         vscode.workspace.fs.readFile(vscode.Uri.file(filePath)).then(
+//             data => console.log(data),
+//             error => {
+//                 console.error(error)
+//             }
+//         )
+//     }
+// }
