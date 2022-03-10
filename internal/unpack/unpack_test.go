@@ -82,7 +82,7 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "illegal-absolute-link-path",
 				in: []*fileInfo{
-					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink | 0655},
+					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				err: "/etc/passwd: illegal link path",
 			},
@@ -90,7 +90,7 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "illegal-relative-link-path",
 				in: []*fileInfo{
-					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink | 0655},
+					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink},
 				},
 				err: "../../etc/passwd: illegal link path",
 			},
@@ -101,8 +101,8 @@ func TestUnpack(t *testing.T) {
 				in: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655},
 					{path: "../../etc/passwd", contents: "foo", mode: 0655},
-					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink | 0655},
-					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink | 0655},
+					{path: "passwd", link: "../../etc/passwd", mode: fs.ModeSymlink},
+					{path: "passwd", link: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
@@ -113,11 +113,11 @@ func TestUnpack(t *testing.T) {
 				name:   "symbolic-link",
 				in: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655},
-					{path: "foo", link: "bar", mode: fs.ModeSymlink | 0755},
+					{path: "foo", link: "bar", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
-					{path: "foo", link: "bar", mode: fs.ModeSymlink | 0755},
+					{path: "foo", link: "bar", mode: fs.ModeSymlink},
 				},
 			},
 		}...)
@@ -245,13 +245,16 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 		link     string
 	)
 
+	mode := info.Mode()
 	if !d.IsDir() {
 		name := filepath.Join(dir, path)
-		if info.Mode()&fs.ModeSymlink != 0 {
+		if mode&fs.ModeSymlink != 0 {
 			link, err = os.Readlink(name)
 			if err != nil {
 				t.Fatal(err)
 			}
+			// Different OSes set different permissions in a symlink so we ignore them.
+			mode = fs.ModeSymlink
 		} else if contents, err = os.ReadFile(name); err != nil {
 			t.Fatal(err)
 		}
@@ -260,7 +263,7 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 	return &fileInfo{
 		path:     path,
 		link:     link,
-		mode:     info.Mode(),
+		mode:     mode,
 		modtime:  info.ModTime(),
 		contents: string(contents),
 		size:     int64(len(contents)),
