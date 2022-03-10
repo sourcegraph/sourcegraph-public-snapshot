@@ -1,14 +1,12 @@
 @import './colors.scss';
 @import './border-radius.scss';
+@import './variables.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
 $border-radius-sm: var(--border-radius);
 $border-radius-lg: var(--border-radius);
 $popover-border-radius: var(--popover-border-radius);
-
-$font-size-base: 0.875rem;
-$line-height-base: (20/14);
 
 $box-shadow: var(--box-shadow);
 
@@ -88,15 +86,6 @@ $hr-margin-y: 0.25rem;
 // Disable all Bootstrap transitions
 $enable-transitions: false;
 
-// Spacer
-$spacer: 1rem;
-
-:root {
-    --spacer: #{$spacer};
-    --font-size-base: #{$font-size-base};
-    --line-height-base: #{$line-height-base};
-}
-
 // Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
@@ -108,9 +97,6 @@ $spacer: 1rem;
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
 
-// Modified in `./forms.scss`
-@import 'bootstrap/scss/custom-forms';
-
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
@@ -119,6 +105,7 @@ $spacer: 1rem;
 @import './popover';
 @import './nav';
 @import './list-group';
+@import './custom-forms';
 @import './typography';
 @import './tables';
 @import './code';
