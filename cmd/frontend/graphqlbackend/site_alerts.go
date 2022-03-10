@@ -215,14 +215,14 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
-		return []*Alert{&Alert{
+		return []*Alert{{
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
 		}}
 	}
 	if conf.Get().EmailAddress == "" {
-		return []*Alert{&Alert{
+		return []*Alert{{
 			TypeValue:                 AlertTypeWarning,
 			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
 			IsDismissibleWithKeyValue: "email-sending",
