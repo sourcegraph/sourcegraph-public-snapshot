@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -24,11 +24,9 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { Alert, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput } from '../..'
-import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
+import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../NotebookBlock.module.scss'
-import { useBlockSelection } from '../useBlockSelection'
-import { useBlockShortcuts } from '../useBlockShortcuts'
+import { NotebookBlock } from '../NotebookBlock'
 
 import styles from './NotebookSymbolBlock.module.scss'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
@@ -64,7 +62,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     onBlockInputChange,
     ...props
 }) => {
-    const blockElement = useRef(null)
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
     const [symbolQueryInput, setSymbolQueryInput] = useState('')
@@ -78,14 +75,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         },
         [id, onBlockInputChange, onRunBlock]
     )
-    const { onSelect } = useBlockSelection({
-        id,
-        blockElement: blockElement.current,
-        isSelected,
-        isInputFocused,
-        onSelectBlock,
-        ...props,
-    })
 
     const onEnterBlock = useCallback(() => {
         if (showInputs) {
@@ -96,15 +85,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         }
     }, [editor, showInputs, isReadOnly, setShowInputs])
 
-    const hideInput = useCallback(() => setShowInputs(false), [setShowInputs])
-
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onEnterBlock,
-        onRunBlock: hideInput,
-        ...props,
-    })
+    const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
     const symbolOutput = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
 
@@ -176,78 +157,72 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
     return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <div
-                className={classNames(
-                    blockStyles.block,
-                    styles.block,
-                    isSelected && !isInputFocused && blockStyles.selected,
-                    isSelected && isInputFocused && blockStyles.selectedNotFocused
-                )}
-                onClick={onSelect}
-                onKeyDown={onKeyDown}
-                onFocus={onSelect}
-                // A tabIndex is necessary to make the block focusable.
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-                tabIndex={0}
-                aria-label="Notebook symbol block"
-                ref={blockElement}
-            >
-                <div className={styles.header}>
-                    {input.symbolName.length > 0 ? (
-                        <NotebookSymbolBlockHeader {...input} symbolURL={symbolURL} />
-                    ) : (
-                        <>No symbol selected</>
-                    )}
-                </div>
-                {showInputs && (
-                    <NotebookSymbolBlockInput
-                        id={id}
-                        editor={editor}
-                        symbolQueryInput={symbolQueryInput}
-                        isLightTheme={isLightTheme}
-                        setEditor={setEditor}
-                        setSymbolQueryInput={setSymbolQueryInput}
-                        debouncedSetSymbolQueryInput={debouncedSetSymbolQueryInput}
-                        onSymbolSelected={onSymbolSelected}
-                        setIsInputFocused={setIsInputFocused}
-                        onRunBlock={hideInput}
-                        onSelectBlock={onSelectBlock}
-                        {...props}
-                    />
-                )}
-                {symbolOutput === LOADING && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
-                        <LoadingSpinner inline={false} />
-                    </div>
-                )}
-                {symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput) && (
-                    <div className={styles.highlightedFileWrapper}>
-                        <CodeExcerpt
-                            repoName={input.repositoryName}
-                            commitID={input.revision}
-                            filePath={input.filePath}
-                            blobLines={symbolOutput.highlightedLines}
-                            highlightRanges={[symbolOutput.highlightSymbolRange]}
-                            {...symbolOutput.highlightLineRange}
-                            isFirst={false}
-                            fetchHighlightedFileRangeLines={() => of([])}
-                            hoverifier={hoverifier}
-                            viewerUpdates={viewerUpdates}
-                        />
-                    </div>
-                )}
-                {symbolOutput && symbolOutput !== LOADING && isErrorLike(symbolOutput) && (
-                    <Alert className="m-3" variant="danger">
-                        {symbolOutput.message}
-                    </Alert>
+        <NotebookBlock
+            className={styles.block}
+            id={id}
+            isReadOnly={isReadOnly}
+            isMacPlatform={isMacPlatform}
+            isInputFocused={isInputFocused}
+            aria-label="Notebook symbol block"
+            onEnterBlock={onEnterBlock}
+            isSelected={isSelected}
+            isOtherBlockSelected={isOtherBlockSelected}
+            onRunBlock={hideInputs}
+            onBlockInputChange={onBlockInputChange}
+            onSelectBlock={onSelectBlock}
+            actions={isSelected ? menuActions : linkMenuAction}
+            {...props}
+        >
+            <div className={styles.header}>
+                {input.symbolName.length > 0 ? (
+                    <NotebookSymbolBlockHeader {...input} symbolURL={symbolURL} />
+                ) : (
+                    <>No symbol selected</>
                 )}
             </div>
-            {(isSelected || !isOtherBlockSelected) && (
-                <NotebookBlockMenu id={id} actions={isSelected ? menuActions : linkMenuAction} />
+            {showInputs && (
+                <NotebookSymbolBlockInput
+                    id={id}
+                    editor={editor}
+                    symbolQueryInput={symbolQueryInput}
+                    isLightTheme={isLightTheme}
+                    setEditor={setEditor}
+                    setSymbolQueryInput={setSymbolQueryInput}
+                    debouncedSetSymbolQueryInput={debouncedSetSymbolQueryInput}
+                    onSymbolSelected={onSymbolSelected}
+                    setIsInputFocused={setIsInputFocused}
+                    onRunBlock={hideInputs}
+                    onSelectBlock={onSelectBlock}
+                    {...props}
+                />
             )}
-        </div>
+            {symbolOutput === LOADING && (
+                <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
+                    <LoadingSpinner inline={false} />
+                </div>
+            )}
+            {symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput) && (
+                <div className={styles.highlightedFileWrapper}>
+                    <CodeExcerpt
+                        repoName={input.repositoryName}
+                        commitID={input.revision}
+                        filePath={input.filePath}
+                        blobLines={symbolOutput.highlightedLines}
+                        highlightRanges={[symbolOutput.highlightSymbolRange]}
+                        {...symbolOutput.highlightLineRange}
+                        isFirst={false}
+                        fetchHighlightedFileRangeLines={() => of([])}
+                        hoverifier={hoverifier}
+                        viewerUpdates={viewerUpdates}
+                    />
+                </div>
+            )}
+            {symbolOutput && symbolOutput !== LOADING && isErrorLike(symbolOutput) && (
+                <Alert className="m-3" variant="danger">
+                    {symbolOutput.message}
+                </Alert>
+            )}
+        </NotebookBlock>
     )
 }
 

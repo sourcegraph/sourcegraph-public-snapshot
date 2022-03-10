@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
@@ -29,11 +29,10 @@ import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { useExperimentalFeatures } from '../../../stores'
 import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUserNeedsCodeHost'
-import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
+import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
+import { NotebookBlock } from '../NotebookBlock'
 import blockStyles from '../NotebookBlock.module.scss'
-import { useBlockSelection } from '../useBlockSelection'
-import { useBlockShortcuts } from '../useBlockShortcuts'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
 import styles from './NotebookQueryBlock.module.scss'
@@ -74,9 +73,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     ...props
 }) => {
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
-    const blockElement = useRef<HTMLDivElement>(null)
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
@@ -108,15 +105,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     const onEnterBlock = useCallback(() => {
         setTimeout(() => editor?.focus(), 0)
     }, [editor])
-    const { onSelect } = useBlockSelection({
-        id,
-        blockElement: blockElement.current,
-        isSelected,
-        isInputFocused,
-        onSelectBlock,
-        ...props,
-    })
-    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, onRunBlock: runBlock, ...props })
 
     const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const mainMenuAction: BlockMenuAction = useMemo(() => {
@@ -159,85 +147,70 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     }, [editor])
 
     return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
-            {/* Notebook blocks are a form of specialized UI for which there are no good accesibility settings (role, aria-*)
-                or semantic elements that would accurately describe its functionality. To provide the necessary functionality we have
-                to rely on plain div elements and custom click/focus/keyDown handlers. We still preserve the ability to navigate through blocks
-                with the keyboard using the up and down arrows, and TAB. */}
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+        <NotebookBlock
+            className={styles.block}
+            id={id}
+            isMacPlatform={isMacPlatform}
+            isInputFocused={isInputFocused}
+            aria-label="Notebook query block"
+            onEnterBlock={onEnterBlock}
+            isSelected={isSelected}
+            isOtherBlockSelected={isOtherBlockSelected}
+            onRunBlock={onRunBlock}
+            onBlockInputChange={onBlockInputChange}
+            onSelectBlock={onSelectBlock}
+            mainAction={mainMenuAction}
+            actions={isSelected ? commonMenuActions : linkMenuActions}
+            {...props}
+        >
+            <div className="mb-1 text-muted">Search query</div>
             <div
                 className={classNames(
-                    blockStyles.block,
-                    styles.block,
-                    isSelected && !isInputFocused && blockStyles.selected,
-                    isSelected && isInputFocused && blockStyles.selectedNotFocused
+                    blockStyles.monacoWrapper,
+                    isInputFocused && blockStyles.selected,
+                    styles.queryInputMonacoWrapper
                 )}
-                onClick={onSelect}
-                onKeyDown={onKeyDown}
-                onFocus={onSelect}
-                // A tabIndex is necessary to make the block focusable.
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-                tabIndex={0}
-                aria-label="Notebook query block"
-                ref={blockElement}
             >
-                <div className="mb-1 text-muted">Search query</div>
-                <div
-                    className={classNames(
-                        blockStyles.monacoWrapper,
-                        isInputFocused && blockStyles.selected,
-                        styles.queryInputMonacoWrapper
-                    )}
-                >
-                    <MonacoEditor
-                        language={sourcegraphSearchLanguageId}
-                        value={input}
-                        height="auto"
-                        isLightTheme={isLightTheme}
-                        editorWillMount={noop}
-                        onEditorCreated={setEditor}
-                        options={MONACO_BLOCK_INPUT_OPTIONS}
-                        border={false}
-                    />
-                </div>
-
-                {searchResults && searchResults.state === 'loading' && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
-                        <LoadingSpinner />
-                    </div>
-                )}
-                {searchResults && searchResults.state !== 'loading' && (
-                    <div className={styles.results}>
-                        <StreamingSearchResultsList
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            searchContextsEnabled={props.searchContextsEnabled}
-                            location={location}
-                            allExpanded={false}
-                            results={searchResults}
-                            isLightTheme={isLightTheme}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            telemetryService={telemetryService}
-                            settingsCascade={settingsCascade}
-                            authenticatedUser={props.authenticatedUser}
-                            showSearchContext={showSearchContext}
-                            assetsRoot={window.context?.assetsRoot || ''}
-                            renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
-                            platformContext={props.platformContext}
-                            extensionsController={props.extensionsController}
-                            hoverifier={hoverifier}
-                            openMatchesInNewTab={true}
-                        />
-                    </div>
-                )}
+                <MonacoEditor
+                    language={sourcegraphSearchLanguageId}
+                    value={input}
+                    height="auto"
+                    isLightTheme={isLightTheme}
+                    editorWillMount={noop}
+                    onEditorCreated={setEditor}
+                    options={MONACO_BLOCK_INPUT_OPTIONS}
+                    border={false}
+                />
             </div>
 
-            {(isSelected || !isOtherBlockSelected) && (
-                <NotebookBlockMenu
-                    id={id}
-                    mainAction={mainMenuAction}
-                    actions={isSelected ? commonMenuActions : linkMenuActions}
-                />
+            {searchResults && searchResults.state === 'loading' && (
+                <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
+                    <LoadingSpinner />
+                </div>
             )}
-        </div>
+            {searchResults && searchResults.state !== 'loading' && (
+                <div className={styles.results}>
+                    <StreamingSearchResultsList
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        searchContextsEnabled={props.searchContextsEnabled}
+                        location={location}
+                        allExpanded={false}
+                        results={searchResults}
+                        isLightTheme={isLightTheme}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                        telemetryService={telemetryService}
+                        settingsCascade={settingsCascade}
+                        authenticatedUser={props.authenticatedUser}
+                        showSearchContext={showSearchContext}
+                        assetsRoot={window.context?.assetsRoot || ''}
+                        renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
+                        platformContext={props.platformContext}
+                        extensionsController={props.extensionsController}
+                        hoverifier={hoverifier}
+                        openMatchesInNewTab={true}
+                    />
+                </div>
+            )}
+        </NotebookBlock>
     )
 }
