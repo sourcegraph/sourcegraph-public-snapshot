@@ -44,6 +44,8 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const [loadingInvites, setLoadingInvites] = useState<Set<string>>(new Set<string>())
     const [successfulInvites, setSuccessfulInvites] = useState<Set<string>>(new Set<string>())
 
+    const isSiteAdmin = authenticatedUser?.siteAdmin ?? false
+
     useEffect(() => {
         if (!Array.isArray(collaborators)) {
             return
@@ -88,12 +90,12 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
     const contentDisplay =
         filteredCollaborators?.length === 0 || !emailEnabled ? (
-            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} />
+            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} isSiteAdmin={isSiteAdmin} />
         ) : (
             <div className={classNames('row', 'pt-1')}>
                 {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
 
-                <CollaboratorsPanelInfo isSiteAdmin={authenticatedUser?.siteAdmin ?? false} />
+                <CollaboratorsPanelInfo isSiteAdmin={isSiteAdmin} />
 
                 {filteredCollaborators?.map((person: InvitableCollaborator) => (
                     <div
@@ -152,7 +154,10 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     )
 }
 
-const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }> = ({ username }) => {
+const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; isSiteAdmin: boolean }> = ({
+    username,
+    isSiteAdmin,
+}) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
     useEffect(() => {
@@ -174,7 +179,13 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 'h-100'
             )}
         >
-            {emailEnabled ? <div className="text-center">No collaborators found in sampled repositories.</div> : null}
+            {emailEnabled ? (
+                <div className="text-muted text-center">No collaborators found in sampled repositories.</div>
+            ) : isSiteAdmin ? (
+                <div className="text-muted text-center">
+                    This server is not configured to send emails. <Link to="/help/admin/config/email">Learn more</Link>
+                </div>
+            ) : null}
             <div className="text-muted mt-3 text-center">
                 You can invite people to Sourcegraph with this direct link:
             </div>
