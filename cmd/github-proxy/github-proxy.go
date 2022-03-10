@@ -59,7 +59,6 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	logging.Init()
-	conf.Init()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
