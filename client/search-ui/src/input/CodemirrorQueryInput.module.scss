@@ -1,0 +1,101 @@
+.root {
+    flex: 1;
+    min-width: 0;
+
+    :global(.cm-editor.cm-focused) {
+        outline: none;
+    }
+
+    :global(.cm-scroller) {
+        font-family: var(--code-font-family);
+    }
+
+    :global(.cm-line) {
+        padding: 0;
+    }
+    :global(.cm-tooltip) {
+        padding: 0.25rem;
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color);
+        max-width: 50vw;
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        code {
+            background-color: rgba(220, 220, 220, 0.4);
+            border-radius: 3px;
+            padding: 0 0.4em;
+        }
+    }
+}
+
+.focusedFilter {
+    background-color: var(--color-bg-2);
+}
+
+.identifier,
+.metaStructuralVariable,
+.metaRevisionCommitHash,
+.metaRevisionLabel,
+.metaRevisionReferencePath {
+    color: var(--search-query-text-color);
+}
+
+.metaRevisionWildcard {
+    color: var(--oc-cyan-7);
+}
+
+.field,
+.metaRepoRevisionSeparator,
+.metaPredicateDot {
+    color: var(--search-filter-keyword-color);
+}
+
+.keyword,
+.openingParen,
+.closingParen,
+.metaContextPrefix,
+.metaPredicateNameAccess {
+    color: var(--search-keyword-color);
+}
+
+.metaRegexp {
+    &CharacterSet,
+    &CharacterClass,
+    &CharacterClassRangeHyphen {
+        color: var(--search-keyword-color);
+    }
+
+    &Alternative,
+    &RangeQuantifier {
+        color: var(--oc-cyan-7);
+    }
+
+    &Delimited,
+    &Assertion,
+    &LazyQualifier {
+        color: var(--oc-red-9);
+    }
+}
+
+.comment,
+.metaPredicateParenthesis,
+.metaRegexpEscapedCharacter,
+.metaStructuralRegexpSeparator,
+.metaRevisionSeparator {
+    color: var(--oc-orange-9);
+}
+
+.metaFilterSeparator,
+.metaPathSeparator {
+    color: var(--oc-gray-6);
+}
+
+.metaStructuralHole,
+.metaStructuralRegexpHole,
+.metaRevisionIncludeGlobMarker,
+.metaRevisionExcludeGlobMarker {
+    color: var(--oc-red-9);
+}

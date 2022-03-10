@@ -8,7 +8,8 @@ import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './LazyMonacoQueryInput.module.scss'
 
-const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
+// const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
+const MonacoQueryInput = lazyComponent(() => import('./CodemirrorQueryInput'), 'CodemirrorQueryInput')
 
 /**
  * A plain query input displayed during lazy-loading of the MonacoQueryInput.
