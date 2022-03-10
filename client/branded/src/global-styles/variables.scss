@@ -13,6 +13,7 @@ $spacer: 1rem;
     --spacer: #{$spacer};
     --font-size-base: #{$font-size-base};
     --line-height-base: #{$line-height-base};
+    // Input
     --input-font-size: var(--font-size-base);
     --input-font-size-sm: #{$input-font-size-sm};
     --input-line-height: var(--line-height-base);

@@ -5,7 +5,7 @@
     --custom-select-padding-x: var(--input-padding-x);
     --custom-select-padding-x-sm: var(--input-padding-x-sm);
     --custom-select-padding-x-lg: var(--input-padding-x-lg);
-    --custom-select-font-size: 0.875rem;
+    --custom-select-font-size: var(--font-size-base);
     --custom-select-bg-size: 1rem 1rem;
     --custom-select-background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23798baf' viewBox='0 0 24 24'%3e%3cpath d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z'/%3e%3c/svg%3e")
         no-repeat right var(--custom-select-padding-x) center/var(--custom-select-bg-size);
