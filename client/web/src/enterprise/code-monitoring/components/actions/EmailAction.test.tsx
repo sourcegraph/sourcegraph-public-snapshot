@@ -108,6 +108,37 @@ describe('EmailAction', () => {
         })
     })
 
+    test('open, edit, cancel, open again', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <EmailAction
+                    {...props}
+                    setAction={setActionSpy}
+                    action={{
+                        __typename: 'MonitorEmail',
+                        enabled: true,
+                        includeResults: false,
+                        id: '1',
+                        recipients: { nodes: [{ id: 'userID' }] },
+                    }}
+                />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-email'))
+
+        expect(getByTestId('enable-action-toggle-expanded-email')).toBeChecked()
+        userEvent.click(getByTestId('enable-action-toggle-expanded-email'))
+        expect(getByTestId('enable-action-toggle-expanded-email')).not.toBeChecked()
+        userEvent.click(getByTestId('cancel-action-email'))
+
+        userEvent.click(getByTestId('form-action-toggle-email'))
+        expect(getByTestId('enable-action-toggle-expanded-email')).toBeChecked()
+
+        sinon.assert.notCalled(setActionSpy)
+    })
+
     describe('Send test email', () => {
         const mockedVars: SendTestEmailVariables = {
             namespace: props.authenticatedUser.id,

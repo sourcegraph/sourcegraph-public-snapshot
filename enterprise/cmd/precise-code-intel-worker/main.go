@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,6 +68,9 @@ func main() {
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+		HoneyDataset: &honey.Dataset{
+			Name: "codeintel-worker",
+		},
 	}
 
 	// Start debug server
@@ -88,7 +92,7 @@ func main() {
 
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
-	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
+	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
@@ -183,6 +187,15 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 
 		return float64(count)
 	}))
+}
+
+func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {
+	if withHoney {
+		return observationContext
+	}
+	ctx := *observationContext
+	ctx.HoneyDataset = nil
+	return &ctx
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {

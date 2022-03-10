@@ -22,9 +22,9 @@ func TestGet(t *testing.T) {
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
-									VALUES (1, 'test title', 'test description', 'unique-1'),
-									       (2, 'test title 2', 'test description 2', 'unique-2')`)
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+									VALUES (1, 'test title', 'test description', 'unique-1', false),
+									       (2, 'test title 2', 'test description 2', 'unique-2', true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,6 +85,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              1,
@@ -105,6 +106,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              2,
@@ -125,6 +127,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "second-color-2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            true,
 			},
 		}
 
@@ -161,6 +164,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              1,
@@ -181,6 +185,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 		}
 
@@ -216,6 +221,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              1,
@@ -236,6 +242,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 		}
 
@@ -2071,4 +2078,45 @@ func TestGetReferenceCount(t *testing.T) {
 		}
 		autogold.Want("ReferenceCount", referenceCount).Equal(t, 0)
 	})
+}
+
+func TestGetSoftDeletedSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	deletedSeriesId := "soft_deleted"
+	_, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:           deletedSeriesId,
+		Query:              "deleteme",
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:           "not_deleted",
+		Query:              "keepme",
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.SetSeriesEnabled(ctx, deletedSeriesId, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.GetSoftDeletedSeries(ctx, time.Now().AddDate(0, 0, 1)) // add some time just so the test can be ahead of the time the series was marked deleted
+	if err != nil {
+		t.Fatal(err)
+	}
+	autogold.Want("get_soft_deleted_series", []string{"soft_deleted"}).Equal(t, got)
 }

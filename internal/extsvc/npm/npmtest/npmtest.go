@@ -1,9 +1,9 @@
 package npmtest
 
 import (
+	"bytes"
 	"context"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -13,6 +13,7 @@ import (
 
 type MockClient struct {
 	Packages map[string]*npm.PackageInfo
+	Tarballs map[string][]byte
 }
 
 func NewMockClient(t testing.TB, deps ...string) *MockClient {
@@ -62,7 +63,7 @@ func (m *MockClient) DoesDependencyExist(ctx context.Context, dep *reposource.NP
 	return pkg.Versions[dep.Version] != nil, nil
 }
 
-func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (closer io.ReadSeekCloser, err error) {
+func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (io.ReadCloser, error) {
 	info, ok := m.Packages[dep.PackageSyntax()]
 	if !ok {
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
@@ -73,5 +74,10 @@ func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependen
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())
 	}
 
-	return os.Open(version.Dist.TarballURL)
+	tgz, ok := m.Tarballs[version.Dist.TarballURL]
+	if !ok {
+		return nil, errors.Newf("no tarball for %s", version.Dist.TarballURL)
+	}
+
+	return io.NopCloser(bytes.NewReader(tgz)), nil
 }

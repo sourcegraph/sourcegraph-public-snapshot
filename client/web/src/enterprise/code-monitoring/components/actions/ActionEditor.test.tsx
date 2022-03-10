@@ -96,7 +96,7 @@ describe('ActionEditor', () => {
         expect(getByTestId('enable-action-toggle-collapsed-email')).toBeChecked()
 
         userEvent.click(getByTestId('enable-action-toggle-collapsed-email'))
-        sinon.assert.calledWithExactly(toggleActionEnabledSpy, false)
+        sinon.assert.calledWithExactly(toggleActionEnabledSpy, false, true)
     })
 
     test('toggle disable when expanded', () => {
@@ -113,6 +113,6 @@ describe('ActionEditor', () => {
         expect(getByTestId('enable-action-toggle-expanded-email')).not.toBeChecked()
 
         userEvent.click(getByTestId('enable-action-toggle-expanded-email'))
-        sinon.assert.calledWithExactly(toggleActionEnabledSpy, true)
+        sinon.assert.calledWithExactly(toggleActionEnabledSpy, true, false)
     })
 })

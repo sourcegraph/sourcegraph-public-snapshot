@@ -303,13 +303,13 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     disabled={this.state.loading}
                                     variant="primary"
                                 >
+                                    {this.state.loading && (
+                                        <>
+                                            <LoadingSpinner />{' '}
+                                        </>
+                                    )}
                                     {this.shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
                                 </Button>
-                                {this.state.loading && (
-                                    <div className="icon-inline">
-                                        <LoadingSpinner />
-                                    </div>
-                                )}
                             </Form>
                         </Container>
                     </>

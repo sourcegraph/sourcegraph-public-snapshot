@@ -117,6 +117,7 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
+elm-stuff
 
 # Extensions
 /client/extension-api/dist
