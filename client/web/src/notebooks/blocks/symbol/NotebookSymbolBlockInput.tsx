@@ -220,6 +220,7 @@ const SymbolSuggestions: React.FunctionComponent<{
                                 lineContext: 3,
                             })
                         }
+                        data-testid="symbol-suggestion-button"
                     >
                         <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                         <code>

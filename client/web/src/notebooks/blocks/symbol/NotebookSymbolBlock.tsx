@@ -232,7 +232,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<SymbolBlockInput> = ({
             <SymbolIcon className="icon-inline" kind={symbolKind} />
         </div>
         <div className="d-flex flex-column">
-            <code>
+            <code data-testid="selected-symbol-name">
                 {symbolName} {symbolContainerName && <span className="text-muted">{symbolContainerName}</span>}
             </code>
             <small className="text-muted">
