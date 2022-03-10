@@ -122,6 +122,7 @@ type Point struct {
 }
 
 type Symbol struct {
+	Name  string  `json:"name"`
 	Hover *string `json:"hover,omitempty"`
 	Def   *Range  `json:"def,omitempty"`
 	Refs  []Range `json:"refs,omitempty"`

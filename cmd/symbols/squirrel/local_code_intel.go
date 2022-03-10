@@ -22,6 +22,7 @@ type Scope = map[SymbolName]*PartialSymbol // pointer for mutability
 
 // PartialSymbol is the same as types.Symbol, but with the refs stored in a map to deduplicate.
 type PartialSymbol struct {
+	Name  string
 	Hover *string
 	Def   *types.Range
 	// Store refs as a set to avoid duplicates from some tree-sitter queries.
@@ -81,6 +82,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 					// Put the symbol in the scope.
 					def := nodeToRange(node.Node)
 					scope[symbolName] = &PartialSymbol{
+						Name:  string(symbolName),
 						Hover: hover,
 						Def:   &def,
 						Refs:  map[types.Range]struct{}{},
@@ -125,7 +127,10 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 
 		// Did not find the symbol in this file, so create a symbol at the root without a def for it.
 		if _, ok := scopes[rootScopeId][symbolName]; !ok {
-			scopes[rootScopeId][symbolName] = &PartialSymbol{Refs: map[types.Range]struct{}{}}
+			scopes[rootScopeId][symbolName] = &PartialSymbol{
+				Name: string(symbolName),
+				Refs: map[types.Range]struct{}{},
+			}
 		}
 		scopes[rootScopeId][symbolName].Refs[nodeToRange(node)] = struct{}{}
 	})
@@ -143,6 +148,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 				refs = append(refs, ref)
 			}
 			symbols = append(symbols, types.Symbol{
+				Name:  string(partialSymbol.Name),
 				Hover: partialSymbol.Hover,
 				Def:   partialSymbol.Def,
 				Refs:  refs,
