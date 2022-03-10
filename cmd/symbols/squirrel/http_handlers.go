@@ -47,7 +47,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log15.Error("failed to read file from gitserver", "err", err)
 		} else {
-			prettyPrintLocalCodeIntelPayload(debugStringBuilder, args, *payload, string(contents))
+			prettyPrintLocalCodeIntelPayload(debugStringBuilder, *payload, string(contents))
 			fmt.Fprintln(debugStringBuilder, "✅ /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
 
 			fmt.Println(" ")
