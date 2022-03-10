@@ -14,11 +14,17 @@ export interface ExtensionCoreAPI {
     /** For search panel webview to signal that it is ready for messages. */
     panelInitialized: (panelId: string) => void
 
-    requestGraphQL: (request: string, variables: any, overrideAccessToken?: string) => Promise<GraphQLResult<any>>
+    requestGraphQL: (
+        request: string,
+        variables: any,
+        overrideAccessToken?: string,
+        overrideSourcegraphURL?: string
+    ) => Promise<GraphQLResult<any>>
     observeSourcegraphSettings: () => ProxySubscribable<SettingsCascadeOrError>
     getAuthenticatedUser: () => ProxySubscribable<AuthenticatedUser | null>
     getInstanceURL: () => ProxySubscribable<string>
     setAccessToken: (accessToken: string) => void
+    setEndpointUri: (uri: string) => void
     /**
      * Observe search box query state.
      * Used to send current query from panel to sidebar.
