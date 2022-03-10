@@ -65,7 +65,7 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	require.NotNil(t, err, "malicious tarball should not be committed successfully")
 
 	dirEntries, err := os.ReadDir(extractPath)
-	baseline := []string{"src"}
+	baseline := []string{"harmless.java"}
 	assert.Nil(t, err)
 	paths := []string{}
 	for _, dirEntry := range dirEntries {

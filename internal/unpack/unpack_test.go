@@ -44,14 +44,20 @@ func TestUnpack(t *testing.T) {
 				packer: p,
 				name:   "filter",
 				opts: Opts{
-					Filter: func(file fs.FileInfo) bool { return file.Size() <= 3 },
+					Filter: func(path string, file fs.FileInfo) bool {
+						return file.Size() <= 3 && (path == "bar" || path == "foo/bar")
+					},
 				},
 				in: []*fileInfo{
 					{path: "big", contents: "E_TOO_BIG", mode: 0655},
-					{path: "foo", contents: "bar", mode: 0655},
+					{path: "bar/baz", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0655},
+					{path: "foo/bar", contents: "bar", mode: 0655},
 				},
 				out: []*fileInfo{
-					{path: "foo", contents: "bar", mode: 0655, size: 3},
+					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{path: "foo", mode: fs.ModeDir | 0750},
+					{path: "foo/bar", contents: "bar", mode: 0655, size: 3},
 				},
 			},
 			{

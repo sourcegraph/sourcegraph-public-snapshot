@@ -33,7 +33,7 @@ type Opts struct {
 	SkipInvalid bool
 
 	// Filter filters out files that do not match the given predicate.
-	Filter func(file fs.FileInfo) bool
+	Filter func(path string, file fs.FileInfo) bool
 }
 
 // Tgz unpacks the contents of the given gzip compressed tarball under dir.
@@ -61,7 +61,7 @@ func Tar(r io.Reader, dir string, opt Opts) error {
 			continue
 		}
 
-		if opt.Filter != nil && !opt.Filter(header.FileInfo()) {
+		if opt.Filter != nil && !opt.Filter(header.Name, header.FileInfo()) {
 			continue
 		}
 

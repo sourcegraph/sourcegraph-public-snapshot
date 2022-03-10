@@ -333,7 +333,7 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposourc
 func decompressTgz(tgz io.Reader, destination string) error {
 	err := unpack.Tgz(tgz, destination, unpack.Opts{
 		SkipInvalid: true,
-		Filter: func(file fs.FileInfo) bool {
+		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
@@ -346,7 +346,7 @@ func decompressTgz(tgz io.Reader, destination string) error {
 				return false
 			}
 
-			_, malicious := isPotentiallyMaliciousFilepathInArchive(file.Name(), destination)
+			_, malicious := isPotentiallyMaliciousFilepathInArchive(path, destination)
 			return !malicious
 		},
 	})
