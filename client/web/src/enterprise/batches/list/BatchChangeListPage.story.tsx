@@ -9,9 +9,14 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { BATCH_CHANGES, GET_LICENSE_AND_USAGE_INFO } from './backend'
+import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListPage } from './BatchChangeListPage'
-import { BATCH_CHANGES_RESULT, getLicenseAndUsageInfoResult, NO_BATCH_CHANGES_RESULT } from './testData'
+import {
+    BATCH_CHANGES_BY_NAMESPACE_RESULT,
+    BATCH_CHANGES_RESULT,
+    getLicenseAndUsageInfoResult,
+    NO_BATCH_CHANGES_RESULT,
+} from './testData'
 
 const { add } = storiesOf('web/batches/list/BatchChangeListPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -38,6 +43,19 @@ const buildMocks = (isLicensed = true, hasBatchChanges = true, hasFilteredBatchC
         },
     ])
 
+const MOCKS_FOR_NAMESPACE = new WildcardMockLink([
+    {
+        request: { query: getDocumentNode(BATCH_CHANGES_BY_NAMESPACE), variables: MATCH_ANY_PARAMETERS },
+        result: { data: BATCH_CHANGES_BY_NAMESPACE_RESULT },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    {
+        request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
+        result: { data: getLicenseAndUsageInfoResult() },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+])
+
 add('List of batch changes', () => {
     const canCreate = boolean('can create batch changes', true)
 
@@ -56,6 +74,22 @@ add('List of batch changes', () => {
         </WebStory>
     )
 })
+
+add('List of batch changes, for a specific namespace', () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={MOCKS_FOR_NAMESPACE}>
+                <BatchChangeListPage
+                    {...props}
+                    headingElement="h1"
+                    canCreate={true}
+                    namespaceID="test-12345"
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
 
 add('List of batch changes, server-side execution enabled', () => (
     <WebStory>

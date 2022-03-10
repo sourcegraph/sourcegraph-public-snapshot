@@ -1,6 +1,7 @@
 import { subDays } from 'date-fns'
 
 import {
+    BatchChangesByNamespaceResult,
     BatchChangesResult,
     BatchChangeState,
     BatchSpecState,
@@ -160,6 +161,13 @@ export const NO_BATCH_CHANGES_RESULT: BatchChangesResult = {
         totalCount: 0,
         nodes: [],
         pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
+
+export const BATCH_CHANGES_BY_NAMESPACE_RESULT: BatchChangesByNamespaceResult = {
+    node: {
+        __typename: 'User',
+        batchChanges: BATCH_CHANGES_RESULT.batchChanges,
     },
 }
 

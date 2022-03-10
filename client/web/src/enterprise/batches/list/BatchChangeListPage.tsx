@@ -60,7 +60,7 @@ const BATCH_CHANGES_PER_PAGE_COUNT = 15
 // Drafts are a new feature of severside execution that for now should not be shown if
 // execution is not enabled.
 const getInitialFilters = (isExecutionEnabled: boolean): MultiSelectState<BatchChangeState> =>
-    isExecutionEnabled ? [OPEN_STATUS] : [OPEN_STATUS, DRAFT_STATUS]
+    isExecutionEnabled ? [OPEN_STATUS, DRAFT_STATUS] : [OPEN_STATUS]
 
 /**
  * A list of all batch changes on the Sourcegraph instance.
