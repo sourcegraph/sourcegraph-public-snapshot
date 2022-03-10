@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int64, argsHash uint64, commitOIDs []string) error {
+func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID, argsHash int64, commitOIDs []string) error {
 	rawQuery := `
 	INSERT INTO cm_last_searched (monitor_id, args_hash, commit_oids)
 	VALUES (%s, %s, %s)
@@ -26,7 +26,7 @@ func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int
 	return s.Exec(ctx, q)
 }
 
-func (s *codeMonitorStore) GetLastSearched(ctx context.Context, monitorID int64, argsHash uint64) ([]string, error) {
+func (s *codeMonitorStore) GetLastSearched(ctx context.Context, monitorID, argsHash int64) ([]string, error) {
 	rawQuery := `
 	SELECT commit_oids
 	FROM cm_last_searched

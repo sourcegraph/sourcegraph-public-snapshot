@@ -233,7 +233,7 @@ func codeMonitorHookWithID(monitorID int64) commit.CodeMonitorHookFunc {
 	}
 }
 
-func hashArgs(args *gitprotocol.SearchRequest) uint64 {
+func hashArgs(args *gitprotocol.SearchRequest) int64 {
 	hasher := fnv.New64()
 	hasher.Write([]byte(args.Repo))
 	for _, rev := range args.Revisions {
@@ -243,9 +243,11 @@ func hashArgs(args *gitprotocol.SearchRequest) uint64 {
 		hasher.Write([]byte{'|'})
 		hasher.Write([]byte(rev.ExcludeRefGlob))
 	}
-	hasher.Write([]byte(args.Query.String()))
+	if args.Query != nil {
+		hasher.Write([]byte(args.Query.String()))
+	}
 	binary.Write(hasher, binary.LittleEndian, args.IncludeDiff)
-	return hasher.Sum64()
+	return int64(hasher.Sum64())
 }
 
 func gqlURL(queryName string) (string, error) {
