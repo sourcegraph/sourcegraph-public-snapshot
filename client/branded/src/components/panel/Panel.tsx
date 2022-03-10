@@ -7,7 +7,7 @@ import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isDefined, combineLatestOrDefault } from '@sourcegraph/common'
+import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -19,7 +19,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
@@ -96,17 +96,21 @@ const builtinPanelViewProviders = new BehaviorSubject<
  * contributed by Sourcegraph extensions)
  */
 export function useBuiltinPanelViews(
-    builtinPanels: { id: string; provider: Observable<BuiltinPanelView | null> }[]
+    builtinPanels: { id: string; enabled: boolean; provider: Observable<BuiltinPanelView | null> }[]
 ): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
-            builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
+            if (builtinPanel.enabled) {
+                builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
+            }
         }
         builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
 
         return () => {
             for (const builtinPanel of builtinPanels) {
-                builtinPanelViewProviders.value.delete(builtinPanel.id)
+                if (builtinPanel.enabled) {
+                    builtinPanelViewProviders.value.delete(builtinPanel.id)
+                }
             }
             builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
         }
@@ -124,6 +128,8 @@ export const Panel = React.memo<Props>(props => {
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
+
+    const isExperimentalReferencePanelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
@@ -169,6 +175,14 @@ export const Panel = React.memo<Props>(props => {
                                     .filter(panelView =>
                                         panelView.selector !== null ? match(panelView.selector, document) : true
                                     )
+                                    .filter(panelView => {
+                                        if (!isExperimentalReferencePanelEnabled) {
+                                            return true
+                                        }
+
+                                        // If we use the new reference panel we don't want to display additional 'implementations_' panels
+                                        return !panelView.component?.locationProvider?.startsWith('implementations_')
+                                    })
                                     .map((panelView: PanelViewWithComponent) => {
                                         const locationProviderID = panelView.component?.locationProvider
                                         const maxLocations = panelView.component?.maxLocationResults
@@ -359,3 +373,7 @@ function transformPanelContributions(contributions: Evaluated<Contributions>): E
         return contributions
     }
 }
+
+// isCoolCodeIntelEnabled is duplicated. Need to move to src/shared
+export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
+    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true

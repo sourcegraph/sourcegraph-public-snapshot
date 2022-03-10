@@ -19,7 +19,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { BuiltinCoolCodeIntelPanel } from '../../../global/CoolCodeIntel'
+import { BuiltinCoolCodeIntelPanel, isCoolCodeIntelEnabled } from '../../../global/CoolCodeIntel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
@@ -96,6 +96,7 @@ export function useBlobPanelViews({
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const experimentalReferencePanelEnabled = isCoolCodeIntelEnabled(settingsCascade)
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
@@ -169,6 +170,7 @@ export function useBlobPanelViews({
             () => [
                 {
                     id: 'history',
+                    enabled: true,
                     provider: panelSubjectChanges.pipe(
                         map(({ repoID, revision, filePath, history, location }) => ({
                             title: 'History',
@@ -191,12 +193,13 @@ export function useBlobPanelViews({
                     ),
                 },
                 {
-                    id: 'cool',
+                    id: 'references',
+                    enabled: experimentalReferencePanelEnabled,
                     provider: panelSubjectChanges.pipe(
                         map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
                             title: 'Code Navigation',
                             content: '',
-                            priority: 200,
+                            priority: 180,
                             selector: null,
                             locationProvider: undefined,
                             // TODO: What do we do if we have no position?
@@ -227,6 +230,7 @@ export function useBlobPanelViews({
                 },
                 {
                     id: 'def',
+                    enabled: !experimentalReferencePanelEnabled,
                     provider: createLocationProvider('def', 'Definition', 190, parameters =>
                         from(extensionsController.extHostAPI).pipe(
                             switchMap(extensionHostAPI =>
@@ -237,6 +241,7 @@ export function useBlobPanelViews({
                 },
                 {
                     id: 'references',
+                    enabled: !experimentalReferencePanelEnabled,
                     provider: createLocationProvider<ReferenceParameters>('references', 'References', 180, parameters =>
                         from(extensionsController.extHostAPI).pipe(
                             switchMap(extensionHostAPI =>
@@ -249,6 +254,7 @@ export function useBlobPanelViews({
                 },
             ],
             [
+                experimentalReferencePanelEnabled,
                 createLocationProvider,
                 panelSubjectChanges,
                 preferAbsoluteTimestamps,
