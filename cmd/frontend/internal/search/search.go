@@ -561,6 +561,10 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
 		Repository: string(commit.Repo.Name),
+		OID:        string(commit.Commit.ID),
+		Message:    string(commit.Commit.Message),
+		AuthorName: commit.Commit.Author.Name,
+		AuthorDate: commit.Commit.Author.Date,
 		Content:    hls.Value,
 		Ranges:     ranges,
 	}
