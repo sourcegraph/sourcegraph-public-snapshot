@@ -472,7 +472,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CodeHostScopeProvider>
                                                     )}
                                                 />
-                                                <SearchStack />
+                                                <SearchStack authenticatedUser={authenticatedUser} />
                                                 <IdeExtensionTracker />
                                             </Router>
                                         </ScrollManager>

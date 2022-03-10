@@ -22,7 +22,7 @@ function SearchStackWrapper({
         useSearchStackState.setState({ entries, previousEntries, canRestoreSession }, true)
     }, [entries, previousEntries, canRestoreSession])
 
-    return <SearchStack initialOpen={open} />
+    return <SearchStack authenticatedUser={null} initialOpen={open} />
 }
 
 export default {

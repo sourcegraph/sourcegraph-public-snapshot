@@ -19,19 +19,24 @@ import React, {
     useEffect,
     useLayoutEffect,
 } from 'react'
-import { useHistory } from 'react-router-dom'
+import { useHistory } from 'react-router'
+import { Observable, of } from 'rxjs'
+import { map, switchMap, tap } from 'rxjs/operators'
+import * as uuid from 'uuid'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, useEventObservable } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
-import { serializeBlocksToURL } from '../notebooks/serialize'
+import { createNotebook } from '../notebooks/backend'
+import { blockToGQLInput } from '../notebooks/serialize'
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import {
@@ -75,7 +80,10 @@ function useHasNewEntry(entries: SearchStackEntry[]): boolean {
     return previous !== undefined && previous < entries.length
 }
 
-export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
+export const SearchStack: React.FunctionComponent<{
+    initialOpen?: boolean
+    authenticatedUser: AuthenticatedUser | null
+}> = ({ initialOpen = false, authenticatedUser }) => {
     const history = useHistory()
 
     const [open, setOpen] = useState(initialOpen)
@@ -144,39 +152,59 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
         [reversedEntries, selectedEntries, setSelectedEntries]
     )
 
-    const createNotebook = useCallback(() => {
-        const blocks: BlockInput[] = []
-        for (const entry of entries) {
-            if (entry.annotation) {
-                blocks.push({ type: 'md', input: entry.annotation })
-            }
-            switch (entry.type) {
-                case 'search':
-                    blocks.push({ type: 'query', input: toSearchQuery(entry) })
-                    break
-                case 'file':
-                    blocks.push({
-                        type: 'file',
-                        input: {
-                            repositoryName: entry.repo,
-                            revision: entry.revision,
-                            filePath: entry.path,
-                            // Notebooks expect the end line to be exclusive
-                            lineRange: entry.lineRange
-                                ? { ...entry.lineRange, endLine: entry.lineRange?.endLine + 1 }
-                                : null,
-                        },
+    const [onCreateNotebook] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
+                click.pipe(
+                    map(() => {
+                        const blocks: BlockInput[] = []
+                        for (const entry of entries) {
+                            if (entry.annotation) {
+                                blocks.push({ type: 'md', input: entry.annotation })
+                            }
+                            switch (entry.type) {
+                                case 'search':
+                                    blocks.push({ type: 'query', input: toSearchQuery(entry) })
+                                    break
+                                case 'file':
+                                    blocks.push({
+                                        type: 'file',
+                                        input: {
+                                            repositoryName: entry.repo,
+                                            revision: entry.revision,
+                                            filePath: entry.path,
+                                            // Notebooks expect the end line to be exclusive
+                                            lineRange: entry.lineRange
+                                                ? { ...entry.lineRange, endLine: entry.lineRange?.endLine + 1 }
+                                                : null,
+                                        },
+                                    })
+                                    break
+                            }
+                        }
+                        return blocks
+                    }),
+                    switchMap(blocks =>
+                        authenticatedUser
+                            ? createNotebook({
+                                  notebook: {
+                                      title: 'New Notebook',
+                                      blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
+                                      public: false,
+                                      namespace: authenticatedUser.id,
+                                  },
+                              })
+                            : of(undefined)
+                    ),
+                    tap(createdNotebook => {
+                        if (createdNotebook) {
+                            history.push(PageRoutes.Notebook.replace(':id', createdNotebook.id))
+                        }
                     })
-                    break
-            }
-        }
-
-        const location = {
-            pathname: PageRoutes.NotebookCreate,
-            hash: serializeBlocksToURL(blocks, window.location.origin),
-        }
-        history.push(location)
-    }, [entries, history])
+                ),
+            [history, entries, authenticatedUser]
+        )
+    )
 
     const toggleOpen = useCallback(() => {
         setOpen(open => {
@@ -354,7 +382,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                         </Button>
                     )}
                     <div className="d-flex justify-content-between align-items-center">
-                        <Button onClick={createNotebook} variant="primary" size="sm" disabled={entries.length === 0}>
+                        <Button onClick={onCreateNotebook} variant="primary" size="sm" disabled={entries.length === 0}>
                             <NotebookPlusIcon className="icon-inline" /> Create Notebook
                         </Button>
                         <Button
