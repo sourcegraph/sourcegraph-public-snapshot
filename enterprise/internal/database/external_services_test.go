@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -20,8 +19,8 @@ import (
 
 // This test lives in cmd/enterprise because it tests a proprietary
 // super-set of the validation performed by the OSS version.
-func TestExternalServices_ValidateConfig(t *testing.T) {
-	d := dbtest.NewDB(t)
+func TestValidateExternalServiceConfig(t *testing.T) {
+	t.Parallel()
 
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -1298,8 +1297,8 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				tc.ps = conf.Get().AuthProviders
 			}
 
-			s := NewExternalServicesStore(d)
-			_, err := s.ValidateConfig(context.Background(), database.ValidateExternalServiceConfigOptions{
+			s := database.NewMockExternalServiceStore()
+			_, err := ValidateExternalServiceConfig(context.Background(), s, database.ValidateExternalServiceConfigOptions{
 				Kind:          tc.kind,
 				Config:        tc.config,
 				AuthProviders: tc.ps,
