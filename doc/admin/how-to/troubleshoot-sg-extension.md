@@ -137,6 +137,8 @@ It's likely that the CSV file exceeds the browser's limit for data URI size. Use
 
 The Sourcegraph [Streaming API](../../api/stream_api/index.md) determines the number of results in the Sourcegraph UI. However, our Search-export extension runs a query on our GraphQL API and will only export the complete list of results if the search query includes the `count:all` keyword.
 
+If one file has two matches, the file will be listed only once in the exported csv. Hence number of lines in csv Might be lower than number of results.
+
 
 ___
 

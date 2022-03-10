@@ -361,7 +361,9 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 			pipeline.AddStep(
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{}),
+				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{},
+				}),
 			)
 		})
 	}
