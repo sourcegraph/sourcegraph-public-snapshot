@@ -358,20 +358,21 @@ func decompressTgz(tgz io.Reader, destination string) error {
 	return stripSingleOutermostDirectory(destination)
 }
 
+// stripSingleOutermostDirectory strips a single outermost directory in dir
+// if it has no sibling files or directories beyond `.git`.
+//
+// In practice, NPM tarballs seem to contain a superfluous directory which
+// contains the files. For example, if you extract react's tarball,
+// all files will be under a package/ directory, and if you extract
+// @types/lodash's files, all files are under lodash/.
+//
+// However, this additional directory has no meaning. Moreover, it makes
+// the UX slightly worse, as when you navigate to a repo, you would see
+// that it contains just 1 folder, and you'd need to click again to drill
+// down further. So we strip the superfluous directory if we detect one.
+//
+// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
 func stripSingleOutermostDirectory(dir string) error {
-	// [NOTE: npm-strip-outermost-directory]
-	// In practice, NPM tarballs seem to contain a superfluous directory which
-	// contains the files. For example, if you extract react's tarball,
-	// all files will be under a package/ directory, and if you extract
-	// @types/lodash's files, all files are under lodash/.
-	//
-	// However, this additional directory has no meaning. Moreover, it makes
-	// the UX slightly worse, as when you navigate to a repo, you would see
-	// that it contains just 1 folder, and you'd need to click again to drill
-	// down further. So we strip the superfluous directory if we detect one.
-	//
-	// https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
-
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
