@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -254,13 +256,15 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			}
 		}
 
-		// If a valid cached value was found, use it and continue
-		if len(group.Repositories) > 0 {
+		// If a valid cached value was found, use it and continue. Check for a nil,
+		// because it is possible this cached group does not have any repositories, in
+		// which case it should have a non-nil length 0 slice of repositories.
+		if group.Repositories != nil {
 			addRepoToUserPerms(group.Repositories...)
 			continue
 		}
 
-		// Perform full sync
+		// Perform full sync. Start with instantiating the repos slice.
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 		isOrg := group.Team == ""
 		hasNextPage = true
@@ -271,7 +275,16 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			} else {
 				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
-			if err != nil {
+			if github.IsNotFound(err) {
+				// If we get a 404 here, something funky is going on and this is very
+				// unexpected. Since this is likely not transient, instead of bailing out
+				// and potentially causing unbounded retries later, we let this result
+				// proceed to cache. This is safe because the cache will eventually get
+				// invalidated, at which point we can retry this group, or a sync can be
+				// triggered that marks the cached group as invalidated.
+				log15.Debug("list repos for group: unexpected 404, persisting to cache",
+					"error", err)
+			} else if err != nil {
 				// Add and return what we've found on this page but don't persist group
 				// to cache
 				for _, r := range repos {

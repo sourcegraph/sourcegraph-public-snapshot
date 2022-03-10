@@ -3,7 +3,7 @@ import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'
@@ -100,7 +100,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
         <>
             <div className="row align-items-center no-gutters mb-3">
                 <div className="ml-2 col d-flex align-items-center">
-                    <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetSpecIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetSpecIDs?.length} />
                     ) : (

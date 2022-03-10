@@ -751,14 +751,14 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
-		Repo:        repo,
-		MigrateFrom: c.AddrForRepo(repo),
+		Repo:           repo,
+		CloneFromShard: c.AddrForRepo(repo),
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
 	// "repo" based on the rendezvous hashing scheme. This way, when the gitserver instance receives
 	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
-	// the repo from the URL set in MigrateFrom - the gitserver instance that owns this repo based
+	// the repo from the URL set in CloneFromShard - the gitserver instance that owns this repo based
 	// on the existing hashing scheme.
 	uri := "http://" + c.RendezvousAddrForRepo(repo) + "/repo-update"
 	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
