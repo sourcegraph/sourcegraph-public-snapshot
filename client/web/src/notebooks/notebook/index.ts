@@ -55,7 +55,7 @@ function findSymbolAtRevision(
                     symbol.containerName === symbolContainerName &&
                     symbol.kind === symbolKind
             )
-            if (!matchingSymbol) {
+            if (!matchingFile || !matchingSymbol) {
                 return new Error('Symbol not found')
             }
 
@@ -63,7 +63,7 @@ function findSymbolAtRevision(
             if (!range) {
                 return new Error('Symbol not found')
             }
-            return { range, revision }
+            return { range, revision: matchingFile.commit ?? '' }
         })
     )
 }
@@ -221,6 +221,8 @@ export class Notebook {
                 observables.push(block.output.pipe(mapTo(DONE)))
             } else if (block.type === 'file') {
                 observables.push(block.output.pipe(mapTo(DONE)))
+            } else if (block.type === 'symbol') {
+                observables.push(block.output.pipe(mapTo(DONE)))
             }
         }
         // We store output observables and join them into a single observable,
@@ -288,11 +290,10 @@ export class Notebook {
         return index >= 0 && index < this.blockOrder.length - 1 ? this.blockOrder[index + 1] : null
     }
 
-    public exportToMarkdown(sourcegraphURL: string): string {
-        return (
-            this.getBlocks()
-                .map(block => serializeBlockToMarkdown(block, sourcegraphURL))
-                .join('\n\n') + '\n'
+    public exportToMarkdown(sourcegraphURL: string): Observable<string> {
+        const serializedBlocks = this.getBlocks().map(block => serializeBlockToMarkdown(block, sourcegraphURL))
+        return forkJoin(serializedBlocks).pipe(
+            map(blocks => blocks.filter(block => block.length > 0).join('\n\n') + '\n')
         )
     }
 }

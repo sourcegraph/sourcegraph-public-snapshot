@@ -77,6 +77,13 @@ export type BlockInit =
     | Omit<ComputeBlock, 'output'>
     | Omit<SymbolBlock, 'output'>
 
+export type SerializableBlock =
+    | Pick<FileBlock, 'type' | 'input'>
+    | Pick<MarkdownBlock, 'type' | 'input'>
+    | Pick<QueryBlock, 'type' | 'input'>
+    | Pick<ComputeBlock, 'type' | 'input'>
+    | Pick<SymbolBlock, 'type' | 'input' | 'output'>
+
 export type BlockDirection = 'up' | 'down'
 
 export interface BlockProps {

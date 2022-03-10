@@ -31,7 +31,6 @@ import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/ut
 import { Button, Link, TextArea } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
-import { serializeBlocksToURL } from '../notebooks/serialize'
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import {
@@ -173,7 +172,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
 
         const location = {
             pathname: PageRoutes.NotebookCreate,
-            hash: serializeBlocksToURL(blocks, window.location.origin),
+            // TODO: hash: serializeBlocksToURL(blocks, window.location.origin),
         }
         history.push(location)
     }, [entries, history])

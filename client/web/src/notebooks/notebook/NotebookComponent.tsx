@@ -163,11 +163,19 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         )
     )
 
-    const exportNotebook = useCallback(() => {
-        const exportedMarkdown = notebook.exportToMarkdown(window.location.origin)
-        downloadTextAsFile(exportedMarkdown, exportedFileName)
-        props.telemetryService.log('SearchNotebookExportNotebook')
-    }, [notebook, exportedFileName, props.telemetryService])
+    const [exportNotebook] = useEventObservable(
+        useCallback(
+            (event: Observable<React.MouseEvent<HTMLButtonElement>>) =>
+                event.pipe(
+                    switchMap(() => notebook.exportToMarkdown(window.location.origin)),
+                    tap(exportedMarkdown => {
+                        downloadTextAsFile(exportedMarkdown, exportedFileName)
+                        props.telemetryService.log('SearchNotebookExportNotebook')
+                    })
+                ),
+            [notebook, exportedFileName, props.telemetryService]
+        )
+    )
 
     const [copyNotebook, copiedNotebookOrError] = useEventObservable(
         useCallback(
