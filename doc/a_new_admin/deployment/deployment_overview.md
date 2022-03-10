@@ -12,7 +12,7 @@ As a recommendation, if you are planning deployment scenario will include very l
 
 ## Options and scenarios
 
-Use the table below to help determine the best option ot meet your needs.
+Using the table below click on the deployment type that best meets your needs.
 
 Of course, if you're just starting out, you can [**try Sourcegraph Cloud**](https://sourcegraph.com) or [run Sourcegraph locally](docker/index.md).
 
@@ -88,7 +88,7 @@ For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 
 ## Reference Repository
 
-For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. Depending on your deployment method, the reference repository contains everything you need to spin up and configure your instance. This will also assist in your upgrade process going forward. For more information, follow the install and configuration docs for your deployment method (linked below).
+For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. Depending on your deployment type, the reference repository contains everything you need to spin up and configure your instance. This will also assist in your upgrade process going forward. For more information, follow the install and configuration docs for your deployment type (linked below).
 
 - Docker Compose
 - Kubernets
