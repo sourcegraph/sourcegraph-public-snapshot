@@ -148,7 +148,7 @@ export function activate(context: vscode.ExtensionContext): void {
 // Names of uninstalled extension will be included in the .obsolete file
 // Including upgrades
 // export function deactivate(): void {
-//     const extensionPath = vscode.extensions.getExtension('sourcegraph.sourcegraph')?.extensionPath
+//     const extensionPath = vscode.extensions.getExtension('eamodio.gitlens')?.extensionPath
 //     const pathComponents = extensionPath?.split('/').slice(0, -1)
 //     pathComponents?.push('.obsolete')
 //     const filePath = pathComponents?.join('/')
