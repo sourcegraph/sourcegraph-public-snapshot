@@ -72,7 +72,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 				// Found the scope.
 				if scope, ok := scopes[nodeId(cur)]; ok {
 					// Get the symbol name.
-					symbolName := SymbolName(cur.Content(node.Contents))
+					symbolName := SymbolName(node.Content(node.Contents))
 
 					// Print a debug message if the symbol is already defined.
 					if symbol, ok := scope[symbolName]; ok && debug {
