@@ -37,10 +37,19 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
+    const invitedBy = query.get('invitedBy')
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
-    }, [])
+
+        if (invitedBy !== null) {
+            const parameters = {
+                isAuthenticated: !!authenticatedUser,
+                allowSignup: context.allowSignup,
+            }
+            eventLogger.log('SignUpInvitedByUser', parameters, parameters)
+        }
+    }, [invitedBy, authenticatedUser, context.allowSignup])
 
     if (authenticatedUser) {
         const returnTo = getReturnTo(location)
