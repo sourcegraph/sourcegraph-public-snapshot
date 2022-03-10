@@ -149,7 +149,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 <Container className="mb-4">
                     <ConnectionContainer>
                         {!!connection?.nodes.length && (
-                            <div className="d-flex align-items-center justify-content-end mb-4">
+                            <div className={styles.filtersRow}>
                                 <h3 className="align-self-end flex-1">{connection?.totalCount} batch changes</h3>
                                 <h4 className="mb-0 mr-2">Status</h4>
                                 <BatchChangeListFilters
