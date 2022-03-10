@@ -33,6 +33,8 @@ Once you are all set up, either [install Sourcegraph directly](#direct-installat
 
 ### Direct installation
 
+  > NOTE: We recently launched support for deploying Sourcegraph with Helm chart. [Give it a try](./helm.md)! 🎉
+
 - After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 - `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
 - Deploy the desired version of Sourcegraph to your cluster by [applying the Kubernetes manifests](./configure.md#applying-manifests):
@@ -153,6 +155,12 @@ The overlays provided in our [overlays directory](https://github.com/sourcegraph
 
 To learn about our available overlays and how to use them, please refer to our [overlays guides](./configure.md#overlays).
 
+### Helm
+
+We support the use of [Helm](https://helm.sh) to deploy Sourcegraph. The Helm chart allows users to deploy Sourcegraph with ease. Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts. Follow our [installation guide](./helm.md) for Helm.
+
 ### Reference repository
 
-Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegraph` reference repository](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [spin up](#installation) and [configure](./configure.md) a Sourcegraph deployment on Kubernetes.
+Sourcegraph for Kubernetes (Kustomize) is configured using our [`sourcegraph/deploy-sourcegraph` reference repository](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [spin up](#installation) and [configure](./configure.md) a Sourcegraph deployment on Kubernetes.
+
+The Sourcegraph Helm chart is available in our [`sourcegraph/deploy-sourcegraph-helm`](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph) repository.
