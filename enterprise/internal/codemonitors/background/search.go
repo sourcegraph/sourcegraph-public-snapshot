@@ -176,7 +176,7 @@ func addCodeMonitorHook(in job.Job, monitorID int64) (_ job.Job, err error) {
 
 		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
 			jobCopy := *c
-			jobCopy.CodeMonitorHook = codeMonitorHook(monitorID)
+			jobCopy.CodeMonitorHook = codeMonitorHookWithID(monitorID)
 			return &jobCopy
 		},
 	}

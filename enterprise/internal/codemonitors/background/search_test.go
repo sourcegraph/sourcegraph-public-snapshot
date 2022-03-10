@@ -6,6 +6,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 )
 
 func TestHashArgs(t *testing.T) {
@@ -53,4 +57,44 @@ func TestHashArgs(t *testing.T) {
 		args2 := &gitprotocol.SearchRequest{Query: &gitprotocol.AuthorMatches{Expr: "b"}}
 		require.NotEqual(t, hashArgs(args1), hashArgs(args2))
 	})
+}
+
+func TestAddCodeMonitorHook(t *testing.T) {
+	t.Parallel()
+
+	t.Run("errors on non-commit search", func(t *testing.T) {
+		erroringJobs := []job.Job{
+			job.NewParallelJob(&run.RepoSearch{}, &commit.CommitSearch{}),
+			&run.RepoSearch{},
+			job.NewAndJob(&textsearch.RepoUniverseTextSearch{}, &commit.CommitSearch{}),
+			job.NewTimeoutJob(0, &run.RepoSearch{}),
+		}
+
+		for _, j := range erroringJobs {
+			t.Run("", func(t *testing.T) {
+				_, err := addCodeMonitorHook(j, 0)
+				require.Error(t, err)
+			})
+		}
+	})
+
+	t.Run("no errors on only commit search", func(t *testing.T) {
+		nonErroringJobs := []job.Job{
+			job.NewParallelJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
+			job.NewAndJob(&commit.CommitSearch{}, &commit.CommitSearch{}),
+			&commit.CommitSearch{},
+			job.NewTimeoutJob(0, &commit.CommitSearch{}),
+		}
+
+		for _, j := range nonErroringJobs {
+			t.Run("", func(t *testing.T) {
+				_, err := addCodeMonitorHook(j, 0)
+				require.NoError(t, err)
+			})
+		}
+	})
+}
+
+func TestCodeMonitorHook(t *testing.T) {
+
 }
