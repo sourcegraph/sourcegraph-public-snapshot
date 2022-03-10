@@ -289,8 +289,8 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-// commitTgz creates a git commit in the given working directory that adds all
-// the file contents of the given tgz file.
+// commitTgz initializes a git repository in the given working directory and creates
+// a git commit in that contains all the file contents of the given tgz.
 func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposource.NPMDependency,
 	workingDirectory string, tgz io.Reader) error {
 	if err := decompressTgz(tgz, workingDirectory); err != nil {
