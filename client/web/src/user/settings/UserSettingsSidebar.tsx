@@ -9,6 +9,7 @@ import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Bad
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { useExperimentalFeatures } from '../../stores'
@@ -21,6 +22,7 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
     user: UserSettingsAreaUserFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
     isSourcegraphDotCom: boolean
+    openBetaEnabled: boolean
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
@@ -32,6 +34,7 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps
     extends UserSettingsAreaRouteContext,
         BatchChangesProps,
+        FeatureFlagProps,
         RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
@@ -42,6 +45,7 @@ export interface UserSettingsSidebarProps
 export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
     const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
+    const openBetaEnabled = !!props.featureFlags.get('open-beta-enabled')
 
     if (!props.authenticatedUser) {
         return null
@@ -56,6 +60,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
+        openBetaEnabled,
     }
 
     function reEnableSearchTour(): void {
@@ -75,7 +80,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         )
                 )}
             </SidebarGroup>
-            {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
+            {!openBetaEnabled && (props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
                     <SidebarGroupHeader label="Your organizations" />
                     {props.user.organizations.nodes.map(org => (

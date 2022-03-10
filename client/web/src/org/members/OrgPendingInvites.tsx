@@ -310,6 +310,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
 
                 <Container
                     className={classNames(
+                        'mb-3',
                         styles.invitationsList,
                         data && !data.pendingInvitations.length && styles.noInvitesList
                     )}

@@ -1,0 +1,72 @@
+.organisations-list {
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0 !important;
+
+    ul {
+        padding: 0;
+        margin: 0;
+        li {
+            &:first-child {
+                padding: 0.5rem 1.5rem;
+                border-top: unset;
+                font-weight: 500;
+                color: var(--dark-text);
+                font-size: 0.75rem;
+            }
+            list-style: none;
+            padding: 0.8rem 1.5rem;
+            border-top: 1px solid var(--border-color-2);
+        }
+    }
+}
+
+.org-details {
+    gap: 1rem;
+}
+
+.org-link {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.avatar-container {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    font-size: 1rem;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--light-text);
+    background-color: var(--gray-05);
+    line-height: 1.25rem;
+}
+
+.display-name {
+    font-size: 0.75rem;
+}
+
+.user-role {
+    flex: 0.1;
+    font-size: 0.75rem;
+}
+
+.org-settings {
+    background-color: var(--body-bg);
+    &:hover {
+        background-color: var(--color-bg-2) !important;
+    }
+}

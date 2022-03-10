@@ -225,6 +225,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
     const membersResult = data ? (data.node as MembersTypeNode) : undefined
     const pagedData = getPaginatedItems(page, membersResult?.members.nodes)
+    const showOnlyYou = membersResult && membersResult.members.totalCount === 1
 
     return (
         <>
@@ -255,7 +256,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     )}
                 </div>
 
-                <Container className={styles.membersList}>
+                <Container className={classNames({ 'mb-3': !showOnlyYou }, styles.membersList)}>
                     {loading && <LoadingSpinner />}
                     {membersResult && (
                         <ul>
@@ -282,36 +283,33 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                 </Container>
                 {pagedData.totalPages > 1 && (
                     <PageSelector
-                        className="mt-4"
+                        className="mt-4 mb-4"
                         currentPage={page}
                         onPageChange={setPage}
                         totalPages={pagedData.totalPages}
                     />
                 )}
 
-                {authenticatedUser &&
-                    membersResult &&
-                    membersResult.members.totalCount === 1 &&
-                    isSelf(membersResult.members.nodes[0].id) && (
-                        <Container className={styles.onlyYouContainer}>
-                            <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                                <h3>Looks like it’s just you!</h3>
-                                <div>
-                                    <InviteMemberModalHandler
-                                        orgName={org.name}
-                                        triggerLabel="Invite a teammate"
-                                        orgId={org.id}
-                                        onInviteSent={onInviteSent}
-                                        className={styles.inviteMemberLink}
-                                        as="a"
-                                        size="lg"
-                                        variant="link"
-                                    />
-                                    {` to join you on ${org.name} on Sourcegraph`}
-                                </div>
+                {authenticatedUser && membersResult && showOnlyYou && isSelf(membersResult.members.nodes[0].id) && (
+                    <Container className={styles.onlyYouContainer}>
+                        <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
+                            <h3>Looks like it’s just you!</h3>
+                            <div>
+                                <InviteMemberModalHandler
+                                    orgName={org.name}
+                                    triggerLabel="Invite a teammate"
+                                    orgId={org.id}
+                                    onInviteSent={onInviteSent}
+                                    className={styles.inviteMemberLink}
+                                    as="a"
+                                    size="lg"
+                                    variant="link"
+                                />
+                                {` to join you on ${org.name} on Sourcegraph`}
                             </div>
-                        </Container>
-                    )}
+                        </div>
+                    </Container>
+                )}
             </div>
         </>
     )
