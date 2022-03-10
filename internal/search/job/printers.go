@@ -9,9 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 func writeSep(b *bytes.Buffer, sep, indent string, depth int) {
@@ -39,6 +41,8 @@ func SexpFormat(job Job, sep, indent string) string {
 		}
 		switch j := job.(type) {
 		case
+			*zoekt.ZoektRepoSubsetSearch,
+			*searcher.Searcher,
 			*run.RepoSearch,
 			*textsearch.RepoSubsetTextSearch,
 			*textsearch.RepoUniverseTextSearch,
@@ -49,6 +53,15 @@ func SexpFormat(job Job, sep, indent string) string {
 			*repos.ComputeExcludedRepos,
 			*noopJob:
 			b.WriteString(j.Name())
+
+		case *repoPagerJob:
+			b.WriteString("REPOPAGER")
+			depth++
+			writeSep(b, sep, indent, depth)
+			writeSexp(j.child)
+			b.WriteString(")")
+			depth--
+
 		case *AndJob:
 			b.WriteString("(AND")
 			depth++
@@ -198,6 +211,8 @@ func PrettyMermaid(job Job) string {
 		}
 		switch j := job.(type) {
 		case
+			*zoekt.ZoektRepoSubsetSearch,
+			*searcher.Searcher,
 			*run.RepoSearch,
 			*textsearch.RepoSubsetTextSearch,
 			*textsearch.RepoUniverseTextSearch,
@@ -208,6 +223,14 @@ func PrettyMermaid(job Job) string {
 			*repos.ComputeExcludedRepos,
 			*noopJob:
 			writeNode(b, depth, RoundedStyle, &id, j.Name())
+
+		case *repoPagerJob:
+			srcId := id
+			depth++
+			writeNode(b, depth, RoundedStyle, &id, "REPOPAGER")
+			writeEdge(b, depth, srcId, id)
+			writeMermaid(j.child)
+			depth--
 		case *AndJob:
 			srcId := id
 			depth++
@@ -314,6 +337,8 @@ func toJSON(job Job, verbose bool) interface{} {
 		}
 		switch j := job.(type) {
 		case
+			*zoekt.ZoektRepoSubsetSearch,
+			*searcher.Searcher,
 			*run.RepoSearch,
 			*textsearch.RepoSubsetTextSearch,
 			*textsearch.RepoUniverseTextSearch,
@@ -327,6 +352,13 @@ func toJSON(job Job, verbose bool) interface{} {
 				return map[string]interface{}{j.Name(): j}
 			}
 			return j.Name()
+
+		case *repoPagerJob:
+			return struct {
+				Repopager interface{} `json:"REPOPAGER"`
+			}{
+				Repopager: emitJSON(j.child),
+			}
 
 		case *AndJob:
 			children := make([]interface{}, 0, len(j.children))

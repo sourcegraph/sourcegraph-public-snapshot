@@ -584,7 +584,7 @@ type ZoektRepoSubsetSearch struct {
 	FileMatchLimit int32
 	Select         filter.SelectPath
 	Zoekt          zoekt.Streamer
-	Since          func(time.Time) time.Duration // since if non-nil will be used instead of time.Since. For tests
+	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
