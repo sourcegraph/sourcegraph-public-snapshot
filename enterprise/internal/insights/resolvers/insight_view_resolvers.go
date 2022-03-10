@@ -287,6 +287,10 @@ func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int3
 	return int32(referenceCount), nil
 }
 
+func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
+	return i.view.IsFrozen, nil
+}
+
 type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }

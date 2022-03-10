@@ -32,6 +32,7 @@ type InsightViewSeries struct {
 	GeneratedFromCaptureGroups    bool
 	JustInTime                    bool
 	GenerationMethod              GenerationMethod
+	IsFrozen                      bool
 }
 
 type Insight struct {
@@ -44,6 +45,7 @@ type Insight struct {
 	Filters          InsightViewFilters
 	OtherThreshold   *float64
 	PresentationType PresentationType
+	IsFrozen         bool
 }
 
 type InsightViewFilters struct {
@@ -66,6 +68,7 @@ type InsightView struct {
 	Filters          InsightViewFilters
 	OtherThreshold   *float64
 	PresentationType PresentationType
+	IsFrozen         bool
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
