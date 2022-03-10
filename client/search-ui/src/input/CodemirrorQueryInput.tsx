@@ -10,11 +10,13 @@ import {
 } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
 import { EditorView, ViewUpdate, keymap, Decoration } from '@codemirror/view'
+import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { QueryChangeSource, SearchPatternType } from '@sourcegraph/search'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -22,6 +24,15 @@ import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 import styles from './CodemirrorQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+
+/**
+ * TODO: Migration to codemirror
+ * - KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR
+ * - onHandleFuzzyFinder
+ * - Show diagnostics
+ * - Show suggestions
+ * - hide vertical scroll bar?
+ */
 
 export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
     patternType,
@@ -55,6 +66,7 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
             patternTypeField,
             parsedQueryFieldExtension,
             tokenHighlight,
+            queryDiagnostic,
             highlightFocusedFilter,
             tokenInfo,
         ],
@@ -96,7 +108,7 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
             case QueryChangeSource.searchReference: {
                 const selectionRange = queryState.selectionRange
                 editor.dispatch({
-                    selection: EditorSelection.range(selectionRange.end, selectionRange.start),
+                    selection: EditorSelection.range(selectionRange.start, selectionRange.end),
                     scrollIntoView: true,
                 })
                 /*
@@ -241,20 +253,29 @@ const patternTypeField = StateField.define<SearchPatternType>({
 // Effect to update the the selected pattern type
 const patternTypeFieldEffect = StateEffect.define<SearchPatternType>()
 
+interface ParsedQuery {
+    patternType: SearchPatternType
+    tokens: Token[]
+}
 // Facet which parses the query using our existing parser. It depends on the current input
 // (obviously) and the selected pattern type. It gets recomputed whenever one of
 // those values changes.
 // The parsed query is used for syntax highlighting and hover information.
-const parsedQueryField = Facet.define<Token[], Token[]>({
+const parsedQueryField = Facet.define<ParsedQuery, ParsedQuery>({
     combine(input) {
-        return input[0] ?? []
+        // There will always only be one extension which parses this query
+        return input[0] ?? { patternType: SearchPatternType.literal, tokens: [] }
     },
 })
 const parsedQueryFieldExtension = parsedQueryField.compute(['doc', patternTypeField], state => {
+    const patternType = state.field(patternTypeField)
     // Looks like Text overwrites toString somehow
     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const result = scanSearchQuery(state.doc.toString(), false, state.field(patternTypeField))
-    return result.type === 'success' ? result.term : []
+    const result = scanSearchQuery(state.doc.toString(), false, patternType)
+    return {
+        patternType,
+        tokens: result.type === 'success' ? result.term : [],
+    }
 })
 
 // This provides syntax highlighting. This is a custom solution so that we an
@@ -263,7 +284,7 @@ const parsedQueryFieldExtension = parsedQueryField.compute(['doc', patternTypeFi
 const tokenHighlight = EditorView.decorations.compute([parsedQueryField], state => {
     const query = state.facet(parsedQueryField)
     const builder = new RangeSetBuilder<Decoration>()
-    for (const token of query) {
+    for (const token of query.tokens) {
         for (const decoratedToken of decorate(token)) {
             builder.add(
                 decoratedToken.range.start,
@@ -275,13 +296,27 @@ const tokenHighlight = EditorView.decorations.compute([parsedQueryField], state 
     return builder.finish()
 })
 
+// Determines whether the cursor is over a filter and if yes, decorates that
+// filter.
+const highlightFocusedFilter = EditorView.decorations.compute(['selection', parsedQueryField], state => {
+    const query = state.facet(parsedQueryField)
+    const position = state.selection.main.head
+    const focusedFilter = query.tokens.find(
+        (token): token is Filter =>
+            token.type === 'filter' && token.range.start <= position && token.range.end >= position
+    )
+    return focusedFilter
+        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+        : Decoration.none
+})
+
 // Tooltip information. This doesn't highlight the current token (yet).
 const tokenInfo = hoverTooltip(
     (view, position) => {
         const tokensAtCursor = view.state
             .facet(parsedQueryField)
-            ?.flatMap(decorate)
-            .filter(({ range }) => range.start <= position && range.end > position)
+            .tokens?.flatMap(decorate)
+            .filter(token => isTokenInRange(position, token))
         if (tokensAtCursor?.length === 0) {
             return null
         }
@@ -297,8 +332,10 @@ const tokenInfo = hoverTooltip(
                                 ? resolvedFilter.definition.description(resolvedFilter.negated)
                                 : resolvedFilter.definition.description
                         )
-                        // Add 1 to end of range to include the ':'.
-                        range = { start: token.range.start, end: token.range.end + 1 }
+                        // Add 3 to end of range to include the ':'.
+                        // (there seems to be a bug with computing the correct
+                        // range end)
+                        range = { start: token.range.start, end: token.range.end + 3 }
                     }
                     break
                 }
@@ -333,16 +370,61 @@ const tokenInfo = hoverTooltip(
     { hoverTime: 100 }
 )
 
-// Determines whether the cursor is over a filter and if yes, decorates that
-// filter.
-const highlightFocusedFilter = EditorView.decorations.compute(['selection', parsedQueryField], state => {
-    const query = state.facet(parsedQueryField)
-    const position = state.selection.main.head
-    const focusedFilter = query.find(
-        (token): token is Filter =>
-            token.type === 'filter' && token.range.start <= position && token.range.end >= position
-    )
-    return focusedFilter
-        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-        : Decoration.none
+// Hooks query diagnostics into the editor
+const diagnostics = Facet.define<Monaco.IMarkerData[], Monaco.IMarkerData[]>({
+    combine: markerData => markerData.flat(),
 })
+const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
+    [MarkerSeverity.Hint]: emptyDecorator,
+    [MarkerSeverity.Info]: emptyDecorator,
+    [MarkerSeverity.Warning]: Decoration.mark({ class: styles.diagnosticWarning }),
+    [MarkerSeverity.Error]: Decoration.mark({ class: styles.diagnosticError }),
+}
+const queryDiagnostic = [
+    // Compute diagnostics when query changes
+    diagnostics.compute([parsedQueryField], state => {
+        const query = state.facet(parsedQueryField)
+        return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType) : []
+    }),
+    // Generate diagnostic markers
+    EditorView.decorations.compute([diagnostics], state =>
+        Decoration.set(
+            state
+                .facet(diagnostics)
+                .map(marker => diagnosticDecos[marker.severity].range(marker.startColumn - 1, marker.endColumn - 1)),
+            true
+        )
+    ),
+    // Show diagnostic message on hover
+    hoverTooltip(
+        (view, position) => {
+            const markersAtCursor = view.state
+                .facet(diagnostics)
+                .filter(({ startColumn, endColumn }) => startColumn - 1 <= position && endColumn > position)
+            if (markersAtCursor?.length === 0) {
+                return null
+            }
+
+            return {
+                // TODO: Properly compute range for multiple markers
+                pos: markersAtCursor[0].startColumn - 1,
+                end: markersAtCursor[0].endColumn - 1,
+                create(): TooltipView {
+                    const dom = document.createElement('div')
+                    dom.innerHTML = renderMarkdown(markersAtCursor.map(marker => marker.message).join('\n\n'))
+                    return { dom }
+                },
+            }
+        },
+        { hoverTime: 100 }
+    ),
+]
+
+// Looks like there might be a bug with how the end range for a field is
+// computed? Need to add 1 to make this work properly.
+function isTokenInRange(
+    position: number,
+    token: { type: DecoratedToken['type']; range: { start: number; end: number } }
+): boolean {
+    return token.range.start <= position && token.range.end + (token.type === 'field' ? 2 : 0) > position
+}
