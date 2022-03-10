@@ -1,5 +1,13 @@
 import { RangeSetBuilder } from '@codemirror/rangeset'
-import { EditorState, EditorStateConfig, Extension, Facet, StateEffect, StateField } from '@codemirror/state'
+import {
+    EditorSelection,
+    EditorState,
+    EditorStateConfig,
+    Extension,
+    Facet,
+    StateEffect,
+    StateField,
+} from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
 import { EditorView, ViewUpdate, keymap, Decoration } from '@codemirror/view'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -21,41 +29,93 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
     queryState,
     onChange,
     onSubmit,
+    autoFocus,
+    onBlur,
 }) => {
     const container = useRef<HTMLDivElement | null>(null)
 
     const extensions = useMemo(
         () => [
+            // Prevent newline insertion
             singleLine,
-            submitOnEnter(onSubmit),
-            notifyOnChange((value: string) =>
-                onChange({
-                    query: value,
-                    changeSource: QueryChangeSource.userInput,
-                })
-            ),
+            notifyOnEnter(onSubmit),
+            EditorView.updateListener.of((update: ViewUpdate) => {
+                if (update.docChanged) {
+                    onChange({
+                        // Looks like Text overwrites toString somehow
+                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                        query: update.state.doc.toString(),
+                        changeSource: QueryChangeSource.userInput,
+                    })
+                }
+                if (onBlur && update.focusChanged && !update.view.hasFocus) {
+                    onBlur()
+                }
+            }),
             patternTypeField,
             parsedQueryFieldExtension,
             tokenHighlight,
             highlightFocusedFilter,
             tokenInfo,
         ],
-        [onChange, onSubmit]
+        [onChange, onSubmit, onBlur]
     )
 
-    const view = useCodeMirror(container.current, queryState.query, extensions)
+    const editor = useCodeMirror(container.current, queryState.query, extensions)
 
     // Update pattern type when it changes
     useEffect(() => {
-        view?.dispatch({ effects: [patternTypeFieldEffect.of(patternType)] })
-    }, [view, patternType])
+        editor?.dispatch({ effects: [patternTypeFieldEffect.of(patternType)] })
+    }, [editor, patternType])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
         if (selectedSearchContextSpec) {
-            view?.focus()
+            editor?.focus()
         }
-    }, [view, selectedSearchContextSpec])
+    }, [editor, selectedSearchContextSpec])
+
+    // Focus the editor if the autoFocus prop is truthy
+    useEffect(() => {
+        if (!editor || !autoFocus) {
+            return
+        }
+        editor.focus()
+    }, [editor, autoFocus])
+
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+
+        switch (queryState.changeSource) {
+            case QueryChangeSource.userInput:
+                // Don't react to user input
+                break
+            case QueryChangeSource.searchTypes:
+            case QueryChangeSource.searchReference: {
+                const selectionRange = queryState.selectionRange
+                editor.dispatch({
+                    selection: EditorSelection.range(selectionRange.end, selectionRange.start),
+                    scrollIntoView: true,
+                })
+                /*
+                if (queryState.showSuggestions) {
+                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+                }
+                 */
+                editor.focus()
+                break
+            }
+            default: {
+                // Place the cursor at the end of the query.
+                editor.dispatch({
+                    selection: EditorSelection.cursor(editor.state.doc.length),
+                    scrollIntoView: true,
+                })
+            }
+        }
+    }, [editor, queryState])
 
     return <div ref={container} className={styles.root} />
 }
@@ -117,25 +177,16 @@ function useCodeMirror(
 // Enter from inserting a new line)
 const singleLine = EditorState.transactionFilter.of(transaction => (transaction.newDoc.lines > 1 ? [] : transaction))
 
-const submitOnEnter = (onSubmit: () => void): Extension =>
+const notifyOnEnter = (notify: () => void): Extension =>
     keymap.of([
         {
             key: 'Enter',
             run: () => {
-                onSubmit()
+                notify()
                 return true
             },
         },
     ])
-
-const notifyOnChange = (onChange: (value: string) => void): Extension =>
-    EditorView.updateListener.of((update: ViewUpdate) => {
-        if (update.docChanged) {
-            // Looks like Text overwrites toString somehow
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
-            onChange(update.state.doc.toString())
-        }
-    })
 
 // Defines decorators for syntax highlighting
 type StyleNames = keyof typeof styles
