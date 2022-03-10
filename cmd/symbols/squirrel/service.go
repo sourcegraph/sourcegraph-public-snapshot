@@ -2,7 +2,6 @@ package squirrel
 
 import (
 	"context"
-	"fmt"
 
 	sitter "github.com/smacker/go-tree-sitter"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // How to read a file.
@@ -50,7 +50,7 @@ func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitP
 	cmd.Repo = api.RepoName(repoCommitPath.Repo)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
+		return nil, errors.Newf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
 	}
 	return stdout, nil
 }

@@ -116,7 +116,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 				}
 
 				// Put the ref in the scope.
-				(*scope[symbolName]).Refs[nodeToRange(node)] = struct{}{}
+				scope[symbolName].Refs[nodeToRange(node)] = struct{}{}
 
 				// Done.
 				return

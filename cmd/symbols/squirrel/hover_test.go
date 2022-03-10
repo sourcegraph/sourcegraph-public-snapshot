@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHover(t *testing.T) {
@@ -34,7 +35,7 @@ func f() {}
 				return []byte(test.contents), nil
 			}
 		}
-		return nil, fmt.Errorf("path %s not found", path.Path)
+		return nil, errors.Newf("path %s not found", path.Path)
 	}
 
 	squirrel := NewSquirrelService(readFile, nil)

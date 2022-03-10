@@ -54,7 +54,7 @@ func isLessRange(a, b types.Range) bool {
 
 // tabsToSpaces converts tabs to spaces.
 func tabsToSpaces(s string) string {
-	return strings.Replace(s, "\t", "    ", -1)
+	return strings.ReplaceAll(s, "\t", "    ")
 }
 
 const TAB_SIZE = 4
@@ -230,7 +230,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 
 	tree, err := s.parser.ParseCtx(context.Background(), nil, contents)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse file contents: %s", err)
+		return nil, errors.Newf("failed to parse file contents: %s", err)
 	}
 	s.closables = append(s.closables, tree.Close)
 
