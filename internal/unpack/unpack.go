@@ -11,6 +11,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Based on https://github.com/gravitational/teleport/blob/350ea5bb953f741b222a08c85acac30254e92f66/lib/utils/unpack.go
+
 package unpack
 
 import (
