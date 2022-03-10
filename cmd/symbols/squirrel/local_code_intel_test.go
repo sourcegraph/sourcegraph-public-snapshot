@@ -38,8 +38,8 @@ func f(x int) {
 
 	for _, symbol := range payload.Symbols {
 		// Check if len(symbol.Refs) is equal to symbolNameToRefCount[symbol.Name]
-		if len(symbol.Refs) != symbolNameToRefCount[symbol.Name] {
-			t.Fatalf("symbol %s has %d refs, want %d", symbol.Name, len(symbol.Refs), symbolNameToRefCount[symbol.Name])
+		if wantRefCount, ok := symbolNameToRefCount[symbol.Name]; ok && len(symbol.Refs) != wantRefCount {
+			t.Fatalf("symbol %s has %d refs, want %d", symbol.Name, len(symbol.Refs), wantRefCount)
 		}
 	}
 }
