@@ -1180,6 +1180,8 @@ type ObservabilityTracing struct {
 	Debug bool `json:"debug,omitempty"`
 	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)
 	Sampling string `json:"sampling,omitempty"`
+	// Type description: Determines what tracing provider to enable. Supports "datadog" or "opentracing"
+	Type string `json:"type,omitempty"`
 }
 
 // OnQuery description: A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
@@ -1414,7 +1416,8 @@ type SAMLAuthProvider struct {
 	Type         string `json:"type"`
 }
 
-// SMTPServerConfig description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
+// SMTPServerConfig description: The SMTP server used to send transactional emails.
+// Please see https://docs.sourcegraph.com/admin/config/email
 type SMTPServerConfig struct {
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
@@ -1494,6 +1497,8 @@ type Settings struct {
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
 	// CodeIntelligenceAutoIndexRepositoryGroups description: A list of search.repositoryGroups that have auto-indexing enabled.
 	CodeIntelligenceAutoIndexRepositoryGroups []string `json:"codeIntelligence.autoIndexRepositoryGroups,omitempty"`
+	// CodeIntelligenceClickToGoToDefinition description: Enable click to go to definition.
+	CodeIntelligenceClickToGoToDefinition bool `json:"codeIntelligence.clickToGoToDefinition,omitempty"`
 	// CodeIntelligenceMaxPanelResults description: Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.
 	CodeIntelligenceMaxPanelResults int `json:"codeIntelligence.maxPanelResults,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
@@ -1504,6 +1509,8 @@ type Settings struct {
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
 	FileSidebarVisibleByDefault bool `json:"fileSidebarVisibleByDefault,omitempty"`
+	// HistoryPreferAbsoluteTimestamps description: Show absolute timestamps in the history panel and only show relative timestamps (e.g.: "5 days ago") in tooltip when hovering.
+	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
@@ -1591,6 +1598,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
 	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
+	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
+	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
 	// SearchStats description: Enables a button on the search results page that shows language statistics about the results for a search query.
@@ -1601,6 +1610,8 @@ type SettingsExperimentalFeatures struct {
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowCodeMonitoringTestEmailButton description: REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.
 	ShowCodeMonitoringTestEmailButton *bool `json:"showCodeMonitoringTestEmailButton,omitempty"`
+	// ShowComputeComponent description: Enables display of compute components (currently Notebook blocks)
+	ShowComputeComponent *bool `json:"showComputeComponent,omitempty"`
 	// ShowEnterpriseHomePanels description: Enabled the homepage panels in the Enterprise homepage
 	ShowEnterpriseHomePanels *bool `json:"showEnterpriseHomePanels,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
@@ -1704,8 +1715,10 @@ type SiteConfiguration struct {
 	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
+	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
-	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
+	// EmailSmtp description: The SMTP server used to send transactional emails.
+	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
@@ -1795,8 +1808,6 @@ type SiteConfiguration struct {
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
-	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
-	UseJaeger bool `json:"useJaeger,omitempty"`
 	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins
 	UserReposMaxPerSite int `json:"userRepos.maxPerSite,omitempty"`
 	// UserReposMaxPerUser description: The per user maximum number of repos that can be added by non site admins

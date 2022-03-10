@@ -299,12 +299,12 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile, limit int) (p
 func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
-	err := regexSearch(ctx, rg, zf, limit, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
 	return sender.Collected(), sender.LimitHit(), err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")

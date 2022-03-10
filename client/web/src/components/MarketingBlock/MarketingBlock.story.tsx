@@ -2,7 +2,7 @@ import { DecoratorFn, Meta } from '@storybook/react'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 
@@ -24,7 +24,7 @@ export const Basic = (): JSX.Element => (
         <div>
             <Link to="https://sourcegraph.com/search">
                 Speak to an engineer
-                <ArrowRightIcon className="icon-inline ml-2" />
+                <Icon className="ml-2" as={ArrowRightIcon} />
             </Link>
         </div>
     </MarketingBlock>

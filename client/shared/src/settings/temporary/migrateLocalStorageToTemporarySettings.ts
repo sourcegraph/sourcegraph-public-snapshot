@@ -35,6 +35,16 @@ const migrations: Migration[] = [
         temporarySettingsKey: 'signup.finishedWelcomeFlow',
         type: 'boolean',
     },
+    {
+        localStorageKey: 'hasDismissedBrowserExtensionAlert',
+        temporarySettingsKey: 'cta.browserExtensionAlertDismissed',
+        type: 'boolean',
+    },
+    {
+        localStorageKey: 'hasDismissedIdeExtensionAlert',
+        temporarySettingsKey: 'cta.ideExtensionAlertDismissed',
+        type: 'boolean',
+    },
 ]
 
 export async function migrateLocalStorageToTemporarySettings(storage: TemporarySettingsStorage): Promise<void> {

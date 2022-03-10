@@ -21,11 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -85,8 +83,8 @@ func TestSearchResults(t *testing.T) {
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
+		MockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { MockDecodedViewerFinalSettings = nil }()
 
 		repos := database.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
@@ -98,62 +96,6 @@ func TestSearchResults(t *testing.T) {
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
-		}
-	})
-
-	t.Run("multiple terms regexp", func(t *testing.T) {
-		t.Skip("Skipping because it's currently failing locally")
-
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		repos := database.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
-
-		calledSearchSymbols := false
-		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
-			calledSearchSymbols = true
-			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
-			// TODO return mock results here and assert that they are output as results
-			return nil, nil, nil
-		}
-		defer func() { symbol.MockSearchSymbols = nil }()
-
-		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
-		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if calledSearchSymbols {
-			t.Error("calledSearchSymbols")
-		}
-	})
-
-	t.Run("multiple terms literal", func(t *testing.T) {
-		t.Skip("Skipping because it's currently failing locally")
-
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		repos := database.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
-
-		calledSearchSymbols := false
-		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
-			calledSearchSymbols = true
-			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
-			// TODO return mock results here and assert that they are output as results
-			return nil, nil, nil
-		}
-		defer func() { symbol.MockSearchSymbols = nil }()
-
-		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
-		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if calledSearchSymbols {
-			t.Error("calledSearchSymbols")
 		}
 	})
 }
@@ -291,14 +233,15 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 	}
 
-	mockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { mockDecodedViewerFinalSettings = nil }()
+	MockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { MockDecodedViewerFinalSettings = nil }()
 
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
-				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
+				globbing := globbing // avoid a reference to the loop variable
+				MockDecodedViewerFinalSettings.SearchGlobbing = &globbing
 				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
@@ -383,19 +326,26 @@ func TestSearchResultsHydration(t *testing.T) {
 	var ctxUser int32 = 1234
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(ctxUser))
 
-	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
+	query := `foobar index:only count:350`
+	literalPatternType := "literal"
+	searchInputs, err := run.NewSearchInputs(
+		ctx,
+		db,
+		"V2",
+		&literalPatternType,
+		query,
+		search.Batch,
+		&schema.Settings{},
+		false,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	resolver := &searchResolver{
-		db: db,
-		SearchInputs: &run.SearchInputs{
-			Plan:         p,
-			Query:        p.ToParseTree(),
-			UserSettings: &schema.Settings{},
-		},
-		zoekt: z,
+		db:           db,
+		SearchInputs: searchInputs,
+		zoekt:        z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -621,19 +571,25 @@ func TestEvaluateAnd(t *testing.T) {
 			repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 			db.ReposFunc.SetDefaultReturn(repos)
 
-			p, err := query.Pipeline(query.InitLiteral(tt.query))
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.query,
+				search.Batch,
+				&schema.Settings{},
+				false,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := &searchResolver{
-				db: db,
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: z,
+				db:           db,
+				SearchInputs: searchInputs,
+				zoekt:        z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -673,11 +629,6 @@ func TestSearchContext(t *testing.T) {
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			repos := database.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
@@ -695,14 +646,25 @@ func TestSearchContext(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.NamespacesFunc.SetDefaultReturn(ns)
 
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.searchQuery,
+				search.Batch,
+				&schema.Settings{},
+				false,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: mockZoekt,
-				db:    db,
+				SearchInputs: searchInputs,
+				zoekt:        mockZoekt,
+				db:           db,
 			}
 
 			_, err = resolver.Results(context.Background())
@@ -804,11 +766,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				authz.DefaultSubRepoPermsChecker = tt.checker()
 			}
 
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			repos := database.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
@@ -819,14 +776,25 @@ func TestSubRepoFiltering(t *testing.T) {
 				return database.NewMockEventLogStore()
 			})
 
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.searchQuery,
+				search.Batch,
+				&schema.Settings{},
+				false,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: mockZoekt,
-				db:    db,
+				SearchInputs: searchInputs,
+				zoekt:        mockZoekt,
+				db:           db,
 			}
 
 			ctx := context.Background()

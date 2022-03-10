@@ -12,7 +12,7 @@ exports[`SearchStatsPage limitHit 1`] = `
         class="d-flex align-items-center mb-0"
       >
         <svg
-          class="mdi-icon icon-inline mr-2"
+          class="mdi-icon iconInline mr-2"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -77,7 +77,7 @@ exports[`SearchStatsPage renders 1`] = `
         class="d-flex align-items-center mb-0"
       >
         <svg
-          class="mdi-icon icon-inline mr-2"
+          class="mdi-icon iconInline mr-2"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"

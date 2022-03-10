@@ -10,7 +10,7 @@ Critical telemetry includes only the high-level data below required for billing,
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
 - Sourcegraph version string (e.g. "vX.X.X")
 - Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)
-- Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
+- Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker cluster)
 - License key associated with your Sourcegraph subscription
 - Aggregate count of current monthly users
 - Total count of existing user accounts
@@ -114,6 +114,25 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
   - who visited Sourcegraph instance from browser extension
 
+
+- CTA usage data
+  - Browser extension
+    - Total number of users who viewed the "install browser extension" CTA on the file page
+    - Total number of users who clicked the "install browser extension" CTA on the file page
+    - Total number of users who viewed the "install browser extension" CTA on the search page
+    - Total number of users who clicked the "install browser extension" CTA on the search page
+    - Total number of views of the "install browser extension" CTA on the file page
+    - Total number of clicks on the "install browser extension" CTA on the file page
+    - Total number of views of the "install browser extension" CTA on the search page
+    - Total number of clicks on the "install browser extension" CTA on the search page
+
+- CTA usage data
+  - Browser extension
+    - Number of users who viewed / clicked the "install browser extension" CTA on the file / search pages today
+    - Number of views / clicks on the "install browser extension" CTA on the file / search pages today
+  - IDE extension
+    - Number of users who viewed / clicked the "install IDE extension" CTA on the file / search pages today
+    - Number of views / clicks on the "install IDE extension" CTA on the file / search pages today
 
 ## CIDR Range for Sourcegraph
 

@@ -189,7 +189,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
-    const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
+    const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
     const [hasInsightPageBeenViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
 
     const searchNavBar = (

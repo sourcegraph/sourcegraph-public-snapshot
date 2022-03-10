@@ -71,7 +71,6 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import styles from './Blob.module.scss'
@@ -88,8 +87,7 @@ export interface BlobProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
-        GlobalCoolCodeIntelProps {
+        ThemeProps {
     location: H.Location
     history: H.History
     className: string
@@ -99,6 +97,9 @@ export interface BlobProps
 
     // Experimental reference panel
     disableStatusBar: boolean
+    // If set, nav is called when a user clicks on a token highlighted by
+    // WebHoverOverlay
+    nav?: (url: string) => void
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -615,7 +616,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
-                        nav={url => props.history.push(url)}
+                        nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}

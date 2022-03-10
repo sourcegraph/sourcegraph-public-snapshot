@@ -9,9 +9,8 @@ import (
 
 func TestQueryTriggerForJob(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
@@ -26,9 +25,8 @@ func TestQueryTriggerForJob(t *testing.T) {
 
 func TestSetQueryTriggerNextRun(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, id, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
@@ -60,11 +58,10 @@ func TestSetQueryTriggerNextRun(t *testing.T) {
 
 func TestResetTriggerQueryTimestamps(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
-	err = s.ResetQueryTriggerTimestamps(ctx, fixtures.query.ID)
+	err := s.ResetQueryTriggerTimestamps(ctx, fixtures.query.ID)
 	require.NoError(t, err)
 
 	got, err := s.GetQueryTriggerForMonitor(ctx, fixtures.monitor.ID)

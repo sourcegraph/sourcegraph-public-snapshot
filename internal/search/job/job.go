@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -29,10 +30,9 @@ import (
 )
 
 type Args struct {
-	SearchInputs        *run.SearchInputs
-	OnSourcegraphDotCom bool
-	Zoekt               zoekt.Streamer
-	SearcherURLs        *endpoint.Map
+	SearchInputs *run.SearchInputs
+	Zoekt        zoekt.Streamer
+	SearcherURLs *endpoint.Map
 }
 
 // ToSearchJob converts a query parse tree to the _internal_ representation
@@ -56,7 +56,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
-	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(args, jargs.SearchInputs.PatternType, jargs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(args, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
@@ -214,6 +214,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				HasTimeFilter:        commit.HasTimeFilter(args.Query),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Gitserver:            gitserver.DefaultClient,
 			})
 		}
 
@@ -439,7 +440,6 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		MinusRepoFilters:  minusRepoFilters,
 		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
-		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
 		OnlyArchived:      archived == query.Only,

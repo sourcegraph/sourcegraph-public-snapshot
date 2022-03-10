@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -441,10 +440,9 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 // JobArgs converts the parts of search resolver state to values needed to create search jobs.
 func (r *searchResolver) JobArgs() *job.Args {
 	return &job.Args{
-		SearchInputs:        r.SearchInputs,
-		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
-		Zoekt:               r.zoekt,
-		SearcherURLs:        r.searcherURLs,
+		SearchInputs: r.SearchInputs,
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
 	}
 }
 
@@ -503,19 +501,13 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	}
 }
 
-func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
 	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	r.logBatch(ctx, srr, err)
-	return srr, err
-}
-
-func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	alert, err := execute.Execute(ctx, r.db, r.stream, r.JobArgs())
-	srr := r.resultsToResolver(nil, alert, streaming.Stats{})
 	return srr, err
 }
 
@@ -526,13 +518,6 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 		Stats:       stats,
 		db:          r.db,
 	}
-}
-
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
-	if r.stream == nil {
-		return r.resultsBatch(ctx)
-	}
-	return r.resultsStreaming(ctx)
 }
 
 // DetermineStatusForLogs determines the final status of a search for logging

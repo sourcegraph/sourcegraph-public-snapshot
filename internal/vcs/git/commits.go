@@ -402,7 +402,7 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	for len(data) > 0 {
 		var commit *wrappedCommit
 		var err error
-		commit, _, data, err = parseCommitFromLog(data, partsPerCommit)
+		commit, data, err = parseCommitFromLog(data, partsPerCommit)
 		if err != nil {
 			return nil, err
 		}
@@ -553,20 +553,20 @@ func checkError(err error) (string, bool, error) {
 }
 
 const (
-	partsPerCommitBasic         = 10 // number of \x00-separated fields per commit
-	partsPerCommitWithFileNames = 11 // number of \x00-separated fields per commit with names of modified files also returned
+	partsPerCommitBasic         = 9  // number of \x00-separated fields per commit
+	partsPerCommitWithFileNames = 10 // number of \x00-separated fields per commit with names of modified files also returned
 
 	// don't include refs (faster, should be used if refs are not needed)
-	logFormatWithoutRefs = "--format=format:%H%x00%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+	logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, refs []string, rest []byte, err error) {
+func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, rest []byte, err error) {
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
-		return nil, nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
+		return nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
 	}
 
 	// log outputs are newline separated, so all but the 1st commit ID part
@@ -574,17 +574,17 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
 	commitID := api.CommitID(parts[0])
 
-	authorTime, err := strconv.ParseInt(string(parts[4]), 10, 64)
+	authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("parsing git commit author time: %s", err)
+		return nil, nil, errors.Errorf("parsing git commit author time: %s", err)
 	}
-	committerTime, err := strconv.ParseInt(string(parts[7]), 10, 64)
+	committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("parsing git commit committer time: %s", err)
+		return nil, nil, errors.Errorf("parsing git commit committer time: %s", err)
 	}
 
 	var parents []api.CommitID
-	if parentPart := parts[9]; len(parentPart) > 0 {
+	if parentPart := parts[8]; len(parentPart) > 0 {
 		parentIDs := bytes.Split(parentPart, []byte{' '})
 		parents = make([]api.CommitID, len(parentIDs))
 		for i, id := range parentIDs {
@@ -594,16 +594,12 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 
 	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
 
-	if len(parts[1]) > 0 {
-		refs = strings.Split(string(parts[1]), ", ")
-	}
-
 	commit = &wrappedCommit{
 		Commit: &gitdomain.Commit{
 			ID:        commitID,
-			Author:    gitdomain.Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
-			Committer: &gitdomain.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
-			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[8]), "\n")),
+			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
+			Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
+			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 			Parents:   parents,
 		}, files: fileNames,
 	}
@@ -616,7 +612,7 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 		}
 	}
 
-	return commit, refs, rest, nil
+	return commit, rest, nil
 }
 
 // If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this
@@ -625,8 +621,8 @@ func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte)
 	var fileNames []string
 	var nextCommit []byte
 	if partsPerCommit == partsPerCommitWithFileNames {
-		parts[10] = bytes.TrimPrefix(parts[10], []byte{'\n'})
-		fileNamesRaw := parts[10]
+		parts[9] = bytes.TrimPrefix(parts[9], []byte{'\n'})
+		fileNamesRaw := parts[9]
 		fileNameParts := bytes.Split(fileNamesRaw, []byte{'\n'})
 		for i, name := range fileNameParts {
 			// The last item contains the files modified, some empty space, and the commit ID for the next commit. Drop
@@ -680,7 +676,7 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ map[string][]gitdomain.RefDescription, err error) {
+func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
 	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
 		format := strings.Join([]string{
 			derefField("objectname"),
@@ -689,7 +685,14 @@ func RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRe
 			derefField("creatordate:iso8601-strict"),
 		}, "%00")
 
-		cmd := gitserver.DefaultClient.Command("git", "for-each-ref", "--format="+format, refPrefix)
+		args := make([]string, 0, len(gitObjs)+3)
+		args = append(args, "for-each-ref", "--format="+format, refPrefix)
+
+		for _, obj := range gitObjs {
+			args = append(args, "--points-at="+obj)
+		}
+
+		cmd := gitserver.DefaultClient.Command("git", args...)
 		cmd.Repo = repo
 
 		out, err := cmd.CombinedOutput(ctx)

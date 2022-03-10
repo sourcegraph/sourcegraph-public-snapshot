@@ -29,11 +29,21 @@ const mockedResponse: MockedResponse[] = [
     },
 ]
 
-add('CodeMonitoringLogs', () => (
+add('default', () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={mockedResponse}>
                 <CodeMonitoringLogs now={() => parseISO('2022-02-14T16:21:00+00:00')} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+))
+
+add('open', () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider mocks={mockedResponse}>
+                <CodeMonitoringLogs now={() => parseISO('2022-02-14T16:21:00+00:00')} _testStartOpen={true} />
             </MockedTestProvider>
         )}
     </WebStory>

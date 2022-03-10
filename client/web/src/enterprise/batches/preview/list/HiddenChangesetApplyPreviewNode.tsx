@@ -4,6 +4,7 @@ import React from 'react'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
@@ -70,10 +71,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
             </h3>
             <span className="text-danger">
                 No action will be taken on apply.{' '}
-                <InfoCircleOutlineIcon
-                    className="icon-inline"
-                    data-tooltip="You have no permissions to access this repository."
-                />
+                <Icon data-tooltip="You have no permissions to access this repository." as={InfoCircleOutlineIcon} />
             </span>
         </div>
         <span />

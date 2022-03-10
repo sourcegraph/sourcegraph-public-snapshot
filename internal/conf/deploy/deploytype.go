@@ -2,7 +2,7 @@ package deploy
 
 import "os"
 
-// Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
+// Deploy type constants. Any changes here should be reflected in the DeployType type declared in client/web/src/jscontext.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
 const (
 	Kubernetes    = "kubernetes"
@@ -10,6 +10,7 @@ const (
 	DockerCompose = "docker-compose"
 	PureDocker    = "pure-docker"
 	Dev           = "dev"
+	Helm          = "helm"
 )
 
 // Type tells the deployment type.
@@ -27,7 +28,7 @@ func Type() string {
 func IsDeployTypeKubernetes(deployType string) bool {
 	switch deployType {
 	// includes older Kubernetes aliases for backwards compatibility
-	case "k8s", "cluster", Kubernetes:
+	case "k8s", "cluster", Kubernetes, Helm:
 		return true
 	}
 

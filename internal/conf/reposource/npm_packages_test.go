@@ -18,12 +18,15 @@ func TestParseNPMDependency(t *testing.T) {
 		{"package.js@1.2.3", true},
 		{"package-1.2.3", false},
 		{"@scope/package", false},
-		{"@weird.scope/package@1.2.3", false},
+		{"@weird.scope/package@1.2.3", true},
 		{"@scope/package.js@1.2.3", true},
 		{"package@1$%", false},
 		{"@scope-package@1.2.3", false},
 		{"@/package@1.2.3", false},
 		{"@scope/@1.2.3", false},
+		{"@dashed-scope/abc@0", true},
+		{"@a.b-c.d-e/f.g--h.ijk-l@0.1-abc", true},
+		{"@A.B-C.D-E/F.G--H.IJK-L@0.1-ABC", true},
 	}
 	for _, entry := range table {
 		dep, err := ParseNPMDependency(entry.testName)

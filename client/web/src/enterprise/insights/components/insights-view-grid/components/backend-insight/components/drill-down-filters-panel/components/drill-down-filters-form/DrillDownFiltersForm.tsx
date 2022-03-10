@@ -4,7 +4,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
@@ -40,7 +40,7 @@ interface DrillDownFiltersFormProps {
     originalFiltersValue: DrillDownFiltersFormValues
 
     /**
-     * Live filters that lives only in runtime memory and can be different
+     * Live filters that live only in runtime memory and can be different
      * from originalFiltersValue of insight until the user syncs them by
      * save/update default filters.
      */
@@ -94,6 +94,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
     const hasAppliedFilters = hasActiveFilters(originalFiltersValue)
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
             <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
@@ -182,7 +183,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     variant="secondary"
                     onClick={onCreateInsightRequest}
                 >
-                    <PlusIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={PlusIcon} />
                     Save as new view
                 </Button>
             </footer>
