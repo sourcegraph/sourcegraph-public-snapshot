@@ -256,7 +256,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                     )}
                 </div>
 
-                <Container className={classNames({ 'mb-3' : !showOnlyYou}, styles.membersList)}>
+                <Container className={classNames({ 'mb-3': !showOnlyYou }, styles.membersList)}>
                     {loading && <LoadingSpinner />}
                     {membersResult && (
                         <ul>
