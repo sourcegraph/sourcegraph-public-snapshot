@@ -37,7 +37,6 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
         if (state !== 'validating') {
-            const newInstanceUrl = (event.currentTarget.elements.namedItem('instance-url') as HTMLInputElement).value
             const newAccessToken = (event.currentTarget.elements.namedItem('token') as HTMLInputElement).value
             let authStateVariables = {
                 request: currentAuthStateQuery,
@@ -46,6 +45,8 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 overrideAccessToken: newAccessToken,
             }
             if (usePrivateInstance) {
+                const newInstanceUrl = (event.currentTarget.elements.namedItem('instance-url') as HTMLInputElement)
+                    .value
                 setHostname(newInstanceUrl)
                 authStateVariables = { ...authStateVariables, ...{ overrideSourcegraphURL: newInstanceUrl } }
             }
@@ -58,7 +59,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 .then(async ({ data }) => {
                     if (data?.currentUser) {
                         setState('success')
-                        await extensionCoreAPI.setEndpointUri(newInstanceUrl)
+                        await extensionCoreAPI.setEndpointUri(hostname)
                         return extensionCoreAPI.setAccessToken(newAccessToken)
                     }
                     setState('failure')
@@ -168,11 +169,6 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 </a>{' '}
                 for a video guide on how to create an access token.
             </p>
-            {state === 'failure' && (
-                <Alert variant="danger">
-                    Unable to verify your access token for {hostname}. Please try again with a new access token.
-                </Alert>
-            )}
             <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <LoaderInput loading={state === 'validating'}>
                     <label htmlFor="access-token-input">Access Token</label>
@@ -189,16 +185,37 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     />
                 </LoaderInput>
             </p>
-            {!usePrivateInstance && (
+            {usePrivateInstance && (
                 <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <button
-                        type="submit"
-                        disabled={state === 'validating'}
-                        className={classNames('btn my-1', styles.ctaButton)}
-                    >
-                        Authenticate Access
-                    </button>
+                    <LoaderInput loading={state === 'validating'}>
+                        <label htmlFor="private-url-input">Sourcegraph Instance URL</label>
+                        <input
+                            className={classNames('input form-control', styles.ctaInput)}
+                            id="private-url-input"
+                            type="url"
+                            name="instance-url"
+                            required={true}
+                            autoFocus={true}
+                            spellCheck={false}
+                            disabled={state === 'validating'}
+                            placeholder="ex sourcegraph.example.com"
+                        />
+                    </LoaderInput>
                 </p>
+            )}
+            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                <button
+                    type="submit"
+                    disabled={state === 'validating'}
+                    className={classNames('btn my-1', styles.ctaButton)}
+                >
+                    Authenticate account
+                </button>
+            </p>
+            {state === 'failure' && (
+                <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
+                    Unable to verify your access token for {hostname}. Please try again with a new access token.
+                </Alert>
             )}
             {!usePrivateInstance ? (
                 <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
@@ -207,42 +224,15 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     </button>
                 </p>
             ) : (
-                <>
-                    <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                        <LoaderInput loading={state === 'validating'}>
-                            <label htmlFor="private-url-input">Sourcegraph Instance URL</label>
-                            <input
-                                className={classNames('input form-control', styles.ctaInput)}
-                                id="private-url-input"
-                                type="text"
-                                name="instance-url"
-                                required={true}
-                                autoFocus={true}
-                                spellCheck={false}
-                                disabled={state === 'validating'}
-                                placeholder="ex sourcegraph.example.com"
-                            />
-                        </LoaderInput>
-                    </p>
-                    <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                        <button
-                            type="submit"
-                            disabled={state === 'validating'}
-                            className={classNames('btn my-1', styles.ctaButton)}
-                        >
-                            Authenticate Access
-                        </button>
-                    </p>
-                    <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                        <button
-                            type="button"
-                            className="btn btn-text-link h-0"
-                            onClick={() => setUsePrivateInstance(false)}
-                        >
-                            Not a private instance user?
-                        </button>
-                    </p>
-                </>
+                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
+                    <button
+                        type="button"
+                        className="btn btn-text-link h-0"
+                        onClick={() => setUsePrivateInstance(false)}
+                    >
+                        Not a private instance user?
+                    </button>
+                </p>
             )}
             <p className={classNames(styles.ctaParagraph)}>
                 <button type="button" className="btn btn-text-link h-0" onClick={onSignUpClick}>

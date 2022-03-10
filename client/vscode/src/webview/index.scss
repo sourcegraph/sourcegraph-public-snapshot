@@ -112,4 +112,6 @@ code {
     color: var(--vscode-textLink-foreground);
     height: 0;
     padding: 0;
+    font-weight: var(--vscode-editor-font-weight) !important;
+    font-size: var(--vscode-editor-font-size) !important;
 }

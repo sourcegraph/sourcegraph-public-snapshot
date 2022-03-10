@@ -23,16 +23,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onFileSystem:sourcegraph",
-    "onLanguage:sourcegraph",
-    "onCommand:sourcegraph.search",
-    "onCommand:sourcegraph.openInBrowser",
-    "onCommand:sourcegraph.copyFileLink",
-    "onCommand:sourcegraph.selectionSearchWeb",
-    "onCommand:sourcegraph.openFile",
-    "onView:sourcegraph.searchSidebar",
-    "onView:sourcegraph.files",
-    "onWebviewPanel:sourcegraphSearch"
+    "*"
   ],
   "main": "./dist/node/extension.js",
   "browser": "./dist/webworker/extension.js",
@@ -208,8 +199,7 @@
     "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
-    "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack",
-    "vscode:uninstall": "node ./dist/node/uninstall.js"
+    "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
   },
   "dependencies": {
     "https-browserify": "^1.0.0",
