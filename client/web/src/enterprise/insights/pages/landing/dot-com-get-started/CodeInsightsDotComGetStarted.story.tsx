@@ -3,7 +3,7 @@ import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { WebStory } from '../../../../components/WebStory'
+import { WebStory } from '../../../../../components/WebStory'
 
 import { CodeInsightsDotComGetStarted } from './CodeInsightsDotComGetStarted'
 

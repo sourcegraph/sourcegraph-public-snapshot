@@ -23,6 +23,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<CodeInsightsExa
 
         if (nextElementReference) {
             nextElementReference.scrollIntoView({ block: 'nearest', inline: 'start' })
+            telemetryService.log('CloudCodeInsightsGetStartedUseCase')
         }
     }
 
@@ -32,6 +33,7 @@ export const CodeInsightsExamplesSlider: React.FunctionComponent<CodeInsightsExa
 
         if (nextElementReference) {
             nextElementReference.scrollIntoView({ block: 'nearest', inline: 'start' })
+            telemetryService.log('CloudCodeInsightsGetStartedUseCase')
         }
     }
 

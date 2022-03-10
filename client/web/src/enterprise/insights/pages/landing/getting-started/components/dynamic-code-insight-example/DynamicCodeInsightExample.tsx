@@ -6,21 +6,21 @@ import { noop } from 'rxjs'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, Link, useObservable, useDebounce, Icon } from '@sourcegraph/wildcard'
 
-import * as View from '../../../../../../views'
-import { FormInput } from '../../../../components/form/form-input/FormInput'
-import { useField } from '../../../../components/form/hooks/useField'
-import { useForm } from '../../../../components/form/hooks/useForm'
-import { InsightQueryInput } from '../../../../components/form/query-input/InsightQueryInput'
-import { RepositoriesField } from '../../../../components/form/repositories-field/RepositoriesField'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { useCodeInsightViewPings, CodeInsightTrackType } from '../../../../pings'
-import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../insights/creation/search-insight'
-import { getQueryPatternTypeFilter } from '../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
-import { SearchInsightLivePreview } from '../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
+import * as View from '../../../../../../../views'
+import { FormInput } from '../../../../../components/form/form-input/FormInput'
+import { useField } from '../../../../../components/form/hooks/useField'
+import { useForm } from '../../../../../components/form/hooks/useForm'
+import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { useCodeInsightViewPings, CodeInsightTrackType } from '../../../../../pings'
+import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../../insights/creation/search-insight'
+import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight/components/form-series-input/get-pattern-type-filter'
+import { SearchInsightLivePreview } from '../../../../insights/creation/search-insight/components/live-preview-chart/SearchInsightLivePreview'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
-} from '../../../insights/creation/search-insight/components/search-insight-creation-content/validators'
+} from '../../../../insights/creation/search-insight/components/search-insight-creation-content/validators'
 
 import styles from './DynamicCodeInsightExample.module.scss'
 

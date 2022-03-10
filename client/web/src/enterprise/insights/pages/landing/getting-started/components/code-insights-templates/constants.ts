@@ -1,6 +1,6 @@
-import { InsightType } from '../../../../core/types'
-import { CaptureInsightUrlValues } from '../../../insights/creation/capture-group'
-import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../insights/creation/search-insight'
+import { InsightType } from '../../../../../core/types'
+import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
+import { DATA_SERIES_COLORS, SearchInsightURLValues } from '../../../../insights/creation/search-insight'
 
 export interface TemplateSection {
     title: string
