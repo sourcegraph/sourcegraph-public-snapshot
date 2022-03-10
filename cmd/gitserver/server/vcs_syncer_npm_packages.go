@@ -373,14 +373,14 @@ func decompressTgz(tgz io.Reader, destination string) error {
 //
 // https://github.com/sourcegraph/sourcegraph/pull/28057#issuecomment-987890718
 func stripSingleOutermostDirectory(dir string) error {
-	files, err := os.ReadDir(dir)
+	dirEntries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}
 
 	outermostDir := dir
-	for _, f := range files {
-		if !f.IsDir() || f.Name() == ".git" {
+	for _, fi := range dirEntries {
+		if !fi.IsDir() || fi.Name() == ".git" {
 			continue
 		}
 
@@ -389,7 +389,7 @@ func stripSingleOutermostDirectory(dir string) error {
 			return nil
 		}
 
-		outermostDir = path.Join(dir, f.Name())
+		outermostDir = path.Join(dir, fi.Name())
 	}
 
 	tmpDir := dir + ".tmp"
