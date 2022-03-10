@@ -77,9 +77,12 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 					// Print a debug message if the symbol is already defined.
 					if symbol, ok := scope[symbolName]; ok && debug {
 						lines := strings.Split(string(node.Contents), "\n")
-						fmt.Printf("duplicate definition for %q in %s (using second)\n", symbolName, repoCommitPath.Path)
+						fmt.Printf("duplicate definition for %q in %s (skipping)\n", symbolName, repoCommitPath.Path)
 						fmt.Printf("  %4d | %s\n", symbol.Def.Row, lines[symbol.Def.Row])
 						fmt.Printf("  %4d | %s\n", node.StartPoint().Row, lines[node.StartPoint().Row])
+
+						// Skip it.
+						break
 					}
 
 					// Get the hover.
