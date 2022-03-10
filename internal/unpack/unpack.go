@@ -101,7 +101,7 @@ func extractFile(tr *tar.Reader, h *tar.Header, dir string) error {
 func sanitizeTarPath(h *tar.Header, dir string) error {
 	// Sanitize all tar paths resolve to within the destination directory.
 	cleanDir := filepath.Clean(dir) + string(os.PathSeparator)
-	destPath := filepath.Join(dir, h.Name)
+	destPath := filepath.Join(dir, h.Name) // Join calls filepath.Clean on each element.
 
 	if !strings.HasPrefix(destPath, cleanDir) {
 		return errors.Errorf("%s: illegal file path", h.Name)
