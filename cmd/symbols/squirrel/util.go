@@ -228,6 +228,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse file contents: %s", err)
 	}
+	s.closables = append(s.closables, tree.Close)
 
 	root := tree.RootNode()
 	if root == nil {
