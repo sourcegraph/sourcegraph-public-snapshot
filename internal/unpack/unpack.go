@@ -100,25 +100,28 @@ func extractFile(tr *tar.Reader, h *tar.Header, dir string) error {
 // like ../../etc/password.
 func sanitizeTarPath(h *tar.Header, dir string) error {
 	// Sanitize all tar paths resolve to within the destination directory.
+	cleanDir := filepath.Clean(dir) + string(os.PathSeparator)
 	destPath := filepath.Join(dir, h.Name)
-	if !strings.HasPrefix(destPath, filepath.Clean(dir)+string(os.PathSeparator)) {
+
+	if !strings.HasPrefix(destPath, cleanDir) {
 		return errors.Errorf("%s: illegal file path", h.Name)
 	}
 
 	// Ensure link destinations resolve to within the destination directory.
 	if h.Linkname != "" {
 		if filepath.IsAbs(h.Linkname) {
-			if !strings.HasPrefix(filepath.Clean(h.Linkname), filepath.Clean(dir)+string(os.PathSeparator)) {
+			if !strings.HasPrefix(filepath.Clean(h.Linkname), cleanDir) {
 				return errors.Errorf("%s: illegal link path", h.Linkname)
 			}
 		} else {
 			// Relative paths are relative to filename after extraction to directory.
 			linkPath := filepath.Join(dir, filepath.Dir(h.Name), h.Linkname)
-			if !strings.HasPrefix(linkPath, filepath.Clean(dir)+string(os.PathSeparator)) {
+			if !strings.HasPrefix(linkPath, cleanDir) {
 				return errors.Errorf("%s: illegal link path", h.Linkname)
 			}
 		}
 	}
+
 	return nil
 }
 
