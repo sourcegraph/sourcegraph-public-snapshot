@@ -96,11 +96,16 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 				continue
 			}
 
-			// If the selected file is a file match, send it unconditionally
-			// to ensure we get all line matches for a file.
-			_, isFileMatch := current.(*result.FileMatch)
+			// If the selected file is a file match send it unconditionally
+			// to ensure we get all line matches for a file. One exception:
+			// if we are only interested in the path (via `select:file`),
+			// we only send the result once.
 			seen := dedup.Seen(current)
+			fm, isFileMatch := current.(*result.FileMatch)
 			if seen && !isFileMatch {
+				continue
+			}
+			if seen && isFileMatch && fm.IsPathMatch() {
 				continue
 			}
 
