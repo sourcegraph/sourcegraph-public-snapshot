@@ -42,23 +42,16 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "insights_search_queue")
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 
 	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
 
 	// Start background goroutines for all of our workers.
+	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, observationContext),
-
-		// Register the query-runner worker and resetter, which executes search queries and records
-		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
-		// disabling the cleaner job while we debug mismatched results from historical insights
-		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
@@ -84,6 +77,31 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	routines = append(routines, NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB))
 
 	return routines
+}
+
+func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+	insightsStore := store.New(insightsDB, insightPermStore)
+
+	// Create a base store to be used for storing worker state. We store this in the main app Postgres
+	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+
+	// Create basic metrics for recording information about background jobs.
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
+
+	return []goroutine.BackgroundRoutine{
+		// Register the query-runner worker and resetter, which executes search queries and records
+		// results to TimescaleDB.
+		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
+		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
+	}
 }
 
 // newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:
