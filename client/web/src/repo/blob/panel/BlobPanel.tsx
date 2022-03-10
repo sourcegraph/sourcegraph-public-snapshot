@@ -178,7 +178,6 @@ export function useBlobPanelViews({
                             priority: 150,
                             selector: null,
                             locationProvider: undefined,
-                            noWrapper: true,
                             reactElement: (
                                 <RepoRevisionSidebarCommits
                                     key="commits"
@@ -209,7 +208,6 @@ export function useBlobPanelViews({
                             priority: 180,
                             selector: null,
                             locationProvider: undefined,
-                            // TODO: What do we do if we have no position?
                             noWrapper: true,
                             reactElement: position ? (
                                 <BuiltinCoolCodeIntelPanel

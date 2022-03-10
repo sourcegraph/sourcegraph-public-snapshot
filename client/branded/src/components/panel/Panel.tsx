@@ -60,7 +60,7 @@ export interface PanelViewWithComponent extends PanelViewData {
      */
     reactElement?: React.ReactFragment
 
-    // Put React element inside wrapper
+    // Should the content of the panel be put inside a wrapper container with padding or not.
     noWrapper?: boolean
 }
 
