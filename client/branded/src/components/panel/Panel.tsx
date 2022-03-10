@@ -294,7 +294,7 @@ export const Panel = React.memo<Props>(props => {
         <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
             <div className="sticky-top">
                 <TabList
-                    wrapperClassName={styles.header}
+                    wrapperClassName={styles.panelHeader}
                     actions={
                         <div className="align-items-center d-flex">
                             {activeTab && (
@@ -339,7 +339,7 @@ export const Panel = React.memo<Props>(props => {
                     ))}
                 </TabList>
             </div>
-            <TabPanels className={styles.tabs}>
+            <TabPanels>
                 {activeTab ? (
                     items.map(({ id, element }) => (
                         <TabPanel key={id} className={styles.tabsContent} data-testid="panel-tabs-content">
