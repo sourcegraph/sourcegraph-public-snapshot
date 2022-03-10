@@ -189,6 +189,7 @@ const config = {
                 options: {
                     cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
                     report: 'json',
+                    pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
                 },
             },
         })
