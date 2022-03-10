@@ -1231,10 +1231,6 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	if Mocks.externalServices.List != nil {
-		return Mocks.externalServices.List(opt)
-	}
-
 	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
 	defer span.Finish()
 
