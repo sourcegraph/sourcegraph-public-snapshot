@@ -41,7 +41,7 @@ func f() {}
 	defer squirrel.Close()
 
 	for _, test := range tests {
-		payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}, readFile)
+		payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path})
 		fatalIfError(t, err)
 
 		ok := false

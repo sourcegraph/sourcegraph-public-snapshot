@@ -38,7 +38,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 	defer squirrel.Close()
 
 	// Compute the local code intel payload.
-	payload, err := squirrel.localCodeIntel(r.Context(), args, readFileFromGitserver)
+	payload, err := squirrel.localCodeIntel(r.Context(), args)
 	if payload != nil && os.Getenv("SQUIRREL_DEBUG") == "true" {
 		debugStringBuilder := &strings.Builder{}
 		fmt.Fprintln(debugStringBuilder, "👉 /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
@@ -81,9 +81,6 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 
-	squirrel := NewSquirrelService(readFileFromGitserver, nil)
-	defer squirrel.Close()
-
 	path := types.RepoCommitPath{
 		Repo:   "foo",
 		Commit: "bar",
@@ -95,9 +92,12 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		return os.ReadFile("/tmp/squirrel-example.txt")
 	}
 
+	squirrel := NewSquirrelService(readFile, nil)
+	defer squirrel.Close()
+
 	rangeToSymbolIx := map[types.Range]int{}
 	symbolIxToColor := map[int]string{}
-	payload, err := squirrel.localCodeIntel(r.Context(), path, readFile)
+	payload, err := squirrel.localCodeIntel(r.Context(), path)
 	if err != nil {
 		fmt.Fprintf(w, "failed to generate local code intel payload: %s\n\n", err)
 	} else {
@@ -115,7 +115,7 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	node, err := squirrel.parse(r.Context(), path, readFile)
+	node, err := squirrel.parse(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

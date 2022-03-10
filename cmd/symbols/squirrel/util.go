@@ -208,7 +208,7 @@ func WithNodePtr(other Node, newNode *sitter.Node) *Node {
 }
 
 // Parses a file and returns info about it.
-func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath, readFile ReadFileFunc) (*Node, error) {
+func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
 	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 
 	langName, ok := extToLang[ext]
@@ -223,7 +223,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 
 	s.parser.SetLanguage(langSpec.language)
 
-	contents, err := readFile(ctx, repoCommitPath)
+	contents, err := s.readFile(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}
