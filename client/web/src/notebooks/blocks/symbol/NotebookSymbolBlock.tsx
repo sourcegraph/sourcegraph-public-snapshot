@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useState, useRef, useMemo, useCallback } from 'react'
@@ -18,8 +19,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput } from '../..'
 import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
@@ -115,6 +117,32 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         ...props,
     })
 
+    const symbolURL = useMemo(
+        () =>
+            symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput)
+                ? toPrettyBlobURL({
+                      repoName: input.repositoryName,
+                      revision: symbolOutput.effectiveRevision,
+                      filePath: input.filePath,
+                      range: symbolOutput.symbolRange,
+                  })
+                : '',
+        [input, symbolOutput]
+    )
+
+    const linkMenuAction: BlockMenuAction[] = useMemo(
+        () => [
+            {
+                type: 'link',
+                label: 'Open in new tab',
+                icon: <OpenInNewIcon className="icon-inline" />,
+                url: symbolURL,
+                isDisabled: symbolURL.length === 0,
+            },
+        ],
+        [symbolURL]
+    )
+
     const toggleEditMenuAction: BlockMenuAction[] = useMemo(
         () => [
             {
@@ -128,11 +156,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         [modifierKeyLabel, showInputs, setShowInputs]
     )
 
-    const menuActions = useMemo(() => (!isReadOnly ? toggleEditMenuAction : []).concat(commonMenuActions), [
-        isReadOnly,
-        toggleEditMenuAction,
-        commonMenuActions,
-    ])
+    const menuActions = useMemo(
+        () => (!isReadOnly ? toggleEditMenuAction : []).concat(linkMenuAction).concat(commonMenuActions),
+        [isReadOnly, linkMenuAction, toggleEditMenuAction, commonMenuActions]
+    )
 
     const codeIntelViewerUpdatesProps = useMemo(
         () => ({
@@ -168,7 +195,11 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 ref={blockElement}
             >
                 <div className={styles.header}>
-                    {input.symbolName.length > 0 ? <NotebookSymbolBlockHeader {...input} /> : <>No symbol selected</>}
+                    {input.symbolName.length > 0 ? (
+                        <NotebookSymbolBlockHeader {...input} symbolURL={symbolURL} />
+                    ) : (
+                        <>No symbol selected</>
+                    )}
                 </div>
                 {showInputs && (
                     <NotebookSymbolBlockInput
@@ -214,18 +245,19 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 )}
             </div>
             {(isSelected || !isOtherBlockSelected) && (
-                <NotebookBlockMenu id={id} actions={isSelected ? menuActions : []} />
+                <NotebookBlockMenu id={id} actions={isSelected ? menuActions : linkMenuAction} />
             )}
         </div>
     )
 }
 
-const NotebookSymbolBlockHeader: React.FunctionComponent<SymbolBlockInput> = ({
+const NotebookSymbolBlockHeader: React.FunctionComponent<SymbolBlockInput & { symbolURL: string }> = ({
     repositoryName,
     filePath,
     symbolName,
     symbolContainerName,
     symbolKind,
+    symbolURL,
 }) => (
     <>
         <div className="mr-2">
@@ -233,7 +265,10 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<SymbolBlockInput> = ({
         </div>
         <div className="d-flex flex-column">
             <code data-testid="selected-symbol-name">
-                {symbolName} {symbolContainerName && <span className="text-muted">{symbolContainerName}</span>}
+                <Link className={styles.headerLink} to={symbolURL}>
+                    {symbolName}
+                </Link>{' '}
+                {symbolContainerName && <span className="text-muted">{symbolContainerName}</span>}
             </code>
             <small className="text-muted">
                 {repositoryName}/{filePath}
