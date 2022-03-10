@@ -2182,6 +2182,11 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
+	// Successfully updated, best-effort calculation of the repo size.
+	if err := s.setRepoSize(ctx, repo); err != nil {
+		log15.Warn("failed setting repo size", "repo", repo, "error", err)
+	}
+
 	return nil
 }
 

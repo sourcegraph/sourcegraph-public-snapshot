@@ -497,6 +497,12 @@ func makeSingleCommitRepo(cmd func(string, ...string) string) string {
 	// Setup a repo with a commit so we can see if we can clone it.
 	cmd("git", "init", ".")
 	cmd("sh", "-c", "echo hello world > hello.txt")
+	return addCommitToRepo(cmd)
+}
+
+// addCommitToRepo adds a commit to the repo at the current path.
+func addCommitToRepo(cmd func(string, ...string) string) string {
+	// Setup a repo with a commit so we can see if we can clone it.
 	cmd("git", "add", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
 	return cmd("git", "rev-parse", "HEAD")
@@ -673,10 +679,12 @@ func TestHandleRepoUpdate(t *testing.T) {
 	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
+	size := dirSize(s.dir(repoName).Path("."))
 	want := &types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "",
-		CloneStatus: types.CloneStatusCloned,
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		RepoSizeBytes: size,
 	}
 	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
 	if err != nil {
@@ -691,21 +699,21 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// Now we'll call again and with an update that fails
-
 	doBackgroundRepoUpdateMock = func(name api.RepoName) error {
 		return errors.New("fail")
 	}
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
-	// This will an update since the repo is already cloned
+	// This will trigger an update since the repo is already cloned
 	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	want = &types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "",
-		CloneStatus: types.CloneStatusCloned,
-		LastError:   "fail",
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		LastError:     "fail",
+		RepoSizeBytes: size,
 	}
 	fromDB, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
 	if err != nil {
@@ -716,6 +724,30 @@ func TestHandleRepoUpdate(t *testing.T) {
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
+
+	// Now we'll call again and with an update that succeeds
+	doBackgroundRepoUpdateMock = nil
+
+	// This will trigger an update since the repo is already cloned
+	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	s.handleRepoUpdate(rr, req)
+
+	want = &types.GitserverRepo{
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		RepoSizeBytes: dirSize(s.dir(repoName).Path(".")), // we compute the new size
+	}
+	fromDB, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We expect an update
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+		t.Fatal(diff)
+	}
+
 }
 
 func TestRemoveBadRefs(t *testing.T) {
