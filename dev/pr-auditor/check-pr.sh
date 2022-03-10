@@ -9,4 +9,5 @@ echo "--- Running 'pr-auditor'"
 go run ./dev/pr-auditor/ \
   -github.payload-path="$GITHUB_EVENT_PATH" \
   -github.token="$GITHUB_TOKEN" \
+  -github.repo-token="$GITHUB_REPO_TOKEN" \
   -github.run-url="$GITHUB_RUN_URL"

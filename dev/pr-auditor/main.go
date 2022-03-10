@@ -17,6 +17,7 @@ import (
 type Flags struct {
 	GitHubPayloadPath string
 	GitHubToken       string
+	GitHubRepoToken   string
 	GitHubRunURL      string
 
 	IssuesRepoOwner string
@@ -25,7 +26,8 @@ type Flags struct {
 
 func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubPayloadPath, "github.payload-path", "", "path to JSON file with GitHub event payload")
-	flag.StringVar(&f.GitHubToken, "github.token", "", "GitHub token")
+	flag.StringVar(&f.GitHubToken, "github.token", "", "default GitHub token")
+	flag.StringVar(&f.GitHubRepoToken, "github.repo-token", "", "cross-repo GitHub token")
 	flag.StringVar(&f.GitHubRunURL, "github.run-url", "", "URL to GitHub actions run")
 	flag.StringVar(&f.IssuesRepoOwner, "issues.repo-owner", "sourcegraph", "owner of repo to create issues in")
 	flag.StringVar(&f.IssuesRepoName, "issues.repo-name", "sec-pr-audit-trail", "name of repo to create issues in")
@@ -76,7 +78,12 @@ func main() {
 
 	// Do checks
 	if payload.PullRequest.Merged {
-		if err := postMergeAudit(ctx, ghc, payload, flags); err != nil {
+		// We use a client with cross-repo permissions to do the post merge check, since
+		// this is where we create issues after the fact.
+		ghcRepo := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: flags.GitHubRepoToken},
+		)))
+		if err := postMergeAudit(ctx, ghc, ghcRepo, payload, flags); err != nil {
 			log.Fatalf("postMergeAudit: %s", err)
 		}
 	} else {
@@ -91,7 +98,7 @@ const (
 	commitStatusPreMerge  = "pr-auditor / pre-merge"
 )
 
-func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPayload, flags *Flags) error {
+func postMergeAudit(ctx context.Context, ghc, ghcRepo *github.Client, payload *EventPayload, flags *Flags) error {
 	result := checkPR(ctx, ghc, payload, checkOpts{
 		ValidateReviews: true,
 	})
@@ -120,7 +127,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 	issue := generateExceptionIssue(payload, &result)
 
 	log.Printf("Ensuring label for repository %q\n", payload.Repository.FullName)
-	_, _, err := ghc.Issues.CreateLabel(ctx, flags.IssuesRepoName, flags.IssuesRepoName, &github.Label{
+	_, _, err := ghcRepo.Issues.CreateLabel(ctx, flags.IssuesRepoName, flags.IssuesRepoName, &github.Label{
 		Name: github.String(payload.Repository.FullName),
 	})
 	if err != nil {
@@ -128,7 +135,7 @@ func postMergeAudit(ctx context.Context, ghc *github.Client, payload *EventPaylo
 	}
 
 	log.Printf("Creating issue for exception: %+v\n", issue)
-	created, _, err := ghc.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
+	created, _, err := ghcRepo.Issues.Create(ctx, flags.IssuesRepoOwner, flags.IssuesRepoName, issue)
 	if err != nil {
 		// Let run fail, don't include special status
 		return errors.Newf("Issues.Create: %w", err)
