@@ -3,7 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Button, Alert } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CodeMonitorInfo.module.scss'
 
@@ -30,7 +30,7 @@ export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = 
                 className={styles.closeButton}
                 onClick={() => setVisible(false)}
             >
-                <CloseIcon className="icon-inline" />
+                <Icon as={CloseIcon} />
             </Button>
         </Alert>
     )

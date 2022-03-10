@@ -21,6 +21,7 @@ import {
     Link,
     CardBody,
     Card,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -293,7 +294,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             {isRetrying !== true && <>Retry</>}
                             {isRetrying === true && (
                                 <>
-                                    <LoadingSpinner className="icon-inline" /> Retrying
+                                    <LoadingSpinner /> Retrying
                                 </>
                             )}
                         </Button>
@@ -308,7 +309,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                                 outline={true}
                                 as={Link}
                             >
-                                <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
                                 Preview
                             </Button>
                         )}
