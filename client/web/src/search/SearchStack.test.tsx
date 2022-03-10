@@ -1,20 +1,20 @@
 import { act, cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { noop } from 'lodash'
 import React from 'react'
+import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
-import { AuthenticatedUser } from '../auth'
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
 import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
 
-import { SearchStack } from './SearchStack'
+import { SearchStack, SearchStackProps } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (
-        props?: Partial<{ initialOpen: boolean; authenticatedUser: AuthenticatedUser | null }>
-    ): RenderWithBrandedContextResult => renderWithBrandedContext(<SearchStack authenticatedUser={null} {...props} />)
+    const renderSearchStack = (props?: Partial<SearchStackProps>): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(<SearchStack onCreateNotebook={noop} {...props} />)
 
     function open() {
         userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
@@ -113,13 +113,13 @@ describe('Search Stack', () => {
         })
 
         it('creates notebooks', () => {
-            const authenticatedUser = { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
-            renderSearchStack({ authenticatedUser })
+            const onCreateNotebook = sinon.spy()
+            renderSearchStack({ onCreateNotebook })
             open()
 
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
 
-            // TODO: How to check for the redirect, because it is async?
+            sinon.assert.calledOnce(onCreateNotebook)
         })
 
         it('allows to delete entries', () => {
