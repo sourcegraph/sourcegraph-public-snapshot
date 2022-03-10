@@ -336,10 +336,6 @@ func decompressTgz(tgz io.Reader, destination string) error {
 		Filter: func(file fs.FileInfo) bool {
 			size := file.Size()
 
-			if size < 0 {
-				return false
-			}
-
 			const sizeLimit = 15 * 1024 * 1024
 			if size >= sizeLimit {
 				log15.Warn("skipping large file in npm package",

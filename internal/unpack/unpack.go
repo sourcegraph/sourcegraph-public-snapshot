@@ -55,6 +55,10 @@ func Tar(r io.Reader, dir string, opt Opts) error {
 			return err
 		}
 
+		if header.Size < 0 {
+			continue
+		}
+
 		if opt.Filter != nil && !opt.Filter(header.FileInfo()) {
 			continue
 		}
