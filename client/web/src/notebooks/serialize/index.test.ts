@@ -1,6 +1,4 @@
-import { encodeURIPathComponent } from '@sourcegraph/common'
-
-import { parseLineRange, serializeBlockInput, serializeBlocksToURL, serializeLineRange } from '.'
+import { parseLineRange, serializeBlockInput, serializeLineRange } from '.'
 
 const SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
@@ -70,16 +68,4 @@ describe('serialize', () => {
 
     it('should parse multi line range', () =>
         expect(parseLineRange('124-321')).toEqual({ startLine: 123, endLine: 321 }))
-
-    it('should serialize multiple blocks', () => {
-        expect(
-            serializeBlocksToURL(
-                [
-                    { type: 'md', input: '# Title' },
-                    { type: 'query', input: 'repo:a b' },
-                ],
-                SOURCEGRAPH_URL
-            )
-        ).toStrictEqual(`md:${encodeURIPathComponent('# Title')},query:${encodeURIComponent('repo:a b')}`)
-    })
 })

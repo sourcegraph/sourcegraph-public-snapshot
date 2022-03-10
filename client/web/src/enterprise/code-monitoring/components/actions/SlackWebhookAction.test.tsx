@@ -154,6 +154,41 @@ describe('SlackWebhookAction', () => {
         })
     })
 
+    test('open, edit, cancel, open again', () => {
+        const setActionSpy = sinon.spy()
+        const { getByTestId } = render(
+            <MockedTestProvider>
+                <SlackWebhookAction
+                    {...props}
+                    action={{
+                        __typename: 'MonitorSlackWebhook',
+                        enabled: true,
+                        includeResults: false,
+                        id: '5',
+                        url: 'https://example.com',
+                    }}
+                    setAction={setActionSpy}
+                />
+            </MockedTestProvider>
+        )
+
+        userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+
+        expect(getByTestId('enable-action-toggle-expanded-slack-webhook')).toBeChecked()
+        userEvent.click(getByTestId('enable-action-toggle-expanded-slack-webhook'))
+        expect(getByTestId('enable-action-toggle-expanded-slack-webhook')).not.toBeChecked()
+
+        userEvent.type(getByTestId('slack-webhook-url'), 'https://example2.com')
+
+        userEvent.click(getByTestId('cancel-action-slack-webhook'))
+
+        userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
+        expect(getByTestId('slack-webhook-url')).toHaveValue('https://example.com')
+        expect(getByTestId('enable-action-toggle-expanded-slack-webhook')).toBeChecked()
+
+        sinon.assert.notCalled(setActionSpy)
+    })
+
     describe('Send test message', () => {
         const mockAction: MonitorAction = {
             __typename: 'MonitorSlackWebhook',

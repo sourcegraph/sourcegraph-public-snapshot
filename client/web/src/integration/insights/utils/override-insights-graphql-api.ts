@@ -70,7 +70,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
         HasAvailableCodeInsight: () => ({
             insightViews: {
                 __typename: 'InsightViewConnection',
-                pageInfo: { __typename: 'PageInfo', hasNextPage: true },
+                nodes: [{ id: '001' }],
             },
         }),
         IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
