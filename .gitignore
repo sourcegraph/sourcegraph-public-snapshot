@@ -170,3 +170,6 @@ annotations/
 
 # Buildkite analytics files
 test-reports/
+
+# tree-sitter queries from nvim-treesitter
+cmd/symbols/squirrel/queries

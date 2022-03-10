@@ -31,7 +31,7 @@ import (
 	"github.com/smacker/go-tree-sitter/yaml"
 )
 
-//go:embed external/nvim-treesitter
+//go:embed queries
 var queriesFs embed.FS
 
 //go:embed language-file-extensions.json

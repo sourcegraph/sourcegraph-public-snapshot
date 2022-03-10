@@ -43,6 +43,9 @@ case "$CC" in
     ;;
 esac
 
+# Copy the tree-sitter queries so go:embed can pick them up.
+cp -a ./cmd/symbols/squirrel/external/nvim-treesitter/queries "$OUTPUT/queries"
+
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/symbols"
 env go build \
