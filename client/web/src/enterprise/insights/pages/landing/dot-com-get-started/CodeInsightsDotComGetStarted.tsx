@@ -93,7 +93,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                                 <Button
                                     variant="primary"
                                     as={Link}
-                                    to="https://about.sourcegraph.com/contact/request-code-insights-demo?utm_medium=getting-started&utm_source=in-product&utm_campaign=getting-started"
+                                    to="https://about.sourcegraph.com/contact/request-code-insights-demo?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=getting-started"
                                     target="_blank"
                                     rel="noopener"
                                     onClick={handleScheduleDemoClick}
@@ -159,7 +159,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                                 <Button
                                     as={Link}
                                     variant="primary"
-                                    to="/help/admin/install?utm_medium=getting-started&utm_source=in-product&utm_campaign=inproduct-cta"
+                                    to="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=getting-started"
                                     onClick={handleInstallLocalInstanceClick}
                                 >
                                     Install local instance
