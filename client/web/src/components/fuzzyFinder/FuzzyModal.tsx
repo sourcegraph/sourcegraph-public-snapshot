@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -240,7 +240,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         Find file
                     </h3>
                     <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
-                        <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
+                        <Icon className={styles.closeIcon} as={CloseIcon} />
                     </Button>
                 </div>
                 <input

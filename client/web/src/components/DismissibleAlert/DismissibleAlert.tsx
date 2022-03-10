@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-import { Button, Alert, AlertProps } from '@sourcegraph/wildcard'
+import { Button, Alert, AlertProps, Icon } from '@sourcegraph/wildcard'
 
 import styles from './DismissibleAlert.module.scss'
 
@@ -47,7 +47,7 @@ export const DismissibleAlert: React.FunctionComponent<DismissibleAlertProps> = 
         <Alert data-testid={testId} className={classNames(styles.container, className)} variant={variant}>
             <div className={styles.content}>{children}</div>
             <Button aria-label="Close alert" variant="icon" className={styles.closeButton} onClick={onDismiss}>
-                <CloseIcon className="icon-inline" />
+                <Icon as={CloseIcon} />
             </Button>
         </Alert>
     )

@@ -186,7 +186,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
             <React.Suspense
                 fallback={
                     <div className="w-100 text-center">
-                        <LoadingSpinner className="icon-inline m-2" />
+                        <LoadingSpinner className="m-2" />
                     </div>
                 }
             >

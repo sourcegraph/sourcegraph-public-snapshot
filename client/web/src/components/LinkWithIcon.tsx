@@ -3,7 +3,7 @@ import { kebabCase } from 'lodash'
 import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './LinkWithIcon.module.scss'
 
@@ -16,7 +16,7 @@ interface LinkWithIconProps extends NavLinkProps {
  * A link displaying an icon along with text.
  */
 export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props => {
-    const { to, exact, text, className, activeClassName, icon: Icon } = props
+    const { to, exact, text, className, activeClassName, icon: linkIcon } = props
 
     return (
         <Button
@@ -28,7 +28,7 @@ export const LinkWithIcon: React.FunctionComponent<LinkWithIconProps> = props =>
             variant="link"
             data-testid={kebabCase(text)}
         >
-            <Icon className="icon-inline mr-1" />
+            <Icon className="mr-1" as={linkIcon} />
             <span className="inline-block">{text}</span>
         </Button>
     )

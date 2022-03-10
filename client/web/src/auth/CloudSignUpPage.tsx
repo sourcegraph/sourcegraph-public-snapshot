@@ -6,7 +6,7 @@ import { useLocation } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -121,7 +121,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
+                    <Icon className={styles.backIcon} as={ChevronLeftIcon} />
                     Go back
                 </Link>
             </small>

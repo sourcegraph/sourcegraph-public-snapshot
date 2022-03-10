@@ -1,5 +1,7 @@
 .button {
     color: var(--icon-color);
+    display: flex;
+    align-items: center;
 
     &:hover {
         // Required to overwrite .btn:hover styles with greater specificity.

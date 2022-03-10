@@ -4,7 +4,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -47,7 +47,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     kind,
     name,
     isTokenUpdateRequired,
-    icon: Icon,
+    icon: ItemIcon,
     navigateToAuthProvider,
     onDidRemove,
     onDidError,
@@ -123,13 +123,13 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             )}
             <div className="align-self-center">
                 {service?.warning || service?.lastSyncError ? (
-                    <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                    <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
                 ) : service?.id ? (
-                    <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
+                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} />
                 ) : (
-                    <CircleDashedIcon className={classNames('icon-inline mb-0 mr-2', styles.iconDashed)} />
+                    <Icon className={classNames('mb-0 mr-2', styles.iconDashed)} as={CircleDashedIcon} />
                 )}
-                <Icon className="mb-0 mr-1" />
+                <Icon className="mb-0 mr-1" as={ItemIcon} />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>

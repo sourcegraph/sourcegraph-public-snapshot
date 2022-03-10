@@ -24,6 +24,7 @@ import {
     Button,
     Alert,
     Link,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -364,7 +365,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 variant="primary"
                                 as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Add repositories
+                                <Icon as={AddIcon} /> Add repositories
                             </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
                             <Button
@@ -373,7 +374,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 variant="primary"
                                 as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Add repositories
+                                <Icon as={AddIcon} /> Add repositories
                             </Button>
                         ) : (
                             <Button
@@ -382,7 +383,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 variant="primary"
                                 as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Connect code hosts
+                                <Icon as={AddIcon} /> Connect code hosts
                             </Button>
                         )}
                     </span>
