@@ -1850,7 +1850,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
-	// Successfully updated, best-effort calculating the repo size.
+	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
 		log15.Warn("failed setting repo size", "repo", repo, "error", err)
 	}
