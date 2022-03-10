@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,7 +18,7 @@ func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int
 	SET commit_oids = %s
 	`
 
-	q := sqlf.Sprintf(rawQuery, monitorID, argsHash, commitOIDs)
+	q := sqlf.Sprintf(rawQuery, monitorID, argsHash, pq.StringArray(commitOIDs), pq.StringArray(commitOIDs))
 	return s.Exec(ctx, q)
 }
 
@@ -32,7 +33,7 @@ func (s *codeMonitorStore) GetLastSearched(ctx context.Context, monitorID int64,
 
 	q := sqlf.Sprintf(rawQuery, monitorID, argsHash)
 	var commitOIDs []string
-	err := s.QueryRow(ctx, q).Scan(&commitOIDs)
+	err := s.QueryRow(ctx, q).Scan((*pq.StringArray)(&commitOIDs))
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

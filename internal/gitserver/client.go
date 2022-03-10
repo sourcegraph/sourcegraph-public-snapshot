@@ -128,7 +128,7 @@ type Client interface {
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
 	// ResolveRevisions expands a set of RevisionSpecifiers into an equivalent set of commit hashes
-	ResolveRevisions(_ context.Context, repo string, _ []protocol.RevisionSpecifier) ([]string, error)
+	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
 	// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
 	// a user-provided command.
@@ -1175,7 +1175,7 @@ func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	return &res.Object, nil
 }
 
-func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo string, revs []protocol.RevisionSpecifier) ([]string, error) {
+func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
 	cmd := c.Command("git", args...)
@@ -1188,7 +1188,7 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo string, r
 
 	split := strings.Split(string(stdout), "\n")
 	split = split[:len(split)-1] // remove the last, empty string
-	return split
+	return split, nil
 }
 
 func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {

@@ -11,7 +11,7 @@
 --    in the associated metadata.yaml file.
 
 CREATE TABLE IF NOT EXISTS cm_last_searched (
-    monitor_id BIGINT NOT NULL REFERENCES cm_monitors(id),
+    monitor_id BIGINT NOT NULL REFERENCES cm_monitors(id) ON DELETE CASCADE,
     args_hash BIGINT NOT NULL,
     commit_oids text[] NOT NULL,
     PRIMARY KEY (monitor_id, args_hash)
