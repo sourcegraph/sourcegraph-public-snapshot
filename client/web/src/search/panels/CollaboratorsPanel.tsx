@@ -180,9 +180,9 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; i
             )}
         >
             {emailEnabled ? (
-                <div className="text-center">No collaborators found in sampled repositories.</div>
+                <div className="text-muted text-center">No collaborators found in sampled repositories.</div>
             ) : isSiteAdmin ? (
-                <div className="text-center">
+                <div className="text-muted text-center">
                     This server is not configured to send emails. <Link to="/help/admin/config/email">Learn more</Link>
                 </div>
             ) : null}
