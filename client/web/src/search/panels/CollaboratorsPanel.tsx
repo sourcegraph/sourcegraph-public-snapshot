@@ -220,8 +220,8 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                                     but no special permissions are granted.
                                 </p>
                                 <p className={classNames(styles.infoBox, 'mb-0')}>
-                                    {/* TODO(#32253): Update the documentation link */}
-                                    If you wish to disable this feature, see <Link to="#">this documentation</Link>.
+                                    If you wish to disable this feature, see{' '}
+                                    <Link to="/help/admin/config/user_invitations">this documentation</Link>.
                                 </p>
                             </>
                         ) : (
