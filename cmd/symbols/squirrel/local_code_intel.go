@@ -164,7 +164,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 }
 
 // Pretty prints the local code intel payload for debugging.
-func prettyPrintLocalCodeIntelPayload(w io.Writer, args types.RepoCommitPath, payload types.LocalCodeIntelPayload, contents string) {
+func prettyPrintLocalCodeIntelPayload(w io.Writer, payload types.LocalCodeIntelPayload, contents string) {
 	lines := strings.Split(contents, "\n")
 
 	// Sort payload.Symbols by Def Row then Column.
