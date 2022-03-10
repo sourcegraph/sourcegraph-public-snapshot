@@ -538,7 +538,7 @@ func TestCloneRepo(t *testing.T) {
 	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
-	assertCloneStatus := func(status types.CloneStatus) {
+	assertRepoState := func(status types.CloneStatus, size int64) {
 		t.Helper()
 		fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
 		if err != nil {
@@ -547,16 +547,20 @@ func TestCloneRepo(t *testing.T) {
 		if fromDB.CloneStatus != status {
 			t.Fatalf("Want %q, got %q", status, fromDB.CloneStatus)
 		}
+		if fromDB.RepoSizeBytes != size {
+			t.Fatalf("Want %d, got %d", size, fromDB.RepoSizeBytes)
+		}
 	}
 
-	if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+	gr := types.GitserverRepo{
 		RepoID:      dbRepo.ID,
 		ShardID:     "test",
 		CloneStatus: types.CloneStatusNotCloned,
-	}); err != nil {
+	}
+	if err := database.GitserverRepos(db).Upsert(ctx, &gr); err != nil {
 		t.Fatal(err)
 	}
-	assertCloneStatus(types.CloneStatusNotCloned)
+	assertRepoState(types.CloneStatusNotCloned, 0)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
@@ -586,7 +590,8 @@ func TestCloneRepo(t *testing.T) {
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	assertCloneStatus(types.CloneStatusCloned)
+	wantRepoSize := dirSize(dst.Path("."))
+	assertRepoState(types.CloneStatusCloned, wantRepoSize)
 
 	repo = filepath.Dir(string(dst))
 	gotCommit := cmd("git", "rev-parse", "HEAD")
@@ -599,7 +604,7 @@ func TestCloneRepo(t *testing.T) {
 	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
-	assertCloneStatus(types.CloneStatusCloned)
+	assertRepoState(types.CloneStatusCloned, wantRepoSize)
 
 	// Test blocking with overwrite. First add random file to GIT_DIR. If the
 	// file is missing after cloning we know the directory was replaced
@@ -608,7 +613,7 @@ func TestCloneRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertCloneStatus(types.CloneStatusCloned)
+	assertRepoState(types.CloneStatusCloned, wantRepoSize)
 
 	if _, err := os.Stat(dst.Path("HELLO")); !os.IsNotExist(err) {
 		t.Fatalf("expected clone to be overwritten: %s", err)
@@ -678,7 +683,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
 
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
