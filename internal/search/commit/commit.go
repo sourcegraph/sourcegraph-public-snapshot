@@ -31,12 +31,10 @@ type CommitSearch struct {
 	Diff                 bool
 	HasTimeFilter        bool
 	Limit                int
-	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
 	Gitserver            GitserverClient `json:"-"`
 
-	ExpandRefs func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest) ([]gitprotocol.RevisionSpecifier, error)
-	OnSuccess  func(context.Context, database.DB, *gitprotocol.SearchRequest) error
+	CodeMonitorHook func(context.Context, database.DB, GitserverClient, func(*gitprotocol.SearchRequest) error) func(*gitprotocol.SearchRequest) error
 }
 
 type GitserverClient interface {
@@ -106,29 +104,22 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 			})
 		}
 
-		bounded.Go(func() error {
-			if j.ExpandRefs != nil {
-				args.Revisions, err = j.ExpandRefs(ctx, db, j.Gitserver, args)
-				if err != nil {
-					return err
-				}
-			}
-
+		doSearch := func(args *gitprotocol.SearchRequest) error {
 			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
-			if err != nil {
-				return err
-			}
-
-			if j.OnSuccess != nil {
-				err = j.OnSuccess(ctx, db, args)
-			}
-
 			return err
+		}
+
+		if j.CodeMonitorHook != nil {
+			doSearch = j.CodeMonitorHook(ctx, db, j.Gitserver, doSearch)
+		}
+
+		bounded.Go(func() error {
+			return doSearch(args)
 		})
 	}
 

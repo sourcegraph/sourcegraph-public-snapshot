@@ -3,7 +3,9 @@ package background
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
+	"hash/fnv"
 	"net/http"
 	"net/url"
 
@@ -107,7 +109,7 @@ func settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func doSearch(ctx context.Context, db database.DB, query string, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+func doSearch(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
@@ -132,7 +134,7 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	}
 
 	if enabled, ok := ffs["cc-repo-aware-monitors"]; ok && enabled {
-		planJob, err = mapJobTree(planJob)
+		planJob, err = mapJobTree(planJob, monitorID)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +158,50 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 	return results, nil
 }
 
-func mapJobTree(in job.Job) (_ job.Job, err error) {
+func mapJobTree(in job.Job, monitorID int64) (_ job.Job, err error) {
+	codeMonitorHook := func(
+		ctx context.Context,
+		db database.DB,
+		gs commit.GitserverClient,
+		doSearch func(*gitprotocol.SearchRequest) error,
+	) func(*gitprotocol.SearchRequest) error {
+		return func(args *gitprotocol.SearchRequest) error {
+			db := edb.NewEnterpriseDB(db)
+			argsHash := hashArgs(args)
+			lastSearched, err := db.CodeMonitors().GetLastSearched(ctx, monitorID, argsHash)
+			if err != nil {
+				return err
+			}
+
+			hashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
+			if err != nil {
+				return err
+			}
+
+			newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(hashes)+len(lastSearched))
+			for _, hash := range hashes {
+				newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: hash})
+			}
+
+			for _, exclude := range lastSearched {
+				newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: "^" + exclude})
+			}
+
+			argsCopy := *args
+			argsCopy.Revisions = newRevs
+
+			// Execute the search
+			err = doSearch(&argsCopy)
+			if err != nil {
+				return err
+			}
+
+			// If the search was successful, store the resolved hashes
+			// as the new "last searched" hashes
+			return db.CodeMonitors().UpsertLastSearched(ctx, monitorID, argsHash, hashes)
+		}
+	}
+
 	addErr := func(j interface{}) {
 		err = errors.Append(err, errors.Errorf("found invalid leaf job %T", j))
 	}
@@ -173,8 +218,7 @@ func mapJobTree(in job.Job) (_ job.Job, err error) {
 
 		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
 			jobCopy := *c
-			jobCopy.ExpandRefs = expandRefs
-			jobCopy.OnSuccess = onSuccess
+			jobCopy.CodeMonitorHook = codeMonitorHook
 			return &jobCopy
 		},
 	}
@@ -182,28 +226,17 @@ func mapJobTree(in job.Job) (_ job.Job, err error) {
 	return mapper.Map(in), err
 }
 
-func expandRefs(
-	ctx context.Context,
-	db edb.EnterpriseDB,
-	gs commit.GitserverClient,
-	req *gitprotocol.SearchRequest,
-) ([]gitprotocol.RevisionSpecifier, error) {
-	hashes, err := gs.ResolveRevisions(ctx, req.Repo, req.Revisions)
-	if err != nil {
-		return nil, err
+func hashArgs(args *gitprotocol.SearchRequest) uint64 {
+	hasher := fnv.New64()
+	hasher.Write([]byte(args.Repo))
+	for _, rev := range args.Revisions {
+		hasher.Write([]byte(rev.RevSpec))
+		hasher.Write([]byte(rev.RefGlob))
+		hasher.Write([]byte(rev.ExcludeRefGlob))
 	}
-
-	// TODO BEFORE MERGE exclude last searched
-
-	res := make([]gitprotocol.RevisionSpecifier, 0, len(hashes))
-	for _, hash := range hashes {
-		res = append(res, gitprotocol.RevisionSpecifier{RevSpec: res})
-	}
-	return res, nil
-}
-
-func onSuccess(context.Context, edb.EnterpriseDB, *gitprotocol.SearchRequest) error {
-	panic("unimplemented")
+	hasher.Write([]byte(args.Query.String()))
+	binary.Write(hasher, binary.LittleEndian, args.IncludeDiff)
+	return hasher.Sum64()
 }
 
 func gqlURL(queryName string) (string, error) {
