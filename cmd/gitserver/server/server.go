@@ -1589,6 +1589,15 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 	}
 }
 
+// setRepoSize calculates the size of the repo and stores it in the database.
+func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
+	if s.DB == nil {
+		return nil
+	}
+
+	return database.GitserverRepos(s.DB).SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+}
+
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
@@ -1839,6 +1848,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
+	}
+
+	// Successfully updated, best-effort calculation of the repo size.
+	if err := s.setRepoSize(ctx, repo); err != nil {
+		log15.Warn("failed setting repo size", "repo", repo, "error", err)
 	}
 
 	log15.Info("repo cloned", "repo", repo)
