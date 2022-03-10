@@ -81,7 +81,7 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 
 	// Then get the hover if it exists.
 	var hover *string
-	{
+	if def != nil {
 		// Parse the END file and find the end node.
 		root, err := squirrel.parse(ctx, def.RepoCommitPath, squirrel.readFile)
 		if err != nil {
