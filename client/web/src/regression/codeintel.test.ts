@@ -1,14 +1,12 @@
 import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import expect from 'expect'
-import { describe, before, after, test } from 'mocha'
 import { ElementHandle } from 'puppeteer'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
@@ -49,9 +47,8 @@ describe('Code intelligence regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let outerResourceManager: TestResourceManager
-    before(async function () {
+    beforeAll(async () => {
         // sourcegraph/sourcegraph takes a while to clone
-        this.timeout(6 * 6 * 60 * 1000)
         ;({ driver, gqlClient, resourceManager: outerResourceManager } = await getTestTools(config))
         outerResourceManager.add(
             'User',
@@ -89,11 +86,11 @@ describe('Code intelligence regression test suite', () => {
         await setTosAccepted(gqlClient, user.id)
 
         outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
-    })
+    }, 6 * 6 * 60 * 1000)
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
-    after(async () => {
+    afterAll(async () => {
         if (!config.noCleanup) {
             await outerResourceManager.destroyAll()
         }
@@ -104,10 +101,10 @@ describe('Code intelligence regression test suite', () => {
 
     describe('Basic code intelligence regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
-        before(async () => {
+        beforeAll(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))
         })
-        after(async () => {
+        afterAll(async () => {
             if (!config.noCleanup) {
                 await innerResourceManager.destroyAll()
             }

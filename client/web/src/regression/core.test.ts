@@ -1,15 +1,13 @@
 // import { applyEdits, parse } from '@sqs/jsonc-parser'
 // import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
-import expect from 'expect'
-import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { getUser, setTosAccepted } from './util/api'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
@@ -40,7 +38,7 @@ describe('Core functionality regression test suite', () => {
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
     let screenshots: ScreenshotVerifier
-    before(async () => {
+    beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
             'User',
@@ -59,9 +57,9 @@ describe('Core functionality regression test suite', () => {
         screenshots = new ScreenshotVerifier(driver)
     })
 
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
-    after(async () => {
+    afterAll(async () => {
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
         }

@@ -1,5 +1,4 @@
 import delay from 'delay'
-import { describe, before, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -23,11 +22,11 @@ describe('Initialize new instance', () => {
     )
 
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createAndInitializeDriver(config)
     })
-    ;(config.init ? test : test.skip)('Initialize new Sourcegraph instance', async function () {
-        this.timeout(30 * 1000)
+    ;(config.init ? test : test.skip)('Initialize new Sourcegraph instance', async () => {
+        jest.setTimeout(30 * 1000)
         await driver.page.goto(config.sourcegraphBaseUrl)
         await driver.page.waitForSelector('input[placeholder="Email"]', { timeout: 5 * 1000 })
         await driver.replaceText({

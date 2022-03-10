@@ -1,4 +1,3 @@
-import { describe, test } from 'mocha'
 import { merge } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError } from 'rxjs/operators'
