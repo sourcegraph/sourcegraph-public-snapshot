@@ -4746,6 +4746,12 @@ type User implements Node & SettingsSubject & Namespace {
     publicRepositories returns the repos listed in user_public_repos for this user
     """
     publicRepositories: [Repository!]!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories this user has access to, and is derived from recent commit history of those.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
