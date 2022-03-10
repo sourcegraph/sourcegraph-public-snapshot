@@ -29,14 +29,11 @@ function getExtensionCoreConfiguration(targetType) {
     mode,
     name: `extension:${targetType}`,
     target: targetType,
-    entry: {
-      extension: path.resolve(__dirname, 'src', 'extension.ts'),
-      uninstall: path.resolve(__dirname, 'src', 'uninstall.ts'),
-    }, // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+    entry: path.resolve(__dirname, 'src', 'extension.ts'), // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist', `${targetType}`),
-      filename: '[name].js',
+      filename: 'extension.js',
       library: {
         type: 'umd',
       },

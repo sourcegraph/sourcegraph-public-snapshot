@@ -24,6 +24,7 @@ import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessT
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
+import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
@@ -142,22 +143,5 @@ export function activate(context: vscode.ExtensionContext): void {
         instanceURL: initialInstanceURL,
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
+    watchUninstall(eventSourceType, localStorageService)
 }
-
-// TODO
-// Names of uninstalled extension will be included in the .obsolete file
-// Including upgrades
-// export function deactivate(): void {
-//     const extensionPath = vscode.extensions.getExtension('eamodio.gitlens')?.extensionPath
-//     const pathComponents = extensionPath?.split('/').slice(0, -1)
-//     pathComponents?.push('.obsolete')
-//     const filePath = pathComponents?.join('/')
-//     if (filePath !== undefined) {
-//         vscode.workspace.fs.readFile(vscode.Uri.file(filePath)).then(
-//             data => console.log(data),
-//             error => {
-//                 console.error(error)
-//             }
-//         )
-//     }
-// }
