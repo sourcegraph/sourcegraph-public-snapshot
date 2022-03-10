@@ -22,6 +22,8 @@ export interface TemporarySettingsSchema {
     'homepage.userInvites.tab': number
     'integrations.vscode.lastDetectionTimestamp': number
     'integrations.jetbrains.lastDetectionTimestamp': number
+    'cta.browserExtensionAlertDismissed': boolean
+    'cta.ideExtensionAlertDismissed': boolean
 }
 
 /**
