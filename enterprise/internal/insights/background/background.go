@@ -45,8 +45,6 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 
-	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
-
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
@@ -97,11 +95,13 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insight
 	}
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
 
+	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
+		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 	}
 }
