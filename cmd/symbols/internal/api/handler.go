@@ -25,7 +25,6 @@ func NewHandler(
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
 	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler)
 	mux.HandleFunc("/debugLocalCodeIntel", squirrel.DebugLocalCodeIntelHandler)
-	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc))
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}
