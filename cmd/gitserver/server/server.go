@@ -806,13 +806,13 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// succeed.
 		resp.CloneInProgress = true
 
-		// We do not need to check if req.MigrateFrom is non-zero here since that has no effect on
+		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
 		// the code path at this point. Since the repo is already not cloned at this point, either
 		// this request was received for a repo migration or a regular clone - for both of which we
 		// want to go ahead and clone the repo. The responsibility of figuring out where to clone
 		// the repo from (upstream URL of the external service or the gitserver instance) lies with
 		// the implementation details of cloneRepo.
-		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, MigrateFrom: req.MigrateFrom})
+		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -1635,13 +1635,10 @@ type cloneOptions struct {
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
 
-	// MigrateFrom is the name of the gitserver instance which is the current owner of the
+	// CloneFromShard is the hostname of the gitserver instance which is the current owner of the
 	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
-	// the current gitserver instance instead of the upstream repo URL of the external service.
-	//
-	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
-	// and it should be removed.
-	MigrateFrom string
+	// that gitserver instance instead of the upstream repo URL of the external service.
+	CloneFromShard string
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
