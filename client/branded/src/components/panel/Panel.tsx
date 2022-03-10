@@ -88,7 +88,7 @@ interface PanelItem {
 export type BuiltinPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
 
 const builtinPanelViewProviders = new BehaviorSubject<
-    Map<string, { id: string; provider: Observable<BuiltinPanelView | null> }>
+    Map<string, { id: string; matches?: (id: string) => boolean; provider: Observable<BuiltinPanelView | null> }>
 >(new Map())
 
 /**
@@ -96,27 +96,41 @@ const builtinPanelViewProviders = new BehaviorSubject<
  * contributed by Sourcegraph extensions)
  */
 export function useBuiltinPanelViews(
-    builtinPanels: { id: string; enabled: boolean; provider: Observable<BuiltinPanelView | null> }[]
+    builtinPanels: {
+        id: string
+        matches?: (id: string) => boolean
+        enabled: boolean
+        provider: Observable<BuiltinPanelView | null>
+    }[]
 ): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
             if (builtinPanel.enabled) {
-                builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
+                builtinPanelViewProviders.value.set(builtinPanel.id, {
+                    id: builtinPanel.id,
+                    provider: builtinPanel.provider,
+                    matches: builtinPanel.matches,
+                })
             }
         }
         builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
 
         return () => {
             for (const builtinPanel of builtinPanels) {
-                if (builtinPanel.enabled) {
-                    builtinPanelViewProviders.value.delete(builtinPanel.id)
+                if (!builtinPanel.enabled) {
+                    continue
                 }
+
+                builtinPanelViewProviders.value.delete(builtinPanel.id)
             }
             builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
         }
     }, [builtinPanels])
 }
 
+interface DynamicPanelView extends PanelViewWithComponent {
+    matches?: (id: string) => boolean
+}
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
@@ -138,14 +152,14 @@ export const Panel = React.memo<Props>(props => {
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
-    const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
+    const builtinPanels: DynamicPanelView[] | undefined = useObservable(
         useMemo(
             () =>
                 builtinPanelViewProviders.pipe(
                     switchMap(providers =>
                         combineLatestOrDefault(
-                            [...providers].map(([id, { provider }]) =>
-                                provider.pipe(map(view => (view ? { ...view, id, component: null } : null)))
+                            [...providers].map(([id, { provider, matches }]) =>
+                                provider.pipe(map(view => (view ? { ...view, id, matches, component: null } : null)))
                             )
                         )
                     ),
@@ -155,7 +169,7 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
-    const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
+    const extensionPanels: DynamicPanelView[] | undefined = useObservable(
         useMemo(
             () =>
                 from(props.extensionsController.extHostAPI).pipe(
@@ -216,7 +230,7 @@ export const Panel = React.memo<Props>(props => {
                         )
                     )
                 ),
-            [props.extensionsController]
+            [isExperimentalReferencePanelEnabled, props.extensionsController]
         )
     )
 
@@ -233,13 +247,17 @@ export const Panel = React.memo<Props>(props => {
         () =>
             panelViews
                 ? panelViews
-                      .map((panelView): PanelItem & { trackTabClick: () => void } => ({
+                      .map((panelView): PanelItem & {
+                          trackTabClick: () => void
+                          matches?: (id: string) => boolean
+                      } => ({
                           label: panelView.title,
                           id: panelView.id,
                           priority: panelView.priority,
                           element: <PanelView {...props} panelView={panelView} location={location} />,
                           hasLocations: !!panelView.locationProvider,
                           trackTabClick: () => trackTabClick(panelView.title),
+                          matches: panelView.matches,
                       }))
                       .sort((a, b) => b.priority - a.priority)
                 : [],
@@ -259,7 +277,7 @@ export const Panel = React.memo<Props>(props => {
     )
 
     useEffect(() => {
-        setTabIndex(items.findIndex(({ id }) => id === currentTabID))
+        setTabIndex(items.findIndex(({ id, matches }) => (matches ? matches(currentTabID) : id === currentTabID)))
     }, [items, hash, currentTabID])
 
     if (!areExtensionsReady) {

@@ -193,7 +193,13 @@ export function useBlobPanelViews({
                     ),
                 },
                 {
-                    id: 'references',
+                    id: 'codenav',
+                    matches: (id: string): boolean =>
+                        id === 'codenav' ||
+                        id === 'def' ||
+                        id === 'references' ||
+                        id.startsWith('implementations_') ||
+                        id === 'ketchup',
                     enabled: experimentalReferencePanelEnabled,
                     provider: panelSubjectChanges.pipe(
                         map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
