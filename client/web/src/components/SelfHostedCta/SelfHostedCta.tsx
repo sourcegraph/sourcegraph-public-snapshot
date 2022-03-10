@@ -4,7 +4,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 export interface SelfHostedCtaProps extends TelemetryProps {
     className?: string
@@ -78,7 +78,7 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                         {...linkProps}
                     >
                         Speak to an engineer
-                        <ArrowRightIcon className="icon-inline ml-2" />
+                        <Icon className="ml-2" as={ArrowRightIcon} />
                     </Link>
                 </div>
             </MarketingBlock>
