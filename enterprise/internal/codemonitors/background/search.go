@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -214,7 +213,6 @@ func mapJobTree(in job.Job, monitorID int64) (_ job.Job, err error) {
 		MapStructuralSearchJob:         func(j *structural.StructuralSearch) *structural.StructuralSearch { addErr(j); return nil },
 		MapRepoSubsetSymbolSearchJob:   func(j *symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch { addErr(j); return nil },
 		MapRepoUniverseSymbolSearchJob: func(j *symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch { addErr(j); return nil },
-		MapComputeExcludedReposJob:     func(j *repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos { addErr(j); return nil },
 
 		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
 			jobCopy := *c

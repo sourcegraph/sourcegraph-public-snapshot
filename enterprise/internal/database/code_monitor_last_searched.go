@@ -18,6 +18,10 @@ func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int
 	SET commit_oids = %s
 	`
 
+	// Appease non-null constraint on column
+	if commitOIDs == nil {
+		commitOIDs = []string{}
+	}
 	q := sqlf.Sprintf(rawQuery, monitorID, argsHash, pq.StringArray(commitOIDs), pq.StringArray(commitOIDs))
 	return s.Exec(ctx, q)
 }
