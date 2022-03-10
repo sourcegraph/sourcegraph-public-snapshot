@@ -91,10 +91,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         if (showInputs) {
             // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
             setTimeout(() => editor?.focus(), 0)
-        } else {
+        } else if (!isReadOnly) {
             setShowInputs(true)
         }
-    }, [editor, showInputs, setShowInputs])
+    }, [editor, showInputs, isReadOnly, setShowInputs])
 
     const hideInput = useCallback(() => setShowInputs(false), [setShowInputs])
 
