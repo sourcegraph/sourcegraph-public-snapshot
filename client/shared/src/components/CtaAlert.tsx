@@ -14,6 +14,11 @@ export interface CtaAlertProps {
         href: string
         onClick?: () => void
     }
+    secondary?: {
+        label: string
+        href: string
+        onClick?: () => void
+    }
     icon: React.ReactNode
     className?: string
     onClose: () => void
@@ -41,6 +46,18 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
             <Button to={props.cta.href} onClick={props.cta.onClick} variant="primary" as={Link} target="_blank">
                 {props.cta.label}
             </Button>
+            {props.secondary ? (
+                <Button
+                    to={props.secondary.href}
+                    onClick={props.secondary.onClick}
+                    variant="link"
+                    as={Link}
+                    target="_blank"
+                    className="ml-2"
+                >
+                    {props.secondary.label}
+                </Button>
+            ) : null}
         </div>
         <CloseIcon
             className="icon-inline position-absolute cursor-pointer"

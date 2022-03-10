@@ -27,7 +27,7 @@ export const IDEExtensionAlert: React.FunctionComponent<Props> = ({ className, p
             title="The power of Sourcegraph in your IDE"
             description="Link your editor and Sourcegraph to improve your ability to reference and reuse code across multiple repositories."
             cta={{
-                label: 'Learn more about IDE extensions',
+                label: 'Learn more',
                 href:
                     'https://docs.sourcegraph.com/integration/editor?utm_medium=inproduct&utm_source=search-results&utm_campaign=inproduct-cta&utm_term=null',
                 onClick: onIDEExtensionClick,
