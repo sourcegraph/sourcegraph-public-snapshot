@@ -68,13 +68,15 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		Metadata:           metadata,
 	})
 	result.aborted = aborted
-
-	html, err := response.HTML()
-	result.html = html
-
 	if err != nil {
 		return nil, err
 	}
+
+	html, err := response.HTML()
+	if err != nil {
+		return nil, err
+	}
+	result.html = html
 
 	// TODO: This section seems so ugly :'(
 	// Should I just highlight this in the backend as well?

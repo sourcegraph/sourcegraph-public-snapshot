@@ -129,10 +129,7 @@ func (h *HighlightResponse) HTML() (template.HTML, error) {
 		table: &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()},
 	}
 
-	err := lsifToHTML(h.code, h.document, formatter)
-	if err != nil {
-		return "", err
-	}
+	lsifToHTML(h.code, h.document, formatter)
 
 	var buf bytes.Buffer
 	if err := html.Render(&buf, formatter.table); err != nil {

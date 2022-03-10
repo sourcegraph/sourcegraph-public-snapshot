@@ -14,9 +14,9 @@ import (
 type EngineType int64
 
 const (
-	EngineInvalid    EngineType = 0
-	EngineTreeSitter            = 1
-	EngineSyntect               = 2
+	EngineInvalid EngineType = iota
+	EngineTreeSitter
+	EngineSyntect
 )
 
 type languagePattern struct {

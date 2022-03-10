@@ -14,7 +14,7 @@ type lsifFormatter interface {
 	AddText(kind lsiftyped.SyntaxKind, line string)
 }
 
-func lsifToHTML(code string, document *lsiftyped.Document, formatter lsifFormatter) error {
+func lsifToHTML(code string, document *lsiftyped.Document, formatter lsifFormatter) {
 	splitLines := strings.Split(code, "\n")
 	occurences := document.Occurrences
 
@@ -31,7 +31,7 @@ func lsifToHTML(code string, document *lsiftyped.Document, formatter lsifFormatt
 		formatter.AddRow(row)
 
 		lineCharacter := 0
-		for occIndex < len(occurences) && occurences[occIndex].Range[0] < int32(row+1) {
+		for occIndex < len(occurences) && occurences[occIndex].Range[0] < row+1 {
 			occ := occurences[occIndex]
 			occIndex += 1
 
@@ -79,7 +79,6 @@ func lsifToHTML(code string, document *lsiftyped.Document, formatter lsifFormatt
 	// 	return "", err
 	// }
 	// return template.HTML(buf.String()), nil
-	return nil
 }
 
 // TODO: This could potentially be an anonymous func
