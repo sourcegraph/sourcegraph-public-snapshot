@@ -1,6 +1,6 @@
-# Current limitations of Code Insights (Beta limitations)
+# Current limitations of Code Insights
 
-Because code insights is currently a private [beta feature](../../admin/beta_and_experimental_features.md#beta-features), there are some limitations that we have not finished building solutions for yet. 
+There are a few existing limitations.  
 
 If you have strong feedback, please do [let us know](mailto:feedback@sourcegraph.com). 
 
@@ -48,7 +48,7 @@ Because these insights need to run dramatically fewer queries than insights over
 * **[Released] Dynamic x-axis ranges**: available in 3.35+ ~~set a custom amount of historical data you care about~~
 * **[Released] Editing data series queries after creation**: available in 3.35+ ~~for insights over all repositories, you must make a new insight if you wish to run a different query~~
 * **Live previews**: showing the preview of your insight in real time
-* **"Diff click"**: click a datapoint on your insight and be taken to a diff search showing any changes contributing to the difference between a datapoint and the prior one
+* **[Released] "Diff click"**: available in 3.36+ ~~click a datapoint on your insight and be taken to a diff search showing any changes contributing to the difference between a datapoint and the prior one~~
 
 > NOTE: many of the above-listed features will become available for insights over all repositories as well. The above list is ordererd top-down, where items on the top of the list will arrive roughly sooner than items on the bottom. 
 
