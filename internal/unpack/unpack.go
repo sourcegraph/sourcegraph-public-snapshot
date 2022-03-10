@@ -32,7 +32,7 @@ type Opts struct {
 	// the whole unpack.
 	SkipInvalid bool
 
-	// Filter filters out files that match the given predicate.
+	// Filter filters out files that do not match the given predicate.
 	Filter func(file fs.FileInfo) bool
 }
 
@@ -82,16 +82,20 @@ func Tar(r io.Reader, dir string, opt Opts) error {
 
 // extractTarFile extracts a single file or directory from tarball into dir.
 func extractFile(tr *tar.Reader, h *tar.Header, dir string) error {
+	path := filepath.Join(dir, h.Name)
+	mode := h.FileInfo().Mode()
+
 	switch h.Typeflag {
 	case tar.TypeDir:
-		return withDir(filepath.Join(dir, h.Name), nil)
+		return os.MkdirAll(path, mode)
 	case tar.TypeBlock, tar.TypeChar, tar.TypeReg, tar.TypeRegA, tar.TypeFifo:
-		return writeFile(filepath.Join(dir, h.Name), tr, h.Size, h.FileInfo().Mode())
+		return writeFile(path, tr, h.Size, mode)
 	case tar.TypeLink:
-		return writeHardLink(filepath.Join(dir, h.Name), filepath.Join(dir, h.Linkname))
+		return writeHardLink(path, filepath.Join(dir, h.Linkname))
 	case tar.TypeSymlink:
-		return writeSymbolicLink(filepath.Join(dir, h.Name), h.Linkname)
+		return writeSymbolicLink(path, h.Linkname)
 	}
+
 	return nil
 }
 
