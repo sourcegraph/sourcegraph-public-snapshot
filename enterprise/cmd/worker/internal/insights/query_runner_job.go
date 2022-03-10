@@ -47,7 +47,7 @@ func (s *insightsQueryRunnerJob) Routines(ctx context.Context) ([]goroutine.Back
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(context.Background(), mainAppDb, insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), mainAppDb, insightsDB), nil
 }
 
 func NewInsightsQueryRunnerJob() shared.Job {

@@ -79,6 +79,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	return routines
 }
 
+// GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
+// insights query runner. It is called from the worker service.
 func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
 	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
