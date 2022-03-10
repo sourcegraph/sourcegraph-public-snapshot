@@ -259,7 +259,6 @@ func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	// no need to update
 	if len(userServices) == 0 {
 		// no need to update
 		return false, nil
