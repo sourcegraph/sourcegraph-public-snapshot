@@ -1,3 +1,4 @@
+import { autocompletion, CompletionResult, Completion, snippet } from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
 import {
     EditorSelection,
@@ -10,29 +11,29 @@ import {
 } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
 import { EditorView, ViewUpdate, keymap, Decoration } from '@codemirror/view'
-import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Shortcut } from '@slimsag/react-shortcuts'
+import { editor as Monaco, MarkerSeverity, languages } from 'monaco-editor'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Observable, of } from 'rxjs'
+import { delay, map, switchMap } from 'rxjs/operators'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { QueryChangeSource, SearchPatternType } from '@sourcegraph/search'
+import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { getCompletionItems } from '@sourcegraph/shared/src/search/query/completion'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
+import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
 import styles from './CodemirrorQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
-
-/**
- * TODO: Migration to codemirror
- * - KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR
- * - onHandleFuzzyFinder
- * - Show diagnostics
- * - Show suggestions
- * - hide vertical scroll bar?
- */
 
 export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
     patternType,
@@ -42,11 +43,22 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
     onSubmit,
     autoFocus,
     onBlur,
+    isSourcegraphDotCom,
+    globbing,
+    onHandleFuzzyFinder,
+    onEditorCreated,
+    interpretComments,
 }) => {
     const container = useRef<HTMLDivElement | null>(null)
+    const editorReference = useRef<EditorView>()
 
-    const extensions = useMemo(
-        () => [
+    const fetchSuggestionsWithContext = useCallback(
+        (query: string) => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
+        [selectedSearchContextSpec]
+    )
+
+    const extensions = useMemo(() => {
+        const extensions: Extension[] = [
             // Prevent newline insertion
             singleLine,
             notifyOnEnter(onSubmit),
@@ -63,22 +75,34 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
                     onBlur()
                 }
             }),
-            patternTypeField,
+            queryParsingOptions,
             parsedQueryFieldExtension,
             tokenHighlight,
             queryDiagnostic,
             highlightFocusedFilter,
             tokenInfo,
-        ],
-        [onChange, onSubmit, onBlur]
-    )
+            autocomplete(fetchSuggestionsWithContext, { globbing, isSourcegraphDotCom }),
+        ]
+
+        if (onHandleFuzzyFinder) {
+            extensions.push(keymap.of([{ key: 'Mod-k', run: () => (onHandleFuzzyFinder(true), true) }]))
+        }
+        return extensions
+    }, [onChange, onSubmit, onBlur, fetchSuggestionsWithContext, isSourcegraphDotCom, globbing, onHandleFuzzyFinder])
 
     const editor = useCodeMirror(container.current, queryState.query, extensions)
+    editorReference.current = editor
 
-    // Update pattern type when it changes
     useEffect(() => {
-        editor?.dispatch({ effects: [patternTypeFieldEffect.of(patternType)] })
-    }, [editor, patternType])
+        if (editor) {
+            onEditorCreated?.(editor)
+        }
+    }, [editor, onEditorCreated])
+
+    // Update pattern type and/or interpretComments when the change
+    useEffect(() => {
+        editor?.dispatch({ effects: [setQueryOptions.of({ patternType, interpretComments })] })
+    }, [editor, patternType, interpretComments])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
@@ -129,7 +153,26 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
         }
     }, [editor, queryState])
 
-    return <div ref={container} className={styles.root} />
+    // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
+    // are storing the editor in a ref so taht `globalFocus` is stable.
+    const globalFocus = useCallback(() => {
+        if (
+            editorReference.current &&
+            !!document.activeElement &&
+            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+        ) {
+            editorReference.current.focus()
+        }
+    }, [editorReference])
+
+    return (
+        <>
+            <div ref={container} className={styles.root} />
+            {KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR.keybindings.map((keybinding, index) => (
+                <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
+            ))}
+        </>
+    )
 }
 
 function useCodeMirror(
@@ -236,22 +279,24 @@ const decoratedToDecoration = (token: DecoratedToken): Decoration => {
     return tokenDecorators[cssClass] ?? emptyDecorator
 }
 
-// Editor state to keep information about the selected pattern type
-const patternTypeField = StateField.define<SearchPatternType>({
+// Editor state to keep information about how to parse the query
+const queryParsingOptions = StateField.define<{ patternType: SearchPatternType; interpretComments?: boolean }>({
     create() {
-        return SearchPatternType.literal
+        return {
+            patternType: SearchPatternType.literal,
+        }
     },
     update(value, transaction) {
         for (const effect of transaction.effects) {
-            if (effect.is(patternTypeFieldEffect)) {
-                return effect.value
+            if (effect.is(setQueryOptions)) {
+                return { ...value, ...effect.value }
             }
         }
         return value
     },
 })
 // Effect to update the the selected pattern type
-const patternTypeFieldEffect = StateEffect.define<SearchPatternType>()
+const setQueryOptions = StateEffect.define<{ patternType: SearchPatternType; interpretComments?: boolean }>()
 
 interface ParsedQuery {
     patternType: SearchPatternType
@@ -267,11 +312,11 @@ const parsedQueryField = Facet.define<ParsedQuery, ParsedQuery>({
         return input[0] ?? { patternType: SearchPatternType.literal, tokens: [] }
     },
 })
-const parsedQueryFieldExtension = parsedQueryField.compute(['doc', patternTypeField], state => {
-    const patternType = state.field(patternTypeField)
+const parsedQueryFieldExtension = parsedQueryField.compute(['doc', queryParsingOptions], state => {
+    const { patternType, interpretComments } = state.field(queryParsingOptions)
     // Looks like Text overwrites toString somehow
     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const result = scanSearchQuery(state.doc.toString(), false, patternType)
+    const result = scanSearchQuery(state.doc.toString(), interpretComments, patternType)
     return {
         patternType,
         tokens: result.type === 'success' ? result.term : [],
@@ -419,6 +464,73 @@ const queryDiagnostic = [
         { hoverTime: 100 }
     ),
 ]
+
+// Hook up autocompletion
+const autocomplete = (
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>,
+    options: { globbing: boolean; isSourcegraphDotCom: boolean }
+): Extension =>
+    autocompletion({
+        override: [
+            context => {
+                const query = context.state.facet(parsedQueryField)
+                const token = query.tokens.find(token => isTokenInRange(context.pos - 1, token))
+                if (!token) {
+                    return null
+                }
+                return of(getSuggestionQuery(query.tokens, token))
+                    .pipe(
+                        // We use a delay here to implement a custom debounce. In the
+                        // next step we check if the current completion request was
+                        // cancelled in the meantime (`context.aborted`).
+                        // This prevents us from needlessly running multiple suggestion
+                        // queries.
+                        delay(200),
+                        switchMap(query =>
+                            context.aborted
+                                ? Promise.resolve(null)
+                                : getCompletionItems(
+                                      token,
+                                      { column: context.pos + 1 },
+                                      fetchSuggestions(query),
+                                      options.globbing,
+                                      options.isSourcegraphDotCom
+                                  )
+                        ),
+                        map(toCMCompletions)
+                    )
+                    .toPromise()
+            },
+        ],
+    })
+
+function toCMCompletions(completionList: languages.CompletionList | null): CompletionResult | null {
+    if (!completionList) {
+        return null
+    }
+
+    // Boost suggestions by position because it appears they are already orderd.
+    let boost = 99
+    const options: Completion[] = completionList.suggestions.map(item => ({
+        type: languages.CompletionItemKind[item.kind].toLowerCase(),
+        label: typeof item.label === 'string' ? item.label : item.label.name,
+        apply:
+            ((item.insertTextRules ?? 0) & languages.CompletionItemInsertTextRule.InsertAsSnippet) ===
+            languages.CompletionItemInsertTextRule.InsertAsSnippet
+                ? snippet(item.insertText)
+                : item.insertText,
+        detail: item.detail,
+        info: item.documentation?.toString(),
+        boost: boost--,
+    }))
+    if (options.length === 0) {
+        return null
+    }
+
+    // Unlike Monaco, CM seems to support only a single replacement starting
+    // position.
+    return { from: completionList.suggestions[0].range.startColumn - 1, options }
+}
 
 // Looks like there might be a bug with how the end range for a field is
 // computed? Need to add 1 to make this work properly.

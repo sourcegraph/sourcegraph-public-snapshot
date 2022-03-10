@@ -13,10 +13,13 @@
     :global(.cm-line) {
         padding: 0;
     }
+
     :global(.cm-tooltip) {
         padding: 0.25rem;
         background-color: var(--color-bg-1);
         border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
         max-width: 50vw;
 
         p:last-child {
@@ -25,7 +28,7 @@
 
         code {
             background-color: rgba(220, 220, 220, 0.4);
-            border-radius: 3px;
+            border-radius: var(--border-radius);
             padding: 0 0.4em;
         }
 
@@ -35,6 +38,46 @@
             &:last-child {
                 padding-top: 0.25rem;
                 padding-bottom: 0;
+            }
+
+            &:last-child:first-child {
+                padding: 0;
+            }
+        }
+    }
+
+    :global(.cm-editor) {
+        :global(.cm-tooltip-autocomplete) {
+            padding: 0;
+
+            > ul > li {
+                padding-top: 0.25rem;
+                padding-bottom: 0.25rem;
+
+                &[aria-selected] {
+                    background-color: var(--color-bg-2);
+                    :global(.cm-completionLabel),
+                    :global(.cm-completionDetail) {
+                        // color: var(--light-text);
+                    }
+                }
+
+                :global(.cm-completionLabel) {
+                    color: var(--body-color);
+                }
+
+                :global(.cm-completionDetail) {
+                    padding-left: 0.25rem;
+                    color: var(--gray-05);
+                }
+
+                :global(.cm-completionMatchedText) {
+                    // Reset
+                    text-decoration: none;
+
+                    // Our style
+                    background-color: var(--mark-bg);
+                }
             }
         }
     }

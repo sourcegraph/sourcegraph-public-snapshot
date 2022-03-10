@@ -335,6 +335,7 @@
   },
   "dependencies": {
     "@apollo/client": "3.4.7",
+    "@codemirror/autocomplete": "^0.19.14",
     "@codemirror/highlight": "^0.19.7",
     "@codemirror/state": "^0.19.9",
     "@codemirror/text": "^0.19.6",

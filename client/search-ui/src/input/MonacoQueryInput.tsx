@@ -22,6 +22,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { IEditor } from './LazyMonacoQueryInput'
 import styles from './MonacoQueryInput.module.scss'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
@@ -70,7 +71,7 @@ export interface MonacoQueryInputProps
     onBlur?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
-    onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
+    onEditorCreated?: (editor: IEditor) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>

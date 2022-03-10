@@ -8,6 +8,13 @@ import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './LazyMonacoQueryInput.module.scss'
 
+/**
+ * Minimal interface for external interaction with the editor.
+ */
+export interface IEditor {
+    focus(): void
+}
+
 // const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
 const MonacoQueryInput = lazyComponent(() => import('./CodemirrorQueryInput'), 'CodemirrorQueryInput')
 

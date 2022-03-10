@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import * as Monaco from 'monaco-editor'
 
 import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -56,7 +55,7 @@ export interface SearchBoxProps
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
     const { queryState } = props
 
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const [editor, setEditor] = useState<{ focus: () => void }>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
 
     return (
