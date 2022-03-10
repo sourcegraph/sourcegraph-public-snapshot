@@ -229,7 +229,9 @@ func hashArgs(args *gitprotocol.SearchRequest) uint64 {
 	hasher.Write([]byte(args.Repo))
 	for _, rev := range args.Revisions {
 		hasher.Write([]byte(rev.RevSpec))
+		hasher.Write([]byte{'|'})
 		hasher.Write([]byte(rev.RefGlob))
+		hasher.Write([]byte{'|'})
 		hasher.Write([]byte(rev.ExcludeRefGlob))
 	}
 	hasher.Write([]byte(args.Query.String()))
