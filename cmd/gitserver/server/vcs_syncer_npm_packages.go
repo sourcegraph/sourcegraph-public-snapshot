@@ -258,17 +258,12 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 	defer tgz.Close()
 
-	cmd := exec.CommandContext(ctx, "git", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
-		return err
-	}
-
 	err = s.commitTgz(ctx, dependency, tmpDirectory, tgz)
 	if err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
+	cmd := exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
@@ -305,7 +300,12 @@ func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency *reposourc
 	// See [NOTE: LSIF-config-json] for why we don't create a JSON file here
 	// like we do for Java.
 
-	cmd := exec.CommandContext(ctx, "git", "add", ".")
+	cmd := exec.CommandContext(ctx, "git", "init")
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
+		return err
+	}
+
+	cmd = exec.CommandContext(ctx, "git", "add", ".")
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
@@ -359,7 +359,7 @@ func decompressTgz(tgz io.Reader, destination string) error {
 }
 
 // stripSingleOutermostDirectory strips a single outermost directory in dir
-// if it has no sibling files or directories beyond `.git`.
+// if it has no sibling files or directories.
 //
 // In practice, NPM tarballs seem to contain a superfluous directory which
 // contains the files. For example, if you extract react's tarball,
@@ -378,20 +378,11 @@ func stripSingleOutermostDirectory(dir string) error {
 		return err
 	}
 
-	outermostDir := dir
-	for _, fi := range dirEntries {
-		if !fi.IsDir() || fi.Name() == ".git" {
-			continue
-		}
-
-		if outermostDir != dir {
-			// More than one directory in destination, no single outermost directory.
-			return nil
-		}
-
-		outermostDir = path.Join(dir, fi.Name())
+	if len(dirEntries) != 1 || !dirEntries[0].IsDir() {
+		return nil
 	}
 
+	outermostDir := dirEntries[0].Name()
 	tmpDir := dir + ".tmp"
 
 	// mv $dir $tmpDir
@@ -401,11 +392,5 @@ func stripSingleOutermostDirectory(dir string) error {
 	}
 
 	// mv $tmpDir/$(basename $outermostDir) $dir
-	err = os.Rename(path.Join(tmpDir, path.Base(outermostDir)), dir)
-	if err != nil {
-		return err
-	}
-
-	// mv $tmpDir/.git $dir/.git
-	return os.Rename(path.Join(tmpDir, ".git"), path.Join(dir, ".git"))
+	return os.Rename(path.Join(tmpDir, outermostDir), dir)
 }
