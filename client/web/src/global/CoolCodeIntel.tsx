@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { MemoryRouter, useHistory } from 'react-router'
+import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -33,13 +33,23 @@ import {
     ResolvedRevisionSpec,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import { Link, LoadingSpinner, CardHeader, useDebounce, Button, Input, Badge } from '@sourcegraph/wildcard'
+import {
+    Link,
+    LoadingSpinner,
+    CardHeader,
+    useDebounce,
+    Button,
+    Input,
+    Badge,
+    useObservable,
+} from '@sourcegraph/wildcard'
 
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
     LocationFields,
 } from '../graphql-operations'
+import { resolveRevision } from '../repo/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
@@ -82,9 +92,59 @@ export const BuiltinCoolCodeIntelPanel: React.FunctionComponent<CoolCodeIntelPro
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
         initialEntries={[props.externalLocation]}
     >
-        <FilterableReferencesList {...props} />
+        <CodeNavPanel {...props} />
     </MemoryRouter>
 )
+const CodeNavPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+    const location = useLocation()
+
+    const { hash, pathname, search } = location
+    const { line, character, viewState } = parseQueryAndHash(search, hash)
+    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
+
+    // If we don't have enough information in the URL, we can't render the panel
+    if (!(line && character && filePath && viewState)) {
+        return null
+    }
+
+    const searchParameters = new URLSearchParams(search)
+    const jumpToFirst = searchParameters.get('jumpToFirst') === 'true'
+
+    const token = { repoName, line, character, filePath }
+
+    if (commitID === undefined || revision === undefined) {
+        return <RevisionResolvingReferencesList {...props} {...token} jumpToFirst={jumpToFirst} />
+    }
+
+    return <FilterableReferencesList {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
+}
+export const RevisionResolvingReferencesList: React.FunctionComponent<
+    CoolCodeIntelProps & {
+        repoName: string
+        line: number
+        character: number
+        filePath: string
+        revision?: string
+    }
+> = props => {
+    const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
+
+    if (!resolvedRevision) {
+        return null
+    }
+
+    const token = {
+        repoName: props.repoName,
+        line: props.line,
+        character: props.character,
+        filePath: props.filePath,
+
+        revision: props.revision || resolvedRevision.defaultBranch,
+        commitID: resolvedRevision.commitID,
+    }
+
+    return <FilterableReferencesList {...props} token={token} />
+}
 
 interface Location {
     resource: {
