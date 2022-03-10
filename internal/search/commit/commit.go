@@ -34,8 +34,11 @@ type CommitSearch struct {
 	IncludeModifiedFiles bool
 	Gitserver            GitserverClient `json:"-"`
 
-	CodeMonitorHook func(context.Context, database.DB, GitserverClient, func(*gitprotocol.SearchRequest) error) func(*gitprotocol.SearchRequest) error
+	CodeMonitorHook CodeMonitorHookFunc
 }
+
+type CodeMonitorHookFunc func(context.Context, database.DB, GitserverClient, DoSearchFunc) DoSearchFunc
+type DoSearchFunc func(*gitprotocol.SearchRequest) error
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *gitprotocol.SearchRequest, onMatches func([]gitprotocol.CommitMatch)) (limitHit bool, _ error)

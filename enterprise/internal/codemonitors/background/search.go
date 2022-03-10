@@ -115,6 +115,7 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 		return nil, err
 	}
 
+	// Inline job creation so we can mutate the commit job before running it
 	jobArgs := searchClient.JobArgs(inputs)
 	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
 	if err != nil {
@@ -126,25 +127,27 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 		return nil, err
 	}
 
+	// If repo-aware monitors is enabled, mutate the job
 	actor := actor.FromContext(ctx)
 	ffs, err := db.FeatureFlags().GetUserFlags(ctx, actor.UID)
 	if err != nil {
 		return nil, err
 	}
-
 	if enabled, ok := ffs["cc-repo-aware-monitors"]; ok && enabled {
-		planJob, err = mapJobTree(planJob, monitorID)
+		planJob, err = addCodeMonitorHook(planJob, monitorID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	// Execute the search
 	agg := streaming.NewAggregatingStream()
 	_, err = planJob.Run(ctx, db, agg)
 	if err != nil {
 		return nil, err
 	}
 
+	// Assert that all results are commit matched
 	results := make([]*result.CommitMatch, len(agg.Results))
 	for i, res := range agg.Results {
 		cm, ok := res.(*result.CommitMatch)
@@ -157,50 +160,7 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 	return results, nil
 }
 
-func mapJobTree(in job.Job, monitorID int64) (_ job.Job, err error) {
-	codeMonitorHook := func(
-		ctx context.Context,
-		db database.DB,
-		gs commit.GitserverClient,
-		doSearch func(*gitprotocol.SearchRequest) error,
-	) func(*gitprotocol.SearchRequest) error {
-		return func(args *gitprotocol.SearchRequest) error {
-			db := edb.NewEnterpriseDB(db)
-			argsHash := hashArgs(args)
-			lastSearched, err := db.CodeMonitors().GetLastSearched(ctx, monitorID, argsHash)
-			if err != nil {
-				return err
-			}
-
-			hashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
-			if err != nil {
-				return err
-			}
-
-			newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(hashes)+len(lastSearched))
-			for _, hash := range hashes {
-				newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: hash})
-			}
-
-			for _, exclude := range lastSearched {
-				newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: "^" + exclude})
-			}
-
-			argsCopy := *args
-			argsCopy.Revisions = newRevs
-
-			// Execute the search
-			err = doSearch(&argsCopy)
-			if err != nil {
-				return err
-			}
-
-			// If the search was successful, store the resolved hashes
-			// as the new "last searched" hashes
-			return db.CodeMonitors().UpsertLastSearched(ctx, monitorID, argsHash, hashes)
-		}
-	}
-
+func addCodeMonitorHook(in job.Job, monitorID int64) (_ job.Job, err error) {
 	addErr := func(j interface{}) {
 		err = errors.Append(err, errors.Errorf("found invalid leaf job %T", j))
 	}
@@ -216,12 +176,61 @@ func mapJobTree(in job.Job, monitorID int64) (_ job.Job, err error) {
 
 		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
 			jobCopy := *c
-			jobCopy.CodeMonitorHook = codeMonitorHook
+			jobCopy.CodeMonitorHook = codeMonitorHook(monitorID)
 			return &jobCopy
 		},
 	}
 
 	return mapper.Map(in), err
+}
+
+func codeMonitorHookWithID(monitorID int64) commit.CodeMonitorHookFunc {
+	return func(
+		ctx context.Context,
+		db database.DB,
+		gs commit.GitserverClient,
+		doSearch commit.DoSearchFunc,
+	) commit.DoSearchFunc {
+		return func(args *gitprotocol.SearchRequest) error {
+			db := edb.NewEnterpriseDB(db)
+			argsHash := hashArgs(args)
+
+			// Look up the previously searched set of commit hashes
+			lastSearched, err := db.CodeMonitors().GetLastSearched(ctx, monitorID, argsHash)
+			if err != nil {
+				return err
+			}
+
+			// Resolve the requested revisions into a static set of commit hashes
+			commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
+			if err != nil {
+				return err
+			}
+
+			// Merge requested hashes and excluded hashes
+			newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
+			for _, hash := range commitHashes {
+				newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: hash})
+			}
+			for _, exclude := range lastSearched {
+				newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: "^" + exclude})
+			}
+
+			// Update args with the new set of revisions
+			argsCopy := *args
+			argsCopy.Revisions = newRevs
+
+			// Execute the search
+			err = doSearch(&argsCopy)
+			if err != nil {
+				return err
+			}
+
+			// If the search was successful, store the resolved hashes
+			// as the new "last searched" hashes
+			return db.CodeMonitors().UpsertLastSearched(ctx, monitorID, argsHash, commitHashes)
+		}
+	}
 }
 
 func hashArgs(args *gitprotocol.SearchRequest) uint64 {
