@@ -6,7 +6,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { MemoryRouter, useHistory, useLocation } from 'react-router'
+import { MemoryRouter, useHistory } from 'react-router'
 import { Collapse } from 'reactstrap'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -21,7 +21,6 @@ import {
 import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -34,30 +33,13 @@ import {
     ResolvedRevisionSpec,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import {
-    Tab,
-    TabList,
-    TabPanel,
-    TabPanels,
-    Tabs,
-    Link,
-    LoadingSpinner,
-    useLocalStorage,
-    CardHeader,
-    useDebounce,
-    Button,
-    useObservable,
-    Input,
-    Badge,
-} from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, CardHeader, useDebounce, Button, Input, Badge } from '@sourcegraph/wildcard'
 
-import { ErrorBoundary } from '../components/ErrorBoundary'
 import {
     CoolCodeIntelHighlightedBlobResult,
     CoolCodeIntelHighlightedBlobVariables,
     LocationFields,
 } from '../graphql-operations'
-import { resolveRevision } from '../repo/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
@@ -94,49 +76,6 @@ interface CoolCodeIntelProps
 export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
-export const CoolCodeIntel: React.FunctionComponent<CoolCodeIntelProps> = props => (
-    <ErrorBoundary
-        location={null}
-        render={error => (
-            <div>
-                <pre>{JSON.stringify(error)}</pre>
-            </div>
-        )}
-    >
-        <MemoryRouter
-            // Force router to remount the Panel when external location changes
-            key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
-            initialEntries={[props.externalLocation]}
-        >
-            <CoolCodeIntelResizablePanel {...props} />
-        </MemoryRouter>
-    </ErrorBoundary>
-)
-
-const CoolCodeIntelResizablePanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
-    const location = useLocation()
-
-    const { hash, pathname, search } = location
-    const { line, character, viewState } = parseQueryAndHash(search, hash)
-    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
-
-    // If we don't have enough information in the URL, we can't render the panel
-    if (!(line && character && filePath && viewState)) {
-        return null
-    }
-
-    const searchParameters = new URLSearchParams(search)
-    const jumpToFirst = searchParameters.get('jumpToFirst') === 'true'
-
-    const token = { repoName, line, character, filePath }
-
-    if (commitID === undefined || revision === undefined) {
-        return <RevisionResolvingCoolCodeIntelPanel {...props} {...token} jumpToFirst={jumpToFirst} />
-    }
-
-    return <ResizableCoolCodeIntelPanel {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
-}
-
 export const BuiltinCoolCodeIntelPanel: React.FunctionComponent<CoolCodeIntelProps> = props => (
     <MemoryRouter
         // Force router to remount the Panel when external location changes
@@ -146,91 +85,6 @@ export const BuiltinCoolCodeIntelPanel: React.FunctionComponent<CoolCodeIntelPro
         <FilterableReferencesList {...props} />
     </MemoryRouter>
 )
-
-export const RevisionResolvingCoolCodeIntelPanel: React.FunctionComponent<
-    CoolCodeIntelProps & {
-        repoName: string
-        line: number
-        character: number
-        filePath: string
-        revision?: string
-    }
-> = props => {
-    const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
-
-    if (!resolvedRevision) {
-        return null
-    }
-
-    const token = {
-        repoName: props.repoName,
-        line: props.line,
-        character: props.character,
-        filePath: props.filePath,
-
-        revision: props.revision || resolvedRevision.defaultBranch,
-        commitID: resolvedRevision.commitID,
-    }
-
-    return <ResizableCoolCodeIntelPanel {...props} token={token} />
-}
-
-const LAST_TAB_STORAGE_KEY = 'CoolCodeIntel.lastTab'
-
-const ResizableCoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => (
-    <Resizable
-        className={styles.resizablePanel}
-        handlePosition="top"
-        defaultSize={350}
-        storageKey="panel-size"
-        element={<CoolCodeIntelPanel {...props} />}
-    />
-))
-
-const CoolCodeIntelPanel = React.memo<CoolCodeIntelProps>(props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
-    const location = useLocation()
-    const handlePanelClose = useCallback(() => {
-        // We close the panel by removing the viewState in the external history
-        props.externalHistory.push(locationWithoutViewState(location))
-    }, [props.externalHistory, location])
-
-    return (
-        <Tabs size="medium" className={styles.panel} index={tabIndex} onChange={handleTabsChange}>
-            <div
-                className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.panelHeader)}
-            >
-                <TabList>
-                    <div className="d-flex w-100">
-                        <Tab key="references">
-                            <span className="tablist-wrapper--tab-label" role="none">
-                                References
-                            </span>
-                        </Tab>
-                    </div>
-                </TabList>
-                <div className="align-items-center d-flex">
-                    <Button
-                        onClick={handlePanelClose}
-                        className={classNames('btn-icon ml-2', styles.dismissButton)}
-                        title="Close panel"
-                        data-tooltip="Close panel"
-                        data-placement="left"
-                    >
-                        <CloseIcon className="icon-inline" />
-                    </Button>
-                </div>
-            </div>
-            <TabPanels>
-                <TabPanel key="references">
-                    <FilterableReferencesList {...props} />
-                </TabPanel>
-            </TabPanels>
-        </Tabs>
-    )
-})
 
 interface Location {
     resource: {
