@@ -68,6 +68,7 @@ const commonProps = (): UserNavItemProps => ({
         ['browser-extension', 'native-integration'] as const,
         'browser-extension'
     ),
+    featureFlags: new Map(),
     showRepositorySection: true,
     authenticatedUser,
     position: Position.bottomStart,
