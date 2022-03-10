@@ -13,8 +13,6 @@ trap cleanup EXIT
 
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 
-cp -a ./cmd/symbols/squirrel/external/nvim-treesitter/queries "$OUTPUT/queries"
-
 # Build go binary into $OUTPUT
 ./cmd/symbols/go-build.sh "$OUTPUT"
 

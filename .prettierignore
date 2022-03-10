@@ -32,4 +32,3 @@ browser/code-intel-extensions/
 .buildkite-cache/
 lib/codeintel/reprolang/
 cmd/symbols/squirrel/language-file-extensions.json
-cmd/symbols/squirrel/external/nvim-treesitter

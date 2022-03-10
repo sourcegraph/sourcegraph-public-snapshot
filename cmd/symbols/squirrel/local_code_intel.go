@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"sort"
 	"strings"
 
@@ -13,7 +12,6 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Nominal type for symbol names.
@@ -38,14 +36,6 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 		return nil, err
 	}
 
-	// Load the tree-sitter query.
-	localsPath := path.Join("queries", root.LangSpec.nvimQueryDir, "locals.scm")
-	queriesBytes, err := queriesFs.ReadFile(localsPath)
-	if err != nil {
-		return nil, errors.Newf("could not read %d: %s", localsPath, err)
-	}
-	queryString := string(queriesBytes)
-
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
 
 	// Collect scopes
@@ -53,7 +43,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	scopes := map[Id]Scope{
 		rootScopeId: {},
 	}
-	err = forEachCapture(queryString, *root, func(captureName string, node Node) {
+	err = forEachCapture(root.LangSpec.query, *root, func(captureName string, node Node) {
 		if captureName == "scope" {
 			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}
 			return
@@ -64,7 +54,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	}
 
 	// Collect defs
-	err = forEachCapture(queryString, *root, func(captureName string, node Node) {
+	err = forEachCapture(root.LangSpec.query, *root, func(captureName string, node Node) {
 		// Only collect "definition*" captures.
 		if strings.HasPrefix(captureName, "definition") {
 			// Find the nearest scope (if it exists).

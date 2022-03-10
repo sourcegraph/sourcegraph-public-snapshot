@@ -10,6 +10,3 @@
 	path = docker-images/syntax-highlighter/crates/sg-syntax/languages/tree-sitter-c_sharp
 	url = https://github.com/tree-sitter/tree-sitter-c-sharp
 	shallow = true
-[submodule "cmd/symbols/squirrel/external/nvim-treesitter"]
-	path = cmd/symbols/squirrel/external/nvim-treesitter
-	url = https://github.com/nvim-treesitter/nvim-treesitter
