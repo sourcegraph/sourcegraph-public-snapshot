@@ -28,6 +28,11 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExa
         return () => window.removeEventListener('resize', handleWindowResize)
     }, [])
 
+    const handleUseCaseButtonClick = (useCaseIndex: number): void => {
+        setActiveExampleIndex(useCaseIndex)
+        telemetryService.log('CloudCodeInsightsGetStartedUseCase')
+    }
+
     const isMobileLayout = windowSize <= 900
 
     return (
@@ -50,7 +55,7 @@ export const CodeInsightsExamplesPicker: React.FunctionComponent<CodeInsightsExa
                                     className={classNames(styles.button, {
                                         [styles.buttonActive]: index === activeExampleIndex,
                                     })}
-                                    onClick={() => setActiveExampleIndex(index)}
+                                    onClick={() => handleUseCaseButtonClick(index)}
                                 >
                                     {example.description}
                                     <svg

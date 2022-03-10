@@ -1,6 +1,6 @@
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { MouseEvent, useState } from 'react'
+import React, { MouseEvent, useContext, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -20,9 +20,14 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { InsightType } from '../../../../core/types'
-import { encodeCaptureInsightURL } from '../../../insights/creation/capture-group'
-import { encodeSearchInsightUrl } from '../../../insights/creation/search-insight'
+import { InsightType } from '../../../../../core/types'
+import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
+import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
+import {
+    CodeInsightsLandingPageContext,
+    CodeInsightsLandingPageType,
+    useLogEventName,
+} from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
 import styles from './CodeInsightsTemplates.module.scss'
@@ -37,22 +42,16 @@ function getTemplateURL(template: Template): string {
     }
 }
 
-interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
-    /**
-     * The template section is used in two different landing pages, in-product where templates are
-     * interactive and lead to the creation UI with prefilled values and for the cloud landing
-     * page where templates are just cards with queries text.
-     */
-    interactive?: boolean
-}
+interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
 
 export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplates> = props => {
-    const { telemetryService, interactive = true, ...otherProps } = props
+    const { telemetryService, ...otherProps } = props
+    const tabChangePingName = useLogEventName('InsightsGetStartedTabClick')
 
     const handleTabChange = (index: number): void => {
         const template = TEMPLATE_SECTIONS[index]
 
-        telemetryService.log('InsightsGetStartedTabClick', { tabName: template.title }, { tabName: template.title })
+        telemetryService.log(tabChangePingName, { tabName: template.title }, { tabName: template.title })
     }
 
     return (
@@ -78,7 +77,6 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
                             key={section.title}
                             sectionTitle={section.title}
                             templates={section.templates}
-                            interactive={interactive}
                             telemetryService={telemetryService}
                         />
                     ))}
@@ -91,19 +89,19 @@ export const CodeInsightsTemplates: React.FunctionComponent<CodeInsightsTemplate
 interface TemplatesPanelProps extends TelemetryProps {
     sectionTitle: string
     templates: Template[]
-    interactive: boolean
 }
 
 const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
-    const { templates, sectionTitle, interactive, telemetryService } = props
+    const { templates, sectionTitle, telemetryService } = props
     const [allVisible, setAllVisible] = useState(false)
+    const tabMoreClickPingName = useLogEventName('InsightsGetStartedTabMoreClick')
 
     const maxNumberOfCards = allVisible ? templates.length : 4
     const hasMoreLessButton = templates.length > 4
 
     const handleShowMoreButtonClick = (): void => {
         if (!allVisible) {
-            telemetryService.log('InsightsGetStartedTabMoreClick', { tabName: sectionTitle }, { tabName: sectionTitle })
+            telemetryService.log(tabMoreClickPingName, { tabName: sectionTitle }, { tabName: sectionTitle })
         }
 
         setAllVisible(!allVisible)
@@ -112,12 +110,7 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
     return (
         <TabPanel className={styles.cards}>
             {templates.slice(0, maxNumberOfCards).map(template => (
-                <TemplateCard
-                    key={template.title}
-                    template={template}
-                    interactive={interactive}
-                    telemetryService={telemetryService}
-                />
+                <TemplateCard key={template.title} template={template} telemetryService={telemetryService} />
             ))}
 
             {hasMoreLessButton && (
@@ -136,11 +129,11 @@ const TemplatesPanel: React.FunctionComponent<TemplatesPanelProps> = props => {
 
 interface TemplateCardProps extends TelemetryProps {
     template: Template
-    interactive: boolean
 }
 
 const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
-    const { template, interactive, telemetryService } = props
+    const { template, telemetryService } = props
+    const { mode } = useContext(CodeInsightsLandingPageContext)
 
     const series =
         template.type === InsightType.SearchBased
@@ -165,7 +158,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
                 )}
             </div>
 
-            {interactive && (
+            {mode === CodeInsightsLandingPageType.InProduct && (
                 <Button
                     as={Link}
                     to={getTemplateURL(template)}
@@ -191,6 +184,7 @@ const copyCompletedTooltip = 'Copied!'
 const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
     const { query, telemetryService } = props
 
+    const templateCopyClickEvenName = useLogEventName('InsightGetStartedTemplateCopyClick')
     const [currentCopyTooltip, setCurrentCopyTooltip] = useState(copyTooltip)
 
     const onCopy = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -203,7 +197,7 @@ const QueryPanel: React.FunctionComponent<QueryPanelProps> = props => {
         })
 
         event.preventDefault()
-        telemetryService.log('InsightGetStartedTemplateCopyClick')
+        telemetryService.log(templateCopyClickEvenName)
     }
 
     return (

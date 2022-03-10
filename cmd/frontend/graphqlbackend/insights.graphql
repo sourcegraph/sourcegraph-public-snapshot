@@ -800,6 +800,11 @@ type InsightView implements Node {
     The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
     """
     dashboardReferenceCount: Int!
+
+    """
+    Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
+    """
+    isFrozen: Boolean!
 }
 
 """
