@@ -460,7 +460,9 @@ type GitserverRepo struct {
 	LastFetched time.Time
 	// The last time a fetch updated the repository.
 	LastChanged time.Time
-	UpdatedAt   time.Time
+	// Size of the repository in bytes.
+	RepoSizeBytes int64
+	UpdatedAt     time.Time
 }
 
 // ExternalService is a connection to an external service.

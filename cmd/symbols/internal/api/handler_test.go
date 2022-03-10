@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -39,7 +40,21 @@ func TestHandler(t *testing.T) {
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
 	parserFactory := func() (ctags.Parser, error) {
-		return newMockParser("x", "y"), nil
+		pathToEntries := map[string][]*ctags.Entry{
+			"a.js": {
+				{
+					Name: "x",
+					Path: "a.js",
+					Line: 1, // ctags line numbers are 1-based
+				},
+				{
+					Name: "y",
+					Path: "a.js",
+					Line: 2,
+				},
+			},
+		}
+		return newMockParser(pathToEntries), nil
 	}
 	parserPool, err := parser.NewParserPool(parserFactory, 15)
 	if err != nil {
@@ -47,7 +62,7 @@ func TestHandler(t *testing.T) {
 	}
 
 	files := map[string]string{
-		"a.js": "var x = 1",
+		"a.js": "var x = 1\nvar y = 2",
 	}
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
@@ -65,8 +80,8 @@ func TestHandler(t *testing.T) {
 		HTTPClient: httpcli.InternalDoer,
 	}
 
-	x := result.Symbol{Name: "x", Path: "a.js"}
-	y := result.Symbol{Name: "y", Path: "a.js"}
+	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
+	y := result.Symbol{Name: "y", Path: "a.js", Line: 1, Character: 4}
 
 	testCases := map[string]struct {
 		args     search.SymbolsParameters
@@ -133,20 +148,18 @@ func TestHandler(t *testing.T) {
 }
 
 type mockParser struct {
-	names []string
+	pathToEntries map[string][]*ctags.Entry
 }
 
-func newMockParser(names ...string) ctags.Parser {
-	return &mockParser{names: names}
+func newMockParser(pathToEntries map[string][]*ctags.Entry) ctags.Parser {
+	return &mockParser{pathToEntries: pathToEntries}
 }
 
-func (m *mockParser) Parse(name string, content []byte) ([]*ctags.Entry, error) {
-	entries := make([]*ctags.Entry, 0, len(m.names))
-	for _, name := range m.names {
-		entries = append(entries, &ctags.Entry{Name: name, Path: "a.js"})
+func (m *mockParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
+	if entries, ok := m.pathToEntries[path]; ok {
+		return entries, nil
 	}
-
-	return entries, nil
+	return nil, errors.Newf("no mock entries for %s", path)
 }
 
 func (m *mockParser) Close() {}

@@ -29,11 +29,10 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
 }) => {
     const [webhookEnabled, setWebhookEnabled] = useState(action ? action.enabled : true)
 
-    const toggleWebhookEnabled: (enabled: boolean) => void = useCallback(
-        enabled => {
+    const toggleWebhookEnabled: (enabled: boolean, saveImmediately: boolean) => void = useCallback(
+        (enabled, saveImmediately) => {
             setWebhookEnabled(enabled)
-
-            if (action) {
+            if (action && saveImmediately) {
                 setAction({ ...action, enabled })
             }
         },
@@ -50,12 +49,17 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
                 __typename: 'MonitorSlackWebhook',
                 id: action ? action.id : '',
                 url,
-                enabled: webhookEnabled,
+                enabled: true,
                 includeResults: false,
             })
         },
-        [action, setAction, url, webhookEnabled]
+        [action, setAction, url]
     )
+
+    const onCancel: React.FormEventHandler = useCallback(() => {
+        setWebhookEnabled(action ? action.enabled : true)
+        setUrl(action && action.__typename === 'MonitorSlackWebhook' ? action.url : '')
+    }, [action])
 
     const onDelete: React.FormEventHandler = useCallback(() => {
         setAction(undefined)
@@ -100,7 +104,7 @@ export const SlackWebhookAction: React.FunctionComponent<ActionProps> = ({
             toggleActionEnabled={toggleWebhookEnabled}
             canSubmit={urlIsValid}
             onSubmit={onSubmit}
-            onCancel={() => {}}
+            onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
             _testStartOpen={_testStartOpen}

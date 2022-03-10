@@ -478,6 +478,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 			symbols = append(symbols, result.NewSymbolMatch(
 				newFile,
 				l.LineNumber,
+				-1, // -1 means infer the column
 				m.SymbolInfo.Sym,
 				m.SymbolInfo.Kind,
 				m.SymbolInfo.Parent,
@@ -583,7 +584,7 @@ type ZoektRepoSubsetSearch struct {
 	FileMatchLimit int32
 	Select         filter.SelectPath
 	Zoekt          zoekt.Streamer
-	Since          func(time.Time) time.Duration // since if non-nil will be used instead of time.Since. For tests
+	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.

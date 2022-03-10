@@ -166,6 +166,7 @@ Some common failure modes:
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled.
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
+- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 yarn build-web` or `ENTERPRISE=1 yarn watch-web`
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
@@ -352,6 +353,15 @@ Click the image on the right to toggle between diff and full image mode to revie
 If the changes are intended, click **Approve** 👍
 
 Once you approve all of the changes, the Percy check will turn green ✅
+
+#### Running the tests locally
+
+It is possible to run our Percy visual regression tests locally.
+
+1. Go to https://percy.io/Sourcegraph/Sourcegraph/settings#token
+2. Copy the token named as `PERCY_TOKEN`
+3. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
+4. Once the tests finish, Percy should output a URL to the created build.
 
 #### Adding a new visual snapshot test
 
