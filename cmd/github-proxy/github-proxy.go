@@ -210,8 +210,12 @@ func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for k, v := range resp.Header {
 		w.Header()[k] = v
 	}
+	// debugging note(to be removed)=> breaking this locally to reproduce error
+	resp.StatusCode = 403
+
 	w.WriteHeader(resp.StatusCode)
-	if resp.StatusCode < 400 || !logRequests {
+	// if resp.StatusCode < 400 || !logRequests {
+	if resp.StatusCode < 400 {
 		_, _ = io.Copy(w, resp.Body)
 		return
 	}
