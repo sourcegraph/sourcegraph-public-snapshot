@@ -37,6 +37,8 @@ type executionOpts struct {
 	logger log.TaskLogger
 
 	ui StepsExecutionUI
+
+	writeStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
 func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result, stepResults []execution.AfterStepResult, err error) {
@@ -185,6 +187,12 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		}
 		stepResults = append(stepResults, stepResult)
 		previousStepResult = result
+
+		// cache the result here
+		err = opts.writeStepCacheResult(ctx, stepResult, opts.task)
+		if err != nil {
+			return execResult, nil, errors.Wrap(err, "failed to cache stepResult")
+		}
 
 		opts.ui.StepFinished(i+1, stepResult.Diff, result.Files, stepResult.Outputs)
 	}

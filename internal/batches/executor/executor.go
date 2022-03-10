@@ -59,9 +59,10 @@ type newExecutorOpts struct {
 	Logger              log.LogManager
 
 	// Config
-	Parallelism int
-	Timeout     time.Duration
-	TempDir     string
+	Parallelism          int
+	Timeout              time.Duration
+	TempDir              string
+	WriteStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
 type executor struct {
@@ -177,7 +178,8 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		ensureImage: x.opts.EnsureImage,
 		tempDir:     x.opts.TempDir,
 
-		ui: ui.StepsExecutionUI(task),
+		ui:                   ui.StepsExecutionUI(task),
+		writeStepCacheResult: x.opts.WriteStepCacheResult,
 	}
 
 	result, stepResults, err := runSteps(runCtx, opts)

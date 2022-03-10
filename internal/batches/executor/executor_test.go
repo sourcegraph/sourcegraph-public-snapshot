@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -69,6 +70,8 @@ func TestExecutor_Integration(t *testing.T) {
 
 		wantFinished        int
 		wantFinishedWithErr int
+
+		wantCacheCount int
 	}{
 		{
 			name: "success",
@@ -97,7 +100,8 @@ func TestExecutor_Integration(t *testing.T) {
 					rootPath: []string{"README.md"},
 				},
 			},
-			wantFinished: 2,
+			wantFinished:   2,
+			wantCacheCount: 4,
 		},
 		{
 			name: "empty",
@@ -120,7 +124,8 @@ func TestExecutor_Integration(t *testing.T) {
 					rootPath: []string{},
 				},
 			},
-			wantFinished: 1,
+			wantFinished:   1,
+			wantCacheCount: 1,
 		},
 		{
 			name: "timeout",
@@ -178,7 +183,8 @@ func TestExecutor_Integration(t *testing.T) {
 					},
 				},
 			},
-			wantFinished: 1,
+			wantFinished:   1,
+			wantCacheCount: 5,
 		},
 		{
 			name: "workspaces",
@@ -233,7 +239,8 @@ func TestExecutor_Integration(t *testing.T) {
 					"a/b":    []string{"a/b/hello.txt", "a/b/gitignore-exists", "a/b/gitignore-exists-in-a"},
 				},
 			},
-			wantFinished: 3,
+			wantFinished:   3,
+			wantCacheCount: 15,
 		},
 		{
 			name: "step condition",
@@ -268,7 +275,8 @@ func TestExecutor_Integration(t *testing.T) {
 					"sub/directory/of/repo": []string{"README.md", "hello.txt", "in-path.txt"},
 				},
 			},
-			wantFinished: 2,
+			wantFinished:   2,
+			wantCacheCount: 4,
 		},
 		{
 			name: "skips errors",
@@ -300,6 +308,7 @@ func TestExecutor_Integration(t *testing.T) {
 			wantErrInclude:      "execution in github.com/sourcegraph/sourcegraph failed: run: exit 1",
 			wantFinished:        1,
 			wantFinishedWithErr: 1,
+			wantCacheCount:      2,
 		},
 	}
 
@@ -337,6 +346,9 @@ func TestExecutor_Integration(t *testing.T) {
 			// Temp dir for log files and downloaded archives
 			testTempDir := t.TempDir()
 
+			cacheCount := 0
+			var cacheLock sync.Mutex
+
 			// Setup executor
 			opts := newExecutorOpts{
 				Creator:             workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
@@ -347,6 +359,12 @@ func TestExecutor_Integration(t *testing.T) {
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
 				Timeout:     tc.executorTimeout,
+				WriteStepCacheResult: func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error {
+					cacheLock.Lock()
+					cacheCount += 1
+					cacheLock.Unlock()
+					return nil
+				},
 			}
 
 			if opts.Timeout == 0 {
@@ -372,6 +390,9 @@ func TestExecutor_Integration(t *testing.T) {
 				}
 			}
 
+			if tc.wantCacheCount != cacheCount {
+				t.Errorf("wrong cache count. have=%d want=%d", cacheCount, tc.wantCacheCount)
+			}
 			wantResults := 0
 			resultsFound := map[string]map[string]bool{}
 			for repo, byPath := range tc.wantFilesChanged {
@@ -695,6 +716,9 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 		TempDir:     testTempDir,
 		Parallelism: runtime.GOMAXPROCS(0),
 		Timeout:     30 * time.Second,
+		WriteStepCacheResult: func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error {
+			return nil
+		},
 	})
 
 	executor.Start(context.Background(), tasks, newDummyTaskExecutionUI())
