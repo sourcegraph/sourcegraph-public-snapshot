@@ -67,9 +67,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                         <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                     </Link>
                 )}
-                {result.type === 'commit' && formattedRepositoryStarCount && (
-                    <div className={styles.divider} />
-                )}
+                {result.type === 'commit' && formattedRepositoryStarCount && <div className={styles.divider} />}
                 {formattedRepositoryStarCount && (
                     <>
                         <SearchResultStar />
