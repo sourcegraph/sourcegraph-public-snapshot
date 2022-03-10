@@ -21,12 +21,7 @@ export const fetchBlob = memoizeObservable(
     }): Observable<BlobFileFields | null> =>
         requestGraphQL<BlobResult, BlobVariables>(
             gql`
-                query Blob(
-                    $repoName: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $disableTimeout: Boolean!
-                ) {
+                query Blob($repoName: String!, $commitID: String!, $filePath: String!, $disableTimeout: Boolean!) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
