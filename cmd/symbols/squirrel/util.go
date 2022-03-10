@@ -17,9 +17,16 @@ type Id string
 
 // walk walks every node in the tree-sitter tree, calling f(node) on each node.
 func walk(node *sitter.Node, f func(node *sitter.Node)) {
-	f(node)
-	for i := 0; i < int(node.ChildCount()); i++ {
-		walk(node.Child(i), f)
+	walkFilter(node, func(n *sitter.Node) bool { f(n); return true })
+}
+
+// walkFilter walks every node in the tree-sitter tree, calling f(node) on each node and descending into
+// children if it returns true.
+func walkFilter(node *sitter.Node, f func(node *sitter.Node) bool) {
+	if f(node) {
+		for i := 0; i < int(node.ChildCount()); i++ {
+			walkFilter(node.Child(i), f)
+		}
 	}
 }
 

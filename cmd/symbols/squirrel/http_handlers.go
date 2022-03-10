@@ -2,14 +2,18 @@ package squirrel
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	sitter "github.com/smacker/go-tree-sitter"
 
 	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -117,4 +121,96 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 			return
 		}
 	}
+}
+
+// Response to /debugLocalCodeIntel.
+func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
+	// Read ?ext=<ext> from the request.
+	ext := r.URL.Query().Get("ext")
+	if ext == "" {
+		http.Error(w, "missing ?ext=<ext> query parameter", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+
+	squirrel := NewSquirrelService(readFileFromGitserver, nil)
+	defer squirrel.Close()
+
+	path := types.RepoCommitPath{
+		Repo:   "foo",
+		Commit: "bar",
+		Path:   "example." + ext,
+	}
+
+	fileToRead := "/tmp/squirrel-example.txt"
+	readFile := func(ctx context.Context, args types.RepoCommitPath) ([]byte, error) {
+		return os.ReadFile("/tmp/squirrel-example.txt")
+	}
+
+	rangeToSymbolIx := map[types.Range]int{}
+	symbolIxToColor := map[int]string{}
+	payload, err := squirrel.localCodeIntel(r.Context(), path, readFile)
+	if err != nil {
+		fmt.Fprintf(w, "failed to generate local code intel payload: %s\n\n", err)
+	} else {
+		for ix := range payload.Symbols {
+			symbolIxToColor[ix] = fmt.Sprintf("hsla(%d, 100%%, 50%%, 0.5)", rand.Intn(360))
+		}
+
+		for ix, symbol := range payload.Symbols {
+			if symbol.Def != nil {
+				rangeToSymbolIx[*symbol.Def] = ix
+			}
+			for _, ref := range symbol.Refs {
+				rangeToSymbolIx[ref] = ix
+			}
+		}
+	}
+
+	node, err := squirrel.parse(r.Context(), path, readFile)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "<h3>Parsing as %s from file on disk %s</h3>\n", ext, fileToRead)
+
+	nodeToHtml := func(n *sitter.Node, contents []byte) string {
+		color := "hsla(0, 0%, 0%, 0.1)"
+		if n.Type() == "ERROR" {
+			color = "hsla(0, 100%, 50%, 0.2)"
+		}
+		if ix, ok := rangeToSymbolIx[nodeToRange(n)]; ok {
+			if c, ok := symbolIxToColor[ix]; ok {
+				color = c
+			}
+		}
+		title := fmt.Sprintf("%s %d:%d-%d:%d", html.EscapeString(n.Type()), n.StartPoint().Row, n.StartPoint().Column, n.EndPoint().Row, n.EndPoint().Column)
+
+		return fmt.Sprintf(
+			`<span style="background-color: %s", title="%s">%s</span>`,
+			color,
+			title,
+			html.EscapeString(string(contents[n.StartByte():n.EndByte()])),
+		)
+	}
+
+	fmt.Fprint(w, "<pre>")
+
+	prev := uint32(0)
+	walkFilter(node.Node, func(n *sitter.Node) bool {
+		if n.Type() != "ERROR" && n.ChildCount() > 0 {
+			return true
+		}
+
+		fmt.Fprint(w, html.EscapeString(string(node.Contents[prev:n.StartByte()])))
+		fmt.Fprint(w, nodeToHtml(n, node.Contents))
+
+		prev = n.EndByte()
+
+		return false
+	})
+
+	fmt.Fprint(w, "</pre>")
 }
