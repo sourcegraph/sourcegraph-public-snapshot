@@ -38,21 +38,22 @@ export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstruc
     wordWrap: 'on',
 }
 
-interface UseMonacoBlockEditorOptions
-    extends Pick<BlockProps, 'onRunBlock' | 'onBlockInputChange' | 'onSelectBlock' | 'onMoveBlockSelection'> {
+interface UseMonacoBlockEditorOptions extends Pick<BlockProps, 'onRunBlock' | 'onSelectBlock'> {
     editor: Monaco.editor.IStandaloneCodeEditor | undefined
     id: string
-    type: 'md' | 'query'
+    preventNewLine?: boolean
+    onInputChange: (value: string) => void
 }
+
+const REPLACE_NEW_LINE_REGEX = /[\n\r↵]/g
 
 export const useMonacoBlockInput = ({
     editor,
     id,
-    type,
+    preventNewLine,
     onRunBlock,
-    onBlockInputChange,
+    onInputChange,
     onSelectBlock,
-    onMoveBlockSelection,
 }: UseMonacoBlockEditorOptions): {
     isInputFocused: boolean
 } => {
@@ -80,22 +81,37 @@ export const useMonacoBlockInput = ({
                 },
             }),
         ]
+
+        if (preventNewLine) {
+            disposables.push(
+                editor.addAction({
+                    id: 'preventEnter',
+                    label: 'preventEnter',
+                    keybindings: [Monaco.KeyCode.Enter],
+                    run: () => {
+                        editor.trigger('preventEnter', 'acceptSelectedSuggestion', [])
+                    },
+                })
+            )
+        }
+
         return () => {
             for (const disposable of disposables) {
                 disposable.dispose()
             }
         }
-    }, [editor, id, onRunBlock, onMoveBlockSelection])
+    }, [editor, id, preventNewLine, onRunBlock])
 
     useEffect(() => {
         if (!editor) {
             return
         }
         const disposable = editor.onDidChangeModelContent(() => {
-            onBlockInputChange(id, { type, input: editor.getValue() })
+            const value = editor.getValue()
+            onInputChange(preventNewLine ? value.replace(REPLACE_NEW_LINE_REGEX, '') : value)
         })
         return () => disposable.dispose()
-    }, [editor, id, type, onBlockInputChange])
+    }, [editor, id, preventNewLine, onInputChange])
 
     useEffect(() => {
         if (!editor) {

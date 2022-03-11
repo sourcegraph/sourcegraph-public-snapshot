@@ -2,11 +2,12 @@ import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { FetchFileParameters, HighlightRange } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { IHighlightLineRange, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-export type BlockType = 'md' | 'query' | 'file' | 'compute'
+export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
 
 interface BaseBlock<I, O> {
     id: string
@@ -38,26 +39,61 @@ export interface ComputeBlock extends BaseBlock<string, string> {
     type: 'compute'
 }
 
-export type Block = QueryBlock | MarkdownBlock | FileBlock | ComputeBlock
+export interface SymbolBlockInput {
+    repositoryName: string
+    revision: string
+    filePath: string
+    symbolName: string
+    symbolKind: SymbolKind
+    symbolContainerName: string
+    lineContext: number
+}
+
+export interface SymbolBlockOutput {
+    symbolFoundAtLatestRevision: boolean
+    effectiveRevision: string
+    symbolRange: UIRangeSpec['range']
+    highlightLineRange: IHighlightLineRange
+    highlightedLines: string[]
+    highlightSymbolRange: HighlightRange
+}
+
+export interface SymbolBlock extends BaseBlock<SymbolBlockInput, Observable<SymbolBlockOutput | Error>> {
+    type: 'symbol'
+}
+
+export type Block = QueryBlock | MarkdownBlock | FileBlock | ComputeBlock | SymbolBlock
 
 export type BlockInput =
     | Pick<FileBlock, 'type' | 'input'>
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
     | Pick<ComputeBlock, 'type' | 'input'>
+    | Pick<SymbolBlock, 'type' | 'input'>
 
 export type BlockInit =
     | Omit<FileBlock, 'output'>
     | Omit<MarkdownBlock, 'output'>
     | Omit<QueryBlock, 'output'>
     | Omit<ComputeBlock, 'output'>
+    | Omit<SymbolBlock, 'output'>
+
+export type SerializableBlock =
+    | Pick<FileBlock, 'type' | 'input'>
+    | Pick<MarkdownBlock, 'type' | 'input'>
+    | Pick<QueryBlock, 'type' | 'input'>
+    | Pick<ComputeBlock, 'type' | 'input'>
+    | Pick<SymbolBlock, 'type' | 'input' | 'output'>
 
 export type BlockDirection = 'up' | 'down'
 
-export interface BlockProps {
+export interface BlockProps<T extends Block = Block> {
     isReadOnly: boolean
     isSelected: boolean
     isOtherBlockSelected: boolean
+    id: T['id']
+    input: T['input']
+    output: T['output']
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, blockInput: BlockInput): void

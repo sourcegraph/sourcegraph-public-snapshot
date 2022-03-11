@@ -4,15 +4,14 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useMemo } from 'react'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 
-import { PathMatch, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { PathMatch, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange } from '../../serialize'
+import { fetchSuggestions } from '../suggestions'
 
 import { NotebookFileBlockInput } from './NotebookFileBlockInput'
 import styles from './NotebookFileBlockInputs.module.scss'
@@ -26,7 +25,6 @@ interface NotebookFileBlockInputsProps
     lineRangeInput: string
     showRevisionInput: boolean
     showLineRangeInput: boolean
-    isMacPlatform: boolean
     setIsInputFocused(value: boolean): void
     setFileInput: (input: Partial<FileBlockInput>) => void
     setLineRangeInput: (input: string) => void
@@ -44,16 +42,6 @@ function getFilePathSuggestionsQuery(repositoryName: string, revision: string, f
     return `${repoFilter} ${revisionFilter} ${filePath} type:path count:${MAX_SUGGESTIONS} fork:yes`
 }
 
-function fetchSuggestions<T extends RepositoryMatch | PathMatch>(
-    query: string,
-    filterSuggestionFn: (match: SearchMatch) => match is T,
-    mapSuggestionFn: (match: T) => string
-): Observable<string[]> {
-    return fetchStreamSuggestions(query).pipe(
-        map(suggestions => suggestions.filter(filterSuggestionFn).map(mapSuggestionFn))
-    )
-}
-
 export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
     id,
     repositoryName,
@@ -66,7 +54,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
     isLineRangeValid,
     showRevisionInput,
     showLineRangeInput,
-    isMacPlatform,
     setIsInputFocused,
     onSelectBlock,
     setFileInput,
@@ -116,6 +103,8 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         )
     )
 
+    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+
     return (
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
@@ -137,7 +126,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                     suggestions={repoSuggestions}
                     suggestionsIcon={<SourceRepositoryIcon className="mr-1" size="1rem" />}
                     isValid={isRepositoryNameValid}
-                    isMacPlatform={isMacPlatform}
                     dataTestId="file-block-repository-name-input"
                 />
                 <div className={styles.separator} />
@@ -152,7 +140,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                     suggestions={fileSuggestions}
                     suggestionsIcon={<FileDocumentIcon className="mr-1" size="1rem" />}
                     isValid={isFilePathValid}
-                    isMacPlatform={isMacPlatform}
                     dataTestId="file-block-file-path-input"
                 />
             </div>
@@ -169,7 +156,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isRevisionValid}
-                            isMacPlatform={isMacPlatform}
                             dataTestId="file-block-revision-input"
                         />
                     </div>
@@ -192,7 +178,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isLineRangeValid}
-                            isMacPlatform={isMacPlatform}
                             dataTestId="file-block-line-range-input"
                         />
                     </div>

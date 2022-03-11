@@ -39,6 +39,7 @@ import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
+import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
@@ -53,7 +54,6 @@ export interface NotebookComponentProps
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
         FileBlockValidationFunctions {
     globbing: boolean
-    isMacPlatform: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
@@ -78,6 +78,7 @@ function countBlockTypes(blocks: Block[]): BlockCounts {
         file: 0,
         query: 0,
         compute: 0,
+        symbol: 0,
     })
 }
 
@@ -164,11 +165,19 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         )
     )
 
-    const exportNotebook = useCallback(() => {
-        const exportedMarkdown = notebook.exportToMarkdown(window.location.origin)
-        downloadTextAsFile(exportedMarkdown, exportedFileName)
-        props.telemetryService.log('SearchNotebookExportNotebook')
-    }, [notebook, exportedFileName, props.telemetryService])
+    const [exportNotebook] = useEventObservable(
+        useCallback(
+            (event: Observable<React.MouseEvent<HTMLButtonElement>>) =>
+                event.pipe(
+                    switchMap(() => notebook.exportToMarkdown(window.location.origin)),
+                    tap(exportedMarkdown => {
+                        downloadTextAsFile(exportedMarkdown, exportedFileName)
+                        props.telemetryService.log('SearchNotebookExportNotebook')
+                    })
+                ),
+            [notebook, exportedFileName, props.telemetryService]
+        )
+    )
 
     const [copyNotebook, copiedNotebookOrError] = useEventObservable(
         useCallback(
@@ -440,6 +449,16 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     )
                 case 'compute':
                     return <NotebookComputeBlock {...block} {...blockProps} />
+                case 'symbol':
+                    return (
+                        <NotebookSymbolBlock
+                            {...block}
+                            {...blockProps}
+                            hoverifier={hoverifier}
+                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            extensionsController={extensionsController}
+                        />
+                    )
             }
         },
         [

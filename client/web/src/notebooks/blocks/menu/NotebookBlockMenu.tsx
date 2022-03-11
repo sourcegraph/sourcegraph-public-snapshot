@@ -66,7 +66,7 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
     )
 }
 
-interface NotebookBlockMenuProps {
+export interface NotebookBlockMenuProps {
     id: string
     mainAction?: BlockMenuButtonAction
     actions: BlockMenuAction[]

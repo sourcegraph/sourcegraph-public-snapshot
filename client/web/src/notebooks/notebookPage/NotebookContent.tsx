@@ -24,7 +24,6 @@ export interface NotebookContentProps
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
-    isMacPlatform: boolean
     viewerCanManage: boolean
     blocks: NotebookBlock[]
     exportedFileName: string
@@ -55,10 +54,13 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
                         return {
                             id: block.id,
                             type: 'file',
-                            input: {
-                                ...block.fileInput,
-                                revision: block.fileInput.revision ?? '',
-                            },
+                            input: { ...block.fileInput, revision: block.fileInput.revision ?? '' },
+                        }
+                    case 'SymbolBlock':
+                        return {
+                            id: block.id,
+                            type: 'symbol',
+                            input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
                         }
                 }
             }),

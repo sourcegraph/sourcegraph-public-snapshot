@@ -46,7 +46,7 @@ interface Props extends Repo {
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
-interface HighlightRange {
+export interface HighlightRange {
     /**
      * The 0-based line number that this highlight appears in
      */

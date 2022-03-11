@@ -30,7 +30,7 @@ func TestSymbolURL(t *testing.T) {
 					Character: 4,
 				},
 			},
-			url: "/repo/A/-/blob/A#L3:5-3:15",
+			url: "/repo/A/-/blob/A?L3:5-3:15",
 		},
 		{
 			name: "with rev",
@@ -42,7 +42,7 @@ func TestSymbolURL(t *testing.T) {
 					Character: 4,
 				},
 			},
-			url: "/repo/A@testrev/-/blob/B#L3:5-3:15",
+			url: "/repo/A@testrev/-/blob/B?L3:5-3:15",
 		},
 	}
 

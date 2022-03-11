@@ -136,7 +136,7 @@ type SymbolMatch struct {
 
 func (s *SymbolMatch) URL() *url.URL {
 	base := s.File.URL()
-	base.Fragment = urlFragmentFromRange(s.Symbol.Range())
+	base.RawQuery = urlFragmentFromRange(s.Symbol.Range())
 	return base
 }
 

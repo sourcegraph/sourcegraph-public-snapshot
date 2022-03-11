@@ -44,7 +44,6 @@ add('default', () => (
         {props => (
             <NotebookComponent
                 {...props}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}
@@ -73,7 +72,6 @@ add('default read-only', () => (
             <NotebookComponent
                 {...props}
                 isReadOnly={true}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}

@@ -14,7 +14,6 @@ const defaultProps = {
     id: 'block-id',
     showRevisionInput: true,
     showLineRangeInput: true,
-    isMacPlatform: false,
     setIsInputFocused: noop,
     setFileInput: noop,
     setLineRangeInput: noop,

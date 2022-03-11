@@ -65,6 +65,7 @@ type NotebookBlockResolver interface {
 	ToMarkdownBlock() (MarkdownBlockResolver, bool)
 	ToQueryBlock() (QueryBlockResolver, bool)
 	ToFileBlock() (FileBlockResolver, bool)
+	ToSymbolBlock() (SymbolBlockResolver, bool)
 }
 
 type MarkdownBlockResolver interface {
@@ -89,6 +90,21 @@ type FileBlockInputResolver interface {
 	LineRange() FileBlockLineRangeResolver
 }
 
+type SymbolBlockResolver interface {
+	ID() string
+	SymbolInput() SymbolBlockInputResolver
+}
+
+type SymbolBlockInputResolver interface {
+	RepositoryName() string
+	FilePath() string
+	Revision() *string
+	LineContext() int32
+	SymbolName() string
+	SymbolContainerName() string
+	SymbolKind() string
+}
+
 type FileBlockLineRangeResolver interface {
 	StartLine() int32
 	EndLine() int32
@@ -100,6 +116,7 @@ const (
 	NotebookMarkdownBlockType NotebookBlockType = "MARKDOWN"
 	NotebookQueryBlockType    NotebookBlockType = "QUERY"
 	NotebookFileBlockType     NotebookBlockType = "FILE"
+	NotebookSymbolBlockType   NotebookBlockType = "SYMBOL"
 )
 
 type CreateNotebookInputArgs struct {
@@ -123,11 +140,12 @@ type NotebookInputArgs struct {
 }
 
 type CreateNotebookBlockInputArgs struct {
-	ID            string                `json:"id"`
-	Type          NotebookBlockType     `json:"type"`
-	MarkdownInput *string               `json:"markdownInput"`
-	QueryInput    *string               `json:"queryInput"`
-	FileInput     *CreateFileBlockInput `json:"fileInput"`
+	ID            string                  `json:"id"`
+	Type          NotebookBlockType       `json:"type"`
+	MarkdownInput *string                 `json:"markdownInput"`
+	QueryInput    *string                 `json:"queryInput"`
+	FileInput     *CreateFileBlockInput   `json:"fileInput"`
+	SymbolInput   *CreateSymbolBlockInput `json:"symbolInput"`
 }
 
 type CreateFileBlockInput struct {
@@ -135,6 +153,16 @@ type CreateFileBlockInput struct {
 	FilePath       string                         `json:"filePath"`
 	Revision       *string                        `json:"revision"`
 	LineRange      *CreateFileBlockLineRangeInput `json:"lineRange"`
+}
+
+type CreateSymbolBlockInput struct {
+	RepositoryName      string  `json:"repositoryName"`
+	FilePath            string  `json:"filePath"`
+	Revision            *string `json:"revision"`
+	LineContext         int32   `json:"lineContext"`
+	SymbolName          string  `json:"symbolName"`
+	SymbolContainerName string  `json:"symbolContainerName"`
+	SymbolKind          string  `json:"symbolKind"`
 }
 
 type CreateFileBlockLineRangeInput struct {

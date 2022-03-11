@@ -9,6 +9,13 @@ function isSourcegraphFileBlobURL(url: string): boolean {
     return !!parseBrowserRepoURL(url).filePath
 }
 
+function isSymbolBlockURL(url: string): boolean {
+    const parsedURL = new URL(url)
+    const symbolParameters = new URLSearchParams(parsedURL.hash.slice(1))
+    const symbolName = symbolParameters.get('symbolName')
+    return symbolName !== null && symbolName.length > 0
+}
+
 export function convertMarkdownToBlocks(markdown: string): BlockInput[] {
     const blocks: BlockInput[] = []
 
@@ -35,7 +42,8 @@ export function convertMarkdownToBlocks(markdown: string): BlockInput[] {
             isSourcegraphFileBlobURL(token.tokens[0].href)
         ) {
             addMarkdownBlock()
-            blocks.push(deserializeBlockInput('file', token.text))
+            const blockType = isSymbolBlockURL(token.text) ? 'symbol' : 'file'
+            blocks.push(deserializeBlockInput(blockType, token.text))
         } else {
             markdownRawTokens.push(token.raw)
         }

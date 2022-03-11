@@ -5,7 +5,8 @@ import { subDays } from 'date-fns'
 import expect from 'expect'
 
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { NotebookBlock } from '@sourcegraph/shared/src/schema'
+import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -100,8 +101,47 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookBlock
                     },
                 },
             }
+        case NotebookBlockType.SYMBOL:
+            return {
+                __typename: 'SymbolBlock',
+                id: block.id,
+                symbolInput: {
+                    __typename: 'SymbolBlockInput',
+                    repositoryName: block.symbolInput?.repositoryName ?? '',
+                    filePath: block.symbolInput?.filePath ?? '',
+                    revision: block.symbolInput?.revision ?? '',
+                    lineContext: block.symbolInput?.lineContext ?? 3,
+                    symbolName: block.symbolInput?.symbolName ?? '',
+                    symbolContainerName: block.symbolInput?.symbolContainerName ?? '',
+                    symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
+                },
+            }
     }
 }
+
+const mockSymbolStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [
+            {
+                type: 'symbol',
+                repository: 'github.com/sourcegraph/sourcegraph',
+                path: 'client/web/index.ts',
+                commit: 'branch',
+                symbols: [
+                    {
+                        name: 'func',
+                        containerName: 'class',
+                        url:
+                            'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
+                        kind: SymbolKind.FUNCTION,
+                    },
+                ],
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -406,6 +446,20 @@ describe('Search Notebook', () => {
                             lineRange: { __typename: 'FileBlockLineRange', startLine: 1, endLine: 10 },
                         },
                     },
+                    {
+                        __typename: 'SymbolBlock',
+                        id: '4',
+                        symbolInput: {
+                            __typename: 'SymbolBlockInput',
+                            repositoryName: 'github.com/sourcegraph/sourcegraph',
+                            filePath: 'client/web/index.ts',
+                            revision: 'branch',
+                            symbolName: 'func',
+                            symbolContainerName: 'class',
+                            symbolKind: SymbolKind.FUNCTION,
+                            lineContext: 3,
+                        },
+                    },
                 ]),
             }),
             CreateNotebook: ({ notebook }) => ({
@@ -416,6 +470,7 @@ describe('Search Notebook', () => {
                 ),
             }),
         })
+        testContext.overrideSearchStreamEvents(mockSymbolStreamEvents)
 
         const expectedExportedMarkdown = `# Title
 
@@ -424,6 +479,8 @@ query
 \`\`\`
 
 https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
+
+https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
         await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: __dirname })
@@ -482,5 +539,51 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/cli
 
         // Verify the redirected URL contains the copied notebook id.
         expect(driver.page.url()).toContain('/notebooks/copiedId')
+    })
+
+    it('Should add symbol block and edit it', async () => {
+        testContext.overrideSearchStreamEvents(mockSymbolStreamEvents)
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await addNewBlock('symbol')
+
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+
+        const symbolBlockSelector = blockSelector(blockIds[2])
+
+        // Edit new symbol block
+        await driver.page.click(`${symbolBlockSelector} .monaco-editor`)
+        await driver.replaceText({
+            selector: `${symbolBlockSelector} .monaco-editor`,
+            newText: 'func',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for symbol suggestion button and click it
+        await driver.page.waitForSelector(`${symbolBlockSelector} [data-testid="symbol-suggestion-button"]`, {
+            visible: true,
+        })
+        await driver.page.click(`${symbolBlockSelector} [data-testid="symbol-suggestion-button"]`)
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${symbolBlockSelector} td.line`, { visible: true })
+
+        // Refocus the entire block (prevents jumping content for below actions)
+        await driver.page.click(symbolBlockSelector)
+
+        // Save the inputs
+        await driver.page.click('[data-testid="Save"]')
+
+        const symbolBlockSelectedSymbolNameSelector = `${symbolBlockSelector} [data-testid="selected-symbol-name"]`
+        const selectedSymbolName = await driver.page.evaluate(
+            symbolBlockSelectedSymbolNameSelector =>
+                document.querySelector<HTMLDivElement>(symbolBlockSelectedSymbolNameSelector)?.textContent,
+            symbolBlockSelectedSymbolNameSelector
+        )
+        expect(selectedSymbolName).toEqual('func class')
     })
 })

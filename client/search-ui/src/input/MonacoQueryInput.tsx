@@ -135,7 +135,7 @@ const hasKeybindingService = (
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
 
-const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
+export const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
     selectionStartLineNumber: range.startLineNumber,
     positionLineNumber: range.endLineNumber,
     selectionStartColumn: range.startColumn,
