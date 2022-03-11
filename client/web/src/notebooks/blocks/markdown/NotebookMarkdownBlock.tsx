@@ -19,7 +19,7 @@ import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlo
 
 import styles from './NotebookMarkdownBlock.module.scss'
 
-interface NotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
+interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
     isMacPlatform: boolean
 }
 

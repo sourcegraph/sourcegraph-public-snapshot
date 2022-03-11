@@ -14,7 +14,7 @@ import { useBlockShortcuts } from '../useBlockShortcuts'
 import { Elm } from './component/src/Main.elm'
 import styles from './NotebookComputeBlock.module.scss'
 
-interface ComputeBlockProps extends BlockProps, ComputeBlock, ThemeProps {
+interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {
     isMacPlatform: boolean
 }
 

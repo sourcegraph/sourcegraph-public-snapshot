@@ -39,8 +39,7 @@ import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlo
 import styles from './NotebookQueryBlock.module.scss'
 
 interface NotebookQueryBlockProps
-    extends BlockProps,
-        QueryBlock,
+    extends BlockProps<QueryBlock>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         ThemeProps,
         SettingsCascadeProps,

@@ -34,8 +34,7 @@ import styles from './NotebookSymbolBlock.module.scss'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
 interface NotebookSymbolBlockProps
-    extends BlockProps,
-        SymbolBlock,
+    extends BlockProps<SymbolBlock>,
         ThemeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,

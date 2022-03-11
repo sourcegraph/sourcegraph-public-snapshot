@@ -34,8 +34,7 @@ import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 import { FileBlockValidationFunctions, useFileBlockInputValidation } from './useFileBlockInputValidation'
 
 interface NotebookFileBlockProps
-    extends BlockProps,
-        Omit<FileBlock, 'type'>,
+    extends BlockProps<FileBlock>,
         FileBlockValidationFunctions,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {

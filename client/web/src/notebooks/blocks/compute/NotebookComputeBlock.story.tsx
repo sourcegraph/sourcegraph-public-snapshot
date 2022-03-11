@@ -24,7 +24,6 @@ add('default', () => (
     <WebStory>
         {props => (
             <NotebookComputeBlock
-                type="compute"
                 {...props}
                 {...noopBlockCallbacks}
                 input=""
