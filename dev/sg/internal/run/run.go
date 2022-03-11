@@ -168,7 +168,6 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 
 			progress.SetValue(0, done)
 			progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d commands installed", int(done), int(total)))
-
 			// Everything installed!
 			if len(cmdNames) == 0 {
 				progress.Complete()
@@ -210,6 +209,7 @@ func waitForInstallation(cmdNames map[string]struct{}, installed chan string, fa
 			progress.WriteLine(output.Linef(emoji, output.StyleBold, msg, strings.Join(names, ", ")))
 			messageCount += 1
 		}
+
 	}
 
 }
@@ -355,7 +355,6 @@ func runWatch(
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
-					installDone <- cmd.Name
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
