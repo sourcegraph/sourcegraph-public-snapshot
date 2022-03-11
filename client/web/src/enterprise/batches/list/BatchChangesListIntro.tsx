@@ -8,11 +8,11 @@ import { SourcegraphIcon } from '../../../auth/icons'
 import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
-    licensed: boolean | undefined
+    isLicensed: boolean | undefined
 }
 
-export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => {
-    if (licensed === undefined || licensed === true) {
+export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ isLicensed }) => {
+    if (isLicensed === undefined || isLicensed === true) {
         return null
     }
 

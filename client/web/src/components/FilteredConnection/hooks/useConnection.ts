@@ -20,20 +20,22 @@ export interface UseConnectionResult<TData> {
     stopPolling: () => void
 }
 
-interface UseConnectionConfig {
+interface UseConnectionConfig<TResult> {
     /** Set if query variables should be updated in and derived from the URL */
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
     /** Set to enable polling of all the nodes currently loaded in the connection */
     pollInterval?: number
+    /** Allows running an optional callback on any successful request */
+    onCompleted?: (data: TResult) => void
 }
 
 interface UseConnectionParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
-    options?: UseConnectionConfig
+    options?: UseConnectionConfig<TResult>
 }
 
 const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
@@ -104,6 +106,7 @@ export const useConnection = <TResult, TVariables, TData>({
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
+        onCompleted: options?.onCompleted,
     })
 
     /**

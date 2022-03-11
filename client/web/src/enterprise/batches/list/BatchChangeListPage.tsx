@@ -1,35 +1,43 @@
 import classNames from 'classnames'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, ReplaySubject } from 'rxjs'
-import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
+import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { Container, PageHeader, useObservable, CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, MultiSelectState, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
+import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../../../components/FilteredConnection/ui'
 import {
     ListBatchChange,
     Scalars,
     BatchChangeState,
     BatchChangesVariables,
     BatchChangesResult,
+    BatchChangesByNamespaceResult,
     BatchChangesByNamespaceVariables,
+    GetLicenseAndUsageInfoResult,
+    GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
 
-import {
-    areBatchChangesLicensed as _areBatchChangesLicensed,
-    queryBatchChanges as _queryBatchChanges,
-    queryBatchChangesByNamespace,
-} from './backend'
+import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
+import { BatchChangeListFilters, DRAFT_STATUS, OPEN_STATUS } from './BatchChangeListFilters'
 import styles from './BatchChangeListPage.module.scss'
-import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
+import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
@@ -40,107 +48,101 @@ export interface BatchChangeListPageProps
         SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
-    displayNamespace?: boolean
-    /** For testing only. */
-    queryBatchChanges?: typeof _queryBatchChanges
-    /** For testing only. */
-    areBatchChangesLicensed?: typeof _areBatchChangesLicensed
+    namespaceID?: Scalars['ID']
     /** For testing only. */
     openTab?: SelectedTab
 }
 
-const OPEN_FILTER = {
-    label: 'Open',
-    value: 'open',
-    tooltip: 'Show only batch changes that are open',
-    args: { state: BatchChangeState.OPEN },
-} as const
-
-const DRAFT_FILTER = {
-    label: 'Draft',
-    value: 'draft',
-    tooltip: 'Show only batch changes that have not been applied yet',
-    args: { state: BatchChangeState.DRAFT },
-} as const
-
-const CLOSED_FILTER = {
-    label: 'Closed',
-    value: 'closed',
-    tooltip: 'Show only batch changes that are closed',
-    args: { state: BatchChangeState.CLOSED },
-}
-
-const ALL_FILTER = {
-    label: 'All',
-    value: 'all',
-    tooltip: 'Show all batch changes',
-    args: {},
-} as const
-
-const getFilters = (withDrafts = false): FilteredConnectionFilter[] => [
-    {
-        id: 'status',
-        label: 'Status',
-        type: 'radio',
-        values: [ALL_FILTER, OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER],
-    },
-]
-
 type SelectedTab = 'batchChanges' | 'gettingStarted'
+
+const BATCH_CHANGES_PER_PAGE_COUNT = 15
+
+// Drafts are a new feature of severside execution that for now should not be shown if
+// execution is not enabled.
+const getInitialFilters = (isExecutionEnabled: boolean): MultiSelectState<BatchChangeState> =>
+    isExecutionEnabled ? [OPEN_STATUS, DRAFT_STATUS] : [OPEN_STATUS]
 
 /**
  * A list of all batch changes on the Sourcegraph instance.
  */
 export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPageProps> = ({
-    queryBatchChanges = _queryBatchChanges,
-    areBatchChangesLicensed = _areBatchChangesLicensed,
     canCreate,
-    displayNamespace = true,
+    namespaceID,
     headingElement,
     location,
     openTab,
     settingsCascade,
-    ...props
+    telemetryService,
 }) => {
-    useEffect(() => props.telemetryService.logViewEvent('BatchChangesListPage'), [props.telemetryService])
+    useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
-    const executionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
+    const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
-    /*
-     * Tracks whether this is the first fetch since this page has been rendered the first time.
-     * Used to only switch to the "Getting started" tab if the user didn't select the tab manually.
-     */
-    const isFirstFetch = useMemo(() => {
-        const subject = new ReplaySubject(1)
-        subject.next(true)
-        return subject
-    }, [])
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
-    const query = useCallback<(args: Partial<BatchChangesVariables>) => Observable<BatchChangesResult['batchChanges']>>(
-        args =>
-            queryBatchChanges(args).pipe(
-                withLatestFrom(isFirstFetch),
-                tap(([response, isFirst]) => {
-                    if (isFirst) {
-                        isFirstFetch.next(false)
-                        if (!openTab && response.totalCount === 0) {
-                            setSelectedTab('gettingStarted')
-                        }
-                    }
-                }),
-                // Don't emit when we are switching to the getting started tab right away to prevent a costly render.
-                // Only if:
-                //  - We don't fetch for the first time (the user clicked a tab) OR
-                //  - There are more than 0 changesets in the namespace OR
-                //  - A test forces us to display a specific tab
-                filter(([response, isFirst]) => !isFirst || openTab !== undefined || response.totalCount > 0),
-                map(([response]) => response.batchChanges)
-            ),
-        [queryBatchChanges, isFirstFetch, openTab]
+    const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>(
+        getInitialFilters(isExecutionEnabled)
     )
-    const licensed: boolean | undefined = useObservable(
-        useMemo(() => areBatchChangesLicensed(), [areBatchChangesLicensed])
+    // We keep state to track to the last total count of batch changes in the connection
+    // to avoid the display flickering as the connection is loading more data or a
+    // different set of filtered data.
+    const [lastTotalCount, setLastTotalCount] = useState<number>(0)
+
+    // We use the license and usage query to check whether or not there are any batch
+    // changes _at all_. If there aren't, we automatically switch the user to the "Getting
+    // started" tab.
+    const onUsageCheckCompleted = useCallback(
+        (data: GetLicenseAndUsageInfoResult) => {
+            if (!openTab && data.allBatchChanges.totalCount === 0) {
+                setSelectedTab('gettingStarted')
+            }
+        },
+        [openTab]
     )
+
+    const { data: licenseAndUsageInfo } = useQuery<GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables>(
+        GET_LICENSE_AND_USAGE_INFO,
+        { onCompleted: onUsageCheckCompleted }
+    )
+
+    const filterStates = useMemo<BatchChangeState[]>(() => selectedFilters.map(filter => filter.value), [
+        selectedFilters,
+    ])
+
+    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+        BatchChangesByNamespaceResult | BatchChangesResult,
+        BatchChangesByNamespaceVariables | BatchChangesVariables,
+        ListBatchChange
+    >({
+        query: namespaceID ? BATCH_CHANGES_BY_NAMESPACE : BATCH_CHANGES,
+        variables: {
+            namespaceID,
+            states: filterStates,
+            first: BATCH_CHANGES_PER_PAGE_COUNT,
+            after: null,
+            viewerCanAdminister: null,
+        },
+        options: { useURL: true },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            if (!namespaceID) {
+                return (data as BatchChangesResult).batchChanges
+            }
+            if (!('node' in data) || !data.node) {
+                throw new Error('Namespace not found')
+            }
+            if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
+                throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
+            }
+            return data.node.batchChanges
+        },
+    })
+
+    useEffect(() => {
+        // If the data in the connection updates with new results, update the total count.
+        if (connection) {
+            setLastTotalCount(connection.totalCount || 0)
+        }
+    }, [connection])
 
     return (
         <Page>
@@ -151,31 +153,56 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
-            <BatchChangesListIntro licensed={licensed} />
+            <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
             {selectedTab === 'batchChanges' && (
                 <Container className="mb-4">
-                    <FilteredConnection<ListBatchChange, Omit<BatchChangeNodeProps, 'node'>>
-                        {...props}
-                        location={location}
-                        nodeComponent={BatchChangeNode}
-                        nodeComponentProps={{ displayNamespace, executionEnabled }}
-                        queryConnection={query}
-                        hideSearch={true}
-                        defaultFirst={15}
-                        // Drafts are a new feature of severside execution that for now
-                        // should not be shown otherwise.
-                        filters={getFilters(executionEnabled)}
-                        noun="batch change"
-                        pluralNoun="batch changes"
-                        listComponent="div"
-                        listClassName={classNames(styles.grid, executionEnabled ? styles.wide : styles.narrow)}
-                        withCenteredSummary={true}
-                        cursorPaging={true}
-                        noSummaryIfAllNodesVisible={true}
-                        emptyElement={<BatchChangeListEmptyElement canCreate={canCreate} location={location} />}
-                    />
+                    <ConnectionContainer>
+                        <div className={styles.filtersRow}>
+                            {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
+                                <h3 className="align-self-end flex-1">{lastTotalCount} batch changes</h3>
+                            )}
+                            <h4 className="mb-0 mr-2">Status</h4>
+                            <BatchChangeListFilters
+                                className="m-0"
+                                isExecutionEnabled={isExecutionEnabled}
+                                defaultValue={selectedFilters}
+                                onChange={setSelectedFilters}
+                            />
+                        </div>
+                        {error && <ConnectionError errors={[error.message]} />}
+                        <ConnectionList
+                            className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
+                        >
+                            {connection?.nodes?.map(node => (
+                                <BatchChangeNode
+                                    key={node.id}
+                                    node={node}
+                                    isExecutionEnabled={isExecutionEnabled}
+                                    // Show the namespace unless we're viewing batch changes for a single namespace.
+                                    displayNamespace={!namespaceID}
+                                />
+                            ))}
+                        </ConnectionList>
+                        {loading && <ConnectionLoading />}
+                        {connection && (
+                            <SummaryContainer centered={true}>
+                                <ConnectionSummary
+                                    noSummaryIfAllNodesVisible={true}
+                                    first={BATCH_CHANGES_PER_PAGE_COUNT}
+                                    connection={connection}
+                                    noun="batch change"
+                                    pluralNoun="batch changes"
+                                    hasNextPage={hasNextPage}
+                                    emptyElement={
+                                        <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
+                                    }
+                                />
+                                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                            </SummaryContainer>
+                        )}
+                    </ConnectionContainer>
                 </Container>
             )}
         </Page>
@@ -204,26 +231,7 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<NamespaceBatc
         [authenticatedUser, namespaceID]
     )
 
-    const queryConnection = useCallback(
-        (args: Partial<BatchChangesByNamespaceVariables>) =>
-            queryBatchChangesByNamespace({
-                namespaceID,
-                first: args.first ?? null,
-                after: args.after ?? null,
-                // The types for FilteredConnectionQueryArguments don't allow access to the filter arguments.
-                state: (args as { state: BatchChangeState | undefined }).state ?? null,
-                viewerCanAdminister: null,
-            }),
-        [namespaceID]
-    )
-    return (
-        <BatchChangeListPage
-            {...props}
-            canCreate={canCreateInThisNamespace}
-            displayNamespace={false}
-            queryBatchChanges={queryConnection}
-        />
-    )
+    return <BatchChangeListPage {...props} canCreate={canCreateInThisNamespace} namespaceID={namespaceID} />
 }
 
 interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}

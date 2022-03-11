@@ -24,7 +24,7 @@ for (const key of Object.keys(nodes)) {
                     node={nodes[key]}
                     displayNamespace={boolean('Display namespace', true)}
                     now={isChromatic() ? () => subDays(now, 5) : undefined}
-                    executionEnabled={false}
+                    isExecutionEnabled={false}
                 />
             )}
         </WebStory>
