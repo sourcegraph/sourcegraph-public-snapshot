@@ -441,7 +441,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 as={Link}
                                             >
                                                 <GraphOutlineIcon className="icon-inline" /> Dependencies{' '}
-                                                <ProductStatusBadge status="beta" />
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
