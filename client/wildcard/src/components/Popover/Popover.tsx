@@ -17,6 +17,7 @@ import { useOnClickOutside, useKeyboard } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import { FloatingPanel, FloatingPanelProps } from './floating-panel/FloatingPanel'
+import styles from './Popover.module.scss'
 
 export enum PopoverOpenEventReason {
     TriggerClick = 'TriggerClick',
@@ -184,6 +185,7 @@ export const PopoverContent = forwardRef((props, reference) => {
             role={role}
             aria-modal={ariaModel}
             className={classNames('dropdown-menu', otherProps.className)}
+            tailClassName={classNames(styles.dropdownMenuTail, otherProps.tailClassName)}
         >
             {focusLocked ? (
                 <FocusLock disabled={!focusLock} returnFocus={true}>

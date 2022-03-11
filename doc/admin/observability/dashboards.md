@@ -10388,7 +10388,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`
+Query: `max(max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m])))`
 
 </details>
 

@@ -150,7 +150,12 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     }, [updateQueue, latestNotebook, onUpdateNotebook, setUpdateQueue])
 
     const onUpdateBlocks = useCallback(
-        (blocks: Block[]) => setUpdateQueue(queue => queue.concat([{ blocks: blocks.map(blockToGQLInput) }])),
+        (blocks: Block[]) =>
+            setUpdateQueue(queue =>
+                queue.concat([
+                    { blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])) },
+                ])
+            ),
         [setUpdateQueue]
     )
 
