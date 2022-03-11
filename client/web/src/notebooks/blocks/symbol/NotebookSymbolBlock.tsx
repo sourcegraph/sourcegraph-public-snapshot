@@ -21,7 +21,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { Alert, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlock, SymbolBlockInput } from '../..'
 import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
@@ -134,7 +134,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <OpenInNewIcon className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} className="icon-inline" />,
                 url: symbolURL,
                 isDisabled: symbolURL.length === 0,
             },
@@ -147,7 +147,11 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             {
                 type: 'button',
                 label: showInputs ? 'Save' : 'Edit',
-                icon: showInputs ? <CheckIcon className="icon-inline" /> : <PencilIcon className="icon-inline" />,
+                icon: showInputs ? (
+                    <Icon as={CheckIcon} className="icon-inline" />
+                ) : (
+                    <Icon as={PencilIcon} className="icon-inline" />
+                ),
                 onClick: () => setShowInputs(!showInputs),
                 keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
             },
