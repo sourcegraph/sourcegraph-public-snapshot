@@ -3,14 +3,14 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
@@ -92,92 +92,75 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     const [hasRepoFilter, setHasRepoFilter] = useState(false)
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
     const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
-
-    const [queryState, nextQueryFieldChange, queryInputReference, overrideState] = useInputValidation(
-        useMemo(
-            () => ({
-                initialValue: query,
-                synchronousValidators: [
-                    (value: string) => {
-                        const tokens = scanSearchQuery(value)
-
-                        const isValidQuery = !!value && tokens.type === 'success'
-                        setIsValidQuery(isValidQuery)
-
-                        let hasTypeDiffOrCommitFilter = false
-                        let hasRepoFilter = false
-                        let hasPatternTypeFilter = false
-                        let hasValidPatternTypeFilter = true
-
-                        if (tokens.type === 'success') {
-                            const filters = tokens.term.filter(token => token.type === 'filter')
-                            hasTypeDiffOrCommitFilter = filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.type &&
-                                    filter.value &&
-                                    isDiffOrCommit(filter.value.value)
-                            )
-
-                            hasRepoFilter = filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.repo &&
-                                    filter.value
-                            )
-
-                            hasPatternTypeFilter = filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                                    filter.value &&
-                                    validateFilter(filter.field.value, filter.value)
-                            )
-
-                            // No explicit patternType filter means we default
-                            // to patternType:literal
-                            hasValidPatternTypeFilter =
-                                !hasPatternTypeFilter ||
-                                filters.some(
-                                    filter =>
-                                        filter.type === 'filter' &&
-                                        resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                                        filter.value &&
-                                        isLiteralOrRegexp(filter.value.value)
-                                )
-                        }
-
-                        setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
-                        setHasRepoFilter(hasRepoFilter)
-                        setHasPatternTypeFilter(hasPatternTypeFilter)
-                        setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
-
-                        if (!isValidQuery) {
-                            return 'Failed to parse query'
-                        }
-
-                        if (!hasTypeDiffOrCommitFilter) {
-                            return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
-                        }
-
-                        if (!hasRepoFilter) {
-                            return 'Code monitors require queries to specify a `repo:` filter.'
-                        }
-
-                        return undefined
-                    },
-                ],
-            }),
-            [query]
-        )
+    const isTriggerQueryComplete = useMemo(
+        () => isValidQuery && hasTypeDiffOrCommitFilter && hasRepoFilter && hasValidPatternTypeFilter,
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
     )
+
+    const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
+
+    useEffect(() => {
+        const value = queryState.query
+        const tokens = scanSearchQuery(value)
+
+        const isValidQuery = !!value && tokens.type === 'success'
+        setIsValidQuery(isValidQuery)
+
+        let hasTypeDiffOrCommitFilter = false
+        let hasRepoFilter = false
+        let hasPatternTypeFilter = false
+        let hasValidPatternTypeFilter = true
+
+        if (tokens.type === 'success') {
+            const filters = tokens.term.filter(token => token.type === 'filter')
+            hasTypeDiffOrCommitFilter = filters.some(
+                filter =>
+                    filter.type === 'filter' &&
+                    resolveFilter(filter.field.value)?.type === FilterType.type &&
+                    filter.value &&
+                    isDiffOrCommit(filter.value.value)
+            )
+
+            hasRepoFilter = filters.some(
+                filter =>
+                    filter.type === 'filter' &&
+                    resolveFilter(filter.field.value)?.type === FilterType.repo &&
+                    filter.value
+            )
+
+            hasPatternTypeFilter = filters.some(
+                filter =>
+                    filter.type === 'filter' &&
+                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                    filter.value &&
+                    validateFilter(filter.field.value, filter.value)
+            )
+
+            // No explicit patternType filter means we default
+            // to patternType:literal
+            hasValidPatternTypeFilter =
+                !hasPatternTypeFilter ||
+                filters.some(
+                    filter =>
+                        filter.type === 'filter' &&
+                        resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                        filter.value &&
+                        isLiteralOrRegexp(filter.value.value)
+                )
+        }
+
+        setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
+        setHasRepoFilter(hasRepoFilter)
+        setHasPatternTypeFilter(hasPatternTypeFilter)
+        setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
+    }, [queryState.query])
 
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
             setShowQueryForm(false)
             setTriggerCompleted(true)
-            onQueryChange(`${queryState.value}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
+            onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
         [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
     )
@@ -186,10 +169,20 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         event => {
             event.preventDefault()
             setShowQueryForm(false)
-            overrideState({ value: query })
+            setQueryState({ query })
         },
-        [setShowQueryForm, overrideState, query]
+        [setShowQueryForm, query]
     )
+
+    const derivedInputClassName = useMemo(() => {
+        if (!queryState.query) {
+            return ''
+        }
+        if (isTriggerQueryComplete) {
+            return 'is-valid'
+        }
+        return 'is-Invalid'
+    }, [isTriggerQueryComplete, queryState.query])
 
     return (
         <>
@@ -207,7 +200,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 className={classNames(
                                     'form-control test-trigger-input',
                                     styles.queryInputField,
-                                    `test-${deriveInputClassName(queryState)}`
+                                    `test-${derivedInputClassName}`
                                 )}
                             >
                                 <LazyMonacoQueryInput
@@ -215,17 +208,18 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     patternType={SearchPatternType.literal}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}
-                                    queryState={{ query: queryState.value }}
-                                    onChange={queryState => nextQueryFieldChange(queryState.query)}
+                                    queryState={queryState}
+                                    onChange={setQueryState}
                                     onSubmit={() => {}}
                                     globbing={false}
-                                    preventNewLine={true}
+                                    preventNewLine={false}
+                                    autoFocus={true}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
-                                        queryState.value,
+                                        queryState.query,
                                         SearchPatternType.literal,
                                         false
                                     )}`}
@@ -246,7 +240,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <li>
                                 <ValidQueryChecklistItem
                                     checked={hasValidPatternTypeFilter}
-                                    hint="Code monitors support literal and regex search. Searches are literal by default."
+                                    hint="Code monitors support literal and regexp search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
                                     Is <code>patternType:literal</code> or <code>patternType:regexp</code>
@@ -283,7 +277,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             className="mr-1 test-submit-trigger"
                             onClick={completeForm}
                             type="submit"
-                            disabled={queryState.kind !== 'VALID'}
+                            disabled={!isTriggerQueryComplete}
                             variant="secondary"
                         >
                             Continue

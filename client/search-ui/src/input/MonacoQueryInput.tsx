@@ -262,7 +262,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
         const disposable = editor.onDidFocusEditorText(() => {
-            editor.createContextKey('editorTabMovesFocus', true)
+            // Use a small non-zero timeout to avoid being overridden by Monaco defaults when editor is shown/hidden quickly
+            setTimeout(() => editor.createContextKey('editorTabMovesFocus', true), 50)
         })
         return () => disposable.dispose()
     }, [editor])
