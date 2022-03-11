@@ -51,3 +51,39 @@ func f(x int) {
 		}
 	}
 }
+
+func TestLocalCodeIntelExports(t *testing.T) {
+	goSource := `
+func main() {
+	x := 5
+	fmt.Println(x)
+}
+`
+
+	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
+		return []byte(goSource), nil
+	}
+
+	squirrel := NewSquirrelService(readFile, nil)
+	defer squirrel.Close()
+
+	payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: "test.go"})
+	fatalIfError(t, err)
+
+	nameToSymbol := map[string]types.Symbol{}
+	for _, symbol := range payload.Symbols {
+		nameToSymbol[symbol.Name] = symbol
+	}
+
+	if symbol, ok := nameToSymbol["x"]; !ok {
+		t.Fatalf("symbol x not found")
+	} else if symbol.Local == false {
+		t.Fatalf("expected symbol x to be local")
+	}
+
+	if symbol, ok := nameToSymbol["main"]; !ok {
+		t.Fatalf("symbol main not found")
+	} else if symbol.Local == true {
+		t.Fatalf("expected symbol main to not be local")
+	}
+}

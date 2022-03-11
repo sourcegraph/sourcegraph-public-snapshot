@@ -42,11 +42,14 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 
 	// Collect exported symbols.
 	exports := map[Id]struct{}{}
-	err = forEachCapture(root.LangSpec.exportsQuery, *root, func(captureName string, node Node) {
-		exports[nodeId(node.Node)] = struct{}{}
-	})
-	if err != nil {
-		return nil, err
+	hasExportsQuery := root.LangSpec.exportsQuery != ""
+	if hasExportsQuery {
+		err = forEachCapture(root.LangSpec.exportsQuery, *root, func(captureName string, node Node) {
+			exports[nodeId(node.Node)] = struct{}{}
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Collect scopes
@@ -101,7 +104,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 						Hover: hover,
 						Def:   &def,
 						Refs:  map[types.Range]struct{}{},
-						Local: !exported,
+						Local: !exported && hasExportsQuery,
 					}
 
 					// Stop walking up the tree.
