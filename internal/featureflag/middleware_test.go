@@ -2,6 +2,8 @@ package featureflag
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
@@ -9,6 +11,25 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
+
+func TestMiddleware(t *testing.T) {
+	// Create a request with an actor on its context
+	req, err := http.NewRequest(http.MethodGet, "/test", nil)
+	require.NoError(t, err)
+	req = req.WithContext(actor.WithActor(context.Background(), actor.FromUser(1)))
+
+	mockStore := NewMockStore()
+	mockStore.GetUserFlagsFunc.SetDefaultReturn(map[string]bool{"user1": true}, nil)
+
+	handler := http.Handler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// After going through the middleware, a request with an actor should
+		// also have feature flags available.
+		require.True(t, FromContext(r.Context())["user1"])
+	}))
+	handler = Middleware(mockStore, handler)
+
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+}
 
 func TestContextFlags(t *testing.T) {
 	mockStore := NewMockStore()
