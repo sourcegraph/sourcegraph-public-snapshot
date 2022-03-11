@@ -12,6 +12,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -169,6 +170,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	// For all downstream actions (specifically executing searches),
 	// we should run as the user who owns the code monitor.
 	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
+	ctx = featureflag.WithFlags(ctx, r.db.FeatureFlags())
 
 	settings, err := settings(ctx)
 	if err != nil {
