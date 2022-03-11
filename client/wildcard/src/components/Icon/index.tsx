@@ -1,3 +1,3 @@
 export * from './Icon'
 export * from './IconStyle'
-export * from './AccessibleSvgComponent'
+export * from './AccessibleSvg'

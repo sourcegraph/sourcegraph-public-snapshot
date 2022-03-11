@@ -48,9 +48,9 @@ export const Simple: Story = () => (
             Note: This is typically used for our older <Code>mdi-react</Code> SVG components.
         </p>
         <H3>Small</H3>
-        <Icon svg={CheckIcon} size="sm" />
+        <Icon as={CheckIcon} size="sm" />
         <H3>Medium</H3>
-        <Icon svg={CheckIcon} size="md" />
+        <Icon as={CheckIcon} size="md" />
 
         <H2 className="mt-3">We can render SVG paths as Icons</H2>
         <p>

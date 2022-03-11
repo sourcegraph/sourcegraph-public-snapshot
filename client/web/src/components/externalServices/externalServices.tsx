@@ -4,8 +4,7 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Icon, Link } from '@sourcegraph/wildcard'
-import { AccessibleSvgProps } from '@sourcegraph/wildcard/src/components/Icon'
+import { AccessibleIcon, Icon, Link } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -23,8 +22,6 @@ import { ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
 
-type ExternalServicesIcon = React.FunctionComponent<AccessibleSvgProps>
-
 /**
  * Metadata associated with adding a given external service.
  */
@@ -39,7 +36,7 @@ export interface AddExternalServiceOptions {
     /**
      * Icon to show in the external service "button"
      */
-    icon: ExternalServicesIcon
+    icon: AccessibleIcon
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -504,7 +501,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
-const GitHubIcon: ExternalServicesIcon = props => <Icon svgPath={mdiGithub} {...props} />
+const GitHubIcon: typeof Icon = props => <Icon svgPath={mdiGithub} {...props} />
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
@@ -532,7 +529,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     instructions: githubInstructions(true),
 }
 
-const AwsIcon: ExternalServicesIcon = props => <Icon svgPath={mdiAws} {...props} />
+const AwsIcon: typeof Icon = props => <Icon svgPath={mdiAws} {...props} />
 
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
@@ -655,7 +652,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     ],
 }
 
-const BitbucketIcon: ExternalServicesIcon = props => <Icon svgPath={mdiBitbucket} {...props} />
+const BitbucketIcon: typeof Icon = props => <Icon svgPath={mdiBitbucket} {...props} />
 
 const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETCLOUD,
@@ -900,7 +897,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
     ],
 }
 
-const GitLabIcon: ExternalServicesIcon = props => <Icon svgPath={mdiGitlab} {...props} />
+const GitLabIcon: typeof Icon = props => <Icon svgPath={mdiGitlab} {...props} />
 
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
@@ -932,7 +929,7 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
 }`,
 }
 
-const GitIcon: ExternalServicesIcon = props => <Icon svgPath={mdiGit} {...props} />
+const GitIcon: typeof Icon = props => <Icon svgPath={mdiGit} {...props} />
 
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
@@ -1195,7 +1192,7 @@ const PERFORCE: AddExternalServiceOptions = {
     ],
 }
 
-const LanguageJavaIcon: ExternalServicesIcon = props => <Icon svgPath={mdiLanguageJava} {...props} />
+const LanguageJavaIcon: typeof Icon = props => <Icon svgPath={mdiLanguageJava} {...props} />
 
 const JVM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.JVMPACKAGES,
@@ -1250,7 +1247,7 @@ const PAGURE: AddExternalServiceOptions = {
     editorActions: [],
 }
 
-const NpmIcon: ExternalServicesIcon = props => <Icon svgPath={mdiNpm} {...props} />
+const NpmIcon: typeof Icon = props => <Icon svgPath={mdiNpm} {...props} />
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,

@@ -1,6 +1,6 @@
 import { mdiPoll } from '@mdi/js'
 import React from 'react'
 
-import { AccessibleIcon, Icon } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
-export const CodeInsightsIcon: AccessibleIcon = props => <Icon svgPath={mdiPoll} {...props} />
+export const CodeInsightsIcon: typeof Icon = props => <Icon svgPath={mdiPoll} {...props} />

@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { AccessibleIcon, Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -21,7 +21,7 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     owner: Owner
     name: string
-    icon: AccessibleIcon
+    icon: typeof Icon
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
     isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
