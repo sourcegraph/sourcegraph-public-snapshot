@@ -73,6 +73,7 @@ Code intelligence provides advanced code navigation features that let developers
 - [Precise code intelligence](explanations/precise_code_intelligence.md)
   - [Precise code intelligence uploads](explanations/uploads.md)
 - [Search-based code intelligence](explanations/search_based_code_intelligence.md)
+- <span class="badge badge-experimental">Experimental</span> [Rockskip: faster symbol searches](explanations/rockskip.md)
 - [Code navigation features](explanations/features.md)
   - [Popover](explanations/features.md#popover)
   - [Go to definition](explanations/features.md#go-to-definition)
