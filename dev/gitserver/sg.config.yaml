@@ -46,6 +46,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
 
@@ -53,6 +54,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
+      HOSTNAME: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
 
