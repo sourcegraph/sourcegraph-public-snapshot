@@ -53,7 +53,7 @@ type Actor struct {
 // FromUser returns an actor corresponding to the user with the given ID
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
 
-// FromAnonymousUser returns an actor corresponding to an anonymous user with the given anonymous ID
+// FromAnonymousUser returns an actor corresponding to an unauthenticated user with the given anonymous ID
 func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID: anonymousUID} }
 
 // FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.

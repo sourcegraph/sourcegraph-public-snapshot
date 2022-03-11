@@ -104,6 +104,13 @@ func TestHTTPMiddleware(t *testing.T) {
 			headerKeyActorUID: "",
 		},
 		wantActor: &Actor{Internal: false},
+	}, {
+		name: "anonymous UID for unauthed actor",
+		headers: map[string]string{
+			headerKeyActorUID:          "none",
+			headerKeyActorAnonymousUID: "anonymousUID",
+		},
+		wantActor: &Actor{AnonymousUID: "anonymousUID"},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
