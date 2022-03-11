@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
-	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,14 +19,6 @@ type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
-
-	// CodeMonitorID, if set, is the graphql-encoded ID of the code monitor
-	// that is running the search. This will likely be removed in the future
-	// once the worker can mutate and execute the search directly, but for now,
-	// there are too many dependencies in frontend to do that. For anyone looking
-	// to rip this out in the future, this should be possible once we can build
-	// a static representation of our job tree independently of any resolvers.
-	CodeMonitorID *graphql.ID
 }
 
 type SearchImplementer interface {

@@ -73,7 +73,7 @@ func NewPermsSyncer(
 		permsStore:          permsStore,
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
-		scheduleInterval:    15 * time.Second,
+		scheduleInterval:    scheduleInterval(),
 	}
 }
 
@@ -1140,7 +1140,6 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			log15.Error("Failed to compute schedule", "err", err)
 			continue
 		}
-
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
 	}
@@ -1241,12 +1240,20 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 			log15.Error("Failed to get metrics from database", "err", err)
 			continue
 		}
+		mstrict, err := s.permsStore.Metrics(ctx, 1*time.Hour)
+		if err != nil {
+			log15.Error("Failed to get metrics from database", "err", err)
+			continue
+		}
 
 		metricsStalePerms.WithLabelValues("user").Set(float64(m.UsersWithStalePerms))
+		metricsStrictStalePerms.WithLabelValues("user").Set(float64(mstrict.UsersWithStalePerms))
 		metricsPermsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
 		metricsStalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
+		metricsStrictStalePerms.WithLabelValues("repo").Set(float64(mstrict.ReposWithStalePerms))
 		metricsPermsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
 		metricsStalePerms.WithLabelValues("sub-repo").Set(float64(m.SubReposWithStalePerms))
+		metricsStrictStalePerms.WithLabelValues("sub-repo").Set(float64(mstrict.SubReposWithStalePerms))
 		metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
 
 		s.queue.mu.RLock()
@@ -1263,4 +1270,12 @@ func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.collectMetrics(ctx)
 
 	<-ctx.Done()
+}
+
+func scheduleInterval() time.Duration {
+	seconds := conf.Get().PermissionsSyncScheduleInterval
+	if seconds <= 0 {
+		return 15 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
 }

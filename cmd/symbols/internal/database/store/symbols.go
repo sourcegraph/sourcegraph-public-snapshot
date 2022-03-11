@@ -20,12 +20,12 @@ func (s *store) CreateSymbolsTable(ctx context.Context) error {
 			path VARCHAR(4096) NOT NULL,
 			pathlowercase VARCHAR(4096) NOT NULL,
 			line INT NOT NULL,
+			character INT NOT NULL,
 			kind VARCHAR(255) NOT NULL,
 			language VARCHAR(255) NOT NULL,
 			parent VARCHAR(255) NOT NULL,
 			parentkind VARCHAR(255) NOT NULL,
 			signature VARCHAR(255) NOT NULL,
-			pattern VARCHAR(255) NOT NULL,
 			filelimited BOOLEAN NOT NULL
 		)
 	`))
@@ -118,12 +118,12 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 				"path",
 				"pathlowercase",
 				"line",
+				"character",
 				"kind",
 				"language",
 				"parent",
 				"parentkind",
 				"signature",
-				"pattern",
 				"filelimited",
 			},
 			rows,
@@ -140,12 +140,12 @@ func symbolToRow(symbol result.Symbol) []interface{} {
 		symbol.Path,
 		strings.ToLower(symbol.Path),
 		symbol.Line,
+		symbol.Character,
 		symbol.Kind,
 		symbol.Language,
 		symbol.Parent,
 		symbol.ParentKind,
 		symbol.Signature,
-		symbol.Pattern,
 		symbol.FileLimited,
 	}
 }

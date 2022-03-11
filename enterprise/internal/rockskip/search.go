@@ -10,6 +10,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/grafana/regexp/syntax"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	pg "github.com/lib/pq"
 	"github.com/segmentio/fasthash/fnv1"
@@ -178,7 +179,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 
 	threadStatus.Tasklog.Start("run query")
 	q := sqlf.Sprintf(`
-		SELECT DISTINCT path
+		SELECT path
 		FROM rockskip_symbols
 		WHERE
 			%s && singleton_integer(repo_id)
@@ -207,14 +208,14 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 		return nil, err
 	}
 
-	paths := []string{}
+	pathSet := map[string]struct{}{}
 	for rows.Next() {
 		var path string
 		err = rows.Scan(&path)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		paths = append(paths, path)
+		pathSet[path] = struct{}{}
 	}
 
 	stopErr := errors.New("stop iterating")
@@ -224,6 +225,10 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	parse := s.createParser()
 
 	threadStatus.Tasklog.Start("ArchiveEach")
+	paths := []string{}
+	for path := range pathSet {
+		paths = append(paths, path)
+	}
 	err = s.git.ArchiveEach(string(args.Repo), string(args.CommitID), paths, func(path string, contents []byte) error {
 		defer threadStatus.Tasklog.Continue("ArchiveEach")
 
@@ -233,14 +238,28 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 			return err
 		}
 
+		lines := strings.Split(string(contents), "\n")
+
 		for _, symbol := range allSymbols {
 			if isMatch(symbol.Name) {
+				if symbol.Line < 0 || symbol.Line >= len(lines) {
+					log15.Warn("symbol.Line out of range, skipping", "symbol", symbol, "lines", len(lines))
+					continue
+				}
+
+				character := strings.Index(lines[symbol.Line], symbol.Name)
+				if character == -1 {
+					log15.Warn("symbol.Name not found in line, setting to 0", "path", path, "symbol", symbol.Name, "line", lines[symbol.Line])
+					character = 0
+				}
+
 				symbols = append(symbols, result.Symbol{
-					Name:   symbol.Name,
-					Path:   path,
-					Line:   symbol.Line,
-					Kind:   symbol.Kind,
-					Parent: symbol.Parent,
+					Name:      symbol.Name,
+					Path:      path,
+					Line:      symbol.Line,
+					Character: character,
+					Kind:      symbol.Kind,
+					Parent:    symbol.Parent,
 				})
 
 				if len(symbols) >= limit {
@@ -362,15 +381,15 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, regexMatch("name", "", args.Query, args.IsCaseSensitive))
+	conjunctOrNils = append(conjunctOrNils, regexMatch(nameConditions, args.Query, args.IsCaseSensitive))
 
 	// IncludePatterns
 	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, regexMatch("path", "path_prefixes(path)", includePattern, args.IsCaseSensitive))
+		conjunctOrNils = append(conjunctOrNils, regexMatch(pathConditions, includePattern, args.IsCaseSensitive))
 	}
 
 	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(regexMatch("path", "path_prefixes(path)", args.ExcludePattern, args.IsCaseSensitive)))
+	conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, args.ExcludePattern, args.IsCaseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
@@ -387,28 +406,109 @@ func convertSearchArgsToSqlQuery(args types.SearchArgs) *sqlf.Query {
 	return sqlf.Join(conjuncts, "AND")
 }
 
-func regexMatch(column, columnForLiteralPrefix, regex string, isCaseSensitive bool) *sqlf.Query {
+// Conditions specifies how to construct query clauses depending on the regex kind.
+type Conditions struct {
+	regex    QueryFunc
+	regexI   QueryFunc
+	exact    QueryFunc
+	exactI   QueryFunc
+	prefix   QueryFunc
+	prefixI  QueryFunc
+	fileExt  QueryNFunc
+	fileExtI QueryNFunc
+}
+
+// Returns a SQL query for the given value.
+type QueryFunc func(value string) *sqlf.Query
+
+// Returns a SQL query for the given values.
+type QueryNFunc func(values []string) *sqlf.Query
+
+var nameConditions = Conditions{
+	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("name ~ %s", v) },
+	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("name ~* %s", v) },
+	exact:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(name)", v) },
+	exactI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(name))", strings.ToLower(v))
+	},
+	prefix:   nil,
+	prefixI:  nil,
+	fileExt:  nil,
+	fileExtI: nil,
+}
+
+var pathConditions = Conditions{
+	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("path ~ %s", v) },
+	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("path ~* %s", v) },
+	exact:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(path)", v) },
+	exactI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(path))", strings.ToLower(v))
+	},
+	prefix: func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && path_prefixes(path)", v) },
+	prefixI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && path_prefixes(lower(path))", strings.ToLower(v))
+	},
+	fileExt: func(vs []string) *sqlf.Query {
+		return sqlf.Sprintf("%s && singleton(get_file_extension(path))", pg.Array(vs))
+	},
+	fileExtI: func(vs []string) *sqlf.Query {
+		return sqlf.Sprintf("%s && singleton(get_file_extension(lower(path)))", pg.Array(lowerAll(vs)))
+	},
+}
+
+func lowerAll(strs []string) []string {
+	lowers := []string{}
+	for _, s := range strs {
+		lowers = append(lowers, strings.ToLower(s))
+	}
+	return lowers
+}
+
+func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf.Query {
 	if regex == "" || regex == "^" {
 		return nil
 	}
 
 	// Exact match optimization
-	if literal, ok, err := isLiteralEquality(regex); err == nil && ok && isCaseSensitive {
-		return sqlf.Sprintf(fmt.Sprintf("%%s = %s", column), literal)
+	if literal, ok, err := isLiteralEquality(regex); err == nil && ok {
+		if isCaseSensitive && conditions.exact != nil {
+			return conditions.exact(literal)
+		}
+		if !isCaseSensitive && conditions.exactI != nil {
+			return conditions.exactI(literal)
+		}
 	}
 
 	// Prefix match optimization
-	if literal, ok, err := isLiteralPrefix(regex); err == nil && ok && isCaseSensitive && columnForLiteralPrefix != "" {
-		return sqlf.Sprintf(fmt.Sprintf("%%s && %s", columnForLiteralPrefix), pg.Array([]string{literal}))
+	if literal, ok, err := isLiteralPrefix(regex); err == nil && ok {
+		if isCaseSensitive && conditions.prefix != nil {
+			return conditions.prefix(literal)
+		}
+		if !isCaseSensitive && conditions.prefixI != nil {
+			return conditions.prefixI(literal)
+		}
+	}
+
+	// File extension match optimization
+	if exts := isFileExtensionMatch(regex); exts != nil {
+		if isCaseSensitive && conditions.fileExt != nil {
+			return conditions.fileExt(exts)
+		}
+		if !isCaseSensitive && conditions.fileExtI != nil {
+			return conditions.fileExtI(exts)
+		}
 	}
 
 	// Regex match
-	operator := "~"
-	if !isCaseSensitive {
-		operator = "~*"
+	if isCaseSensitive && conditions.regex != nil {
+		return conditions.regex(regex)
+	}
+	if !isCaseSensitive && conditions.regexI != nil {
+		return conditions.regexI(regex)
 	}
 
-	return sqlf.Sprintf(fmt.Sprintf("%s %s %%s", column, operator), regex)
+	log15.Error("None of the conditions matched", "regex", regex)
+	return nil
 }
 
 // isLiteralEquality returns true if the given regex matches literal strings exactly.
@@ -458,6 +558,26 @@ func isLiteralPrefix(expr string) (string, bool, error) {
 	}
 
 	return "", false, nil
+}
+
+// isFileExtensionMatch returns true if the given regex matches file extensions. If so, this function
+// returns true along with the extensions. If not, this function returns false.
+func isFileExtensionMatch(expr string) []string {
+	if !strings.HasPrefix(expr, `\.(`) {
+		return nil
+	}
+
+	expr = strings.TrimPrefix(expr, `\.(`)
+
+	if !strings.HasSuffix(expr, `)$`) {
+		return nil
+	}
+
+	expr = strings.TrimSuffix(expr, `)$`)
+
+	exts := strings.Split(expr, `|`)
+
+	return exts
 }
 
 func negate(query *sqlf.Query) *sqlf.Query {

@@ -34,7 +34,6 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
     fetchCollaborators,
 }) => {
-    console.log(authenticatedUser)
     const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
     const collaborators = useObservable(
         useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
@@ -44,6 +43,8 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
     const [loadingInvites, setLoadingInvites] = useState<Set<string>>(new Set<string>())
     const [successfulInvites, setSuccessfulInvites] = useState<Set<string>>(new Set<string>())
+
+    const isSiteAdmin = authenticatedUser?.siteAdmin ?? false
 
     useEffect(() => {
         if (!Array.isArray(collaborators)) {
@@ -89,12 +90,12 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
     const contentDisplay =
         filteredCollaborators?.length === 0 || !emailEnabled ? (
-            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} />
+            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} isSiteAdmin={isSiteAdmin} />
         ) : (
             <div className={classNames('row', 'pt-1')}>
                 {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
 
-                <CollaboratorsPanelInfo isSiteAdmin={authenticatedUser?.siteAdmin ?? false} />
+                <CollaboratorsPanelInfo isSiteAdmin={isSiteAdmin} />
 
                 {filteredCollaborators?.map((person: InvitableCollaborator) => (
                     <div
@@ -153,7 +154,10 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     )
 }
 
-const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }> = ({ username }) => {
+const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; isSiteAdmin: boolean }> = ({
+    username,
+    isSiteAdmin,
+}) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
     useEffect(() => {
@@ -175,7 +179,13 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 'h-100'
             )}
         >
-            <div className="text-center">No collaborators found in sampled repositories.</div>
+            {emailEnabled ? (
+                <div className="text-muted text-center">No collaborators found in sampled repositories.</div>
+            ) : isSiteAdmin ? (
+                <div className="text-muted text-center">
+                    This server is not configured to send emails. <Link to="/help/admin/config/email">Learn more</Link>
+                </div>
+            ) : null}
             <div className="text-muted mt-3 text-center">
                 You can invite people to Sourcegraph with this direct link:
             </div>
@@ -210,7 +220,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                                 aria-label="Close info box"
                                 aria-expanded="true"
                             >
-                                ×
+                                <span aria-hidden="true">×</span>
                             </Button>
                         </div>
                         {isSiteAdmin ? (
@@ -221,7 +231,8 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                                     but no special permissions are granted.
                                 </p>
                                 <p className={classNames(styles.infoBox, 'mb-0')}>
-                                    If you wish to disable this feature, see <Link to="#">this documentation</Link>.
+                                    If you wish to disable this feature, see{' '}
+                                    <Link to="/help/admin/config/user_invitations">this documentation</Link>.
                                 </p>
                             </>
                         ) : (
@@ -241,18 +252,15 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
             <div className="flex-grow-1" />
             <div>
                 <InformationOutlineIcon className="icon-inline mr-1 text-muted" />
-                <Link
-                    to="#"
-                    className={styles.info}
-                    onClick={event => {
-                        event.preventDefault()
-                        setInfoShown(true)
-                    }}
+                <Button
+                    variant="link"
+                    className={classNames(styles.info, 'p-0')}
+                    onClick={() => setInfoShown(true)}
                     aria-haspopup="true"
                     aria-expanded="false"
                 >
                     What is this?
-                </Link>
+                </Button>
             </div>
         </div>
     )
