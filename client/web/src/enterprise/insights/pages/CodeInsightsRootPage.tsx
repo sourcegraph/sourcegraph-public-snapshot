@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react'
-
 import PlusIcon from 'mdi-react/PlusIcon'
+import React, { useContext, useEffect, useMemo } from 'react'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
@@ -11,6 +10,7 @@ import { Button, Link, PageHeader, Tabs, TabList, Tab, Badge, Icon } from '@sour
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
+import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'

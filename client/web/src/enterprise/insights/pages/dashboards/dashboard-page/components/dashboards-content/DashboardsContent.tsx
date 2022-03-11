@@ -9,6 +9,7 @@ import { authenticatedUser } from '@sourcegraph/web/src/auth'
 import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
+import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
@@ -141,6 +142,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     Add or remove insights
                 </Button>
             </DashboardHeader>
+
+            <LimitedAccessLabel
+                className={classNames(styles.limitedAccessLabel)}
+                message="Create up to two global insights"
+            />
 
             {currentDashboard ? (
                 <DashboardInsights
