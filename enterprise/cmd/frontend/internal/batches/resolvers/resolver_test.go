@@ -1132,9 +1132,9 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				OnlyClosable: &onlyClosable,
 				State:        &openChangsetState,
 			},
-			wantSafe: false,
+			wantSafe: 	false,
 			wantParsed: store.ListChangesetsOpts{},
-			wantErr: "invalid combination of state and onlyClosable",
+			wantErr: 	"invalid combination of state and onlyClosable",
 		},
 	}
 	for i, tc := range tcs {
