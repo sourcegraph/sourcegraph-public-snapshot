@@ -22,6 +22,7 @@ add(
                         { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
                     }
                     createCodeMonitor={sinon.fake()}
+                    isSourcegraphDotCom={false}
                 />
             )}
         </WebStory>

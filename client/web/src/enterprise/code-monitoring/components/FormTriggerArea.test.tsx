@@ -27,6 +27,8 @@ describe('FormTriggerArea', () => {
                 onQueryChange={sinon.spy()}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
+                isLightTheme={true}
+                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
@@ -107,6 +109,8 @@ describe('FormTriggerArea', () => {
                     onQueryChange={sinon.spy()}
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
+                    isLightTheme={true}
+                    isSourcegraphDotCom={false}
                 />
             )
             userEvent.click(screen.getByTestId('trigger-button'))
@@ -153,11 +157,13 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
+                isLightTheme={true}
+                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
 
-        const triggerInput = screen.getByTestId('trigger-query-edit')
+        const triggerInput = screen.getByRole('textbox')
         userEvent.type(triggerInput, 'test type:diff repo:test')
         act(() => {
             clock.tick(600)
@@ -176,11 +182,13 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
+                isLightTheme={true}
+                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
 
-        const triggerInput = screen.getByTestId('trigger-query-edit')
+        const triggerInput = screen.getByRole('textbox')
         userEvent.type(triggerInput, 'test patternType:regexp type:diff repo:test')
         act(() => {
             clock.tick(600)

@@ -8,6 +8,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Button, useEventObservable, Alert, Link, Select } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -19,7 +20,7 @@ import { DeleteMonitorModal } from './DeleteMonitorModal'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
 
-export interface CodeMonitorFormProps {
+export interface CodeMonitorFormProps extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser
@@ -40,6 +41,8 @@ export interface CodeMonitorFormProps {
     description?: string
 
     deleteCodeMonitor?: typeof _deleteCodeMonitor
+
+    isSourcegraphDotCom: boolean
 }
 
 interface FormCompletionSteps {
@@ -57,6 +60,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     deleteCodeMonitor = _deleteCodeMonitor,
     triggerQuery,
     description,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
 
@@ -203,6 +208,8 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             cardBtnClassName={styles.cardButton}
                             cardLinkClassName={styles.cardLink}
                             cardClassName={styles.card}
+                            isLightTheme={isLightTheme}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>
                     <div className={classNames(!formCompletion.triggerCompleted && styles.actionsDisabled)}>

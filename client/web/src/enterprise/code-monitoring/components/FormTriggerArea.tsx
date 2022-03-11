@@ -197,11 +197,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <div>
                         <div className={classNames(styles.queryInput, 'my-2')}>
                             <div
-                                className={classNames(
-                                    'form-control test-trigger-input',
-                                    styles.queryInputField,
-                                    `test-${derivedInputClassName}`
-                                )}
+                                className={classNames('form-control', styles.queryInputField)}
+                                data-testid="trigger-query-edit"
                             >
                                 <LazyMonacoQueryInput
                                     isLightTheme={isLightTheme}
@@ -214,6 +211,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     globbing={false}
                                     preventNewLine={false}
                                     autoFocus={true}
+                                    className={classNames('test-trigger-input', `test-${derivedInputClassName}`)}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>
@@ -240,7 +238,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <li>
                                 <ValidQueryChecklistItem
                                     checked={hasValidPatternTypeFilter}
-                                    hint="Code monitors support literal and regexp search. Searches are literal by default."
+                                    hint="Code monitors support literal and regex search. Searches are literal by default."
                                     dataTestid="patterntype-checkbox"
                                 >
                                     Is <code>patternType:literal</code> or <code>patternType:regexp</code>

@@ -35,6 +35,8 @@ describe('CreateCodeMonitorPage', () => {
         createCodeMonitor: sinon.spy((monitor: CreateCodeMonitorVariables) =>
             of({ description: mockCodeMonitor.node.description })
         ),
+        isLightTheme: true,
+        isSourcegraphDotCom: false,
     }
     let clock: sinon.SinonFakeTimers
 

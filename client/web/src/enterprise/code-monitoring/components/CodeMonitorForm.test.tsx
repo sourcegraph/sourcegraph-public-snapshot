@@ -16,6 +16,8 @@ const PROPS: CodeMonitorFormProps = {
     onSubmit: () => NEVER,
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
+    isLightTheme: true,
+    isSourcegraphDotCom: false,
 }
 
 describe('CodeMonitorForm', () => {
@@ -25,7 +27,8 @@ describe('CodeMonitorForm', () => {
                 <CodeMonitorForm {...PROPS} triggerQuery="foo" />
             </MockedTestProvider>
         )
-        expect(screen.getByTestId('trigger-query-edit')).toHaveValue('foo')
+
+        expect(screen.getByRole('textbox')).toHaveValue('foo')
     })
 
     test('Submit button disabled if no actions are present', () => {
