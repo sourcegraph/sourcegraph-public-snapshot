@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Unsubscribable } from 'sourcegraph'
 
 import { isDefined } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Breadcrumbs.module.scss'
 
@@ -159,9 +159,7 @@ export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDep
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
             .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider = breadcrumb.divider ?? (
-                    <ChevronRightIcon className={classNames('icon-inline', styles.divider)} />
-                )
+                const divider = breadcrumb.divider ?? <Icon className={styles.divider} as={ChevronRightIcon} />
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (

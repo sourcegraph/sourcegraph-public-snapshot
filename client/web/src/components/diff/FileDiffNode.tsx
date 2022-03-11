@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Badge, Link } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -99,11 +99,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
                     <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
-                        {expanded ? (
-                            <ChevronDownIcon className="icon-inline" />
-                        ) : (
-                            <ChevronRightIcon className="icon-inline" />
-                        )}
+                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (

@@ -16,6 +16,7 @@ import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
@@ -34,10 +35,6 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { BrowserExtensionAlert } from '../../repo/actions/BrowserExtensionAlert'
 import { IDEExtensionAlert } from '../../repo/actions/IdeExtensionAlert'
-import {
-    HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
-    HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
-} from '../../repo/actions/InstallIntegrationsAlert'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -97,12 +94,12 @@ function useCtaAlert(
         'StreamingSearchResults.hasDismissedSignupAlert',
         false
     )
-    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
+    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useTemporarySetting(
+        'cta.browserExtensionAlertDismissed',
         false
     )
-    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
+    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useTemporarySetting(
+        'cta.ideExtensionAlertDismissed',
         false
     )
     const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
@@ -128,7 +125,7 @@ function useCtaAlert(
         }
 
         if (
-            !hasDismissedBrowserExtensionAlert &&
+            hasDismissedBrowserExtensionAlert === false &&
             isAuthenticated &&
             isBrowserExtensionInstalled === false &&
             displaySignupAndBrowserExtensionCTAsBasedOnCadence
@@ -136,7 +133,11 @@ function useCtaAlert(
             return 'browser'
         }
 
-        if (isUsingIdeIntegration === false && displayIDEExtensionCTABasedOnCadence && !hasDismissedIDEExtensionAlert) {
+        if (
+            isUsingIdeIntegration === false &&
+            displayIDEExtensionCTABasedOnCadence &&
+            hasDismissedIDEExtensionAlert === false
+        ) {
             return 'ide'
         }
 
