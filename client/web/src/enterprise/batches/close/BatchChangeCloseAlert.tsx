@@ -51,7 +51,6 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
             setIsClosing(asError(error))
         }
     }, [history, closeChangesets, closeBatchChange, batchChangeID, batchChangeURL])
-
     return (
         <>
             <Card className="mb-3">
