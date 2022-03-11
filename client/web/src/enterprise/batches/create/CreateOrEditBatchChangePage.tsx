@@ -18,7 +18,16 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge, RadioButton } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    Button,
+    Container,
+    Input,
+    LoadingSpinner,
+    FeedbackBadge,
+    RadioButton,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
@@ -101,7 +110,7 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
     if (loading && !data) {
         return (
             <div className="w-100 text-center">
-                <LoadingSpinner className="icon-inline m-2" />
+                <Icon className="m-2" as={LoadingSpinner} />
             </div>
         )
     }
@@ -190,7 +199,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                         </small>
                         <hr className="my-3" />
                         <h3 className="text-muted">
-                            Visibility <InfoCircleOutlineIcon className="icon-inline" data-tooltip="Coming soon" />
+                            Visibility <Icon data-tooltip="Coming soon" as={InfoCircleOutlineIcon} />
                         </h3>
                         <div className="form-group mb-1">
                             <RadioButton
@@ -211,7 +220,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                                 disabled={true}
                                 label={
                                     <>
-                                        Private <LockIcon className="text-warning icon-inline" aria-hidden={true} />
+                                        Private <Icon className="text-warning" aria-hidden={true} as={LockIcon} />
                                     </>
                                 }
                                 aria-label="Private"

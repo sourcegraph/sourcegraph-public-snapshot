@@ -19,6 +19,10 @@ var (
 		Name: "src_repoupdater_perms_syncer_stale_perms",
 		Help: "The number of records that have stale permissions",
 	}, []string{"type"})
+	metricsStrictStalePerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_perms_syncer_strict_stale_perms",
+		Help: "The number of records that have permissions older than 1h",
+	}, []string{"type"})
 	metricsPermsGap = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_repoupdater_perms_syncer_perms_gap_seconds",
 		Help: "The time gap between least and most up to date permissions",

@@ -1,0 +1,118 @@
+.hero-section {
+    display: flex;
+    flex-wrap: wrap;
+    // Override card default styles with flex-direction: column;
+    flex-direction: row;
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+
+.hero-video-block {
+    flex-grow: 10;
+    flex-basis: 30rem;
+}
+
+.here-description-block {
+    flex-grow: 1;
+    flex-basis: 25rem;
+}
+
+.hero-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 160%;
+    margin-bottom: 1.5rem;
+}
+
+.here-bullet-title {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 125%;
+    margin-top: 1.5rem;
+}
+
+.hero-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.hero-image {
+    background-color: var(--color-bg-2);
+    height: 22.5rem;
+}
+
+.quote-section {
+    max-width: 35rem;
+    margin: 5rem auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.quote {
+    margin-top: 2rem;
+    font-weight: 500;
+    border: var(--logo-blue) 0 solid;
+    border-left-width: 2px;
+    padding-left: 1rem;
+    text-align: center;
+}
+
+.quote-author {
+    color: var(--text-muted);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.quote-logo {
+    margin: 0 auto;
+}
+
+.install-locally-section {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    grid-gap: 1rem;
+}
+
+.install-locally-requirements {
+    flex-grow: 2;
+    flex-basis: 15rem;
+    padding: 1.5rem 1rem;
+}
+
+.install-locally-requirements-list {
+    padding: 0 0 0 1rem;
+}
+
+.install-locally-get-started {
+    flex-grow: 4;
+    flex-basis: 15rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-direction: row;
+    padding: 1.5rem 1rem;
+}
+
+.install-locally-get-started-content {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.template-section {
+    margin-top: 3rem;
+}
+
+.video-section {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    margin-top: 3rem;
+}
+
+.learn-more-section {
+    margin-top: 3rem;
+}

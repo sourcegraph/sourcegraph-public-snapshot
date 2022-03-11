@@ -225,6 +225,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
+			bk.Cmd("git-lfs fetch"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
@@ -360,7 +361,9 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 			pipeline.AddStep(
 				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
 				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{}),
+				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
+					Annotations: &bk.AnnotationOpts{},
+				}),
 			)
 		})
 	}
@@ -577,9 +580,12 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 }
 
 func clusterQA(candidateTag string) operations.Operation {
+	var dependencies []bk.StepOpt
+	for _, image := range images.DeploySourcegraphDockerImages {
+		dependencies = append(dependencies, bk.DependsOn(candidateImageStepKey(image)))
+	}
 	return func(p *bk.Pipeline) {
-		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
-			bk.DependsOn(candidateImageStepKey("frontend")),
+		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA", append(dependencies,
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Env("NO_CLEANUP", "false"),
@@ -590,9 +596,7 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
-			// Flakey test we are running to collect more data:
-			// https://github.com/sourcegraph/sourcegraph/issues/31342
-			bk.SoftFail(123))
+		)...)
 	}
 }
 

@@ -8,7 +8,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button } from '@sourcegraph/wildcard'
+import { Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -95,7 +95,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                         variant="primary"
                         as={Link}
                     >
-                        <AddIcon className="icon-inline" /> Add code host
+                        <Icon as={AddIcon} /> Add code host
                     </Button>
                 )}
             </div>

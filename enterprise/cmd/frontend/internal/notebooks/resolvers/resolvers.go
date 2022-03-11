@@ -92,6 +92,22 @@ func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInpu
 			Revision:       inputBlock.FileInput.Revision,
 			LineRange:      convertLineRangeInput(inputBlock.FileInput.LineRange),
 		}
+	case graphqlbackend.NotebookSymbolBlockType:
+		if inputBlock.SymbolInput == nil {
+			return nil, errors.Errorf("symbol block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookSymbolBlockType
+		block.SymbolInput = &notebooks.NotebookSymbolBlockInput{
+			RepositoryName:      inputBlock.SymbolInput.RepositoryName,
+			FilePath:            inputBlock.SymbolInput.FilePath,
+			Revision:            inputBlock.SymbolInput.Revision,
+			LineContext:         inputBlock.SymbolInput.LineContext,
+			SymbolName:          inputBlock.SymbolInput.SymbolName,
+			SymbolContainerName: inputBlock.SymbolInput.SymbolContainerName,
+			SymbolKind:          inputBlock.SymbolInput.SymbolKind,
+		}
+	default:
+		return nil, errors.Newf("invalid block type: %s", inputBlock.Type)
 	}
 	return block, nil
 }
@@ -468,6 +484,13 @@ func (r *notebookBlockResolver) ToFileBlock() (graphqlbackend.FileBlockResolver,
 	return nil, false
 }
 
+func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResolver, bool) {
+	if r.block.Type == notebooks.NotebookSymbolBlockType {
+		return &symbolBlockResolver{r.block}, true
+	}
+	return nil, false
+}
+
 type markdownBlockResolver struct {
 	// block.type == NotebookMarkdownBlockType
 	block notebooks.NotebookBlock
@@ -540,4 +563,49 @@ func (r *fileBlockLineRangeResolver) StartLine() int32 {
 
 func (r *fileBlockLineRangeResolver) EndLine() int32 {
 	return r.lineRange.EndLine
+}
+
+type symbolBlockResolver struct {
+	// block.type == NotebookSymbolBlockType
+	block notebooks.NotebookBlock
+}
+
+func (r *symbolBlockResolver) ID() string {
+	return r.block.ID
+}
+
+func (r *symbolBlockResolver) SymbolInput() graphqlbackend.SymbolBlockInputResolver {
+	return &symbolBlockInputResolver{*r.block.SymbolInput}
+}
+
+type symbolBlockInputResolver struct {
+	input notebooks.NotebookSymbolBlockInput
+}
+
+func (r *symbolBlockInputResolver) RepositoryName() string {
+	return r.input.RepositoryName
+}
+
+func (r *symbolBlockInputResolver) FilePath() string {
+	return r.input.FilePath
+}
+
+func (r *symbolBlockInputResolver) Revision() *string {
+	return r.input.Revision
+}
+
+func (r *symbolBlockInputResolver) LineContext() int32 {
+	return r.input.LineContext
+}
+
+func (r *symbolBlockInputResolver) SymbolName() string {
+	return r.input.SymbolName
+}
+
+func (r *symbolBlockInputResolver) SymbolContainerName() string {
+	return r.input.SymbolContainerName
+}
+
+func (r *symbolBlockInputResolver) SymbolKind() string {
+	return r.input.SymbolKind
 }

@@ -4,6 +4,8 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 import styles from './SearchQueryChecks.module.scss'
 
 interface SearchQueryChecksProps {
@@ -20,7 +22,7 @@ const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }
     if (valid === true) {
         return (
             <>
-                <Check className={classNames(styles.icon, 'text-success icon-inline')} />
+                <Icon className={classNames(styles.icon, 'text-success')} as={Check} />
                 <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
             </>
         )
@@ -29,7 +31,7 @@ const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }
     if (valid === false) {
         return (
             <>
-                <CloseIcon className={classNames(styles.icon, 'text-danger icon-inline')} />
+                <Icon className={classNames(styles.icon, 'text-danger')} as={CloseIcon} />
                 <span className="text-muted">{children}</span>
             </>
         )
@@ -37,7 +39,7 @@ const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }
 
     return (
         <>
-            <RadioboxBlankIcon className={classNames(styles.icon, styles.smaller, 'icon-inline')} />{' '}
+            <Icon className={classNames(styles.icon, styles.smaller)} as={RadioboxBlankIcon} />{' '}
             <span className="text-muted">{children}</span>
         </>
     )

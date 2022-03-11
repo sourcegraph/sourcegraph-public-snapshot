@@ -26,32 +26,40 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps, Telemet
 /**
  * A panel view contributed by an extension using {@link sourcegraph.app.createPanelView}.
  */
-export const PanelView = React.memo<Props>(props => (
-    <div className={styles.panelView}>
-        {props.panelView.content && (
-            <div className="px-2 pt-2">
-                <Markdown dangerousInnerHTML={renderMarkdown(props.panelView.content)} />
-            </div>
-        )}
-        {props.panelView.reactElement}
-        {props.panelView.locationProvider && props.repoName && (
-            <HierarchicalLocationsView
-                location={props.location}
-                locations={props.panelView.locationProvider}
-                maxLocationResults={props.panelView.maxLocationResults}
-                defaultGroup={props.repoName}
-                isLightTheme={props.isLightTheme}
-                fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                extensionsController={props.extensionsController}
-                settingsCascade={props.settingsCascade}
-                telemetryService={props.telemetryService}
-                onSelectLocation={(): void =>
-                    props.telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
-                }
-            />
-        )}
-        {!props.panelView.content && !props.panelView.reactElement && !props.panelView.locationProvider && (
-            <EmptyPanelView className="mt-3" />
-        )}
-    </div>
-))
+export const PanelView = React.memo<Props>(props => {
+    const panelView = (
+        <>
+            {props.panelView.content && (
+                <div className="px-2 pt-2">
+                    <Markdown dangerousInnerHTML={renderMarkdown(props.panelView.content)} />
+                </div>
+            )}
+            {props.panelView.reactElement}
+            {props.panelView.locationProvider && props.repoName && (
+                <HierarchicalLocationsView
+                    location={props.location}
+                    locations={props.panelView.locationProvider}
+                    maxLocationResults={props.panelView.maxLocationResults}
+                    defaultGroup={props.repoName}
+                    isLightTheme={props.isLightTheme}
+                    fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                    extensionsController={props.extensionsController}
+                    settingsCascade={props.settingsCascade}
+                    telemetryService={props.telemetryService}
+                    onSelectLocation={(): void =>
+                        props.telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
+                    }
+                />
+            )}
+            {!props.panelView.content && !props.panelView.reactElement && !props.panelView.locationProvider && (
+                <EmptyPanelView className="mt-3" />
+            )}
+        </>
+    )
+
+    if (props.panelView.noWrapper) {
+        return <>{panelView}</>
+    }
+
+    return <div className={styles.panelView}>{panelView}</div>
+})

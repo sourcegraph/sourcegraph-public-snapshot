@@ -1,7 +1,35 @@
 const { readdir, readFile } = require('mz/fs')
 const shelljs = require('shelljs')
 
+const recordSnapshot = grepValue =>
+  shelljs.exec(
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${grepValue}'`,
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(error)
+        return
+      }
+      console.log(`stdout: ${stdout}`)
+      console.error(`stderr: ${stderr}`)
+    }
+  )
+
 ;(async () => {
+  // 1. Record by --grep args
+  const args = process.argv.slice(2)
+  for (let index = 0; index < args.length; ++index) {
+    if (args[index] === '--grep' && !!args[index + 1]) {
+      recordSnapshot(args[index + 1])
+      return
+    }
+    if (args[index].startsWith('--grep=')) {
+      recordSnapshot(args.replace('--grep=', ''))
+      return
+    }
+  }
+
+  // 2. Record all tests
   const fileNames = await readdir('./src/integration')
   const testFileNames = fileNames.filter(fileName => fileName.endsWith('.test.ts'))
   const testFiles = await Promise.all(
@@ -16,17 +44,7 @@ const shelljs = require('shelljs')
     .map(matchArray => matchArray[2])
 
   for (const testName of testNames) {
-    shelljs.exec(
-      `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${testName}'`,
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(error)
-          return
-        }
-        console.log(`stdout: ${stdout}`)
-        console.error(`stderr: ${stderr}`)
-      }
-    )
+    recordSnapshot(testName)
   }
 })().catch(error => {
   console.log(error)

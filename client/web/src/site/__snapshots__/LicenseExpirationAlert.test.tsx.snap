@@ -37,7 +37,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
       type="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -89,7 +89,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
       type="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"

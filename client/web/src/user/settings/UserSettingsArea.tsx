@@ -12,6 +12,7 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -33,6 +34,7 @@ export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaR
 
 export interface UserSettingsAreaProps
     extends UserAreaRouteContext,
+        FeatureFlagProps,
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,

@@ -12,7 +12,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Container } from '@sourcegraph/wildcard'
+import { Badge, Container, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 import {
@@ -96,7 +96,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             <BatchChangeTabList>
                 <BatchChangeTab index={0} name={TabName.Changesets}>
                     <span>
-                        <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                        <Icon className="text-muted mr-1" as={SourceBranchIcon} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
                         </span>{' '}
@@ -107,7 +107,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 </BatchChangeTab>
                 <BatchChangeTab index={1} name={TabName.Chart}>
                     <span>
-                        <ChartLineVariantIcon className="icon-inline text-muted mr-1" />{' '}
+                        <Icon className="text-muted mr-1" as={ChartLineVariantIcon} />{' '}
                         <span className="text-content" data-tab-content="Burndown chart">
                             Burndown chart
                         </span>
@@ -116,7 +116,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 {!executionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
-                            <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
+                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Spec">
                                 Spec
                             </span>
@@ -126,7 +126,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 {executionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
-                            <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
+                            <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
                             </span>
@@ -135,7 +135,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 )}
                 <BatchChangeTab index={3} name={TabName.Archived}>
                     <span>
-                        <ArchiveIcon className="icon-inline text-muted mr-1" />{' '}
+                        <Icon className="text-muted mr-1" as={ArchiveIcon} />{' '}
                         <span className="text-content" data-tab-content="Archived">
                             Archived
                         </span>{' '}
@@ -146,7 +146,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 </BatchChangeTab>
                 <BatchChangeTab index={4} name={TabName.BulkOperations}>
                     <span>
-                        <MonitorStarIcon className="icon-inline text-muted mr-1" />{' '}
+                        <Icon className="text-muted mr-1" as={MonitorStarIcon} />{' '}
                         <span className="text-content" data-tab-content="Bulk operations">
                             Bulk operations
                         </span>{' '}
