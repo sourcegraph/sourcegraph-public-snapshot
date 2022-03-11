@@ -1210,6 +1210,8 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                     <code>"org.hamcrest:hamcrest-core:1.3:default"</code>.
                 </li>
             </ol>
+            <p>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</p>
         </div>
     ),
     editorActions: [],
@@ -1264,6 +1266,8 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
                     supported.
                 </li>
             </ol>
+            <p>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</p>
         </div>
     ),
     editorActions: [],
@@ -1281,9 +1285,9 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gitolite: GITOLITE,
     git: GENERIC_GIT,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.npmPackages === 'disabled' ? {} : { npmPackages: NPM_PACKAGES }),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
