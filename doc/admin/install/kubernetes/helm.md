@@ -25,7 +25,7 @@ Helm customizations can be applied using an override file. Using an override fil
 
 To customize configuration settings with an override file, create an empty yaml file (e.g. `override.yaml`) and configure overrides.
 
-> WARNING: __DO NOT__ copy the [default values file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) as a boilerplate for your override file. You will be risk having outdated values during upgrade.
+> WARNING: __DO NOT__ copy the [default values file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) as a boilerplate for your override file. You risk having outdated values during upgrades.
 
 Example overrides can be found in the [examples](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder. Please take a look at our examples before providing your own configuration and consider using them as boilerplates.
 
@@ -47,8 +47,8 @@ The Sourcegraph chart is highly customizable to support a wide-range of environm
 
 The Helm chart is new and still under active development, and we may not cover all your use cases. 
 
-Please reach out to your account team to discuess your specific need.
+Please reach out to your account team to discuss your specific need.
 
-For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Plesae __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
+For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
 
 You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
