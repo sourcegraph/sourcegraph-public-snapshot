@@ -399,13 +399,8 @@ export const ReferencesList: React.FunctionComponent<
                 </div>
                 {activeLocation !== undefined && (
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
-                        <CardHeader
-                            className={classNames(
-                                'pl-1 d-flex justify-content-between',
-                                styles.referencesSideBlobFilename
-                            )}
-                        >
-                            <h4>
+                        <CardHeader className={classNames('pl-1 pr-3 py-1 d-flex justify-content-between')}>
+                            <h4 className="mb-0">
                                 {activeLocation.resource.path}{' '}
                                 <Link
                                     to={activeLocation.url}
@@ -420,7 +415,7 @@ export const ReferencesList: React.FunctionComponent<
 
                             <Button
                                 onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon py-0', styles.dismissButton)}
+                                className={classNames('btn-icon p-0', styles.dismissButton)}
                                 title="Close panel"
                                 data-tooltip="Close panel"
                                 data-placement="left"
@@ -746,7 +741,7 @@ const ReferenceGroup: React.FunctionComponent<{
                 onClick={handleOpen}
                 className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
             >
-                <span className={styles.coolCodeIntelReferenceFilename}>
+                <span className={styles.referenceFilename}>
                     {isOpen ? (
                         <ChevronDownIcon className="icon-inline" aria-label="Close" />
                     ) : (
@@ -769,9 +764,7 @@ const ReferenceGroup: React.FunctionComponent<{
                 <ul className="list-unstyled pl-3 py-1 mb-0">
                     {group.locations.map(reference => {
                         const className =
-                            activeLocation && activeLocation.url === reference.url
-                                ? styles.coolCodeIntelReferenceActive
-                                : ''
+                            activeLocation && activeLocation.url === reference.url ? styles.referenceActive : ''
 
                         return (
                             <li key={reference.url} className={classNames('border-0 rounded-0', className)}>
