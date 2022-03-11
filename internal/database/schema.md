@@ -961,6 +961,14 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.gitserver_repo_migration_cursor"
+```
+ Column | Type | Collation | Nullable | Default 
+--------+------+-----------+----------+---------
+ cursor | text |           | not null | 
+
+```
+
 # Table "public.gitserver_repos"
 ```
      Column      |           Type           | Collation | Nullable |      Default       
