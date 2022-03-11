@@ -42,16 +42,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL, buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Button,
-    useObservable,
-    ButtonGroup,
-    Link,
-    ProductStatusBadge,
-} from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -441,7 +432,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 as={Link}
                                             >
                                                 <GraphOutlineIcon className="icon-inline" /> Dependencies{' '}
-                                                <ProductStatusBadge status="beta" />
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
