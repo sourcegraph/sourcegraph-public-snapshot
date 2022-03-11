@@ -63,17 +63,19 @@ export interface GlobalCoolCodeIntelProps {
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
-interface CoolCodeIntelProps
+interface ReferencesPanelProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
-    // The token for which to show references
+    /** The token for which to show references. If it's not set, the panel will try to get enough info out of the URL. */
     token?: Token
 
+    /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
+
     /**
      * The panel runs inside its own MemoryRouter, we keep track of externalHistory
      * so that we're still able to actually navigate within the browser when required
@@ -82,17 +84,17 @@ interface CoolCodeIntelProps
     externalLocation: H.Location
 }
 
-export const BuiltinCoolCodeIntelPanel: React.FunctionComponent<CoolCodeIntelProps> = props => (
+export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<ReferencesPanelProps> = props => (
     <MemoryRouter
         // Force router to remount the Panel when external location changes
         key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
         initialEntries={[props.externalLocation]}
     >
-        <CodeNavPanel {...props} />
+        <ReferencesPanel {...props} />
     </MemoryRouter>
 )
 
-const CodeNavPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
+const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => {
     const location = useLocation()
 
     const { hash, pathname, search } = location
@@ -115,8 +117,9 @@ const CodeNavPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
 
     return <FilterableReferencesList {...props} token={{ ...token, revision, commitID }} jumpToFirst={jumpToFirst} />
 }
+
 export const RevisionResolvingReferencesList: React.FunctionComponent<
-    CoolCodeIntelProps & {
+    ReferencesPanelProps & {
         repoName: string
         line: number
         character: number
@@ -131,11 +134,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     }
 
     const token = {
-        repoName: props.repoName,
-        line: props.line,
-        character: props.character,
-        filePath: props.filePath,
-
+        ...props,
         revision: props.revision || resolvedRevision.defaultBranch,
         commitID: resolvedRevision.commitID,
     }
@@ -189,7 +188,7 @@ interface LocationGroup {
     locations: Location[]
 }
 
-const FilterableReferencesList: React.FunctionComponent<CoolCodeIntelProps> = props => {
+const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = props => {
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
@@ -218,7 +217,7 @@ const FilterableReferencesList: React.FunctionComponent<CoolCodeIntelProps> = pr
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
-    CoolCodeIntelProps & {
+    ReferencesPanelProps & {
         token: Token
         filter?: string
     }
@@ -443,7 +442,7 @@ export const ReferencesList: React.FunctionComponent<
     )
 }
 
-const CollapsibleLocationList: React.FunctionComponent<{
+interface CollapsibleLocationListProps {
     name: string
     locations: Location[]
     setActiveLocation: (location: Location | undefined) => void
@@ -452,7 +451,9 @@ const CollapsibleLocationList: React.FunctionComponent<{
     hasMore: boolean
     fetchMore?: () => void
     loadingMore: boolean
-}> = props => {
+}
+
+const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListProps> = props => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
@@ -522,7 +523,7 @@ const CollapsibleLocationList: React.FunctionComponent<{
 }
 
 const SideBlob: React.FunctionComponent<
-    CoolCodeIntelProps & {
+    ReferencesPanelProps & {
         activeLocation: Location
 
         location: H.Location
@@ -617,12 +618,19 @@ const getLineContent = (location: Location): string => {
     return ''
 }
 
-const LocationsList: React.FunctionComponent<{
+interface LocationsListProps {
     locations: Location[]
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     filter: string | undefined
-}> = ({ locations, activeLocation, setActiveLocation, filter }) => {
+}
+
+const LocationsList: React.FunctionComponent<LocationsListProps> = ({
+    locations,
+    activeLocation,
+    setActiveLocation,
+    filter,
+}) => {
     const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
         const byFile: Record<string, Location[]> = {}
         for (const location of locations) {
@@ -657,9 +665,9 @@ const LocationsList: React.FunctionComponent<{
     return (
         <>
             {repoLocationGroups.map(repoReferenceGroup => (
-                <RepoReferenceGroup
+                <RepoLocationGroup
                     key={repoReferenceGroup.repoName}
-                    repoReferenceGroup={repoReferenceGroup}
+                    repoLocationGroup={repoReferenceGroup}
                     activeLocation={activeLocation}
                     setActiveLocation={setActiveLocation}
                     getLineContent={getLineContent}
@@ -670,13 +678,13 @@ const LocationsList: React.FunctionComponent<{
     )
 }
 
-const RepoReferenceGroup: React.FunctionComponent<{
-    repoReferenceGroup: RepoLocationGroup
+const RepoLocationGroup: React.FunctionComponent<{
+    repoLocationGroup: RepoLocationGroup
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (location: Location) => string
     filter: string | undefined
-}> = ({ repoReferenceGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
+}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
 
@@ -695,12 +703,12 @@ const RepoReferenceGroup: React.FunctionComponent<{
                         <ChevronRightIcon className="icon-inline" aria-label="Expand" />
                     )}
 
-                    <Link to={`/${repoReferenceGroup.repoName}`}>{displayRepoName(repoReferenceGroup.repoName)}</Link>
+                    <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
                 </span>
             </Button>
 
-            <Collapse id={repoReferenceGroup.repoName} isOpen={isOpen}>
-                {repoReferenceGroup.referenceGroups.map(group => (
+            <Collapse id={repoLocationGroup.repoName} isOpen={isOpen}>
+                {repoLocationGroup.referenceGroups.map(group => (
                     <ReferenceGroup
                         key={group.path + group.repoName}
                         group={group}

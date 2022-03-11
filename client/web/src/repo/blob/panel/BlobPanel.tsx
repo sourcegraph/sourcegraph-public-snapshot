@@ -23,7 +23,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { BuiltinCoolCodeIntelPanel } from '../../../global/CoolCodeIntel'
+import { ReferencesPanelWithMemoryRouter } from '../../../global/CoolCodeIntel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
@@ -248,7 +248,7 @@ export function useBlobPanelViews({
                             // This panel doesn't need a wrapper
                             noWrapper: true,
                             reactElement: position ? (
-                                <BuiltinCoolCodeIntelPanel
+                                <ReferencesPanelWithMemoryRouter
                                     settingsCascade={settingsCascade}
                                     platformContext={platformContext}
                                     isLightTheme={isLightTheme}
