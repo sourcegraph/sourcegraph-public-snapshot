@@ -1344,8 +1344,6 @@ type PermissionsUserMapping struct {
 
 // Phabricator description: Phabricator instance that integrates with this Gitolite instance
 type Phabricator struct {
-	// CallsignCommand description:  Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
-	CallsignCommand string `json:"callsignCommand"`
 	// Url description: URL of the Phabricator instance that integrates with this Gitolite instance. This should be set
 	Url string `json:"url"`
 }

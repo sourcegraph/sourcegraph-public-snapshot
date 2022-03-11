@@ -217,11 +217,10 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "phabricator without url nor callsignCommand",
+			desc:   "phabricator without url",
 			config: `{"phabricator": {}}`,
 			assert: includes(
 				"phabricator: url is required",
-				"phabricator: callsignCommand is required",
 			),
 		},
 		{
