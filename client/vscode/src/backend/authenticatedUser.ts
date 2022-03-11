@@ -1,7 +1,8 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import * as vscode from 'vscode'
 
-import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import { gql } from '@sourcegraph/http-client'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
@@ -40,3 +41,37 @@ export function observeAuthenticatedUser({
 
     return authenticatedUsers
 }
+
+// Minimal auth state for the VS Code extension.
+// Uses only old fields for backwards compatibility with old GraphQL API versions.
+const currentAuthStateQuery = gql`
+    query CurrentAuthState {
+        currentUser {
+            __typename
+            id
+            databaseID
+            username
+            avatarURL
+            email
+            displayName
+            siteAdmin
+            tags
+            url
+            settingsURL
+            organizations {
+                nodes {
+                    id
+                    name
+                    displayName
+                    url
+                    settingsURL
+                }
+            }
+            session {
+                canSignOut
+            }
+            viewerCanAdminister
+            tags
+        }
+    }
+`
