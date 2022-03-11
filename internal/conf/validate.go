@@ -205,6 +205,20 @@ func ValidateSite(input string) (messages []string, err error) {
 	return problems.Messages(), nil
 }
 
+// siteConfigSecrets is the list of secrets in site config needs to be redacted
+// before serving or unredacted before saving.
+var siteConfigSecrets = []struct {
+	readPath  string // gjson uses "." as path separator, uses "\" to escape.
+	editPaths []string
+}{
+	{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
+	{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
+	{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
+	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
+	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
+	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+}
+
 // UnredactSecrets unredacts unchanged secrets back to their original value for
 // the given configuration.
 //
@@ -250,62 +264,13 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		return input, errors.Wrap(err, `unredact "auth.providers"`)
 	}
 
-	secrets := []struct {
-		value     func(cfg *Unified) string
-		editPaths []string
-	}{
-		{
-			value:     func(cfg *Unified) string { return cfg.ExecutorsAccessToken },
-			editPaths: []string{"executors.accessToken"},
-		},
-		{
-			value: func(cfg *Unified) string {
-				if cfg.EmailSmtp == nil {
-					return ""
-				}
-				return cfg.EmailSmtp.Password
-			},
-			editPaths: []string{"email.smtp", "password"},
-		},
-		{
-			value: func(cfg *Unified) string {
-				if cfg.OrganizationInvitations == nil {
-					return ""
-				}
-				return cfg.OrganizationInvitations.SigningKey
-			},
-			editPaths: []string{"organizationInvitations", "signingKey"},
-		},
-		{
-			value:     func(cfg *Unified) string { return cfg.GithubClientSecret },
-			editPaths: []string{"githubClientSecret"},
-		},
-		{
-			value: func(cfg *Unified) string {
-				if cfg.Dotcom == nil || cfg.Dotcom.GithubAppCloud == nil {
-					return ""
-				}
-				return cfg.Dotcom.GithubAppCloud.ClientSecret
-			},
-			editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"},
-		},
-		{
-			value: func(cfg *Unified) string {
-				if cfg.Dotcom == nil || cfg.Dotcom.GithubAppCloud == nil {
-					return ""
-				}
-				return cfg.Dotcom.GithubAppCloud.PrivateKey
-			},
-			editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"},
-		},
-	}
-	for _, secret := range secrets {
-		v := secret.value(newCfg)
+	for _, secret := range siteConfigSecrets {
+		v := gjson.Get(unredactedSite, secret.readPath).String()
 		if v != RedactedSecret {
 			continue
 		}
 
-		unredactedSite, err = jsonc.Edit(unredactedSite, secret.value(oldCfg), secret.editPaths...)
+		unredactedSite, err = jsonc.Edit(unredactedSite, gjson.Get(raw.Site, secret.readPath).String(), secret.editPaths...)
 		if err != nil {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
@@ -340,18 +305,7 @@ func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err er
 		return empty, errors.Wrap(err, `redact "auth.providers"`)
 	}
 
-	secrets := []struct {
-		readPath  string // gjson uses "." as path separator, uses "\" to escape.
-		editPaths []string
-	}{
-		{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
-		{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
-		{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
-		{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
-		{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
-		{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
-	}
-	for _, secret := range secrets {
+	for _, secret := range siteConfigSecrets {
 		v := gjson.Get(redactedSite, secret.readPath).String()
 		if v == "" {
 			continue
