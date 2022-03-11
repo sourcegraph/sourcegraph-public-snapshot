@@ -76,9 +76,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
-                // TODO: This doesn't account for draft changesets. Ideally, this would
-                // use the delta API and apply an empty batch spec, but then changesets
-                // would currently be lost.
                 state: null,
                 checkOpenOrDraft: true,
                 checkState: null,
