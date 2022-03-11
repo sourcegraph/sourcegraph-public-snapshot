@@ -48,6 +48,7 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
     onHandleFuzzyFinder,
     onEditorCreated,
     interpretComments,
+    isLightTheme,
 }) => {
     const container = useRef<HTMLDivElement | null>(null)
     const editorReference = useRef<EditorView>()
@@ -59,6 +60,7 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
 
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
+            EditorView.darkTheme.of(isLightTheme === false),
             // Prevent newline insertion
             singleLine,
             notifyOnEnter(onSubmit),
@@ -88,7 +90,16 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
             extensions.push(keymap.of([{ key: 'Mod-k', run: () => (onHandleFuzzyFinder(true), true) }]))
         }
         return extensions
-    }, [onChange, onSubmit, onBlur, fetchSuggestionsWithContext, isSourcegraphDotCom, globbing, onHandleFuzzyFinder])
+    }, [
+        onChange,
+        onSubmit,
+        onBlur,
+        fetchSuggestionsWithContext,
+        isSourcegraphDotCom,
+        globbing,
+        onHandleFuzzyFinder,
+        isLightTheme,
+    ])
 
     const editor = useCodeMirror(container.current, queryState.query, extensions)
     editorReference.current = editor
