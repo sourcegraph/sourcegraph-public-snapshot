@@ -41,25 +41,26 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err erro
 		if err != nil {
 			return errors.Wrap(err, "UnfreezeAllInsights")
 		}
-	} else {
-		log15.Info("No license found for Code Insights. Freezing insights for limited access mode.")
-		globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := tx.GetUnfrozenInsightCount(ctx)
+		return nil
+	}
+
+	log15.Info("No license found for Code Insights. Freezing insights for limited access mode.")
+	globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := tx.GetUnfrozenInsightCount(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetUnfrozenInsightCount")
+	}
+	// Insights need to be frozen if:
+	// - more than 2 global insights are unfrozen
+	// - any other insights are unfrozen
+	shouldFreeze := globalUnfrozenInsightCount > 2 || totalUnfrozenInsightCount != globalUnfrozenInsightCount
+	if shouldFreeze {
+		err = tx.FreezeAllInsights(ctx)
 		if err != nil {
-			return errors.Wrap(err, "GetUnfrozenInsightCount")
+			return errors.Wrap(err, "FreezeAllInsights")
 		}
-		// Insights are considered to be in a frozen state if:
-		// - no more than 2 global insights are unfrozen
-		// - all other insights are frozen
-		insightsFrozen := globalUnfrozenInsightCount <= 2 && totalUnfrozenInsightCount == globalUnfrozenInsightCount
-		if !insightsFrozen {
-			err = tx.FreezeAllInsights(ctx)
-			if err != nil {
-				return errors.Wrap(err, "FreezeAllInsights")
-			}
-			err = tx.UnfreezeGlobalInsights(ctx, 2)
-			if err != nil {
-				return errors.Wrap(err, "UnfreezeGlobalInsights")
-			}
+		err = tx.UnfreezeGlobalInsights(ctx, 2)
+		if err != nil {
+			return errors.Wrap(err, "UnfreezeGlobalInsights")
 		}
 	}
 

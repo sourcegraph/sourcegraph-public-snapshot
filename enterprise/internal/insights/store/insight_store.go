@@ -794,12 +794,10 @@ func (s *InsightStore) HardDeleteSeries(ctx context.Context, seriesId string) er
 
 func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globalCount int, totalCount int, err error) {
 	rows := s.QueryRow(ctx, sqlf.Sprintf(getUnfrozenInsightCountSql))
-	if err = rows.Scan(
+	err = rows.Scan(
 		&globalCount,
 		&totalCount,
-	); err != nil {
-		return
-	}
+	)
 	return
 }
 
@@ -1010,12 +1008,11 @@ SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenTotal.total as unfrozenTo
 	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
 	WHERE iv.is_frozen = FALSE AND dg.global = TRUE
 ) as unfrozenGlobal
-JOIN
+CROSS JOIN
 (
 	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
 	WHERE iv.is_frozen = FALSE
-) as unfrozenTotal
-on TRUE;
+) as unfrozenTotal;
 `
 
 const unfreezeGlobalInsightsSql = `
