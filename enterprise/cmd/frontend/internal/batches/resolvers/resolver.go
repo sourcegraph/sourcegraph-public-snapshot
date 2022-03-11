@@ -828,9 +828,9 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		opts.Cursor = cursor
 	}
 
-	if args.CheckOpenOrDraft != nil && *args.CheckOpenOrDraft {
+	if args.OnlyClosable != nil && *args.OnlyClosable {
 		if args.State != nil {
-			return opts, false, errors.New("invalid combination of state and checkOpenOrDraft")
+			return opts, false, errors.New("invalid combination of state and onlyClosable")
 		}
 
 		publicationState := btypes.ChangesetPublicationStatePublished

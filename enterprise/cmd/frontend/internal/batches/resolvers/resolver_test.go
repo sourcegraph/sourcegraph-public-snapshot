@@ -988,8 +988,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	var batchChangeID int64 = 1
 	var repoID api.RepoID = 123
 	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
-	checkOpenOrDraft := true
-	checkOpenOrDraftPublicationState := btypes.ChangesetPublicationStatePublished
+	onlyClosable := true
+	openChangsetState := "OPEN"
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -1111,20 +1111,30 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 				RepoID: repoID,
 			},
 		},
-		// CheckOpenOrDraft changesets
+		// onlyClosable changesets
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckOpenOrDraft: &checkOpenOrDraft,
+				OnlyClosable: &onlyClosable,
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				PublicationState: &checkOpenOrDraftPublicationState,
+				PublicationState: &wantPublicationStates[0],
 				ExternalStates: []btypes.ChangesetExternalState{
 					btypes.ChangesetExternalStateDraft,
 					btypes.ChangesetExternalStateOpen,
 				},
 				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},
+		},
+		// error when state and onlyClosable are not null
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyClosable: &onlyClosable,
+				State:        &openChangsetState,
+			},
+			wantSafe: false,
+			wantParsed: store.ListChangesetsOpts{},
+			wantErr: "invalid combination of state and onlyClosable",
 		},
 	}
 	for i, tc := range tcs {

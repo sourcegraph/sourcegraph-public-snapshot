@@ -77,7 +77,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
                 state: null,
-                checkOpenOrDraft: true,
+                onlyClosable: true,
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,

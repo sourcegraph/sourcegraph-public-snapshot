@@ -309,7 +309,7 @@ export const CHANGESETS = gql`
         $onlyPublishedByThisBatchChange: Boolean
         $search: String
         $onlyArchived: Boolean
-        $checkOpenOrDraft: Boolean
+        $onlyClosable: Boolean
     ) {
         node(id: $batchChange) {
             __typename
@@ -323,7 +323,7 @@ export const CHANGESETS = gql`
                     onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
                     search: $search
                     onlyArchived: $onlyArchived
-                    checkOpenOrDraft: $checkOpenOrDraft
+                    onlyClosable: $onlyClosable
                 ) {
                     __typename
                     totalCount
@@ -359,7 +359,7 @@ export const queryChangesets = ({
     first,
     after,
     state,
-    checkOpenOrDraft,
+    onlyClosable,
     reviewState,
     checkState,
     onlyPublishedByThisBatchChange,
@@ -373,7 +373,7 @@ export const queryChangesets = ({
         first,
         after,
         state,
-        checkOpenOrDraft,
+        onlyClosable,
         reviewState,
         checkState,
         onlyPublishedByThisBatchChange,
