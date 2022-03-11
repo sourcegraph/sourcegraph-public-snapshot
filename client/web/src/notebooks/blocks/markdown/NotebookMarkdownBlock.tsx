@@ -14,13 +14,12 @@ import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import blockStyles from '../NotebookBlock.module.scss'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
 import styles from './NotebookMarkdownBlock.module.scss'
 
-interface NotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
-    isMacPlatform: boolean
-}
+interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
 
 export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = ({
     id,
@@ -28,7 +27,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     output,
     isSelected,
     isLightTheme,
-    isMacPlatform,
     isReadOnly,
     onBlockInputChange,
     onRunBlock,
@@ -84,14 +82,13 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
     }, [isEditing, editor])
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
         isInputFocused,
         isReadOnly,
-        isMacPlatform,
         ...props,
     })
+
+    const modifierKeyLabel = useModifierKeyLabel()
     const menuActions = useMemo(() => {
         const action: BlockMenuAction[] = [
             isEditing
@@ -116,7 +113,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     const notebookBlockProps = useMemo(
         () => ({
             id,
-            isMacPlatform,
             isInputFocused,
             onEnterBlock,
             isReadOnly,
@@ -131,7 +127,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         [
             id,
             isInputFocused,
-            isMacPlatform,
             isReadOnly,
             isSelected,
             menuActions,

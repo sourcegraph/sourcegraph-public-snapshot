@@ -8,9 +8,8 @@ import blockStyles from './NotebookBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
 
-interface NotebookBlockProps extends BlockProps, NotebookBlockMenuProps {
+interface NotebookBlockProps extends Omit<BlockProps, 'input' | 'output'>, NotebookBlockMenuProps {
     className?: string
-    isMacPlatform: boolean
     isInputFocused: boolean
     'aria-label': string
     onDoubleClick?: () => void
@@ -21,7 +20,6 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
     children,
     id,
     className,
-    isMacPlatform,
     isSelected,
     isInputFocused,
     isOtherBlockSelected,
@@ -44,7 +42,6 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
 
     const { onKeyDown } = useBlockShortcuts({
         id,
-        isMacPlatform,
         onEnterBlock,
         ...props,
     })

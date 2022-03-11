@@ -33,20 +33,19 @@ import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import blockStyles from '../NotebookBlock.module.scss'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
 import styles from './NotebookQueryBlock.module.scss'
 
 interface NotebookQueryBlockProps
-    extends BlockProps,
-        QueryBlock,
+    extends BlockProps<QueryBlock>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -63,7 +62,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     settingsCascade,
     isSelected,
     isOtherBlockSelected,
-    isMacPlatform,
     sourcegraphSearchLanguageId,
     hoverifier,
     onBlockInputChange,
@@ -106,7 +104,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         setTimeout(() => editor?.focus(), 0)
     }, [editor])
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
+    const modifierKeyLabel = useModifierKeyLabel()
     const mainMenuAction: BlockMenuAction = useMemo(() => {
         const isLoading = searchResults && searchResults.state === 'loading'
         return {
@@ -131,9 +129,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         [input]
     )
 
-    const commonMenuActions = linkMenuActions.concat(
-        useCommonBlockMenuActions({ modifierKeyLabel, isInputFocused, isMacPlatform, ...props })
-    )
+    const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ isInputFocused, ...props }))
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
@@ -150,7 +146,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         <NotebookBlock
             className={styles.block}
             id={id}
-            isMacPlatform={isMacPlatform}
             isInputFocused={isInputFocused}
             aria-label="Notebook query block"
             onEnterBlock={onEnterBlock}

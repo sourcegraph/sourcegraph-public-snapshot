@@ -50,6 +50,7 @@ export interface SymbolBlockInput {
 }
 
 export interface SymbolBlockOutput {
+    symbolFoundAtLatestRevision: boolean
     effectiveRevision: string
     symbolRange: UIRangeSpec['range']
     highlightLineRange: IHighlightLineRange
@@ -86,10 +87,13 @@ export type SerializableBlock =
 
 export type BlockDirection = 'up' | 'down'
 
-export interface BlockProps {
+export interface BlockProps<T extends Block = Block> {
     isReadOnly: boolean
     isSelected: boolean
     isOtherBlockSelected: boolean
+    id: T['id']
+    input: T['input']
+    output: T['output']
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, blockInput: BlockInput): void

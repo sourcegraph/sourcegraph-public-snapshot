@@ -155,20 +155,27 @@ export class Notebook {
                 })
                 break
             case 'symbol': {
-                // Start by searching for the symbol at the latest HEAD (main) revision. If not found,
-                // look at the revision stored in the block input (should always be found).
+                // Start by searching for the symbol at the latest HEAD (main) revision.
                 const output = findSymbolAtRevision(block.input, 'HEAD').pipe(
-                    switchMap(rangeOrError =>
-                        isErrorLike(rangeOrError)
-                            ? findSymbolAtRevision(block.input, block.input.revision)
-                            : of(rangeOrError)
-                    ),
-                    switchMap(rangeOrError => {
-                        if (isErrorLike(rangeOrError)) {
-                            return of(rangeOrError)
+                    switchMap(symbolSearchResult => {
+                        if (!isErrorLike(symbolSearchResult)) {
+                            return of({ ...symbolSearchResult, symbolFoundAtLatestRevision: true })
+                        }
+                        // If not found, look at the revision stored in the block input (should always be found).
+                        return findSymbolAtRevision(block.input, block.input.revision).pipe(
+                            map(symbolSearchResult =>
+                                !isErrorLike(symbolSearchResult)
+                                    ? { ...symbolSearchResult, symbolFoundAtLatestRevision: false }
+                                    : symbolSearchResult
+                            )
+                        )
+                    }),
+                    switchMap(symbolSearchResult => {
+                        if (isErrorLike(symbolSearchResult)) {
+                            return of(symbolSearchResult)
                         }
                         const { repositoryName, filePath, lineContext } = block.input
-                        const { range, revision } = rangeOrError
+                        const { range, revision, symbolFoundAtLatestRevision } = symbolSearchResult
                         const highlightLineRange = {
                             startLine: Math.max(range.start.line - 1 - lineContext, 0),
                             endLine: range.end.line + lineContext,
@@ -193,6 +200,7 @@ export class Notebook {
                                     highlightSymbolRange,
                                     symbolRange: range,
                                     effectiveRevision: revision,
+                                    symbolFoundAtLatestRevision,
                                 }))
                             )
                     }),

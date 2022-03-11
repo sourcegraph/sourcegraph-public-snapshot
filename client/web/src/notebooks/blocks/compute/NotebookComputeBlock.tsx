@@ -11,9 +11,7 @@ import { NotebookBlock } from '../NotebookBlock'
 import { Elm } from './component/src/Main.elm'
 import styles from './NotebookComputeBlock.module.scss'
 
-interface ComputeBlockProps extends BlockProps, ComputeBlock, ThemeProps {
-    isMacPlatform: boolean
-}
+interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {}
 
 interface ElmEvent {
     data: string
@@ -76,19 +74,15 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     output,
     isSelected,
     isLightTheme,
-    isMacPlatform,
     isReadOnly,
     onRunBlock,
     onSelectBlock,
     ...props
 }) => {
     const isInputFocused = false
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
         isInputFocused,
         isReadOnly,
-        isMacPlatform,
         ...props,
     })
 
@@ -97,7 +91,6 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
             className={styles.input}
             id={id}
             isReadOnly={isReadOnly}
-            isMacPlatform={isMacPlatform}
             isInputFocused={isInputFocused}
             aria-label="Notebook compute block"
             onEnterBlock={noop}
