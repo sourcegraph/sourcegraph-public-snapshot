@@ -1,8 +1,7 @@
-interface BaseSVGProps extends React.SVGAttributes<SVGElement> {
-    /**
-     * Shorthand for width={X} and height={X}
-     */
-    size?: number
+import React from 'react'
+
+interface BaseSVGProps {
+    className?: string
 }
 
 interface ScreenReaderIconProps extends BaseSVGProps {
@@ -13,4 +12,7 @@ interface HiddenIconProps extends BaseSVGProps {
     'aria-hidden': true | 'true'
 }
 
-export type AccessibleSvgComponent = React.FunctionComponent<ScreenReaderIconProps | HiddenIconProps>
+export type AccessibleSvgProps = ScreenReaderIconProps | HiddenIconProps
+
+export type AccessibleSvg = React.ComponentType<AccessibleSvgProps & React.SVGAttributes<SVGElement>>
+export type AccessibleIcon = React.ComponentType<AccessibleSvgProps>

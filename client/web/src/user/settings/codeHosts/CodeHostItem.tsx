@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Icon, IconComponentType } from '@sourcegraph/wildcard'
+import { AccessibleIcon, Button, Icon } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -21,7 +21,7 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     owner: Owner
     name: string
-    icon: IconComponentType
+    icon: AccessibleIcon
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
     isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
@@ -126,9 +126,13 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : service?.id ? (
                     <Icon className="mb-0 mr-2 text-success" svgPath={mdiCheckCircle} title="Checked icon" />
                 ) : (
-                    <Icon className={classNames('mb-0 mr-2', styles.iconDashed)} as={CircleDashedIcon} />
+                    <Icon
+                        className={classNames('mb-0 mr-2', styles.iconDashed)}
+                        as={CircleDashedIcon}
+                        title="Dashed circle"
+                    />
                 )}
-                <Icon className="mb-0 mr-1" as={ItemIcon} />
+                <Icon className="mb-0 mr-1" as={ItemIcon} aria-hidden="true" />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>

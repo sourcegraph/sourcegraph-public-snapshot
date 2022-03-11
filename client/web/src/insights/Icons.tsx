@@ -1,3 +1,6 @@
-import BarChartIcon from 'mdi-react/BarChartIcon'
+import { mdiPoll } from '@mdi/js'
+import React from 'react'
 
-export const CodeInsightsIcon = BarChartIcon
+import { AccessibleIcon, Icon } from '@sourcegraph/wildcard'
+
+export const CodeInsightsIcon: AccessibleIcon = props => <Icon svgPath={mdiPoll} {...props} />

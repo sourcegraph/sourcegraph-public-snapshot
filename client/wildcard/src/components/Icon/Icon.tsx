@@ -1,27 +1,20 @@
 import MDIIcon from '@mdi/react'
 import React from 'react'
 
-import { AccessibleSVGComponent } from './AccessibleSvgComponent'
+import { AccessibleSvg, AccessibleSvgProps } from './AccessibleSvgComponent'
 import { IconStyle, IconStyleProps } from './IconStyle'
 
 interface BaseIconProps extends IconStyleProps {}
-interface BasePathIconProps extends BaseIconProps, Omit<React.ComponentProps<typeof MDIIcon>, 'size' | 'path'> {
+
+interface PathIconProps extends BaseIconProps, Omit<React.ComponentProps<typeof MDIIcon>, 'size' | 'path'> {
     svgPath: string
 }
 
-interface ScreenReaderPathIconProps extends BasePathIconProps {
-    title: string
-}
-interface HiddenPathIconProps extends BasePathIconProps {
-    'aria-hidden': true | 'true'
-}
-type PathIconProps = ScreenReaderPathIconProps | HiddenPathIconProps
-
-interface ComponentIconProps extends BaseIconProps {
-    as: AccessibleSVGComponent
+interface ComponentIconProps extends BaseIconProps, React.SVGAttributes<SVGElement> {
+    as: AccessibleSvg
 }
 
-export type IconProps = PathIconProps | ComponentIconProps
+export type IconProps = (PathIconProps & AccessibleSvgProps) | (ComponentIconProps & AccessibleSvgProps)
 
 export const Icon: React.FunctionComponent<IconProps> = ({ children, className, ...props }) => {
     if ('svgPath' in props) {
@@ -30,7 +23,7 @@ export const Icon: React.FunctionComponent<IconProps> = ({ children, className, 
         return <IconStyle as={MDIIcon} path={svgPath} className={className} {...attributes} />
     }
 
-    const { as: IconComponent = 'div', ...attributes } = props
+    const { as: IconComponent = 'svg', ...attributes } = props
 
     return <IconStyle as={IconComponent} className={className} {...attributes} />
 }

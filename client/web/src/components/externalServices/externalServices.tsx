@@ -4,7 +4,8 @@ import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Icon, Link, IconComponentType } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
+import { AccessibleSvgProps } from '@sourcegraph/wildcard/src/components/Icon'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -22,6 +23,8 @@ import { ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
 
+type ExternalServicesIcon = React.FunctionComponent<AccessibleSvgProps>
+
 /**
  * Metadata associated with adding a given external service.
  */
@@ -36,7 +39,7 @@ export interface AddExternalServiceOptions {
     /**
      * Icon to show in the external service "button"
      */
-    icon: IconComponentType
+    icon: ExternalServicesIcon
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -501,9 +504,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
-const GitHubIcon: IconComponentType = ({ className }) => (
-    <Icon svgPath={mdiGithub} title="GitHub icon" className={className} />
-)
+const GitHubIcon: ExternalServicesIcon = props => <Icon svgPath={mdiGithub} {...props} />
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
@@ -531,7 +532,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     instructions: githubInstructions(true),
 }
 
-const AwsIcon: ExternalServiceIcon = ({ className }) => <Icon svgPath={mdiAws} title="AWS icon" className={className} />
+const AwsIcon: ExternalServicesIcon = props => <Icon svgPath={mdiAws} {...props} />
 
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
@@ -654,9 +655,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     ],
 }
 
-const BitbucketIcon: IconComponentType = ({ className }) => (
-    <Icon svgPath={mdiBitbucket} title="Bitbucket icon" className={className} />
-)
+const BitbucketIcon: ExternalServicesIcon = props => <Icon svgPath={mdiBitbucket} {...props} />
 
 const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETCLOUD,
@@ -901,9 +900,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
     ],
 }
 
-const GitLabIcon: IconComponentType = ({ className }) => (
-    <Icon svgPath={mdiGitlab} title="GitLab icon" className={className} />
-)
+const GitLabIcon: ExternalServicesIcon = props => <Icon svgPath={mdiGitlab} {...props} />
 
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
@@ -935,7 +932,7 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
 }`,
 }
 
-const GitIcon: IconComponentType = ({ className }) => <Icon svgPath={mdiGit} title="Git icon" className={className} />
+const GitIcon: ExternalServicesIcon = props => <Icon svgPath={mdiGit} {...props} />
 
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
@@ -1198,9 +1195,7 @@ const PERFORCE: AddExternalServiceOptions = {
     ],
 }
 
-const LanguageJavaIcon: IconComponentType = ({ className }) => (
-    <Icon svgPath={mdiLanguageJava} title="Java language icon" className={className} />
-)
+const LanguageJavaIcon: ExternalServicesIcon = props => <Icon svgPath={mdiLanguageJava} {...props} />
 
 const JVM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.JVMPACKAGES,
@@ -1255,7 +1250,7 @@ const PAGURE: AddExternalServiceOptions = {
     editorActions: [],
 }
 
-const NpmIcon: IconComponentType = ({ className }) => <Icon svgPath={mdiNpm} title="NPM icon" className={className} />
+const NpmIcon: ExternalServicesIcon = props => <Icon svgPath={mdiNpm} {...props} />
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
