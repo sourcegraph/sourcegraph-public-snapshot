@@ -32,14 +32,12 @@ import (
 type Client interface {
 	// GetPackageInfo gets a package's data from the registry, including versions.
 	//
-	// It is preferable to use this method instead of calling DoesDependencyExist
-	// in a loop, if different dependencies may share the same underlying package.
+	// It is preferable to use this method instead of calling GetDependencyInfo for
+	// multiple versions of a package in a loop.
 	GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (*PackageInfo, error)
 
-	// DoesDependencyExist checks if a particular dependency exists on a particular registry.
-	//
-	// exists should be checked even if err is nil.
-	DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error)
+	// GetDependencyInfo gets a dependency's data from the registry.
+	GetDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (*DependencyInfo, error)
 
 	// FetchTarball fetches the sources in .tar.gz format for a dependency.
 	//
@@ -69,23 +67,24 @@ func FetchSources(ctx context.Context, client Client, dependency *reposource.NPM
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
+
 	return client.FetchTarball(ctx, dependency)
 }
 
-func Exists(ctx context.Context, client Client, dependency *reposource.NPMDependency) (err error) {
+func Exists(ctx context.Context, client Client, dependency *reposource.NPMDependency) (exists bool, err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Bool("exists", exists),
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	exists, err := client.DoesDependencyExist(ctx, dependency)
-	if err != nil {
-		return errors.Wrapf(err, "tried to check if npm package %s exists but failed", dependency.PackageManagerSyntax())
+	if _, err = client.GetDependencyInfo(ctx, dependency); err != nil {
+		if errors.HasType(err, npmError{}) {
+			return false, nil
+		}
+		return false, err
 	}
-	if !exists {
-		return errors.Newf("npm package %s does not exist", dependency.PackageManagerSyntax())
-	}
-	return nil
+	return true, nil
 }
 
 type HTTPClient struct {
@@ -189,10 +188,7 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 
 	resp, err := client.do(ctx, req)
 	if err != nil {
-		if resp == nil { // possible if you pass in an incorrect registry URL
-			return nil, err
-		}
-		return nil, npmError{resp.StatusCode, err}
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -201,13 +197,13 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, npmError{resp.StatusCode, errors.Newf("%s", bodyBuffer.String())}
+		return nil, npmError{resp.StatusCode, errors.New(bodyBuffer.String())}
 	}
 
 	return io.NopCloser(&bodyBuffer), nil
 }
 
-func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (*DependencyInfo, error) {
+func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (*DependencyInfo, error) {
 	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
 	body, err := client.makeGetRequest(ctx, url)
@@ -221,23 +217,8 @@ func (client *HTTPClient) getDependencyInfo(ctx context.Context, dep *reposource
 	return &info, nil
 }
 
-func (client *HTTPClient) DoesDependencyExist(ctx context.Context, dep *reposource.NPMDependency) (exists bool, err error) {
-	_, err = client.getDependencyInfo(ctx, dep)
-	var npmErr npmError
-	if err != nil && errors.As(err, &npmErr) && npmErr.statusCode == http.StatusNotFound {
-		log15.Info("npm dependency does not exist", "dependency", dep.PackageManagerSyntax())
-		return false, err
-	}
-	var e illFormedJSONError
-	if errors.As(err, &e) {
-		log15.Warn("received ill-formed JSON payload from NPM Registry API", "error", e)
-		return false, nil
-	}
-	return err == nil, err
-}
-
 func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NPMDependency) (io.ReadCloser, error) {
-	info, err := client.getDependencyInfo(ctx, dep)
+	info, err := client.GetDependencyInfo(ctx, dep)
 	if err != nil {
 		return nil, err
 	}

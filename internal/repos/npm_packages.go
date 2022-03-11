@@ -99,22 +99,21 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 			npmDependency := reposource.NPMDependency{NPMPackage: parsedDbPackage, Version: dbDep.Version}
 			pkgKey := npmDependency.PackageSyntax()
 			info := pkgVersions[pkgKey]
+
 			if info == nil {
 				info, err = s.client.GetPackageInfo(ctx, npmDependency.NPMPackage)
 				if err != nil {
 					pkgVersions[pkgKey] = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
-					log15.Warn("npm package not found in registry", "package", pkgKey, "err", err)
 					continue
 				}
+
 				pkgVersions[pkgKey] = info
 			}
+
 			if _, hasVersion := info.Versions[npmDependency.Version]; !hasVersion {
-				if len(info.Versions) != 0 { // We must've already logged a package not found earlier if len is 0.
-					log15.Warn("npm dependency does not exist",
-						"dependency", npmDependency.PackageManagerSyntax())
-				}
 				continue
 			}
+
 			repo := s.makeRepo(npmDependency.NPMPackage, info.Description)
 			totalDBResolved++
 			results <- SourceResult{Source: s, Repo: repo}
