@@ -117,10 +117,7 @@ export interface BuiltinPanelDefinition {
 export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
-            builtinPanelViewProviders.value.set(builtinPanel.id, {
-                id: builtinPanel.id,
-                provider: builtinPanel.provider,
-            })
+            builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
         }
         builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
 
