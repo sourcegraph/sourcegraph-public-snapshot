@@ -106,7 +106,7 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
         >
             <div className="elm">
                 {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */}
-                <ElmComponent src={Elm.Main} ports={setupPorts} flags={null} />
+                <ElmComponent src={Elm.Main} ports={setupPorts} flags={platformContext.sourcegraphURL} />
             </div>
         </NotebookBlock>
     )
