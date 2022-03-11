@@ -31,9 +31,7 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
 
-### Direct installation
-
-  > NOTE: We recently launched support for deploying Sourcegraph with Helm chart. [Give it a try](./helm.md)! 🎉
+### Direct
 
 - After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 - `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
@@ -64,7 +62,11 @@ Once you are all set up, either [install Sourcegraph directly](#direct-installat
 
 > NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
 
-### Cloud installation
+### Helm
+
+We support the use of [Helm](https://helm.sh) to deploy Sourcegraph. The Helm chart allows users to deploy Sourcegraph with ease. Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts. Follow our [installation guide](./helm.md) for Helm.
+
+### Cloud
 
 > WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
@@ -150,10 +152,6 @@ The overlays provided in our [overlays directory](https://github.com/sourcegraph
   and also allows using `kubectl apply -f` with `--prune` flag turned on (`apply -k` with `--prune` does not work correctly).
 
 To learn about our available overlays and how to use them, please refer to our [overlays guides](./configure.md#overlays).
-
-### Helm
-
-We support the use of [Helm](https://helm.sh) to deploy Sourcegraph. The Helm chart allows users to deploy Sourcegraph with ease. Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts. Follow our [installation guide](./helm.md) for Helm.
 
 ### Reference repository
 
