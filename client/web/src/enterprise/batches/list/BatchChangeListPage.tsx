@@ -152,14 +152,14 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                             <div className={styles.filtersRow}>
                                 <h3 className="align-self-end flex-1">{connection?.totalCount} batch changes</h3>
                                 <h4 className="mb-0 mr-2">Status</h4>
-                                <BatchChangeListFilters
-                                    className={styles.statusDropdown}
-                                    isExecutionEnabled={isExecutionEnabled}
-                                    defaultValue={selectedFilters}
-                                    onChange={setSelectedFilters}
-                                />
-                            </div>
                         )}
+                            <BatchChangeListFilters
+                                className="m-0"
+                                isExecutionEnabled={isExecutionEnabled}
+                                defaultValue={selectedFilters}
+                                onChange={setSelectedFilters}
+                                isDisabled={licenseAndUsageInfo?.allBatchChanges.totalCount === 0}
+                            />
                         {error && <ConnectionError errors={[error.message]} />}
                         <ConnectionList
                             className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
