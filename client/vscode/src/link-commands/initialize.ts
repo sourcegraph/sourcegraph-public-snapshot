@@ -45,7 +45,7 @@ export function initializeCodeSharingCommands(
     // Log Redirect Event
     function logRedirectEvent(sourcegraphUrl: string): void {
         const userEventVariables = {
-            event: 'IDERedirects',
+            event: 'IDERedirected',
             userCookieID: localStorageService.getValue(ANONYMOUS_USER_ID_KEY),
             referrer: 'VSCE',
             url: sourcegraphUrl,
