@@ -127,10 +127,6 @@ type Client interface {
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
-	// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
-	// a user-provided command.
-	GetGitolitePhabricatorMetadata(_ context.Context, gitoliteHost string, _ api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
-
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
@@ -686,27 +682,6 @@ func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	}
 	wg.Wait()
 	return repos, err
-}
-
-func (c *ClientImplementor) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.addrForKey(gitoliteHost) +
-		"/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) +
-		"&repo=" + url.QueryEscape(string(repoName))
-
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var metadata protocol.GitolitePhabricatorMetadataResponse
-	err = json.NewDecoder(resp.Body).Decode(&metadata)
-	return &metadata, err
 }
 
 func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {

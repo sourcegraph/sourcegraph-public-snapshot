@@ -163,12 +163,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	var gps *repos.GitolitePhabricatorMetadataSyncer
-	if !envvar.SourcegraphDotComMode() {
-		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
-	}
-
-	go watchSyncer(ctx, syncer, updateScheduler, gps, server.PermsSyncer)
+	go watchSyncer(ctx, syncer, updateScheduler, server.PermsSyncer)
 	go func() {
 		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -399,7 +394,6 @@ func watchSyncer(
 	ctx context.Context,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	gps *repos.GitolitePhabricatorMetadataSyncer,
 	permsSyncer permsSyncer,
 ) {
 	log15.Debug("started new repo syncer updates scheduler relay thread")
@@ -418,14 +412,6 @@ func watchSyncer(
 				// Schedule a repo permissions sync for all private repos that were added or
 				// modified.
 				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
-			}
-
-			if gps != nil {
-				go func() {
-					if err := gps.Sync(ctx, diff.Repos()); err != nil {
-						log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
-					}
-				}()
 			}
 		}
 	}
