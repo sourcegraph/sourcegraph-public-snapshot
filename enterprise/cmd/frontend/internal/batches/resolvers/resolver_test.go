@@ -988,6 +988,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	var batchChangeID int64 = 1
 	var repoID api.RepoID = 123
 	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
+	checkOpenOrDraft := true
+	checkOpenOrDraftPublicationState := btypes.ChangesetPublicationStatePublished
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -1107,6 +1109,21 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
 				RepoID: repoID,
+			},
+		},
+		// CheckOpenOrDraft changesets
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				CheckOpenOrDraft: &checkOpenOrDraft,
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				PublicationState: &checkOpenOrDraftPublicationState,
+				ExternalStates: []btypes.ChangesetExternalState{
+					btypes.ChangesetExternalStateDraft,
+					btypes.ChangesetExternalStateOpen,
+				},
+				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},
 		},
 	}
