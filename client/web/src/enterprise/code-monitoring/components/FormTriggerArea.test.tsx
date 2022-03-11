@@ -19,26 +19,6 @@ describe('FormTriggerArea', () => {
         clock.restore()
     })
 
-    test('Correct checkboxes shown when query does not fulfill requirements', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <FormTriggerArea
-                query="test repo:test"
-                triggerCompleted={false}
-                onQueryChange={sinon.spy()}
-                setTriggerCompleted={sinon.spy()}
-                startExpanded={false}
-                isLightTheme={true}
-                isSourcegraphDotCom={false}
-            />
-        )
-        userEvent.click(screen.getByTestId('trigger-button'))
-        act(() => {
-            clock.tick(600)
-        })
-
-        expect(asFragment()).toMatchSnapshot()
-    })
-
     const testCases = [
         { query: '', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: false },
         { query: 'test', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: true },

@@ -197,7 +197,12 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <div>
                         <div className={classNames(styles.queryInput, 'my-2')}>
                             <div
-                                className={classNames('form-control', styles.queryInputField)}
+                                className={classNames(
+                                    'form-control',
+                                    styles.queryInputField,
+                                    'test-trigger-input',
+                                    `test-${derivedInputClassName}`
+                                )}
                                 data-testid="trigger-query-edit"
                             >
                                 <LazyMonacoQueryInput
@@ -211,7 +216,6 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     globbing={false}
                                     preventNewLine={false}
                                     autoFocus={true}
-                                    className={classNames('test-trigger-input', `test-${derivedInputClassName}`)}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>
