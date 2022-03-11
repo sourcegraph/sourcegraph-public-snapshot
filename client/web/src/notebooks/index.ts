@@ -50,6 +50,7 @@ export interface SymbolBlockInput {
 }
 
 export interface SymbolBlockOutput {
+    symbolFoundAtLatestRevision: boolean
     effectiveRevision: string
     symbolRange: UIRangeSpec['range']
     highlightLineRange: IHighlightLineRange

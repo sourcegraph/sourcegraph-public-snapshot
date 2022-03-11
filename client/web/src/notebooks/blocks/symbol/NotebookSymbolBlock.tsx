@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as Monaco from 'monaco-editor'
@@ -23,7 +24,7 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Alert, Icon, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { BlockProps, SymbolBlock, SymbolBlockInput } from '../..'
+import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
 import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import blockStyles from '../NotebookBlock.module.scss'
@@ -45,6 +46,12 @@ interface NotebookSymbolBlockProps
 }
 
 const LOADING = 'LOADING' as const
+
+function isSymbolOutputLoaded(
+    output: SymbolBlockOutput | Error | typeof LOADING | undefined
+): output is SymbolBlockOutput {
+    return output !== undefined && !isErrorLike(output) && output !== LOADING
+}
 
 export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = ({
     id,
@@ -159,10 +166,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         () => ({
             extensionsController,
             ...input,
-            revision:
-                symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput)
-                    ? symbolOutput.effectiveRevision
-                    : input.revision,
+            revision: isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision : input.revision,
         }),
         [symbolOutput, extensionsController, input]
     )
@@ -190,7 +194,18 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             >
                 <div className={styles.header}>
                     {input.symbolName.length > 0 ? (
-                        <NotebookSymbolBlockHeader {...input} symbolURL={symbolURL} />
+                        <NotebookSymbolBlockHeader
+                            {...input}
+                            symbolFoundAtLatestRevision={
+                                isSymbolOutputLoaded(symbolOutput)
+                                    ? symbolOutput.symbolFoundAtLatestRevision
+                                    : undefined
+                            }
+                            effectiveRevision={
+                                isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision.slice(0, 7) : ''
+                            }
+                            symbolURL={symbolURL}
+                        />
                     ) : (
                         <>No symbol selected</>
                     )}
@@ -245,9 +260,17 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     )
 }
 
-const NotebookSymbolBlockHeader: React.FunctionComponent<SymbolBlockInput & { symbolURL: string }> = ({
+interface NotebookSymbolBlockHeaderProps extends SymbolBlockInput {
+    symbolFoundAtLatestRevision: boolean | undefined
+    effectiveRevision: string
+    symbolURL: string
+}
+
+const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHeaderProps> = ({
     repositoryName,
     filePath,
+    symbolFoundAtLatestRevision,
+    effectiveRevision,
     symbolName,
     symbolContainerName,
     symbolKind,
@@ -258,12 +281,21 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<SymbolBlockInput & { sy
             <SymbolIcon className="icon-inline" kind={symbolKind} />
         </div>
         <div className="d-flex flex-column">
-            <code data-testid="selected-symbol-name">
-                <Link className={styles.headerLink} to={symbolURL}>
-                    {symbolName}
-                </Link>{' '}
-                {symbolContainerName && <span className="text-muted">{symbolContainerName}</span>}
-            </code>
+            <div className="mb-1 d-flex align-items-center">
+                <code data-testid="selected-symbol-name">
+                    <Link className={styles.headerLink} to={symbolURL}>
+                        {symbolName}
+                    </Link>
+                    {symbolContainerName && <span className="text-muted"> {symbolContainerName}</span>}
+                </code>
+                {symbolFoundAtLatestRevision === false && (
+                    <Icon
+                        as={InformationOutlineIcon}
+                        className="icon-inline ml-1"
+                        data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
+                    />
+                )}
+            </div>
             <small className="text-muted">
                 {repositoryName}/{filePath}
             </small>
