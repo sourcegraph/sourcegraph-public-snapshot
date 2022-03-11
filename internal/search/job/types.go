@@ -30,7 +30,6 @@ var allJobs = []Job{
 	&zoekt.ZoektRepoSubsetSearch{},
 	&searcher.Searcher{},
 	&run.RepoSearch{},
-	&textsearch.RepoSubsetTextSearch{},
 	&textsearch.RepoUniverseTextSearch{},
 	&structural.StructuralSearch{},
 	&commit.CommitSearch{},
