@@ -17,35 +17,15 @@
 
 .floating-panel {
     overflow: auto;
-    min-width: 10rem;
-    font-size: 0.875rem;
-    text-align: left;
-    list-style: none;
-    background-clip: padding-box;
-    background-color: var(--dropdown-bg);
-    border: 1px solid var(--dropdown-border-color);
-    border-radius: var(--popover-border-radius);
-    color: var(--body-color);
-    box-shadow: var(--dropdown-shadow);
 }
 
 .tail {
     width: 1rem;
     height: 0.5rem;
 
-    &::before,
     &::after {
         content: '';
         display: block;
-    }
-
-    &::before {
-        position: absolute;
-        border-left: 9px solid transparent;
-        border-top: 9px solid rgba(0, 0, 0, 0.8);
-        border-right: 9px solid transparent;
-        right: -1px;
-        bottom: -1px;
     }
 
     &::after {
@@ -56,29 +36,5 @@
         z-index: 1;
 
         border-top-color: var(--border-color);
-    }
-
-    &--top-start,
-    &--top,
-    &--top-end {
-        top: -1px;
-    }
-
-    &--left-start,
-    &--left,
-    &--left-end {
-        left: -2px;
-    }
-
-    &--right-start,
-    &--right,
-    &--right-end {
-        left: 1px;
-    }
-
-    &--bottom-start,
-    &--bottom,
-    &--bottom-end {
-        top: 1px;
     }
 }
