@@ -175,11 +175,8 @@ func TestUnredactSecrets(t *testing.T) {
 		input := getTestSiteWithRedactedSecrets()
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
-		assert.Contains(t, unredactedSite, RedactedSecret)
-
-		got := conftypes.RawUnified{Site: unredactedSite}
-		want := conftypes.RawUnified{Site: previousSite}
-		assert.Equal(t, want, got)
+		assert.NotContains(t, unredactedSite, RedactedSecret)
+		assert.Equal(t, previousSite, unredactedSite)
 	})
 
 	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
@@ -195,20 +192,17 @@ func TestUnredactSecrets(t *testing.T) {
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
 
-		got := conftypes.RawUnified{Site: unredactedSite}
 		// Expect to have newly-specified secrets and to fill in "REDACTED" secrets with secrets from previous site
-		want := conftypes.RawUnified{
-			Site: getTestSiteWithSecrets(
-				"new"+executorsAccessToken,
-				authOpenIDClientSecret, "new"+authGitLabClientSecret, authGitHubClientSecret,
-				emailSMTPPassword,
-				organizationInvitationsSigningKey,
-				githubClientSecret,
-				dotcomGitHubAppCloudClientSecret,
-				dotcomGitHubAppCloudPrivateKey,
-			),
-		}
-		assert.Equal(t, want, got)
+		want := getTestSiteWithSecrets(
+			"new"+executorsAccessToken,
+			authOpenIDClientSecret, "new"+authGitLabClientSecret, authGitHubClientSecret,
+			emailSMTPPassword,
+			organizationInvitationsSigningKey,
+			githubClientSecret,
+			dotcomGitHubAppCloudClientSecret,
+			dotcomGitHubAppCloudPrivateKey,
+		)
+		assert.Equal(t, want, unredactedSite)
 	})
 
 	t.Run("unredacts secrets and respects edits to config", func(t *testing.T) {
@@ -226,21 +220,18 @@ func TestUnredactSecrets(t *testing.T) {
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
 
-		got := conftypes.RawUnified{Site: unredactedSite}
 		// Expect new secrets and new email to show up in the unredacted version
-		want := conftypes.RawUnified{
-			Site: getTestSiteWithSecrets(
-				"new"+executorsAccessToken,
-				authOpenIDClientSecret, "new"+authGitLabClientSecret, authGitHubClientSecret,
-				emailSMTPPassword,
-				organizationInvitationsSigningKey,
-				githubClientSecret,
-				dotcomGitHubAppCloudClientSecret,
-				dotcomGitHubAppCloudPrivateKey,
-				newEmail,
-			),
-		}
-		assert.Equal(t, want, got)
+		want := getTestSiteWithSecrets(
+			"new"+executorsAccessToken,
+			authOpenIDClientSecret, "new"+authGitLabClientSecret, authGitHubClientSecret,
+			emailSMTPPassword,
+			organizationInvitationsSigningKey,
+			githubClientSecret,
+			dotcomGitHubAppCloudClientSecret,
+			dotcomGitHubAppCloudPrivateKey,
+			newEmail,
+		)
+		assert.Equal(t, want, unredactedSite)
 	})
 }
 
@@ -305,7 +296,7 @@ func getTestSiteWithSecrets(
   "organizationInvitations": {
     "signingKey": "%s"
   },
-  "authGitHubClientSecret": "%s",
+  "githubClientSecret": "%s",
   "dotcom": {
     "githubApp.cloud": {
       "clientSecret": "%s",
