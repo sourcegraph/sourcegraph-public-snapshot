@@ -3,8 +3,8 @@ import React, { useEffect } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CaptureGroupInsight } from '../../../../core/types'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -58,7 +58,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
     }
 
     return (
-        <Page>
+        <CodeInsightsPage>
             <PageTitle title="Create new capture group code insight" />
 
             <header className="mb-5">
@@ -80,6 +80,6 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
                 onCancel={handleCancel}
                 onChange={handleChange}
             />
-        </Page>
+        </CodeInsightsPage>
     )
 }

@@ -2,7 +2,6 @@ import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
 import React from 'react'
-import { of } from 'rxjs'
 
 import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import {
@@ -28,7 +27,7 @@ const settingsClient = createMockClient(
 )
 
 class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
-    public getUiFeatures = () => of({ licensed: false })
+    public getUiFeatures = () => ({ licensed: false })
 }
 const api = new CodeInsightExampleBackend({} as any)
 

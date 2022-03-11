@@ -1,5 +1,5 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
-import { forkJoin, from, Observable, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 import {
@@ -476,10 +476,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    public getUiFeatures = (): Observable<UiFeatures> =>
-        forkJoin({
-            licensed: of(true),
-        })
+    public getUiFeatures = (): UiFeatures => ({
+        licensed: true,
+    })
 }
 
 const getRepositoryName = (
