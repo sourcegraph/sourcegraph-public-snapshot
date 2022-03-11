@@ -1416,7 +1416,8 @@ type SAMLAuthProvider struct {
 	Type         string `json:"type"`
 }
 
-// SMTPServerConfig description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
+// SMTPServerConfig description: The SMTP server used to send transactional emails.
+// Please see https://docs.sourcegraph.com/admin/config/email
 type SMTPServerConfig struct {
 	// Authentication description: The type of authentication to use for the SMTP server.
 	Authentication string `json:"authentication"`
@@ -1714,8 +1715,10 @@ type SiteConfiguration struct {
 	// Dotcom description: Configuration options for Sourcegraph.com only.
 	Dotcom *Dotcom `json:"dotcom,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
+	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailAddress string `json:"email.address,omitempty"`
-	// EmailSmtp description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
+	// EmailSmtp description: The SMTP server used to send transactional emails.
+	// Please see https://docs.sourcegraph.com/admin/config/email
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
@@ -1787,6 +1790,8 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
+	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
+	PermissionsSyncScheduleInterval int `json:"permissions.syncScheduleInterval,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.

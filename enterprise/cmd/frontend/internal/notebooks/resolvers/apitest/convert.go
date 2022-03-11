@@ -20,6 +20,16 @@ func BlockToAPIResponse(block notebooks.NotebookBlock) NotebookBlock {
 			Revision:       block.FileInput.Revision,
 			LineRange:      &LineRange{StartLine: block.FileInput.LineRange.StartLine, EndLine: block.FileInput.LineRange.EndLine},
 		}}
+	case notebooks.NotebookSymbolBlockType:
+		return NotebookBlock{Typename: "SymbolBlock", ID: block.ID, SymbolInput: SymbolInput{
+			RepositoryName:      block.SymbolInput.RepositoryName,
+			FilePath:            block.SymbolInput.FilePath,
+			Revision:            block.SymbolInput.Revision,
+			LineContext:         block.SymbolInput.LineContext,
+			SymbolName:          block.SymbolInput.SymbolName,
+			SymbolContainerName: block.SymbolInput.SymbolContainerName,
+			SymbolKind:          block.SymbolInput.SymbolKind,
+		}}
 	}
 	panic("unknown block type")
 }
@@ -54,6 +64,16 @@ func BlockToAPIInput(block notebooks.NotebookBlock) graphqlbackend.CreateNoteboo
 			FilePath:       block.FileInput.FilePath,
 			Revision:       block.FileInput.Revision,
 			LineRange:      &graphqlbackend.CreateFileBlockLineRangeInput{StartLine: block.FileInput.LineRange.StartLine, EndLine: block.FileInput.LineRange.EndLine},
+		}}
+	case notebooks.NotebookSymbolBlockType:
+		return graphqlbackend.CreateNotebookBlockInputArgs{ID: block.ID, Type: graphqlbackend.NotebookSymbolBlockType, SymbolInput: &graphqlbackend.CreateSymbolBlockInput{
+			RepositoryName:      block.SymbolInput.RepositoryName,
+			FilePath:            block.SymbolInput.FilePath,
+			Revision:            block.SymbolInput.Revision,
+			LineContext:         block.SymbolInput.LineContext,
+			SymbolName:          block.SymbolInput.SymbolName,
+			SymbolContainerName: block.SymbolInput.SymbolContainerName,
+			SymbolKind:          block.SymbolInput.SymbolKind,
 		}}
 	}
 	panic("unknown block type")

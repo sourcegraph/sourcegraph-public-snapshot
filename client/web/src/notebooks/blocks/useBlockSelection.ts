@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { BlockProps } from '..'
+import { Block, BlockProps } from '..'
 
-interface UseBlockFocusOptions extends Pick<BlockProps, 'onSelectBlock'> {
+interface UseBlockFocusOptions extends Pick<BlockProps<Block>, 'onSelectBlock'> {
     id: string
     isSelected: boolean
     isInputFocused: boolean
