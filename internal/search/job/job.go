@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
@@ -139,35 +140,35 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		}
 
 		if args.ResultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
+			var textSearchJobs []Job
 			typ := search.TextRequest
-			// TODO(rvantonder): we don't always have to run
-			// this converter. It depends on whether we run
-			// a zoekt search at all.
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-			if err != nil {
-				return nil, err
-			}
-			zoektArgs := &search.ZoektParameters{
-				Query:          zoektQuery,
-				Typ:            typ,
-				FileMatchLimit: args.PatternInfo.FileMatchLimit,
-				Select:         args.PatternInfo.Select,
-				Zoekt:          args.Zoekt,
+			if !onlyRunSearcher {
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				if err != nil {
+					return nil, err
+				}
+				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
+					Query:          zoektQuery,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				})
 			}
 
-			searcherArgs := &search.SearcherParameters{
-				SearcherURLs:    args.SearcherURLs,
+			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
 				PatternInfo:     args.PatternInfo,
+				Indexed:         false,
+				SearcherURLs:    args.SearcherURLs,
 				UseFullDeadline: args.UseFullDeadline,
-			}
+			})
 
-			addJob(true, &textsearch.RepoSubsetTextSearch{
-				ZoektArgs:        zoektArgs,
-				SearcherArgs:     searcherArgs,
-				NotSearcherOnly:  !onlyRunSearcher,
-				UseIndex:         args.PatternInfo.Index,
-				ContainsRefGlobs: query.ContainsRefGlobs(q),
-				RepoOpts:         repoOptions,
+			addJob(true, &repoPagerJob{
+				child:            NewParallelJob(textSearchJobs...),
+				repoOptions:      repoOptions,
+				useIndex:         args.PatternInfo.Index,
+				containsRefGlobs: query.ContainsRefGlobs(q),
+				zoekt:            args.Zoekt,
 			})
 		}
 
