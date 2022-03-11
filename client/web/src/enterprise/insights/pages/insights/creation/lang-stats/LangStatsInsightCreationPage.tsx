@@ -5,8 +5,8 @@ import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -94,7 +94,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className={classNames(styles.creationPage, 'col-10')}>
+        <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -115,6 +115,6 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 onCancel={handleCancel}
                 onChange={handleChange}
             />
-        </Page>
+        </CodeInsightsPage>
     )
 }
