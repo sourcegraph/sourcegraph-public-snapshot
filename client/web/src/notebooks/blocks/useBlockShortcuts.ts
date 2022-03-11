@@ -1,4 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
+
+import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 
 import { BlockProps } from '..'
 
@@ -9,7 +11,6 @@ interface UseBlockShortcutsOptions
     > {
     id: string
     onEnterBlock: () => void
-    isMacPlatform: boolean
 }
 
 export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isMacPlatform: boolean): boolean {
@@ -18,7 +19,6 @@ export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isM
 
 export const useBlockShortcuts = ({
     id,
-    isMacPlatform,
     onMoveBlockSelection,
     onRunBlock,
     onDeleteBlock,
@@ -26,6 +26,7 @@ export const useBlockShortcuts = ({
     onMoveBlock,
     onDuplicateBlock,
 }: UseBlockShortcutsOptions): { onKeyDown: (event: React.KeyboardEvent) => void } => {
+    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent): void => {
             const isModifierKeyDown = isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)

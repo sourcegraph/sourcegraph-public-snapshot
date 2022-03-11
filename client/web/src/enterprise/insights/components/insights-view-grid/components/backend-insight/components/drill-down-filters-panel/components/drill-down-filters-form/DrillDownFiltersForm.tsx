@@ -40,7 +40,7 @@ interface DrillDownFiltersFormProps {
     originalFiltersValue: DrillDownFiltersFormValues
 
     /**
-     * Live filters that lives only in runtime memory and can be different
+     * Live filters that live only in runtime memory and can be different
      * from originalFiltersValue of insight until the user syncs them by
      * save/update default filters.
      */

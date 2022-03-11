@@ -16,7 +16,7 @@ import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashb
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
 const LazyCodeInsightsGettingStartedPage = lazyComponent(
-    () => import('./getting-started/CodeInsightsGettingStartedPage'),
+    () => import('./landing/getting-started/CodeInsightsGettingStartedPage'),
     'CodeInsightsGettingStartedPage'
 )
 
