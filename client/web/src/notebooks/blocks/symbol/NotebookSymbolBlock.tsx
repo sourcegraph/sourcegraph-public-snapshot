@@ -69,10 +69,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
-    const [symbolQueryInput, setSymbolQueryInput] = useState('')
     const [isInputFocused, setIsInputFocused] = useState(false)
-
+    const [symbolQueryInput, setSymbolQueryInput] = useState('')
     const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
+
     const onSymbolSelected = useCallback(
         (input: SymbolBlockInput) => {
             onBlockInputChange(id, { type: 'symbol', input })
@@ -196,11 +196,11 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 <NotebookSymbolBlockInput
                     id={id}
                     editor={editor}
-                    symbolQueryInput={symbolQueryInput}
+                    queryInput={symbolQueryInput}
                     isLightTheme={isLightTheme}
                     setEditor={setEditor}
-                    setSymbolQueryInput={setSymbolQueryInput}
-                    debouncedSetSymbolQueryInput={debouncedSetSymbolQueryInput}
+                    setQueryInput={setSymbolQueryInput}
+                    debouncedSetQueryInput={debouncedSetSymbolQueryInput}
                     onSymbolSelected={onSymbolSelected}
                     setIsInputFocused={setIsInputFocused}
                     onRunBlock={hideInputs}

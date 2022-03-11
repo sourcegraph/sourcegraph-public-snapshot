@@ -433,6 +433,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
+                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
                             extensionsController={extensionsController}
                         />
                     )
