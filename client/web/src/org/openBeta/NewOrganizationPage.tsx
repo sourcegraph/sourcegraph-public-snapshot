@@ -9,7 +9,17 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Alert, Button, Checkbox, Container, Input, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    AlertLink,
+    Button,
+    Checkbox,
+    Container,
+    Input,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+} from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import {
@@ -22,6 +32,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NewOrganization.module.scss'
 
+export const OPEN_BETA_ID_KEY = 'sgopenBetaId'
 interface Props extends RouteComponentProps<{ openBetaId: string }> {
     authenticatedUser: AuthenticatedUser
 }
@@ -49,7 +60,7 @@ const isValidOpenBetaId = (openBetaId: string): boolean => {
         if (openBetaId === 'testdev') {
             return true
         }
-        const waitingOpenBetaId = localStorage.getItem('sgopenBetaId')
+        const waitingOpenBetaId = localStorage.getItem(OPEN_BETA_ID_KEY)
         const isValid = openBetaId === waitingOpenBetaId
         eventLogger.log('OpenBetaIdCheck', { valid: isValid }, { valid: isValid })
         return isValid
@@ -66,7 +77,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
     const [orgId, setOrgId] = useState<string>('')
     const [displayName, setDisplayName] = useState<string>('')
     const [termsAccepted, setTermsAccepted] = useState(false)
-    const displayBox = useRef(false)
+    const [displayBox, setDisplayBox] = useState(false)
     const isSuggested = useRef(false)
 
     const [createOpenBetaOrg, { loading, error }] = useMutation<
@@ -92,7 +103,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
 
     useEffect(() => {
         if (existId && isSuggested.current && orgId && !loadingOrg) {
-            displayBox.current = true
+            setDisplayBox(true)
             const autofixID = `${orgId}-1`
             tryGetOrg({ variables: { name: autofixID } })
             setOrgId(autofixID)
@@ -101,16 +112,16 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
 
     const onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         isSuggested.current = true
-        displayBox.current = false
         const orgId = normalizeOrgId(event.currentTarget.value)
         setOrgId(orgId)
         setDisplayName(event.currentTarget.value)
+        setDisplayBox(false)
         debounceTryGetOrg.current({ variables: { name: orgId } })
     }
 
     const onDisplayNameFocus: React.ChangeEventHandler<HTMLInputElement> = () => {
         if (displayName && !hasValidId && orgId) {
-            displayBox.current = false
+            setDisplayBox(false)
             isSuggested.current = true
             debounceTryGetOrg.current({ variables: { name: orgId } })
         }
@@ -118,14 +129,20 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
 
     const onOrgIdChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         isSuggested.current = false
-        displayBox.current = false
         const orgId = normalizeOrgId(event.currentTarget.value)
         setOrgId(orgId)
+        setDisplayBox(false)
         debounceTryGetOrg.current({ variables: { name: orgId } })
     }
 
     const onCancelClick = (): void => {
         history.push(`/users/${authenticatedUser.username}/settings/organizations`)
+    }
+
+    const onDismissAlertClick: React.MouseEventHandler<HTMLAnchorElement> = event => {
+        event.preventDefault()
+        event.stopPropagation()
+        setDisplayBox(false)
     }
 
     const onTermsAcceptedChange: React.ChangeEventHandler<HTMLInputElement> = () => {
@@ -136,20 +153,21 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
         async event => {
             event.preventDefault()
             eventLogger.log('CreateNewOrgBetaClicked')
-            if (!event.currentTarget.checkValidity()) {
+            if (!event.currentTarget.checkValidity() || !hasValidId) {
                 return
             }
             try {
                 const result = await createOpenBetaOrg({ variables: { name: orgId, displayName } })
                 eventLogger.log('CreateNewOrgBetaOK')
                 if (result?.data?.createOrganization) {
+                    localStorage.removeItem(OPEN_BETA_ID_KEY)
                     history.push(result.data.createOrganization.settingsURL as string)
                 }
             } catch {
                 eventLogger.log('CreateNewOrgBetaFailed')
             }
         },
-        [orgId, displayName, history, createOpenBetaOrg]
+        [orgId, displayName, history, createOpenBetaOrg, hasValidId]
     )
 
     return (
@@ -207,19 +225,23 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
                             title="An organization identifier consists of letters, numbers, hyphens (-), dots (.) and may not begin
                             or end with a dot, nor begin with a hyphen."
                         />
-                        {displayBox.current && hasValidId && (
-                            <Alert variant="info" className="mb-2">
-                                <h4>We’ve suggested an alternative organization ID</h4>
-                                <div>{`${normalizeOrgId(
-                                    displayName
-                                )} is already in use. Use our suggestion or choose a new ID for your organization.`}</div>
+                        {displayBox && hasValidId && (
+                            <Alert variant="info" className="mb-2 d-flex align-items-center">
+                                <div className="flex-grow-1">
+                                    <h4>We’ve suggested an alternative organization ID</h4>
+                                    <div>{`${normalizeOrgId(
+                                        displayName
+                                    )} is already in use. Use our suggestion or choose a new ID for your organization.`}</div>
+                                </div>
+                                <AlertLink className="mr-2" to="" onClick={onDismissAlertClick}>
+                                    Dismiss
+                                </AlertLink>
                             </Alert>
                         )}
                         {!loadingOrg && !hasValidId && !isSuggested.current && orgId && (
-                            <Alert variant="info" className="mb-2">
-                                <h4>{`The organization identifier ${orgId} is already in use`}</h4>
-                                <div>Please try choosing a different one</div>
-                            </Alert>
+                            <span className={classNames('text-danger mb-3', styles.duplicateId)}>
+                                Organization ID is already in use
+                            </span>
                         )}
                         <small id="new-org-page__form-orgid-help" className="form-text text-muted">
                             Cannot be changed after creating your organization. This will be used to reference your
