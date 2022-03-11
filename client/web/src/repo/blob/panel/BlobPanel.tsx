@@ -202,7 +202,6 @@ export function useBlobPanelViews({
                     ...[
                         {
                             id: 'def',
-                            matches: undefined,
                             provider: createLocationProvider('def', 'Definition', 190, parameters =>
                                 from(extensionsController.extHostAPI).pipe(
                                     switchMap(extensionHostAPI =>
@@ -213,7 +212,6 @@ export function useBlobPanelViews({
                         },
                         {
                             id: 'references',
-                            matches: undefined,
                             provider: createLocationProvider<ReferenceParameters>(
                                 'references',
                                 'References',
@@ -235,8 +233,6 @@ export function useBlobPanelViews({
             } else {
                 panelDefinitions.push({
                     id: 'references',
-                    matches: (id: string): boolean =>
-                        id === 'def' || id === 'references' || id.startsWith('implementations_'),
                     provider: panelSubjectChanges.pipe(
                         map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
                             title: 'References',
@@ -244,6 +240,10 @@ export function useBlobPanelViews({
                             priority: 180,
                             selector: null,
                             locationProvider: undefined,
+                            // The new reference panel contains definitoins, references, and implementations. We need it to
+                            // match all these IDs so it shows up when one of the IDs is used as `#tab=<ID>` in the URL.
+                            matches: (id: string): boolean =>
+                                id === 'def' || id === 'references' || id.startsWith('implementations_'),
                             // This panel doesn't need a wrapper
                             noWrapper: true,
                             reactElement: position ? (
@@ -259,8 +259,8 @@ export function useBlobPanelViews({
                                         commitID,
                                         revision,
                                         filePath,
-                                        line: position?.line,
-                                        character: position?.character,
+                                        line: position.line,
+                                        character: position.character,
                                     }}
                                     externalHistory={history}
                                     externalLocation={location}

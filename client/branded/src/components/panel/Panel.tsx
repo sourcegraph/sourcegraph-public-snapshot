@@ -62,6 +62,9 @@ export interface PanelViewWithComponent extends PanelViewData {
 
     // Should the content of the panel be put inside a wrapper container with padding or not.
     noWrapper?: boolean
+
+    // Should the panel be shown for the given `#tab=<ID>` in the URL?
+    matchesTabID?: (id: string) => boolean
 }
 
 /**
@@ -86,12 +89,18 @@ interface PanelItem {
      * location provider (even if the result set is empty).
      */
     hasLocations?: boolean
+
+    /** Callback that's triggered when the panel is selected */
+    trackTabClick: () => void
+
+    // Should the panel item be shown for the given `#tab=<ID>` in the URL?
+    matchesTabID?: (id: string) => boolean
 }
 
 export type BuiltinPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
 
 const builtinPanelViewProviders = new BehaviorSubject<
-    Map<string, { id: string; matches?: (id: string) => boolean; provider: Observable<BuiltinPanelView | null> }>
+    Map<string, { id: string; provider: Observable<BuiltinPanelView | null> }>
 >(new Map())
 
 /**
@@ -99,7 +108,6 @@ const builtinPanelViewProviders = new BehaviorSubject<
  */
 export interface BuiltinPanelDefinition {
     id: string
-    matches?: (id: string) => boolean
     provider: Observable<BuiltinPanelView | null>
 }
 /**
@@ -112,7 +120,6 @@ export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): v
             builtinPanelViewProviders.value.set(builtinPanel.id, {
                 id: builtinPanel.id,
                 provider: builtinPanel.provider,
-                matches: builtinPanel.matches,
             })
         }
         builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
@@ -126,16 +133,6 @@ export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): v
     }, [builtinPanels])
 }
 
-/**
- * DynamicPanelView is a PanelViewWithComponent that can dynamically decide
- * whether to be shown for the given panel tab ID.
- *
- * This ID comes from the `#tab=<ID>` location hash.
- *
- */
-interface DynamicPanelView extends PanelViewWithComponent {
-    matches?: (id: string) => boolean
-}
 /**
  * The panel, which is a tabbed component with contextual information. Components rendering the panel should
  * generally use ResizablePanel, not Panel.
@@ -157,14 +154,14 @@ export const Panel = React.memo<Props>(props => {
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
-    const builtinPanels: DynamicPanelView[] | undefined = useObservable(
+    const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
                 builtinPanelViewProviders.pipe(
                     switchMap(providers =>
                         combineLatestOrDefault(
-                            [...providers].map(([id, { provider, matches }]) =>
-                                provider.pipe(map(view => (view ? { ...view, id, matches, component: null } : null)))
+                            [...providers].map(([id, { provider }]) =>
+                                provider.pipe(map(view => (view ? { ...view, id, component: null } : null)))
                             )
                         )
                     ),
@@ -174,7 +171,7 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
-    const extensionPanels: DynamicPanelView[] | undefined = useObservable(
+    const extensionPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
                 from(props.extensionsController.extHostAPI).pipe(
@@ -194,14 +191,13 @@ export const Panel = React.memo<Props>(props => {
                                     .filter(panelView =>
                                         panelView.selector !== null ? match(panelView.selector, document) : true
                                     )
-                                    .filter(panelView => {
-                                        if (!isExperimentalReferencePanelEnabled) {
-                                            return true
-                                        }
-
-                                        // If we use the new reference panel we don't want to display additional 'implementations_' panels
-                                        return !panelView.component?.locationProvider?.startsWith('implementations_')
-                                    })
+                                    .filter(panelView =>
+                                        // If we use the new reference panel we don't want to display additional
+                                        // 'implementations_' panels
+                                        isExperimentalReferencePanelEnabled
+                                            ? !panelView.component?.locationProvider?.startsWith('implementations_')
+                                            : true
+                                    )
                                     .map((panelView: PanelViewWithComponent) => {
                                         const locationProviderID = panelView.component?.locationProvider
                                         const maxLocations = panelView.component?.maxLocationResults
@@ -252,18 +248,17 @@ export const Panel = React.memo<Props>(props => {
         () =>
             panelViews
                 ? panelViews
-                      .map((panelView): PanelItem & {
-                          trackTabClick: () => void
-                          matches?: (id: string) => boolean
-                      } => ({
-                          label: panelView.title,
-                          id: panelView.id,
-                          priority: panelView.priority,
-                          element: <PanelView {...props} panelView={panelView} location={location} />,
-                          hasLocations: !!panelView.locationProvider,
-                          trackTabClick: () => trackTabClick(panelView.title),
-                          matches: panelView.matches,
-                      }))
+                      .map(
+                          (panelView): PanelItem => ({
+                              label: panelView.title,
+                              id: panelView.id,
+                              priority: panelView.priority,
+                              element: <PanelView {...props} panelView={panelView} location={location} />,
+                              hasLocations: !!panelView.locationProvider,
+                              trackTabClick: () => trackTabClick(panelView.title),
+                              matchesTabID: panelView.matchesTabID,
+                          })
+                      )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
         [location, panelViews, props, trackTabClick]
@@ -282,7 +277,9 @@ export const Panel = React.memo<Props>(props => {
     )
 
     useEffect(() => {
-        setTabIndex(items.findIndex(({ id, matches }) => (matches ? matches(currentTabID) : id === currentTabID)))
+        setTabIndex(
+            items.findIndex(({ id, matchesTabID }) => (matchesTabID ? matchesTabID(currentTabID) : id === currentTabID))
+        )
     }, [items, hash, currentTabID])
 
     if (!areExtensionsReady) {
