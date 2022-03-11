@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/media-has-caption */
 import classNames from 'classnames'
 import React, { useEffect } from 'react'
 
