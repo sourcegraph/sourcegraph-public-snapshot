@@ -37,7 +37,7 @@ export function watchUninstall(eventSourceType: EventSource, localStorageService
      * it means 1 version of the extension is still installed, therefore no uninstallation
      * has happened
      **/
-    function checkUninstall(uninstalledPath: string, extensionsDirectoryPath: string): boolean {
+    function checkUninstall(uninstalledPath: string, extensionsDirectoryPath: string): void {
         Promise.all([
             // .obsolete file includes all extensions versions that need to be remove at restart
             vscode.workspace.fs.readFile(vscode.Uri.file(uninstalledPath)),
