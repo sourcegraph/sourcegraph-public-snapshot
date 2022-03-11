@@ -1,5 +1,6 @@
-import { mdiAlertCircle, mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -21,7 +22,7 @@ interface CodeHostItemProps {
     kind: ExternalServiceKind
     owner: Owner
     name: string
-    icon: typeof Icon
+    icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
     isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
@@ -122,17 +123,13 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             )}
             <div className="align-self-center">
                 {service?.warning || service?.lastSyncError ? (
-                    <Icon className="mb-0 mr-2 text-warning" svgPath={mdiAlertCircle} title="Alert icon" />
+                    <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
                 ) : service?.id ? (
-                    <Icon className="mb-0 mr-2 text-success" svgPath={mdiCheckCircle} title="Checked icon" />
+                    <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} />
                 ) : (
-                    <Icon
-                        className={classNames('mb-0 mr-2', styles.iconDashed)}
-                        as={CircleDashedIcon}
-                        title="Dashed circle"
-                    />
+                    <Icon className={classNames('mb-0 mr-2', styles.iconDashed)} as={CircleDashedIcon} />
                 )}
-                <Icon className="mb-0 mr-1" as={ItemIcon} aria-hidden="true" />
+                <Icon className="mb-0 mr-1" as={ItemIcon} />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>

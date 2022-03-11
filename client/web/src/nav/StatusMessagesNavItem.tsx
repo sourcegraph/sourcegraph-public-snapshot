@@ -18,7 +18,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Button, Icon, Link, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
@@ -95,15 +95,7 @@ function entryIcon(entryType: EntryType): JSX.Element {
         case 'progress':
             return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
         case 'not-active':
-            return (
-                <Icon
-                    as={CircleDashedIcon}
-                    height={16}
-                    width={16}
-                    className={classNames(styles.icon, styles.iconOff)}
-                    aria-hidden="true"
-                />
-            )
+            return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
     }
 }
 
