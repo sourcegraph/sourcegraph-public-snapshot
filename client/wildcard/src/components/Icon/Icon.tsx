@@ -33,5 +33,5 @@ export const Icon = React.forwardRef(({ children, className, ...props }, referen
 
     const { svg, ...attributes } = props
 
-    return <IconStyle as={svg} {...attributes} ref={reference} />
+    return <IconStyle as={svg} ref={reference} {...attributes} />
 }) as ForwardReferenceComponent<'svg', IconProps>
