@@ -297,26 +297,11 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy_${CADDY_VERSION}_$([[ "$(go env GOOS)" = "darwin" ]] && echo "mac" || echo "$(go env GOOS)")_$(go env GOARCH) run --watch --config=dev/Caddyfile
-    install: |
-      case "$(go env GOOS)" in
-        linux)
-          os="linux"
-          ;;
-        darwin)
-          os="mac"
-          ;;
-      esac
-      name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
-      target="$PWD/.bin/$name"
-      url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
-
-      if [ ! -f "${target}" ]; then
-        echo "downloading ${url}" 1>&2
-        curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
-        mv "${target}.tmp" "${target}"
-        chmod +x "${target}"
-      fi
+    cmd: .bin/caddy_${CADDY_VERSION}
+    download_binary:
+      url: https://github.com/caddyserver/caddy/releases/download/v2.4.5/caddy_2.4.5_{{ .GOOS_WITH_MAC }}_{{ .GOARCH }}.tar.gz
+      file_in_archive: caddy
+      target_file: .bin/caddy_2.4.5
     env:
       CADDY_VERSION: 2.4.5
 

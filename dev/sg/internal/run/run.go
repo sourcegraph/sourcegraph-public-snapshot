@@ -386,6 +386,34 @@ func runWatch(
 
 		}
 
+		if cmd.DownloadBinary != (DownloadBinary{}) {
+			if startedOnce {
+				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Downloading binary for %s...", cmd.Name))
+			}
+
+			err := Download(cmd.DownloadBinary)
+			if err != nil {
+				if !startedOnce {
+					return installErr{cmdName: cmd.Name, output: "no output", originalErr: err}
+				} else {
+					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: "no output"})
+					// Now we wait for a reload signal before we start to build it again
+					<-reload
+					continue
+				}
+			}
+
+			// clear this signal before starting
+			select {
+			case <-reload:
+			default:
+			}
+
+			if startedOnce {
+				stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
+			}
+		}
+
 		if !startedOnce {
 			installDone <- cmd.Name
 			<-okayToStart

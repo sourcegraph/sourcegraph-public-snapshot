@@ -12,6 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
+type DownloadBinary struct {
+	URL           string `yaml:"url"`
+	FileInArchive string `yaml:"file_in_archive"`
+	TargetFile    string `yaml:"target_file"`
+}
+
 type Command struct {
 	Name                string
 	Cmd                 string            `yaml:"cmd"`
@@ -26,6 +32,8 @@ type Command struct {
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
+	//
+	DownloadBinary DownloadBinary `yaml:"download_binary"`
 }
 
 func (c Command) Merge(other Command) Command {
