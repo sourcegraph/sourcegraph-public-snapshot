@@ -23,7 +23,7 @@ export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPag
     const { url } = useRouteMatch()
 
     if (!dashboardID) {
-        // In case if url doesn't have a dashboard id we should fallback on
+        // In case if url doesn't have a dashboard id we should fall back on
         // built-in "All insights" dashboard
         return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
     }
