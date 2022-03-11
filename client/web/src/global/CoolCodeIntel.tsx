@@ -13,7 +13,6 @@ import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
-    isErrorLike,
     lprToRange,
     toPositionOrRangeQueryParameter,
     toViewStateHash,
@@ -23,7 +22,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -83,9 +82,6 @@ interface CoolCodeIntelProps
     externalLocation: H.Location
 }
 
-export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
-
 export const BuiltinCoolCodeIntelPanel: React.FunctionComponent<CoolCodeIntelProps> = props => (
     <MemoryRouter
         // Force router to remount the Panel when external location changes
@@ -95,6 +91,7 @@ export const BuiltinCoolCodeIntelPanel: React.FunctionComponent<CoolCodeIntelPro
         <CodeNavPanel {...props} />
     </MemoryRouter>
 )
+
 const CodeNavPanel: React.FunctionComponent<CoolCodeIntelProps> = props => {
     const location = useLocation()
 

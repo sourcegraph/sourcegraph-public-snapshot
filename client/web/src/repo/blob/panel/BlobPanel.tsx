@@ -23,7 +23,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { BuiltinCoolCodeIntelPanel, isCoolCodeIntelEnabled } from '../../../global/CoolCodeIntel'
+import { BuiltinCoolCodeIntelPanel } from '../../../global/CoolCodeIntel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
@@ -100,7 +100,8 @@ export function useBlobPanelViews({
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
-    const experimentalReferencePanelEnabled = isCoolCodeIntelEnabled(settingsCascade)
+    const experimentalReferencePanelEnabled =
+        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(

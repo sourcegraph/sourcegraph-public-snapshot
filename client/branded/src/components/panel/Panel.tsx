@@ -19,7 +19,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
@@ -145,7 +145,9 @@ export const Panel = React.memo<Props>(props => {
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
 
-    const isExperimentalReferencePanelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
+    const isExperimentalReferencePanelEnabled =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
@@ -391,7 +393,3 @@ function transformPanelContributions(contributions: Evaluated<Contributions>): E
         return contributions
     }
 }
-
-// isCoolCodeIntelEnabled is duplicated. Need to move to src/shared
-export const isCoolCodeIntelEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
