@@ -29,9 +29,11 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
-Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
+Once you are all set up, [install Sourcegraph directly](#direct), [install Sourcegraph with Helm](#helm), or [deploy Sourcegraph to a cloud of your choice](#cloud).
 
 ### Direct
+
+Direct installation supports deploying from Kubernetes manifests and applying customization with [Kustomize](#kustomize).
 
 - After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 - `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
