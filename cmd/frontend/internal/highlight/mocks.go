@@ -5,7 +5,7 @@ package highlight
 //
 // (The emptyMocks is used by ResetMocks to zero out Mocks without needing to use a named type.)
 var Mocks, emptyMocks struct {
-	Code func(p Params) (response *HighlightResponse, aborted bool, err error)
+	Code func(p Params) (response *HighlightedCode, aborted bool, err error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

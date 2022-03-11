@@ -96,7 +96,7 @@ func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, p
 // DecorateFileHTML returns decorated HTML rendering of file content. If
 // successful and within bounds of timeout and line size, it returns HTML marked
 // up with highlight classes. In other cases, it returns plaintext HTML.
-func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightResponse, error) {
+func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightedCode, error) {
 	content, err := fetchContent(ctx, repo, commit, path)
 	if err != nil {
 		return nil, err

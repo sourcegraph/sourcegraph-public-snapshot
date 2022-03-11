@@ -114,67 +114,35 @@ var engineToDisplay map[EngineType]string = map[EngineType]string{
 	EngineTreeSitter: "tree-sitter",
 }
 
-type HighlightResponse struct {
+type HighlightedCode struct {
 	code     string
 	html     template.HTML
 	document *lsiftyped.Document
 }
 
-func (h *HighlightResponse) HTML() (template.HTML, error) {
+func (h *HighlightedCode) HTML() (template.HTML, error) {
 	if h.document == nil {
 		return h.html, nil
 	}
 
-	formatter := &lsifHTML{
-		table: &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()},
-	}
-
-	lsifToHTML(h.code, h.document, formatter)
-
-	var buf bytes.Buffer
-	if err := html.Render(&buf, formatter.table); err != nil {
-		return "", err
-	}
-
-	return template.HTML(buf.String()), nil
+	return DocumentToHTML(h.code, h.document)
 }
 
-func (h *HighlightResponse) SetHTML(html template.HTML) {
+func (h *HighlightedCode) SetHTML(html template.HTML) {
 	h.html = html
 }
 
-func (h *HighlightResponse) LSIF() *lsiftyped.Document {
+func (h *HighlightedCode) LSIF() *lsiftyped.Document {
 	return h.document
 }
 
 // SplitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func (h *HighlightResponse) SplitHighlightedLines(wholeRow bool) ([]template.HTML, error) {
+func (h *HighlightedCode) SplitHighlightedLines(wholeRow bool) ([]template.HTML, error) {
 	if h.document != nil {
-		formatter := &lsifLined{
-			rows: make([]*html.Node, 0),
-		}
-
-		lsifToHTML(h.code, h.document, formatter)
-
-		lines := make([]template.HTML, 0, len(formatter.rows))
-		for _, line := range formatter.rows {
-
-			var lineHTML bytes.Buffer
-			if err := html.Render(&lineHTML, line); err != nil {
-				return nil, err
-			}
-
-			lines = append(lines, template.HTML(lineHTML.String()))
-			// return template.HTML(buf.String()), nil
-			// lineHTML, err :=
-		}
-
-		return lines, nil
+		return DocumentToSplitHTML(h.code, h.document)
 	}
-
-	fmt.Printf("Current response: doc: %+v, \n", h.document)
 
 	input, err := h.HTML()
 	if err != nil {
@@ -215,6 +183,90 @@ func (h *HighlightResponse) SplitHighlightedLines(wholeRow bool) ([]template.HTM
 	return lines, nil
 }
 
+// TODO: A bit weird that it's string and not template.HTML...
+func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
+	maxLines := len(strings.Split(h.code, "\n"))
+
+	validLines := map[int32]bool{}
+	for _, r := range ranges {
+		if r.StartLine < 0 {
+			r.StartLine = 0
+		}
+
+		if r.StartLine > r.EndLine {
+			r.StartLine = 0
+			r.EndLine = 0
+		}
+
+		if r.EndLine > int32(maxLines) {
+			r.EndLine = int32(maxLines)
+		}
+
+		for row := r.StartLine; row < r.EndLine; row++ {
+			validLines[row] = true
+		}
+	}
+
+	htmlRows := map[int32]*html.Node{}
+	var currentCell *html.Node
+
+	addRow := func(row int32) {
+		tr, cell := newRow(row)
+
+		// Add our newest row to our list
+		htmlRows[row] = tr
+
+		// Set current cell that we should append text to
+		currentCell = cell
+	}
+
+	addText := func(kind lsiftyped.SyntaxKind, line string) {
+		appendText(currentCell, kind, line)
+	}
+
+	lsifToHTML(h.code, h.document, addRow, addText, validLines)
+
+	stringRows := map[int32]string{}
+	for row, node := range htmlRows {
+		var buf bytes.Buffer
+		err := html.Render(&buf, node)
+		if err != nil {
+			return nil, err
+		}
+		stringRows[row] = buf.String()
+	}
+
+	var lineRanges [][]string
+	for _, r := range ranges {
+		curRange := []string{}
+
+		if r.StartLine < 0 {
+			r.StartLine = 0
+		}
+
+		if r.StartLine > r.EndLine {
+			r.StartLine = 0
+			r.EndLine = 0
+		}
+
+		if r.EndLine > int32(maxLines) {
+			r.EndLine = int32(maxLines)
+		}
+
+		for row := r.StartLine; row < r.EndLine; row++ {
+			if str, ok := stringRows[row]; !ok {
+				return nil, errors.New("Missing row for some reason")
+			} else {
+				curRange = append(curRange, str)
+			}
+		}
+
+		lineRanges = append(lineRanges, curRange)
+	}
+
+	return lineRanges, nil
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -223,7 +275,7 @@ func (h *HighlightResponse) SplitHighlightedLines(wholeRow bool) ([]template.HTM
 // to timeout. In this scenario, a plain text table is returned.
 //
 // In the event the input content is binary, ErrBinary is returned.
-func Code(ctx context.Context, p Params) (response *HighlightResponse, aborted bool, err error) {
+func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
@@ -240,7 +292,7 @@ func Code(ctx context.Context, p Params) (response *HighlightResponse, aborted b
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	fmt.Println("ENGINE ENGINE:", filetypeQuery.Engine)
+	fmt.Println("ENGINE :", p.Filepath, filetypeQuery.Engine)
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
@@ -414,14 +466,14 @@ func Code(ctx context.Context, p Params) (response *HighlightResponse, aborted b
 		// 	return nil, true, err
 		// }
 
-		return &HighlightResponse{
+		return &HighlightedCode{
 			code:     code,
 			html:     "",
 			document: document,
 		}, false, nil
 	}
 
-	return &HighlightResponse{
+	return &HighlightedCode{
 		code:     code,
 		html:     template.HTML(resp.Data),
 		document: nil,
@@ -448,7 +500,7 @@ func firstCharacters(s string, n int) string {
 	return string(v[:n])
 }
 
-func generatePlainTable(code string) (*HighlightResponse, error) {
+func generatePlainTable(code string) (*HighlightedCode, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	for row, line := range strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files
@@ -479,7 +531,7 @@ func generatePlainTable(code string) (*HighlightResponse, error) {
 		return nil, err
 	}
 
-	return &HighlightResponse{
+	return &HighlightedCode{
 		code:     code,
 		html:     template.HTML(buf.String()),
 		document: nil,
@@ -540,7 +592,7 @@ type LineRange struct {
 // Input line ranges will automatically be clamped within the bounds of the file.
 func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
 	// TODO: HACK
-	response := &HighlightResponse{
+	response := &HighlightedCode{
 		html: html,
 	}
 

@@ -76,8 +76,8 @@ func TestVirtualFile(t *testing.T) {
 	t.Run("Highlight", func(t *testing.T) {
 		testHighlight := func(aborted bool) {
 			highlightedContent := template.HTML("highlight of the file")
-			highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightResponse, bool, error) {
-				response := &highlight.HighlightResponse{}
+			highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
+				response := &highlight.HighlightedCode{}
 				response.SetHTML(highlightedContent)
 
 				return response, aborted, nil

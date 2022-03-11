@@ -98,7 +98,7 @@ func TestSplitHighlightedLines(t *testing.T) {
 </span></div>`,
 		`<div></div>`}
 
-	response := &HighlightResponse{html: template.HTML(input)}
+	response := &HighlightedCode{html: template.HTML(input)}
 	have, err := response.SplitHighlightedLines(false)
 	if err != nil {
 		t.Fatal(err)
@@ -115,8 +115,8 @@ line3`
 	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
-	Mocks.Code = func(p Params) (response *HighlightResponse, aborted bool, err error) {
-		return &HighlightResponse{
+	Mocks.Code = func(p Params) (response *HighlightedCode, aborted bool, err error) {
+		return &HighlightedCode{
 			html: template.HTML(highlightedCode),
 		}, false, nil
 	}

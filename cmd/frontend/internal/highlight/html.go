@@ -1,7 +1,9 @@
 package highlight
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsiftyped"
@@ -14,21 +16,30 @@ type lsifFormatter interface {
 	AddText(kind lsiftyped.SyntaxKind, line string)
 }
 
-func lsifToHTML(code string, document *lsiftyped.Document, formatter lsifFormatter) {
+func lsifToHTML(
+	code string,
+	document *lsiftyped.Document,
+	AddRow func(row int32),
+	AddText func(kind lsiftyped.SyntaxKind, line string),
+	validLines map[int32]bool,
+) {
 	splitLines := strings.Split(code, "\n")
 	occurences := document.Occurrences
 
-	// table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
-
 	row, occIndex := int32(0), 0
 	for row < int32(len(splitLines)) {
+		// skip invalid lines, when passed
+		if validLines != nil && !validLines[row] {
+			row += 1
+			continue
+		}
+
 		line := strings.TrimSuffix(splitLines[row], "\r")
 		if line == "" {
 			line = "\n" // important for e.g. selecting whitespace in the produced table
 		}
 
-		// codeCell := addRow(table, row)
-		formatter.AddRow(row)
+		AddRow(row)
 
 		lineCharacter := 0
 		for occIndex < len(occurences) && occurences[occIndex].Range[0] < row+1 {
@@ -36,55 +47,41 @@ func lsifToHTML(code string, document *lsiftyped.Document, formatter lsifFormatt
 			occIndex += 1
 
 			startRow, startCharacter, endRow, endCharacter := getRange(occ.Range)
-			// appendText(codeCell, "", line[lineCharacter:startCharacter])
-			formatter.AddText(occ.SyntaxKind, line[lineCharacter:startCharacter])
+			AddText(occ.SyntaxKind, line[lineCharacter:startCharacter])
 
 			if startRow != endRow {
-				// appendText(codeCell, synClass, line[startCharacter:])
-				formatter.AddText(occ.SyntaxKind, line[startCharacter:])
+				AddText(occ.SyntaxKind, line[startCharacter:])
 
 				row += 1
 				for row < endRow {
 					line = splitLines[row]
 
-					// codeCell = addRow(table, row)
-					formatter.AddRow(row)
-					// appendText(codeCell, synClass, line)
-					formatter.AddText(occ.SyntaxKind, line)
+					AddRow(row)
+					AddText(occ.SyntaxKind, line)
 
 					row += 1
 				}
 
 				line = splitLines[row]
-				// codeCell = addRow(table, row)
-				formatter.AddRow(row)
-				// appendText(codeCell, synClass, line[:endCharacter])
-				formatter.AddText(occ.SyntaxKind, line[:endCharacter])
+				AddRow(row)
+				AddText(occ.SyntaxKind, line[:endCharacter])
 			} else {
-				// appendText(codeCell, synClass, line[startCharacter:endCharacter])
-				formatter.AddText(occ.SyntaxKind, line[startCharacter:endCharacter])
+				AddText(occ.SyntaxKind, line[startCharacter:endCharacter])
 			}
 
 			lineCharacter = int(endCharacter)
 		}
 
-		// appendText(codeCell, "", line[lineCharacter:])
-		formatter.AddText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, line[lineCharacter:])
+		AddText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, line[lineCharacter:])
 
 		row += 1
 	}
-
-	// var buf bytes.Buffer
-	// if err := html.Render(&buf, table); err != nil {
-	// 	return "", err
-	// }
-	// return template.HTML(buf.String()), nil
 }
 
-// TODO: This could potentially be an anonymous func
-// that captures the info that we want within the other scope.
-func appendText(tr *html.Node, kind lsiftyped.SyntaxKind, line string) {
-	if line == "" {
+// appendText formats the text to the right css class and appends to the current
+// html node
+func appendText(tr *html.Node, kind lsiftyped.SyntaxKind, text string) {
+	if text == "" {
 		return
 	}
 
@@ -98,7 +95,7 @@ func appendText(tr *html.Node, kind lsiftyped.SyntaxKind, line string) {
 		span.Attr = append(span.Attr, html.Attribute{Key: "class", Val: class})
 	}
 	tr.AppendChild(span)
-	spanText := &html.Node{Type: html.TextNode, Data: line}
+	spanText := &html.Node{Type: html.TextNode, Data: text}
 	span.AppendChild(spanText)
 }
 
@@ -125,50 +122,64 @@ func getRange(r []int32) (int32, int32, int32, int32) {
 	}
 }
 
-// lsifHTML
-type lsifHTML struct {
-	table       *html.Node
-	currentCell *html.Node
+func DocumentToHTML(code string, document *lsiftyped.Document) (template.HTML, error) {
+	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
+	var currentCell *html.Node
+
+	addRow := func(row int32) {
+		tr, cell := newRow(row)
+
+		// Add new row to our table
+		table.AppendChild(tr)
+
+		// Set current curent cell to the code cell in the row
+		currentCell = cell
+	}
+
+	addText := func(kind lsiftyped.SyntaxKind, line string) {
+		appendText(currentCell, kind, line)
+	}
+
+	lsifToHTML(code, document, addRow, addText, nil)
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, table); err != nil {
+		return "", err
+	}
+
+	return template.HTML(buf.String()), nil
 }
 
-func (f *lsifHTML) AddRow(row int32) {
-	tr, cell := newRow(row)
+func DocumentToSplitHTML(code string, document *lsiftyped.Document) ([]template.HTML, error) {
+	rows := []*html.Node{}
+	var currentCell *html.Node
 
-	// Add new row to our table
-	f.table.AppendChild(tr)
+	addRow := func(row int32) {
+		tr, cell := newRow(row)
 
-	// Set current curent cell to the code cell in the row
-	f.currentCell = cell
+		// Add our newest row to our list
+		rows = append(rows, tr)
 
-	// tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
-	//
-	// tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-	// tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
-	// tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
-	// tr.AppendChild(tdLineNumber)
-	//
-	// f.currentCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-	// f.currentCell.Attr = append(f.currentCell.Attr, html.Attribute{Key: "class", Val: "code"})
-	// tr.AppendChild(f.currentCell)
-}
+		// Set current cell that we should append text to
+		currentCell = cell
+	}
 
-func (f *lsifHTML) AddText(kind lsiftyped.SyntaxKind, line string) {
-	appendText(f.currentCell, kind, line)
-}
+	addText := func(kind lsiftyped.SyntaxKind, line string) {
+		appendText(currentCell, kind, line)
+	}
 
-// lsifLined
-type lsifLined struct {
-	rows        []*html.Node
-	currentCell *html.Node
-}
+	lsifToHTML(code, document, addRow, addText, nil)
 
-func (f *lsifLined) AddRow(row int32) {
-	tr, cell := newRow(row)
+	lines := make([]template.HTML, 0, len(rows))
+	for _, line := range rows {
 
-	f.rows = append(f.rows, tr)
-	f.currentCell = cell
-}
+		var lineHTML bytes.Buffer
+		if err := html.Render(&lineHTML, line); err != nil {
+			return nil, err
+		}
 
-func (f *lsifLined) AddText(kind lsiftyped.SyntaxKind, line string) {
-	appendText(f.currentCell, kind, line)
+		lines = append(lines, template.HTML(lineHTML.String()))
+	}
+
+	return lines, nil
 }

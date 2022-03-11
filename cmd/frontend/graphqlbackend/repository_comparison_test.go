@@ -718,8 +718,8 @@ func TestFileDiffHighlighter(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">new2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
 
-	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightResponse, bool, error) {
-		response := &highlight.HighlightResponse{}
+	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
+		response := &highlight.HighlightedCode{}
 
 		switch p.Filepath {
 		case file1.path:

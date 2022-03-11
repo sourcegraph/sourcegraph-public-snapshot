@@ -39,17 +39,47 @@ type HighlightArgs struct {
 
 type highlightedFileResolver struct {
 	aborted bool
-	html    template.HTML
+	// html    template.HTML
 
-	// JSON encoded form of lsiftyped.Document
-	lsif string
+	response *highlight.HighlightedCode
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string  { return string(h.html) }
-func (h *highlightedFileResolver) LSIF() string  { return h.lsif }
+func (h *highlightedFileResolver) HTML() string {
+	html, err := h.response.HTML()
+	if err != nil {
+		return ""
+	}
+
+	return string(html)
+}
+func (h *highlightedFileResolver) LSIF() string {
+	if h.response == nil {
+		return ""
+	}
+
+	marshaller := &jsonpb.Marshaler{
+		EnumsAsInts:  true,
+		EmitDefaults: false,
+	}
+
+	// TODO: @olaf is it OK if I do this?
+	// I'd like to keep on minimizing as much work as possible in the resolver for this.
+	//    I don't think there's any reason to expect that we get back bad response here
+	//    and would it do anything different besides just returning ""?
+	lsif, err := marshaller.MarshalToString(h.response.LSIF())
+	if err != nil {
+		return ""
+	}
+
+	return lsif
+}
 func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
-	return highlight.SplitLineRanges(h.html, args.Ranges)
+	if h.response != nil && h.response.LSIF() != nil {
+		return h.response.LinesForRanges(args.Ranges)
+	}
+
+	return highlight.SplitLineRanges(template.HTML(h.HTML()), args.Ranges)
 }
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
@@ -67,31 +97,12 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,
 	})
+
 	result.aborted = aborted
+	result.response = response
+
 	if err != nil {
 		return nil, err
 	}
-
-	html, err := response.HTML()
-	if err != nil {
-		return nil, err
-	}
-	result.html = html
-
-	// TODO: This section seems so ugly :'(
-	// Should I just highlight this in the backend as well?
-	// I'm not sure...
-	if response.LSIF() != nil {
-		marshaller := &jsonpb.Marshaler{
-			EnumsAsInts:  true,
-			EmitDefaults: false,
-		}
-
-		result.lsif, err = marshaller.MarshalToString(response.LSIF())
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return result, nil
 }
