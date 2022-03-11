@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -30,7 +29,7 @@ var allJobs = []Job{
 	&zoekt.ZoektRepoSubsetSearch{},
 	&searcher.Searcher{},
 	&run.RepoSearch{},
-	&textsearch.RepoUniverseTextSearch{},
+	&zoekt.GlobalSearch{},
 	&structural.StructuralSearch{},
 	&commit.CommitSearch{},
 	&symbol.RepoSubsetSymbolSearch{},
