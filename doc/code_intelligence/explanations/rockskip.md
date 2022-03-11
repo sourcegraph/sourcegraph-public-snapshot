@@ -4,9 +4,9 @@ Rockskip is an alternative symbol indexing and query engine for the symbol servi
 
 ## When should I use Rockskip?
 
-![still processing symbols error](https://user-images.githubusercontent.com/1387653/157811739-1d9aa6ef-b56a-4192-a4cc-41fd162efbb1.png)
+![still processing symbols error](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/symbol-sidebar-timeout.png)
 
-![hover popover spinner](https://user-images.githubusercontent.com/1387653/157811918-b35cab26-c07a-4ed9-ab4d-f4c0c616492b.png)
+![hover popover spinner](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/hover-popover-spinner.png)
 
 If you regularly see the above error or slow hover popovers (when not using LSIF), it probably means that the default implementation (which copyies SQLite DBs for each commit) is not fast enough and that Rockskip might help.
 
