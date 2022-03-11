@@ -617,14 +617,22 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 
 	allOrgMembersCanRead := isRepoInternallyVisible || canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
 	if allOrgMembersCanRead {
-		// if isRepoInternallyVisible {
-		// 	// TODO: Cache this.
-		// 	orgs, err := p.client.ListOrganizations(ctx context.Context, owner string, page int, adminsOnly bool)
-		// 	// TODO err checking
-		// 	for _, org := range orgs {
-		// 		syncGroup(org, "", false)
-		// 	}
-		// }
+		if isRepoInternallyVisible {
+			hasNextPage := true
+			for page := 1; hasNextPage; page++ {
+				var orgs []*github.Org
+
+				log15.Info("ListOrganization", "page", page)
+				orgs, hasNextPage, err = client.ListOrganizations(ctx, page)
+				if err != nil {
+					return
+				}
+				// TODO err checking
+				for _, org := range orgs {
+					syncGroup(org.Login, "", false)
+				}
+			}
+		}
 
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.

@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -453,7 +454,7 @@ func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
 
 	// Token with org:write is required, so we can use a token from milton's account in
 	// ghe.sgdev.org.
-	token := os.Getenv("GITHUB_ENTERPRISE_TOKEN")
+	token := os.Getenv("GHE_TOKEN")
 
 	spec := extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
@@ -473,13 +474,31 @@ func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
 	}
 
 	t.Run("repo-centric", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// The user on ghe.sgdev.org with username "integration-test" does not belong to any
+		// orgs. Yet, it should be able to access internal repos belonging to any org in that GHE
+		// instance. This test case uses the following resources:
+		//
+		// 1. GHE Instance: https://ghe.sgdev.org
+		// 2. GHE Org: https://ghe.sgdev.org/sgtest
+		// 3. GHE Internal repo: https://ghe.sgdev.org/sgtest/internal
+		// 4. GHE user: https://ghe.sgdev.org/integration-test
+		//
+		// And this test case verifies that the user is able to access the internal repo on
+		// Sourcegraph even though they are not a part of the GitHub organization on the GHE
+		// instance.
+
 		newUser := database.NewUser{
 			Email:           "integration-test@sourcegraph.com",
 			Username:        "integration-test",
 			EmailIsVerified: true,
 		}
 
+		// Test case when groups cache is enabled.
 		t.Run("groups-enabled", func(t *testing.T) {
+			// Internal repo support is guarded behind a feature flag and will be removed once it is
+			// declared stable.
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -488,6 +507,7 @@ func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
 				},
 			})
 
+			// Setup test stubs and prerequisites.
 			name := t.Name()
 			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 			defer save()
@@ -502,11 +522,11 @@ func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
 			ctx := actor.WithInternalActor(context.Background())
 
 			repoStore := repos.NewStore(testDB, sql.TxOptions{})
-
 			if err := repoStore.ExternalServiceStore.Upsert(ctx, &svc); err != nil {
 				t.Fatal(err)
 			}
 
+			// Provider with groupsCacheTTL enabled and configured.
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      url,
