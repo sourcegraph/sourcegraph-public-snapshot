@@ -26,11 +26,18 @@ When you select 'Find references' from the popover, a panel will be shown at the
 
 ## Dependency navigation
 
-If [auto-indexing](auto_indexing.md) is enabled for your instance, you will also be able to Find references and navigate precisely across your dependencies. 
+Dependency navigation enables "Find references" and "Go to definition" to show usages across multiple repositories, including transitive dependencies.
+For example, the animation below demonstrates how to trigger "Find references" in the repository `github.com/Netflix/Hystrix` and navigate to results in the Java standard library (JDK).
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/dependency-nav.gif" width="500"/>
 
-> NOTE: This feature is in Experimental phase and currently available for Go, Java, Scala, Kotlin packages only. We plan to expand language support for this feature in the future.
+The instructions to setup dependency navigation are different depending on what language ecosystem you use.
+
+* **Go**: Setup [auto-indexing](auto_indexing.md).
+* **Java, Scala, Kotlin**: Setup [auto-indexing](auto_indexing.md) and a [JVM dependencies code host](../../integration/jvm.md).
+* **JavaScript, TypeScript**: Setup [auto-indexing](auto_indexing.md) and a [npm dependencies code host](../../integration/npm.md).
+
+> NOTE: This feature is in Experimental phase and is not available for other language ecosystems at the moment.
 
 ## Find implementations
 
