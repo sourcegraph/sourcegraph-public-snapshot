@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookComputeBlock } from './NotebookComputeBlock'
@@ -32,6 +34,7 @@ add('default', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
+                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
     </WebStory>

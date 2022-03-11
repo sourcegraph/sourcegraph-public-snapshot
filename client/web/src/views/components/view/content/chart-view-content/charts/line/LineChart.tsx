@@ -54,7 +54,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 <LegendBlock className={classNames({ [styles.legendListHorizontal]: isHorizontal })}>
                     {props.series.map(line => (
                         <LegendItem key={line.dataKey.toString()} color={getLineStroke(line)}>
-                            {line.name}
+                            <span className={styles.legendItemText}>{line.name}</span>
                         </LegendItem>
                     ))}
                 </LegendBlock>
@@ -78,6 +78,6 @@ export const LegendItem: React.FunctionComponent<LegendItemProps> = props => (
             style={{ backgroundColor: props.color }}
             className={styles.legendMark}
         />
-        <span className={styles.legendItemText}>{props.children}</span>
+        {props.children}
     </li>
 )
