@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Badge, Link } from '@sourcegraph/wildcard'
 
 import styles from './CodeInsightsLimitAccessBanner.module.scss'
 
@@ -10,11 +10,23 @@ interface CodeInsightsLimitAccessBannerProps extends React.HTMLAttributes<HTMLDi
 export const CodeInsightsLimitAccessBanner: React.FunctionComponent<CodeInsightsLimitAccessBannerProps> = props => (
     <div {...props} className={classNames(styles.banner, props.className)}>
         <div className={styles.content}>
-            <h4>You’re currently viewing a demo version of Code Insights</h4>
-            <span>
-                Contact your admin or <Link to="mailto:support@sourcegraph.com">reach out to us</Link> to upgrade your
-                licence for unlimited insights and dashboards.
-            </span>
+            <Badge variant="merged" className="mb-2">
+                LIMITED ACCESS
+            </Badge>
+            <p className="m-0">
+                Contact your admin or{' '}
+                <Link
+                    to="https://about.sourcegraph.com/contact/request-code-insights-demo?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
+                    target="_blank"
+                    rel="noopener"
+                >
+                    reach out to us
+                </Link>{' '}
+                to upgrade your Sourcegraph license to unlock Code Insights for unlimited insights and dashboards.{' '}
+                <Link to="/help/code_insights" rel="noopener noreferrer" target="_blank">
+                    Learn more
+                </Link>
+            </p>
         </div>
     </div>
 )
