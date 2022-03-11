@@ -11,6 +11,7 @@
   - <span class="badge badge-experimental">Experimental</span> [Dependency navigation](features.md#dependency-navigation)
   - [Find implementations](features.md#find-implementations)
   - [Symbol search](features.md#symbol-search)
+- <span class="badge badge-experimental">Experimental</span> [Rockskip: faster search-based code intelligence](rockskip.md)
 - [Writing an indexer](writing_an_indexer.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing](auto_indexing.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](auto_indexing_inference.md)
