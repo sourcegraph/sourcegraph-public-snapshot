@@ -13,6 +13,15 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fix client-side routing support on GitHub repository browse file tree pages: [#pull/32199](https://github.com/sourcegraph/sourcegraph/pull/32199), [#issues/31716](https://github.com/sourcegraph/sourcegraph/issues/31716)
+- Fix code intel popup buttons overflow issue on GitHub: [#pull/31698](https://github.com/sourcegraph/sourcegraph/pull/31698), [#issues/31359](https://github.com/sourcegraph/sourcegraph/issues/31359)
+- Make 'Configure on Sourcegraph' button navigate to manage repositories page when on default Sourcegraph URL: [#pull/31690](https://github.com/sourcegraph/sourcegraph/pull/31690), [#issues/3066](https://github.com/sourcegraph/sourcegraph/issues/3066)
+- Cover 'Search on Sourcegraph' buttons on GitHub search pages with integration tests: [#pull/31572](https://github.com/sourcegraph/sourcegraph/pull/31572), [#issues/31044](https://github.com/sourcegraph/sourcegraph/issues/31044)
+- Add after install page integration test: [#pull/31327](https://github.com/sourcegraph/sourcegraph/pull/31327), [#issues/31046](https://github.com/sourcegraph/sourcegraph/issues/31046)
+- Automate refetching of code intel extensions: [#pull/31471](https://github.com/sourcegraph/sourcegraph/pull/31471), [#issues/18383](https://github.com/sourcegraph/sourcegraph/issues/18383)
+- Enable Chromatic snapshots for specific stories: [#pull/31304](https://github.com/sourcegraph/sourcegraph/pull/31304), [#issues/30341](https://github.com/sourcegraph/sourcegraph/issues/30341)
+- Add installs/uninstall events tracking: [#pull/31785](https://github.com/sourcegraph/sourcegraph/pull/31785), [issues/31486](https://github.com/sourcegraph/sourcegraph/issues/31486)
+
 ## Chrome & Firefox v22.2.11.1553, Safari v1.11
 
 - Make "single click to definition" an opt-in through advanced settings: [#pull/30540](https://github.com/sourcegraph/sourcegraph/pull/30540), [#issues/#30437](https://github.com/sourcegraph/sourcegraph/issues/30437)
