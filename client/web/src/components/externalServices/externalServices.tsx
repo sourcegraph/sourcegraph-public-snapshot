@@ -1,16 +1,10 @@
+import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab, mdiLanguageJava, mdiNpm } from '@mdi/js'
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import AwsIcon from 'mdi-react/AwsIcon'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitIcon from 'mdi-react/GitIcon'
-import GitLabIcon from 'mdi-react/GitlabIcon'
-import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
-import NpmIcon from 'mdi-react/NpmIcon'
 import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link } from '@sourcegraph/wildcard'
+import { Icon, Link, IconComponentType } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
@@ -42,7 +36,7 @@ export interface AddExternalServiceOptions {
     /**
      * Icon to show in the external service "button"
      */
-    icon: React.ComponentType<{ className?: string }>
+    icon: IconComponentType
 
     /**
      * A short description that will appear in the external service "button" under the title
@@ -507,10 +501,14 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     },
 ]
 
+const GitHubIcon: IconComponentType = ({ className }) => (
+    <Icon svgPath={mdiGithub} title="GitHub icon" className={className} />
+)
+
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     title: 'GitHub',
-    icon: GithubIcon,
+    icon: GitHubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
     instructions: githubInstructions(false),
@@ -532,6 +530,9 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     editorActions: githubEditorActions(true),
     instructions: githubInstructions(true),
 }
+
+const AwsIcon: ExternalServiceIcon = ({ className }) => <Icon svgPath={mdiAws} title="AWS icon" className={className} />
+
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
     title: 'AWS CodeCommit repositories',
@@ -652,6 +653,11 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
         },
     ],
 }
+
+const BitbucketIcon: IconComponentType = ({ className }) => (
+    <Icon svgPath={mdiBitbucket} title="Bitbucket icon" className={className} />
+)
+
 const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETCLOUD,
     title: 'Bitbucket.org',
@@ -894,6 +900,11 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
         },
     ],
 }
+
+const GitLabIcon: IconComponentType = ({ className }) => (
+    <Icon svgPath={mdiGitlab} title="GitLab icon" className={className} />
+)
+
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
     title: 'GitLab',
@@ -923,6 +934,9 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
   ]
 }`,
 }
+
+const GitIcon: IconComponentType = ({ className }) => <Icon svgPath={mdiGit} title="Git icon" className={className} />
+
 const SRC_SERVE_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.OTHER,
     title: 'Sourcegraph CLI Serve-Git',
@@ -1183,6 +1197,11 @@ const PERFORCE: AddExternalServiceOptions = {
         },
     ],
 }
+
+const LanguageJavaIcon: IconComponentType = ({ className }) => (
+    <Icon svgPath={mdiLanguageJava} title="Java language icon" className={className} />
+)
+
 const JVM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.JVMPACKAGES,
     title: 'JVM Dependencies',
@@ -1235,6 +1254,8 @@ const PAGURE: AddExternalServiceOptions = {
     ),
     editorActions: [],
 }
+
+const NpmIcon: IconComponentType = ({ className }) => <Icon svgPath={mdiNpm} title="NPM icon" className={className} />
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,

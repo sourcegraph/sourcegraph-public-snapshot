@@ -1,6 +1,5 @@
+import { mdiCheckboxBlankCircleOutline, mdiCheckCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
@@ -69,14 +68,16 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                             <Icon
                                 className="text-success test-code-host-connection-node-enabled"
                                 data-tooltip="Connected"
-                                as={CheckCircleOutlineIcon}
+                                svgPath={mdiCheckCircleOutline}
+                                title="Checked circle"
                             />
                         )}
                         {!isEnabled && (
                             <Icon
                                 className="text-danger test-code-host-connection-node-disabled"
                                 data-tooltip="No token set"
-                                as={CheckboxBlankCircleOutlineIcon}
+                                svgPath={mdiCheckboxBlankCircleOutline}
+                                title="Blank circle"
                             />
                         )}
                         <Icon className="mx-2" as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}

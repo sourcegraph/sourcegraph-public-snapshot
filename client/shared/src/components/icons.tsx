@@ -64,7 +64,9 @@ export const PhabricatorIcon: React.FunctionComponent<IconProps> = props => (
         className={classNames('phabricator-icon mdi-icon', props.className)}
         viewBox="0 0 64 64"
         fill="currentColor"
+        aria-labelledby="phabricatorIconTitle"
     >
+        <title id="phabricatorIconTitle">Phabricator icon</title>
         <g>
             <g id="Oval">
                 <g transform="translate(-3426.45 1547.34)">
