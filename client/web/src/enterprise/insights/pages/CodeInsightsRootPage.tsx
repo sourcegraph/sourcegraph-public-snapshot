@@ -1,5 +1,6 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useContext, useEffect, useMemo } from 'react'
+
+import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
