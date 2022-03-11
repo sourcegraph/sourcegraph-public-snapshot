@@ -425,10 +425,12 @@ type QueryFunc func(value string) *sqlf.Query
 type QueryNFunc func(values []string) *sqlf.Query
 
 var nameConditions = Conditions{
-	regex:    func(v string) *sqlf.Query { return sqlf.Sprintf("name ~ %s", v) },
-	regexI:   func(v string) *sqlf.Query { return sqlf.Sprintf("name ~* %s", v) },
-	exact:    func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(name)", v) },
-	exactI:   func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(lower(name))", v) },
+	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("name ~ %s", v) },
+	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("name ~* %s", v) },
+	exact:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(name)", v) },
+	exactI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(name))", strings.ToLower(v))
+	},
 	prefix:   nil,
 	prefixI:  nil,
 	fileExt:  nil,
@@ -436,18 +438,30 @@ var nameConditions = Conditions{
 }
 
 var pathConditions = Conditions{
-	regex:   func(v string) *sqlf.Query { return sqlf.Sprintf("path ~ %s", v) },
-	regexI:  func(v string) *sqlf.Query { return sqlf.Sprintf("path ~* %s", v) },
-	exact:   func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(path)", v) },
-	exactI:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(lower(path))", v) },
-	prefix:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && path_prefixes(path)", v) },
-	prefixI: func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && path_prefixes(lower(path))", v) },
+	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("path ~ %s", v) },
+	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("path ~* %s", v) },
+	exact:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(path)", v) },
+	exactI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(path))", strings.ToLower(v))
+	},
+	prefix: func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && path_prefixes(path)", v) },
+	prefixI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && path_prefixes(lower(path))", strings.ToLower(v))
+	},
 	fileExt: func(vs []string) *sqlf.Query {
 		return sqlf.Sprintf("%s && singleton(get_file_extension(path))", pg.Array(vs))
 	},
 	fileExtI: func(vs []string) *sqlf.Query {
-		return sqlf.Sprintf("%s && singleton(get_file_extension(lower(path)))", pg.Array(vs))
+		return sqlf.Sprintf("%s && singleton(get_file_extension(lower(path)))", pg.Array(lowerAll(vs)))
 	},
+}
+
+func lowerAll(strs []string) []string {
+	lowers := []string{}
+	for _, s := range strs {
+		lowers = append(lowers, strings.ToLower(s))
+	}
+	return lowers
 }
 
 func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf.Query {

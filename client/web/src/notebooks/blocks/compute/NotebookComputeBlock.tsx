@@ -2,6 +2,7 @@ import { noop } from 'lodash'
 import React from 'react'
 import ElmComponent from 'react-elm-components'
 
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BlockProps, ComputeBlock } from '../..'
@@ -11,7 +12,9 @@ import { NotebookBlock } from '../NotebookBlock'
 import { Elm } from './component/src/Main.elm'
 import styles from './NotebookComputeBlock.module.scss'
 
-interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {}
+interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {
+    platformContext: Pick<PlatformContext, 'sourcegraphURL'>
+}
 
 interface ElmEvent {
     data: string
@@ -74,6 +77,7 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     output,
     isSelected,
     isLightTheme,
+    platformContext,
     isReadOnly,
     onRunBlock,
     onSelectBlock,
