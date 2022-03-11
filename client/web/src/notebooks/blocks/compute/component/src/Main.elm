@@ -34,16 +34,11 @@ debounceQueryInputMillis =
     400
 
 
-endpoint : String
-endpoint =
-    "https://sourcegraph.test:3443/.api"
-
-
 
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program String Model Msg
 main =
     Browser.element
         { init = init
@@ -73,7 +68,8 @@ type alias Filter a =
 
 
 type alias Model =
-    { query : String
+    { sourcegraphURL : String
+    , query : String
     , debounce : Int
     , dataPoints : Int
     , sortByCount : Bool
@@ -87,9 +83,10 @@ type alias Model =
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { query = "repo:.* content:output((.|\\n)* -> $date) type:commit count:all"
+init : String -> ( Model, Cmd Msg )
+init sourcegraphURL =
+    ( { sourcegraphURL = sourcegraphURL
+      , query = "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
       , dataPoints = 30
       , sortByCount = True
       , reverse = False
@@ -217,7 +214,13 @@ update msg model =
 
             else
                 ( { model | resultsMap = Dict.empty }
-                , openStream ( endpoint ++ Url.Builder.absolute [ "compute", "stream" ] [ Url.Builder.string "q" model.query ], Nothing )
+                , openStream
+                    ( Url.Builder.crossOrigin
+                        model.sourcegraphURL
+                        [ ".api", "compute", "stream" ]
+                        [ Url.Builder.string "q" model.query ]
+                    , Nothing
+                    )
                 )
 
         OnResults r ->

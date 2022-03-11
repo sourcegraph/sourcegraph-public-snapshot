@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { useRef } from 'react'
 import ElmComponent from 'react-elm-components'
 
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BlockProps, ComputeBlock } from '../..'
@@ -16,6 +17,7 @@ import styles from './NotebookComputeBlock.module.scss'
 
 interface ComputeBlockProps extends BlockProps, ComputeBlock, ThemeProps {
     isMacPlatform: boolean
+    platformContext: Pick<PlatformContext, 'sourcegraphURL'>
 }
 
 interface ElmEvent {
@@ -80,6 +82,7 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     isSelected,
     isLightTheme,
     isMacPlatform,
+    platformContext,
     isReadOnly,
     onRunBlock,
     onSelectBlock,
@@ -137,7 +140,7 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
             >
                 <div className="elm">
                     {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */}
-                    <ElmComponent src={Elm.Main} ports={setupPorts} flags={null} />
+                    <ElmComponent src={Elm.Main} ports={setupPorts} flags={platformContext.sourcegraphURL} />
                 </div>
             </div>
             {blockMenu}

@@ -58,7 +58,10 @@ export interface NotebookComponentProps
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
     extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
-    platformContext: Pick<PlatformContext, 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>
+    platformContext: Pick<
+        PlatformContext,
+        'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
+    >
     exportedFileName: string
     isEmbedded?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
