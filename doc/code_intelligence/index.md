@@ -80,6 +80,7 @@ Code intelligence provides advanced code navigation features that let developers
   - <span class="badge badge-experimental">Experimental</span> [Dependency navigation](explanations/features.md#dependency-navigation)
   - [Find implementations](explanations/features.md#find-implementations)
   - [Symbol search](explanations/features.md#symbol-search)
+- <span class="badge badge-experimental">Experimental</span> [Rockskip: faster search-based code intelligence](explanations/rockskip.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
