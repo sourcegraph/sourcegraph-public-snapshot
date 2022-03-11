@@ -54,7 +54,6 @@ interface NotebookPageProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
-    isMacPlatform: boolean
     resolveRevision?: typeof _resolveRevision
     fetchRepository?: typeof _fetchRepository
     fetchNotebook?: typeof _fetchNotebook

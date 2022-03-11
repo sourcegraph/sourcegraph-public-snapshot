@@ -1,60 +1,103 @@
+import { of } from 'rxjs'
+
+import { SymbolKind } from '@sourcegraph/shared/src/schema'
+
 import { parseLineRange, serializeBlockInput, serializeLineRange } from '.'
 
 const SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
 describe('serialize', () => {
-    it('should serialize empty markdown text', () => {
-        expect(serializeBlockInput({ type: 'md', input: '' }, SOURCEGRAPH_URL)).toStrictEqual('')
+    it('should serialize empty markdown text', async () => {
+        const serialized = await serializeBlockInput({ type: 'md', input: '' }, SOURCEGRAPH_URL).toPromise()
+        expect(serialized).toStrictEqual('')
     })
 
-    it('should serialize markdown text', () => {
-        expect(serializeBlockInput({ type: 'md', input: '# Title' }, SOURCEGRAPH_URL)).toStrictEqual('# Title')
+    it('should serialize markdown text', async () => {
+        const serialized = await serializeBlockInput({ type: 'md', input: '# Title' }, SOURCEGRAPH_URL).toPromise()
+        expect(serialized).toStrictEqual('# Title')
     })
 
-    it('should serialize empty query', () => {
-        expect(serializeBlockInput({ type: 'query', input: '' }, SOURCEGRAPH_URL)).toStrictEqual('')
+    it('should serialize empty query', async () => {
+        const serialized = await serializeBlockInput({ type: 'query', input: '' }, SOURCEGRAPH_URL).toPromise()
+        expect(serialized).toStrictEqual('')
     })
 
-    it('should serialize a query', () => {
-        expect(serializeBlockInput({ type: 'query', input: 'repo:a b' }, SOURCEGRAPH_URL)).toStrictEqual('repo:a b')
+    it('should serialize a query', async () => {
+        const serialized = await serializeBlockInput({ type: 'query', input: 'repo:a b' }, SOURCEGRAPH_URL).toPromise()
+        expect(serialized).toStrictEqual('repo:a b')
     })
 
-    it('should serialize a file without range', () => {
-        expect(
-            serializeBlockInput(
-                {
-                    type: 'file',
-                    input: {
-                        repositoryName: 'github.com/sourcegraph/sourcegraph',
-                        revision: 'feature',
-                        filePath: 'client/web/index.ts',
-                        lineRange: null,
+    it('should serialize a file without range', async () => {
+        const serialized = await serializeBlockInput(
+            {
+                type: 'file',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'feature',
+                    filePath: 'client/web/index.ts',
+                    lineRange: null,
+                },
+            },
+            SOURCEGRAPH_URL
+        ).toPromise()
+
+        expect(serialized).toStrictEqual(
+            `${SOURCEGRAPH_URL}/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts`
+        )
+    })
+
+    it('should serialize a file with range', async () => {
+        const serialized = await serializeBlockInput(
+            {
+                type: 'file',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'feature',
+                    filePath: 'client/web/index.ts',
+                    lineRange: {
+                        startLine: 100,
+                        endLine: 123,
                     },
                 },
-                SOURCEGRAPH_URL
-            )
-        ).toStrictEqual(`${SOURCEGRAPH_URL}/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts`)
-    })
+            },
+            SOURCEGRAPH_URL
+        ).toPromise()
 
-    it('should serialize a file with range', () => {
-        expect(
-            serializeBlockInput(
-                {
-                    type: 'file',
-                    input: {
-                        repositoryName: 'github.com/sourcegraph/sourcegraph',
-                        revision: 'feature',
-                        filePath: 'client/web/index.ts',
-                        lineRange: {
-                            startLine: 100,
-                            endLine: 123,
-                        },
-                    },
-                },
-                SOURCEGRAPH_URL
-            )
-        ).toStrictEqual(
+        expect(serialized).toStrictEqual(
             `${SOURCEGRAPH_URL}/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts?L101-123`
+        )
+    })
+
+    it('should serialize a symbol block', async () => {
+        const serialized = await serializeBlockInput(
+            {
+                type: 'symbol',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'feature',
+                    filePath: 'client/web/index.ts',
+                    symbolName: 'func a',
+                    symbolContainerName: 'class',
+                    symbolKind: SymbolKind.FUNCTION,
+                    lineContext: 3,
+                },
+                output: of({
+                    symbolFoundAtLatestRevision: true,
+                    effectiveRevision: 'effective-feature',
+                    symbolRange: {
+                        start: { line: 1, character: 1 },
+                        end: { line: 1, character: 3 },
+                    },
+                    highlightSymbolRange: { highlightLength: 2, line: 1, character: 1 },
+                    highlightLineRange: { startLine: 0, endLine: 6 },
+                    highlightedLines: [],
+                }),
+            },
+            SOURCEGRAPH_URL
+        ).toPromise()
+
+        expect(serialized).toStrictEqual(
+            `${SOURCEGRAPH_URL}/github.com/sourcegraph/sourcegraph@effective-feature/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func+a&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3`
         )
     })
 

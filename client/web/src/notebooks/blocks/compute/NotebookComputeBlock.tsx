@@ -14,9 +14,7 @@ import { useBlockShortcuts } from '../useBlockShortcuts'
 import { Elm } from './component/src/Main.elm'
 import styles from './NotebookComputeBlock.module.scss'
 
-interface ComputeBlockProps extends BlockProps, ComputeBlock, ThemeProps {
-    isMacPlatform: boolean
-}
+interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {}
 
 interface ElmEvent {
     data: string
@@ -79,7 +77,6 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     output,
     isSelected,
     isLightTheme,
-    isMacPlatform,
     isReadOnly,
     onRunBlock,
     onSelectBlock,
@@ -99,20 +96,12 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
 
     const { onKeyDown } = useBlockShortcuts({
         id,
-        isMacPlatform,
         onEnterBlock: () => {},
         ...props,
         onRunBlock: () => {},
     })
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
-        isInputFocused,
-        isReadOnly,
-        isMacPlatform,
-        ...props,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ isInputFocused, isReadOnly, ...props })
 
     const blockMenu = isSelected && !isReadOnly && <NotebookBlockMenu id={id} actions={commonMenuActions} />
 
