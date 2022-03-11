@@ -256,6 +256,19 @@ func TestGetAll(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	// First test the method on an empty database.
+	t.Run("test empty database", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAll(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]types.InsightViewSeries{}, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
 
 	// Set up some insight views to test pagination and permissions.
 	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
@@ -305,8 +318,6 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	ctx := context.Background()
 
 	t.Run("test all results", func(t *testing.T) {
 		store := NewInsightStore(timescale)
