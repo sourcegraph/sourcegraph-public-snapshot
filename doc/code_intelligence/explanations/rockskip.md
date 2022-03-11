@@ -16,7 +16,9 @@ You can always try Rockskip for a while and if it doesn't help then you can disa
 
 ## How do I enable Rockskip?
 
-To enable it, set these environment variables on the symbols container:
+To enable it, set these environment variables on the `symbols` container:
+
+For Kubernetes:
 
 ```yaml
 # base/symbols/symbols.Deployment.yaml
@@ -33,6 +35,20 @@ spec:
         - name: ROCKSKIP_REPOS
           value: "github.com/torvalds/linux,github.com/pallets/flask"
 ```
+
+For Docker Compose:
+
+```yaml
+services:
+  symbols-0:
+    environment:
+      # Enables Rockskip
+      - USE_ROCKSKIP=true
+      # Uses Rockskip for the repositories in the comma separated list
+      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
+```
+
+For other deployments, make sure the `symbols` service has access to the codeintel DB then set the environment variables.
 
 ## How do I use Rockskip?
 
