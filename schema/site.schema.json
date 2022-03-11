@@ -746,6 +746,11 @@
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
       "group": "Security"
     },
+    "permissions.syncScheduleInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 15
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
