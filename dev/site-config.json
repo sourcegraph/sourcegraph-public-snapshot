@@ -10,7 +10,11 @@
   "update.channel": "release",
   "experimentalFeatures": {
     "passwordPolicy": {
-      "enabled": true
+      "enabled": true,
+      "minimumLength": 12,
+      "numberOfSpecialCharacters": 1,
+      "requireAtLeastOneNumber": true,
+      "requireUpperandLowerCase": true
     }
   },
   "disablePublicRepoRedirects": true,
