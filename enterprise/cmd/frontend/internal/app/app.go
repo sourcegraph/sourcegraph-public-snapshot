@@ -103,14 +103,25 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		setupAction := r.URL.Query().Get("setup_action")
 
 		a := actor.FromContext(r.Context())
-
 		if !a.IsAuthenticated() {
 			if setupAction == "install" {
-				http.Redirect(w, r, "/install_success", http.StatusFound)
+				http.Redirect(w, r, "/install-github-app-success", http.StatusFound)
+				return
 			}
+
+			if setupAction == "request" {
+				http.Redirect(w, r, "/install-github-app-request", http.StatusFound)
+				return
+			}
+
 		}
 
 		state := r.URL.Query().Get("state")
+		if state == "" && setupAction == "install" {
+			http.Redirect(w, r, "/settings", http.StatusFound)
+			return
+		}
+
 		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -132,6 +143,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 
 		if setupAction == "request" {
 			http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts?reason=request", org.Name), http.StatusFound)
+			return
 		}
 
 		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
