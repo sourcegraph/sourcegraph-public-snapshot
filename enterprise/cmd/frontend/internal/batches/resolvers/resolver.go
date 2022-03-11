@@ -828,6 +828,20 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		opts.Cursor = cursor
 	}
 
+	if args.CheckOpenOrDraft != nil && *args.CheckOpenOrDraft {
+		if args.State != nil {
+			return opts, false, errors.New("invalid combination of state and checkOpenOrDraft")
+		}
+
+		publicationState := btypes.ChangesetPublicationStatePublished
+		opts.ExternalStates = []btypes.ChangesetExternalState{
+			btypes.ChangesetExternalStateDraft,
+			btypes.ChangesetExternalStateOpen,
+		}
+		opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
+		opts.PublicationState = &publicationState
+	}
+
 	if args.State != nil {
 		state := btypes.ChangesetState(*args.State)
 		if !state.Valid() {

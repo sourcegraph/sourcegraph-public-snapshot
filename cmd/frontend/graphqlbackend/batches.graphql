@@ -2408,6 +2408,11 @@ type BatchChange implements Node {
         """
         state: ChangesetState
         """
+        query only changesets that are either open or draft
+        this is used exclusively on the close page when closing a batch change
+        """
+        checkOpenOrDraft: Boolean
+        """
         Only include changesets with the given review state.
         """
         reviewState: ChangesetReviewState

@@ -558,6 +558,8 @@ type ListChangesetsArgs struct {
 	ExternalState *string
 	// State is a value of type *btypes.ChangesetState.
 	State *string
+	// CheckOpenOrDraft is a field use to query for Open or Draft changests.
+	CheckOpenOrDraft *bool
 	// ReviewState is a value of type *btypes.ChangesetReviewState.
 	ReviewState *string
 	// CheckState is a value of type *btypes.ChangesetCheckState.
