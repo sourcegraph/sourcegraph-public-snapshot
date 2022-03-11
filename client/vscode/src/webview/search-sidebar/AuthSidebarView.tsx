@@ -70,14 +70,10 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
         // If successful, update setting. This form will no longer be rendered
     }
 
-    const onSignUpClick = (): void => {
+    const onSignUpClick = async (): Promise<void> => {
         setHasAccount(true)
-        extensionCoreAPI
-            .openLink(signUpURL)
-            .then(() => {})
-            .catch(() => {})
-
         platformContext.telemetryService.log('VSCESidebarCreateAccount')
+        await extensionCoreAPI.openLink(signUpURL)
     }
 
     const onLinkClick = (type: 'Sourcegraph' | 'Extension'): void =>
@@ -146,9 +142,13 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                         Create an account
                     </button>
                 </p>
-                <a onClick={() => setHasAccount(true)} className={classNames(styles.ctaParagraph)} href="/">
+                <button
+                    type="button"
+                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left')}
+                    onClick={() => setHasAccount(true)}
+                >
                     Have an account?
-                </a>
+                </button>
             </>
         )
     }
@@ -197,47 +197,47 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                             autoFocus={true}
                             spellCheck={false}
                             disabled={state === 'validating'}
-                            placeholder="ex sourcegraph.example.com"
+                            placeholder="ex https://sourcegraph.example.com"
                         />
                     </LoaderInput>
                 </p>
             )}
-            <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                <button
-                    type="submit"
-                    disabled={state === 'validating'}
-                    className={classNames('btn my-1', styles.ctaButton)}
-                >
-                    Authenticate account
-                </button>
-            </p>
+            <button
+                type="submit"
+                disabled={state === 'validating'}
+                className={classNames('btn my-1', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
+            >
+                Authenticate account
+            </button>
             {state === 'failure' && (
                 <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
                     Unable to verify your access token for {hostname}. Please try again with a new access token.
                 </Alert>
             )}
             {!usePrivateInstance ? (
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <button type="button" className="btn btn-text-link h-0" onClick={() => setUsePrivateInstance(true)}>
-                        Need to connect to a private instance?
-                    </button>
-                </p>
-            ) : (
-                <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
-                    <button
-                        type="button"
-                        className="btn btn-text-link h-0"
-                        onClick={() => setUsePrivateInstance(false)}
-                    >
-                        Not a private instance user?
-                    </button>
-                </p>
-            )}
-            <p className={classNames(styles.ctaParagraph)}>
-                <button type="button" className="btn btn-text-link h-0" onClick={onSignUpClick}>
-                    Create an account
+                <button
+                    type="button"
+                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                    onClick={() => setUsePrivateInstance(true)}
+                >
+                    Need to connect to a private instance?
                 </button>
-            </p>
+            ) : (
+                <button
+                    type="button"
+                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                    onClick={() => setUsePrivateInstance(false)}
+                >
+                    Not a private instance user?
+                </button>
+            )}
+            <button
+                type="button"
+                className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                onClick={onSignUpClick}
+            >
+                Create an account
+            </button>
         </>
     )
 }
