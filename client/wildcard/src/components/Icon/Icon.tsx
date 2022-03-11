@@ -41,6 +41,17 @@ type ComponentIconProps = (BaseComponentIconProps & AccessibleSvgProps) | Legacy
 
 export type IconProps = PathIconProps | ComponentIconProps
 
+/**
+ * Renders styled SVG icons.
+ *
+ * **Note:** You must provide either a descriptive `title` or set `aria-hidden="true"` in props when using this component.
+ * -
+ * This is to ensure that all consumers consider accessibility when rendering an icon.
+ *
+ * This component can be used in two different way depending on the source of your icon:
+ * 1. If using a Material Design icon, simply set `svgPath` using the path from `@mdj/js`.
+ * 2. If using a custom SVG, ensure it implements the `AccessibleSVG` type and set `as` to the component that you want to render.
+ */
 export const Icon: React.FunctionComponent<IconProps> = ({ children, className, ...props }) => {
     if ('svgPath' in props) {
         const { svgPath, ...attributes } = props
