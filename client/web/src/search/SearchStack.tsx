@@ -188,6 +188,11 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
         (event: KeyboardEvent): void => {
             const hasMeta = (isMacPlatform_ && event.metaKey) || (!isMacPlatform_ && event.ctrlKey)
 
+            if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
+                // Ignore any events originating from an annotations input
+                return
+            }
+
             switch (event.key) {
                 // Select all entries
                 case 'a':
@@ -534,12 +539,10 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                     onBlur={() => setEntryAnnotation(entry, annotation)}
                     onChange={event => setAnnotation(event.currentTarget.value)}
                     onClick={stopPropagation}
-                    onKeyUp={event => {
-                        // This is used mainly to prevent deletion of the entry
-                        // when Delete or Backspace are pressed (one of the
-                        // ancestors listens to keyup events to handle
-                        // keybindings)
-                        event.stopPropagation()
+                    onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                            event.currentTarget.blur()
+                        }
                     }}
                 />
             )}
