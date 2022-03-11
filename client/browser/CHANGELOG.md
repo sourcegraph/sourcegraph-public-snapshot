@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox v22.3.11.1145, Safari v1.12
+
 - Fix client-side routing support on GitHub repository browse file tree pages: [#pull/32199](https://github.com/sourcegraph/sourcegraph/pull/32199), [#issues/31716](https://github.com/sourcegraph/sourcegraph/issues/31716)
 - Fix code intel popup buttons overflow issue on GitHub: [#pull/31698](https://github.com/sourcegraph/sourcegraph/pull/31698), [#issues/31359](https://github.com/sourcegraph/sourcegraph/issues/31359)
 - Make 'Configure on Sourcegraph' button navigate to manage repositories page when on default Sourcegraph URL: [#pull/31690](https://github.com/sourcegraph/sourcegraph/pull/31690), [#issues/3066](https://github.com/sourcegraph/sourcegraph/issues/3066)
