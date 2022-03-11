@@ -43,7 +43,7 @@ import {
     CloseChangesetsResult,
     CloseChangesetsVariables,
     PublishChangesetsResult,
-    PublishChangesetsVariables
+    PublishChangesetsVariables,
 } from '../../../graphql-operations'
 
 const changesetsStatsFragment = gql`
