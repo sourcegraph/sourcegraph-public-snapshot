@@ -27,7 +27,7 @@ interface Props extends ExtensionsControllerProps, SettingsCascadeProps, Telemet
  * A panel view contributed by an extension using {@link sourcegraph.app.createPanelView}.
  */
 export const PanelView = React.memo<Props>(props => {
-    const content = (
+    const panelView = (
         <>
             {props.panelView.content && (
                 <div className="px-2 pt-2">
@@ -58,7 +58,8 @@ export const PanelView = React.memo<Props>(props => {
     )
 
     if (props.panelView.noWrapper) {
-        return <>{content}</>
+        return <>{panelView}</>
     }
-    return <div className={styles.panelView}>{content}</div>
+
+    return <div className={styles.panelView}>{panelView}</div>
 })

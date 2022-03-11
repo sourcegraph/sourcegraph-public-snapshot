@@ -3,7 +3,11 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
-import { BuiltinPanelView, useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
+import {
+    BuiltinPanelDefinition,
+    BuiltinPanelView,
+    useBuiltinPanelViews,
+} from '@sourcegraph/branded/src/components/panel/Panel'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -166,11 +170,10 @@ export function useBlobPanelViews({
     }, [panelSubject, panelSubjectChanges])
 
     useBuiltinPanelViews(
-        useMemo(
-            () => [
+        useMemo(() => {
+            const panelDefinitions: BuiltinPanelDefinition[] = [
                 {
                     id: 'history',
-                    enabled: true,
                     provider: panelSubjectChanges.pipe(
                         map(({ repoID, revision, filePath, history, location }) => ({
                             title: 'History',
@@ -192,22 +195,56 @@ export function useBlobPanelViews({
                         }))
                     ),
                 },
-                {
-                    id: 'codenav',
+            ]
+
+            if (!experimentalReferencePanelEnabled) {
+                panelDefinitions.push(
+                    ...[
+                        {
+                            id: 'def',
+                            matches: undefined,
+                            provider: createLocationProvider('def', 'Definition', 190, parameters =>
+                                from(extensionsController.extHostAPI).pipe(
+                                    switchMap(extensionHostAPI =>
+                                        wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                                    )
+                                )
+                            ),
+                        },
+                        {
+                            id: 'references',
+                            matches: undefined,
+                            provider: createLocationProvider<ReferenceParameters>(
+                                'references',
+                                'References',
+                                180,
+                                parameters =>
+                                    from(extensionsController.extHostAPI).pipe(
+                                        switchMap(extensionHostAPI =>
+                                            wrapRemoteObservable(
+                                                extensionHostAPI.getReferences(parameters, {
+                                                    includeDeclaration: false,
+                                                })
+                                            )
+                                        )
+                                    )
+                            ),
+                        },
+                    ]
+                )
+            } else {
+                panelDefinitions.push({
+                    id: 'references',
                     matches: (id: string): boolean =>
-                        id === 'codenav' ||
-                        id === 'def' ||
-                        id === 'references' ||
-                        id.startsWith('implementations_') ||
-                        id === 'ketchup',
-                    enabled: experimentalReferencePanelEnabled,
+                        id === 'def' || id === 'references' || id.startsWith('implementations_'),
                     provider: panelSubjectChanges.pipe(
                         map(({ repoName, commitID, position, revision, filePath, history, location }) => ({
-                            title: 'Code Navigation',
+                            title: 'References',
                             content: '',
                             priority: 180,
                             selector: null,
                             locationProvider: undefined,
+                            // This panel doesn't need a wrapper
                             noWrapper: true,
                             reactElement: position ? (
                                 <BuiltinCoolCodeIntelPanel
@@ -216,7 +253,7 @@ export function useBlobPanelViews({
                                     isLightTheme={isLightTheme}
                                     extensionsController={extensionsController}
                                     telemetryService={telemetryService}
-                                    key="commits"
+                                    key="references"
                                     token={{
                                         repoName,
                                         commitID,
@@ -233,44 +270,21 @@ export function useBlobPanelViews({
                             ),
                         }))
                     ),
-                },
-                {
-                    id: 'def',
-                    enabled: !experimentalReferencePanelEnabled,
-                    provider: createLocationProvider('def', 'Definition', 190, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
-                            )
-                        )
-                    ),
-                },
-                {
-                    id: 'references',
-                    enabled: !experimentalReferencePanelEnabled,
-                    provider: createLocationProvider<ReferenceParameters>('references', 'References', 180, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(
-                                    extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
-                                )
-                            )
-                        )
-                    ),
-                },
-            ],
-            [
-                experimentalReferencePanelEnabled,
-                createLocationProvider,
-                panelSubjectChanges,
-                preferAbsoluteTimestamps,
-                isLightTheme,
-                settingsCascade,
-                telemetryService,
-                platformContext,
-                extensionsController,
-            ]
-        )
+                })
+            }
+
+            return panelDefinitions
+        }, [
+            experimentalReferencePanelEnabled,
+            createLocationProvider,
+            panelSubjectChanges,
+            preferAbsoluteTimestamps,
+            isLightTheme,
+            settingsCascade,
+            telemetryService,
+            platformContext,
+            extensionsController,
+        ])
     )
 
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])

@@ -95,35 +95,30 @@ const builtinPanelViewProviders = new BehaviorSubject<
 >(new Map())
 
 /**
+ * BuiltinPanelDefinition defines which BuiltinPanelViews will be available.
+ */
+export interface BuiltinPanelDefinition {
+    id: string
+    matches?: (id: string) => boolean
+    provider: Observable<BuiltinPanelView | null>
+}
+/**
  * React hook to add panel views from other components (panel views are typically
  * contributed by Sourcegraph extensions)
  */
-export function useBuiltinPanelViews(
-    builtinPanels: {
-        id: string
-        matches?: (id: string) => boolean
-        enabled: boolean
-        provider: Observable<BuiltinPanelView | null>
-    }[]
-): void {
+export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
-            if (builtinPanel.enabled) {
-                builtinPanelViewProviders.value.set(builtinPanel.id, {
-                    id: builtinPanel.id,
-                    provider: builtinPanel.provider,
-                    matches: builtinPanel.matches,
-                })
-            }
+            builtinPanelViewProviders.value.set(builtinPanel.id, {
+                id: builtinPanel.id,
+                provider: builtinPanel.provider,
+                matches: builtinPanel.matches,
+            })
         }
         builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
 
         return () => {
             for (const builtinPanel of builtinPanels) {
-                if (!builtinPanel.enabled) {
-                    continue
-                }
-
                 builtinPanelViewProviders.value.delete(builtinPanel.id)
             }
             builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
@@ -131,6 +126,13 @@ export function useBuiltinPanelViews(
     }, [builtinPanels])
 }
 
+/**
+ * DynamicPanelView is a PanelViewWithComponent that can dynamically decide
+ * whether to be shown for the given panel tab ID.
+ *
+ * This ID comes from the `#tab=<ID>` location hash.
+ *
+ */
 interface DynamicPanelView extends PanelViewWithComponent {
     matches?: (id: string) => boolean
 }
