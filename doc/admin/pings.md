@@ -112,13 +112,13 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
   - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension
 - IDE extensions usage data
-  - Aggregate daily, weekly, and monthly counts of:
-    - Searches performed by unique users
-    - Total searches performed
-  - Aggregated monthly user state changes: 
+  - Aggregate counts of current daily, weekly, and monthly searches performed:
+    - Count of unique users who performed searches
+    - Count of total searches performed
+  - Aggregate counts of current daily user state:
     - Count of users who installed the extension
     - Count of users who uninstalled the extension 
-  - Aggregate monthly count of redirects to Sourcegraph instance from the extension
+  - Aggregate count of current daily redirects from extension to Sourcegraph instance
 
 
 
