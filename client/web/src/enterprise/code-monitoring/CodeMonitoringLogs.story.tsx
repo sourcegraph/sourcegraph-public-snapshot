@@ -48,3 +48,31 @@ add('open', () => (
         )}
     </WebStory>
 ))
+
+add('empty', () => {
+    const emptyMockedResponse: MockedResponse[] = [
+        {
+            request: {
+                query: getDocumentNode(CODE_MONITOR_EVENTS),
+                variables: { first: 20, after: null, triggerEventsFirst: 20, triggerEventsAfter: null },
+            },
+            result: {
+                data: {
+                    currentUser: {
+                        monitors: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null }, totalCount: 0 },
+                    },
+                },
+            },
+        },
+    ]
+
+    return (
+        <WebStory>
+            {() => (
+                <MockedTestProvider mocks={emptyMockedResponse}>
+                    <CodeMonitoringLogs now={() => parseISO('2022-02-14T16:21:00+00:00')} _testStartOpen={true} />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+})
