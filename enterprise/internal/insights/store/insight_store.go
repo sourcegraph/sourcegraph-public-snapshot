@@ -126,6 +126,10 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	if err != nil {
 		return nil, err
 	}
+	if len(insightIds) == 0 {
+		return []types.InsightViewSeries{}, nil
+	}
+
 	insightIdElems := make([]*sqlf.Query, 0, len(insightIds))
 	for _, id := range insightIds {
 		insightIdElems = append(insightIdElems, sqlf.Sprintf("%s", id))
