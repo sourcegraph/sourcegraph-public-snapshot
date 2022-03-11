@@ -236,6 +236,10 @@ var langToLangSpec = map[string]LangSpec{
   (type_spec
     name: (type_identifier) @definition.type))
 
+(type_declaration
+  (type_alias
+    name: (type_identifier) @definition.type))
+
 ;; reference
 (identifier) @reference
 (type_identifier) @reference

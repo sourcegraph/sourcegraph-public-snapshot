@@ -8,82 +8,90 @@ import (
 )
 
 func TestLocalCodeIntel(t *testing.T) {
-	goSource := `
-func main() {
-	z := 4
-	f(z)
+	type Wants struct {
+		hasDefinition bool
+		refCount      int
+		isLocal       bool
+	}
+
+	type Test struct {
+		name        string
+		source      string
+		nameToWants map[string]Wants
+	}
+
+	tests := []Test{
+		{
+			name: "go",
+			source: `
+const c = 1
+var v = 2
+type t1 = int
+type t2 int
+
+func f(p int) {
+	i := 4
+	fmt.Println(p, i)
 }
 
-func f(x int) {
-	fmt.Println(x)
+func (t t2) m() {
+	f(3)
 }
-`
-
-	symbolNameToRefCount := map[string]int{
-		"main": 1,
-		"z":    2,
-		"f":    2,
-		"x":    2,
+`,
+			nameToWants: map[string]Wants{
+				"m":   {hasDefinition: true, refCount: 1, isLocal: false},
+				"i":   {hasDefinition: true, refCount: 2, isLocal: true},
+				"f":   {hasDefinition: true, refCount: 2, isLocal: false},
+				"c":   {hasDefinition: true, refCount: 1, isLocal: false},
+				"v":   {hasDefinition: true, refCount: 1, isLocal: false},
+				"t1":  {hasDefinition: true, refCount: 1, isLocal: false},
+				"t2":  {hasDefinition: true, refCount: 2, isLocal: false},
+				"t":   {hasDefinition: true, refCount: 1, isLocal: true},
+				"p":   {hasDefinition: true, refCount: 2, isLocal: true},
+				"fmt": {hasDefinition: false, refCount: 1, isLocal: false},
+			},
+		},
 	}
 
-	symbolNameToLocal := map[string]bool{
-		"z": true,
-		"f": false,
-	}
-
-	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
-		return []byte(goSource), nil
-	}
-
-	squirrel := NewSquirrelService(readFile, nil)
-	defer squirrel.Close()
-
-	payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: "test.go"})
-	fatalIfError(t, err)
-
-	for _, symbol := range payload.Symbols {
-		if wantRefCount, ok := symbolNameToRefCount[symbol.Name]; ok && len(symbol.Refs) != wantRefCount {
-			t.Fatalf("symbol %s has %d refs, want %d", symbol.Name, len(symbol.Refs), wantRefCount)
+	for _, test := range tests {
+		readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
+			return []byte(test.source), nil
 		}
 
-		if wantLocal, ok := symbolNameToLocal[symbol.Name]; ok && symbol.Local != wantLocal {
-			t.Fatalf("symbol %s is %t, want %t", symbol.Name, symbol.Local, wantLocal)
+		squirrel := NewSquirrelService(readFile, nil)
+		defer squirrel.Close()
+
+		payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: "test.go"})
+		fatalIfError(t, err)
+
+		for _, symbol := range payload.Symbols {
+			wants, ok := test.nameToWants[symbol.Name]
+			if !ok {
+				continue
+			}
+
+			if wants.hasDefinition != (symbol.Def != nil) {
+				t.Fatalf("symbol %q has definition? got %v, want %v", symbol.Name, symbol.Def != nil, wants.hasDefinition)
+			}
+
+			if wants.refCount != len(symbol.Refs) {
+				t.Fatalf("symbol %q ref count got %d, want %d", symbol.Name, len(symbol.Refs), wants.refCount)
+			}
+
+			if wants.isLocal != symbol.Local {
+				t.Fatalf("symbol %q isLocal got %v, want %v", symbol.Name, symbol.Local, wants.isLocal)
+			}
 		}
-	}
-}
 
-func TestLocalCodeIntelExports(t *testing.T) {
-	goSource := `
-func main() {
-	x := 5
-	fmt.Println(x)
-}
-`
-
-	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
-		return []byte(goSource), nil
-	}
-
-	squirrel := NewSquirrelService(readFile, nil)
-	defer squirrel.Close()
-
-	payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: "test.go"})
-	fatalIfError(t, err)
-
-	nameToSymbol := map[string]types.Symbol{}
-	for _, symbol := range payload.Symbols {
-		nameToSymbol[symbol.Name] = symbol
-	}
-
-	if symbol, ok := nameToSymbol["x"]; !ok {
-		t.Fatalf("symbol x not found")
-	} else if symbol.Local == false {
-		t.Fatalf("expected symbol x to be local")
-	}
-
-	if symbol, ok := nameToSymbol["main"]; !ok {
-		t.Fatalf("symbol main not found")
-	} else if symbol.Local == true {
-		t.Fatalf("expected symbol main to not be local")
+		// Make sure we didn't miss any.
+	nextName:
+		for name := range test.nameToWants {
+			for _, symbol := range payload.Symbols {
+				if symbol.Name == name {
+					continue nextName
+				}
+			}
+			t.Fatalf("expected local code intel to include symbol %s", name)
+		}
 	}
 }
