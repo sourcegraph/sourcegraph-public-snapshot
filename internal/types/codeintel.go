@@ -126,6 +126,7 @@ type Symbol struct {
 	Hover *string `json:"hover,omitempty"`
 	Def   *Range  `json:"def,omitempty"`
 	Refs  []Range `json:"refs,omitempty"`
+	Local bool    `json:"local,omitempty"`
 }
 
 func (s Symbol) String() string {
