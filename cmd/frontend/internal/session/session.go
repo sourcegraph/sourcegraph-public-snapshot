@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -406,6 +407,12 @@ func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter
 
 		info.Actor.FromSessionCookie = true
 		return actor.WithActor(r.Context(), info.Actor)
+	}
+
+	// If the user cannot be authenticated by cookie, attempt to identify the
+	// actor by anonymous UID if it exists.
+	if anonymousUID, ok := cookie.AnonymousUID(r); ok {
+		return actor.WithActor(r.Contex(), actor.FromAnonymousUser(anonymousUID))
 	}
 
 	return r.Context()
