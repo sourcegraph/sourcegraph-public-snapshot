@@ -12,7 +12,6 @@ type searchBasedCodeIntelSupportType string
 const (
 	unsupported searchBasedCodeIntelSupportType = "UNSUPPORTED"
 	basic       searchBasedCodeIntelSupportType = "BASIC"
-	syntactic   searchBasedCodeIntelSupportType = "SYNTACTIC"
 )
 
 type preciseCodeIntelSupportType string
@@ -32,31 +31,10 @@ func NewSearchBasedCodeIntelResolver(language *string) gql.SearchBasedSupportRes
 }
 
 func (r *searchBasedSupportResolver) SupportLevel() string {
-	if r.language == nil || *r.language == "" {
-		return string(unsupported)
+	if r.language != nil && *r.language != "" {
+		return string(basic)
 	}
-
-	ctagsLangToLang := map[string]string{
-		"C":          "cpp",
-		"C#":         "csharp",
-		"C++":        "cpp",
-		"Go":         "go",
-		"Java":       "java",
-		"JavaScript": "javascript",
-		"Lua":        "lua",
-		"OCaml":      "ocaml",
-		"PHP":        "php",
-		"Python":     "python",
-		"Ruby":       "ruby",
-		"Rust":       "rust",
-		"Sh":         "shell",
-	}
-
-	if _, ok := ctagsLangToLang[*r.language]; ok {
-		return string(syntactic)
-	}
-
-	return string(basic)
+	return string(unsupported)
 }
 
 func (r *searchBasedSupportResolver) Language() *string {
