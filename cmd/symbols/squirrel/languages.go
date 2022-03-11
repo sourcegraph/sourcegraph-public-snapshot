@@ -55,6 +55,7 @@ type LangSpec struct {
 	language     *sitter.Language
 	commentStyle CommentStyle
 	query        string
+	exportsQuery string
 }
 
 // Info about comments in a language.
@@ -281,6 +282,14 @@ var langToLangSpec = map[string]LangSpec{
 (expression_switch_statement) @scope
 (for_statement) @scope
 (method_declaration) @scope
+`,
+		exportsQuery: `
+(source_file (var_declaration (var_spec name: (identifier) @exported)))
+(source_file (const_declaration (const_spec name: (identifier) @exported)))
+(source_file (function_declaration name: (identifier) @exported))
+(source_file (method_declaration name: (field_identifier) @exported))
+(source_file (type_declaration (type_spec name: (type_identifier) @exported)))
+(source_file (type_declaration (type_alias name: (type_identifier) @exported)))
 `,
 	},
 	"java": {

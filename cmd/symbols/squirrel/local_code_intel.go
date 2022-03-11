@@ -26,7 +26,8 @@ type PartialSymbol struct {
 	Hover *string
 	Def   *types.Range
 	// Store refs as a set to avoid duplicates from some tree-sitter queries.
-	Refs map[types.Range]struct{}
+	Refs  map[types.Range]struct{}
+	Local bool
 }
 
 // Computes the local code intel payload, which is a list of symbols.
@@ -38,6 +39,15 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	}
 
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
+
+	// Collect exported symbols.
+	exports := map[Id]struct{}{}
+	err = forEachCapture(root.LangSpec.exportsQuery, *root, func(captureName string, node Node) {
+		exports[nodeId(node.Node)] = struct{}{}
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	// Collect scopes
 	rootScopeId := nodeId(root.Node)
@@ -81,11 +91,17 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 
 					// Put the symbol in the scope.
 					def := nodeToRange(node.Node)
-					scope[symbolName] = &PartialSymbol{
+					_, exported := exports[nodeId(node.Node)]
+					targetScope := scope
+					if exported {
+						targetScope = scopes[rootScopeId]
+					}
+					targetScope[symbolName] = &PartialSymbol{
 						Name:  string(symbolName),
 						Hover: hover,
 						Def:   &def,
 						Refs:  map[types.Range]struct{}{},
+						Local: !exported,
 					}
 
 					// Stop walking up the tree.
@@ -128,8 +144,9 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 		// Did not find the symbol in this file, so create a symbol at the root without a def for it.
 		if _, ok := scopes[rootScopeId][symbolName]; !ok {
 			scopes[rootScopeId][symbolName] = &PartialSymbol{
-				Name: string(symbolName),
-				Refs: map[types.Range]struct{}{},
+				Name:  string(symbolName),
+				Refs:  map[types.Range]struct{}{},
+				Local: false,
 			}
 		}
 		scopes[rootScopeId][symbolName].Refs[nodeToRange(node)] = struct{}{}
@@ -152,6 +169,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 				Hover: partialSymbol.Hover,
 				Def:   partialSymbol.Def,
 				Refs:  refs,
+				Local: partialSymbol.Local,
 			})
 		}
 	}

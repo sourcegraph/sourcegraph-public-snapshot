@@ -22,8 +22,13 @@ func f(x int) {
 	symbolNameToRefCount := map[string]int{
 		"main": 1,
 		"z":    2,
-		"f":    1, // TODO allow functions to escape their immediate scope (should be 2)
+		"f":    2,
 		"x":    2,
+	}
+
+	symbolNameToLocal := map[string]bool{
+		"z": true,
+		"f": false,
 	}
 
 	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
@@ -37,9 +42,12 @@ func f(x int) {
 	fatalIfError(t, err)
 
 	for _, symbol := range payload.Symbols {
-		// Check if len(symbol.Refs) is equal to symbolNameToRefCount[symbol.Name]
 		if wantRefCount, ok := symbolNameToRefCount[symbol.Name]; ok && len(symbol.Refs) != wantRefCount {
 			t.Fatalf("symbol %s has %d refs, want %d", symbol.Name, len(symbol.Refs), wantRefCount)
+		}
+
+		if wantLocal, ok := symbolNameToLocal[symbol.Name]; ok && symbol.Local != wantLocal {
+			t.Fatalf("symbol %s is %t, want %t", symbol.Name, symbol.Local, wantLocal)
 		}
 	}
 }
