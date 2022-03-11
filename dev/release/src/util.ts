@@ -97,6 +97,9 @@ export function ensureMainBranchUpToDate(): void {
             `Your branch is behind the ${mainBranch} branch. You should run \`git pull\` to update your ${mainBranch} branch.`
         )
         process.exit(1)
+    } else if (stdout.includes('Your branch is ahead')) {
+        console.log(`Your branch is ahead of the ${mainBranch} branch.`)
+        process.exit(1)
     }
 }
 interface ContainerRegistryCredential {
