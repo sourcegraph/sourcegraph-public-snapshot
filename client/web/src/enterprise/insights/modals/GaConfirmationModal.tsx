@@ -62,9 +62,9 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
                 </p>
 
                 <p>
-                    If your team has created more than 2 insights during the trial, some insights will be hidden.{' '}
-                    <b>All of the insights you’ve created are preserved and will be displayed as locked.</b> All
-                    insights will be visible again after upgrading your license.
+                    If your team has created more than 2 insights during the trial, some insights will be hidden. All of
+                    the insights you've created are preserved, <b>but</b> will be locked. All insights will be visible
+                    again after upgrading your license.
                 </p>
 
                 <p>
