@@ -4,6 +4,7 @@
 - [Precise code intelligence](precise_code_intelligence.md)
   - [Precise code intelligence uploads](uploads.md)
 - [Search-based code intelligence](search_based_code_intelligence.md)
+- <span class="badge badge-experimental">Experimental</span> [Rockskip: faster symbol searches](rockskip.md)
 - [Code navigation features](features.md)
   - [Popover](features.md#popover)
   - [Go to definition](features.md#go-to-definition)
