@@ -7,6 +7,9 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
 
+import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
+import { useGetApi } from './hooks/use-get-api'
+
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
 const CodeInsightsDotComGetStartedLazy = lazyComponent(
@@ -29,9 +32,19 @@ export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>,
 }
 
 export const CodeInsightsRouter: React.FunctionComponent<CodeInsightsRouterProps> = props => {
-    if (props.isSourcegraphDotCom) {
-        return <CodeInsightsDotComGetStartedLazy telemetryService={props.telemetryService} />
+    const api = useGetApi()
+
+    if (!api) {
+        return null
     }
 
-    return <CodeInsightsAppLazyRouter {...props} />
+    return (
+        <CodeInsightsBackendContext.Provider value={api}>
+            {props.isSourcegraphDotCom ? (
+                <CodeInsightsDotComGetStartedLazy telemetryService={props.telemetryService} />
+            ) : (
+                <CodeInsightsAppLazyRouter {...props} />
+            )}
+        </CodeInsightsBackendContext.Provider>
+    )
 }
