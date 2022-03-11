@@ -82,6 +82,7 @@ describe('serialize', () => {
                     lineContext: 3,
                 },
                 output: of({
+                    symbolFoundAtLatestRevision: true,
                     effectiveRevision: 'effective-feature',
                     symbolRange: {
                         start: { line: 1, character: 1 },
