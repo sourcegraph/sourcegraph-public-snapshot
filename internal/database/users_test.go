@@ -98,89 +98,100 @@ func TestUsers_ValidUsernames(t *testing.T) {
 
 // This validates the password using the Paassord Policy configured
 func Test_validatePasswordUsingPolicy(passwd string) error {
-  letters := 0
+	letters := 0
   numbers := false;
-  upperCase := false;
-  special := 0;
-  for _, c := range passwd {
-      switch {
-      case unicode.IsNumber(c):
-          numbers = true
-          letters++
-      case unicode.IsUpper(c):
-          upperCase = true
-          letters++
-      case unicode.IsPunct(c) || unicode.IsSymbol(c):
-          special++
-          letters++
-      case unicode.IsLetter(c) || c == ' ':
-          letters++
-      default:
-          //ignore
-      }
-  }
-  // Check for blank password
-  if letters == 0 {
-    return errors.New("password empty")
-  }
-  // Get a reference to the password policy
-  policy := conf.ExperimentalFeatures().PasswordPolicy
-  // Minimum Length Check
-  if letters < policy.MinimumLength {
-    return false
-  }
-  // Maximum Length Check
-  if letters > maxPasswordRunes {
-    return false
-  }
-  // Numeric Check
-  if policy.RequireAtLeastOneNumber {
-    if !numbers {
-      false
-    }
-  }
-  // Mixed case check
-  if policy.RequireUpperandLowerCase {
-    if !upperCase {
-      false
-    }
-  }
-  // Special Character Check
-  if policy.NumberOfSpecialCharacters > 0 {
-    if special < policy.NumberOfSpecialCharacters {
-      return false
-    }
-  }
-  // All good return
-  return true
+	upperCase := false;
+	special := 0;
+
+	for _, c := range passwd {
+			switch {
+			case unicode.IsNumber(c):
+					numbers = true
+					letters++
+			case unicode.IsUpper(c):
+					upperCase = true
+					letters++
+			case unicode.IsPunct(c) || unicode.IsSymbol(c):
+					special++
+					letters++
+			case unicode.IsLetter(c) || c == ' ':
+					letters++
+			default:
+					//ignore
+			}
+	}
+	// Check for blank password
+	if passwd == "" {
+		return false
+	}
+	// Get a reference to the password policy
+	policy := conf.ExperimentalFeatures().PasswordPolicy
+
+	// Minimum Length Check
+	if letters < policy.MinimumLength {
+		return false
+	}
+
+	// Maximum Length Check
+	if letters > maxPasswordRunes {
+		return false
+	}
+
+	// Numeric Check
+	if policy.RequireAtLeastOneNumber {
+		if !numbers {
+			false
+		}
+	}
+
+	// Mixed case check
+	if policy.RequireUpperandLowerCase {
+		if !upperCase {
+			false
+		}
+	}
+
+	// Special Character Check
+	if policy.NumberOfSpecialCharacters > 0 {
+		if special < policy.NumberOfSpecialCharacters {
+			return false
+		}
+	}
+
+	// All good return
+	return true
 }
 
 func TestUsers_Password_Policy(t *testing.T) {
-  // Numeric Check
-  pwTest1 := "abcdefghijklm!@AWS"
-  result1 := Test_validatePasswordUsingPolicy(pwTest1)
-  if result1 {
-    t.Fatal("Number found check failed.")
-  }
-  // Mixed case check
-  pwTest2 := "abcdefghijklm!@1ass"
-  result2 := Test_validatePasswordUsingPolicy(pwTest2)
-  if result2 {
-    t.Fatal("Mixed case check failed.")
-  }
-  // Special Character Check
-  pwTest3 := "abcdefghijklmQWS1ass"
-  result3 := Test_validatePasswordUsingPolicy(pwTest2)
-  if result3 {
-    t.Fatal("Special character check failed.")
-  }
-  // Min Character Check
-  pwTest4 := "abcde1@W"
-  result4 := Test_validatePasswordUsingPolicy(pwTest2)
-  if result4 {
-    t.Fatal("Min character check failed.")
+
+	// Numeric Check
+	pwTest1 := "abcdefghijklm!@AWS"
+	result1 := Test_validatePasswordUsingPolicy(pwTest1)
+	if result1 {
+		t.Fatal("Number found check failed.")
+	}
+
+	// Mixed case check
+	pwTest2 := "abcdefghijklm!@1ass"
+	result2 := Test_validatePasswordUsingPolicy(pwTest2)
+	if result2 {
+		t.Fatal("Mixed case check failed.")
+	}
+
+	// Special Character Check
+	pwTest3 := "abcdefghijklmQWS1ass"
+	result3 := Test_validatePasswordUsingPolicy(pwTest2)
+	if result3 {
+		t.Fatal("Special character check failed.")
+	}
+
+	// Min Character Check
+	pwTest4 := "abcde1@W"
+	result4 := Test_validatePasswordUsingPolicy(pwTest2)
+	if result4 {
+		t.Fatal("Min character check failed.")
 }
-	
+
 func TestUsers_Create_CheckPassword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
