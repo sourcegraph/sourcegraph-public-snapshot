@@ -30,7 +30,10 @@ func TestToSearchInputs(t *testing.T) {
 	// Job generation for global vs non-global search
 	autogold.Want("user search context", `
 (PARALLEL
-  RepoSubsetText
+  REPOPAGER
+    (PARALLEL
+      ZoektRepoSubset
+      Searcher))
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
@@ -51,14 +54,20 @@ func TestToSearchInputs(t *testing.T) {
 
 	autogold.Want("nonglobal repo", `
 (PARALLEL
-  RepoSubsetText
+  REPOPAGER
+    (PARALLEL
+      ZoektRepoSubset
+      Searcher))
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("nonglobal repo contains", `
 (PARALLEL
-  RepoSubsetText
+  REPOPAGER
+    (PARALLEL
+      ZoektRepoSubset
+      Searcher))
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
@@ -118,7 +127,10 @@ func TestToSearchInputs(t *testing.T) {
 
 	autogold.Want("Streaming: many types", `
 (PARALLEL
-  RepoSubsetText
+  REPOPAGER
+    (PARALLEL
+      ZoektRepoSubset
+      Searcher))
   RepoSubsetSymbol
   Commit
   Repo
@@ -140,7 +152,10 @@ func TestToSearchInputs(t *testing.T) {
 (PRIORITY
   (REQUIRED
     (PARALLEL
-      RepoSubsetText
+      REPOPAGER
+        (PARALLEL
+          ZoektRepoSubset
+          Searcher))
       Repo
       ComputeExcludedRepos))
   (OPTIONAL
