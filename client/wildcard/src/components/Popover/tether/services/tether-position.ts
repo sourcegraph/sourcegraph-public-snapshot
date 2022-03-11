@@ -33,6 +33,8 @@ export interface TetherState {
 
     /** Y and X coordinates of marker element */
     markerOffset: Point
+
+    position: Position
 }
 
 /**
@@ -106,6 +108,7 @@ export function getPositionState(layout: TetherLayout, position: Position): Teth
         elementBounds,
         markerAngle,
         markerOffset,
+        position,
     }
 }
 
