@@ -49,23 +49,6 @@
         }
       },
       "examples": [[{ "name": "myrepo" }, { "pattern": ".*secret.*" }]]
-    },
-    "phabricatorMetadataCommand": {
-      "description": "This is DEPRECATED. Use the `phabricator` field instead.",
-      "type": "string"
-    },
-    "phabricator": {
-      "description": "Phabricator instance that integrates with this Gitolite instance",
-      "type": "object",
-      "required": ["url"],
-      "additionalProperties": false,
-      "properties": {
-        "url": {
-          "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
-          "type": "string",
-          "format": "uri"
-        }
-      }
     }
   }
 }
