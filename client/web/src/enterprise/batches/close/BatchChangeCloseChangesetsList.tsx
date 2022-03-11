@@ -8,7 +8,6 @@ import { ErrorLike, isDefined, property } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -77,10 +76,8 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
-                // TODO: This doesn't account for draft changesets. Ideally, this would
-                // use the delta API and apply an empty batch spec, but then changesets
-                // would currently be lost.
-                state: ChangesetState.OPEN,
+                state: null,
+                onlyClosable: true,
                 checkState: null,
                 reviewState: null,
                 first: args.first ?? null,

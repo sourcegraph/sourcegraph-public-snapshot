@@ -309,6 +309,7 @@ export const CHANGESETS = gql`
         $onlyPublishedByThisBatchChange: Boolean
         $search: String
         $onlyArchived: Boolean
+        $onlyClosable: Boolean
     ) {
         node(id: $batchChange) {
             __typename
@@ -322,6 +323,7 @@ export const CHANGESETS = gql`
                     onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
                     search: $search
                     onlyArchived: $onlyArchived
+                    onlyClosable: $onlyClosable
                 ) {
                     __typename
                     totalCount
@@ -349,7 +351,7 @@ export const CHANGESETS = gql`
     ${externalChangesetFieldsFragment}
 `
 
-// TODO: This has been superseded by CHANGESETS below, but the "Close" page still uses
+// TODO: This has been superseded by CHANGESETS above, but the "Close" page still uses
 // this older `requestGraphQL` one. The variables and result types are the same, so
 // eventually this can just go away when we refactor the requests from the "Close" page.
 export const queryChangesets = ({
@@ -357,6 +359,7 @@ export const queryChangesets = ({
     first,
     after,
     state,
+    onlyClosable,
     reviewState,
     checkState,
     onlyPublishedByThisBatchChange,
@@ -370,6 +373,7 @@ export const queryChangesets = ({
         first,
         after,
         state,
+        onlyClosable,
         reviewState,
         checkState,
         onlyPublishedByThisBatchChange,
