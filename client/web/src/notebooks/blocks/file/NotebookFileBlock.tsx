@@ -28,6 +28,7 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import blockStyles from '../NotebookBlock.module.scss'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import styles from './NotebookFileBlock.module.scss'
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
@@ -38,7 +39,6 @@ interface NotebookFileBlockProps
         FileBlockValidationFunctions,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
@@ -62,7 +62,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     telemetryService,
     isSelected,
     isOtherBlockSelected,
-    isMacPlatform,
     isReadOnly,
     hoverifier,
     extensionsController,
@@ -108,7 +107,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
 
     const { onKeyDown } = useBlockShortcuts({
         id,
-        isMacPlatform,
         onEnterBlock: () => setShowInputs(true),
         onRunBlock: () => {
             setShowInputs(false)
@@ -125,14 +123,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         isRevisionValid !== false &&
         isLineRangeValid !== false
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
-        isInputFocused,
-        isMacPlatform,
-        isReadOnly,
-        ...props,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ isInputFocused, isReadOnly, ...props })
 
     const fileURL = useMemo(
         () =>
@@ -163,6 +154,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         [fileURL, areInputsValid]
     )
 
+    const modifierKeyLabel = useModifierKeyLabel()
     const toggleEditMenuAction: BlockMenuAction[] = useMemo(
         () => [
             {
@@ -291,7 +283,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
                         isLineRangeValid={isLineRangeValid}
                         showRevisionInput={showRevisionInput}
                         showLineRangeInput={showLineRangeInput}
-                        isMacPlatform={isMacPlatform}
                         setIsInputFocused={setIsInputFocused}
                         onSelectBlock={onSelectBlock}
                         setFileInput={setFileInput}

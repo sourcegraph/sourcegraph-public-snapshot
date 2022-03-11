@@ -29,6 +29,7 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import blockStyles from '../NotebookBlock.module.scss'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import styles from './NotebookSymbolBlock.module.scss'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
@@ -39,7 +40,6 @@ interface NotebookSymbolBlockProps
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    isMacPlatform: boolean
     sourcegraphSearchLanguageId: string
     hoverifier: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
@@ -53,7 +53,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     telemetryService,
     isSelected,
     isOtherBlockSelected,
-    isMacPlatform,
     isReadOnly,
     hoverifier,
     extensionsController,
@@ -97,21 +96,12 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 
     const hideInput = useCallback(() => setShowInputs(false), [setShowInputs])
 
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onEnterBlock,
-        onRunBlock: hideInput,
-        ...props,
-    })
+    const { onKeyDown } = useBlockShortcuts({ id, onEnterBlock, onRunBlock: hideInput, ...props })
 
     const symbolOutput = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
         isInputFocused,
-        isMacPlatform,
         isReadOnly,
         ...props,
     })
@@ -142,6 +132,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         [symbolURL]
     )
 
+    const modifierKeyLabel = useModifierKeyLabel()
     const toggleEditMenuAction: BlockMenuAction[] = useMemo(
         () => [
             {

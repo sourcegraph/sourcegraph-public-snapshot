@@ -24,7 +24,6 @@ export interface NotebookContentProps
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
-    isMacPlatform: boolean
     viewerCanManage: boolean
     blocks: NotebookBlock[]
     exportedFileName: string

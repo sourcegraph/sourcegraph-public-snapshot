@@ -32,7 +32,6 @@ add('default', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
             />
         )}
     </WebStory>

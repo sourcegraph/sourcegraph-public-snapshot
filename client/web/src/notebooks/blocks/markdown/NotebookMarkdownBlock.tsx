@@ -15,13 +15,12 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import blockStyles from '../NotebookBlock.module.scss'
 import { useBlockSelection } from '../useBlockSelection'
 import { useBlockShortcuts } from '../useBlockShortcuts'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
 import styles from './NotebookMarkdownBlock.module.scss'
 
-interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
-    isMacPlatform: boolean
-}
+interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
 
 export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = ({
     id,
@@ -29,7 +28,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     output,
     isSelected,
     isLightTheme,
-    isMacPlatform,
     isReadOnly,
     onBlockInputChange,
     onRunBlock,
@@ -89,7 +87,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         ...props,
     })
 
-    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, ...props, onRunBlock: runBlock })
+    const { onKeyDown } = useBlockShortcuts({ id, onEnterBlock, ...props, onRunBlock: runBlock })
 
     useEffect(() => {
         if (isEditing) {
@@ -97,14 +95,13 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
     }, [isEditing, editor])
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
         isInputFocused,
         isReadOnly,
-        isMacPlatform,
         ...props,
     })
+
+    const modifierKeyLabel = useModifierKeyLabel()
     const menuActions = useMemo(() => {
         const action: BlockMenuAction[] = [
             isEditing

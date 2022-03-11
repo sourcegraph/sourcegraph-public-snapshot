@@ -54,7 +54,6 @@ export interface NotebookComponentProps
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
         FileBlockValidationFunctions {
     globbing: boolean
-    isMacPlatform: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
