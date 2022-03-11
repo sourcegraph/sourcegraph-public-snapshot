@@ -1600,4 +1600,8 @@ enum SearchBasedSupportLevel {
     Universal-ctags is used for indexing this language.
     """
     BASIC
+    """
+    tree-sitter analysis is used for this language.
+    """
+    SYNTACTIC
 }
