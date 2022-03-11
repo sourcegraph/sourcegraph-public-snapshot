@@ -965,7 +965,7 @@ Referenced by:
 ```
  Column | Type | Collation | Nullable | Default 
 --------+------+-----------+----------+---------
- cursor | text |           | not null | 
+ cursor | text |           |          | 
 
 ```
 
