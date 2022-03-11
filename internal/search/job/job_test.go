@@ -40,14 +40,14 @@ func TestToSearchInputs(t *testing.T) {
 
 	autogold.Want("universal (AKA global) search context", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
@@ -75,27 +75,27 @@ func TestToSearchInputs(t *testing.T) {
 	// Job generation support for implied `type:repo` queries.
 	autogold.Want("supported Repo job", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("supportedRepo job literal", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   Repo
   ComputeExcludedRepos)
 `).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
 	autogold.Want("unsupported Repo job prefix", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   ComputeExcludedRepos)
 `).Equal(t, test("@nope", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("unsupported Repo job regexp", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   ComputeExcludedRepos)
 `).Equal(t, test("foo @bar", search.Streaming, query.ParseRegexp))
 
@@ -120,7 +120,7 @@ func TestToSearchInputs(t *testing.T) {
 
 	autogold.Want("Streaming: file or commit", `
 (PARALLEL
-  RepoUniverseText
+  ZoektGlobalSearch
   Commit
   ComputeExcludedRepos)
 `).Equal(t, test("type:file type:commit test", search.Streaming, query.ParseRegexp))
@@ -142,7 +142,7 @@ func TestToSearchInputs(t *testing.T) {
 (PRIORITY
   (REQUIRED
     (PARALLEL
-      RepoUniverseText
+      ZoektGlobalSearch
       ComputeExcludedRepos))
   (OPTIONAL
     Commit))
@@ -189,7 +189,7 @@ func TestToEvaluateJob(t *testing.T) {
     (LIMIT
       500
       (PARALLEL
-        RepoUniverseText
+        ZoektGlobalSearch
         Repo
         ComputeExcludedRepos))))
 `).Equal(t, test("foo", search.Streaming))
@@ -201,7 +201,7 @@ func TestToEvaluateJob(t *testing.T) {
     (LIMIT
       30
       (PARALLEL
-        RepoUniverseText
+        ZoektGlobalSearch
         Repo
         ComputeExcludedRepos))))
 `).Equal(t, test("foo", search.Batch))
