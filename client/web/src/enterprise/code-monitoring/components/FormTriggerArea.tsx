@@ -5,8 +5,10 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
@@ -15,7 +17,7 @@ import { SearchPatternType } from '../../../graphql-operations'
 
 import styles from './FormTriggerArea.module.scss'
 
-interface TriggerAreaProps {
+interface TriggerAreaProps extends ThemeProps {
     query: string
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
@@ -24,6 +26,7 @@ interface TriggerAreaProps {
     cardClassName?: string
     cardBtnClassName?: string
     cardLinkClassName?: string
+    isSourcegraphDotCom: boolean
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
@@ -75,6 +78,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     cardClassName,
     cardBtnClassName,
     cardLinkClassName,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     const [showQueryForm, setShowQueryForm] = useState(startExpanded)
     const toggleQueryForm: React.FormEventHandler = useCallback(event => {
@@ -197,59 +202,27 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     </span>
                     <span className="mt-4">Search query</span>
                     <div>
-                        <div className={classNames('mb-4', styles.queryInput)}>
-                            <div className="d-flex flex-column flex-grow-1">
-                                <input
-                                    type="text"
-                                    className={classNames(
-                                        'form-control mt-2 mb-3 test-trigger-input text-monospace',
-                                        styles.queryInputField,
-                                        `test-${deriveInputClassName(queryState)}`
-                                    )}
-                                    onChange={nextQueryFieldChange}
-                                    value={queryState.value}
-                                    autoFocus={true}
-                                    ref={queryInputReference}
-                                    spellCheck={false}
-                                    data-testid="trigger-query-edit"
+                        <div className={classNames(styles.queryInput, 'my-2')}>
+                            <div
+                                className={classNames(
+                                    'form-control test-trigger-input',
+                                    styles.queryInputField,
+                                    `test-${deriveInputClassName(queryState)}`
+                                )}
+                            >
+                                <LazyMonacoQueryInput
+                                    isLightTheme={isLightTheme}
+                                    patternType={SearchPatternType.literal}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                    caseSensitive={false}
+                                    queryState={{ query: queryState.value }}
+                                    onChange={queryState => nextQueryFieldChange(queryState.query)}
+                                    onSubmit={() => {}}
+                                    globbing={false}
+                                    preventNewLine={true}
                                 />
-
-                                <ul className={styles.checklist}>
-                                    <li>
-                                        <ValidQueryChecklistItem
-                                            checked={hasValidPatternTypeFilter}
-                                            hint="Code monitors support literal and regex search. Searches are literal by default."
-                                            dataTestid="patterntype-checkbox"
-                                        >
-                                            Is <code>patternType:literal</code> or <code>patternType:regexp</code>
-                                        </ValidQueryChecklistItem>
-                                    </li>
-                                    <li>
-                                        <ValidQueryChecklistItem
-                                            checked={hasTypeDiffOrCommitFilter}
-                                            hint="type:diff targets code present in new commits, while type:commit targets commit messages"
-                                            dataTestid="type-checkbox"
-                                        >
-                                            Contains a <code>type:diff</code> or <code>type:commit</code> filter
-                                        </ValidQueryChecklistItem>
-                                    </li>
-                                    <li>
-                                        <ValidQueryChecklistItem
-                                            checked={hasRepoFilter}
-                                            hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
-                                            dataTestid="repo-checkbox"
-                                        >
-                                            Contains a <code>repo:</code> filter
-                                        </ValidQueryChecklistItem>
-                                    </li>
-                                    <li>
-                                        <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
-                                            Is a valid search query
-                                        </ValidQueryChecklistItem>
-                                    </li>
-                                </ul>
                             </div>
-                            <div className={classNames('p-2 my-2', styles.queryInputPreviewLink)}>
+                            <div className={styles.queryInputPreviewLink}>
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.value,
@@ -258,7 +231,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={classNames('test-preview-link', styles.queryInputPreviewLinkText)}
+                                    className="test-preview-link"
                                 >
                                     Preview results{' '}
                                     <Icon
@@ -268,6 +241,41 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 </Link>
                             </div>
                         </div>
+
+                        <ul className={classNames(styles.checklist, 'mb-4')}>
+                            <li>
+                                <ValidQueryChecklistItem
+                                    checked={hasValidPatternTypeFilter}
+                                    hint="Code monitors support literal and regex search. Searches are literal by default."
+                                    dataTestid="patterntype-checkbox"
+                                >
+                                    Is <code>patternType:literal</code> or <code>patternType:regexp</code>
+                                </ValidQueryChecklistItem>
+                            </li>
+                            <li>
+                                <ValidQueryChecklistItem
+                                    checked={hasTypeDiffOrCommitFilter}
+                                    hint="type:diff targets code present in new commits, while type:commit targets commit messages"
+                                    dataTestid="type-checkbox"
+                                >
+                                    Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                </ValidQueryChecklistItem>
+                            </li>
+                            <li>
+                                <ValidQueryChecklistItem
+                                    checked={hasRepoFilter}
+                                    hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                    dataTestid="repo-checkbox"
+                                >
+                                    Contains a <code>repo:</code> filter
+                                </ValidQueryChecklistItem>
+                            </li>
+                            <li>
+                                <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
+                                    Is a valid search query
+                                </ValidQueryChecklistItem>
+                            </li>
+                        </ul>
                     </div>
                     <div>
                         <Button
