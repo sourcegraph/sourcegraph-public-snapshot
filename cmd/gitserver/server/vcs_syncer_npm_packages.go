@@ -102,10 +102,17 @@ func (s *NPMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 
 	cloneable := dependencies[:0] // in place filtering
 	for _, dependency := range dependencies {
-		if err := npm.Exists(ctx, s.client, dependency); err == nil {
+		exists, err := npm.Exists(ctx, s.client, dependency)
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			log15.Warn("skipping missing npm dependency", "dep", dependency.PackageManagerSyntax())
+		} else {
 			cloneable = append(cloneable, dependency)
 		}
-	}
+
 	dependencies = cloneable
 
 	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), placeholderNPMDependency)
@@ -171,7 +178,7 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			dep, err := reposource.ParseNPMDependency(configDependencyString)
 			if err != nil {
 				log15.Warn("skipping malformed npm dependency", "package", configDependencyString, "error", err)
-				return nil, err
+				continue
 			}
 			matchingDependencies = append(matchingDependencies, dep)
 		}
