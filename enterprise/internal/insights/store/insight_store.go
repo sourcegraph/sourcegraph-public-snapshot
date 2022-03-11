@@ -792,11 +792,11 @@ func (s *InsightStore) HardDeleteSeries(ctx context.Context, seriesId string) er
 	return s.Exec(ctx, sqlf.Sprintf(hardDeleteSeries, seriesId))
 }
 
-func (s *InsightStore) GetFrozenInsightCount(ctx context.Context) (globalCount int, nonGlobalCount int, err error) {
-	rows := s.QueryRow(ctx, sqlf.Sprintf(getFrozenInsightCountSql))
+func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globalCount int, totalCount int, err error) {
+	rows := s.QueryRow(ctx, sqlf.Sprintf(getUnfrozenInsightCountSql))
 	if err = rows.Scan(
 		&globalCount,
-		&nonGlobalCount,
+		&totalCount,
 	); err != nil {
 		return
 	}
@@ -1002,29 +1002,20 @@ const unfreezeAllInsightsSql = `
 UPDATE insight_view SET is_frozen = FALSE
 `
 
-const getFrozenInsightCountSql = `
+const getUnfrozenInsightCountSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetFrozenInsightCounts
-SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenNonGlobal.total as unfrozenNonGlobal FROM (
+SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenTotal.total as unfrozenTotal FROM (
 	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
-	JOIN insight_view_grants as ivg on ivg.insight_view_id = iv.id
-	LEFT JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
-	LEFT JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
-	WHERE
-		iv.is_frozen = FALSE
-		AND (ivg.global = TRUE OR dg.global = TRUE)
+	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE iv.is_frozen = FALSE AND dg.global = TRUE
 ) as unfrozenGlobal
 JOIN
 (
 	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
-	JOIN insight_view_grants as ivg on ivg.insight_view_id = iv.id
-	LEFT JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
-	LEFT JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
-	WHERE
-		iv.is_frozen = FALSE
-		AND (ivg.org_id IS NOT NULL OR ivg.user_id IS NOT NULL)
-		AND (dg.org_id IS NOT NULL OR dg.user_id IS NOT NULL)
-) as unfrozenNonGlobal
-on TRUE
+	WHERE iv.is_frozen = FALSE
+) as unfrozenTotal
+on TRUE;
 `
 
 const unfreezeGlobalInsightsSql = `
@@ -1032,10 +1023,9 @@ const unfreezeGlobalInsightsSql = `
 UPDATE insight_view SET is_frozen = FALSE
 WHERE id IN (
 	SELECT DISTINCT(iv.id) from insight_view as iv
-	JOIN insight_view_grants as ivg on ivg.insight_view_id = iv.id
-	LEFT JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
-	LEFT JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
-	WHERE ivg.global = TRUE OR dg.global = TRUE
+	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE dg.global = TRUE
 	ORDER BY iv.id ASC
 	LIMIT %s
 )

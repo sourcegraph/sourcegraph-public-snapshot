@@ -38,14 +38,14 @@ func checkAndEnforceLicense(ctx context.Context, postgres dbutil.DB, insightsdb 
 			return errors.Wrap(err, "UnfreezeAllInsights")
 		}
 	} else {
-		globalFrozenInsightCount, nonGlobalFrozenInsightCount, err := tx.GetFrozenInsightCount(ctx)
+		globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := tx.GetUnfrozenInsightCount(ctx)
 		if err != nil {
-			return errors.Wrap(err, "GetFrozenInsightCount")
+			return errors.Wrap(err, "GetUnfrozenInsightCount")
 		}
 		// Insights are considered to be in a frozen state if:
 		// - no more than 2 global insights are unfrozen
 		// - all other insights are frozen
-		insightsFrozen := globalFrozenInsightCount <= 2 && nonGlobalFrozenInsightCount == 0
+		insightsFrozen := globalUnfrozenInsightCount <= 2 && totalUnfrozenInsightCount == globalUnfrozenInsightCount
 		if !insightsFrozen {
 			err = tx.FreezeAllInsights(ctx)
 			if err != nil {
