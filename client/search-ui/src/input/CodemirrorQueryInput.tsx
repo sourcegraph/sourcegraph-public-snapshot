@@ -1,4 +1,4 @@
-import { autocompletion, CompletionResult, Completion, snippet } from '@codemirror/autocomplete'
+import { autocompletion, CompletionResult, Completion, snippet, completionKeymap } from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
 import {
     EditorSelection,
@@ -8,6 +8,7 @@ import {
     Facet,
     StateEffect,
     StateField,
+    Prec,
 } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
 import { EditorView, ViewUpdate, keymap, Decoration } from '@codemirror/view'
@@ -436,7 +437,7 @@ const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
     [MarkerSeverity.Warning]: Decoration.mark({ class: styles.diagnosticWarning }),
     [MarkerSeverity.Error]: Decoration.mark({ class: styles.diagnosticError }),
 }
-const queryDiagnostic = [
+const queryDiagnostic: Extension[] = [
     // Compute diagnostics when query changes
     diagnostics.compute([parsedQueryField], state => {
         const query = state.facet(parsedQueryField)
@@ -480,8 +481,18 @@ const queryDiagnostic = [
 const autocomplete = (
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>,
     options: { globbing: boolean; isSourcegraphDotCom: boolean }
-): Extension =>
+): Extension[] => [
+    // Uses the default keymapping by changes accepting suggestions from Enter
+    // to Tab
+    Prec.highest(
+        keymap.of(
+            completionKeymap.map(keybinding =>
+                keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
+            )
+        )
+    ),
     autocompletion({
+        defaultKeymap: false,
         override: [
             context => {
                 const query = context.state.facet(parsedQueryField)
@@ -508,39 +519,42 @@ const autocomplete = (
                                       options.isSourcegraphDotCom
                                   )
                         ),
-                        map(toCMCompletions)
+                        map((completionList): CompletionResult | null => {
+                            if (completionList === null || completionList.suggestions.length === 0) {
+                                return null
+                            }
+                            return {
+                                from:
+                                    token.type === 'filter'
+                                        ? token.value?.range.start ?? context.pos
+                                        : token.range.start,
+                                options: toCMCompletions(completionList),
+                            }
+                        })
                     )
                     .toPromise()
             },
         ],
-    })
+    }),
+]
 
-function toCMCompletions(completionList: languages.CompletionList | null): CompletionResult | null {
-    if (!completionList) {
-        return null
-    }
-
+function toCMCompletions(completionList: languages.CompletionList): Completion[] {
     // Boost suggestions by position because it appears they are already orderd.
     let boost = 99
-    const options: Completion[] = completionList.suggestions.map(item => ({
-        type: languages.CompletionItemKind[item.kind].toLowerCase(),
-        label: typeof item.label === 'string' ? item.label : item.label.name,
-        apply:
-            ((item.insertTextRules ?? 0) & languages.CompletionItemInsertTextRule.InsertAsSnippet) ===
-            languages.CompletionItemInsertTextRule.InsertAsSnippet
-                ? snippet(item.insertText)
-                : item.insertText,
-        detail: item.detail,
-        info: item.documentation?.toString(),
-        boost: boost--,
-    }))
-    if (options.length === 0) {
-        return null
-    }
-
-    // Unlike Monaco, CM seems to support only a single replacement starting
-    // position.
-    return { from: completionList.suggestions[0].range.startColumn - 1, options }
+    return completionList.suggestions.map(
+        (item): Completion => ({
+            type: languages.CompletionItemKind[item.kind].toLowerCase(),
+            label: typeof item.label === 'string' ? item.label : item.label.name,
+            apply:
+                ((item.insertTextRules ?? 0) & languages.CompletionItemInsertTextRule.InsertAsSnippet) ===
+                languages.CompletionItemInsertTextRule.InsertAsSnippet
+                    ? snippet(item.insertText)
+                    : item.insertText,
+            detail: item.detail,
+            info: item.documentation?.toString(),
+            boost: boost--,
+        })
+    )
 }
 
 // Looks like there might be a bug with how the end range for a field is
