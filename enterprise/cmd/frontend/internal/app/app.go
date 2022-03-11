@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -100,6 +101,14 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		}
 
 		setupAction := r.URL.Query().Get("setup_action")
+
+		a := actor.FromContext(r.Context())
+
+		if !a.IsAuthenticated() {
+			if setupAction == "install" {
+				http.Redirect(w, r, "/install_success", http.StatusFound)
+			}
+		}
 
 		state := r.URL.Query().Get("state")
 		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))

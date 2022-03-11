@@ -108,6 +108,9 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 
 		http.Redirect(w, req, appInstallURL, http.StatusFound)
 	}))
+	mux.Handle("/install-github-app-success", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+	}))
 	return mux
 }
 
