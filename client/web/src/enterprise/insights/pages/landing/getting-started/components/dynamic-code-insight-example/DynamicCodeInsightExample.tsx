@@ -51,7 +51,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     const { telemetryService, ...otherProps } = props
 
     const { getFirstExampleRepository, getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
+    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,

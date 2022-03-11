@@ -18,10 +18,9 @@ import {
     TooltipController,
     Icon,
     Link,
-    useObservable,
 } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { InsightType } from '../../../../../core/types'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
@@ -138,7 +137,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
     const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useObservable(useMemo(() => getUiFeatures(), [getUiFeatures]))
+    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
 
     const series =
         template.type === InsightType.SearchBased
