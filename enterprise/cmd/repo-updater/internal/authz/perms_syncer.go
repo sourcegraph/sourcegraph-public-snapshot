@@ -3,7 +3,6 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -1141,7 +1140,6 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			log15.Error("Failed to compute schedule", "err", err)
 			continue
 		}
-		log.Println("Scheduling dat 🌈🦋🦄")
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
 	}
