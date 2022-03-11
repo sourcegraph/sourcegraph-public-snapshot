@@ -26,7 +26,6 @@ add('default', () => (
     <WebStory>
         {props => (
             <NotebookComputeBlock
-                type="compute"
                 {...props}
                 {...noopBlockCallbacks}
                 input=""
@@ -35,7 +34,6 @@ add('default', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
