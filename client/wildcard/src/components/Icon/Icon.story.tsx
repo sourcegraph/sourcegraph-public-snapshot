@@ -20,7 +20,7 @@ const config: Meta = {
     ],
 
     parameters: {
-        component: IconStyle,
+        component: Icon,
         chromatic: {
             enableDarkMode: true,
             disableSnapshot: false,
