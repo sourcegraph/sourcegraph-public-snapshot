@@ -1,2 +1,2 @@
-name: add_rendezvous_migration_table
+name: add_gitserver_repo_migration_cursor_table
 parents: [1646741362]
