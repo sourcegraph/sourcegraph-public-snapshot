@@ -28,6 +28,7 @@ import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignupEmailField } from './SignupEmailField'
+import { nil } from 'ajv'
 
 export interface SignUpArguments {
     email: string
@@ -80,6 +81,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
             },
             password: {
                 synchronousValidators: [],
+                asynchronousValidators: [validatePassword]
             },
         }),
         []
@@ -322,9 +324,39 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
 }
 
 function validatePassword(password: string): Observable<string | undefined> {
-    let passwordError = ""
 
-    if (window.context.experimentalFeatures.passwordPolicy) {
-        if (window.context.experimentalFeatures.passwordPolicy.)
+    if (window.context.experimentalFeatures.passwordPolicy?.enabled) {
+        if (password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength!) {
+            return of("Password must be greater than " + window.context.experimentalFeatures.passwordPolicy.minimumLength! + " characters.")
+        }
+        if (window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! > 0) {
+            const specialCharacters = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/
+            const count = (password.match(specialCharacters) || []).length
+            if (count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters!) {
+                return of("Password must contain " + window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! + " special character(s).")
+            }
+        }
+
+        if (window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber!) {
+            const validRequireAtLeastOneNumber = /\d+/
+            if (password.match(validRequireAtLeastOneNumber) == null) {
+                return of("Password must contain at least one number.")
+            }
+        }
+
+        if (window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase!) {
+            let validUseUpperCase = new RegExp('[A-Z]+')
+            if (!validUseUpperCase.test(password)) {
+                return of("Password must contain at least one uppercase letter.")
+            }
+        }
+
+        return of(undefined)
     }
+
+    if (password.length < 12) {
+        return of("Password must be at least 12 characters.")
+    }
+
+    return of(undefined)
 }

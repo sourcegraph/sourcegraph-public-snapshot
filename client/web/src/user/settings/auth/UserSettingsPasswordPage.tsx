@@ -146,7 +146,6 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         aria-label="new password"
                                         placeholder=" "
                                         autoComplete="new-password"
-                                        minLength={12}
                                         className={styles.userSettingsPasswordPageInput}
                                     />
                                     <small className="form-help text-muted">At least 12 characters</small>
@@ -202,11 +201,48 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     private validateForm(): void {
         if (this.newPasswordConfirmationField) {
             if (this.state.newPassword === this.state.newPasswordConfirmation) {
-                this.newPasswordConfirmationField.setCustomValidity('') // valid
+                this.validatePassword(this.state.newPassword)
             } else {
                 this.newPasswordConfirmationField.setCustomValidity("New passwords don't match.")
             }
         }
+    }
+
+    private validatePassword(password: string): void {
+        if (window.context.experimentalFeatures.passwordPolicy?.enabled) {
+            if (password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength!) {
+                this.newPasswordConfirmationField!.setCustomValidity("Password must be greater than " + window.context.experimentalFeatures.passwordPolicy.minimumLength! + " characters.")
+            }
+            if (window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! > 0) {
+                const specialCharacters = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/
+                const count = (password.match(specialCharacters) || []).length
+                if (count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters!) {
+                    this.newPasswordConfirmationField!.setCustomValidity("Password must contain " + window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! + " special character(s).")
+                }
+            }
+
+            if (window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber!) {
+                const validRequireAtLeastOneNumber = /\d+/
+                if (password.match(validRequireAtLeastOneNumber) == null) {
+                    this.newPasswordConfirmationField!.setCustomValidity("Password must contain at least one number.")
+                }
+            }
+
+            if (window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase!) {
+                let validUseUpperCase = new RegExp('[A-Z]+')
+                if (!validUseUpperCase.test(password)) {
+                    this.newPasswordConfirmationField!.setCustomValidity("Password must contain at least one uppercase letter.")
+                }
+            }
+
+            this.newPasswordConfirmationField!.setCustomValidity('')
+        }
+
+        if (password.length < 12) {
+            this.newPasswordConfirmationField!.setCustomValidity("Password must be at least 12 characters.")
+        }
+
+        this.newPasswordConfirmationField!.setCustomValidity('')
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

@@ -3,9 +3,8 @@ package security
 
 import (
 	"errors"
-	"regexp"
+	"unicode"
 	"unicode/utf8"
-	"strconv"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,7 +28,7 @@ func ValidatePassword(passwd string) error {
 func validatePasswordUsingDefaultMethod(passwd string) error {
 	// Check for blank password
 	if passwd == "" {
-		return errors.New("password empty")
+		return errcode.NewPresentationError("Your password may not be empty.")
 	}
 
 	// Check for minimum/maximum length only
@@ -37,7 +36,7 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 	minPasswordRunes := conf.AuthMinPasswordLength()
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
+		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
 		}
 
 	return nil 
@@ -45,53 +44,63 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 
 // This validates the password using the Paassord Policy configured
 func validatePasswordUsingPolicy(passwd string) error {
+	letters := 0
+  numbers := false;
+	upperCase := false;
+	special := 0;
+	
+	for _, c := range passwd {
+			switch {
+			case unicode.IsNumber(c):
+					numbers = true
+					letters++
+			case unicode.IsUpper(c):
+					upperCase = true
+					letters++
+			case unicode.IsPunct(c) || unicode.IsSymbol(c):
+					special++
+					letters++
+			case unicode.IsLetter(c) || c == ' ':
+					letters++
+			default:
+					//ignore
+			}
+	}
 	// Check for blank password
-	if passwd == "" {
+	if letters == 0 {
 		return errors.New("password empty")
 	}
 	// Get a reference to the password policy 
 	policy := conf.ExperimentalFeatures().PasswordPolicy
 	
 	// Minimum Length Check
-	pwdLength := utf8.RuneCountInString(passwd)
-	if pwdLength < policy.MinimumLength {
-		return errcode.NewPresentationError(fmt.Sprintf("Password may not be less than %d characters.", policy.MinimumLength))
+	if letters < policy.MinimumLength {
+		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d characters.", policy.MinimumLength))
 	}
 
 	// Maximum Length Check
-	if pwdLength > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Password may not be more than %d characters.", maxPasswordRunes))
+	if letters > maxPasswordRunes {
+		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be more than %d characters.", maxPasswordRunes))
 	}
 
 	// Numeric Check
 	if policy.RequireAtLeastOneNumber {
-		regex := regexp.MustCompile(`\d+`)
-		numberFound := regex.MatchString(passwd)
-		if !numberFound {
-			return errors.New("Your password must include one number.")
+		if !numbers {
+			return errcode.NewPresentationError("Your password must include one number.")
 		}
 	}
 
 	// Mixed case check
 	if policy.RequireUpperandLowerCase {
-		regexUpperCase := regexp.MustCompile(`[A-Z]+`)
-		oneUpperCaseLetterFound := regexUpperCase.MatchString(passwd)
-		if !oneUpperCaseLetterFound {
-			return errors.New("Your password must include one uppercase letter.")
-		}
-		regexLowerCase := regexp.MustCompile(`[a-z]+`)
-		oneLowerCaseLetterFound := regexLowerCase.MatchString(passwd)
-		if !oneLowerCaseLetterFound {
-			return errors.New("Your password must include one lowercase letter.")
+		if !upperCase {
+			return errcode.NewPresentationError("Your password must include one uppercase letter.")
 		}
 	}
 
 	// Special Character Check
 	if policy.NumberOfSpecialCharacters > 0 {
-		regex := regexp.MustCompile(`\W` + `{` + strconv.Itoa(policy.NumberOfSpecialCharacters) + `}`)
-		foundSpecialCharacters := regex.MatchString(passwd)
-		if !foundSpecialCharacters {
-			return errcode.NewPresentationError(fmt.Sprintf("Password must include at least %d special character(s).", policy.NumberOfSpecialCharacters))
+		if special < policy.NumberOfSpecialCharacters {
+			return errcode.NewPresentationError(fmt.Sprintf("Your password must include at least %d special character(s).", policy.NumberOfSpecialCharacters))
 		}
 	}
 
