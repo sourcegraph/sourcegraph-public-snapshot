@@ -82,9 +82,13 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>(
         getInitialFilters(isExecutionEnabled)
     )
+    // We keep state to track to the last total count of batch changes in the connection
+    // to avoid the display flickering as the connection is loading more data or a
+    // different set of filtered data.
+    const [lastTotalCount, setLastTotalCount] = useState<number>(0)
 
     // We use the license and usage query to check whether or not there are any batch
-    // changes at all. If there aren't, we automatically switch the user to the "Getting
+    // changes _at all_. If there aren't, we automatically switch the user to the "Getting
     // started" tab.
     const onUsageCheckCompleted = useCallback(
         (data: GetLicenseAndUsageInfoResult) => {
@@ -133,6 +137,13 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
         },
     })
 
+    useEffect(() => {
+        // If the data in the connection updates with new results, update the total count.
+        if (connection) {
+            setLastTotalCount(connection.totalCount || 0)
+        }
+    }, [connection])
+
     return (
         <Page>
             <PageHeader
@@ -148,18 +159,18 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
             {selectedTab === 'batchChanges' && (
                 <Container className="mb-4">
                     <ConnectionContainer>
-                        {!!connection?.nodes.length && (
-                            <div className={styles.filtersRow}>
-                                <h3 className="align-self-end flex-1">{connection?.totalCount} batch changes</h3>
-                                <h4 className="mb-0 mr-2">Status</h4>
-                        )}
+                        <div className={styles.filtersRow}>
+                            {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
+                                <h3 className="align-self-end flex-1">{lastTotalCount} batch changes</h3>
+                            )}
+                            <h4 className="mb-0 mr-2">Status</h4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
                                 defaultValue={selectedFilters}
                                 onChange={setSelectedFilters}
-                                isDisabled={licenseAndUsageInfo?.allBatchChanges.totalCount === 0}
                             />
+                        </div>
                         {error && <ConnectionError errors={[error.message]} />}
                         <ConnectionList
                             className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
