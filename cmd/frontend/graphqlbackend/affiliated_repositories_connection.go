@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -23,16 +24,21 @@ var (
 	cf = httpcli.ExternalClientFactory
 )
 
+// type codeHostResult struct {
+// 	svcID  int64
+// 	repos  []*codeHostRepositoryResolver
+// 	svcErr error
+// }
+
 type affiliatedRepositoriesConnection struct {
 	userID   int32
 	orgID    int32
 	codeHost int64
 	query    string
-
-	once  sync.Once
-	nodes []*codeHostRepositoryResolver
-	err   error
-	db    database.DB
+	once     sync.Once
+	nodes    []*codeHostRepositoryResolver
+	err      error
+	db       database.DB
 }
 
 func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
@@ -51,7 +57,10 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				a.err = err
 				return
 			}
+			fmt.Println("===1", len(svcs))
+
 		} else {
+			fmt.Println("===2")
 			svc, err := a.db.ExternalServices().GetByID(ctx, a.codeHost)
 			if err != nil {
 				a.err = err
@@ -72,14 +81,17 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			err   error
 		}
 
+		fmt.Println("===3")
+
 		// get Source for all external services
 		var (
 			results  = make(chan affiliatedResult, len(svcs))
 			svcsByID = make(map[int64]*types.ExternalService)
 			pending  int
 		)
-		for _, svc := range svcs {
+		for i, svc := range svcs {
 			svcsByID[svc.ID] = svc
+			fmt.Println("iterating over svcs", i)
 			src, err := repos.NewSource(a.db.ExternalServices(), svc, cf)
 			if err != nil {
 				a.err = err
@@ -115,11 +127,16 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			select {
 			case result := <-results:
 				if result.err != nil {
+					fmt.Println("result.err not nil", result.err)
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
-					fetchErrors = append(fetchErrors, result.err)
+					fetchErrors = append(fetchErrors, errors.New("Error from "+svcsByID[result.svcID].DisplayName+" - "+result.err.Error()))
+					// fetchErrors = append(fetchErrors, result.err)
 					continue
 				}
+
+				fmt.Println("resul errrs len", result.err, result.repos, result.svcID)
+
 				for _, repo := range result.repos {
 					if a.query != "" && !strings.Contains(strings.ToLower(repo.Name), a.query) {
 						continue
@@ -128,6 +145,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 						continue
 					}
 					repo := repo
+
 					a.nodes = append(a.nodes, &codeHostRepositoryResolver{
 						db:       a.db,
 						codeHost: svcsByID[repo.CodeHostID],
@@ -140,14 +158,26 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			}
 		}
 
+		fmt.Println("=== /////////// 5")
+
 		sort.Slice(a.nodes, func(i, j int) bool {
 			return a.nodes[i].repo.Name < a.nodes[j].repo.Name
 		})
 
 		if len(fetchErrors) == pending {
 			// All hosts failed
+			fmt.Println("heeeere")
 			a.nodes = nil
 			a.err = errors.New("failed to fetch from any code host")
+		}
+
+		if len(fetchErrors) > 0 {
+			var allErrors []string
+			for _, e := range fetchErrors {
+				allErrors = append(allErrors, e.Error())
+			}
+			// a.nodes = nil
+			a.err = errors.New(strings.Join(allErrors, ","))
 		}
 	})
 
@@ -155,6 +185,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(a.nodes)))
 	}
 
+	// If we return an error in the next line, the value (a.nodes) will be ignored . Do we want to show the partial result?
 	return a.nodes, a.err
 }
 

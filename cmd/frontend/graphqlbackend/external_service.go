@@ -177,7 +177,7 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 	if err != nil {
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.
-		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
+		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err) // here, sometimes, we got errors such as "not an oauth token"...
 		return nil, nil
 	}
 	if scopes == nil {

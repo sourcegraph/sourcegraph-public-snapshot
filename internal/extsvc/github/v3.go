@@ -433,13 +433,16 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	// We only care about headers
 	var dest struct{}
 	respState, err := c.get(ctx, "/", &dest)
-	if err != nil {
+	if err != nil && respState.statusCode != 200 {
 		return nil, err
 	}
+
 	scope := respState.headers.Get("x-oauth-scopes")
+
 	if scope == "" {
 		return []string{}, nil
 	}
+
 	return strings.Split(scope, ", "), nil
 }
 
