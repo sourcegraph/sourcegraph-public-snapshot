@@ -27,7 +27,11 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
         {!authenticatedUser && (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
+            <CodeMonitorSignUpLink
+                className="my-3"
+                eventName="SignUpPLGMonitor_EmptyList"
+                text="Get started with code monitors"
+            />
         )}
     </div>
 )
