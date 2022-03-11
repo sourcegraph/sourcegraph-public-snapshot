@@ -112,6 +112,7 @@ func (s *NPMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		} else {
 			cloneable = append(cloneable, dependency)
 		}
+	}
 
 	dependencies = cloneable
 
