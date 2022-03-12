@@ -6505,6 +6505,10 @@ type CodeHostRepository {
     Is the repo private
     """
     private: Boolean!
+    """
+    Errors from the codeHost
+    """
+    codeHostErrs: String
 }
 
 """

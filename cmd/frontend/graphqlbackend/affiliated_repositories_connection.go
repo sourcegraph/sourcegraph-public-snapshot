@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -24,11 +23,12 @@ var (
 	cf = httpcli.ExternalClientFactory
 )
 
-// type codeHostResult struct {
-// 	svcID  int64
-// 	repos  []*codeHostRepositoryResolver
-// 	svcErr error
-// }
+type codeHostRepositoryResolver struct {
+	repo         *types.CodeHostRepository
+	codeHost     *types.ExternalService
+	db           database.DB
+	codeHostErrs string
+}
 
 type affiliatedRepositoriesConnection struct {
 	userID   int32
@@ -57,10 +57,8 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				a.err = err
 				return
 			}
-			fmt.Println("===1", len(svcs))
 
 		} else {
-			fmt.Println("===2")
 			svc, err := a.db.ExternalServices().GetByID(ctx, a.codeHost)
 			if err != nil {
 				a.err = err
@@ -81,17 +79,14 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			err   error
 		}
 
-		fmt.Println("===3")
-
 		// get Source for all external services
 		var (
 			results  = make(chan affiliatedResult, len(svcs))
 			svcsByID = make(map[int64]*types.ExternalService)
 			pending  int
 		)
-		for i, svc := range svcs {
+		for _, svc := range svcs {
 			svcsByID[svc.ID] = svc
-			fmt.Println("iterating over svcs", i)
 			src, err := repos.NewSource(a.db.ExternalServices(), svc, cf)
 			if err != nil {
 				a.err = err
@@ -121,21 +116,19 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		}
 
 		// collect all results
-		var fetchErrors []error
 		a.nodes = []*codeHostRepositoryResolver{}
+		var errResult map[int64]string
+		dict := make(map[int64]string)
 		for i := 0; i < pending; i++ {
 			select {
 			case result := <-results:
-				if result.err != nil {
-					fmt.Println("result.err not nil", result.err)
+				if result.err != nil || svcsByID[result.svcID].DisplayName == "GitLab" {
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
-					fetchErrors = append(fetchErrors, errors.New("Error from "+svcsByID[result.svcID].DisplayName+" - "+result.err.Error()))
-					// fetchErrors = append(fetchErrors, result.err)
-					continue
-				}
 
-				fmt.Println("resul errrs len", result.err, result.repos, result.svcID)
+					errResult = setErrorPerCodeHost(dict, result.svcID, "err goes here")
+					// fetchErrors = append(fetchErrors, errors.New("Error from "+svcsByID[result.svcID].DisplayName+" - "+result.err.Error()))
+				}
 
 				for _, repo := range result.repos {
 					if a.query != "" && !strings.Contains(strings.ToLower(repo.Name), a.query) {
@@ -144,13 +137,25 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 					if !allowPrivate && repo.Private {
 						continue
 					}
-					repo := repo
 
-					a.nodes = append(a.nodes, &codeHostRepositoryResolver{
-						db:       a.db,
-						codeHost: svcsByID[repo.CodeHostID],
-						repo:     &repo,
-					})
+					repo := repo
+					errorFromCodeHost, _ := errResult[repo.CodeHostID]
+
+					if len(errResult) > 0 {
+						a.nodes = append(a.nodes, &codeHostRepositoryResolver{
+							db:           a.db,
+							codeHost:     svcsByID[repo.CodeHostID],
+							repo:         &repo,
+							codeHostErrs: errorFromCodeHost,
+						})
+					} else {
+						a.nodes = append(a.nodes, &codeHostRepositoryResolver{
+							db:           a.db,
+							codeHost:     svcsByID[repo.CodeHostID],
+							repo:         &repo,
+							codeHostErrs: errorFromCodeHost,
+						})
+					}
 				}
 			case <-ctx.Done():
 				a.err = ctx.Err()
@@ -158,26 +163,15 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			}
 		}
 
-		fmt.Println("=== /////////// 5")
-
 		sort.Slice(a.nodes, func(i, j int) bool {
 			return a.nodes[i].repo.Name < a.nodes[j].repo.Name
 		})
 
-		if len(fetchErrors) == pending {
+		// if len(fetchErrors) == pending {
+		if len(errResult) == pending {
 			// All hosts failed
-			fmt.Println("heeeere")
 			a.nodes = nil
 			a.err = errors.New("failed to fetch from any code host")
-		}
-
-		if len(fetchErrors) > 0 {
-			var allErrors []string
-			for _, e := range fetchErrors {
-				allErrors = append(allErrors, e.Error())
-			}
-			// a.nodes = nil
-			a.err = errors.New(strings.Join(allErrors, ","))
 		}
 	})
 
@@ -185,14 +179,17 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(a.nodes)))
 	}
 
-	// If we return an error in the next line, the value (a.nodes) will be ignored . Do we want to show the partial result?
 	return a.nodes, a.err
 }
 
-type codeHostRepositoryResolver struct {
-	repo     *types.CodeHostRepository
-	codeHost *types.ExternalService
-	db       database.DB
+func setErrorPerCodeHost(dict map[int64]string, id int64, err string) map[int64]string {
+	_, ok := dict[id]
+	if ok {
+		return dict
+	}
+
+	dict[id] = err
+	return dict
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
@@ -208,6 +205,10 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 		db:              r.db,
 		externalService: r.codeHost,
 	}
+}
+
+func (r *codeHostRepositoryResolver) CodeHostErrs() *string {
+	return &r.codeHostErrs
 }
 
 func allowPrivate(ctx context.Context, db database.DB, userID, orgID int32) (bool, error) {

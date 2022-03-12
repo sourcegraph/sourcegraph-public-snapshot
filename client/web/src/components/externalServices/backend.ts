@@ -160,6 +160,7 @@ export function listAffiliatedRepositories(
                             displayName
                         }
                         private
+                        codeHostErrs
                     }
                 }
             }
