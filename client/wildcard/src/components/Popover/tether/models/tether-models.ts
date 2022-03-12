@@ -15,7 +15,7 @@ export interface Padding {
  */
 export interface Constraint {
     element: Rectangle
-    padding: Rectangle
+    padding: Padding
 }
 
 /**

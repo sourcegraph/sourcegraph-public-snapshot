@@ -1,5 +1,8 @@
 import { createPoint, Point } from '../models/geometry/point'
 import { Rectangle } from '../models/geometry/rectangle'
+import { Position } from '../models/tether-models'
+
+import { POSITION_VARIANTS } from './geometry/constants'
 
 interface ScrollPositions {
     points: WeakMap<Element, Point>
@@ -129,6 +132,13 @@ export function setVisibility(element: HTMLElement | null, isVisible: boolean): 
 export function setStyle(element: HTMLElement | null, key: string, value: string): void {
     if (element !== null && element.style.getPropertyValue(key) !== value) {
         element.style.setProperty(key, value)
+    }
+}
+
+export function setPositionAttributes(element: HTMLElement | null, position: Position): void {
+    if (element !== null && position) {
+        element.dataset.position = position
+        element.dataset.side = POSITION_VARIANTS[position].positionSides
     }
 }
 
