@@ -23,10 +23,10 @@ describe('collectMetrics', () => {
             )
         ).toMatchInlineSnapshot(`
             {
-              "count_and": 1,
+              "count_and": 3,
               "count_repo_contains": 1,
               "count_repo_contains_file": 1,
-              "count_repo_dependencies": 2,
+              "count_repo_dependencies": 2
             }
         `)
     })
