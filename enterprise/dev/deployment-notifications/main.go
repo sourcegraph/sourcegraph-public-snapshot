@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"text/template"
+	"time"
 
 	"github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -17,6 +19,21 @@ import (
 )
 
 var ghToken = os.Getenv("GITHUB_TOKEN")
+
+type commentPresenter struct {
+	DeployedAt        string
+	Apps              []string
+	BuildkiteBuildURL string
+}
+
+var commentTemplate = `### Deployment status
+
+[Deployed at {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
+
+{{- range .Apps }}
+- ` + "`" + `{{ . }}` + "`" + `
+{{- end }}
+`
 
 func main() {
 	ctx := context.Background()
@@ -30,8 +47,12 @@ func main() {
 	}
 
 	deployedApps := guessDeployedApps(changedFiles)
-	fmt.Println(deployedApps)
 
+	str, err := renderComment(deployedApps)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(str)
 	return
 
 	sha1 := os.Getenv("CI_PREPROD_COMMIT")
@@ -52,6 +73,24 @@ func main() {
 	for _, pr := range pulls {
 		fmt.Printf("pretending to post a comment in PR#%d\n", pr.GetNumber())
 	}
+}
+
+func renderComment(deployedApps []string) (string, error) {
+	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
+	if err != nil {
+		return "", err
+	}
+	presenter := commentPresenter{
+		DeployedAt: time.Now().In(time.UTC).Format(time.RFC822Z),
+		Apps:       deployedApps,
+	}
+
+	var sb strings.Builder
+	err = tmpl.Execute(&sb, presenter)
+	if err != nil {
+		return "", err
+	}
+	return sb.String(), nil
 }
 
 func getChangedFiles() ([]string, error) {
