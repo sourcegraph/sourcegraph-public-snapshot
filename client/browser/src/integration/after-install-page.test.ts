@@ -5,20 +5,19 @@ import { closeInstallPageTab } from './shared'
 
 describe('After install page', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
 
     let testContext: BrowserIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createBrowserIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
         })
 

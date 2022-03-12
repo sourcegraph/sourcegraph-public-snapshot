@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 
@@ -13,14 +13,13 @@ describe('Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
             customContext: {
                 // Enforce using a new gql API for code insights pages
@@ -29,9 +28,9 @@ describe('Code insights page', () => {
         })
     })
 
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     afterEach(() => testContext?.dispose())
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
     it('should update user/org settings if insight delete happened', async () => {
         overrideInsightsGraphQLApi({

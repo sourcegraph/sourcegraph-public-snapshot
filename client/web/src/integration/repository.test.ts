@@ -9,7 +9,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
 
@@ -47,19 +47,18 @@ export const getCommonRepositoryGraphQlResults = (
 
 describe('Repository', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
         })
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     async function assertSelectorHasText(selector: string, text: string) {

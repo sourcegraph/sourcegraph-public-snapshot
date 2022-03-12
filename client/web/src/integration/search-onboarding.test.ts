@@ -1,9 +1,7 @@
 import assert from 'assert'
 
-import expect from 'expect'
-
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -11,15 +9,14 @@ import { siteID, siteGQLID } from './jscontext'
 
 describe('Search onboarding', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
         })
         testContext.overrideGraphQL({
@@ -89,7 +86,7 @@ describe('Search onboarding', () => {
             { type: 'done', data: {} },
         ])
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     const waitAndFocusInput = async () => {

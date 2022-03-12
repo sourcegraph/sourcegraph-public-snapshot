@@ -3,7 +3,7 @@ import assert from 'assert'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
@@ -12,20 +12,19 @@ import { closeInstallPageTab } from './shared'
 
 describe('GitLab', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
         if (driver.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
 
     let testContext: BrowserIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createBrowserIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
         })
 
@@ -81,7 +80,7 @@ describe('GitLab', () => {
         // Ensure that the same assets are requested in all environments.
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     it('adds "view on Sourcegraph" buttons to files', async () => {

@@ -1,15 +1,35 @@
 import * as path from 'path'
 
-import { afterEach } from 'mocha'
+import jest from '@jest/globals'
+import mocha from 'mocha'
 import { mkdir } from 'mz/fs'
 import * as puppeteer from 'puppeteer'
+
+/**
+ * Registers an `afterEach` hook (for use with Jest) that takes a screenshot of
+ * the browser when a test fails. It is used by e2e and integration tests.
+ */
+export function afterEachSaveScreenshotIfFailedWithJest(getPage: () => puppeteer.Page): void {
+    jest.afterEach(async () => {
+        if (hasTestFailures) {
+            await takeScreenshot({
+                page: getPage(),
+                repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
+                screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
+                testName: jest.expect.getState().currentTestName ?? '',
+            })
+
+            hasTestFailures = false
+        }
+    })
+}
 
 /**
  * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
  * the browser when a test fails. It is used by e2e and integration tests.
  */
 export function afterEachSaveScreenshotIfFailed(getPage: () => puppeteer.Page): void {
-    afterEach('Save screenshot', async function () {
+    mocha.afterEach('Save screenshot', async function () {
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({
                 page: getPage(),

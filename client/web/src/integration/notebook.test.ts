@@ -2,13 +2,12 @@ import fs from 'fs'
 import path from 'path'
 
 import { subDays } from 'date-fns'
-import expect from 'expect'
 
 import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { CreateNotebookBlockInput, NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 import { BlockType } from '../notebooks'
@@ -165,21 +164,20 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search Notebook', () => {
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
         })
         testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     const getBlockIds = () =>

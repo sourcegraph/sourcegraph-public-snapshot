@@ -3,7 +3,7 @@ import assert from 'assert'
 import delay from 'delay'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
@@ -19,14 +19,13 @@ describe('Code insight create insight page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
             customContext: {
                 // Enforce using a new gql API for code insights pages
@@ -35,9 +34,9 @@ describe('Code insight create insight page', () => {
         })
     })
 
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     afterEach(() => testContext?.dispose())
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
     it('is styled correctly, with welcome popup', async () => {
         overrideInsightsGraphQLApi({ testContext })

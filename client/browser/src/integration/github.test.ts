@@ -5,7 +5,7 @@ import type * as sourcegraph from 'sourcegraph'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
@@ -93,7 +93,7 @@ describe('GitHub', () => {
         // Ensure that the same assets are requested in all environments.
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(async () => {
         await testContext?.dispose()
         await driver?.close()

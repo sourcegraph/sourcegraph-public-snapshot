@@ -4,7 +4,7 @@ import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { InsightViewNode } from '../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
@@ -17,14 +17,13 @@ describe('Backend insight drill down filters', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
             customContext: {
                 // Enforce using a new gql API for code insights pages
@@ -33,9 +32,9 @@ describe('Backend insight drill down filters', () => {
         })
     })
 
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     afterEach(() => testContext?.dispose())
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
     it('should update user settings if drill-down filters have been persisted', async () => {
         overrideInsightsGraphQLApi({

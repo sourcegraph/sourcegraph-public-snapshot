@@ -4,7 +4,7 @@ import { subtypeOf } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
@@ -28,19 +28,18 @@ describe('Organizations', () => {
     })
 
     let driver: Driver
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
         })
     })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
     afterEach(() => testContext?.dispose())
 
     const settingsID = 12345

@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
@@ -58,14 +58,13 @@ describe('Code insight edit insight page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
-    before(async () => {
+    beforeAll(async () => {
         driver = await createDriverForTest()
     })
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         testContext = await createWebIntegrationTestContext({
             driver,
-            currentTest: this.currentTest!,
             directory: __dirname,
             customContext: {
                 // Enforces a new GQL backend for the creation UI
@@ -74,9 +73,9 @@ describe('Code insight edit insight page', () => {
         })
     })
 
-    after(() => driver?.close())
+    afterAll(() => driver?.close())
     afterEach(() => testContext?.dispose())
-    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
 
     it('should run a proper GQL mutation if search based insight has been updated', async () => {
         // Mock `Date.now` to stabilize timestamps
