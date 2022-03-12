@@ -122,7 +122,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		for i := 0; i < pending; i++ {
 			select {
 			case result := <-results:
-				if result.err != nil || svcsByID[result.svcID].DisplayName == "GitLab" {
+				if result.err != nil {
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 
