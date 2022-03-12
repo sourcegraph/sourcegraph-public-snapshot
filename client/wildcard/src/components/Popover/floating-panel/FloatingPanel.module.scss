@@ -26,15 +26,11 @@
     &::after {
         content: '';
         display: block;
-    }
-
-    &::after {
         border-left: 8px solid transparent;
         border-top: 8px solid;
         border-right: 8px solid transparent;
         position: relative;
         z-index: 1;
-
         border-top-color: var(--border-color);
     }
 }
