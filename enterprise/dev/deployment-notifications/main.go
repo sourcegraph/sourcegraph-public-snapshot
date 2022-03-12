@@ -3,14 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"text/template"
-	"time"
 
 	"github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -19,21 +14,6 @@ import (
 )
 
 var ghToken = os.Getenv("GITHUB_TOKEN")
-
-type commentPresenter struct {
-	DeployedAt        string
-	Apps              []string
-	BuildkiteBuildURL string
-}
-
-var commentTemplate = `### Deployment status
-
-[Deployed at {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
-
-{{- range .Apps }}
-- ` + "`" + `{{ . }}` + "`" + `
-{{- end }}
-`
 
 func main() {
 	ctx := context.Background()
@@ -46,51 +26,23 @@ func main() {
 		panic(err)
 	}
 
-	deployedApps := guessDeployedApps(changedFiles)
-
-	str, err := renderComment(deployedApps)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(str)
-	return
-
 	sha1 := os.Getenv("CI_PREPROD_COMMIT")
 	fmt.Println(sha1)
 
-	lastCommit, err := getLastPreprodCommit()
-	if err != nil {
-		panic(err)
-	}
 	// Force last commit for testing purposes
-	lastCommit = "cd0799fa3686c87909ad81570d17469e9840a230"
+	// lastCommit = "cd0799fa3686c87909ad81570d17469e9840a230"
 
-	pulls, err := getPullRequestsSinceCommit(ctx, ghc, lastCommit)
+	dn := NewDeploymentNotifier(
+		ghc,
+		NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
+		sha1,
+		changedFiles,
+	)
+
+	_, err = dn.Summary(ctx)
 	if err != nil {
 		panic(err)
 	}
-
-	for _, pr := range pulls {
-		fmt.Printf("pretending to post a comment in PR#%d\n", pr.GetNumber())
-	}
-}
-
-func renderComment(deployedApps []string) (string, error) {
-	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
-	if err != nil {
-		return "", err
-	}
-	presenter := commentPresenter{
-		DeployedAt: time.Now().In(time.UTC).Format(time.RFC822Z),
-		Apps:       deployedApps,
-	}
-
-	var sb strings.Builder
-	err = tmpl.Execute(&sb, presenter)
-	if err != nil {
-		return "", err
-	}
-	return sb.String(), nil
 }
 
 func getChangedFiles() ([]string, error) {
@@ -100,44 +52,6 @@ func getChangedFiles() ([]string, error) {
 	} else {
 		return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
 	}
-}
-
-func guessDeployedApps(changedFiles []string) []string {
-	var deployedApps []string
-	for _, file := range changedFiles {
-		if filepath.Ext(file) != ".yaml" {
-			continue
-		}
-		base := filepath.Base(file)
-		components := strings.Split(base, ".")
-		if len(components) < 3 {
-			continue
-		}
-		// gitserver.[Deployment|StatefulSet|DaemonSet].yaml
-		kind := components[1]
-
-		if kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet" {
-			deployedApps = append(deployedApps, components[0])
-		}
-	}
-	return deployedApps
-}
-
-func getLastPreprodCommit() (string, error) {
-	resp, err := http.Get("https://preview.sgdev.dev/__version")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	elems := strings.Split(string(body), "_")
-	if len(elems) != 3 {
-		return "", errors.Errorf("unknown format of /__version response: %q", body)
-	}
-	return elems[2], nil
 }
 
 func getPullRequestsSinceCommit(ctx context.Context, ghc *github.Client, sha1 string) ([]*github.PullRequest, error) {
