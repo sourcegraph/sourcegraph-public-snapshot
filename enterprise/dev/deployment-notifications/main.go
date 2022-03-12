@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/v41/github"
@@ -23,17 +24,27 @@ func main() {
 		&oauth2.Token{AccessToken: ghToken},
 	)))
 
+	changedFiles, err := getChangedFiles()
+	if err != nil {
+		panic(err)
+	}
+
+	deployedApps := guessDeployedApps(changedFiles)
+	fmt.Println(deployedApps)
+
+	return
+
 	sha1 := os.Getenv("CI_PREPROD_COMMIT")
 	fmt.Println(sha1)
 
-	lastCommit, err := GetLastPreprodCommit()
+	lastCommit, err := getLastPreprodCommit()
 	if err != nil {
 		panic(err)
 	}
 	// Force last commit for testing purposes
 	lastCommit = "cd0799fa3686c87909ad81570d17469e9840a230"
 
-	pulls, err := GetPullRequestsSinceCommit(ctx, ghc, lastCommit)
+	pulls, err := getPullRequestsSinceCommit(ctx, ghc, lastCommit)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +54,37 @@ func main() {
 	}
 }
 
-func GetLastPreprodCommit() (string, error) {
+func getChangedFiles() ([]string, error) {
+	diffCommand := []string{"diff", "--name-only", "HEAD~5"}
+	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
+		return nil, err
+	} else {
+		return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
+	}
+}
+
+func guessDeployedApps(changedFiles []string) []string {
+	var deployedApps []string
+	for _, file := range changedFiles {
+		if filepath.Ext(file) != ".yaml" {
+			continue
+		}
+		base := filepath.Base(file)
+		components := strings.Split(base, ".")
+		if len(components) < 3 {
+			continue
+		}
+		// gitserver.[Deployment|StatefulSet|DaemonSet].yaml
+		kind := components[1]
+
+		if kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet" {
+			deployedApps = append(deployedApps, components[0])
+		}
+	}
+	return deployedApps
+}
+
+func getLastPreprodCommit() (string, error) {
 	resp, err := http.Get("https://preview.sgdev.dev/__version")
 	if err != nil {
 		return "", err
@@ -60,7 +101,7 @@ func GetLastPreprodCommit() (string, error) {
 	return elems[2], nil
 }
 
-func GetPullRequestsSinceCommit(ctx context.Context, ghc *github.Client, sha1 string) ([]*github.PullRequest, error) {
+func getPullRequestsSinceCommit(ctx context.Context, ghc *github.Client, sha1 string) ([]*github.PullRequest, error) {
 	var pullsSinceLastCommit []*github.PullRequest
 	lines, err := GitCmd("log", "--format=%H", fmt.Sprintf("HEAD...%s", sha1))
 	if err != nil {
@@ -87,70 +128,6 @@ func GetPullRequestsSinceCommit(ctx context.Context, ghc *github.Client, sha1 st
 
 	return pullsSinceLastCommit, nil
 }
-
-// func markDeployed() {
-// 	ctx := context.Background()
-// 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-// 		&oauth2.Token{AccessToken: ghToken},
-// 	)))
-//
-// 	ref := "ede7d6cf098047b1c79a8e2e9b6eadcb147934ba"
-// 	transient := true
-// 	environment := "cloud-preprod"
-// 	description := "https://github.com/sourcegraph/sourcegraph/pull/32381"
-// 	automerge := false
-// 	requiredContext := []string{}
-// 	deployment, _, err := ghc.Repositories.CreateDeployment(ctx, "sourcegraph", "sourcegraph", &github.DeploymentRequest{
-// 		Ref:                  &ref,
-// 		TransientEnvironment: &transient,
-// 		Environment:          &environment,
-// 		Description:          &description,
-// 		AutoMerge:            &automerge,
-// 		RequiredContexts:     &requiredContext,
-// 	})
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	fmt.Println(deployment.GetID())
-//
-// 	state := "in_progress"
-// 	_, _, err = ghc.Repositories.CreateDeploymentStatus(ctx, "sourcegraph", "sourcegraph", deployment.GetID(), &github.DeploymentStatusRequest{
-// 		State: &state,
-// 	})
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// }
-//
-// func fetchLastPRCommit() {
-// 	ctx := context.Background()
-// 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-// 		&oauth2.Token{AccessToken: ghToken},
-// 	)))
-//
-// 	ref := "072969e28084444bff5c5bc1695ab709e61729b6"
-// 	pulls, _, err := ghc.PullRequests.ListPullRequestsWithCommit(ctx, "sourcegraph", "sourcegraph", ref, &github.PullRequestListOptions{
-// 		State: "merged",
-// 	})
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	if len(pulls) > 1 {
-// 		panic("multiple PRs")
-// 	}
-//
-// 	pr := pulls[0]
-// 	fmt.Println(pr.GetTitle())
-//
-// 	pr, _, err = ghc.PullRequests.Get(ctx, "sourcegraph", "sourcegraph", int(pr.GetNumber()))
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Println(pr.GetHead().GetSHA())
-// }
 
 // Extracted from sg, keeping it here for testing purposes
 func GitCmd(args ...string) (string, error) {
