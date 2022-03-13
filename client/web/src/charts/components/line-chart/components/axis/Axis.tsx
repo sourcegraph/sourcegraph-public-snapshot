@@ -6,7 +6,7 @@ import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import classNames from 'classnames'
 
-import { formatXTick, formatYTick, getXScaleTicks, getYScaleTicks } from '../../utils/ticks'
+import { formatXTick, formatYTick, getXScaleTicks, getYScaleTicks } from '../../utils'
 
 import { getTickXProps, getTickYProps, Tick } from './Tick'
 
