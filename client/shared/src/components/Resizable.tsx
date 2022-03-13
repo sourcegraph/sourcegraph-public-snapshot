@@ -4,7 +4,6 @@ import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
 import styles from './Resizable.module.scss'
-import { convertREMToPX } from './utils/size'
 
 interface Props<C extends React.ReactElement = React.ReactElement> {
     className?: string
@@ -41,9 +40,6 @@ interface Props<C extends React.ReactElement = React.ReactElement> {
      */
     element: C
 }
-
-// Should match CSS variable `--handle-size`
-const HANDLE_SIZE = convertREMToPX(0.35)
 
 const containerClassNameMap: Record<Props['handlePosition'], string> = {
     top: styles.resizableTop,
@@ -168,8 +164,8 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
                 if (this.state.resizing && this.containerRef) {
                     let size = isHorizontal(this.props.handlePosition)
                         ? this.props.handlePosition === 'right'
-                            ? event.pageX - this.containerRef.getBoundingClientRect().left - HANDLE_SIZE / 2
-                            : this.containerRef.getBoundingClientRect().right - event.pageX - HANDLE_SIZE / 2
+                            ? event.pageX - this.containerRef.getBoundingClientRect().left
+                            : this.containerRef.getBoundingClientRect().right - event.pageX
                         : this.containerRef.getBoundingClientRect().bottom - event.pageY
                     if (event.shiftKey) {
                         size = Math.ceil(size / 20) * 20

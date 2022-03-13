@@ -4,22 +4,13 @@
     overflow-x: hidden;
 }
 
-.resizable-group {
-    min-width: 6rem;
-    padding-top: 0.5rem;
-    margin-right: 0.375rem;
-    overflow-y: auto;
-}
-
 .group-list {
-    flex: 1;
-    border-right: none;
-    overflow-x: hidden;
-    margin-right: 0.375rem;
+    width: 100%;
+    margin-right: 0.5rem;
 }
 
 .file-locations {
     flex: 1;
     width: 100%;
-    margin-right: -1rem;
+    margin: 0 -1rem 0 0.5rem;
 }

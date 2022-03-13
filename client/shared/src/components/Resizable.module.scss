@@ -12,7 +12,6 @@
 }
 
 .handle {
-    // Should match JS constant `HANDLE_SIZE`
     --handle-size: 0.35rem;
 
     position: relative;
@@ -20,6 +19,7 @@
     user-select: none;
     z-index: 1;
     transition: opacity 150ms;
+    flex-shrink: 0;
 
     &--right,
     &--left {
@@ -32,12 +32,12 @@
 
     &--left {
         margin-left: calc(-1 * var(--handle-size));
-        right: 0;
+        right: calc(-1 / 2 * var(--handle-size));
     }
 
     &--right {
         margin-right: calc(-1 * var(--handle-size));
-        left: 0;
+        left: calc(-1 / 2 * var(--handle-size));
     }
 
     &--top {
