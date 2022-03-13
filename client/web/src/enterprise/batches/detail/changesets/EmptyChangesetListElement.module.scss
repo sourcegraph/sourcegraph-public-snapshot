@@ -3,5 +3,14 @@
 .empty-changeset-list-element {
     &__body {
         max-width: 45rem;
+        text-align: center;
+        margin: 3rem 0;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
 }
