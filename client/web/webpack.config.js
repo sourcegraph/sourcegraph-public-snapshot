@@ -3,7 +3,6 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
-const StatoscopeWebpackPlugin = require('@statoscope/webpack-plugin').default
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
@@ -23,6 +22,7 @@ const {
   getMonacoCSSRule,
   getMonacoTTFRule,
   getBasicCSSLoader,
+  getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
@@ -176,7 +176,7 @@ const config = {
         filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
       }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
-    shouldAnalyze && new StatoscopeWebpackPlugin(),
+    shouldAnalyze && getStatoscopePlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&
