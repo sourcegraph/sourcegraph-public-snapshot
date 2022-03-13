@@ -7,7 +7,6 @@ import styles from './Resizable.module.scss'
 
 interface Props<C extends React.ReactElement = React.ReactElement> {
     className?: string
-    handleClassName?: string
 
     /**
      * Where the resize handle is (which also determines the axis along which the element can be
@@ -126,7 +125,7 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
 
     public render(): React.ReactNode {
         const { size, resizing } = this.state
-        const { element, handlePosition, handleClassName, className } = this.props
+        const { element, handlePosition, className } = this.props
 
         return (
             <div
@@ -141,8 +140,7 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
                     className={classNames(
                         styles.handle,
                         handleClassNameMap[handlePosition],
-                        resizing && styles.handleResizing,
-                        handleClassName
+                        resizing && styles.handleResizing
                     )}
                     onMouseDown={this.onMouseDown}
                 />
