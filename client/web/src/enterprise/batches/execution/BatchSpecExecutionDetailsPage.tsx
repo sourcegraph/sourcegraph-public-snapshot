@@ -344,6 +344,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLig
     </div>
 )
 
+const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
+
 interface ExecutionPageProps extends ThemeProps {
     batchSpec: BatchSpecExecutionFields
 }
@@ -366,7 +368,7 @@ const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ batchSpec,
                     minSize={405}
                     maxSize={1400}
                     handlePosition="right"
-                    storageKey="temp"
+                    storageKey={WORKSPACES_LIST_SIZE}
                     element={
                         <div className="w-100 d-flex flex-column">
                             <h3 className="mb-2">Workspaces</h3>
