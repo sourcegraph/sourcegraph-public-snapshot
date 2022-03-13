@@ -10,6 +10,7 @@ import (
 
 type VersionRequester interface {
 	LastCommit() (string, error)
+	Environment() string
 }
 
 type APIVersionRequester struct {
@@ -29,6 +30,10 @@ func (a *APIVersionRequester) url() string {
 	default:
 		return ""
 	}
+}
+
+func (a *APIVersionRequester) Environment() string {
+	return a.environment
 }
 
 func (a *APIVersionRequester) LastCommit() (string, error) {
@@ -62,4 +67,8 @@ func (m *MockedVersionRequester) LastCommit() (string, error) {
 		return "", m.err
 	}
 	return m.commit, nil
+}
+
+func (m *MockedVersionRequester) Environment() string {
+	return "mock"
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -15,6 +16,10 @@ import (
 var (
 	repoOwner = "sourcegraph"
 	repoName  = "sourcegraph"
+)
+
+var (
+	ErrAlreadyDeployed = errors.New("target commit matches live commit")
 )
 
 type DeploymentNotifier struct {
@@ -66,11 +71,7 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit stri
 	return nil, errors.Newf("commit %s not found in the last 90 commits", lastCommit)
 }
 
-func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context) ([]*github.PullRequest, error) {
-	liveCommit, err := dn.vr.LastCommit()
-	if err != nil {
-		return nil, err
-	}
+func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, liveCommit string) ([]*github.PullRequest, error) {
 	repoCommits, err := dn.getNewCommits(ctx, liveCommit)
 	if err != nil {
 		return nil, err
@@ -94,18 +95,30 @@ func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context) ([]*github
 	return pullsSinceLastCommit, nil
 }
 
-func (dn *DeploymentNotifier) Summary(ctx context.Context) (string, error) {
-	prs, err := dn.getNewPullRequests(ctx)
+func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
+	liveCommit, err := dn.vr.LastCommit()
 	if err != nil {
-		return "", err
-	}
-	fmt.Println("found prs:")
-	for _, pr := range prs {
-		fmt.Println("-", pr.GetNumber())
+		return nil, err
 	}
 
-	renderComment(dn.deployedApps())
-	return "", nil
+	if liveCommit == dn.targetCommit {
+		return nil, errors.Wrap(ErrAlreadyDeployed, dn.vr.Environment())
+	}
+
+	prs, err := dn.getNewPullRequests(ctx, liveCommit)
+	if err != nil {
+		return nil, err
+	}
+
+	report := report{
+		PullRequests:      prs,
+		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
+		Apps:              dn.deployedApps(),
+		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
+	}
+
+	return &report, nil
+
 }
 
 func (dn *DeploymentNotifier) deployedApps() []string {
@@ -134,7 +147,7 @@ func renderComment(deployedApps []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	presenter := commentPresenter{
+	presenter := report{
 		DeployedAt: time.Now().In(time.UTC).Format(time.RFC822Z),
 		Apps:       deployedApps,
 	}
@@ -147,7 +160,8 @@ func renderComment(deployedApps []string) (string, error) {
 	return sb.String(), nil
 }
 
-type commentPresenter struct {
+type report struct {
+	PullRequests      []*github.PullRequest
 	DeployedAt        string
 	Apps              []string
 	BuildkiteBuildURL string

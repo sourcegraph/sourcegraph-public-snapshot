@@ -39,7 +39,7 @@ func main() {
 		changedFiles,
 	)
 
-	_, err = dn.Summary(ctx)
+	_, err = dn.Report(ctx)
 	if err != nil {
 		panic(err)
 	}
