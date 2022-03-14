@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -62,6 +63,11 @@ func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Gro
 		},
 
 		QueueSize: NoAlertsOption("none"),
+		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual((time.Hour * 5).Seconds()), `
+			An alert here could be indicative of a few things: an upload surfacing a pathological performance characteristic,
+			precise-code-intel-worker being underprovisioned for the required upload processing throughput, or a higher replica
+			count being required for the volume of uploads.
+		`),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -114,6 +120,10 @@ func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitorin
 		},
 
 		QueueSize: NoAlertsOption("none"),
+		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual(time.Hour.Seconds()), `
+			An alert here is generally indicative of either underprovisioned worker instance(s) and/or
+			an underprovisioned main postgres instance.
+		`),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -196,7 +206,8 @@ func (codeIntelligence) NewDependencyIndexQueueGroup(containerName string) monit
 			},
 		},
 
-		QueueSize: NoAlertsOption("none"),
+		QueueSize:   NoAlertsOption("none"),
+		QueueMaxAge: NoAlertsOption("none"),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -249,7 +260,8 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 			},
 		},
 
-		QueueSize: NoAlertsOption("none"),
+		QueueSize:   NoAlertsOption("none"),
+		QueueMaxAge: NoAlertsOption("none"),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
 
@@ -846,7 +858,6 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				`).Observable(),
 			},
 			{
-
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background",
 					MetricDescriptionRoot: "janitor",

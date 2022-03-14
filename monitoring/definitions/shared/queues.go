@@ -53,6 +53,21 @@ func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedO
 	}
 }
 
+func (queueConstructor) MaxAge(options ObservableConstructorOptions) sharedObservable {
+	return func(containerName string, owner monitoring.ObservableOwner) Observable {
+		filters := makeFilters(containerName, options.Filters...)
+		by, legendPrefix := makeBy(options.By...)
+
+		return Observable{
+			Name:        fmt.Sprintf("%s_queued_max_age", options.MetricNameRoot),
+			Description: fmt.Sprintf("%s queue longest time in queue", options.MetricDescriptionRoot),
+			Query:       fmt.Sprintf(`max%[1]s(src_%[2]s_queued_duration_seconds_total{%[3]s})`, by, options.MetricNameRoot, filters),
+			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s max queued age", legendPrefix)).Unit(monitoring.Seconds),
+			Owner:       owner,
+		}
+	}
+}
+
 type QueueSizeGroupOptions struct {
 	GroupConstructorOptions
 
@@ -61,6 +76,8 @@ type QueueSizeGroupOptions struct {
 
 	// QueueGrowthRate transforms the default observable used to construct the queue growth rate panel.
 	QueueGrowthRate ObservableOption
+
+	QueueMaxAge ObservableOption
 }
 
 // NewGroup creates a group containing panels displaying metrics to monitor the size and growth rate
@@ -74,12 +91,15 @@ type QueueSizeGroupOptions struct {
 // instructions on how to create the processor metrics, see the `NewWorkerutilGroup` function in
 // this package.
 func (queueConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options QueueSizeGroupOptions) monitoring.Group {
-	row := make(monitoring.Row, 0, 2)
+	row := make(monitoring.Row, 0, 3)
 	if options.QueueSize != nil {
 		row = append(row, options.QueueSize(Queue.Size(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 	if options.QueueGrowthRate != nil {
 		row = append(row, options.QueueGrowthRate(Queue.GrowthRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	}
+	if options.QueueMaxAge != nil {
+		row = append(row, options.QueueMaxAge(Queue.MaxAge(options.ObservableConstructorOptions)(containerName, owner)).Observable())
 	}
 
 	if len(row) == 0 {
