@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { HOVER_COUNT_KEY, HOVER_THRESHOLD } from '../RepoContainer'
 
 import { BrowserExtensionAlert } from './BrowserExtensionAlert'
@@ -41,7 +41,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
         DISPLAY_CADENCE,
         IDE_CTA_CADENCE_SHIFT
     )
-    const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     const isUsingIdeIntegration = useIsActiveIdeIntegrationUser()
     const [hoverCount] = useLocalStorage<number>(HOVER_COUNT_KEY, 0)
     const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useTemporarySetting(
@@ -56,7 +56,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
     const ctaToDisplay = useMemo<CtaToDisplay | undefined>(
         (): CtaToDisplay | undefined => {
             if (
-                isBrowserExtensionInstalled === false &&
+                isBrowserExtensionActiveUser === false &&
                 displayBrowserExtensionCTABasedOnCadence &&
                 hasDismissedBrowserExtensionAlert === false &&
                 hoverCount >= HOVER_THRESHOLD
@@ -84,7 +84,7 @@ export const InstallIntegrationsAlert: React.FunctionComponent<InstallIntegratio
             displayIDEExtensionCTABasedOnCadence,
             hasDismissedBrowserExtensionAlert,
             hasDismissedIDEExtensionAlert,
-            isBrowserExtensionInstalled,
+            isBrowserExtensionActiveUser,
             isUsingIdeIntegration,
         ]
     )

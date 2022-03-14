@@ -102,6 +102,7 @@ import {
     getExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
+import { BrowserExtensionTracker } from './tracking/BrowserExtensionTracker'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -479,6 +480,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                 />
                                                 <SearchStack onCreateNotebook={this.onCreateNotebook} />
                                                 <IdeExtensionTracker />
+                                                <BrowserExtensionTracker />
                                             </Router>
                                         </ScrollManager>
                                         <Tooltip key={1} />
