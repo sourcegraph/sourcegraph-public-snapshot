@@ -40,7 +40,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getUiFeatures } = useContext(CodeInsightsBackendContext)
+    const { getDashboards } = useContext(CodeInsightsBackendContext)
 
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
     const features = useUiFeatures({ currentDashboard: undefined })
