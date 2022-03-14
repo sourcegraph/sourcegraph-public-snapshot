@@ -43,9 +43,9 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 mightContainPrivateInfo: true,
                 overrideAccessToken: newAccessToken,
             }
+            let newInstanceUrl: string
             if (usePrivateInstance) {
-                const newInstanceUrl = (event.currentTarget.elements.namedItem('instance-url') as HTMLInputElement)
-                    .value
+                newInstanceUrl = (event.currentTarget.elements.namedItem('instance-url') as HTMLInputElement).value
                 setHostname(newInstanceUrl)
                 authStateVariables = { ...authStateVariables, ...{ overrideSourcegraphURL: newInstanceUrl } }
             }
@@ -58,7 +58,9 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 .then(async ({ data }) => {
                     if (data?.currentUser) {
                         setState('success')
-                        await extensionCoreAPI.setEndpointUri(hostname)
+                        if (newInstanceUrl) {
+                            await extensionCoreAPI.setEndpointUri(newInstanceUrl)
+                        }
                         return extensionCoreAPI.setAccessToken(newAccessToken)
                     }
                     setState('failure')
@@ -187,10 +189,10 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
             {usePrivateInstance && (
                 <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                     <LoaderInput loading={state === 'validating'}>
-                        <label htmlFor="private-url-input">Sourcegraph Instance URL</label>
+                        <label htmlFor="instance-url-input">Sourcegraph Instance URL</label>
                         <input
                             className={classNames('input form-control', styles.ctaInput)}
-                            id="private-url-input"
+                            id="instance-url-input"
                             type="url"
                             name="instance-url"
                             required={true}
