@@ -33,7 +33,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.) 
+	// DB, not the TimescaleDB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
@@ -71,8 +71,11 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
 		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
-	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
-	routines = append(routines, NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB))
+	routines = append(
+		routines,
+		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
+		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+	)
 
 	return routines
 }
