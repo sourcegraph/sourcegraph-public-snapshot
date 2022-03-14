@@ -40,6 +40,28 @@ export interface IUserPermission {
 }
 
 /**
+ * A user (identified either by username or email address) with its sub-repository permissions.
+ */
+export interface IUserSubRepoPermission {
+    /**
+     * Depending on the bindID option in the permissions.userMapping site configuration property,
+     * the elements of the list are either all usernames (bindID of "username") or all email
+     * addresses (bindID of "email").
+     */
+    bindID: string
+
+    /**
+     * An array of paths that the user is allowed to access, in glob format.
+     */
+    pathIncludes: string[]
+
+    /**
+     * An array of paths that the user is not allowed to access, in glob format.
+     */
+    pathExcludes: string[]
+}
+
+/**
  * Different repository permission levels.
  */
 export enum RepositoryPermission {
@@ -372,9 +394,14 @@ export interface IBatchChangesOnChangesetArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -450,9 +477,14 @@ export interface IBatchChangesOnHiddenExternalChangesetArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -626,9 +658,14 @@ export interface IBatchChangesOnExternalChangesetArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -1046,6 +1083,11 @@ export interface IVisibleChangesetSpec {
     expiresAt: DateTime | null
 
     /**
+     * The fork the changeset will be pushed to, if any.
+     */
+    forkTarget: IForkTarget | null
+
+    /**
      * The workspace this resulted from. Null, if not run server-side.
      */
     workspace: IBatchSpecWorkspace | null
@@ -1105,7 +1147,7 @@ export interface IGitBranchChangesetDescription {
 
     /**
      * The repository that contains the branch with this changeset's changes.
-     * @deprecated "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use fork or ExternalChangeset.forkNamespace instead."
+     * @deprecated "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
      */
     headRepository: IRepository
 
@@ -1115,11 +1157,6 @@ export interface IGitBranchChangesetDescription {
      * the Git branch "fix-foo").
      */
     headRef: string
-
-    /**
-     * Whether the changeset will be published to a fork.
-     */
-    fork: boolean
 
     /**
      * The title of the changeset on the code host.
@@ -1492,6 +1529,25 @@ export interface IChangesetApplyPreviewConnection {
 }
 
 /**
+ * The target repository that a changeset will be pushed to, if it's not the origin
+ * repository.
+ */
+export interface IForkTarget {
+    __typename: 'ForkTarget'
+
+    /**
+     * True if the remote target is a fork in the user namespace associated with
+     * the credential used to push the changeset.
+     */
+    pushUser: boolean
+
+    /**
+     * The specific named fork that the changeset will be pushed to.
+     */
+    namespace: string | null
+}
+
+/**
  * State of the workspace resolution.
  */
 export enum BatchSpecWorkspaceResolutionState {
@@ -1584,8 +1640,23 @@ export interface IWorkspacesOnBatchSpecWorkspaceResolutionArguments {
      */
     first?: number | null
     after?: string | null
+
+    /**
+     * Not implemented.
+     */
     orderBy?: WorkspacesSortOrder | null
+
+    /**
+     * Search for workspaces matching this query. Queries may include quoted substrings
+     * to match phrases, and words may be preceded by - to negate them.
+     * Currently, this supports searching repository names only.
+     */
     search?: string | null
+
+    /**
+     * Filter workspaces by given state.
+     */
+    state?: BatchSpecWorkspaceState | null
 }
 
 export interface IRecentlyCompletedOnBatchSpecWorkspaceResolutionArguments {
@@ -2145,6 +2216,12 @@ export interface IChangesetsOnBatchChangeArguments {
      * Only include changesets with the given state.
      */
     state?: ChangesetState | null
+
+    /**
+     * Query only changesets that are either open or draft. This is used on the close page to list changesets that remain open.
+     * When set, passing state is not allowed.
+     */
+    onlyClosable?: boolean | null
 
     /**
      * Only include changesets with the given review state.
@@ -3016,6 +3093,19 @@ export interface IMonitorTriggerEvent {
     timestamp: DateTime
 
     /**
+     * The query (with after filter) that provides an approximation of the
+     * set of results associated with this trigger run. Will always be empty
+     * while status is PENDING.
+     */
+    query: string | null
+
+    /**
+     * The number of results recorded for this trigger run. Will always be
+     * zero until status is SUCCESS.
+     */
+    resultCount: number
+
+    /**
      * A list of actions.
      */
     actions: IMonitorActionConnection
@@ -3081,6 +3171,11 @@ export interface IMonitorEmail {
      * Whether the email action is enabled or not.
      */
     enabled: boolean
+
+    /**
+     * Whether to include the result contents in the email message
+     */
+    includeResults: boolean
 
     /**
      * The priority of the email action.
@@ -3154,6 +3249,11 @@ export interface IMonitorWebhook {
     enabled: boolean
 
     /**
+     * Whether to include the result contents in webhook payload.
+     */
+    includeResults: boolean
+
+    /**
      * The endpoint the webhook event will be sent to
      */
     url: string
@@ -3192,6 +3292,11 @@ export interface IMonitorSlackWebhook {
      * Whether the Slack webhook action is enabled or not.
      */
     enabled: boolean
+
+    /**
+     * Whether to include the result contents in Slack notification message.
+     */
+    includeResults: boolean
 
     /**
      * The endpoint the Slack webhook event will be sent to
@@ -3388,6 +3493,11 @@ export interface IMonitorEmailInput {
     enabled: boolean
 
     /**
+     * Whether to include the result contents in the email message
+     */
+    includeResults: boolean
+
+    /**
      * The priority of the email.
      */
     priority: MonitorEmailPriority
@@ -3413,6 +3523,11 @@ export interface IMonitorWebhookInput {
     enabled: boolean
 
     /**
+     * Whether to include the result contents in webhook payload.
+     */
+    includeResults: boolean
+
+    /**
      * The URL that will receive a payload when the action is triggered.
      */
     url: string
@@ -3426,6 +3541,11 @@ export interface IMonitorSlackWebhookInput {
      * Whether the Slack webhook action is enabled or not.
      */
     enabled: boolean
+
+    /**
+     * Whether to include the result contents in Slack notification message.
+     */
+    includeResults: boolean
 
     /**
      * The URL that will receive a payload when the action is triggered.
@@ -3638,6 +3758,52 @@ export interface ICodeIntelligenceConfigurationPolicy {
 }
 
 /**
+ * A retention policy match candidate.
+ */
+export interface ICodeIntelligenceRetentionPolicyMatch {
+    __typename: 'CodeIntelligenceRetentionPolicyMatch'
+
+    /**
+     * The actual retention policy.
+     */
+    configurationPolicy: ICodeIntelligenceConfigurationPolicy | null
+
+    /**
+     * Whether the retention policy matches the upload or not. False values may be returned
+     * if non-matching policies are requested for inclusion.
+     */
+    matches: boolean
+
+    /**
+     * A list of commits that are visible to this upload for which this retention policy applies.
+     * It is empty if the policy applies directly to the commit associated with the upload.
+     */
+    protectingCommits: string[] | null
+}
+
+/**
+ * A list of code intelligence retention policy match candidates.
+ */
+export interface ICodeIntelligenceRetentionPolicyMatchesConnection {
+    __typename: 'CodeIntelligenceRetentionPolicyMatchesConnection'
+
+    /**
+     * A list of code intelligence retention policies matches.
+     */
+    nodes: ICodeIntelligenceRetentionPolicyMatch[]
+
+    /**
+     * The total number of policies in this result set.
+     */
+    totalCount: number | null
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
  * A git object that matches a git object type and glob pattern. This type is used by
  * the UI to preview what names match a code intelligence policy in a given repository.
  */
@@ -3672,6 +3838,11 @@ export interface ITreeEntryLSIFData {
      * Code diagnostics provided through LSIF.
      */
     diagnostics: IDiagnosticConnection
+
+    /**
+     * The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+     */
+    lsifUploads: ILSIFUpload[]
 
     /**
      * Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -3784,6 +3955,11 @@ export interface IGitTreeLSIFData {
      * Code diagnostics provided through LSIF.
      */
     diagnostics: IDiagnosticConnection
+
+    /**
+     * The list of LSIF uploads that may be used to service code-intel requests for this TreeEntry.
+     */
+    lsifUploads: ILSIFUpload[]
 
     /**
      * Returns the documentation page corresponding to the given path ID, where the empty string "/"
@@ -3938,6 +4114,11 @@ export interface IGitBlobLSIFData {
     diagnostics: IDiagnosticConnection
 
     /**
+     * The list of LSIF uploads that may be used to service code-intel requests for this GitBlob.
+     */
+    lsifUploads: ILSIFUpload[]
+
+    /**
      * Returns the documentation page corresponding to the given path ID, where the path ID "/"
      * refers to the current git blob and can be used to walk all documentation below this git blob.
      *
@@ -4012,6 +4193,11 @@ export interface IDefinitionsOnGitBlobLSIFDataArguments {
      * The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
      */
     character: number
+
+    /**
+     * When specified, it filters references by filename.
+     */
+    filter?: string | null
 }
 
 export interface IReferencesOnGitBlobLSIFDataArguments {
@@ -4039,6 +4225,11 @@ export interface IReferencesOnGitBlobLSIFDataArguments {
      * how many results to return per page.
      */
     first?: number | null
+
+    /**
+     * When specified, it filters references by filename.
+     */
+    filter?: string | null
 }
 
 export interface IImplementationsOnGitBlobLSIFDataArguments {
@@ -4066,6 +4257,11 @@ export interface IImplementationsOnGitBlobLSIFDataArguments {
      * how many results to return per page.
      */
     first?: number | null
+
+    /**
+     * When specified, it filters immplementations by filename.
+     */
+    filter?: string | null
 }
 
 export interface IHoverOnGitBlobLSIFDataArguments {
@@ -4316,6 +4512,36 @@ export interface ILSIFUpload {
      * The LSIF indexing job that created this upload record.
      */
     associatedIndex: ILSIFIndex | null
+
+    /**
+     * The list of retention policies, optionally filtered by only ones that match/apply to this upload and/or
+     * by name substring match.
+     */
+    retentionPolicyOverview: ICodeIntelligenceRetentionPolicyMatchesConnection
+}
+
+export interface IRetentionPolicyOverviewOnLSIFUploadArguments {
+    matchesOnly: boolean
+
+    /**
+     * An (optional) search query that searches over the name property.
+     */
+    query?: string | null
+
+    /**
+     * When specified, indicates that this request should be paginated and
+     * to fetch results starting at this cursor.
+     * A future request can be made for more results by passing in the
+     * 'CodeIntelligenceRetentionPolicyMatchesConnection.pageInfo.endCursor' that is returned.
+     */
+    after?: string | null
+
+    /**
+     * When specified, indicates that this request should be paginated and
+     * the first N results (relative to the cursor) should be returned. i.e.
+     * how many results to return per page.
+     */
+    first?: number | null
 }
 
 /**
@@ -4556,6 +4782,116 @@ export interface IIndexConfiguration {
      * The raw JSON-encoded index configuration as inferred by the auto-indexer.
      */
     inferredConfiguration: string | null
+}
+
+/**
+ * Details the types, tools and levels of code-intel support.
+ */
+export interface ICodeIntelSupport {
+    __typename: 'CodeIntelSupport'
+
+    /**
+     * Search-based code-intel support overview.
+     */
+    searchBasedSupport: ISearchBasedCodeIntelSupport
+
+    /**
+     * Precise code-intel support overview.
+     */
+    preciseSupport: IPreciseCodeIntelSupport
+}
+
+/**
+ * Details precise code-intel support overview.
+ */
+export interface IPreciseCodeIntelSupport {
+    __typename: 'PreciseCodeIntelSupport'
+
+    /**
+     * Level of support/ownership for the most complete/accurate precise code-intel indexer.
+     * This may be THIRD_PARTY even where a by us indexer exists, where the third-party indexer is
+     * more maintained/accurate/complete etc such as with the Dart indexer, where the Workiva one
+     * should be used over our own.
+     */
+    supportLevel: PreciseSupportLevel
+
+    /**
+     * List of indexers in subjective order of recommendation, from most to least recommended
+     * (not an indication of absolute quality, rather relative).
+     */
+    indexers: ICodeIntelIndexer[] | null
+}
+
+/**
+ * Describes a precise code-intel indexer.
+ */
+export interface ICodeIntelIndexer {
+    __typename: 'CodeIntelIndexer'
+
+    /**
+     * Name of the precise code-intel indexer.
+     */
+    name: string
+
+    /**
+     * URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
+     */
+    url: string
+}
+
+/**
+ * Ownership level of the recommended precise code-intel indexer.
+ */
+export enum PreciseSupportLevel {
+    /**
+     * When there is no known indexer.
+     */
+    UNKNOWN = 'UNKNOWN',
+
+    /**
+     * When the recommended indexer is maintained by us.
+     */
+    NATIVE = 'NATIVE',
+
+    /**
+     * When the recommended indexer is maintained by a third-party
+     * but is recommended over a native indexer, where one exists.
+     */
+    THIRD_PARTY = 'THIRD_PARTY',
+}
+
+/**
+ * Details search-based code-intel support overview.
+ */
+export interface ISearchBasedCodeIntelSupport {
+    __typename: 'SearchBasedCodeIntelSupport'
+
+    /**
+     * Level of support.
+     */
+    supportLevel: SearchBasedSupportLevel
+
+    /**
+     * The inferred language the underlying tool inferred when building an index for
+     * search-based code-intel.
+     */
+    language: string | null
+}
+
+/**
+ * Tiered list of types of search-based support for a language. This may be expanded as different
+ * indexing methods are introduced.
+ */
+export enum SearchBasedSupportLevel {
+    /**
+     * The language has no configured search-based code-intel support.
+     */
+    UNSUPPORTED = 'UNSUPPORTED',
+
+    /**
+     * Universal-ctags is used for indexing this language.
+     */
+    BASIC = 'BASIC',
 }
 
 /**
@@ -6080,6 +6416,16 @@ export interface IInsightView {
      * Information on how each data series was generated
      */
     dataSeriesDefinitions: InsightDataSeriesDefinition[]
+
+    /**
+     * The total number of dashboards on which this insight is referenced. The count is global and disregards permissions.
+     */
+    dashboardReferenceCount: number
+
+    /**
+     * Represents if this insight is in a frozen state or not. A frozen state is relevant when a license is downgraded and the number of insights exceed the free plan limits.
+     */
+    isFrozen: boolean
 }
 
 /**
@@ -6313,6 +6659,7 @@ export interface INotebookConnection {
 export enum NotebooksOrderBy {
     NOTEBOOK_UPDATED_AT = 'NOTEBOOK_UPDATED_AT',
     NOTEBOOK_CREATED_AT = 'NOTEBOOK_CREATED_AT',
+    NOTEBOOK_STAR_COUNT = 'NOTEBOOK_STAR_COUNT',
 }
 
 /**
@@ -6412,9 +6759,69 @@ export interface IFileBlock {
 }
 
 /**
- * Notebook blocks are represented as a union between three distinct block types: Markdown, Query, and File.
+ * SymbolBlockInput contains the information necessary to find the symbol.
  */
-export type NotebookBlock = IMarkdownBlock | IQueryBlock | IFileBlock
+export interface ISymbolBlockInput {
+    __typename: 'SymbolBlockInput'
+
+    /**
+     * Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
+     */
+    repositoryName: string
+
+    /**
+     * Path within the repository, e.g. "client/web/file.tsx".
+     */
+    filePath: string
+
+    /**
+     * An optional revision, e.g. "pr/feature-1", "a9505a2947d3df53558e8c88ff8bcef390fc4e3e".
+     * If omitted, we use the latest revision (HEAD).
+     */
+    revision: string | null
+
+    /**
+     * Number of lines to show before and after the matched symbol line.
+     */
+    lineContext: number
+
+    /**
+     * The symbol name.
+     */
+    symbolName: string
+
+    /**
+     * Name of the symbol container.
+     */
+    symbolContainerName: string
+
+    /**
+     * The symbol kind.
+     */
+    symbolKind: SymbolKind
+}
+
+/**
+ * FileBlock specifies a symbol to display within the block.
+ */
+export interface ISymbolBlock {
+    __typename: 'SymbolBlock'
+
+    /**
+     * ID of the block.
+     */
+    id: string
+
+    /**
+     * Symbol block input.
+     */
+    symbolInput: ISymbolBlockInput
+}
+
+/**
+ * Notebook blocks are represented as a union between four distinct block types: Markdown, Query, File, and Symbol.
+ */
+export type NotebookBlock = IMarkdownBlock | IQueryBlock | IFileBlock | ISymbolBlock
 
 /**
  * A notebook with an array of blocks.
@@ -6443,6 +6850,16 @@ export interface INotebook {
     creator: IUser | null
 
     /**
+     * User that last updated the notebook or null if that user was removed.
+     */
+    updater: IUser | null
+
+    /**
+     * Notebook namespace or null if the namespace (user or org) was removed.
+     */
+    namespace: Namespace | null
+
+    /**
      * Public property controls the visibility of the notebook. A public notebook is available to
      * any user on the instance. Private notebooks are only available to their creators.
      */
@@ -6462,6 +6879,68 @@ export interface INotebook {
      * If current viewer can manage (edit, delete) the notebook.
      */
     viewerCanManage: boolean
+
+    /**
+     * If current viewer has starred the notebook.
+     */
+    viewerHasStarred: boolean
+
+    /**
+     * Notebook stars.
+     */
+    stars: INotebookStarConnection
+}
+
+export interface IStarsOnNotebookArguments {
+    /**
+     * Returns the first n notebook stars from the list.
+     * @default 50
+     */
+    first?: number | null
+
+    /**
+     * Opaque pagination cursor.
+     */
+    after?: string | null
+}
+
+/**
+ * A paginated list of notebook stars.
+ */
+export interface INotebookStarConnection {
+    __typename: 'NotebookStarConnection'
+
+    /**
+     * A list of notebook stars.
+     */
+    nodes: INotebookStar[]
+
+    /**
+     * The total number of notebook stars in the connection.
+     */
+    totalCount: number
+
+    /**
+     * Pagination information.
+     */
+    pageInfo: IPageInfo
+}
+
+/**
+ * A notebook star.
+ */
+export interface INotebookStar {
+    __typename: 'NotebookStar'
+
+    /**
+     * User that starred the notebook.
+     */
+    user: IUser
+
+    /**
+     * Date and time the notebook star was created.
+     */
+    createdAt: DateTime
 }
 
 /**
@@ -6506,12 +6985,54 @@ export interface ICreateFileBlockInput {
 }
 
 /**
+ * CreateSymbolBlockInput contains the information necessary to create a symbol block.
+ */
+export interface ICreateSymbolBlockInput {
+    /**
+     * Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
+     */
+    repositoryName: string
+
+    /**
+     * Path within the repository, e.g. "client/web/file.tsx".
+     */
+    filePath: string
+
+    /**
+     * An optional revision, e.g. "pr/feature-1", "a9505a2947d3df53558e8c88ff8bcef390fc4e3e".
+     * If omitted, we use the latest revision (HEAD).
+     */
+    revision?: string | null
+
+    /**
+     * Number of lines to show before and after the matched symbol line.
+     */
+    lineContext: number
+
+    /**
+     * The symbol name.
+     */
+    symbolName: string
+
+    /**
+     * Name of the symbol container.
+     */
+    symbolContainerName: string
+
+    /**
+     * The symbol kind.
+     */
+    symbolKind: SymbolKind
+}
+
+/**
  * Enum of possible block types.
  */
 export enum NotebookBlockType {
     MARKDOWN = 'MARKDOWN',
     QUERY = 'QUERY',
     FILE = 'FILE',
+    SYMBOL = 'SYMBOL',
 }
 
 /**
@@ -6543,6 +7064,11 @@ export interface ICreateNotebookBlockInput {
      * File input.
      */
     fileInput?: ICreateFileBlockInput | null
+
+    /**
+     * Symbol input.
+     */
+    symbolInput?: ICreateSymbolBlockInput | null
 }
 
 /**
@@ -6558,6 +7084,12 @@ export interface INotebookInput {
      * Array of notebook blocks.
      */
     blocks: ICreateNotebookBlockInput[]
+
+    /**
+     * Notebook namespace (user or org). Controls the visibility of the notebook
+     * and who can edit the notebook. Only the notebook creator can update the namespace.
+     */
+    namespace: ID
 
     /**
      * Public property controls the visibility of the notebook. A public notebook is available to
@@ -6706,7 +7238,11 @@ export interface IMutation {
     updateOrganization: IOrg
 
     /**
-     * Deletes an organization. Only site admins may perform this mutation.
+     * Soft or hard deletes an organization.
+     * - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+     * Only site admins may perform this mutation.
+     * - When the second argument is true, it hard deletes an organization and its associated resources.
+     * Hard deletion is currently only supported on cloud. Only org members may perform this mutation
      */
     deleteOrganization: IEmptyResponse | null
 
@@ -6829,6 +7365,11 @@ export interface IMutation {
     setTosAccepted: IEmptyResponse
 
     /**
+     * Current user opt in/out from being searchable in the users picker.
+     */
+    setSearchable: IEmptyResponse
+
+    /**
      * Creates an access token that grants the privileges of the specified user (referred to as the access token's
      * "subject" user after token creation). The result is the access token value, which the caller is responsible
      * for storing (it is not accessible by Sourcegraph after creation).
@@ -6858,6 +7399,15 @@ export interface IMutation {
      * Only site admins or the user who is associated with the external account may perform this mutation.
      */
     deleteExternalAccount: IEmptyResponse
+
+    /**
+     * Sends an invitation to join Sourcegraph to the given email address.
+     *
+     * Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
+     * may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
+     * or if the user has been invited too recently.
+     */
+    inviteEmailToSourcegraph: IEmptyResponse
 
     /**
      * Invite the user with the given username to join the organization. The invited user account must already
@@ -7100,6 +7650,13 @@ export interface IMutation {
     editTemporarySettings: IEmptyResponse
 
     /**
+     * Sends an email for testing Sourcegraph's email configuration.
+     *
+     * Only administrators can use this API.
+     */
+    sendTestEmail: string
+
+    /**
      * Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
      * operation overwrites the previous permissions for the repository.
      */
@@ -7118,6 +7675,13 @@ export interface IMutation {
      * the user's operations on Sourcegraph.
      */
     scheduleUserPermissionsSync: IEmptyResponse
+
+    /**
+     * Set the sub-repo permissions of a repository (i.e., which paths are allowed or disallowed for
+     * a particular user). This operation overwrites the previous sub-repo permissions for the
+     * repository.
+     */
+    setSubRepositoryPermissionsForUsers: IEmptyResponse
 
     /**
      * Upload a changeset spec that will be used in a future update to a batch change. The changeset spec
@@ -7197,6 +7761,16 @@ export interface IMutation {
      * applied, use `createBatchSpecFromRaw` instead.
      */
     replaceBatchSpecInput: IBatchSpec
+
+    /**
+     * Creates or updates a batch spec based on the given namespace and name, then
+     * triggers a job to evaluate the workspaces.
+     *
+     * This is essentially a wrapper for `createBatchSpecFromRaw` and
+     * `replaceBatchSpecInput` to facilitate src-cli, and should not be used
+     * otherwise.
+     */
+    upsertBatchSpecInput: IBatchSpec
 
     /**
      * Deletes the batch spec. All associated jobs will be canceled, if still running.
@@ -7382,6 +7956,16 @@ export interface IMutation {
     triggerTestEmailAction: IEmptyResponse
 
     /**
+     * Triggers a test webhook call for a code monitor action.
+     */
+    triggerTestWebhookAction: IEmptyResponse
+
+    /**
+     * Triggers a test Slack webhook message for a code monitor action.
+     */
+    triggerTestSlackWebhookAction: IEmptyResponse
+
+    /**
      * Creates a new configuration policy with the given attributes.
      */
     createCodeIntelligenceConfigurationPolicy: ICodeIntelligenceConfigurationPolicy
@@ -7502,6 +8086,17 @@ export interface IMutation {
     deleteNotebook: IEmptyResponse
 
     /**
+     * Create a notebook star for the current user.
+     * Only one star can be created per notebook and user pair.
+     */
+    createNotebookStar: INotebookStar
+
+    /**
+     * Delete the notebook star for the current user, if exists.
+     */
+    deleteNotebookStar: IEmptyResponse
+
+    /**
      * Create search context.
      */
     createSearchContext: ISearchContext
@@ -7536,6 +8131,7 @@ export interface IUpdateOrganizationOnMutationArguments {
 
 export interface IDeleteOrganizationOnMutationArguments {
     organization: ID
+    hard?: boolean | null
 }
 
 export interface IAddExternalServiceOnMutationArguments {
@@ -7630,6 +8226,10 @@ export interface ISetTosAcceptedOnMutationArguments {
     userID?: ID | null
 }
 
+export interface ISetSearchableOnMutationArguments {
+    searchable: boolean
+}
+
 export interface ICreateAccessTokenOnMutationArguments {
     user: ID
     scopes: string[]
@@ -7645,9 +8245,14 @@ export interface IDeleteExternalAccountOnMutationArguments {
     externalAccount: ID
 }
 
+export interface IInviteEmailToSourcegraphOnMutationArguments {
+    email: string
+}
+
 export interface IInviteUserToOrganizationOnMutationArguments {
     organization: ID
-    username: string
+    username?: string | null
+    email?: string | null
 }
 
 export interface IRespondToOrganizationInvitationOnMutationArguments {
@@ -8041,6 +8646,10 @@ export interface IEditTemporarySettingsOnMutationArguments {
     settingsToEdit: string
 }
 
+export interface ISendTestEmailOnMutationArguments {
+    to: string
+}
+
 export interface ISetRepositoryPermissionsForUsersOnMutationArguments {
     /**
      * The repository whose permissions to set.
@@ -8069,6 +8678,19 @@ export interface IScheduleUserPermissionsSyncOnMutationArguments {
      * Additional options when performing a sync.
      */
     options?: IFetchPermissionsOptions | null
+}
+
+export interface ISetSubRepositoryPermissionsForUsersOnMutationArguments {
+    /**
+     * The repository whose permissions to set.
+     */
+    repository: ID
+
+    /**
+     * A list of user identifiers and their sub-repository permissions, which defines the set of
+     * paths within the repository they can access.
+     */
+    userPermissions: IUserSubRepoPermission[]
 }
 
 export interface ICreateChangesetSpecOnMutationArguments {
@@ -8223,6 +8845,50 @@ export interface IReplaceBatchSpecInputOnMutationArguments {
      * @default false
      */
     noCache?: boolean | null
+}
+
+export interface IUpsertBatchSpecInputOnMutationArguments {
+    /**
+     * The raw batch spec as YAML (or the equivalent JSON). See
+     * https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/batch_spec.schema.json
+     * for the JSON Schema that describes the structure of this input.
+     */
+    batchSpec: string
+
+    /**
+     * If true, repos with a .batchignore file will still be included.
+     * @default false
+     */
+    allowIgnored?: boolean | null
+
+    /**
+     * If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
+     * be published.
+     * @default false
+     */
+    allowUnsupported?: boolean | null
+
+    /**
+     * Right away set the execute flag.
+     *
+     * TODO: Not implemented yet.
+     * @default false
+     */
+    execute?: boolean | null
+
+    /**
+     * Don't use cache entries.
+     *
+     * TODO: Not implemented yet.
+     * @default false
+     */
+    noCache?: boolean | null
+
+    /**
+     * The namespace (either a user or organization). A batch spec can only be applied to (or
+     * used to create) batch changes in this namespace.
+     */
+    namespace: ID
 }
 
 export interface IDeleteBatchSpecOnMutationArguments {
@@ -8467,6 +9133,18 @@ export interface ITriggerTestEmailActionOnMutationArguments {
     email: IMonitorEmailInput
 }
 
+export interface ITriggerTestWebhookActionOnMutationArguments {
+    namespace: ID
+    description: string
+    webhook: IMonitorWebhookInput
+}
+
+export interface ITriggerTestSlackWebhookActionOnMutationArguments {
+    namespace: ID
+    description: string
+    slackWebhook: IMonitorSlackWebhookInput
+}
+
 export interface ICreateCodeIntelligenceConfigurationPolicyOnMutationArguments {
     /**
      * If supplied, the repository to which this configuration policy applies. If not supplied,
@@ -8595,6 +9273,14 @@ export interface IUpdateNotebookOnMutationArguments {
 
 export interface IDeleteNotebookOnMutationArguments {
     id: ID
+}
+
+export interface ICreateNotebookStarOnMutationArguments {
+    notebookID: ID
+}
+
+export interface IDeleteNotebookStarOnMutationArguments {
+    notebookID: ID
 }
 
 export interface ICreateSearchContextOnMutationArguments {
@@ -8770,6 +9456,7 @@ export enum EventSource {
     WEB = 'WEB',
     CODEHOSTINTEGRATION = 'CODEHOSTINTEGRATION',
     BACKEND = 'BACKEND',
+    STATICWEB = 'STATICWEB',
 }
 
 /**
@@ -9210,6 +9897,11 @@ export interface IQuery {
     organizationFeatureFlagValue: boolean
 
     /**
+     * Retrieve all organization feature flag overrides for the current user
+     */
+    organizationFeatureFlagOverrides: IFeatureFlagOverride[]
+
+    /**
      * Retrieves the temporary settings for the current user.
      */
     temporarySettings: ITemporarySettings
@@ -9227,6 +9919,22 @@ export interface IQuery {
      * Retrieve active executor compute instances.
      */
     executors: IExecutorConnection
+
+    /**
+     * (experimental)
+     * Get invitation based on the JWT in the invitation URL
+     */
+    invitationByToken: IOrganizationInvitation
+
+    /**
+     * Get pending invitations for the specific organization
+     */
+    pendingInvitations: IOrganizationInvitation[]
+
+    /**
+     * Search for users that opt-in to search autocomplete.
+     */
+    autocompleteMembersSearch: IAutocompleteMemberSearchItem[]
 
     /**
      * The repositories a user is authorized to access with the given permission.
@@ -9690,6 +10398,32 @@ export interface IExecutorsOnQueryArguments {
     after?: string | null
 }
 
+export interface IInvitationByTokenOnQueryArguments {
+    /**
+     * The token that uniquely identifies the invitation
+     */
+    token: string
+}
+
+export interface IPendingInvitationsOnQueryArguments {
+    /**
+     * The organization ID
+     */
+    organization: ID
+}
+
+export interface IAutocompleteMembersSearchOnQueryArguments {
+    /**
+     * The organization ID
+     */
+    organization: ID
+
+    /**
+     * Return users whose usernames or display names match the query.
+     */
+    query: string
+}
+
 export interface IAuthorizedUserRepositoriesOnQueryArguments {
     /**
      * The username.
@@ -9731,9 +10465,14 @@ export interface IBatchChangesOnQueryArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -9980,9 +10719,19 @@ export interface INotebooksOnQueryArguments {
     query?: string | null
 
     /**
-     * Limit notebooks made by a single creator.
+     * Filter to notebooks made by a single creator.
      */
     creatorUserID?: ID | null
+
+    /**
+     * Filter to notebooks that were starred by the user.
+     */
+    starredByUserID?: ID | null
+
+    /**
+     * Filter to notebooks associated with a specific namespace (user or org).
+     */
+    namespace?: ID | null
 
     /**
      * Sort field.
@@ -10509,6 +11258,12 @@ export interface ISearchResults {
     matchCount: number
 
     /**
+     * DEPRECATED: Renamed to 'matchCount' for less ambiguity.
+     * @deprecated "renamed to matchCount for less ambiguity"
+     */
+    resultCount: number
+
+    /**
      * The approximate number of results. This is like the length of the results
      * array, except it can indicate the number of results regardless of whether
      * or not the limit was hit. Currently, this is represented as e.g. "5+"
@@ -10567,6 +11322,7 @@ export interface ISearchResults {
     timedout: IRepository[]
 
     /**
+     * DEPRECATED: This field is not used in known clients, and will always return `false`.
      * True if indexed search is enabled but was not available during this search.
      */
     indexUnavailable: boolean
@@ -10975,6 +11731,20 @@ export interface IExternalService {
      * Only site admins may access this field.
      */
     webhookLogs: IWebhookLogConnection
+
+    /**
+     * EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+     * repositories included by this external service, and is derived from commit history (because that
+     * for example gives more accurate collaborator work email addresses than the contributors API which
+     * often returns personal emails.
+     *
+     * Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
+     * inviting collaborators while repositories are cloning.
+     *
+     * In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
+     * reaches out to the code host directly which is wasteful if repositories are already cloned.
+     */
+    invitableCollaborators: IPerson[]
 }
 
 export interface IWebhookLogsOnExternalServiceArguments {
@@ -11422,9 +12192,14 @@ export interface IBatchChangesOnRepositoryArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -12115,6 +12890,11 @@ export interface IHighlightOnFileDiffHunkArguments {
      * @default false
      */
     highlightLongLines?: boolean | null
+
+    /**
+     * @default false
+     */
+    treeSitterEnabled?: boolean | null
 }
 
 /**
@@ -13379,6 +14159,11 @@ export interface IHighlightOnFile2Arguments {
      * @default false
      */
     highlightLongLines?: boolean | null
+
+    /**
+     * @default false
+     */
+    treeSitterEnabled?: boolean | null
 }
 
 /**
@@ -13456,6 +14241,11 @@ export interface IHighlightOnVirtualFileArguments {
      * @default false
      */
     highlightLongLines?: boolean | null
+
+    /**
+     * @default false
+     */
+    treeSitterEnabled?: boolean | null
 }
 
 /**
@@ -13593,6 +14383,11 @@ export interface IGitBlob {
      * intelligence queries for this path-at-revision, this resolves to null.
      */
     lsif: IGitBlobLSIFData | null
+
+    /**
+     * Provides info on the level of code-intel support.
+     */
+    codeIntelInfo: ICodeIntelSupport
 }
 
 export interface IBlameOnGitBlobArguments {
@@ -13611,6 +14406,11 @@ export interface IHighlightOnGitBlobArguments {
      * @default false
      */
     highlightLongLines?: boolean | null
+
+    /**
+     * @default false
+     */
+    treeSitterEnabled?: boolean | null
 }
 
 export interface ISymbolsOnGitBlobArguments {
@@ -13678,6 +14478,11 @@ export interface IHighlightedFile {
      * The HTML table that can be used to display the highlighted file.
      */
     html: string
+
+    /**
+     * Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
+     */
+    lsif: string
 
     /**
      * A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
@@ -13971,6 +14776,11 @@ export interface IUser {
     tosAccepted: boolean
 
     /**
+     * Whether the user accepted to be searched in the users picker or not.
+     */
+    searchable: boolean
+
+    /**
      * The user's usage statistics on Sourcegraph.
      */
     usageStatistics: IUserUsageStatistics
@@ -14044,6 +14854,12 @@ export interface IUser {
      * publicRepositories returns the repos listed in user_public_repos for this user
      */
     publicRepositories: IRepository[]
+
+    /**
+     * EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+     * repositories this user has access to, and is derived from recent commit history of those.
+     */
+    invitableCollaborators: IPerson[]
 
     /**
      * The permissions information of the user over repositories.
@@ -14161,9 +14977,14 @@ export interface IBatchChangesOnUserArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -14571,7 +15392,9 @@ export interface IOrg {
     configurationCascade: IConfigurationCascade
 
     /**
+     * DEPRECATED
      * A pending invitation for the viewer to join this organization, if any.
+     * @deprecated "Use invitationByToken operation instead. This field is deprecated and will be removed in a future release."
      */
     viewerPendingInvitation: IOrganizationInvitation | null
 
@@ -14625,9 +15448,14 @@ export interface IBatchChangesOnOrgArguments {
     after?: string | null
 
     /**
-     * Only return batch changes in this state.
+     * Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
      */
     state?: BatchChangeState | null
+
+    /**
+     * Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+     */
+    states?: BatchChangeState[] | null
 
     /**
      * Only include batch changes that the viewer can administer.
@@ -14723,7 +15551,12 @@ export interface IOrganizationInvitation {
     /**
      * The user who received the invitation.
      */
-    recipient: IUser
+    recipient: IUser | null
+
+    /**
+     * The email address that the invitation was sent to.
+     */
+    recipientEmail: string | null
 
     /**
      * The date when this invitation was created.
@@ -14754,6 +15587,48 @@ export interface IOrganizationInvitation {
      * The date when this invitation was revoked.
      */
     revokedAt: DateTime | null
+
+    /**
+     * The date when this invitation is going to expire.
+     */
+    expiresAt: DateTime | null
+
+    /**
+     * Boolean flag which returns true if the email on the invite matches a verified email of the user
+     */
+    isVerifiedEmail: boolean | null
+}
+
+/**
+ * Result user returned by invite members autocomplete search.
+ */
+export interface IAutocompleteMemberSearchItem {
+    __typename: 'AutocompleteMemberSearchItem'
+
+    /**
+     * The unique ID for the user.
+     */
+    id: ID
+
+    /**
+     * The user's username.
+     */
+    username: string
+
+    /**
+     * The display name chosen by the user.
+     */
+    displayName: string | null
+
+    /**
+     * The URL of the user's avatar image.
+     */
+    avatarURL: string | null
+
+    /**
+     * If the user belongs to current Organization.
+     */
+    inOrg: boolean | null
 }
 
 /**
