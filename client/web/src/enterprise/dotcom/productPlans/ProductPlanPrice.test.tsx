@@ -20,7 +20,7 @@ describe('ProductPlanPrice', () => {
             ).asFragment()
         ).toMatchInlineSnapshot(`
             <DocumentFragment>
-              $0/month
+              $0/month 
             </DocumentFragment>
         `)
     })
