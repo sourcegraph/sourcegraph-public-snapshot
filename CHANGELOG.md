@@ -22,6 +22,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Timestamps in the history panel can now be formatted as absolute timestamps by using user setting `history.preferAbsoluteTimestamps`
 - Timestamps in the history panel can now be formatted as absolute timestamps by using user setting `history.preferAbsoluteTimestamps` [#31837](https://github.com/sourcegraph/sourcegraph/pull/31837)
 - Notebooks from private enterprise instances can now be embedded in external sites by enabling the `enable-embed-route` feature flag. [#31628](https://github.com/sourcegraph/sourcegraph/issues/31628)
+- Pings now include IDE extensions usage metrics [#32000](https://github.com/sourcegraph/sourcegraph/pull/32000)
+- New EventSource type: `IDEEXTENSION` for IDE extensions-related events [#32000](https://github.com/sourcegraph/sourcegraph/pull/32000)
 - Code Monitoring now has a Logs tab enabled as a [beta feature](https://docs.sourcegraph.com/admin/beta_and_experimental_features). This lets you see recent runs of your code monitors and determine if any notifications were sent or if there were any errors during the run. [#32292](https://github.com/sourcegraph/sourcegraph/pull/32292)
 
 ### Changed
