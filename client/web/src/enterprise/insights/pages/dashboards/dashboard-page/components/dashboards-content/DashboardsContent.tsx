@@ -131,10 +131,12 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 </Button>
             </DashboardHeader>
 
-            <LimitedAccessLabel
-                className={classNames(styles.limitedAccessLabel)}
-                message="Create up to two global insights"
-            />
+            {!features.licensed && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedAccessLabel)}
+                    message="Create up to two global insights"
+                />
+            )}
 
             {currentDashboard ? (
                 <DashboardInsights
