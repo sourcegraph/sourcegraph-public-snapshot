@@ -15,6 +15,7 @@ import java.io.*;
 import java.awt.Desktop;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public abstract class SearchActionBase extends AnAction {
     public void actionPerformedMode(AnActionEvent e, String mode) {
@@ -30,9 +31,6 @@ public abstract class SearchActionBase extends AnAction {
             return;
         }
         Document currentDoc = editor.getDocument();
-        if (currentDoc == null) {
-            return;
-        }
         VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
         if (currentFile == null) {
             return;
@@ -52,23 +50,16 @@ public abstract class SearchActionBase extends AnAction {
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
 
-        try {
-            uri = Util.sourcegraphURL(project)+"-/editor"
-                    + "?editor=" + URLEncoder.encode("JetBrains", "UTF-8")
-                    + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
-                    + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
-                    + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8")
-                    + "&search=" + URLEncoder.encode(q, "UTF-8");
+        uri = Util.sourcegraphURL(project)+"-/editor"
+                + "?editor=" + URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)
+                + "&version=" + URLEncoder.encode(Util.VERSION, StandardCharsets.UTF_8)
+                + "&utm_product_name=" + URLEncoder.encode(productName, StandardCharsets.UTF_8)
+                + "&utm_product_version=" + URLEncoder.encode(productVersion, StandardCharsets.UTF_8)
+                + "&search=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
 
-            if (mode == "search.repository") {
-                uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteURL, "UTF-8")
-                        + "&search_branch=" + URLEncoder.encode(repoInfo.branch, "UTF-8");
-            }
-
-        } catch (UnsupportedEncodingException err) {
-            logger.debug("failed to build URL");
-            err.printStackTrace();
-            return;
+        if (mode.equals("search.repository")) {
+            uri += "&search_remote_url=" + URLEncoder.encode(repoInfo.remoteURL, StandardCharsets.UTF_8)
+                    + "&search_branch=" + URLEncoder.encode(repoInfo.branch, StandardCharsets.UTF_8);
         }
 
         // Open the URL in the browser.
@@ -78,7 +69,6 @@ public abstract class SearchActionBase extends AnAction {
             logger.debug("failed to open browser");
             err.printStackTrace();
         }
-        return;
     }
 
     @Override
@@ -98,9 +88,6 @@ public abstract class SearchActionBase extends AnAction {
             return null;
         }
         Document currentDoc = editor.getDocument();
-        if (currentDoc == null) {
-            return null;
-        }
         VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
         if (currentFile == null) {
             return null;

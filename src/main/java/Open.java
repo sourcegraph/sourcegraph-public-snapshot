@@ -16,6 +16,5 @@ public class Open extends FileAction {
             logger.debug("failed to open browser");
             err.printStackTrace();
         }
-        return;
     }
 }

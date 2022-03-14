@@ -1,5 +1,4 @@
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
@@ -42,7 +41,7 @@ class Config implements PersistentStateComponent<Config> {
         this.remoteUrlReplacements = config.remoteUrlReplacements;
     }
 
-    @Nullable static Config getInstance(Project project) {
-        return ServiceManager.getService(project, Config.class);
+    static Config getInstance(Project project) {
+        return project.getService(Config.class);
     }
 }

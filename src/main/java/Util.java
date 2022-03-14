@@ -129,7 +129,7 @@ public class Util {
 
             // If on a branch that does not exist on the remote and no defaultBranch is configured
             // use "master" instead.
-            // This allows users to checkout a branch that does not exist in origin remote by setting defaultBranch
+            // This allows users to check out a branch that does not exist in origin remote by setting defaultBranch
             if (!isRemoteBranch(branch, repoRoot) && Util.setDefaultBranch(project)==null) {
                 branch = "master";
             }
@@ -167,7 +167,8 @@ public class Util {
             logger.debug(s);
         }
 
-        String out = new String();
+        String out = "";
+        //noinspection StatementWithEmptyBody
         for (String l; (l = stdout.readLine()) != null; out += l + "\n");
         return out;
     }
