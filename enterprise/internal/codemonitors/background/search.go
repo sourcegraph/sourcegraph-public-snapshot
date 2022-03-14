@@ -168,7 +168,6 @@ func addCodeMonitorHook(in job.Job, monitorID int64) (_ job.Job, err error) {
 		MapRepoSearchJob:               func(j *run.RepoSearch) *run.RepoSearch { addErr(j); return nil },
 		MapRepoUniverseTextSearchJob:   func(j *zoekt.GlobalSearch) *zoekt.GlobalSearch { addErr(j); return nil },
 		MapStructuralSearchJob:         func(j *structural.StructuralSearch) *structural.StructuralSearch { addErr(j); return nil },
-		MapRepoSubsetSymbolSearchJob:   func(j *symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch { addErr(j); return nil },
 		MapRepoUniverseSymbolSearchJob: func(j *symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch { addErr(j); return nil },
 
 		// Add hook to any commit search jobs
