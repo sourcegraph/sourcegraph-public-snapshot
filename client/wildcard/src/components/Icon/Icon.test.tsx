@@ -8,15 +8,8 @@ import { Icon } from './Icon'
 import { AccessibleSvg } from '.'
 
 const CustomIcon: AccessibleSvg = ({ className, size, ...props }) => (
-    <svg
-        height={size}
-        width={size}
-        className={className}
-        viewBox="0 0 24 24"
-        aria-labelledby="customIconTitle"
-        {...props}
-    >
-        {'title' in props ? <title id="customIconTitle">{props.title}</title> : null}
+    <svg height={size} width={size} className={className} viewBox="0 0 24 24" {...props}>
+        {'title' in props ? <title>{props.title}</title> : null}
         <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
     </svg>
 )
@@ -81,13 +74,12 @@ describe('Icon', () => {
         })
     })
 
-    describe('custom SVGs that implement the AccessibleIcon type', () => {
+    describe('custom SVGs that implement the AccessibleSvg type', () => {
         it('renders a simple icon correctly', () => {
             const { asFragment } = render(<Icon as={CustomIcon} aria-hidden="true" />)
             expect(asFragment().firstChild).toMatchInlineSnapshot(`
                 <svg
                   aria-hidden="true"
-                  aria-labelledby="customIconTitle"
                   class="iconInline"
                   viewBox="0 0 24 24"
                 >
@@ -102,14 +94,11 @@ describe('Icon', () => {
             const { asFragment } = render(<Icon as={CustomIcon} title="Sourcegraph icon" />)
             expect(asFragment().firstChild).toMatchInlineSnapshot(`
                 <svg
-                  aria-labelledby="customIconTitle"
                   class="iconInline"
                   title="Sourcegraph icon"
                   viewBox="0 0 24 24"
                 >
-                  <title
-                    id="customIconTitle"
-                  >
+                  <title>
                     Sourcegraph icon
                   </title>
                   <path

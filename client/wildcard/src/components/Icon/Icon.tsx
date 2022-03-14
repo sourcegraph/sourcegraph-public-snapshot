@@ -5,7 +5,7 @@ import React from 'react'
 import { AccessibleSvgProps, AccessibleSvg } from './AccessibleSvg'
 import { IconStyle, IconStyleProps } from './IconStyle'
 
-export type AccessibleIcon = typeof Icon | AccessibleSvg
+export type AccessibleIcon = typeof Icon
 
 interface BaseIconProps extends IconStyleProps {}
 
@@ -29,7 +29,7 @@ interface BaseComponentIconProps extends BaseIconProps, React.SVGAttributes<SVGE
      *
      * Note:  `mdi-react`
      */
-    as: AccessibleIcon
+    as: AccessibleIcon | AccessibleSvg
 }
 /**
  * @deprecated Frontend Platform is phasing this out in favor of `@mdi/react`.
