@@ -1170,8 +1170,11 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
 	}
 
-	split := strings.Split(string(stdout), "\n")
-	split = split[:len(split)-1] // remove the last, empty string
+	trimmed := strings.TrimSpace(string(stdout))
+	if len(trimmed) == 0 {
+		return nil, nil
+	}
+	split := strings.Split(trimmed, "\n")
 	return split, nil
 }
 
