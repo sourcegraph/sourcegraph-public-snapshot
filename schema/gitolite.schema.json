@@ -15,9 +15,7 @@
         "pattern": "example\\.com"
       },
       "type": "string",
-      "examples": [
-        "gitolite.example.com/"
-      ]
+      "examples": ["gitolite.example.com/"]
     },
     "host": {
       "description": "Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).",
@@ -26,10 +24,7 @@
         "pattern": "example\\.com"
       },
       "type": "string",
-      "examples": [
-        "git@gitolite.example.com",
-        "ssh://git@gitolite.example.com:2222/"
-      ]
+      "examples": ["git@gitolite.example.com", "ssh://git@gitolite.example.com:2222/"]
     },
     "exclude": {
       "description": "A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({\"name\": \"foo\"}).",
@@ -41,14 +36,10 @@
         "additionalProperties": false,
         "anyOf": [
           {
-            "required": [
-              "name"
-            ]
+            "required": ["name"]
           },
           {
-            "required": [
-              "pattern"
-            ]
+            "required": ["pattern"]
           }
         ],
         "properties": {
@@ -82,10 +73,7 @@
     "phabricator": {
       "description": "This is DEPRECATED",
       "type": "object",
-      "required": [
-        "url",
-        "callsignCommand"
-      ],
+      "required": ["url", "callsignCommand"],
       "additionalProperties": false,
       "properties": {
         "url": {
