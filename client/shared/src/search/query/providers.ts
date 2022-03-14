@@ -42,11 +42,7 @@ const MAX_SUGGESTION_COUNT = 50
 const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
 const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
-export function getSuggestionQuery(
-    tokens: Token[],
-    tokenAtColumn: Token,
-    disablePatternSuggestions: boolean | undefined
-): string {
+export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, disablePatternSuggestions?: boolean): string {
     const hasAndOrOperators = tokens.some(
         token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
     )
