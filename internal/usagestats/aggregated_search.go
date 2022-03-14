@@ -166,6 +166,7 @@ func newSearchEventPeriod() *types.SearchUsagePeriod {
 		RepoContainsFile:        newSearchCountStatistics(),
 		RepoContainsContent:     newSearchCountStatistics(),
 		RepoContainsCommitAfter: newSearchCountStatistics(),
+		RepoDependencies:        newSearchCountStatistics(),
 		CountAll:                newSearchCountStatistics(),
 		NonGlobalContext:        newSearchCountStatistics(),
 		OnlyPatterns:            newSearchCountStatistics(),
