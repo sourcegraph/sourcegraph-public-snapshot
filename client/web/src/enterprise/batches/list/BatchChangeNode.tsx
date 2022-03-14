@@ -23,7 +23,7 @@ import { BatchChangeStatePill } from './BatchChangeStatePill'
 
 export interface BatchChangeNodeProps {
     node: ListBatchChange
-    executionEnabled: boolean
+    isExecutionEnabled: boolean
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
     displayNamespace: boolean
@@ -61,7 +61,7 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
  */
 export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     node,
-    executionEnabled,
+    isExecutionEnabled,
     now = () => new Date(),
     displayNamespace,
 }) => {
@@ -74,7 +74,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     const nodeLink = useMemo(() => {
         // Before SSBC, all batch changes took you to the same place, the node detail
         // page. Closed batch changes also take you to this page.
-        if (!executionEnabled || node.state === BatchChangeState.CLOSED) {
+        if (!isExecutionEnabled || node.state === BatchChangeState.CLOSED) {
             return node.url
         }
 
@@ -103,12 +103,12 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             default:
                 return node.url
         }
-    }, [executionEnabled, node.url, node.state, node.currentSpec, latestExecution])
+    }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
         <>
             <span className={styles.batchChangeNodeSeparator} />
-            {executionEnabled ? (
+            {isExecutionEnabled ? (
                 <BatchChangeStatePill
                     state={node.state}
                     latestExecutionState={node.batchSpecs.nodes[0]?.state}

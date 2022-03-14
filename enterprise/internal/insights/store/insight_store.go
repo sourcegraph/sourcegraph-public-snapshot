@@ -126,6 +126,10 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	if err != nil {
 		return nil, err
 	}
+	if len(insightIds) == 0 {
+		return []types.InsightViewSeries{}, nil
+	}
+
 	insightIdElems := make([]*sqlf.Query, 0, len(insightIds))
 	for _, id := range insightIds {
 		insightIdElems = append(insightIdElems, sqlf.Sprintf("%s", id))
@@ -222,6 +226,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			},
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
+			IsFrozen:         seriesSet[0].IsFrozen,
 		})
 	}
 
@@ -440,6 +445,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.GeneratedFromCaptureGroups,
 			&temp.JustInTime,
 			&temp.GenerationMethod,
+			&temp.IsFrozen,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -782,6 +788,14 @@ func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, erro
 	return count, nil
 }
 
+func (s *InsightStore) GetSoftDeletedSeries(ctx context.Context, deletedBefore time.Time) ([]string, error) {
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getSoftDeletedSeries, deletedBefore)))
+}
+
+func (s *InsightStore) HardDeleteSeries(ctx context.Context, seriesId string) error {
+	return s.Exec(ctx, sqlf.Sprintf(hardDeleteSeries, seriesId))
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -862,7 +876,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -875,7 +889,7 @@ SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.descri
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -916,7 +930,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -942,4 +956,19 @@ const getReferenceCount = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
 SELECT COUNT(*) from dashboard_insight_view
 WHERE insight_view_id = %s
+`
+
+const getSoftDeletedSeries = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetSoftDeletedSeries
+SELECT series_id
+FROM insight_series i
+LEFT JOIN insight_view_series ivs ON i.id = ivs.insight_series_id
+WHERE i.deleted_at IS NOT NULL
+  AND i.deleted_at < %s
+  AND ivs.insight_series_id IS NULL;
+`
+
+const hardDeleteSeries = `
+-- source: enterprise/internal/insights/store/insight_store.go:HardDeleteSeries
+DELETE FROM insight_series WHERE series_id = %s;
 `

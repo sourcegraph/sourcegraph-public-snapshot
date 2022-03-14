@@ -1,6 +1,6 @@
 import { createPoint, Point } from '../models/geometry/point'
 import { createRectangle, createRectangleFromPoints, EMPTY_RECTANGLE, Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Position, Strategy } from '../models/tether-models'
+import { Constraint, Flipping, Overlapping, Padding, Position, Strategy } from '../models/tether-models'
 
 import { getAbsoluteAnchorOffset, getScrollParents } from './tether-browser'
 import { Tether, TetherLayout } from './types'
@@ -14,10 +14,11 @@ export function getLayout(tether: Tether): TetherLayout {
         position = Position.top,
         flipping = Flipping.opposite,
         overlapping = Overlapping.none,
-        windowPadding = EMPTY_RECTANGLE,
-        constraintPadding = EMPTY_RECTANGLE,
         overflowToScrollParents = true,
         strategy = Strategy.Fixed,
+        targetPadding = EMPTY_RECTANGLE,
+        windowPadding,
+        constraintPadding,
         constrainToScrollParents,
     } = tether
 
@@ -34,6 +35,9 @@ export function getLayout(tether: Tether): TetherLayout {
     const overflows: Constraint[] = []
     const constraints: Constraint[] = []
 
+    const normalizedWindowPadding = getNormalizedPadding(windowPadding)
+    const normalizedConstraintPadding = getNormalizedPadding(constraintPadding)
+
     overflows.push({
         element: createRectangle(
             document.documentElement.clientLeft,
@@ -41,7 +45,7 @@ export function getLayout(tether: Tether): TetherLayout {
             document.documentElement.clientWidth,
             document.documentElement.clientHeight
         ),
-        padding: windowPadding,
+        padding: normalizedWindowPadding,
     })
 
     constraints.push({
@@ -51,13 +55,13 @@ export function getLayout(tether: Tether): TetherLayout {
             document.documentElement.clientWidth,
             document.documentElement.clientHeight
         ),
-        padding: windowPadding,
+        padding: normalizedWindowPadding,
     })
 
     if (tether.constraint) {
         constraints.push({
             element: tether.constraint.getBoundingClientRect(),
-            padding: constraintPadding,
+            padding: normalizedConstraintPadding,
         })
     }
 
@@ -66,7 +70,7 @@ export function getLayout(tether: Tether): TetherLayout {
 
         const scrollConstraints = containers.map(container => ({
             element: container.getBoundingClientRect(),
-            padding: constraintPadding,
+            padding: normalizedConstraintPadding,
         }))
 
         constraints.push(...scrollConstraints)
@@ -94,6 +98,7 @@ export function getLayout(tether: Tether): TetherLayout {
         constraints,
         anchorOffset,
         strategy,
+        targetPadding,
     }
 }
 
@@ -116,4 +121,19 @@ function getMarkerSize(element?: HTMLElement | null): Rectangle {
     // Measure element without rotation transformations
     // since transform rotation may affect element sizing
     return element.getBoundingClientRect()
+}
+
+function getNormalizedPadding(padding?: Partial<Padding>): Padding {
+    if (!padding) {
+        return EMPTY_RECTANGLE
+    }
+
+    const { top = 0, right = 0, left = 0, bottom = 0 } = padding
+
+    return {
+        top,
+        right,
+        bottom,
+        left,
+    }
 }

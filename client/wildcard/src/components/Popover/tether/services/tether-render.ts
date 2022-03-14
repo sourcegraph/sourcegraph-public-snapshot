@@ -2,6 +2,7 @@ import {
     getScrollPositions,
     isVisible,
     setMaxSize,
+    setPositionAttributes,
     setScrollPositions,
     setStyle,
     setTransform,
@@ -43,7 +44,10 @@ export function render(tether: Tether, eventTarget: HTMLElement | null, preserve
     }
 
     setTransform(tether.element, 0, state.elementOffset)
+    setPositionAttributes(tether.element, state.position)
+
     setTransform(tether.marker ?? null, state.markerAngle, state.markerOffset)
+    setPositionAttributes(tether.marker ?? null, state.position)
 
     if (!positions.points.has(eventTarget as Element)) {
         if (state.elementBounds) {

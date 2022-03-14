@@ -4,15 +4,23 @@ import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
-import { renderMarkdown } from '@sourcegraph/common'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import {
+    CommitMatch,
+    getCommitMatchUrl,
+    getRepoMatchLabel,
+    getRepoMatchUrl,
+    getRepositoryUrl,
+    RepositoryMatch,
+} from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
+import { Link } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import styles from './SearchResult.module.scss'
@@ -38,19 +46,28 @@ export const SearchResult: React.FunctionComponent<Props> = ({
         return (
             <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
-                <Markdown
-                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
-                />
+                <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                    {result.type === 'commit' && (
+                        <>
+                            <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
+                            {' › '}
+                            <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
+                            {': '}
+                            <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
+                        </>
+                    )}
+                    {result.type === 'repo' && (
+                        <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                    )}
+                </span>
                 <span className={styles.spacer} />
-                {result.type === 'commit' && result.detail && (
-                    <>
-                        <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
-                    </>
+                {result.type === 'commit' && (
+                    <Link to={getCommitMatchUrl(result)}>
+                        <code className={styles.commitOid}>{result.oid.slice(0, 7)}</code>{' '}
+                        <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                    </Link>
                 )}
-                {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
-                    <div className={styles.divider} />
-                )}
+                {result.type === 'commit' && formattedRepositoryStarCount && <div className={styles.divider} />}
                 {formattedRepositoryStarCount && (
                     <>
                         <SearchResultStar />

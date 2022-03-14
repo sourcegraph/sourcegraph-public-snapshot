@@ -8,23 +8,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
 type Mapper struct {
 	MapJob func(job Job) Job
 
 	// Search Jobs (leaf nodes)
+	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch
+	MapSearcherJob                 func(*searcher.Searcher) *searcher.Searcher
 	MapRepoSearchJob               func(*run.RepoSearch) *run.RepoSearch
-	MapRepoSubsetTextSearchJob     func(*textsearch.RepoSubsetTextSearch) *textsearch.RepoSubsetTextSearch
-	MapRepoUniverseTextSearchJob   func(*textsearch.RepoUniverseTextSearch) *textsearch.RepoUniverseTextSearch
+	MapRepoUniverseTextSearchJob   func(*zoekt.GlobalSearch) *zoekt.GlobalSearch
 	MapStructuralSearchJob         func(*structural.StructuralSearch) *structural.StructuralSearch
 	MapCommitSearchJob             func(*commit.CommitSearch) *commit.CommitSearch
 	MapRepoSubsetSymbolSearchJob   func(*symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch
 	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch
 	MapComputeExcludedReposJob     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos
+
+	// Repo pager Job (pre-step for some Search Jobs)
+	MapRepoPagerJob func(*repoPagerJob) *repoPagerJob
 
 	// Expression Jobs
 	MapAndJob func(children []Job) []Job
@@ -52,19 +57,25 @@ func (m *Mapper) Map(job Job) Job {
 	}
 
 	switch j := job.(type) {
+	case *zoekt.ZoektRepoSubsetSearch:
+		if m.MapZoektRepoSubsetSearchJob != nil {
+			j = m.MapZoektRepoSubsetSearchJob(j)
+		}
+		return j
+
+	case *searcher.Searcher:
+		if m.MapSearcherJob != nil {
+			j = m.MapSearcherJob(j)
+		}
+		return j
+
 	case *run.RepoSearch:
 		if m.MapRepoSearchJob != nil {
 			j = m.MapRepoSearchJob(j)
 		}
 		return j
 
-	case *textsearch.RepoSubsetTextSearch:
-		if m.MapRepoSubsetTextSearchJob != nil {
-			j = m.MapRepoSubsetTextSearchJob(j)
-		}
-		return j
-
-	case *textsearch.RepoUniverseTextSearch:
+	case *zoekt.GlobalSearch:
 		if m.MapRepoUniverseTextSearchJob != nil {
 			j = m.MapRepoUniverseTextSearchJob(j)
 		}
@@ -97,6 +108,12 @@ func (m *Mapper) Map(job Job) Job {
 	case *repos.ComputeExcludedRepos:
 		if m.MapComputeExcludedReposJob != nil {
 			j = m.MapComputeExcludedReposJob(j)
+		}
+		return j
+
+	case *repoPagerJob:
+		if m.MapRepoPagerJob != nil {
+			j = m.MapRepoPagerJob(j)
 		}
 		return j
 

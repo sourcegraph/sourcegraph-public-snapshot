@@ -6,12 +6,14 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
-import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+
+import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
+import { useGetApi } from './hooks/use-get-api'
 
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
 const CodeInsightsDotComGetStartedLazy = lazyComponent(
-    () => import('./pages/dot-com-get-started/CodeInsightsDotComGetStarted'),
+    () => import('./pages/landing/dot-com-get-started/CodeInsightsDotComGetStarted'),
     'CodeInsightsDotComGetStarted'
 )
 
@@ -22,25 +24,27 @@ const CodeInsightsDotComGetStartedLazy = lazyComponent(
  */
 export interface CodeInsightsRouterProps extends SettingsCascadeProps<Settings>, TelemetryProps {
     /**
-     * Authenticated user info, Used to decide where code insight will appears
+     * Authenticated user info, Used to decide where code insight will appear
      * in personal dashboard (private) or in organisation dashboard (public)
      */
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
 
-/**
- * Turn on/off the cloud landing page layout. Make sure it's off until GA release will happen.
- */
-const CLOUD_LANDING_PAGE = false
+export const CodeInsightsRouter: React.FunctionComponent<CodeInsightsRouterProps> = props => {
+    const api = useGetApi()
 
-/**
- * Main Insight routing component. Main entry point to code insights UI.
- */
-export const CodeInsightsRouter = withAuthenticatedUser<CodeInsightsRouterProps>(props => {
-    if (props.isSourcegraphDotCom && CLOUD_LANDING_PAGE) {
-        return <CodeInsightsDotComGetStartedLazy telemetryService={props.telemetryService} />
+    if (!api) {
+        return null
     }
 
-    return <CodeInsightsAppLazyRouter {...props} />
-})
+    return (
+        <CodeInsightsBackendContext.Provider value={api}>
+            {props.isSourcegraphDotCom ? (
+                <CodeInsightsDotComGetStartedLazy telemetryService={props.telemetryService} />
+            ) : (
+                <CodeInsightsAppLazyRouter {...props} />
+            )}
+        </CodeInsightsBackendContext.Provider>
+    )
+}

@@ -33,7 +33,7 @@ import (
 var clock = timeutil.Now
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	database.ExternalServices = edb.NewExternalServicesStore
+	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)
 	}
