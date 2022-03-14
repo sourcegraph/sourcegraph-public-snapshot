@@ -160,7 +160,7 @@
           }
         },
         "npmPackages": {
-          "description": "Allow adding NPM packages code host connections",
+          "description": "Allow adding npm packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
