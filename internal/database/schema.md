@@ -1492,6 +1492,7 @@ Stores the retention policy of code intellience data for a repository.
  expired                | boolean                  |           | not null | false
  last_retention_scan_at | timestamp with time zone |           |          | 
  reference_count        | integer                  |           |          | 
+ indexer_version        | text                     |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1520,6 +1521,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**indexer_version**: The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
 **last_retention_scan_at**: The last time this upload was checked against data retention policies.
 
@@ -2591,6 +2594,7 @@ Foreign-key constraints:
  finished_at            | timestamp with time zone |           |          | 
  repository_id          | integer                  |           |          | 
  indexer                | text                     |           |          | 
+ indexer_version        | text                     |           |          | 
  num_parts              | integer                  |           |          | 
  uploaded_parts         | integer[]                |           |          | 
  process_after          | timestamp with time zone |           |          | 
@@ -2617,6 +2621,7 @@ Foreign-key constraints:
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -2645,6 +2650,7 @@ Foreign-key constraints:
  finished_at            | timestamp with time zone |           |          | 
  repository_id          | integer                  |           |          | 
  indexer                | text                     |           |          | 
+ indexer_version        | text                     |           |          | 
  num_parts              | integer                  |           |          | 
  uploaded_parts         | integer[]                |           |          | 
  process_after          | timestamp with time zone |           |          | 
@@ -2672,6 +2678,7 @@ Foreign-key constraints:
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -2757,6 +2764,7 @@ Foreign-key constraints:
  finished_at            | timestamp with time zone |           |          | 
  repository_id          | integer                  |           |          | 
  indexer                | text                     |           |          | 
+ indexer_version        | text                     |           |          | 
  num_parts              | integer                  |           |          | 
  uploaded_parts         | integer[]                |           |          | 
  process_after          | timestamp with time zone |           |          | 
@@ -2783,6 +2791,7 @@ Foreign-key constraints:
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,

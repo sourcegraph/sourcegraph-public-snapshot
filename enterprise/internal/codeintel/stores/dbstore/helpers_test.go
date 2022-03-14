@@ -53,6 +53,9 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 		if upload.Indexer == "" {
 			upload.Indexer = "lsif-go"
 		}
+		if upload.IndexerVersion == "" {
+			upload.IndexerVersion = "latest"
+		}
 		if upload.UploadedParts == nil {
 			upload.UploadedParts = []int{}
 		}
@@ -75,11 +78,12 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 				num_failures,
 				repository_id,
 				indexer,
+				indexer_version,
 				num_parts,
 				uploaded_parts,
 				upload_size,
 				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -94,6 +98,7 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 			upload.NumFailures,
 			upload.RepositoryID,
 			upload.Indexer,
+			upload.IndexerVersion,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
@@ -461,6 +466,7 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryID:      expected.RepositoryID,
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
+		IndexerVersion:    expected.IndexerVersion,
 		AssociatedIndexID: expected.AssociatedIndexID,
 	}
 }

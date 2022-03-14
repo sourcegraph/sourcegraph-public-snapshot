@@ -48,6 +48,7 @@ func TestGetUploadByID(t *testing.T) {
 		RepositoryID:   123,
 		RepositoryName: "n-123",
 		Indexer:        "lsif-go",
+		IndexerVersion: "1.2.3",
 		NumParts:       1,
 		UploadedParts:  []int{},
 		Rank:           nil,

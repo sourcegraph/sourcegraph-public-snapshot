@@ -96,6 +96,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			log.String("commit", uploadState.commit),
 			log.String("root", uploadState.root),
 			log.String("indexer", uploadState.indexer),
+			log.String("indexerVersion", uploadState.indexerVersion),
 			log.Int("associatedIndexID", uploadState.associatedIndexID),
 			log.Int("numParts", uploadState.numParts),
 			log.Int("numUploadedParts", len(uploadState.uploadedParts)),

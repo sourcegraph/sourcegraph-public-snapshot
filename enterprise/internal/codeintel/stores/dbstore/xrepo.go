@@ -93,6 +93,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.associated_index_id
 FROM lsif_dumps_with_repository_name u
 WHERE u.id IN (SELECT id FROM canonical_uploads)

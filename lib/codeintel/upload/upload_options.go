@@ -40,5 +40,6 @@ type UploadRecordOptions struct {
 	Commit            string
 	Root              string
 	Indexer           string
+	IndexerVersion    string
 	AssociatedIndexID *int
 }

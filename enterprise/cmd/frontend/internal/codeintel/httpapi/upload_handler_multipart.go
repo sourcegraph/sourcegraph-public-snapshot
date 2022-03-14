@@ -37,6 +37,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 		Root:              uploadState.root,
 		RepositoryID:      uploadState.repositoryID,
 		Indexer:           uploadState.indexer,
+		IndexerVersion:    uploadState.indexerVersion,
 		AssociatedIndexID: &uploadState.associatedIndexID,
 		State:             "uploading",
 		NumParts:          uploadState.numParts,

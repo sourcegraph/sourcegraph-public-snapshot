@@ -35,6 +35,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 		Root:              uploadState.root,
 		RepositoryID:      uploadState.repositoryID,
 		Indexer:           uploadState.indexer,
+		IndexerVersion:    uploadState.indexerVersion,
 		AssociatedIndexID: &uploadState.associatedIndexID,
 		State:             "uploading",
 		NumParts:          1,
