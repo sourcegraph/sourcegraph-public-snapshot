@@ -18,10 +18,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -263,13 +266,15 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 		"echo -n infile1 > dir1/file1",
 		"touch --date=2006-01-02T15:04:05Z dir1 dir1/file1 || touch -t 200601021704.05 dir1 dir1/file1",
 		"git add dir1/file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"echo -n infile2 > 'file 2'",
 		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t 201405062120.21 'file 2'",
 		"git add 'file 2'",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
+		"git branch test-ref HEAD~1",
+		"git branch test-nested-ref test-ref",
 	} {
-		c := exec.Command("bash", "-c", cmd)
+		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
 		c.Dir = dir
 		out, err := c.CombinedOutput()
 		if err != nil {
@@ -435,4 +440,72 @@ func TestClient_P4Exec(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClient_ResolveRevisions(t *testing.T) {
+	root := t.TempDir()
+	remote := createSimpleGitRepo(t, root)
+	// These hashes should be stable since we set the timestamps
+	// when creating the commits.
+	hash1 := "b6602ca96bdc0ab647278577a3c6edcb8fe18fb0"
+	hash2 := "c5151eceb40d5e625716589b745248e1a6c6228d"
+
+	tests := []struct {
+		input []protocol.RevisionSpecifier
+		want  []string
+		err   error
+	}{{
+		input: []protocol.RevisionSpecifier{{}},
+		want:  []string{hash2},
+	}, {
+		input: []protocol.RevisionSpecifier{{RevSpec: "HEAD"}},
+		want:  []string{hash2},
+	}, {
+		input: []protocol.RevisionSpecifier{{RevSpec: "HEAD~1"}},
+		want:  []string{hash1},
+	}, {
+		input: []protocol.RevisionSpecifier{{RevSpec: "test-ref"}},
+		want:  []string{hash1},
+	}, {
+		input: []protocol.RevisionSpecifier{{RevSpec: "test-nested-ref"}},
+		want:  []string{hash1},
+	}, {
+		input: []protocol.RevisionSpecifier{{RefGlob: "refs/heads/test-*"}},
+		want:  []string{hash1, hash1}, // two hashes because to refs point to that hash
+	}, {
+		input: []protocol.RevisionSpecifier{{RevSpec: "test-fake-ref"}},
+		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
+	}}
+
+	srv := httptest.NewServer((&server.Server{
+		ReposDir: filepath.Join(root, "repos"),
+		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
+			return remote, nil
+		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+			return &server.GitRepoSyncer{}, nil
+		},
+	}).Handler())
+	defer srv.Close()
+
+	u, _ := url.Parse(srv.URL)
+	addrs := []string{u.Host}
+	cli := gitserver.NewTestClient(&http.Client{}, addrs)
+
+	ctx := context.Background()
+	for _, test := range tests {
+		t.Run("", func(t *testing.T) {
+			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)
+			require.NoError(t, err)
+
+			got, err := cli.ResolveRevisions(ctx, api.RepoName(remote), test.input)
+			if test.err != nil {
+				require.Equal(t, test.err, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, test.want, got)
+		})
+	}
+
 }

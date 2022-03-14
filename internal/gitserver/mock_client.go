@@ -77,6 +77,9 @@ type MockClient struct {
 	// RequestRepoUpdateFunc is an instance of a mock function object
 	// controlling the behavior of the method RequestRepoUpdate.
 	RequestRepoUpdateFunc *ClientRequestRepoUpdateFunc
+	// ResolveRevisionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ResolveRevisions.
+	ResolveRevisionsFunc *ClientResolveRevisionsFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *ClientSearchFunc
@@ -178,6 +181,11 @@ func NewMockClient() *MockClient {
 		},
 		RequestRepoUpdateFunc: &ClientRequestRepoUpdateFunc{
 			defaultHook: func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error) {
+				return nil, nil
+			},
+		},
+		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
+			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
 				return nil, nil
 			},
 		},
@@ -288,6 +296,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.RequestRepoUpdate")
 			},
 		},
+		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
+			defaultHook: func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
+				panic("unexpected invocation of MockClient.ResolveRevisions")
+			},
+		},
 		SearchFunc: &ClientSearchFunc{
 			defaultHook: func(context.Context, *protocol.SearchRequest, func([]protocol.CommitMatch)) (bool, error) {
 				panic("unexpected invocation of MockClient.Search")
@@ -356,6 +369,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		RequestRepoUpdateFunc: &ClientRequestRepoUpdateFunc{
 			defaultHook: i.RequestRepoUpdate,
+		},
+		ResolveRevisionsFunc: &ClientResolveRevisionsFunc{
+			defaultHook: i.ResolveRevisions,
 		},
 		SearchFunc: &ClientSearchFunc{
 			defaultHook: i.Search,
@@ -2411,6 +2427,117 @@ func (c ClientRequestRepoUpdateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRequestRepoUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientResolveRevisionsFunc describes the behavior when the
+// ResolveRevisions method of the parent MockClient instance is invoked.
+type ClientResolveRevisionsFunc struct {
+	defaultHook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
+	hooks       []func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)
+	history     []ClientResolveRevisionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ResolveRevisions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) ResolveRevisions(v0 context.Context, v1 api.RepoName, v2 []protocol.RevisionSpecifier) ([]string, error) {
+	r0, r1 := m.ResolveRevisionsFunc.nextHook()(v0, v1, v2)
+	m.ResolveRevisionsFunc.appendCall(ClientResolveRevisionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResolveRevisions
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientResolveRevisionsFunc) SetDefaultHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResolveRevisions method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientResolveRevisionsFunc) PushHook(hook func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientResolveRevisionsFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientResolveRevisionsFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientResolveRevisionsFunc) nextHook() func(context.Context, api.RepoName, []protocol.RevisionSpecifier) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientResolveRevisionsFunc) appendCall(r0 ClientResolveRevisionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientResolveRevisionsFuncCall objects
+// describing the invocations of this function.
+func (f *ClientResolveRevisionsFunc) History() []ClientResolveRevisionsFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientResolveRevisionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientResolveRevisionsFuncCall is an object that describes an invocation
+// of method ResolveRevisions on an instance of MockClient.
+type ClientResolveRevisionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []protocol.RevisionSpecifier
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientResolveRevisionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientResolveRevisionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
