@@ -113,7 +113,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
             isSelected,
             onRunBlock,
             onBlockInputChange,
-            actions: isSelected ? menuActions : [],
+            actions: isSelected && !isReadOnly ? menuActions : [],
             'aria-label': 'Notebook markdown block',
             ...props,
         }),
