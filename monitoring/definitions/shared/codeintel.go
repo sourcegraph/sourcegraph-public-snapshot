@@ -890,8 +890,8 @@ func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group 
 	return newPackageManagerGroup("Coursier", containerName)
 }
 
-func (codeIntelligence) NewNPMGroup(containerName string) monitoring.Group {
-	return newPackageManagerGroup("NPM", containerName)
+func (codeIntelligence) NewNpmGroup(containerName string) monitoring.Group {
+	return newPackageManagerGroup("npm", containerName)
 }
 
 func (codeIntelligence) NewDependencyReposStoreGroup(containerName string) monitoring.Group {

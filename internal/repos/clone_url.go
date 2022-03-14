@@ -77,7 +77,7 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		if r, ok := repo.Metadata.(*jvmpackages.Metadata); ok {
 			return r.Module.CloneURL(), nil
 		}
-	case *schema.NPMPackagesConnection:
+	case *schema.NpmPackagesConnection:
 		if r, ok := repo.Metadata.(*npmpackages.Metadata); ok {
 			return r.Package.CloneURL(), nil
 		}
