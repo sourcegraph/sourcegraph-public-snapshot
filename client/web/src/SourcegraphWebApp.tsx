@@ -9,6 +9,7 @@ import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import * as uuid from 'uuid'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -68,8 +69,12 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { OverrideFeatureFlagsAgent } from './featureFlags/OverrideFeatureFlagsAgent'
+import { IdeExtensionTracker } from './IdeExtensionTracker'
 import { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
+import { BlockInput } from './notebooks'
+import { createNotebook } from './notebooks/backend'
+import { blockToGQLInput } from './notebooks/serialize'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
@@ -80,8 +85,9 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
+import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
+import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews, fetchCollaborators } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
@@ -457,6 +463,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                 globbing={this.state.globbing}
                                                                 fetchSavedSearches={fetchSavedSearches}
                                                                 fetchRecentSearches={fetchRecentSearches}
+                                                                fetchCollaborators={fetchCollaborators}
                                                                 fetchRecentFileViews={fetchRecentFileViews}
                                                                 streamSearch={aggregateStreamingSearch}
                                                                 onUserExternalServicesOrRepositoriesUpdate={
@@ -470,7 +477,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         </CodeHostScopeProvider>
                                                     )}
                                                 />
-                                                <SearchStack />
+                                                <SearchStack onCreateNotebook={this.onCreateNotebook} />
+                                                <IdeExtensionTracker />
                                             </Router>
                                         </ScrollManager>
                                         <Tooltip key={1} />
@@ -537,5 +545,24 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
+    }
+
+    private onCreateNotebook = (blocks: BlockInput[]): void => {
+        if (!this.state.authenticatedUser) {
+            return
+        }
+
+        this.subscriptions.add(
+            createNotebook({
+                notebook: {
+                    title: 'New Notebook',
+                    blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
+                    public: false,
+                    namespace: this.state.authenticatedUser.id,
+                },
+            }).subscribe(createdNotebook => {
+                history.push(PageRoutes.Notebook.replace(':id', createdNotebook.id))
+            })
+        )
     }
 }

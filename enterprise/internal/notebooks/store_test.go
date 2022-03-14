@@ -55,6 +55,14 @@ func TestCreateAndGetNotebook(t *testing.T) {
 		{ID: "3", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
 			RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx"},
 		},
+		{ID: "4", Type: NotebookSymbolBlockType, SymbolInput: &NotebookSymbolBlockInput{
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			FilePath:            "client/web/file.tsx",
+			LineContext:         1,
+			SymbolName:          "function",
+			SymbolContainerName: "container",
+			SymbolKind:          "FUNCTION",
+		}},
 	}
 	notebook := notebookByUser(&Notebook{Title: "Notebook Title", Blocks: blocks, Public: true}, user.ID)
 	createdNotebook, err := n.CreateNotebook(ctx, notebook)

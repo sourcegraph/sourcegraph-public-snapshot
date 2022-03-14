@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -59,17 +61,6 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return reporev.Revs
 	}
 
-	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		rb.RepoRevs[reporev.Repo.ID] = reporev
-		br, ok := rb.branchRepos["HEAD"]
-		if !ok {
-			br = &zoektquery.BranchRepos{Branch: "HEAD", Repos: roaring.New()}
-			rb.branchRepos["HEAD"] = br
-		}
-		br.Repos.Add(uint32(reporev.Repo.ID))
-		return nil
-	}
-
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
@@ -79,22 +70,20 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	indexed := reporev.Revs[:0]
 
 	for _, rev := range reporev.Revs {
-		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
-			// Zoekt convention that first branch is HEAD
-			branches = append(branches, repo.Branches[0].Name)
-			indexed = append(indexed, rev)
-			continue
+		found := false
+		revSpec := rev.RevSpec
+		if revSpec == "" {
+			revSpec = "HEAD"
 		}
 
-		found := false
 		for _, branch := range repo.Branches {
-			if branch.Name == rev.RevSpec {
+			if branch.Name == revSpec {
 				branches = append(branches, branch.Name)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
-			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
+			if len(revSpec) >= 4 && strings.HasPrefix(branch.Version, revSpec) {
 				branches = append(branches, branch.Name)
 				found = true
 				break
@@ -275,6 +264,10 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
+	if args.Zoekt == nil {
+		return nil
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -487,6 +480,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 			symbols = append(symbols, result.NewSymbolMatch(
 				newFile,
 				l.LineNumber,
+				-1, // -1 means infer the column
 				m.SymbolInfo.Sym,
 				m.SymbolInfo.Kind,
 				m.SymbolInfo.Parent,
@@ -592,7 +586,7 @@ type ZoektRepoSubsetSearch struct {
 	FileMatchLimit int32
 	Select         filter.SelectPath
 	Zoekt          zoekt.Streamer
-	Since          func(time.Time) time.Duration // since if non-nil will be used instead of time.Since. For tests
+	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
@@ -618,4 +612,34 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream s
 
 func (*ZoektRepoSubsetSearch) Name() string {
 	return "ZoektRepoSubset"
+}
+
+type GlobalSearch struct {
+	GlobalZoektQuery *GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+
+	RepoOptions search.RepoOptions
+	UserID      int32
+}
+
+func (t *GlobalSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "ZoektGlobalSearch", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)
+	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
+	})
+	return nil, g.Wait()
+}
+
+func (*GlobalSearch) Name() string {
+	return "ZoektGlobalSearch"
 }

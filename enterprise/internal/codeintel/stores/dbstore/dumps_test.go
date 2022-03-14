@@ -43,6 +43,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		RepositoryID:      50,
 		RepositoryName:    "n-50",
 		Indexer:           "lsif-go",
+		IndexerVersion:    "latest",
 		AssociatedIndexID: &expectedAssociatedIndexID,
 	}
 	expected2 := Dump{
@@ -58,6 +59,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 		RepositoryID:      50,
 		RepositoryName:    "n-50",
 		Indexer:           "lsif-tsc",
+		IndexerVersion:    "1.2.3",
 		AssociatedIndexID: nil,
 	}
 

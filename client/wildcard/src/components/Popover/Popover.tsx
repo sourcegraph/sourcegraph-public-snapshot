@@ -17,6 +17,7 @@ import { useOnClickOutside, useKeyboard } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import { FloatingPanel, FloatingPanelProps } from './floating-panel/FloatingPanel'
+import styles from './Popover.module.scss'
 
 export enum PopoverOpenEventReason {
     TriggerClick = 'TriggerClick',
@@ -116,7 +117,7 @@ export const PopoverTrigger = forwardRef((props, reference) => {
     return <Component ref={mergedReference} onClick={handleClick} {...otherProps} />
 }) as ForwardReferenceComponent<'button', PopoverTriggerProps>
 
-interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
+export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
     isOpen?: boolean
     focusLocked?: boolean
     autoFocus?: boolean
@@ -154,7 +155,7 @@ export const PopoverContent = forwardRef((props, reference) => {
     useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
 
     // Native behavior of browsers about focus elements says - if element that gets focus
-    // is in outside of the visible area than browser should scroll to this element automatically.
+    // is in outside the visible area than browser should scroll to this element automatically.
     // This logic breaks popover behavior by loosing scroll positions of the scroll container with
     // target element. In order to preserve scroll we should adjust order of actions
     // Render popover element in the DOM → Calculate and apply the right position for the popover →
@@ -183,7 +184,8 @@ export const PopoverContent = forwardRef((props, reference) => {
             target={anchor?.current ?? targetElement}
             role={role}
             aria-modal={ariaModel}
-            className={classNames('dropdown-menu', otherProps.className)}
+            className={classNames(styles.popover, otherProps.className)}
+            tailClassName={classNames(styles.popoverTail, otherProps.tailClassName)}
         >
             {focusLocked ? (
                 <FocusLock disabled={!focusLock} returnFocus={true}>

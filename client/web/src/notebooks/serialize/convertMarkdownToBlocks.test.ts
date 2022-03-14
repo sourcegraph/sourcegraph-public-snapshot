@@ -1,3 +1,5 @@
+import { SymbolKind } from '@sourcegraph/shared/src/schema'
+
 import { convertMarkdownToBlocks } from './convertMarkdownToBlocks'
 
 describe('convertMarkdownToBlocks', () => {
@@ -66,6 +68,9 @@ https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client
 
 https://example.com/a/b
 
+### Symbol block
+
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func+a&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
         expect(convertMarkdownToBlocks(markdown)).toStrictEqual([
@@ -111,7 +116,19 @@ https://example.com/a/b
                     },
                 },
             },
-            { type: 'md', input: '### Third title\n\nhttps://example.com/a/b\n\n' },
+            { type: 'md', input: '### Third title\n\nhttps://example.com/a/b\n\n### Symbol block\n\n' },
+            {
+                type: 'symbol',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'branch',
+                    filePath: 'client/web/index.ts',
+                    symbolName: 'func a',
+                    symbolContainerName: 'class',
+                    symbolKind: SymbolKind.FUNCTION,
+                    lineContext: 3,
+                },
+            },
         ])
     })
 })

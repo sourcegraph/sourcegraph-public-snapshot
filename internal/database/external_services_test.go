@@ -124,8 +124,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 }
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
-	// Can't currently run in parallel because of global mocks
-	db := dbtest.NewDB(t)
+	t.Parallel()
 
 	tests := []struct {
 		name            string
@@ -133,7 +132,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		config          string
 		namespaceUserID int32
 		namespaceOrgID  int32
-		setup           func(t *testing.T)
+		listFunc        func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 		wantErr         string
 	}{
 		{
@@ -170,13 +169,8 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:   "no conflicting rate limit",
 			kind:   extsvc.KindGitHub,
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return nil, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return nil, nil
 			},
 			wantErr: "<nil>",
 		},
@@ -184,20 +178,15 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:   "conflicting rate limit",
 			kind:   extsvc.KindGitHub,
 			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return []*types.ExternalService{
-						{
-							ID:          1,
-							Kind:        extsvc.KindGitHub,
-							DisplayName: "GITHUB 1",
-							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-						},
-					}, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return []*types.ExternalService{
+					{
+						ID:          1,
+						Kind:        extsvc.KindGitHub,
+						DisplayName: "GITHUB 1",
+						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
+					},
+				}, nil
 			},
 			wantErr: "existing external service, \"GITHUB 1\", already has a rate limit set",
 		},
@@ -248,20 +237,15 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:            extsvc.KindGitHub,
 			config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			namespaceUserID: 1,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return []*types.ExternalService{
-						{
-							ID:          1,
-							Kind:        extsvc.KindGitHub,
-							DisplayName: "GITHUB 1",
-							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-						},
-					}, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return []*types.ExternalService{
+					{
+						ID:          1,
+						Kind:        extsvc.KindGitHub,
+						DisplayName: "GITHUB 1",
+						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+					},
+				}, nil
 			},
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
@@ -270,20 +254,15 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:           extsvc.KindGitHub,
 			config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			namespaceOrgID: 1,
-			setup: func(t *testing.T) {
-				t.Cleanup(func() {
-					Mocks.ExternalServices.List = nil
-				})
-				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-					return []*types.ExternalService{
-						{
-							ID:          1,
-							Kind:        extsvc.KindGitHub,
-							DisplayName: "GITHUB 1",
-							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-						},
-					}, nil
-				}
+			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				return []*types.ExternalService{
+					{
+						ID:          1,
+						Kind:        extsvc.KindGitHub,
+						DisplayName: "GITHUB 1",
+						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+					},
+				}, nil
 			},
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
@@ -302,11 +281,11 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if test.setup != nil {
-				test.setup(t)
+			ess := NewMockExternalServiceStore()
+			if test.listFunc != nil {
+				ess.ListFunc.SetDefaultHook(test.listFunc)
 			}
-
-			_, err := ExternalServices(db).ValidateConfig(context.Background(), ValidateExternalServiceConfigOptions{
+			_, err := ValidateExternalServiceConfig(context.Background(), ess, ValidateExternalServiceConfigOptions{
 				Kind:            test.kind,
 				Config:          test.config,
 				NamespaceUserID: test.namespaceUserID,
@@ -538,11 +517,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 	// NOTE: The order of tests matters
 	tests := []struct {
-		name             string
-		update           *ExternalServiceUpdate
-		wantUnrestricted bool
-		wantCloudDefault bool
-		wantHasWebhooks  bool
+		name               string
+		update             *ExternalServiceUpdate
+		wantUnrestricted   bool
+		wantCloudDefault   bool
+		wantHasWebhooks    bool
+		wantTokenExpiresAt bool
 	}{
 		{
 			name: "update with authorization",
@@ -583,7 +563,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		{
 			name: "set cloud_default true",
 			update: &ExternalServiceUpdate{
-				DisplayName:  strptr("GITHUB (updated) #3"),
+				DisplayName:  strptr("GITHUB (updated) #4"),
 				CloudDefault: boolptr(true),
 				Config: strptr(`
 {
@@ -597,6 +577,16 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			wantUnrestricted: false,
 			wantCloudDefault: true,
 			wantHasWebhooks:  true,
+		},
+		{
+			name: "update token_expires_at",
+			update: &ExternalServiceUpdate{
+				DisplayName:    strptr("GITHUB (updated) #5"),
+				Config:         strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				TokenExpiresAt: timePtr(time.Now()),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
 		},
 	}
 	for _, test := range tests {
@@ -632,6 +622,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				t.Fatal("has_webhooks is unexpectedly null")
 			} else if test.wantHasWebhooks != *got.HasWebhooks {
 				t.Fatalf("Want has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			}
+
+			if (got.TokenExpiresAt != nil) != test.wantTokenExpiresAt {
+				t.Fatalf("Want token_expires_at = %v, but got %v", test.wantTokenExpiresAt, got.TokenExpiresAt)
 			}
 		})
 	}

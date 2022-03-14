@@ -120,4 +120,17 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         render: lazyComponent(() => import('./SiteAdminMigrationsPage'), 'SiteAdminMigrationsPage'),
     },
+    {
+        path: '/feature-flags',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminFeatureFlagsPage'), 'SiteAdminFeatureFlagsPage'),
+    },
+    {
+        path: '/feature-flags/configuration/:name',
+        exact: true,
+        render: lazyComponent(
+            () => import('./SiteAdminFeatureFlagConfigurationPage'),
+            'SiteAdminFeatureFlagConfigurationPage'
+        ),
+    },
 ]

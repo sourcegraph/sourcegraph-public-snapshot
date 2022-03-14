@@ -1,0 +1,53 @@
+.popover {
+    min-width: 10rem;
+    font-size: 0.875rem;
+    background-clip: padding-box;
+    background-color: var(--dropdown-bg);
+    border: 1px solid var(--dropdown-border-color);
+    border-radius: var(--popover-border-radius);
+    color: var(--body-color);
+    box-shadow: var(--dropdown-shadow);
+
+    &-tail {
+        &::after {
+            border-left-color: transparent;
+            border-top-color: var(--dropdown-bg);
+            border-right-color: transparent;
+        }
+
+        /*
+         Shift tail in order to compensate border width of the popover content element
+
+         Example for the tail "right" position
+                       Border                        Border
+                ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+                ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+            Content▒▒▒▒░░▓                 Content▒▒▒▓░
+                ▒▒▒▒▒▒▒░░▓▓  Tail             ▒▒▒▒▒▒▒▓▓  Tail
+                ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+                ▒▒▒▒▒▒▒░░▓▓▓▓      ───────▶   ▒▒▒▒▒▒▒▓▓▓▓
+                ▒▒▒▒▒▒▒░░▓▓▓                  ▒▒▒▒▒▒▒▓▓▓
+                ▒▒▒▒▒▒▒░░▓▓                   ▒▒▒▒▒▒▒▓▓
+                ▒▒▒▒▒▒▒░░▓                    ▒▒▒▒▒▒▒▓░
+                ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+                ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+                ▒▒▒▒▒▒▒░░                     ▒▒▒▒▒▒▒░░
+         */
+
+        &[data-side='top'] {
+            top: -1px;
+        }
+
+        &[data-side='left'] {
+            left: -1px;
+        }
+
+        &[data-side='right'] {
+            left: 1px;
+        }
+
+        &[data-side='bottom'] {
+            top: 1px;
+        }
+    }
+}
