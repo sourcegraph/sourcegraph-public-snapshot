@@ -347,7 +347,7 @@ func runWatch(
 
 	for {
 		// Build or download it
-		if cmd.Install != "" || cmd.DownloadBinary != (DownloadBinary{}) {
+		if cmd.Install != "" || cmd.DownloadArchive != (DownloadArchive{}) {
 			if startedOnce {
 				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 			}
@@ -357,10 +357,13 @@ func runWatch(
 				err    error
 			)
 
+			env, cmdEnv := makeEnv(globalEnv, cmd.Env)
+			lookup := func(key string) string { return env[key] }
+
 			if cmd.Install != "" {
-				cmdOut, err = BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
-			} else if cmd.DownloadBinary != (DownloadBinary{}) {
-				err = Download(cmd.DownloadBinary)
+				cmdOut, err = BashInRoot(ctx, cmd.Install, cmdEnv)
+			} else if cmd.DownloadArchive != (DownloadArchive{}) {
+				err = Download(cmd.DownloadArchive, lookup)
 			}
 
 			if err != nil {
@@ -468,7 +471,7 @@ func runWatch(
 	}
 }
 
-func makeEnv(envs ...map[string]string) []string {
+func makeEnv(envs ...map[string]string) (map[string]string, []string) {
 	combined := os.Environ()
 	expandedEnv := map[string]string{}
 
@@ -505,7 +508,7 @@ func makeEnv(envs ...map[string]string) []string {
 		}
 	}
 
-	return combined
+	return expandedEnv, combined
 }
 
 func md5HashFile(filename string) (string, error) {
@@ -633,7 +636,8 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(globalEnv, cmd.Env)
+	_, cmdEnv := makeEnv(globalEnv, cmd.Env)
+	c.Env = cmdEnv
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 

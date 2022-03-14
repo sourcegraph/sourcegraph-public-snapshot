@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
-type DownloadBinary struct {
+type DownloadArchive struct {
 	URL           string `yaml:"url"`
 	FileInArchive string `yaml:"file_in_archive"`
 	TargetFile    string `yaml:"target_file"`
@@ -29,11 +29,11 @@ type Command struct {
 	IgnoreStderr        bool              `yaml:"ignoreStderr"`
 	DefaultArgs         string            `yaml:"defaultArgs"`
 	ContinueWatchOnExit bool              `yaml:"continueWatchOnExit"`
+	DownloadArchive     DownloadArchive   `yaml:"download_archive"`
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
 	//
-	DownloadBinary DownloadBinary `yaml:"download_binary"`
 }
 
 func (c Command) Merge(other Command) Command {
@@ -58,6 +58,16 @@ func (c Command) Merge(other Command) Command {
 		merged.DefaultArgs = other.DefaultArgs
 	}
 	merged.ContinueWatchOnExit = other.ContinueWatchOnExit || merged.ContinueWatchOnExit
+
+	if other.DownloadArchive.URL != merged.DownloadArchive.URL {
+		merged.DownloadArchive.URL = other.DownloadArchive.URL
+	}
+	if other.DownloadArchive.FileInArchive != merged.DownloadArchive.FileInArchive {
+		merged.DownloadArchive.FileInArchive = other.DownloadArchive.FileInArchive
+	}
+	if other.DownloadArchive.TargetFile != merged.DownloadArchive.TargetFile {
+		merged.DownloadArchive.TargetFile = other.DownloadArchive.TargetFile
+	}
 
 	for k, v := range other.Env {
 		merged.Env[k] = v
@@ -129,7 +139,8 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 
 	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
 	sc.Cmd.Dir = dir
-	sc.Cmd.Env = makeEnv(globalEnv, cmd.Env)
+	_, cmdEnv := makeEnv(globalEnv, cmd.Env)
+	sc.Cmd.Env = cmdEnv
 
 	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)

@@ -16,21 +16,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Download(bin DownloadBinary) error {
+func Download(bin DownloadArchive, lookupEnv func(string) string) error {
+	// Treat fields as templats and render them
+	targetFile, err := renderField("targetFile", bin.TargetFile, lookupEnv)
+	if err != nil {
+		return errors.Wrapf(err, "failed to render field %q as template", "targetFile")
+	}
+
+	fileInArchive, err := renderField("fileInArchive", bin.FileInArchive, lookupEnv)
+	if err != nil {
+		return errors.Wrapf(err, "failed to render field %q as template", "fileInArchive")
+	}
+
+	url, err := renderField("url", bin.URL, lookupEnv)
+	if err != nil {
+		return errors.Wrapf(err, "failed to render field %q as template", "targetFile")
+	}
+
+	// Skip download if file already exists
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
-	targetFile := filepath.Join(repoRoot, bin.TargetFile)
 
-	// Skip download if file already exists
-	if ok, _ := fileExists(targetFile); ok {
+	targetFilePath := filepath.Join(repoRoot, targetFile)
+	if ok, _ := fileExists(targetFilePath); ok {
 		return nil
-	}
-
-	url, err := renderField("url", bin.URL)
-	if err != nil {
-		return errors.Wrapf(err, "failed to render field %q as template", "url")
 	}
 
 	resp, err := http.Get(url)
@@ -43,13 +54,14 @@ func Download(bin DownloadBinary) error {
 	}
 	defer resp.Body.Close()
 
+	// Create a temp directory to unarchive files to
 	tmpDirName, err := os.MkdirTemp("", "sg-binary-download*")
 	if err != nil {
 		return err
 	}
 	defer func() {
 		// Clean up the temporary directory but ignore any possible errors
-		_ = os.Remove(tmpDirName)
+		// _ = os.Remove(tmpDirName)
 	}()
 
 	// Only extract the file that we want
@@ -62,12 +74,12 @@ func Download(bin DownloadBinary) error {
 		return errors.Wrap(err, "unpacking archive failed")
 	}
 
-	fileInArchive := filepath.Join(tmpDirName, bin.FileInArchive)
-	if ok, err := fileExists(fileInArchive); !ok || err != nil {
-		return errors.Newf("expected %s to exist in extracted archive at %s, but does not", bin.FileInArchive, tmpDirName)
+	fileInArchivePath := filepath.Join(tmpDirName, fileInArchive)
+	if ok, err := fileExists(fileInArchivePath); !ok || err != nil {
+		return errors.Newf("expected %s to exist in extracted archive at %s, but does not", fileInArchivePath, tmpDirName)
 	}
 
-	if err := os.Rename(fileInArchive, targetFile); err != nil {
+	if err := os.Rename(fileInArchivePath, targetFilePath); err != nil {
 		return err
 	}
 
@@ -85,8 +97,11 @@ func fileExists(path string) (bool, error) {
 	return true, nil
 }
 
-func renderField(name, content string) (string, error) {
-	t, err := template.New(fmt.Sprintf("field-%s", name)).Parse(content)
+func renderField(name, content string, lookupEnv func(string) string) (string, error) {
+	t, err := template.
+		New(fmt.Sprintf("field-%s", name)).
+		Funcs(template.FuncMap{"getEnv": lookupEnv}).
+		Parse(content)
 	if err != nil {
 		return "", err
 	}
