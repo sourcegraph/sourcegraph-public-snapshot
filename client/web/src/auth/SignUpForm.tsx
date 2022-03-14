@@ -79,8 +79,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 asynchronousValidators: [isUsernameUnique],
             },
             password: {
-                synchronousValidators: [],
-                asynchronousValidators: [validatePassword]
+                synchronousValidators: [validatePassword],
+                asynchronousValidators: []
             },
         }),
         []
