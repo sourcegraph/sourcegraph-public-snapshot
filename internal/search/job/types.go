@@ -34,7 +34,6 @@ var allJobs = []Job{
 	&zoekt.GlobalSearch{},
 	&structural.StructuralSearch{},
 	&commit.CommitSearch{},
-	&symbol.RepoSubsetSymbolSearch{},
 	&symbol.RepoUniverseSymbolSearch{},
 	&repos.ComputeExcludedRepos{},
 	&noopJob{},

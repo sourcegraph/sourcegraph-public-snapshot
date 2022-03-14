@@ -1,4 +1,4 @@
-package symbol
+package searcher
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestSymbolsToMatches(t *testing.T) {
+func Test_symbolsToMatches(t *testing.T) {
 	type fileType struct {
 		Path    string
 		Symbols []string
