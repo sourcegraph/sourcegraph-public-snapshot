@@ -926,11 +926,14 @@ commandsets:
       - caddy
     env:
       ENTERPRISE: 1
+      SOURCEGRAPHDOTCOM_MODE: true
 
   oss-web-standalone:
     commands:
       - web-standalone-http
       - caddy
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
 
   web-standalone-prod:
     commands:
@@ -938,11 +941,14 @@ commandsets:
       - caddy
     env:
       ENTERPRISE: 1
+      SOURCEGRAPHDOTCOM_MODE: true
 
   oss-web-standalone-prod:
     commands:
       - web-standalone-http-prod
       - caddy
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
 
 tests:
   # These can be run with `sg test [name]`
