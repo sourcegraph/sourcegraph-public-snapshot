@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { fireEvent, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
-import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'

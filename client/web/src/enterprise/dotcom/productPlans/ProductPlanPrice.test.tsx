@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { render } from '@testing-library/react'
 
 import { ProductPlanPrice } from './ProductPlanPrice'
 
@@ -19,7 +20,7 @@ describe('ProductPlanPrice', () => {
             ).asFragment()
         ).toMatchInlineSnapshot(`
             <DocumentFragment>
-              $0/month 
+              $0/month
             </DocumentFragment>
         `)
     })

@@ -67,7 +67,7 @@ export async function formatPuppeteerConsoleMessage(
                               return value
                           })
                       )
-                  ).jsonValue()) as string
+                  ).jsonValue())
                   const parsed: unknown = JSON.parse(json)
                   return parsed
               })

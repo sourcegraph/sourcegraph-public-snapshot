@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import { isEmpty, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 

@@ -1,12 +1,14 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
-import styles from './SearchButton.module.scss'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
+
+import styles from './SearchButton.module.scss'
 
 interface Props extends TelemetryProps {
     /** Hide the "help" icon and dropdown. */

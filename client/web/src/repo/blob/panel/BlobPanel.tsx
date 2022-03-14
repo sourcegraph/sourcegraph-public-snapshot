@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+
+import * as H from 'history'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 

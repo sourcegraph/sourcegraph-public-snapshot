@@ -1,5 +1,6 @@
-import { LocationDescriptor } from 'history'
 import * as React from 'react'
+
+import { LocationDescriptor } from 'history'
 
 import { Link } from '@sourcegraph/wildcard'
 

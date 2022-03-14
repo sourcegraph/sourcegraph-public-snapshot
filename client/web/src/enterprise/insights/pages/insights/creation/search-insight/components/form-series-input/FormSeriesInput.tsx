@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { Button, Card } from '@sourcegraph/wildcard'

@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AccountEditIcon from 'mdi-react/AccountEditIcon'
@@ -6,7 +8,6 @@ import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -28,6 +29,7 @@ import { ChangesetSpecFileDiffConnection } from './ChangesetSpecFileDiffConnecti
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
+
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {

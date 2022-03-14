@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
-import React from 'react'
 import FocusLock from 'react-focus-lock'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
@@ -10,6 +11,7 @@ import { ButtonLink, PopoverContent, Position } from '@sourcegraph/wildcard'
 import { SourcegraphIcon } from '../../auth/icons'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
+
 import styles from './InstallBrowserExtensionPopover.module.scss'
 
 interface Props {

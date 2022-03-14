@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'

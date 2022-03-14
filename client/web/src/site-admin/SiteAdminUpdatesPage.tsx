@@ -1,7 +1,8 @@
+import React, { useMemo } from 'react'
+
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
-import React, { useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
@@ -11,6 +12,7 @@ import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcar
 import { PageTitle } from '../components/PageTitle'
 
 import { fetchSiteUpdateCheck } from './backend'
+
 import styles from './SiteAdminUpdatesPage.module.scss'
 
 interface Props extends TelemetryProps {}

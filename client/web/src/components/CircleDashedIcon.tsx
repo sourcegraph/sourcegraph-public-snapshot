@@ -1,5 +1,6 @@
-import type { MdiReactIconProps } from 'mdi-react'
 import React, { memo } from 'react'
+
+import type { MdiReactIconProps } from 'mdi-react'
 
 export const CircleDashedIcon: React.FunctionComponent<MdiReactIconProps> = memo(
     ({ color = 'currentColor', size = 24, className = '', ...props }) => (
