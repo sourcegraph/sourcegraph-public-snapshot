@@ -73,7 +73,7 @@ func NewPermsSyncer(
 		permsStore:          permsStore,
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
-		scheduleInterval:    15 * time.Second,
+		scheduleInterval:    scheduleInterval(),
 	}
 }
 
@@ -1140,7 +1140,6 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			log15.Error("Failed to compute schedule", "err", err)
 			continue
 		}
-
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
 	}
@@ -1271,4 +1270,12 @@ func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.collectMetrics(ctx)
 
 	<-ctx.Done()
+}
+
+func scheduleInterval() time.Duration {
+	seconds := conf.Get().PermissionsSyncScheduleInterval
+	if seconds <= 0 {
+		return 15 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
 }

@@ -774,7 +774,7 @@ commandsets:
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
-  enterprise-codeintel:
+  codeintel: &codeintel_set
     requiresDevPrivate: true
     checks:
       - docker
@@ -803,6 +803,9 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
+
+  enterprise-codeintel:
+    <<: *codeintel_set
 
   enterprise-codeinsights:
     requiresDevPrivate: true

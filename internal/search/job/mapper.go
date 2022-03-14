@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -22,8 +21,7 @@ type Mapper struct {
 	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch
 	MapSearcherJob                 func(*searcher.Searcher) *searcher.Searcher
 	MapRepoSearchJob               func(*run.RepoSearch) *run.RepoSearch
-	MapRepoSubsetTextSearchJob     func(*textsearch.RepoSubsetTextSearch) *textsearch.RepoSubsetTextSearch
-	MapRepoUniverseTextSearchJob   func(*textsearch.RepoUniverseTextSearch) *textsearch.RepoUniverseTextSearch
+	MapRepoUniverseTextSearchJob   func(*zoekt.GlobalSearch) *zoekt.GlobalSearch
 	MapStructuralSearchJob         func(*structural.StructuralSearch) *structural.StructuralSearch
 	MapCommitSearchJob             func(*commit.CommitSearch) *commit.CommitSearch
 	MapRepoSubsetSymbolSearchJob   func(*symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch
@@ -77,13 +75,7 @@ func (m *Mapper) Map(job Job) Job {
 		}
 		return j
 
-	case *textsearch.RepoSubsetTextSearch:
-		if m.MapRepoSubsetTextSearchJob != nil {
-			j = m.MapRepoSubsetTextSearchJob(j)
-		}
-		return j
-
-	case *textsearch.RepoUniverseTextSearch:
+	case *zoekt.GlobalSearch:
 		if m.MapRepoUniverseTextSearchJob != nil {
 			j = m.MapRepoUniverseTextSearchJob(j)
 		}

@@ -1,3 +1,4 @@
+import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import webpack from 'webpack'
 
@@ -18,3 +19,5 @@ export const getProvidePlugin = (): webpack.ProvidePlugin =>
         // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
         Buffer: ['buffer', 'Buffer'],
     })
+
+export const getStatoscopePlugin = (): StatoscopeWebpackPlugin => new StatoscopeWebpackPlugin()
