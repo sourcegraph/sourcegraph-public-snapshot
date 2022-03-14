@@ -63,7 +63,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.RepositoryID,
 			&dump.RepositoryName,
 			&dump.Indexer,
-			&dump.IndexerVersion,
+			&dbutil.NullString{S: &dump.IndexerVersion},
 			&dump.AssociatedIndexID,
 		); err != nil {
 			return nil, err
