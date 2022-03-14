@@ -5,7 +5,6 @@
 }
 
 .markdown-body ul {
-  list-style:none;
   padding-left: 1em;
 }
 
@@ -13,59 +12,83 @@
   margin: 0.5em 0;
 }
 
-.markdown-body ul li:before {
-  content: '';
-  display: inline-block;
-  height: 1.2em;
-  width: 1em;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-image: url(../batch_changes/file-icon.svg);
-  margin-right: 0.5em;
-  margin-bottom: -0.29em;
-}
-
-body.theme-dark .markdown-body ul li:before {
-  filter: invert(50%);
+.markdown-body .lead-screenshot {
+    float: right;
+    display: block;
+    margin: 1em auto;
+    max-width: 500px;
+    margin-left: 0.5em;
+    border: 1px solid lightgrey;
+    border-radius: 10px;
 }
 
 </style>
 
 # Code intelligence
 
-<p class="subtitle">Navigate code, with definitions and references</p>
+<p class="subtitle">Navigate your code with tooling that understands it</p>
+
+<div>
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/code-intel-overview.png" class="lead-screenshot">
 
 <p class="lead">
-Code intelligence provides advanced code navigation features that let developers explore source code. It displays rich metadata about functions, variables, and cross-references in the code.
+Code Intelligence adds advanced code navigation to Sourcegraph, enabling
+developers to explore code by
 </p>
 
+
+<ul class="lead">
+<li>jumping to definitions</li>
+<li>finding references</li>
+<li>listing implementations</li>
+<li>browsing symbols defined in current document or folder</li>
+<li>navigate dependencies</li>
+<li>documentation in hover tooltips</li>
+</ul>
+</div>
+
+<div style="display: block; float: clear;"> </div>
+
 <div class="cta-group">
-<a class="btn btn-primary" href="explanations/introduction_to_code_intelligence">★ Introduction to code intelligence</a>
-<a class="btn" href="references/indexers">🗂 LSIF supported languages</a>
-<a class="btn" href="apidocs">📚 API docs for your code</a>
+<a class="btn btn-primary" href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references">★ Try it on public code!</a>
+<a class="btn" href="#code-intelligence-for-your-code">Enable it for your code</a>
 </div>
 
-## Getting started
+Code Intelligence is made up of multiple features that build on top of each other:
 
-<div class="getting-started">
-  <a href="../../integration/browser_extension" class="btn" alt="Install the browser extension">
-   <span>Install the browser extension</span>
-   </br>
-   Add code intelligence to your code host and/or code review tool by installing the Sourcegraph browser extension.
-  </a>
+- [Search-based code intelligence](explanations/search_based_code_intelligence.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
+- [Precise code intelligence](explanations/precise_code_intelligence.md) uses [LSIF indexes](https://lsif.dev/) to provide correct code intelligence features and accurate cross-repository navigation.
+- [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create LSIF indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code intelligence.
+- [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code intelligence and auto-indexing.
 
-  <a href="https://www.youtube.com/watch?v=kRFeSK5yCh8" class="btn" alt="Watch the code intelligence demo video">
-   <span>Demo video</span>
-   </br>
-   Watch the code intelligence demo video to see it in action on GitHub.
-  </a>
+## Code Intelligence for your code
 
-  <a href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references" class="btn" alt="Try code intelligence on public code">
-   <span>Try on public code</span>
-   </br>
-   Interested in trying code intelligence out on public code? See this sample file on Sourcegraph Cloud.
-  </a>
-</div>
+Here's how you go from search-based code intelligence to **automatically-updating, precise code intelligence across multiple repositories and dependencies**:
+
+1. Navigate code with [search-based code intelligence](explanations/search_based_code_intelligence.md) and [Sourcegraph extensions](../../../extensions/index.md):
+
+    Included in a standard Sourcegraph installation and works out of the box!
+1. Start using [precise code intelligence](explanations/precise_code_intelligence.md) by creating an LSIF index of a repository and uploading it to your Sourcegraph instance:
+
+    - [Index a Go repository](how-to/index_a_go_repository.md#manual-indexing)
+    - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
+    - [Index a C++ repository](how-to/index_a_cpp_repository.md)
+    - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/lsif-java/docs/getting-started.html)
+
+    See the [tutorials](#tutorials) for more step-by-step instructions.
+1. _Optional_: automate the uploading of LSIF indexes by [adding LSIF indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
+1. Get **automatic precise code intelligence** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code intelligence for them.
+1. Setup **auto-dependency indexing** to navigate and search through the dependencies used by your code:
+    - **Go**: Enable [auto-indexing](explanations/auto_indexing.md) and Sourcegraph will start indexing your dependencies.
+    - **Java, Scala, Kotlin**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [JVM dependencies code host](../../integration/jvm.md).
+    - **JavaScript, TypeScript**: Enable [auto-indexing](explanations/auto_indexing.md) and setup a [npm dependencies code host](../../integration/npm.md).
+
+Once setup, code intelligence is available for use across popular development tools:
+
+- In the Sourcegraph web UI
+- When browsing code on your code host, via [integrations](../../../integration/index.md)
+- While looking at diffs in your code review tool, via [integrations](../../../integration/index.md)
+- In the [Sourcegraph API](https://docs.sourcegraph.com/api/graphql)
 
 ## [Explanations](explanations/index.md)
 
@@ -74,12 +97,6 @@ Code intelligence provides advanced code navigation features that let developers
   - [Precise code intelligence uploads](explanations/uploads.md)
 - [Search-based code intelligence](explanations/search_based_code_intelligence.md)
 - [Code navigation features](explanations/features.md)
-  - [Popover](explanations/features.md#popover)
-  - [Go to definition](explanations/features.md#go-to-definition)
-  - [Find references](explanations/features.md#find-references)
-  - <span class="badge badge-experimental">Experimental</span> [Dependency navigation](explanations/features.md#dependency-navigation)
-  - [Find implementations](explanations/features.md#find-implementations)
-  - [Symbol search](explanations/features.md#symbol-search)
 - <span class="badge badge-experimental">Experimental</span> [Rockskip: faster search-based code intelligence](explanations/rockskip.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
