@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -152,6 +153,10 @@ type Client interface {
 	RendezvousAddrForRepo(api.RepoName) string
 
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+
+	// ResolveRevisions expands a set of RevisionSpecifiers (which may include hashes, globs, refs, or glob exclusions)
+	// into an equivalent set of commit hashes
+	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
 	// RepoInfo retrieves information about one or more repositories on gitserver.
 	//
@@ -1145,4 +1150,51 @@ func (c *ClientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	}
 
 	return &res.Object, nil
+}
+
+var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
+
+func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
+	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
+
+	cmd := c.Command("git", args...)
+	cmd.Repo = repo
+	stdout, stderr, err := cmd.DividedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return nil, err
+		}
+		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
+			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
+		}
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
+	}
+
+	trimmed := strings.TrimSpace(string(stdout))
+	if len(trimmed) == 0 {
+		return nil, nil
+	}
+	split := strings.Split(trimmed, "\n")
+	return split, nil
+}
+
+func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
+	args := make([]string, 0, len(revSpecs))
+	for _, r := range revSpecs {
+		if r.RevSpec != "" {
+			args = append(args, r.RevSpec)
+		} else if r.RefGlob != "" {
+			args = append(args, "--glob="+r.RefGlob)
+		} else if r.ExcludeRefGlob != "" {
+			args = append(args, "--exclude="+r.ExcludeRefGlob)
+		} else {
+			args = append(args, "HEAD")
+		}
+	}
+
+	// If revSpecs is empty, git treats it as equivalent to HEAD
+	if len(revSpecs) == 0 {
+		args = append(args, "HEAD")
+	}
+	return args
 }
