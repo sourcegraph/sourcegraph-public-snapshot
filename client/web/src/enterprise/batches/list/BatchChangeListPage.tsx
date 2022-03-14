@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -82,10 +83,6 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>(
         getInitialFilters(isExecutionEnabled)
     )
-    // We keep state to track to the last total count of batch changes in the connection
-    // to avoid the display flickering as the connection is loading more data or a
-    // different set of filtered data.
-    const [lastTotalCount, setLastTotalCount] = useState<number>(0)
 
     // We use the license and usage query to check whether or not there are any batch
     // changes _at all_. If there aren't, we automatically switch the user to the "Getting
@@ -137,12 +134,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
         },
     })
 
-    useEffect(() => {
-        // If the data in the connection updates with new results, update the total count.
-        if (connection) {
-            setLastTotalCount(connection.totalCount || 0)
-        }
-    }, [connection])
+    const currentTotalCount = licenseAndUsageInfo?.allBatchChanges.totalCount
 
     return (
         <Page>
@@ -160,10 +152,11 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 <Container className="mb-4">
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
-                            {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <h3 className="align-self-end flex-1">{lastTotalCount} batch changes</h3>
+                            {typeof currentTotalCount === 'number' && (
+                                <h3 className="align-self-end flex-1">
+                                    {currentTotalCount} {pluralize('batch change', currentTotalCount)}
+                                </h3>
                             )}
-                            <h4 className="mb-0 mr-2">Status</h4>
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}

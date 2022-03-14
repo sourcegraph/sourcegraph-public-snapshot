@@ -23,9 +23,12 @@ export const BatchChangeListFilters: React.FunctionComponent<BatchChangeListFilt
     isExecutionEnabled,
     ...props
 }) => (
-    <MultiSelect
-        {...props}
-        options={isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS}
-        aria-label="Select batch change status to filter."
-    />
+    <>
+        <h4 className="mb-0 mr-2">Status</h4>
+        <MultiSelect
+            {...props}
+            options={isExecutionEnabled ? STATUS_OPTIONS : STATUS_OPTIONS_NO_DRAFTS}
+            aria-label="Select batch change status to filter."
+        />
+    </>
 )
