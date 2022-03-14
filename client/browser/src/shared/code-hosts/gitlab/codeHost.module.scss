@@ -1,5 +1,5 @@
 :root {
-    --gray-10: #fafafa;
+    --gray-10: #fafafa; // override value to avoid style conflics: https://github.com/sourcegraph/sourcegraph/pull/32548
 }
 
 .command-list-popover {
