@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	a "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -56,6 +57,8 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/.setup/github-app-cloud?installation_id=21994992&setup_action=install&state=T3JnOjE%3D", nil)
+	ctx := a.WithActor(req.Context(), &a.Actor{UID: 1})
+	req = req.WithContext(ctx)
 	require.Nil(t, err)
 
 	h := newGitHubAppCloudSetupHandler(db, apiURL, client)
