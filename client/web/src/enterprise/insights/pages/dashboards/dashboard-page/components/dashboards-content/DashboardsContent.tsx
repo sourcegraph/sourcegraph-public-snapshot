@@ -13,6 +13,7 @@ import { LimitedAccessLabel } from '../../../../../components/limited-access-lab
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
@@ -42,7 +43,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { getDashboards, getUiFeatures } = useContext(CodeInsightsBackendContext)
 
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const features = useUiFeatures({ currentDashboard: undefined })
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -69,7 +70,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     }
 
     const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
-    const dashboardFeatures = features.getDashboardsContent(currentDashboard)
+    const dashboardFeatures = features.dashboards
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {

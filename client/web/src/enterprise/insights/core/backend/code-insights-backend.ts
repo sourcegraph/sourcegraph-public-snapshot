@@ -3,6 +3,7 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
+import { DashboardPermissions } from '../../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
@@ -26,16 +27,9 @@ import {
     RepositorySuggestionData,
 } from './code-insights-backend-types'
 
-export interface UiFeatures {
+export interface UiFeaturesConfig {
     licensed: boolean
-    getDashboardsContent: (
-        currentDashboard?: InsightDashboard
-    ) => {
-        addRemoveInsightsButton: {
-            disabled: boolean
-            tooltip: string | undefined
-        }
-    }
+    permissions: DashboardPermissions
 }
 
 /**
@@ -162,5 +156,5 @@ export interface CodeInsightsBackend {
     /**
      * Returns a features object used to show/hide and enable/disable UI elements
      */
-    getUiFeatures: () => UiFeatures
+    getUiFeatures: (currentDashboard?: InsightDashboard) => UiFeaturesConfig
 }

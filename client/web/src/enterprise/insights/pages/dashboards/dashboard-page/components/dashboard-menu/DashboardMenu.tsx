@@ -9,7 +9,7 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { positionBottomRight } from '../../../../../components/context-menu/utils'
 import { InsightDashboard } from '../../../../../core/types'
-import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 
 import styles from './DashboardMenu.module.scss'
 
@@ -30,9 +30,11 @@ export interface DashboardMenuProps {
 
 export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
     const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
+    const {
+        dashboards: { menu },
+    } = useUiFeatures({ currentDashboard: dashboard })
 
     const hasDashboard = dashboard !== undefined
-    const permissions = getDashboardPermissions(dashboard)
 
     return (
         <Menu>
@@ -49,41 +51,49 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
 
             <MenuPopover portal={true} position={positionBottomRight}>
                 <MenuItems className={classNames(styles.menuList, 'dropdown-menu')}>
-                    <MenuItem
-                        as={Button}
-                        disabled={!permissions.isConfigurable}
-                        data-tooltip={getTooltipMessage(dashboard, permissions)}
-                        data-placement="right"
-                        className={styles.menuItem}
-                        onSelect={() => onSelect(DashboardMenuAction.Configure)}
-                        outline={true}
-                    >
-                        Configure dashboard
-                    </MenuItem>
+                    {menu.configure.display && (
+                        <MenuItem
+                            as={Button}
+                            disabled={menu.configure.disabled}
+                            data-tooltip={menu.configure.tooltip}
+                            data-placement="right"
+                            className={styles.menuItem}
+                            onSelect={() => onSelect(DashboardMenuAction.Configure)}
+                            outline={true}
+                        >
+                            Configure dashboard
+                        </MenuItem>
+                    )}
 
-                    <MenuItem
-                        as={Button}
-                        disabled={!hasDashboard}
-                        className={styles.menuItem}
-                        onSelect={() => onSelect(DashboardMenuAction.CopyLink)}
-                        outline={true}
-                    >
-                        Copy link
-                    </MenuItem>
+                    {menu.copy.display && (
+                        <MenuItem
+                            as={Button}
+                            disabled={!hasDashboard}
+                            className={styles.menuItem}
+                            onSelect={() => onSelect(DashboardMenuAction.CopyLink)}
+                            outline={true}
+                        >
+                            Copy link
+                        </MenuItem>
+                    )}
 
-                    <hr />
+                    {menu.delete.display && (
+                        <>
+                            <hr />
 
-                    <MenuItem
-                        as={Button}
-                        disabled={!permissions.isConfigurable}
-                        data-tooltip={getTooltipMessage(dashboard, permissions)}
-                        data-placement="right"
-                        className={classNames(styles.menuItem, styles.menuItemDanger)}
-                        onSelect={() => onSelect(DashboardMenuAction.Delete)}
-                        outline={true}
-                    >
-                        Delete
-                    </MenuItem>
+                            <MenuItem
+                                as={Button}
+                                disabled={menu.delete.disabled}
+                                data-tooltip={menu.delete.tooltip}
+                                data-placement="right"
+                                className={classNames(styles.menuItem, styles.menuItemDanger)}
+                                onSelect={() => onSelect(DashboardMenuAction.Delete)}
+                                outline={true}
+                            >
+                                Delete
+                            </MenuItem>
+                        </>
+                    )}
                 </MenuItems>
             </MenuPopover>
         </Menu>

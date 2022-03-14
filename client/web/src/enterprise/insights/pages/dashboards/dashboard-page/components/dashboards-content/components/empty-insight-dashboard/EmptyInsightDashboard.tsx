@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
-import { getTooltipMessage, getDashboardPermissions } from '../../../../utils/get-dashboard-permissions'
+import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
@@ -50,22 +50,20 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  */
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
     const { onAddInsight, dashboard } = props
-    const permissions = getDashboardPermissions(dashboard)
+    const {
+        dashboards: { addRemoveInsightsButton },
+    } = useUiFeatures({ currentDashboard: undefined })
 
     return (
         <section className={styles.emptySection}>
             <Button
                 type="button"
-                disabled={!permissions.isConfigurable}
+                disabled={addRemoveInsightsButton.disabled}
                 onClick={onAddInsight}
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
-                <Card
-                    data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
-                    data-placement="right"
-                    className={styles.itemCard}
-                >
+                <Card data-tooltip={addRemoveInsightsButton.tooltip} data-placement="right" className={styles.itemCard}>
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
                 </Card>

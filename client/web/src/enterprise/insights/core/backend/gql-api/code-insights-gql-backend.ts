@@ -23,14 +23,11 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import {
-    getDashboardPermissions,
-    getTooltipMessage,
-} from '../../../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
+import { getDashboardPermissions } from '../../../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { SupportedInsightSubject } from '../../types/subjects'
-import { CodeInsightsBackend, UiFeatures } from '../code-insights-backend'
+import { CodeInsightsBackend, UiFeaturesConfig } from '../code-insights-backend'
 import {
     AssignInsightsToDashboardInput,
     BackendInsightData,
@@ -480,18 +477,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    public getUiFeatures = (): UiFeatures => ({
+    public getUiFeatures = (currentDashboard?: InsightDashboard): UiFeaturesConfig => ({
         licensed: true,
-        getDashboardsContent: (currentDashboard?: InsightDashboard) => {
-            const permissions = getDashboardPermissions(currentDashboard)
-
-            return {
-                addRemoveInsightsButton: {
-                    disabled: !permissions.isConfigurable,
-                    tooltip: getTooltipMessage(currentDashboard, permissions),
-                },
-            }
-        },
+        permissions: getDashboardPermissions(currentDashboard, true),
     })
 }
 

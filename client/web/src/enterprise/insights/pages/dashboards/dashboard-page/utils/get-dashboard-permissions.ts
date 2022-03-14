@@ -5,9 +5,10 @@ enum DashboardReasonDenied {
     BuiltInCantBeEdited,
     PermissionDenied,
     UnknownDashboard,
+    NotLicensed,
 }
 
-type DashboardPermissions =
+export type DashboardPermissions =
     | {
           isConfigurable: false
           reason: DashboardReasonDenied
@@ -21,13 +22,23 @@ const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
     reason: DashboardReasonDenied.UnknownDashboard,
 }
 
-export function getDashboardPermissions(dashboard: InsightDashboard | undefined): DashboardPermissions {
+export function getDashboardPermissions(
+    dashboard: InsightDashboard | undefined,
+    licensed: boolean
+): DashboardPermissions {
     if (dashboard && 'grants' in dashboard) {
         // This means we're using the graphql api.
         // Since the api only returns info the user can see
         // We can safely assume the user has permission to edit the dashboard
         return {
             isConfigurable: true,
+        }
+    }
+
+    if (!licensed) {
+        return {
+            isConfigurable: false,
+            reason: DashboardReasonDenied.NotLicensed,
         }
     }
 
@@ -75,5 +86,7 @@ export function getTooltipMessage(
             }
         case DashboardReasonDenied.AllVirtualDashboard:
             return "This is an automatically created dashboard that lists all the insights you have access to. You can't edit this dashboard."
+        case DashboardReasonDenied.NotLicensed:
+            return 'TODO: Need unlicensed message'
     }
 }
