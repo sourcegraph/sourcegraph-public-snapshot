@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import { debounce } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
@@ -47,12 +47,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         () => (lineRangeInput.trim() ? parseLineRange(lineRangeInput) !== null : undefined),
         [lineRangeInput]
     )
-
-    useEffect(() => {
-        // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input,
-        // if Enter key was used to show the inputs.
-        setTimeout(() => editor?.focus(), 0)
-    }, [editor])
 
     const onLineRangeInputChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
