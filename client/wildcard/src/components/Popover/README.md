@@ -224,3 +224,5 @@ enum Strategy {
   Absolute,
 }
 ```
+
+- **_targetPadding_** (optional) - Adds space/padding between target and popover elements

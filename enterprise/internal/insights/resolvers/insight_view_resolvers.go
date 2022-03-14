@@ -78,6 +78,11 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
+	if i.view.IsFrozen {
+		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
+		// easy mis-use of unlicensed features.
+		return nil, nil
+	}
 
 	var filters *types.InsightViewFilters
 	if i.overrideFilters != nil {

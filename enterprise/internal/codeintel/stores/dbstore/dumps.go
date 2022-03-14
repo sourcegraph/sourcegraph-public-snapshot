@@ -33,6 +33,7 @@ type Dump struct {
 	RepositoryID      int        `json:"repositoryId"`
 	RepositoryName    string     `json:"repositoryName"`
 	Indexer           string     `json:"indexer"`
+	IndexerVersion    string     `json:"indexerVersion"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
 }
 
@@ -62,6 +63,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 			&dump.RepositoryID,
 			&dump.RepositoryName,
 			&dump.Indexer,
+			&dump.IndexerVersion,
 			&dump.AssociatedIndexID,
 		); err != nil {
 			return nil, err
@@ -117,6 +119,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.associated_index_id
 FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 `
@@ -186,6 +189,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.associated_index_id
 FROM visible_uploads vu
 JOIN lsif_dumps_with_repository_name u ON u.id = vu.upload_id
@@ -280,6 +284,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.associated_index_id
 FROM lsif_dumps_with_repository_name u
 WHERE u.id IN (%s) AND %s

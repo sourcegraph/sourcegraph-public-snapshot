@@ -19,7 +19,7 @@ import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-} from './CoolCodeIntelQueries'
+} from './ReferencesPanelQueries'
 
 export interface UsePreciseCodeIntelResult {
     lsifData?: PreciseCodeIntelForLocationFields
