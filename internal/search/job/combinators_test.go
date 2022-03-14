@@ -116,23 +116,6 @@ func TestTimeoutJob(t *testing.T) {
 		require.ErrorIs(t, err, context.DeadlineExceeded)
 	})
 
-	t.Run("early return returns early", func(t *testing.T) {
-		timeoutWaiter := NewMockJob()
-		timeoutWaiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ database.DB, _ streaming.Sender) (*search.Alert, error) {
-			select {
-			case <-time.After(10 * time.Millisecond):
-				return nil, nil
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		})
-		timeoutJob := NewTimeoutJob(time.Second, timeoutWaiter)
-		start := time.Now()
-		_, err := timeoutJob.Run(context.Background(), nil, nil)
-		require.NoError(t, err)
-		require.WithinDuration(t, time.Now(), start.Add(10*time.Millisecond), 5*time.Millisecond)
-	})
-
 	t.Run("NewTimeoutJob propagates noop", func(t *testing.T) {
 		job := NewTimeoutJob(10*time.Second, NewNoopJob())
 		require.Equal(t, NewNoopJob(), job)
