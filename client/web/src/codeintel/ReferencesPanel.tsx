@@ -43,7 +43,11 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { LocationFields } from '../graphql-operations'
+import {
+    LocationFields,
+    ReferencesPanelHighlightedBlobResult,
+    ReferencesPanelHighlightedBlobVariables,
+} from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
