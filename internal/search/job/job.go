@@ -172,28 +172,34 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		}
 
 		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" && !skipRepoSubsetSearch {
+			var symbolSearchJobs []Job
 			typ := search.SymbolRequest
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-			if err != nil {
-				return nil, err
-			}
-			zoektArgs := &search.ZoektParameters{
-				Query:          zoektQuery,
-				Typ:            typ,
-				FileMatchLimit: args.PatternInfo.FileMatchLimit,
-				Select:         args.PatternInfo.Select,
-				Zoekt:          args.Zoekt,
+
+			if !onlyRunSearcher {
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				if err != nil {
+					return nil, err
+				}
+				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
+					Query:          zoektQuery,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				})
 			}
 
+			symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+				PatternInfo: args.PatternInfo,
+				Limit:       maxResults,
+			})
+
 			required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
-			addJob(required, &symbol.RepoSubsetSymbolSearch{
-				ZoektArgs:        zoektArgs,
-				PatternInfo:      args.PatternInfo,
-				Limit:            maxResults,
-				NotSearcherOnly:  !onlyRunSearcher,
-				UseIndex:         args.PatternInfo.Index,
-				ContainsRefGlobs: query.ContainsRefGlobs(q),
-				RepoOpts:         repoOptions,
+			addJob(required, &repoPagerJob{
+				child:            NewParallelJob(symbolSearchJobs...),
+				repoOptions:      repoOptions,
+				useIndex:         args.PatternInfo.Index,
+				containsRefGlobs: query.ContainsRefGlobs(q),
+				zoekt:            args.Zoekt,
 			})
 		}
 
