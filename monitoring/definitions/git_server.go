@@ -451,7 +451,7 @@ func GitServer() *monitoring.Container {
 			},
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNPMGroup(containerName),
+			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),

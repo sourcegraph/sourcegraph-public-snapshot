@@ -30,12 +30,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-var updateRecordings = flag.Bool("update", false, "make NPM API calls, record and save data")
+var updateRecordings = flag.Bool("update", false, "make npm API calls, record and save data")
 
 func newTestHTTPClient(t *testing.T) (client *HTTPClient, stop func()) {
 	t.Helper()
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
-	rateLimit := schema.NPMRateLimit{true, 1000}
+	rateLimit := schema.NpmRateLimit{true, 1000}
 	client = NewHTTPClient("https://registry.npmjs.org", &rateLimit, "")
 	doer, err := recorderFactory.Doer()
 	require.Nil(t, err)
@@ -43,7 +43,7 @@ func newTestHTTPClient(t *testing.T) (client *HTTPClient, stop func()) {
 	return client, stop
 }
 
-func mockNPMServer(credentials string) *httptest.Server {
+func mockNpmServer(credentials string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if key, ok := req.Header["Authorization"]; ok && key[0] != fmt.Sprintf("Bearer %s", credentials) {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -74,16 +74,16 @@ func mockNPMServer(credentials string) *httptest.Server {
 
 func TestCredentials(t *testing.T) {
 	credentials := "top secret access token"
-	server := mockNPMServer(credentials)
+	server := mockNpmServer(credentials)
 	defer server.Close()
 
 	ctx := context.Background()
-	rateLimit := schema.NPMRateLimit{true, 1000}
+	rateLimit := schema.NpmRateLimit{true, 1000}
 	client := NewHTTPClient(server.URL, &rateLimit, credentials)
 
-	presentDep, err := reposource.ParseNPMDependency("left-pad@1.3.0")
+	presentDep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
 	require.NoError(t, err)
-	absentDep, err := reposource.ParseNPMDependency("left-pad@1.3.1")
+	absentDep, err := reposource.ParseNpmDependency("left-pad@1.3.1")
 	require.NoError(t, err)
 
 	info, err := client.GetDependencyInfo(ctx, presentDep)
@@ -112,7 +112,7 @@ func TestGetPackage(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	pkg, err := reposource.ParseNPMPackageFromPackageSyntax("is-sorted")
+	pkg, err := reposource.ParseNpmPackageFromPackageSyntax("is-sorted")
 	require.Nil(t, err)
 	info, err := client.GetPackageInfo(ctx, pkg)
 	require.Nil(t, err)
@@ -129,12 +129,12 @@ func TestGetDependencyInfo(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep, err := reposource.ParseNPMDependency("left-pad@1.3.0")
+	dep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
 	require.NoError(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.NoError(t, err)
 	require.NotNil(t, info)
-	dep, err = reposource.ParseNPMDependency("left-pad@1.3.1")
+	dep, err = reposource.ParseNpmDependency("left-pad@1.3.1")
 	require.NoError(t, err)
 	info, err = client.GetDependencyInfo(ctx, dep)
 	require.Nil(t, info)
@@ -145,7 +145,7 @@ func TestFetchSources(t *testing.T) {
 	ctx := context.Background()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep, err := reposource.ParseNPMDependency("is-sorted@1.0.0")
+	dep, err := reposource.ParseNpmDependency("is-sorted@1.0.0")
 	require.Nil(t, err)
 	readSeekCloser, err := client.FetchTarball(ctx, dep)
 	require.Nil(t, err)
@@ -180,7 +180,7 @@ func TestNoPanicOnNonexistentRegistry(t *testing.T) {
 	client, stop := newTestHTTPClient(t)
 	defer stop()
 	client.registryURL = "http://not-an-npm-registry.sourcegraph.com"
-	dep, err := reposource.ParseNPMDependency("left-pad@1.3.0")
+	dep, err := reposource.ParseNpmDependency("left-pad@1.3.0")
 	require.Nil(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.Error(t, err)

@@ -16,7 +16,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, git
 	for _, fn := range []func(pkg precise.Package) (api.RepoName, string, bool){
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
-		inferNPMRepositoryAndRevision,
+		inferNpmRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -55,13 +55,13 @@ func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	return api.RepoName(pkg.Name), "v" + pkg.Version, true
 }
 
-func inferNPMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependenciesStore.NPMPackagesScheme {
+func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependenciesStore.NpmPackagesScheme {
 		return "", "", false
 	}
-	npmPkg, err := reposource.ParseNPMPackageFromPackageSyntax(pkg.Name)
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
 	if err != nil {
-		log15.Error("invalid NPM package name in database", "error", err)
+		log15.Error("invalid npm package name in database", "error", err)
 		return "", "", false
 	}
 	return npmPkg.RepoName(), "v" + pkg.Version, true

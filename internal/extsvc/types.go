@@ -84,7 +84,7 @@ const (
 	KindPhabricator     = "PHABRICATOR"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPagure          = "PAGURE"
-	KindNPMPackages     = "NPMPACKAGES"
+	KindNpmPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
 )
 
@@ -127,8 +127,8 @@ const (
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
 
-	// TypeNPMPackages is the (api.ExternalRepoSpec).ServiceType value for NPM packages (JavaScript/TypeScript ecosystem libraries).
-	TypeNPMPackages = "npmPackages"
+	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
+	TypeNpmPackages = "npmPackages"
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
@@ -187,8 +187,8 @@ func TypeToKind(t string) string {
 		return KindPerforce
 	case TypePhabricator:
 		return KindPhabricator
-	case TypeNPMPackages:
-		return KindNPMPackages
+	case TypeNpmPackages:
+		return KindNpmPackages
 	case TypeJVMPackages:
 		return KindJVMPackages
 	case TypePagure:
@@ -205,7 +205,7 @@ var (
 	bbsLower = strings.ToLower(TypeBitbucketServer)
 	bbcLower = strings.ToLower(TypeBitbucketCloud)
 	jvmLower = strings.ToLower(TypeJVMPackages)
-	npmLower = strings.ToLower(TypeNPMPackages)
+	npmLower = strings.ToLower(TypeNpmPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -231,7 +231,7 @@ func ParseServiceType(s string) (string, bool) {
 	case jvmLower:
 		return TypeJVMPackages, true
 	case npmLower:
-		return TypeNPMPackages, true
+		return TypeNpmPackages, true
 	case TypePagure:
 		return TypePagure, true
 	case TypeOther:
@@ -308,8 +308,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.JVMPackagesConnection{}
 	case KindPagure:
 		cfg = &schema.PagureConnection{}
-	case KindNPMPackages:
-		cfg = &schema.NPMPackagesConnection{}
+	case KindNpmPackages:
+		cfg = &schema.NpmPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -542,8 +542,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return c.P4Port, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
-	case *schema.NPMPackagesConnection:
-		return KindNPMPackages, nil
+	case *schema.NpmPackagesConnection:
+		return KindNpmPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:

@@ -21,7 +21,7 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 
 	packages := map[string]*npm.PackageInfo{}
 	for _, dep := range deps {
-		d, err := reposource.ParseNPMDependency(dep)
+		d, err := reposource.ParseNpmDependency(dep)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -47,7 +47,7 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 
 var _ npm.Client = &MockClient{}
 
-func (m *MockClient) GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (info *npm.PackageInfo, err error) {
+func (m *MockClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackage) (info *npm.PackageInfo, err error) {
 	info = m.Packages[pkg.PackageSyntax()]
 	if info == nil {
 		return nil, errors.Newf("package not found: %s", pkg.PackageSyntax())
@@ -55,8 +55,8 @@ func (m *MockClient) GetPackageInfo(ctx context.Context, pkg *reposource.NPMPack
 	return info, nil
 }
 
-func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (info *npm.DependencyInfo, err error) {
-	pkg, err := m.GetPackageInfo(ctx, dep.NPMPackage)
+func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmDependency) (info *npm.DependencyInfo, err error) {
+	pkg, err := m.GetPackageInfo(ctx, dep.NpmPackage)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NPMD
 	return info, nil
 }
 
-func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NPMDependency) (io.ReadCloser, error) {
+func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error) {
 	info, ok := m.Packages[dep.PackageSyntax()]
 	if !ok {
 		return nil, errors.Newf("Unknown dependency: %s", dep.PackageManagerSyntax())

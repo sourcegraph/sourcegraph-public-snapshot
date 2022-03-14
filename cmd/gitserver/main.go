@@ -394,12 +394,12 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DepsStore: codeintelDB}, nil
-	case extsvc.TypeNPMPackages:
-		var c schema.NPMPackagesConnection
+	case extsvc.TypeNpmPackages:
+		var c schema.NpmPackagesConnection
 		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewNPMPackagesSyncer(c, codeintelDB, nil), nil
+		return server.NewNpmPackagesSyncer(c, codeintelDB, nil), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

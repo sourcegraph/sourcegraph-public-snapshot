@@ -59,7 +59,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 
 	have, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
-		Scheme: NPMPackagesScheme,
+		Scheme: NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)

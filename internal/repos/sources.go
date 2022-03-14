@@ -61,8 +61,8 @@ func NewSource(externalServicesStore database.ExternalServiceStore, svc *types.E
 		return NewJVMPackagesSource(svc)
 	case extsvc.KindPagure:
 		return NewPagureSource(svc, cf)
-	case extsvc.KindNPMPackages:
-		return NewNPMPackagesSource(svc)
+	case extsvc.KindNpmPackages:
+		return NewNpmPackagesSource(svc)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:

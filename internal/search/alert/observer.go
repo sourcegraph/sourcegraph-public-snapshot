@@ -90,8 +90,8 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
 		if len(dependencies) > 0 {
-			needsNPMConfig, err := needsNPMPackageHostConfiguration(ctx, o.Db)
-			if err == nil && needsNPMConfig {
+			needsNpmConfig, err := needsNpmPackageHostConfiguration(ctx, o.Db)
+			if err == nil && needsNpmConfig {
 				if isSiteAdmin {
 					return &search.Alert{
 						Title:       "No package hosts configured",
@@ -124,7 +124,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	if len(dependencies) > 0 {
 		return &search.Alert{
 			Title:       "No dependency repositories found",
-			Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly NPM dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+			Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
 		}
 	}
 
@@ -362,9 +362,9 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 	return count == 0, nil
 }
 
-func needsNPMPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
+func needsNpmPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
 	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindNPMPackages},
+		Kinds: []string{extsvc.KindNpmPackages},
 	})
 	if err != nil {
 		return false, err

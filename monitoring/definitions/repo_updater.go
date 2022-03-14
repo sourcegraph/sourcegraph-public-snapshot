@@ -462,7 +462,7 @@ func RepoUpdater() *monitoring.Container {
 			shared.Batches.NewServiceGroup(containerName),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNPMGroup(containerName),
+			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),

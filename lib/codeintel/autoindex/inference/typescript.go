@@ -112,14 +112,14 @@ func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []co
 
 func checkLernaFile(gitclient GitClient, path string, pathMap pathMap) (isYarn bool) {
 	lernaConfig := struct {
-		NPMClient string `json:"npmClient"`
+		NpmClient string `json:"npmClient"`
 	}{}
 
 	for _, dir := range ancestorDirs(path) {
 		if pathMap.contains(dir, "lerna.json") {
 			lernaPath := filepath.Join(dir, "lerna.json")
 			if b, err := gitclient.RawContents(context.TODO(), lernaPath); err == nil {
-				if err := json.Unmarshal(b, &lernaConfig); err == nil && lernaConfig.NPMClient == "yarn" {
+				if err := json.Unmarshal(b, &lernaConfig); err == nil && lernaConfig.NpmClient == "yarn" {
 					return true
 				}
 			}

@@ -41,7 +41,7 @@ func parsePackageLockDependencies(in map[string]*packageLockDependency) ([]repos
 	)
 
 	for name, d := range in {
-		dep, err := reposource.ParseNPMDependency(name + "@" + d.Version)
+		dep, err := reposource.ParseNpmDependency(name + "@" + d.Version)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		} else {
@@ -101,7 +101,7 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageDependency, err er
 				return nil, errors.New("invalid yarn.lock format")
 			}
 
-			dep, err := reposource.ParseNPMDependency(name + "@" + version)
+			dep, err := reposource.ParseNpmDependency(name + "@" + version)
 			if err != nil {
 				errs = errors.Append(errs, err)
 			} else {
