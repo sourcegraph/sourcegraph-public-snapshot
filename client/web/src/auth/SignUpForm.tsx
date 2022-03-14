@@ -28,7 +28,6 @@ import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignupEmailField } from './SignupEmailField'
-import { nil } from 'ajv'
 
 export interface SignUpArguments {
     email: string
