@@ -422,15 +422,23 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             onClick: onSignUpClick,
                         }}
                         icon={<SearchBetaIcon />}
-                        className="mr-3"
+                        className="mr-3 percy-display-none"
                         onClose={onCtaAlertDismissed}
                     />
                 )}
                 {ctaToDisplay === 'browser' && (
-                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
+                    <BrowserExtensionAlert
+                        className="mr-3 percy-display-none"
+                        onAlertDismissed={onCtaAlertDismissed}
+                        page="search"
+                    />
                 )}
                 {ctaToDisplay === 'ide' && (
-                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
+                    <IDEExtensionAlert
+                        className="mr-3 percy-display-none"
+                        onAlertDismissed={onCtaAlertDismissed}
+                        page="search"
+                    />
                 )}
                 <StreamingSearchResultsList
                     {...props}
