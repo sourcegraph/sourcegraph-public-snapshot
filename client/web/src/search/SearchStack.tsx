@@ -186,7 +186,8 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
     // Handles key events on the whole list
     const handleKey = useCallback(
         (event: KeyboardEvent): void => {
-            const hasMeta = (isMacPlatform_ && event.metaKey) || (!isMacPlatform_ && event.ctrlKey)
+            const hasMacMeta = isMacPlatform_ && event.metaKey
+            const hasMeta = hasMacMeta || (!isMacPlatform_ && event.ctrlKey)
 
             if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
                 // Ignore any events originating from an annotations input
@@ -211,6 +212,12 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                 // Delete selected entries
                 case 'Delete':
                     if (selectedEntries.length > 0) {
+                        deleteSelectedEntries()
+                    }
+                    break
+                // On macOS we also support CMD+Backpace for deletion
+                case 'Backspace':
+                    if (hasMacMeta && selectedEntries.length > 0) {
                         deleteSelectedEntries()
                     }
                     break
