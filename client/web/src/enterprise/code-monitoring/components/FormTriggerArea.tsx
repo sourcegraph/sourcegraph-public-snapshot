@@ -181,7 +181,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         if (isTriggerQueryComplete) {
             return 'is-valid'
         }
-        return 'is-Invalid'
+        return 'is-invalid'
     }, [isTriggerQueryComplete, queryState.query])
 
     return (
