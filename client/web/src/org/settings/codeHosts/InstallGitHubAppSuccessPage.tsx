@@ -6,7 +6,7 @@ import { Card, CardBody, PageHeader } from '@sourcegraph/wildcard'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 
-export const InstallGithubAppSuccessPage: React.FunctionComponent<{}> = () => (
+export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => (
     <Page>
         <PageTitle>Success!</PageTitle>
         <PageHeader
