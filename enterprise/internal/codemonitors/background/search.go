@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -103,8 +105,21 @@ func doSearch(ctx context.Context, db database.DB, query string, settings *schem
 		return nil, err
 	}
 
+	// Inline job creation so we can mutate the commit job before running it
+	jobArgs := searchClient.JobArgs(inputs)
+	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	if err != nil {
+		return nil, err
+	}
+
+	planJob, err := job.FromExpandedPlan(jobArgs, plan)
+	if err != nil {
+		return nil, err
+	}
+
+	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	_, err = searchClient.Execute(ctx, agg, inputs)
+	_, err = planJob.Run(ctx, db, agg)
 	if err != nil {
 		return nil, err
 	}
