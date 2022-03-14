@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/slack-go/slack"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
 )
@@ -22,6 +24,8 @@ type Flags struct {
 	Pretend                bool
 	GuessSourcegraphCommit bool
 	Environment            string
+	SlackToken             string
+	SlackAnnounceWebhook   string
 }
 
 func (f *Flags) Parse() {
@@ -31,6 +35,8 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.MockLiveCommit, "mock.live-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
 	flag.BoolVar(&f.Pretend, "pretend", false, "Pretend to post notifications, printing to stdout instead")
 	flag.BoolVar(&f.GuessSourcegraphCommit, "sourcegraph.guess-commit", false, "Attempt at deducting the deployed commit from the changes in the diff")
+	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
+	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.Parse()
 }
 
@@ -86,14 +92,34 @@ func main() {
 		log.Fatal(err)
 	}
 
+	slc := slack.New(flags.SlackToken)
+	teammates := team.NewTeammateResolver(ghc, slc)
+
 	if flags.Pretend {
-		out, _ := renderComment(report)
-		fmt.Println(out)
+		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
-			fmt.Println(pr.GetNumber())
+			fmt.Println("-", pr.GetNumber())
 		}
+		out, err := renderComment(report)
+		if err != nil {
+			log.Fatalf("can't render GitHub comment %q", err)
+		}
+		fmt.Println(out)
+		fmt.Println("Slack\n---")
+		out, err = slackSummary(ctx, teammates, report)
+		if err != nil {
+			log.Fatalf("can't render Slack post %q", err)
+		}
+		fmt.Println(out)
 	} else {
-		panic("not implemented")
+		out, err := slackSummary(ctx, teammates, report)
+		if err != nil {
+			log.Fatalf("can't render Slack post %q", err)
+		}
+		err = postSlackUpdate(flags.SlackAnnounceWebhook, out)
+		if err != nil {
+			log.Fatalf("can't post Slack update %q", err)
+		}
 	}
 }
 

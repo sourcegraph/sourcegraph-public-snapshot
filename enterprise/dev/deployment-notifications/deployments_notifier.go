@@ -112,6 +112,7 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 	}
 
 	report := report{
+		Environment:       dn.vr.Environment(),
 		PullRequests:      prs,
 		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
 		Apps:              dn.deployedApps(),
@@ -156,6 +157,7 @@ func renderComment(report *report) (string, error) {
 }
 
 type report struct {
+	Environment       string
 	PullRequests      []*github.PullRequest
 	DeployedAt        string
 	Apps              []string
