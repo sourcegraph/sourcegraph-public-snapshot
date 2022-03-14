@@ -42,7 +42,7 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 	return nil 
 }
 
-// This validates the password using the Paassord Policy configured
+// This validates the password using the Password Policy configured
 func validatePasswordUsingPolicy(passwd string) error {
 	letters := 0
 	numbers := false
