@@ -143,6 +143,21 @@ const mockSymbolStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
+const mockFilePathStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [
+            {
+                type: 'path',
+                repository: 'github.com/sourcegraph/sourcegraph',
+                path: 'client/web/index.ts',
+                commit: 'branch',
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
+
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     ...highlightFileResult,
@@ -297,6 +312,8 @@ describe('Search Notebook', () => {
     })
 
     it('Should add file block and edit it', async () => {
+        testContext.overrideSearchStreamEvents(mockFilePathStreamEvents)
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
@@ -308,27 +325,19 @@ describe('Search Notebook', () => {
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Edit new file block
-        await driver.page.click(fileBlockSelector)
-
+        await driver.page.click(`${fileBlockSelector} .monaco-editor`)
         await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-repository-name-input"]`,
-            newText: 'github.com/sourcegraph/sourcegraph',
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
-        // Wait for input to validate
-        await driver.page.waitForSelector(
-            `${fileBlockSelector} [data-testid="file-block-repository-name-input"].is-valid`
-        )
-
-        await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-file-path-input"]`,
+            selector: `${fileBlockSelector} .monaco-editor`,
             newText: 'client/web/file.tsx',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
-        // Wait for input to validate
-        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-block-file-path-input"].is-valid`)
+
+        // Wait for file suggestion button and click it
+        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-suggestion-button"]`, {
+            visible: true,
+        })
+        await driver.page.click(`${fileBlockSelector} [data-testid="file-suggestion-button"]`)
 
         // Wait for highlighted code to load
         await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
@@ -340,7 +349,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
+        expect(fileBlockHeaderText).toEqual('client/web/index.ts#1-20github.com/sourcegraph/sourcegraph@branch')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
@@ -383,9 +392,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual(
-            'github.com/sourcegraph/sourcegraph/client/search/src/index.ts@main, lines 30-32'
-        )
+        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
     })
 
     it('Should update the notebook title', async () => {
