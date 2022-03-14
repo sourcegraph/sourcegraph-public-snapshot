@@ -210,7 +210,6 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                     break
                 // Delete selected entries
                 case 'Delete':
-                case 'Backspace':
                     if (selectedEntries.length > 0) {
                         deleteSelectedEntries()
                     }
