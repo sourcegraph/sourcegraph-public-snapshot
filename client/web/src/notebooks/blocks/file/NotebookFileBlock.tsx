@@ -15,6 +15,7 @@ import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
@@ -22,7 +23,7 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
-import { parseFileBlockInput, parseLineRange, serializeLineRange } from '../../serialize'
+import { parseFileBlockInput, serializeLineRange } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
@@ -60,9 +61,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
 }) => {
     const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
     const [isInputFocused, setIsInputFocused] = useState(false)
-    const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(input.lineRange))
     const [fileQueryInput, setFileQueryInput] = useState('')
-    const debouncedSetLineRangeInput = useMemo(() => debounce(setLineRangeInput, 300), [setLineRangeInput])
     const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
 
     const onFileSelected = useCallback(
@@ -71,6 +70,18 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             onRunBlock(id)
         },
         [id, onBlockInputChange, onRunBlock]
+    )
+
+    const onLineRangeChange = useCallback(
+        (lineRange: IHighlightLineRange | null) => {
+            onFileSelected({
+                repositoryName: input.repositoryName,
+                revision: input.revision,
+                filePath: input.filePath,
+                lineRange,
+            })
+        },
+        [input.filePath, input.repositoryName, input.revision, onFileSelected]
     )
 
     const onEnterBlock = useCallback(() => setShowInputs(true), [setShowInputs])
@@ -128,27 +139,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         [isReadOnly, toggleEditMenuAction, linkMenuAction, commonMenuActions]
     )
 
-    const isLineRangeValid = useMemo(
-        () => (lineRangeInput.trim() ? parseLineRange(lineRangeInput) !== null : undefined),
-        [lineRangeInput]
-    )
-
-    // useEffect(() => {
-    //     const parsedLineRange = parseLineRange(lineRangeInput)
-    //     onBlockInputChange(id, { type: 'file', input: { ...input, lineRange: parsedLineRange } })
-    //     if (isFileSelected) {
-    //         onRunBlock(id)
-    //     }
-    // }, [id, input, isFileSelected, lineRangeInput, onBlockInputChange, onRunBlock])
-
-    // Automatically fetch the highlighted file on each input change, if all inputs are valid
-    // useEffect(() => {
-    //     if (!showInputs || !areInputsValid) {
-    //         return
-    //     }
-    //     onRunBlock(id)
-    // }, [id, input, showInputs, areInputsValid, onRunBlock])
-
     const onFileURLPaste = useCallback(
         (event: ClipboardEvent) => {
             if (!isSelected || !showInputs || !event.clipboardData) {
@@ -201,13 +191,12 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {showInputs && (
                 <NotebookFileBlockInputs
                     id={id}
+                    lineRange={input.lineRange}
+                    onLineRangeChange={onLineRangeChange}
                     queryInput={fileQueryInput}
                     setQueryInput={setFileQueryInput}
                     debouncedSetQueryInput={debouncedSetFileQueryInput}
                     onRunBlock={hideInputs}
-                    lineRangeInput={lineRangeInput}
-                    isLineRangeValid={isLineRangeValid}
-                    setLineRangeInput={debouncedSetLineRangeInput}
                     setIsInputFocused={setIsInputFocused}
                     onSelectBlock={onSelectBlock}
                     onFileSelected={onFileSelected}
