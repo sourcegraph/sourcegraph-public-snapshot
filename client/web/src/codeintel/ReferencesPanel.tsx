@@ -44,22 +44,18 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
-    CoolCodeIntelHighlightedBlobResult,
-    CoolCodeIntelHighlightedBlobVariables,
     LocationFields,
+    ReferencesPanelHighlightedBlobResult,
+    ReferencesPanelHighlightedBlobVariables,
 } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
-import styles from './CoolCodeIntel.module.scss'
-import { FETCH_HIGHLIGHTED_BLOB } from './CoolCodeIntelQueries'
+import styles from './ReferencesPanel.module.scss'
+import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
-
-export interface GlobalCoolCodeIntelProps {
-    coolCodeIntelEnabled: boolean
-}
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
@@ -527,8 +523,8 @@ const SideBlob: React.FunctionComponent<
     }
 > = props => {
     const { data, error, loading } = useQuery<
-        CoolCodeIntelHighlightedBlobResult,
-        CoolCodeIntelHighlightedBlobVariables
+        ReferencesPanelHighlightedBlobResult,
+        ReferencesPanelHighlightedBlobVariables
     >(FETCH_HIGHLIGHTED_BLOB, {
         variables: {
             repository: props.activeLocation.resource.repository.name,

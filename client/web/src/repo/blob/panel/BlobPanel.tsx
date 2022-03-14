@@ -23,7 +23,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { ReferencesPanelWithMemoryRouter } from '../../../global/CoolCodeIntel'
+import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
