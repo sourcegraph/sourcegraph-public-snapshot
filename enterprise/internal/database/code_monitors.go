@@ -80,6 +80,9 @@ type CodeMonitorStore interface {
 	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
+
+	UpsertLastSearched(ctx context.Context, monitorID int64, argsHash int64, lastSearched []string) error
+	GetLastSearched(ctx context.Context, monitorID int64, argsHash int64) ([]string, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models

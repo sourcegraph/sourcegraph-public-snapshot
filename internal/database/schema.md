@@ -456,6 +456,26 @@ Referenced by:
 
 ```
 
+# Table "public.cm_last_searched"
+```
+   Column    |  Type  | Collation | Nullable | Default 
+-------------+--------+-----------+----------+---------
+ monitor_id  | bigint |           | not null | 
+ args_hash   | bigint |           | not null | 
+ commit_oids | text[] |           | not null | 
+Indexes:
+    "cm_last_searched_pkey" PRIMARY KEY, btree (monitor_id, args_hash)
+Foreign-key constraints:
+    "cm_last_searched_monitor_id_fkey" FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE
+
+```
+
+The last searched commit hashes for the given code monitor and unique set of search arguments
+
+**args_hash**: A unique hash of the gitserver search arguments to identify this search job
+
+**commit_oids**: The set of commit OIDs that was previously successfully searched and should be excluded on the next run
+
 # Table "public.cm_monitors"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -478,6 +498,7 @@ Foreign-key constraints:
     "cm_monitors_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 Referenced by:
     TABLE "cm_emails" CONSTRAINT "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_monitor_id_fkey" FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_slack_webhooks" CONSTRAINT "cm_slack_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_queries" CONSTRAINT "cm_triggers_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
