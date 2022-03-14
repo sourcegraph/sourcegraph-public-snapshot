@@ -2,7 +2,7 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ActionButtonDescriptor } from '../util/contributions'
 
@@ -28,7 +28,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
             <PageHeader
                 path={[{ icon: PuzzleOutlineIcon, text: 'Extensions' }]}
                 actions={props.actionButtons.map(
-                    ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
+                    ({ condition = () => true, to, icon: ButtonIcon, label, tooltip }) =>
                         condition(props) && (
                             <Button
                                 className="ml-2"
@@ -38,7 +38,7 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
                                 variant="secondary"
                                 as={Link}
                             >
-                                {Icon && <Icon className="icon-inline" />} {label}
+                                {ButtonIcon && <Icon as={ButtonIcon} />} {label}
                             </Button>
                         )
                 )}

@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -43,14 +43,14 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <CloudOutlineIcon className="icon-inline" /> Not yet cloned
+                        <Icon as={CloudOutlineIcon} /> Not yet cloned
                     </small>
                 )}
             </div>
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <CloudDownloadIcon className="icon-inline" /> Clone now
+                        <Icon as={CloudDownloadIcon} /> Clone now
                     </Button>
                 )}{' '}
                 {
@@ -61,7 +61,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
                         size="sm"
                         as={Link}
                     >
-                        <SettingsIcon className="icon-inline" /> Settings
+                        <Icon as={SettingsIcon} /> Settings
                     </Button>
                 }{' '}
             </div>

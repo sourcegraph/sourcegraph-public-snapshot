@@ -8,7 +8,7 @@ import React, { useMemo, useEffect } from 'react'
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -155,7 +155,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                         )}
                         {repositoryURL && (
                             <div className="d-flex">
-                                {repositoryURL.hostname === 'github.com' && <GithubIcon className="icon-inline mr-1" />}
+                                {repositoryURL.hostname === 'github.com' && <Icon className="mr-1" as={GithubIcon} />}
                                 <Link
                                     to={repositoryURL.href}
                                     rel="nofollow noreferrer noopener"

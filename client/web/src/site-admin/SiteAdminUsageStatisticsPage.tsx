@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -255,7 +255,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                     variant="secondary"
                     as="a"
                 >
-                    <FileDownloadIcon className="icon-inline" /> Download usage stats archive
+                    <Icon as={FileDownloadIcon} /> Download usage stats archive
                 </Button>
 
                 {this.state.stats && (

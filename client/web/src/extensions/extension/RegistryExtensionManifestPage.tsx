@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -75,15 +75,16 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
                         <h3 className="mb-0 mr-1">Manifest</h3>
-                        <InformationOutlineIcon
-                            className="icon-inline text-muted"
+                        <Icon
+                            className="text-muted"
                             data-tooltip="The published JSON description of how to run or access the extension"
+                            as={InformationOutlineIcon}
                         />
                     </div>
                     <div>
                         {this.props.extension.manifest && (
                             <Button onClick={this.onViewModeButtonClick} variant="secondary">
-                                <EyeIcon className="icon-inline" /> Use{' '}
+                                <Icon as={EyeIcon} /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </Button>
                         )}{' '}

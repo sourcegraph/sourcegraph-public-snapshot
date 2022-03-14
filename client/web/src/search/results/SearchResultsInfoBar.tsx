@@ -17,7 +17,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Link, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, useLocalStorage, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -140,7 +140,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <FormatQuoteOpenIcon className="icon-inline" />
+                <Icon as={FormatQuoteOpenIcon} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -233,7 +233,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     className="create-code-monitor-button"
                     button={
                         <>
-                            <CodeMonitoringLogo className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={CodeMonitoringLogo} />
                             Monitor
                         </>
                     }
@@ -269,7 +269,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     className="test-save-search-link"
                     button={
                         <>
-                            <BookmarkOutlineIcon className="icon-inline mr-1" />
+                            <Icon className="mr-1" as={BookmarkOutlineIcon} />
                             Save search
                         </>
                     }
@@ -313,9 +313,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     variant="secondary"
                     size="sm"
                 >
-                    <MenuIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={MenuIcon} />
                     Filters
-                    {showFilters ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                    <Icon as={showFilters ? MenuUpIcon : MenuDownIcon} />
                 </Button>
 
                 {props.stats}
@@ -373,11 +373,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     variant="secondary"
                                     size="sm"
                                 >
-                                    {props.allExpanded ? (
-                                        <ArrowCollapseUpIcon className="icon-inline mr-0" />
-                                    ) : (
-                                        <ArrowExpandDownIcon className="icon-inline mr-0" />
-                                    )}
+                                    <Icon
+                                        className="mr-0"
+                                        as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}
+                                    />
                                 </Button>
                             </li>
                         </>

@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import styles from './ModalVideo.module.scss'
 
@@ -83,7 +83,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >
-                                <CloseIcon className="icon-inline" />
+                                <Icon as={CloseIcon} />
                             </Button>
                         </div>
                         <div className="w-100">
