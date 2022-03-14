@@ -10,26 +10,41 @@
 ;  (#match? @_id ".*Query$")
 ; )
 
+;; TODO: It would be cool to explore trying to guess whether
+;; something is a local or not to use as modules, but let's
+;; leave that for smarter parsers than us.
+;; I will leave this as an example for later though.
+; (
+;  (call_expression
+;   function: (selector_expression
+;    operand: (identifier) @variable.module (#is-not? @variable.module local)
+;    field: (field_identifier))))
+
+
+;; Builtin types
+
+((type_identifier) @type.builtin
+ (#match? @type.builtin 
+  "(bool|byte|complex128|complex64|error|float32|float64|int|int16|int32|int64|int8|rune|string|uint|uint16|uint32|uint64|uint8|uintptr)"
+    ))
+
+;; Builtin functions
+
+((identifier) @function.builtin
+  (#match? @function.builtin
+   "(append|cap|close|complex|copy|delete|imag|len|make|new|panic|print|println|real|recover)"))
+
 ; Function calls
 
 (parameter_declaration (identifier) @variable.parameter)
 (variadic_parameter_declaration (identifier) @variable.parameter)
-
-; (call_expression
-;  function: (selector_expression
-;    operand: (identifier)
-;    field: (field_identifier) @identifier.function)
-;  arguments: (_))
-;
-; (call_expression
-;  function: (identifier) @identifier)
 
 (call_expression
   function: (identifier) @identifer.function)
 
 (call_expression
   function: (selector_expression
-    field: (field_identifier) @identifier.function))
+    field: (field_identifier) @function))
 
 ; Function definitions
 
@@ -124,51 +139,6 @@
 ] @conditional
 
 
-;; Builtin types
-
-((type_identifier) @type.builtin
-  (#any-of? @type.builtin
-            "bool"
-            "byte"
-            "complex128"
-            "complex64"
-            "error"
-            "float32"
-            "float64"
-            "int"
-            "int16"
-            "int32"
-            "int64"
-            "int8"
-            "rune"
-            "string"
-            "uint"
-            "uint16"
-            "uint32"
-            "uint64"
-            "uint8"
-            "uintptr"))
-
-
-;; Builtin functions
-
-; ((identifier) @function.builtin
-;   (#any-of? @function.builtin
-;             "append"
-;             "cap"
-;             "close"
-;             "complex"
-;             "copy"
-;             "delete"
-;             "imag"
-;             "len"
-;             "make"
-;             "new"
-;             "panic"
-;             "print"
-;             "println"
-;             "real"
-;             "recover"))
 
 
 ; Delimiters
@@ -207,15 +177,6 @@
 
 (ERROR) @error
 
-
-; (
-;  (const_spec
-;   name: (identifier) @_id
-;   value: (expression_list (raw_string_literal) @keyword))
-;
-;  (#match? @_id ".*Query$")
-; )
-
 ;;
 ; Identifiers
 
@@ -226,6 +187,3 @@
 (type_identifier) @type
 (field_identifier) @property
 (identifier) @variable
-
-
-

@@ -38,7 +38,6 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("function",                SyntaxKind::IdentifierFunctionDefinition),
     ("function.builtin",        SyntaxKind::IdentifierBuiltin),
     ("identifier",              SyntaxKind::Identifier),
-    ("identifier.function",     SyntaxKind::IdentifierFunctionDefinition),
     ("include",                 SyntaxKind::IdentifierKeyword),
     ("keyword",                 SyntaxKind::IdentifierKeyword),
     ("keyword.function",        SyntaxKind::IdentifierKeyword),
@@ -54,7 +53,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string.special",          SyntaxKind::StringLiteral),
     ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
     ("type",                    SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierType),
+    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
     ("variable",                SyntaxKind::Identifier),
     ("variable.builtin",        SyntaxKind::UnspecifiedSyntaxKind),
     ("variable.parameter",      SyntaxKind::IdentifierParameter),
@@ -432,6 +431,7 @@ import "fmt"
 
 func main() {
 	fmt.Println("Hello, world", 5)
+
 }
 "#;
 

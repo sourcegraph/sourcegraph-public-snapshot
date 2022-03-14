@@ -713,9 +713,7 @@
     --hl-red: #ffb0af;
     --hl-green-1: #d3f9d8;
     --hl-green-2: #a3be8c;
-    // --hl-purple: #b48ead;
     --hl-purple: #6c71c4;
-    // --hl-purple: #C678DD;
     --hl-orange: #d08770;
     --hl-brown: #ab7967;
     --hl-black: #2b303b;
@@ -723,6 +721,11 @@
     --hl-bg-red: #bf616a;
     --hl-bg-dark-red: #350b10;
     --hl-bg-dark-green: #0e2414;
+
+    // TODO: Decide on a purple that is actually useful.
+    // Current purple looks very dull
+    // --hl-purple: #b48ead;
+    // --hl-purple: #C678DD;
 
     .hl-source,
     .hl-text {
@@ -921,10 +924,10 @@
         color: var(--hl-dark-blue-1);
     }
     .hl-typed-Identifier {
-        color: var(--hl-blue);
+        color: var(--hl-white);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-blue);
+        color: var(--hl-dark-blue-1);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierNull {
@@ -935,17 +938,17 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--hl-dark-blue-1);
     }
     .hl-typed-IdentifierParameter {
-        color: var(--hl-blue);
+        color: var(--hl-white);
         font-weight: bold;
     }
     .hl-typed-IdentifierLocal {
-        color: var(--hl-blue);
+        color: var(--hl-white);
     }
     .hl-typed-IdentifierShadowed {
         color: var(--hl-blue);
@@ -966,13 +969,13 @@
         color: var(--hl-yellow);
     }
     .hl-typed-IdentifierType {
-        color: var(--hl-blue);
+        color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-blue);
+        color: var(--hl-dark-blue-1);
     }
     .hl-typed-IdentifierAttribute {
-        color: var(--hl-purple);
+        color: var(--hl-blue);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995

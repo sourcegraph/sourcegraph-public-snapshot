@@ -1,0 +1,90 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 491
+expression: "dump_document(&document, &contents)"
+
+---
+  package main
+//^^^^^^^ IdentifierKeyword
+//        ^^^^ IdentifierModule
+  
+  import (
+//^^^^^^ IdentifierKeyword
+   "fmt"
+// ^^^^^ StringLiteral
+   "strings"
+// ^^^^^^^^^ StringLiteral
+  )
+  
+  func example(x int) {
+//^^^^ IdentifierKeyword
+//     ^^^^^^^ IdentifierFunctionDefinition
+//             ^ IdentifierParameter
+//               ^^^ IdentifierBuiltinType
+   fmt.Println(x)
+// ^^^ Identifier
+//     ^^^^^^^ IdentifierFunctionDefinition
+//             ^ IdentifierParameter
+  }
+  
+  type MyThing struct{}
+//^^^^ IdentifierKeyword
+//     ^^^^^^^ IdentifierType
+//             ^^^^^^ IdentifierKeyword
+  
+  func main() {
+//^^^^ IdentifierKeyword
+//     ^^^^ IdentifierFunctionDefinition
+   example(5)
+// ^^^^^^^ IdentifierFunctionDefinition
+//         ^ NumericLiteral
+  
+   x := []bool{true}
+// ^ Identifier
+//   ^^ IdentifierOperator
+//        ^^^^ IdentifierBuiltinType
+//             ^^^^ BooleanLiteral
+   x = append(x, false)
+// ^ Identifier
+//   ^ IdentifierOperator
+//     ^^^^^^ IdentifierBuiltin
+//            ^ Identifier
+//             ^ PunctuationDelimiter
+//               ^^^^^ BooleanLiteral
+   for row, line := range strings.Split(code, "\n") {
+// ^^^ IdentifierKeyword
+//     ^^^ Identifier
+//        ^ PunctuationDelimiter
+//          ^^^^ Identifier
+//               ^^ IdentifierOperator
+//                  ^^^^^ IdentifierKeyword
+//                        ^^^^^^^ Identifier
+//                                ^^^^^ IdentifierFunctionDefinition
+//                                      ^^^^ Identifier
+//                                          ^ PunctuationDelimiter
+//                                            ^ StringLiteral
+//                                             ^^ StringLiteral
+//                                               ^ StringLiteral
+    x := strings.Split("hello")
+//  ^ Identifier
+//    ^^ IdentifierOperator
+//       ^^^^^^^ Identifier
+//               ^^^^^ IdentifierFunctionDefinition
+//                     ^^^^^^^ StringLiteral
+    fmt.Println(row, line)
+//  ^^^ Identifier
+//      ^^^^^^^ IdentifierFunctionDefinition
+//              ^^^ Identifier
+//                 ^ PunctuationDelimiter
+//                   ^^^^ Identifier
+   }
+  
+   y := MyThing{}
+// ^ Identifier
+//   ^^ IdentifierOperator
+//      ^^^^^^^ IdentifierType
+   y.DoSomething()
+// ^ Identifier
+//   ^^^^^^^^^^^ IdentifierFunctionDefinition
+  }
+
