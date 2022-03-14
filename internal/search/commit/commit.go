@@ -40,8 +40,6 @@ type CommitSearch struct {
 	CodeMonitorSearchWrapper func(_ context.Context, _ database.DB, _ GitserverClient, doSearch func(*gitprotocol.SearchRequest) error) error `json:"-"`
 }
 
-type DoSearchFunc func(*gitprotocol.SearchRequest) error
-
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
 	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
