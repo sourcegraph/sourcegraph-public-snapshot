@@ -1,12 +1,14 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
-import styles from './Alert.module.scss'
 import { ALERT_VARIANTS } from './constants'
 import { getAlertStyle } from './utils'
+
+import styles from './Alert.module.scss'
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
     variant?: typeof ALERT_VARIANTS[number]

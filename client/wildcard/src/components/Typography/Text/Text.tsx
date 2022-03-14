@@ -1,10 +1,12 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../../types'
 import { TYPOGRAPHY_SIZES, TYPOGRAPHY_WEIGHTS } from '../constants'
-import typographyStyles from '../Typography.module.scss'
 import { getModeStyle, getAlignmentStyle, TypographyProps, getFontWeightStyle } from '../utils'
+
+import typographyStyles from '../Typography.module.scss'
 
 interface TextProps extends React.HTMLAttributes<HTMLParagraphElement>, TypographyProps {
     size?: typeof TYPOGRAPHY_SIZES[number]
