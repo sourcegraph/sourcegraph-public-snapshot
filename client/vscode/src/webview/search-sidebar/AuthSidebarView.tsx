@@ -168,18 +168,25 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 </a>{' '}
                 for a video guide on how to create an access token.
             </p>
+            {state === 'failure' && (
+                <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
+                    Unable to verify your access token for {hostname}. Please try again with a new access token.
+                </Alert>
+            )}
             <p className={classNames(styles.ctaButtonWrapperWithContextBelow)}>
                 <LoaderInput loading={state === 'validating'}>
                     <label htmlFor="access-token-input">Access Token</label>
                     <input
-                        className={classNames('input form-control', styles.ctaInput)}
+                        className={classNames('form-control', styles.ctaInput)}
                         id="access-token-input"
                         type="text"
                         name="token"
                         required={true}
+                        minLength={40}
                         autoFocus={true}
                         spellCheck={false}
                         disabled={state === 'validating'}
+                        formNoValidate={true}
                         placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                     />
                 </LoaderInput>
@@ -189,7 +196,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     <LoaderInput loading={state === 'validating'}>
                         <label htmlFor="private-url-input">Sourcegraph Instance URL</label>
                         <input
-                            className={classNames('input form-control', styles.ctaInput)}
+                            className={classNames('form-control', styles.ctaInput)}
                             id="private-url-input"
                             type="url"
                             name="instance-url"
@@ -209,11 +216,6 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
             >
                 Authenticate account
             </button>
-            {state === 'failure' && (
-                <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
-                    Unable to verify your access token for {hostname}. Please try again with a new access token.
-                </Alert>
-            )}
             {!usePrivateInstance ? (
                 <button
                     type="button"
@@ -231,13 +233,15 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     Not a private instance user?
                 </button>
             )}
-            <button
-                type="button"
-                className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
-                onClick={onSignUpClick}
-            >
-                Create an account
-            </button>
+            <div>
+                <button
+                    type="button"
+                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                    onClick={onSignUpClick}
+                >
+                    Create an account
+                </button>
+            </div>
         </>
     )
 }

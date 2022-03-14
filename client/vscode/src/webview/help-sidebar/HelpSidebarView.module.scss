@@ -1,0 +1,25 @@
+.sidebar-container {
+    padding: 0.125rem 0 0 0 !important;
+
+    font-size: var(--vscode-editor-font-size) !important;
+
+    &__sticky-box {
+        @media (--md-breakpoint-down) {
+            // Sidebar shouldn't be sticky in smaller screens
+            position: static !important;
+
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            column-gap: 1.5rem;
+        }
+    }
+}
+
+.item-container {
+    display: flex;
+    flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    flex-wrap: nowrap;
+}

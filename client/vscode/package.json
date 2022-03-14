@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "sourcegraph",
+  "name": "sourcegraph-vsce",
   "displayName": "Sourcegraph",
   "version": "2.2.0",
   "description": "Sourcegraph for VS Code",
@@ -79,6 +79,12 @@
           "type": "webview",
           "id": "sourcegraph.searchSidebar",
           "name": "Sourcegraph Search",
+          "visibility": "visible"
+        },
+        {
+          "type": "webview",
+          "id": "sourcegraph.helpSidebar",
+          "name": "Help and feedback",
           "visibility": "visible"
         },
         {

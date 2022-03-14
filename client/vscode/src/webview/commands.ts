@@ -1,3 +1,4 @@
+import { releaseProxy } from 'comlink'
 import { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
@@ -9,7 +10,11 @@ import { ExtensionCoreAPI } from '../contract'
 import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SearchPatternType } from '../graphql-operations'
 
-import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './initialize'
+import {
+    initializeHelpSidebarWebview,
+    initializeSearchPanelWebview,
+    initializeSearchSidebarWebview,
+} from './initialize'
 
 // Track current active webview panel to make sure only one panel exists at a time
 let currentSearchPanel: vscode.WebviewPanel | 'initializing' | undefined
@@ -125,6 +130,27 @@ export function registerWebviews({
                         if (webviewView.visible) {
                             openSearchPanelCommand()
                         }
+                    })
+                },
+            },
+            { webviewOptions: { retainContextWhenHidden: true } }
+        )
+    )
+
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(
+            'sourcegraph.helpSidebar',
+            {
+                // This typically will be called only once since `retainContextWhenHidden` is set to `true`.
+                resolveWebviewView: (webviewView, _context, _token) => {
+                    const { helpSidebarAPI } = initializeHelpSidebarWebview({
+                        extensionUri: context.extensionUri,
+                        extensionCoreAPI,
+                        webviewView,
+                    })
+
+                    webviewView.onDidDispose(() => {
+                        helpSidebarAPI[releaseProxy]()
                     })
                 },
             },
