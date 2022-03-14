@@ -1294,7 +1294,7 @@ func oldestUserPermissionsBatchSize() int {
 func oldestRepoPermissionsBatchSize() int {
 	batchSize := conf.Get().PermissionsSyncOldestRepos
 	if batchSize <= 0 {
-		return batchSize
+		return 10
 	}
 	return batchSize
 }
