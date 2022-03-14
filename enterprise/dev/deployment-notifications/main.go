@@ -16,11 +16,12 @@ import (
 )
 
 type Flags struct {
-	SourcegraphCommit string
-	MockLiveCommit    string
-	GitHubToken       string
-	Pretend           bool
-	Environment       string
+	SourcegraphCommit      string
+	MockLiveCommit         string
+	GitHubToken            string
+	Pretend                bool
+	GuessSourcegraphCommit bool
+	Environment            string
 }
 
 func (f *Flags) Parse() {
@@ -29,6 +30,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
 	flag.StringVar(&f.MockLiveCommit, "mock.live-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
 	flag.BoolVar(&f.Pretend, "pretend", false, "Pretend to post notifications, printing to stdout instead")
+	flag.BoolVar(&f.GuessSourcegraphCommit, "sourcegraph.guess-commit", false, "Attempt at deducting the deployed commit from the changes in the diff")
 	flag.Parse()
 }
 
@@ -40,8 +42,16 @@ func main() {
 	if flags.Environment == "" {
 		log.Fatalf("-enviroment must be specified: preprod or production.")
 	}
-	if flags.SourcegraphCommit == "" {
+	if flags.SourcegraphCommit == "" && !flags.GuessSourcegraphCommit {
 		log.Fatalf("-sourcegraph.commit must be specified.")
+	}
+
+	if flags.GuessSourcegraphCommit {
+		commit, err := guessSourcegraphCommit()
+		if err != nil {
+			log.Fatalf("could not guess commit from changes, %q", err)
+		}
+		flags.SourcegraphCommit = commit
 	}
 
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
@@ -69,6 +79,10 @@ func main() {
 
 	report, err := dn.Report(ctx)
 	if err != nil {
+		if errors.Is(err, ErrAlreadyDeployed) {
+			fmt.Println(":warning: Already deployed, skipping notifications and exiting normally.")
+			return
+		}
 		log.Fatal(err)
 	}
 
