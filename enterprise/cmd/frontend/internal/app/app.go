@@ -113,7 +113,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				http.Redirect(w, r, "/install-github-app-request", http.StatusFound)
 				return
 			}
-
 		}
 
 		state := r.URL.Query().Get("state")

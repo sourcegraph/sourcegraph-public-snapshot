@@ -57,11 +57,21 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/.setup/github-app-cloud?installation_id=21994992&setup_action=install&state=T3JnOjE%3D", nil)
-	ctx := a.WithActor(req.Context(), &a.Actor{UID: 1})
-	req = req.WithContext(ctx)
+
 	require.Nil(t, err)
 
 	h := newGitHubAppCloudSetupHandler(db, apiURL, client)
+
+	t.Run("user not logged in (no actor in context)", func(t *testing.T) {
+		resp := httptest.NewRecorder()
+		h.ServeHTTP(resp, req)
+
+		assert.Equal(t, http.StatusFound, resp.Code)
+		assert.Equal(t, "/install-github-app-success", resp.Header().Get("Location"))
+	})
+
+	ctx := a.WithActor(req.Context(), &a.Actor{UID: 1})
+	req = req.WithContext(ctx)
 
 	t.Run("feature flag not enabled", func(t *testing.T) {
 		resp := httptest.NewRecorder()
