@@ -136,7 +136,7 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
             Search repos by org or name
         </SearchTypeButton>,
         <SearchTypeButton onClick={updateQueryWithRepoDependenciesExample} key="repo-dependencies">
-            Search repo dependencies
+            Search through repo dependencies
         </SearchTypeButton>,
         <SearchSymbol {...props} key="symbol">
             Find a symbol
