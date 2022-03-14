@@ -323,7 +323,6 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
 }
 
 function validatePassword(password: string): Observable<string | undefined> {
-
     if (window.context.experimentalFeatures.passwordPolicy?.enabled) {
         if (password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength!) {
             return of("Password must be greater than " + window.context.experimentalFeatures.passwordPolicy.minimumLength! + " characters.")
