@@ -17,6 +17,7 @@ package unpack
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"io"
 	"io/fs"
@@ -38,10 +39,33 @@ type Opts struct {
 
 // Tgz unpacks the contents of the given gzip compressed tarball under dir.
 func Tgz(r io.Reader, dir string, opt Opts) error {
-	gzr, err := gzip.NewReader(r)
+	// Since we fallback to untar the input reader if it isn't
+	// a gzipped tar, we need to seek back the bytes already read
+	// from gzip.NewReader() trying to read a gzip header, so make
+	// sure we have an io.ReadSeeker.
+	tgz, ok := r.(io.ReadSeeker)
+	if !ok {
+		bs, err := io.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		tgz = bytes.NewReader(bs)
+	}
+
+	gzr, err := gzip.NewReader(tgz)
 	if err != nil {
+		if err == gzip.ErrHeader || err == gzip.ErrChecksum {
+			// Some archives aren't compressed at all, despite the tgz extension.
+			// Try to untar them without gzip decompression.
+			if _, err = tgz.Seek(0, io.SeekStart); err != nil {
+				return err
+			}
+			return Tar(tgz, dir, opt)
+		}
 		return err
 	}
+
+	defer gzr.Close()
 	return Tar(gzr, dir, opt)
 }
 

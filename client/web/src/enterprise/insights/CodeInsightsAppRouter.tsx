@@ -14,7 +14,6 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { useGetApi } from './hooks/use-get-api'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
 import {
     CodeInsightsRootPage,
@@ -52,14 +51,8 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
     const { telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
-    const api = useGetApi()
-
-    if (!api) {
-        return null
-    }
-
     return (
-        <CodeInsightsBackendContext.Provider value={api}>
+        <>
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
@@ -113,7 +106,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>
-        </CodeInsightsBackendContext.Provider>
+        </>
     )
 })
 

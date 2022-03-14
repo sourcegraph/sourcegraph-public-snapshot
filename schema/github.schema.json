@@ -175,6 +175,11 @@
       "description": "The installation ID of the GitHub App.",
       "type": "string"
     },
+    "pending": {
+      "description": "Whether the code host connection is in a pending state.",
+      "type": "boolean",
+      "default": false
+    },
     "cloudGlobal": {
       "title": "CloudGlobal",
       "description": "When set to true, this external service will be chosen as our 'Global' GitHub service. Only valid on Sourcegraph.com. Only one service can have this flag set.",

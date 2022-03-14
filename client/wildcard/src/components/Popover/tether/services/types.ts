@@ -1,6 +1,6 @@
 import { Point } from '../models/geometry/point'
 import { Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Position, Strategy } from '../models/tether-models'
+import { Constraint, Flipping, Overlapping, Padding, Position, Strategy } from '../models/tether-models'
 
 export interface Tether {
     /** Reference on target HTML element in the DOM. */
@@ -49,8 +49,9 @@ export interface Tether {
      */
     strategy?: Strategy
 
-    windowPadding?: Rectangle
-    constraintPadding?: Rectangle
+    targetPadding?: Rectangle
+    windowPadding?: Partial<Padding>
+    constraintPadding?: Partial<Padding>
 
     overflowToScrollParents?: boolean
     constrainToScrollParents?: boolean
@@ -80,4 +81,5 @@ export interface TetherLayout {
 
     strategy: Strategy
     anchorOffset: Point
+    targetPadding: Rectangle
 }

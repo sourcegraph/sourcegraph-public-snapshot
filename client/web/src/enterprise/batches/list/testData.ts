@@ -1,11 +1,19 @@
 import { subDays } from 'date-fns'
 
-import { BatchChangeState, BatchSpecState, ListBatchChange } from '../../../graphql-operations'
+import {
+    BatchChangesByNamespaceResult,
+    BatchChangesResult,
+    BatchChangeState,
+    BatchSpecState,
+    GetLicenseAndUsageInfoResult,
+    ListBatchChange,
+} from '../../../graphql-operations'
 
 export const now = new Date()
 
-export const nodes: Record<string, ListBatchChange> = {
+export const nodes: Record<string, { __typename: 'BatchChange' } & ListBatchChange> = {
     'Open batch change': {
+        __typename: 'BatchChange',
         id: 'test',
         url: '/users/alice/batch-change/test',
         name: 'Awesome batch',
@@ -25,13 +33,13 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'old-spec',
+            id: 'old-spec-1',
         },
         batchSpecs: {
             nodes: [
                 {
                     __typename: 'BatchSpec',
-                    id: 'test',
+                    id: 'test-1',
                     state: BatchSpecState.PROCESSING,
                     applyURL: null,
                 },
@@ -39,6 +47,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         },
     },
     'Failed draft': {
+        __typename: 'BatchChange',
         id: 'testdraft',
         url: '/users/alice/batch-change/test',
         name: 'Awesome batch',
@@ -56,13 +65,13 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'empty-draft',
+            id: 'empty-draft-2',
         },
         batchSpecs: {
             nodes: [
                 {
                     __typename: 'BatchSpec',
-                    id: 'test',
+                    id: 'test-2',
                     state: BatchSpecState.FAILED,
                     applyURL: null,
                 },
@@ -70,6 +79,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         },
     },
     'No description': {
+        __typename: 'BatchChange',
         id: 'test2',
         url: '/users/alice/batch-changes/test2',
         name: 'Awesome batch',
@@ -87,13 +97,13 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'old-spec',
+            id: 'old-spec-3',
         },
         batchSpecs: {
             nodes: [
                 {
                     __typename: 'BatchSpec',
-                    id: 'test',
+                    id: 'test-3',
                     state: BatchSpecState.COMPLETED,
                     applyURL: '/fake-apply-url',
                 },
@@ -101,6 +111,7 @@ This is my thorough explanation. And it can also get very long, in that case the
         },
     },
     'Closed batch change': {
+        __typename: 'BatchChange',
         id: 'test3',
         url: '/users/alice/batch-changes/test3',
         name: 'Awesome batch',
@@ -120,13 +131,13 @@ This is my thorough explanation. And it can also get very long, in that case the
             url: '/users/alice',
         },
         currentSpec: {
-            id: 'test',
+            id: 'test-4',
         },
         batchSpecs: {
             nodes: [
                 {
                     __typename: 'BatchSpec',
-                    id: 'test',
+                    id: 'test-4',
                     state: BatchSpecState.COMPLETED,
                     applyURL: '/fake-apply-url',
                 },
@@ -134,3 +145,37 @@ This is my thorough explanation. And it can also get very long, in that case the
         },
     },
 }
+
+export const BATCH_CHANGES_RESULT: BatchChangesResult = {
+    batchChanges: {
+        __typename: 'BatchChangeConnection',
+        totalCount: Object.values(nodes).length,
+        nodes: Object.values(nodes),
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
+
+export const NO_BATCH_CHANGES_RESULT: BatchChangesResult = {
+    batchChanges: {
+        __typename: 'BatchChangeConnection',
+        totalCount: 0,
+        nodes: [],
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
+
+export const BATCH_CHANGES_BY_NAMESPACE_RESULT: BatchChangesByNamespaceResult = {
+    node: {
+        __typename: 'User',
+        batchChanges: BATCH_CHANGES_RESULT.batchChanges,
+    },
+}
+
+export const getLicenseAndUsageInfoResult = (
+    isLicensed = true,
+    hasBatchChanges = true
+): GetLicenseAndUsageInfoResult => ({
+    campaigns: isLicensed,
+    batchChanges: isLicensed,
+    allBatchChanges: { totalCount: hasBatchChanges ? Object.values(nodes).length : 0 },
+})

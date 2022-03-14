@@ -53,7 +53,7 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		return nil
 	})
 
-	if errors.Is(err, searchrepos.ErrNoResolvedRepos) {
+	if errors.Is(err, searchrepos.ErrNoResolvedRepos) && len(s.Args.RepoOptions.Dependencies) == 0 {
 		err = nil
 	}
 

@@ -28,6 +28,13 @@
     }
 }
 
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
 .chart {
     min-height: 19.5rem;
 }

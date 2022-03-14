@@ -5,8 +5,8 @@ import { Badge, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcar
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { isCaptureGroupInsight, isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
 
@@ -57,7 +57,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     }
 
     return (
-        <Page className="container">
+        <CodeInsightsPage>
             <PageTitle title="Edit code insight" />
 
             <div className="mb-5">
@@ -82,6 +82,6 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             {isLangStatsInsight(insight) && (
                 <EditLangStatsInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
             )}
-        </Page>
+        </CodeInsightsPage>
     )
 }
