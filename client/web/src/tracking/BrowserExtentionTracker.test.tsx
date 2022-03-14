@@ -1,5 +1,5 @@
 import { act, cleanup, render } from '@testing-library/react'
-import { renderHook } from '@testing-library/react-hooks'
+import { renderHook, cleanup as hookCleanup } from '@testing-library/react-hooks'
 import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
@@ -9,12 +9,14 @@ const BROWSER_EXTENSION_LAST_DETECTION_KEY = 'integrations.browser.lastDetection
 const BROWSER_EXTENSION_MARKER_ELEMENT = 'sourcegraph-app-background'
 describe('BrowserExtensionTracker', () => {
     const DATE_NOW = '1646922320064'
+
     afterAll(cleanup)
 
     beforeEach(() => {
         jest.useFakeTimers()
         jest.setSystemTime(Number(DATE_NOW))
     })
+
     afterEach(() => {
         jest.runOnlyPendingTimers()
         jest.useRealTimers()
@@ -71,24 +73,37 @@ describe('BrowserExtensionTracker', () => {
 })
 
 describe('useIsBrowserExtensionActiveUser', () => {
-    test('Returns falsy', () => {
-        const { result } = renderHook(() => useIsBrowserExtensionActiveUser())
+    afterAll(hookCleanup)
+
+    afterEach(() => {
+        localStorage.clear()
+    })
+
+    test('Returns falsy', async () => {
+        const { result, waitForNextUpdate } = renderHook(() => useIsBrowserExtensionActiveUser())
+        expect(result.current).toBeUndefined()
+        await waitForNextUpdate()
         expect(result.current).toBeFalsy()
     })
+
     test('Returns truthy if "localStorage" item exist', () => {
         localStorage.setItem(BROWSER_EXTENSION_LAST_DETECTION_KEY, `${Date.now()}`)
         const { result } = renderHook(() => useIsBrowserExtensionActiveUser())
         expect(result.current).toBeTruthy()
     })
 
-    test('Returns truthy if extension marker DOM element exist', () => {
-        const wrapper: React.FunctionComponent = ({ children }) => (
-            <div>
-                {children}
-                <div id={BROWSER_EXTENSION_MARKER_ELEMENT} />
-            </div>
+    test('Returns truthy if extension marker DOM element exist', async () => {
+        jest.spyOn(document, 'querySelector').mockImplementation(selector =>
+            selector === `#${BROWSER_EXTENSION_MARKER_ELEMENT}` ? (document.createElement('div') as Element) : null
         )
-        const { result } = renderHook(() => useIsBrowserExtensionActiveUser(), { wrapper })
+
+        const { result, waitForNextUpdate } = renderHook(() => useIsBrowserExtensionActiveUser())
+        expect(result.current).toBeUndefined()
+
+        await waitForNextUpdate()
+
         expect(result.current).toBeTruthy()
+
+        jest.resetAllMocks()
     })
 })

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useLocation } from 'react-router'
-import { fromEvent, concat, Observable, of, merge, EMPTY } from 'rxjs'
+import { fromEvent, concat, Observable, of, merge, EMPTY, OperatorFunction } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
-import { catchError, filter, map, mapTo, publishReplay, refCount, take } from 'rxjs/operators'
+import { catchError, filter, map, mapTo, mergeMap, publishReplay, refCount, take } from 'rxjs/operators'
 
 import { isErrorLike, isFirefox } from '@sourcegraph/common'
 import { useLocalStorage, useObservable } from '@sourcegraph/wildcard/src/hooks'
@@ -77,6 +77,19 @@ const checkChromeExtensionInstalled = (): Observable<boolean> => {
     }).pipe(catchError(() => of(false)))
 }
 
+function pipeIf<T>(predicate: (v: T) => boolean, ...pipes: OperatorFunction<T, T>[]) {
+    return function (source: Observable<T>) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return source.pipe(mergeMap(value => (predicate(value) ? of(value).pipe(...pipes) : of(value))))
+    }
+}
+
+/**
+ * Returns whether code is running in jest unit tests or not
+ */
+const isUnitTestRunning = (): boolean => process.env.JEST_WORKER_ID !== undefined
+
 /**
  * Indicates if the current user has the browser extension installed. It waits 1000ms for the browser
  * extension to inject a DOM marker element, and if it doesn't, emits false
@@ -89,9 +102,8 @@ const browserExtensionInstalled: Observable<boolean> = concat(
     )
 ).pipe(
     take(1),
-    // Replay the same latest value for every subscriber
-    publishReplay(1),
-    refCount()
+    // Replay the same latest value for every subscriber unless running in tests
+    pipeIf(() => !isUnitTestRunning(), publishReplay(1), refCount())
 )
 
 /**
