@@ -22,3 +22,4 @@ steps:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: 'true'
       SOURCEGRAPH_API_URL: https://sourcegraph.com
+      SOURCEGRAPHDOTCOM_MODE: 'true'
