@@ -57,7 +57,6 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 	)
 
 	req, err := http.NewRequest(http.MethodGet, "/.setup/github-app-cloud?installation_id=21994992&setup_action=install&state=T3JnOjE%3D", nil)
-
 	require.Nil(t, err)
 
 	h := newGitHubAppCloudSetupHandler(db, apiURL, client)
