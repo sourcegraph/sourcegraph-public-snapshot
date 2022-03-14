@@ -10,6 +10,7 @@ import { useHistory } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
@@ -248,6 +249,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 }
 
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
+const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
 interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
@@ -404,23 +406,32 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
                 </div>
-                <div className={styles.workspacesPreviewContainer}>
-                    <WorkspacesPreview
-                        previewDisabled={previewDisabled}
-                        preview={() => previewBatchSpec(debouncedCode)}
-                        batchSpecStale={
-                            isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
-                        }
-                        hasPreviewed={hasPreviewed}
-                        excludeRepo={excludeRepo}
-                        cancel={cancel}
-                        isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
-                        resolutionState={resolutionState}
-                        workspacesConnection={workspacesConnection}
-                        importingChangesetsConnection={importingChangesetsConnection}
-                        setFilters={setFilters}
-                    />
-                </div>
+                <Resizable
+                    defaultSize={500}
+                    minSize={405}
+                    maxSize={1400}
+                    handlePosition="left"
+                    storageKey={WORKSPACES_PREVIEW_SIZE}
+                    element={
+                        <div className={styles.workspacesPreviewContainer}>
+                            <WorkspacesPreview
+                                previewDisabled={previewDisabled}
+                                preview={() => previewBatchSpec(debouncedCode)}
+                                batchSpecStale={
+                                    isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                                }
+                                hasPreviewed={hasPreviewed}
+                                excludeRepo={excludeRepo}
+                                cancel={cancel}
+                                isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                                resolutionState={resolutionState}
+                                workspacesConnection={workspacesConnection}
+                                importingChangesetsConnection={importingChangesetsConnection}
+                                setFilters={setFilters}
+                            />
+                        </div>
+                    }
+                />
             </div>
         </BatchChangePage>
     )

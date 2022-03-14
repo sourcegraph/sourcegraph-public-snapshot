@@ -8,9 +8,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       data-testid="hierarchical-locations-view"
     >
       <div
-        class="d-flex"
-      />
-      <div
         class="fileLocations fileLocations"
       >
         <div>
@@ -163,78 +160,74 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       data-testid="hierarchical-locations-view"
     >
       <div
-        class="d-flex"
+        class="resizable"
+        style="width: 200px;"
       >
         <div
-          class="resizable resizableGroup"
-          style="width: 200px;"
+          class="groupList"
+          data-testid="hierarchical-locations-view-list"
         >
-          <div
-            class="list-group groupList"
-            data-testid="hierarchical-locations-view-list"
+          <button
+            class="list-group-item list-group-item-action locationButton active"
+            data-testid="hierarchical-locations-view-button"
+            type="button"
           >
-            <button
-              class="list-group-item list-group-item-action locationButton active"
-              data-testid="hierarchical-locations-view-button"
-              type="button"
+            <span
+              class="locationName"
+              title="file1.txt"
             >
               <span
-                class="locationName"
-                title="file1.txt"
+                class="locationNameText"
               >
                 <span
-                  class="locationNameText"
+                  class=""
                 >
-                  <span
-                    class=""
-                  >
-                     
-                    <span>
-                      file1.txt
-                    </span>
+                   
+                  <span>
+                    file1.txt
                   </span>
                 </span>
               </span>
-              <span
-                class="locationBadge ml-1"
-              >
-                2
-              </span>
-            </button>
-            <button
-              class="list-group-item list-group-item-action locationButton"
-              data-testid="hierarchical-locations-view-button"
-              type="button"
+            </span>
+            <span
+              class="locationBadge ml-1"
+            >
+              2
+            </span>
+          </button>
+          <button
+            class="list-group-item list-group-item-action locationButton"
+            data-testid="hierarchical-locations-view-button"
+            type="button"
+          >
+            <span
+              class="locationName"
+              title="file2.txt"
             >
               <span
-                class="locationName"
-                title="file2.txt"
+                class="locationNameText"
               >
                 <span
-                  class="locationNameText"
+                  class=""
                 >
-                  <span
-                    class=""
-                  >
-                     
-                    <span>
-                      file2.txt
-                    </span>
+                   
+                  <span>
+                    file2.txt
                   </span>
                 </span>
               </span>
-              <span
-                class="locationBadge ml-1"
-              >
-                3
-              </span>
-            </button>
-          </div>
-          <div
-            class="handle handleRight resizableHandle"
-            role="presentation"
-          />
+            </span>
+            <span
+              class="locationBadge ml-1"
+            >
+              3
+            </span>
+          </button>
         </div>
+        <div
+          class="handle handleRight"
+          role="presentation"
+        />
       </div>
       <div
         class="fileLocations fileLocations"
@@ -414,9 +407,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       class="referencesContainer"
       data-testid="hierarchical-locations-view"
     >
-      <div
-        class="d-flex"
-      />
       <div
         class="fileLocations fileLocations"
       >
