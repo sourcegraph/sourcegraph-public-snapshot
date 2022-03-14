@@ -98,7 +98,7 @@ const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> =
 }
 
 const repoExample = createQueryExampleFromString('{regexp-pattern}')
-const repoDependenciesExample = createQueryExampleFromString('deps({^github\\.com/sourcegraph/sourcegraph$@HEAD})')
+const repoDependenciesExample = createQueryExampleFromString('deps({})')
 
 export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
     function updateQueryWithRepoExample(): void {
