@@ -27,21 +27,27 @@ func main() {
 	}
 
 	sha1 := os.Getenv("CI_PREPROD_COMMIT")
-	fmt.Println(sha1)
 
 	// Force last commit for testing purposes
 	// lastCommit = "cd0799fa3686c87909ad81570d17469e9840a230"
 
 	dn := NewDeploymentNotifier(
 		ghc,
-		NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
+		// NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
+		NewAPIVersionRequester("preprod"),
 		sha1,
 		changedFiles,
 	)
 
-	_, err = dn.Report(ctx)
+	report, err := dn.Report(ctx)
 	if err != nil {
 		panic(err)
+	}
+
+	out, _ := renderComment(report)
+	fmt.Println(out)
+	for _, pr := range report.PullRequests {
+		fmt.Println(pr.GetNumber())
 	}
 }
 

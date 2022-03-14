@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,9 +59,6 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit stri
 				currentCommitIdx = i
 			}
 			if commit.GetSHA() == lastCommit {
-				for _, c := range commits[currentCommitIdx:i] {
-					fmt.Println(c.GetSHA())
-				}
 				return commits[currentCommitIdx:i], nil
 			}
 		}
@@ -142,18 +138,13 @@ func (dn *DeploymentNotifier) deployedApps() []string {
 	return deployedApps
 }
 
-func renderComment(deployedApps []string) (string, error) {
+func renderComment(report *report) (string, error) {
 	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
 	if err != nil {
 		return "", err
 	}
-	presenter := report{
-		DeployedAt: time.Now().In(time.UTC).Format(time.RFC822Z),
-		Apps:       deployedApps,
-	}
-
 	var sb strings.Builder
-	err = tmpl.Execute(&sb, presenter)
+	err = tmpl.Execute(&sb, report)
 	if err != nil {
 		return "", err
 	}
