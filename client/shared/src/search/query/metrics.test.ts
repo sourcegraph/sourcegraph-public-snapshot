@@ -18,9 +18,7 @@ describe('collectMetrics', () => {
 
     test('predicates', () => {
         expect(
-            collectMetrics(
-                'repo:contains.file(foo) and repo:contains(file:foo content:bar) and repo:deps(foo) and repo:dependencies(bar)'
-            )
+            collectMetrics('repo:contains.file(foo) r:contains(file:foo content:bar) r:deps(foo) r:dependencies(bar)')
         ).toMatchInlineSnapshot(`
             {
               "count_and": 3,

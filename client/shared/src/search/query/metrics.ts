@@ -1,3 +1,4 @@
+import { resolveFieldAlias } from './filters'
 import { scanPredicate } from './predicates'
 import { scanSearchQuery } from './scanner'
 import { KeywordKind } from './token'
@@ -30,6 +31,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
     if (tokens.type !== 'success') {
         return undefined
     }
+
     let count_or = 0
     let count_and = 0
     let count_not = 0
@@ -91,7 +93,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                 if (!token.value) {
                     continue
                 }
-                switch (token.field.value) {
+                switch (resolveFieldAlias(token.field.value)) {
                     case 'select':
                         switch (token.value.value) {
                             case 'repo':
