@@ -337,6 +337,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         interpretComments: true,
     })
 
+    const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
+        patternType: SearchPatternType.literal,
+        globbing: props.globbing,
+        interpretComments: true,
+        disablePatternSuggestions: true,
+    })
+
     // Register dummy onCompletionSelected handler to prevent console errors
     useEffect(() => {
         const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
@@ -431,7 +438,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
-                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                             extensionsController={extensionsController}
                         />
                     )
@@ -454,7 +461,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
-                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                             extensionsController={extensionsController}
                         />
                     )
@@ -472,6 +479,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             props,
             selectedBlockId,
             sourcegraphSearchLanguageId,
+            sourcegraphSuggestionsSearchLanguageId,
             extensionsController,
             hoverifier,
             authenticatedUser,
