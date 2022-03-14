@@ -1,16 +1,14 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
-
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import React, { useEffect, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { authenticatedUser } from '@sourcegraph/web/src/auth'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
@@ -21,10 +19,9 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
+import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
-
-import styles from './DashboardsContent.module.scss'
 
 export interface DashboardsContentProps extends TelemetryProps {
     /**
@@ -34,16 +31,15 @@ export interface DashboardsContentProps extends TelemetryProps {
      * version of merged settings (all insights)
      */
     dashboardID: string
+    dashboards: InsightDashboard[]
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { dashboardID, telemetryService } = props
+    const { dashboardID, telemetryService, dashboards } = props
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 
     const history = useHistory()
-    const { getDashboards } = useContext(CodeInsightsBackendContext)
-
-    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
-    const features = useUiFeatures({ currentDashboard: undefined })
+    const features = useUiFeatures({ currentDashboard })
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -61,15 +57,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         telemetryService.logViewEvent('Insights')
     }, [telemetryService, dashboardID])
 
-    if (dashboards === undefined) {
-        return (
-            <div data-testid="loading-spinner">
-                <LoadingSpinner inline={false} />
-            </div>
-        )
-    }
-
-    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
     const dashboardFeatures = features.dashboards
 
     const handleSelect = (action: DashboardMenuAction): void => {
