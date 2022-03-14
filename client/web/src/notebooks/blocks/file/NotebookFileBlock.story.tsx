@@ -47,7 +47,6 @@ add('default', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={false}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
@@ -70,7 +69,6 @@ add('edit mode', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={false}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
@@ -93,7 +91,6 @@ add('error fetching file', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={false}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}

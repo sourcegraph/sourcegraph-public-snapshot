@@ -4,7 +4,7 @@ import * as uuid from 'uuid'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
-import { browserExtensionMessageReceived } from './analyticsUtils'
+import { browserExtensionMessageReceived } from './BrowserExtensionTracker'
 import { serverAdmin } from './services/serverAdminWrapper'
 import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 

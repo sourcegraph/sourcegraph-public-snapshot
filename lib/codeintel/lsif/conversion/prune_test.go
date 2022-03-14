@@ -15,7 +15,7 @@ func TestPrune(t *testing.T) {
 		"root/sub": {"root/sub/baz.go"},
 	}
 
-	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	getChildren := func(_ context.Context, dirnames []string) (map[string][]string, error) {
 		out := map[string][]string{}
 		for _, dirname := range dirnames {
 			out[dirname] = gitContentsOracle[dirname]

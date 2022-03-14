@@ -11,8 +11,8 @@ import (
 
 	"github.com/slack-go/slack"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,15 +44,15 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
 				"%s match: <%s|%s@%s>",
 				resultType,
-				getCommitURL(args.ExternalURL, result.Commit.Repository.Name, result.Commit.Oid, args.UTMSource),
-				result.Commit.Repository.Name,
-				result.Commit.Oid[:8],
+				getCommitURL(args.ExternalURL, string(result.Repo.Name), string(result.Commit.ID), args.UTMSource),
+				result.Repo.Name,
+				result.Commit.ID.Short(),
 			)))
 			var contentRaw string
 			if result.DiffPreview != nil {
-				contentRaw = truncateString(result.DiffPreview.Value, 10)
+				contentRaw = truncateString(result.DiffPreview.Content, 10)
 			} else {
-				contentRaw = truncateString(result.MessagePreview.Value, 10)
+				contentRaw = truncateString(result.MessagePreview.Content, 10)
 			}
 			blocks = append(blocks, newMarkdownSection(fmt.Sprintf("```%s```", contentRaw)))
 		}
@@ -89,55 +89,21 @@ func truncateString(input string, lines int) string {
 	return strings.Join(splitLines, "")
 }
 
-func truncateResults(results cmtypes.CommitSearchResults, maxResults int) (cmtypes.CommitSearchResults, int) {
-	remaining := maxResults
-	var output cmtypes.CommitSearchResults
-	for _, result := range results {
-		var highlights []cmtypes.Highlight
-		if result.DiffPreview != nil { // diff match
-			highlights = result.DiffPreview.Highlights
-		} else { // commit message match
-			highlights = result.MessagePreview.Highlights
-		}
-
-		if len(highlights) < remaining {
-			remaining -= len(highlights)
-			output = append(output, result)
-			continue
-		}
-
-		if len(highlights) == remaining {
-			output = append(output, result)
-			break
-		}
-
-		highlights = highlights[:remaining]
-		if result.DiffPreview != nil {
-			result.DiffPreview.Highlights = highlights
-		} else {
-			result.MessagePreview.Highlights = highlights
-		}
-
-		output = append(output, result)
-		break
+func truncateResults(results []*result.CommitMatch, maxResults int) ([]*result.CommitMatch, int) {
+	// Convert to type result.Matches
+	matches := make(result.Matches, len(results))
+	for i, res := range results {
+		matches[i] = res
 	}
 
-	outputCount := 0
-	for _, result := range output {
-		if result.DiffPreview != nil {
-			outputCount += len(result.DiffPreview.Highlights)
-		} else {
-			outputCount += len(result.MessagePreview.Highlights)
-		}
-	}
+	totalCount := matches.ResultCount()
+	matches.Limit(maxResults)
+	outputCount := matches.ResultCount()
 
-	totalCount := 0
-	for _, result := range results {
-		if result.DiffPreview != nil {
-			totalCount += len(result.DiffPreview.Highlights)
-		} else {
-			totalCount += len(result.MessagePreview.Highlights)
-		}
+	// Convert back type []*result.CommitMatch
+	output := make([]*result.CommitMatch, len(matches))
+	for i, match := range matches {
+		output[i] = match.(*result.CommitMatch)
 	}
 
 	return output, totalCount - outputCount

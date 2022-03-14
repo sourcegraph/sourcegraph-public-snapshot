@@ -78,6 +78,11 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
+	if i.view.IsFrozen {
+		// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
+		// easy mis-use of unlicensed features.
+		return nil, nil
+	}
 
 	var filters *types.InsightViewFilters
 	if i.overrideFilters != nil {
@@ -287,6 +292,10 @@ func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int3
 	return int32(referenceCount), nil
 }
 
+func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
+	return i.view.IsFrozen, nil
+}
+
 type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }
@@ -380,6 +389,10 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 }
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	if len(args.Input.DataSeries) == 0 {
+		return nil, errors.New("At least one data series is required to create an insight view")
+	}
+
 	uid := actor.FromContext(ctx).UID
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
@@ -431,6 +444,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	if len(args.Input.DataSeries) == 0 {
+		return nil, errors.New("At least one data series is required to update an insight view")
+	}
+
 	tx, err := r.insightStore.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -788,7 +805,8 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			args.After = afterID
 		}
 		if r.args.First != nil {
-			args.Limit = int(*r.args.First)
+			// Ask for one more result than needed in order to determine if there is a next page.
+			args.Limit = int(*r.args.First) + 1
 		}
 		var err error
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
@@ -815,8 +833,9 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 
 		r.views = r.insightStore.GroupByView(ctx, viewSeries)
 
-		if len(r.views) > 0 {
-			r.next = r.views[len(r.views)-1].UniqueID
+		if r.args.First != nil && len(r.views) == args.Limit {
+			r.next = r.views[len(r.views)-2].UniqueID
+			r.views = r.views[:args.Limit-1]
 		}
 	})
 	return r.views, r.next, r.err

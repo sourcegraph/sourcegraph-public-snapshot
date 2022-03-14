@@ -48,6 +48,7 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                     We take data privacy seriously. We collect only what we need to provide a great experience, and we
                     never have access to your private data or code.
                 </p>
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={onSubmit}>
                     <div className="form-group">
                         <div className="form-check">

@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link } from '@sourcegraph/wildcard'
+import { Button, Container, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -13,6 +13,7 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+import styles from './CodeMonitorList.module.scss'
 
 type CodeMonitorFilter = 'all' | 'user'
 
@@ -28,7 +29,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
         {authenticatedUser ? (
             <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                <PlusIcon className="icon-inline" />
+                <Icon as={PlusIcon} />
                 Create a code monitor
             </Button>
         ) : (
@@ -90,7 +91,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                     <h3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                     </h3>
-                    <Container>
+                    <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,
                             Omit<CodeMonitorNodeProps, 'node'>,
@@ -112,6 +113,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             cursorPaging={true}
                             withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
+                            className={styles.list}
                         />
                     </Container>
                 </div>

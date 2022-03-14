@@ -13,6 +13,7 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
@@ -32,6 +33,7 @@ export interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
+        FeatureFlagProps,
         ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
@@ -49,7 +51,19 @@ export interface Props
  */
 const AuthenticatedOrgsArea: React.FunctionComponent<Props> = props => (
     <Switch>
-        <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+        {(!props.isSourcegraphDotCom || props.authenticatedUser.siteAdmin) && (
+            <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+        )}
+        {props.featureFlags.get('open-beta-enabled') && (
+            <Route path={`${props.match.url}/joinopenbeta`} component={() => <p>JoinOpenBeta</p>} exact={true} />
+        )}
+        {props.featureFlags.get('open-beta-enabled') && (
+            <Route
+                path={`${props.match.url}/joinopenbeta/neworg`}
+                component={() => <p>JoinOpenBeta new org</p>}
+                exact={true}
+            />
+        )}
         <Route
             path={`${props.match.url}/invitation/:token`}
             exact={true}
@@ -59,6 +73,7 @@ const AuthenticatedOrgsArea: React.FunctionComponent<Props> = props => (
             path={`${props.match.url}/:name`}
             render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
         />
+
         <Route component={NotFoundPage} />
     </Switch>
 )

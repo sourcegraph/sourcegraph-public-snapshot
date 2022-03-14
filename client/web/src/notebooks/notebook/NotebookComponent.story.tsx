@@ -44,7 +44,6 @@ add('default', () => (
         {props => (
             <NotebookComponent
                 {...props}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}
@@ -61,6 +60,7 @@ add('default', () => (
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
+                onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>
@@ -72,7 +72,6 @@ add('default read-only', () => (
             <NotebookComponent
                 {...props}
                 isReadOnly={true}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}
@@ -89,6 +88,7 @@ add('default read-only', () => (
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
+                onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>

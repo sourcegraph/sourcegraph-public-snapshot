@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -99,6 +101,50 @@ func TestOrgs_Delete(t *testing.T) {
 	}
 }
 
+func TestOrgs_HardDelete(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	displayName := "org1"
+	org, err := Orgs(db).Create(ctx, "org1", &displayName)
+	require.NoError(t, err)
+
+	// Hard Delete org.
+	if err := Orgs(db).HardDelete(ctx, org.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Org no longer exists.
+	_, err = Orgs(db).GetByID(ctx, org.ID)
+	if !errors.HasType(err, &OrgNotFoundError{}) {
+		t.Errorf("got error %v, want *OrgNotFoundError", err)
+	}
+
+	orgs, err := Orgs(db).List(ctx, &OrgsListOptions{Query: "org1"})
+	require.NoError(t, err)
+	if len(orgs) > 0 {
+		t.Errorf("got %d orgs, want 0", len(orgs))
+	}
+
+	// Cannot hard delete an org that doesn't exist.
+	err = Orgs(db).HardDelete(ctx, org.ID)
+	if !errors.HasType(err, &OrgNotFoundError{}) {
+		t.Errorf("got error %v, want *OrgNotFoundError", err)
+	}
+
+	// Can hard delete an org that has been soft deleted.
+	displayName2 := "org2"
+	org2, err := Orgs(db).Create(ctx, "org2", &displayName2)
+	require.NoError(t, err)
+
+	err = Orgs(db).Delete(ctx, org2.ID)
+	require.NoError(t, err)
+
+	err = Orgs(db).HardDelete(ctx, org2.ID)
+	require.NoError(t, err)
+}
+
 func TestOrgs_GetByID(t *testing.T) {
 	createOrg := func(ctx context.Context, db *sql.DB, name string, displayName string) *types.Org {
 		org, err := Orgs(db).Create(ctx, name, &displayName)
@@ -172,13 +218,11 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return user
 	}
 
-	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) *types.OrgMembership {
-		member, err := OrgMembers(db).Create(ctx, orgID, userID)
+	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) {
+		_, err := OrgMembers(db).Create(ctx, orgID, userID)
 		if err != nil {
 			t.Fatal(err)
-			return nil
 		}
-		return member
 	}
 
 	t.Parallel()

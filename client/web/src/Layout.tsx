@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -36,15 +36,8 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import {
-    CoolCodeIntel,
-    CoolClickedToken,
-    isCoolCodeIntelEnabled,
-    locationWithoutViewState,
-} from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
 import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -85,8 +78,6 @@ export interface LayoutProps
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
-        CodeInsightsContextProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -194,14 +185,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     //     setTosAccepted(true)
     // }, [])
 
-    // Experimental reference panel
-    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
-    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
-        props.history.push(locationWithoutViewState(props.location))
-        onTokenClick(token)
-    }
-    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -221,9 +204,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
-        // Experimental reference panel
-        coolCodeIntelEnabled,
-        onTokenClick: coolCodeIntelEnabled ? onTokenClickRemoveViewState : undefined,
     }
 
     return (
@@ -287,8 +267,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {!coolCodeIntelEnabled &&
-                parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}
@@ -304,17 +283,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 history={props.history}
             />
             <GlobalDebug {...props} />
-            {coolCodeIntelEnabled && (
-                <CoolCodeIntel
-                    {...props}
-                    {...themeProps}
-                    onClose={() => {
-                        onTokenClick(undefined)
-                    }}
-                    onTokenClick={onTokenClick}
-                    clickedToken={clickedToken}
-                />
-            )}
         </div>
     )
 }

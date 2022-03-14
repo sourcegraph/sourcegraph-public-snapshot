@@ -5,7 +5,7 @@ import MinusIcon from 'mdi-react/MinusIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -23,23 +23,20 @@ import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcar
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
 import { isSingleLineRange, parseFileBlockInput, serializeLineRange } from '../../serialize'
-import { BlockMenuAction, NotebookBlockMenu } from '../menu/NotebookBlockMenu'
+import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../NotebookBlock.module.scss'
-import { useBlockSelection } from '../useBlockSelection'
-import { useBlockShortcuts } from '../useBlockShortcuts'
+import { NotebookBlock } from '../NotebookBlock'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import styles from './NotebookFileBlock.module.scss'
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 import { FileBlockValidationFunctions, useFileBlockInputValidation } from './useFileBlockInputValidation'
 
 interface NotebookFileBlockProps
-    extends BlockProps,
-        Omit<FileBlock, 'type'>,
+    extends BlockProps<FileBlock>,
         FileBlockValidationFunctions,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
-    isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
@@ -63,7 +60,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     telemetryService,
     isSelected,
     isOtherBlockSelected,
-    isMacPlatform,
     isReadOnly,
     hoverifier,
     extensionsController,
@@ -75,7 +71,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     onBlockInputChange,
     ...props
 }) => {
-    const blockElement = useRef<HTMLDivElement>(null)
     const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
     const [isInputFocused, setIsInputFocused] = useState(false)
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(input.lineRange))
@@ -98,25 +93,12 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         }
     )
 
-    const { onSelect } = useBlockSelection({
-        id,
-        blockElement: blockElement.current,
-        isSelected,
-        isInputFocused,
-        onSelectBlock,
-        ...props,
-    })
+    const onEnterBlock = useCallback(() => setShowInputs(true), [setShowInputs])
 
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onEnterBlock: () => setShowInputs(true),
-        onRunBlock: () => {
-            setShowInputs(false)
-            setIsInputFocused(false)
-        },
-        ...props,
-    })
+    const hideInputs = useCallback(() => {
+        setShowInputs(false)
+        setIsInputFocused(false)
+    }, [setShowInputs, setIsInputFocused])
 
     const blobLines = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
 
@@ -126,14 +108,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         isRevisionValid !== false &&
         isLineRangeValid !== false
 
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
-    const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
-        isInputFocused,
-        isMacPlatform,
-        isReadOnly,
-        ...props,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ isInputFocused, isReadOnly, ...props })
 
     const fileURL = useMemo(
         () =>
@@ -164,6 +139,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         [fileURL, areInputsValid]
     )
 
+    const modifierKeyLabel = useModifierKeyLabel()
     const toggleEditMenuAction: BlockMenuAction[] = useMemo(
         () => [
             {
@@ -262,85 +238,76 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
     return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
-            {/* See the explanation for the disable in markdown and query blocks. */}
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <div
-                className={classNames(
-                    blockStyles.block,
-                    styles.block,
-                    isSelected && !isInputFocused && blockStyles.selected,
-                    isSelected && isInputFocused && blockStyles.selectedNotFocused
-                )}
-                onClick={onSelect}
-                onKeyDown={onKeyDown}
-                onFocus={onSelect}
-                // A tabIndex is necessary to make the block focusable.
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-                tabIndex={0}
-                aria-label="Notebook file block"
-                ref={blockElement}
-            >
-                {showInputs ? (
-                    <NotebookFileBlockInputs
-                        id={id}
-                        {...input}
-                        lineRangeInput={lineRangeInput}
-                        isRepositoryNameValid={isRepositoryNameValid}
-                        isFilePathValid={isFilePathValid}
-                        isRevisionValid={isRevisionValid}
-                        isLineRangeValid={isLineRangeValid}
-                        showRevisionInput={showRevisionInput}
-                        showLineRangeInput={showLineRangeInput}
-                        isMacPlatform={isMacPlatform}
-                        setIsInputFocused={setIsInputFocused}
-                        onSelectBlock={onSelectBlock}
-                        setFileInput={setFileInput}
-                        setLineRangeInput={setLineRangeInput}
-                    />
-                ) : (
-                    <div className={styles.header} data-testid="file-block-header">
-                        <FileDocumentIcon className="icon-inline mr-2" />
-                        {areInputsValid ? (
-                            <Link className={styles.headerFileLink} to={fileURL}>
-                                {getFileHeader(input)}
-                            </Link>
-                        ) : (
-                            <span>{getFileHeader(input)}</span>
-                        )}
-                    </div>
-                )}
-                {blobLines && blobLines === LOADING && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
-                        <LoadingSpinner inline={false} />
-                    </div>
-                )}
-                {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
-                    <div className={styles.highlightedFileWrapper}>
-                        <CodeExcerpt
-                            repoName={input.repositoryName}
-                            commitID={input.revision}
-                            filePath={input.filePath}
-                            blobLines={blobLines}
-                            highlightRanges={[]}
-                            startLine={input.lineRange?.startLine ?? 0}
-                            endLine={input.lineRange?.endLine ?? 1}
-                            isFirst={false}
-                            fetchHighlightedFileRangeLines={() => of([])}
-                            hoverifier={hoverifier}
-                            viewerUpdates={viewerUpdates}
-                        />
-                    </div>
-                )}
-                {blobLines && blobLines !== LOADING && isErrorLike(blobLines) && (
-                    <Alert className="m-3" variant="danger">
-                        {blobLines.message}
-                    </Alert>
-                )}
-            </div>
-            {(isSelected || !isOtherBlockSelected) && (
-                <NotebookBlockMenu id={id} actions={isSelected ? menuActions : linkMenuAction} />
+        <NotebookBlock
+            className={styles.block}
+            id={id}
+            isReadOnly={isReadOnly}
+            isInputFocused={isInputFocused}
+            aria-label="Notebook file block"
+            onEnterBlock={onEnterBlock}
+            isSelected={isSelected}
+            isOtherBlockSelected={isOtherBlockSelected}
+            onRunBlock={hideInputs}
+            onBlockInputChange={onBlockInputChange}
+            onSelectBlock={onSelectBlock}
+            actions={isSelected ? menuActions : linkMenuAction}
+            {...props}
+        >
+            {showInputs ? (
+                <NotebookFileBlockInputs
+                    id={id}
+                    {...input}
+                    lineRangeInput={lineRangeInput}
+                    isRepositoryNameValid={isRepositoryNameValid}
+                    isFilePathValid={isFilePathValid}
+                    isRevisionValid={isRevisionValid}
+                    isLineRangeValid={isLineRangeValid}
+                    showRevisionInput={showRevisionInput}
+                    showLineRangeInput={showLineRangeInput}
+                    setIsInputFocused={setIsInputFocused}
+                    onSelectBlock={onSelectBlock}
+                    setFileInput={setFileInput}
+                    setLineRangeInput={setLineRangeInput}
+                />
+            ) : (
+                <div className={styles.header} data-testid="file-block-header">
+                    <FileDocumentIcon className="icon-inline mr-2" />
+                    {areInputsValid ? (
+                        <Link className={styles.headerFileLink} to={fileURL}>
+                            {getFileHeader(input)}
+                        </Link>
+                    ) : (
+                        <span>{getFileHeader(input)}</span>
+                    )}
+                </div>
             )}
-        </div>
+            {blobLines && blobLines === LOADING && (
+                <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
+                    <LoadingSpinner inline={false} />
+                </div>
+            )}
+            {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
+                <div className={styles.highlightedFileWrapper}>
+                    <CodeExcerpt
+                        repoName={input.repositoryName}
+                        commitID={input.revision}
+                        filePath={input.filePath}
+                        blobLines={blobLines}
+                        highlightRanges={[]}
+                        startLine={input.lineRange?.startLine ?? 0}
+                        endLine={input.lineRange?.endLine ?? 1}
+                        isFirst={false}
+                        fetchHighlightedFileRangeLines={() => of([])}
+                        hoverifier={hoverifier}
+                        viewerUpdates={viewerUpdates}
+                    />
+                </div>
+            )}
+            {blobLines && blobLines !== LOADING && isErrorLike(blobLines) && (
+                <Alert className="m-3" variant="danger">
+                    {blobLines.message}
+                </Alert>
+            )}
+        </NotebookBlock>
     )
 }

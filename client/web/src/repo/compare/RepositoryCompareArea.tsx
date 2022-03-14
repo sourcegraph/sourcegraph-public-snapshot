@@ -18,6 +18,7 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -34,7 +35,6 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
@@ -57,8 +57,8 @@ interface RepositoryCompareAreaProps
         TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
-        BreadcrumbSetters,
-        GlobalCoolCodeIntelProps {
+        SettingsCascadeProps,
+        BreadcrumbSetters {
     repo: RepositoryFields
     history: H.History
 }

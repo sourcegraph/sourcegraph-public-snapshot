@@ -5,8 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -15,12 +17,18 @@ import (
 func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no authorization", func(t *testing.T) {
 		providers, problems, warnings := NewAuthzProviders(
-			[]*types.GitHubConnection{{
-				GitHubConnection: &schema.GitHubConnection{
-					Url:           "https://github.com",
-					Authorization: nil,
+			database.NewMockExternalServiceStore(),
+			[]*ExternalConnection{
+				{
+					GitHubConnection: &types.GitHubConnection{
+						URN: "",
+						GitHubConnection: &schema.GitHubConnection{
+							Url:           schema.DefaultGitHubURL,
+							Authorization: nil,
+						},
+					},
 				},
-			}},
+			},
 			[]schema.AuthProviders{},
 			false,
 		)
@@ -34,40 +42,50 @@ func TestNewAuthzProviders(t *testing.T) {
 
 	t.Run("no matching auth provider", func(t *testing.T) {
 		providers, problems, warnings := NewAuthzProviders(
-			[]*types.GitHubConnection{{
-				GitHubConnection: &schema.GitHubConnection{
-					Url:           "https://github.com/my-org", // incorrect
-					Authorization: &schema.GitHubAuthorization{},
+			database.NewMockExternalServiceStore(),
+			[]*ExternalConnection{
+				{
+					GitHubConnection: &types.GitHubConnection{
+						URN: "",
+						GitHubConnection: &schema.GitHubConnection{
+							Url:           "https://github.com/my-org", // incorrect
+							Authorization: &schema.GitHubAuthorization{},
+						},
+					},
 				},
-			}},
+			},
 			[]schema.AuthProviders{{
 				Github: &schema.GitHubAuthProvider{
-					Url: "https://github.com",
+					Url: schema.DefaultGitHubURL,
 				},
 			}},
 			false,
 		)
 
-		assert := assert.New(t)
+		require.Len(t, providers, 1, "expect exactly one provider")
+		assert.NotNil(t, providers[0])
 
-		if assert.Len(providers, 1, "expected exactly one provider") {
-			assert.NotNil(providers[0], "expected provider to not be nil")
-		}
-		assert.Len(problems, 0, "unexpected problems: %+v", problems)
-		if assert.Len(warnings, 1, "expected one warning") {
-			assert.Contains(warnings[0], "no authentication provider", "unexpected warnings: %+v", warnings)
-		}
+		assert.Empty(t, problems)
+
+		require.Len(t, warnings, 1, "expect exactly one warning")
+		assert.Contains(t, warnings[0], "no authentication provider")
 	})
 
 	t.Run("matching auth provider found", func(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			providers, problems, warnings := NewAuthzProviders(
-				[]*types.GitHubConnection{{
-					GitHubConnection: &schema.GitHubConnection{
-						Url:           schema.DefaultGitHubURL,
-						Authorization: &schema.GitHubAuthorization{},
+				database.NewMockExternalServiceStore(),
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url:           schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{},
+							},
+						},
 					},
-				}},
+				},
 				[]schema.AuthProviders{{
 					// falls back to schema.DefaultGitHubURL
 					Github: &schema.GitHubAuthProvider{},
@@ -75,46 +93,46 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			assert := assert.New(t)
+			require.Len(t, providers, 1, "expect exactly one provider")
+			assert.NotNil(t, providers[0])
 
-			if assert.Len(providers, 1, "expected exactly one provider") {
-				assert.NotNil(providers[0], "expected provider to not be nil")
-			}
-			assert.Len(problems, 0, "unexpected problems: %+v", problems)
-			assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
+			assert.Empty(t, problems)
+			assert.Empty(t, warnings)
 		})
 
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
 			providers, problems, warnings := NewAuthzProviders(
-				[]*types.GitHubConnection{{
-					GitHubConnection: &schema.GitHubConnection{
-						Url: "https://github.com/",
-						Authorization: &schema.GitHubAuthorization{
-							GroupsCacheTTL: 72,
+				database.NewMockExternalServiceStore(),
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url: schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{
+									GroupsCacheTTL: 72,
+								},
+							},
 						},
 					},
-				}},
+				},
 				[]schema.AuthProviders{{
 					Github: &schema.GitHubAuthProvider{
-						Url:                        "https://github.com",
+						Url:                        schema.DefaultGitHubURL,
 						AllowGroupsPermissionsSync: false,
 					},
 				}},
 				false,
 			)
 
-			assert := assert.New(t)
+			require.Len(t, providers, 1, "expect exactly one provider")
+			assert.NotNil(t, providers[0])
+			assert.Nil(t, providers[0].(*Provider).groupsCache, "expect groups cache to be disabled")
 
-			if assert.Len(providers, 1, "expected exactly one provider") {
-				if assert.NotNil(providers[0], "expected provider to not be nil") {
-					assert.Nil((providers[0].(*Provider).groupsCache), "expected groups cache to be disabled")
-				}
+			assert.Empty(t, problems)
 
-			}
-			assert.Len(problems, 0, "unexpected problems: %+v", problems)
-			if assert.Len(warnings, 1, "expected one warning") {
-				assert.Contains(warnings[0], "`allowGroupsPermissionsSync`", "unexpected warnings: %+v", warnings)
-			}
+			require.Len(t, warnings, 1, "expect exactly one warning")
+			assert.Contains(t, warnings[0], "allowGroupsPermissionsSync")
 		})
 
 		t.Run("groups cache and allowGroupsPermissionsSync enabled", func(t *testing.T) {
@@ -122,14 +140,20 @@ func TestNewAuthzProviders(t *testing.T) {
 				return []string{"read:org"}, nil
 			}
 			providers, problems, warnings := NewAuthzProviders(
-				[]*types.GitHubConnection{{
-					GitHubConnection: &schema.GitHubConnection{
-						Url: "https://github.com/",
-						Authorization: &schema.GitHubAuthorization{
-							GroupsCacheTTL: 72,
+				database.NewMockExternalServiceStore(),
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url: schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{
+									GroupsCacheTTL: 72,
+								},
+							},
 						},
 					},
-				}},
+				},
 				[]schema.AuthProviders{{
 					Github: &schema.GitHubAuthProvider{
 						Url:                        "https://github.com",
@@ -139,16 +163,12 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			assert := assert.New(t)
+			require.Len(t, providers, 1, "expect exactly one provider")
+			assert.NotNil(t, providers[0])
+			assert.NotNil(t, providers[0].(*Provider).groupsCache, "expect groups cache to be enabled")
 
-			if assert.Len(providers, 1, "expected exactly one provider") {
-				if assert.NotNil(providers[0], "expected provider to not be nil") {
-					assert.NotNil((providers[0].(*Provider).groupsCache), "expected groups cache to be enabled")
-				}
-
-			}
-			assert.Len(problems, 0, "unexpected problems: %+v", problems)
-			assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
+			assert.Empty(t, problems)
+			assert.Empty(t, warnings)
 		})
 
 		t.Run("github app installation id available", func(t *testing.T) {
@@ -170,15 +190,21 @@ func TestNewAuthzProviders(t *testing.T) {
 			defer conf.Mock(nil)
 
 			providers, problems, warnings := NewAuthzProviders(
-				[]*types.GitHubConnection{{
-					GitHubConnection: &schema.GitHubConnection{
-						Url: "https://github.com/",
-						Authorization: &schema.GitHubAuthorization{
-							GroupsCacheTTL: 72,
+				database.NewMockExternalServiceStore(),
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url: schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{
+									GroupsCacheTTL: 72,
+								},
+								GithubAppInstallationID: "1234",
+							},
 						},
-						GithubAppInstallationID: "1234",
 					},
-				}},
+				},
 				[]schema.AuthProviders{{
 					// falls back to schema.DefaultGitHubURL
 					Github: &schema.GitHubAuthProvider{},
@@ -186,13 +212,11 @@ func TestNewAuthzProviders(t *testing.T) {
 				false,
 			)
 
-			assert := assert.New(t)
+			require.Len(t, providers, 1, "expect exactly one provider")
+			assert.NotNil(t, providers[0])
 
-			if assert.Len(providers, 1, "expected exactly one provider") {
-				assert.NotNil(providers[0], "expected provider to not be nil")
-			}
-			assert.Len(problems, 0, "unexpected problems: %+v", problems)
-			assert.Len(warnings, 0, "unexpected warnings: %+v", warnings)
+			assert.Empty(t, problems)
+			assert.Empty(t, warnings)
 		})
 	})
 }

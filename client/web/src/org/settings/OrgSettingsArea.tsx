@@ -19,6 +19,7 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
+import { DeleteOrg } from './DeleteOrg'
 import { OrgSettingsMembersPage } from './members-v1/OrgSettingsMembersPage'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
@@ -75,28 +76,34 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <SettingsArea
-                                        {...routeComponentProps}
-                                        {...props}
-                                        subject={props.org}
-                                        extraHeader={
-                                            <>
-                                                {props.authenticatedUser &&
-                                                    props.org.viewerCanAdminister &&
-                                                    !props.org.viewerIsMember && (
-                                                        <SiteAdminAlert className="sidebar__alert">
-                                                            Viewing settings for <strong>{props.org.name}</strong>
-                                                        </SiteAdminAlert>
-                                                    )}
-                                                <p>
-                                                    Organization settings apply to all members. User settings override
-                                                    organization settings.
-                                                </p>
-                                            </>
-                                        }
-                                    />
+                                    <div>
+                                        <SettingsArea
+                                            {...routeComponentProps}
+                                            {...props}
+                                            subject={props.org}
+                                            extraHeader={
+                                                <>
+                                                    {props.authenticatedUser &&
+                                                        props.org.viewerCanAdminister &&
+                                                        !props.org.viewerIsMember && (
+                                                            <SiteAdminAlert className="sidebar__alert">
+                                                                Viewing settings for <strong>{props.org.name}</strong>
+                                                            </SiteAdminAlert>
+                                                        )}
+                                                    <p>
+                                                        Organization settings apply to all members. User settings
+                                                        override organization settings.
+                                                    </p>
+                                                </>
+                                            }
+                                        />
+                                        {props.isSourcegraphDotCom && props.org.viewerIsMember && (
+                                            <DeleteOrg {...routeComponentProps} {...props} />
+                                        )}
+                                    </div>
                                 )}
                             />
+
                             <Route
                                 path={`${props.match.path}/profile`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

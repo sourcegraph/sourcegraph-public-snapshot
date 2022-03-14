@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -541,5 +543,109 @@ func TestValues(t *testing.T) {
 
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected values string: %v", diff)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+
+	ctx := context.Background()
+	clock := timeutil.Now
+	insightsdb, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+
+	repoName := "reallygreatrepo"
+	repoId := api.RepoID(5)
+
+	postgres := dbtest.NewDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
+
+	err := timeseriesStore.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{
+		{
+			SeriesID: "series1",
+			Point: SeriesPoint{
+				SeriesID: "series1",
+				Time:     now,
+				Value:    50,
+			},
+			RepoName:    &repoName,
+			RepoID:      &repoId,
+			PersistMode: RecordMode,
+		},
+		{
+			SeriesID: "series1",
+			Point: SeriesPoint{
+				SeriesID: "series1",
+				Time:     now,
+				Value:    50,
+			},
+			RepoName:    &repoName,
+			RepoID:      &repoId,
+			PersistMode: SnapshotMode,
+		},
+		{
+			SeriesID: "series2",
+			Point: SeriesPoint{
+				SeriesID: "series2",
+				Time:     now,
+				Value:    25,
+			},
+			RepoName:    &repoName,
+			RepoID:      &repoId,
+			PersistMode: RecordMode,
+		},
+		{
+			SeriesID: "series2",
+			Point: SeriesPoint{
+				SeriesID: "series2",
+				Time:     now,
+				Value:    25,
+			},
+			RepoName:    &repoName,
+			RepoID:      &repoId,
+			PersistMode: SnapshotMode,
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = timeseriesStore.Delete(ctx, "series1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	getCountForSeries := func(ctx context.Context, timeseriesStore *Store, mode PersistMode, seriesId string) int {
+		table, err := getTableForPersistMode(mode)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(table)
+		q := sqlf.Sprintf("select count(*) from %s where series_id = %s;", sqlf.Sprintf(table), seriesId)
+		row := timeseriesStore.QueryRow(ctx, q)
+		val, err := basestore.ScanInt(row)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val
+	}
+
+	if getCountForSeries(ctx, timeseriesStore, RecordMode, "series1") != 0 {
+		t.Errorf("expected 0 count for series1 in record table")
+	}
+	if getCountForSeries(ctx, timeseriesStore, SnapshotMode, "series1") != 0 {
+		t.Errorf("expected 0 count for series1 in snapshot table")
+	}
+
+	if getCountForSeries(ctx, timeseriesStore, RecordMode, "series2") != 1 {
+		t.Errorf("expected 1 count for series2 in record table")
+	}
+	if getCountForSeries(ctx, timeseriesStore, SnapshotMode, "series2") != 1 {
+		t.Errorf("expected 1 count for series2 in snapshot table")
 	}
 }

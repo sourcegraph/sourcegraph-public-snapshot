@@ -1,0 +1,3 @@
+name: 'intarray extension'
+parent: 1000000030
+privileged: true

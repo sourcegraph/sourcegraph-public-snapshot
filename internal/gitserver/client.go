@@ -127,10 +127,6 @@ type Client interface {
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
-	// GetGitolitePhabricatorMetadata returns Phabricator metadata for a Gitolite repository fetched via
-	// a user-provided command.
-	GetGitolitePhabricatorMetadata(_ context.Context, gitoliteHost string, _ api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
-
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
@@ -688,27 +684,6 @@ func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	return repos, err
 }
 
-func (c *ClientImplementor) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repoName api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.addrForKey(gitoliteHost) +
-		"/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) +
-		"&repo=" + url.QueryEscape(string(repoName))
-
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var metadata protocol.GitolitePhabricatorMetadataResponse
-	err = json.NewDecoder(resp.Body).Decode(&metadata)
-	return &metadata, err
-}
-
 func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
 	req, err := http.NewRequest("GET", "http://"+addr+"/list"+urlSuffix, nil)
 	if err != nil {
@@ -751,14 +726,14 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
-		Repo:        repo,
-		MigrateFrom: c.AddrForRepo(repo),
+		Repo:           repo,
+		CloneFromShard: c.AddrForRepo(repo),
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
 	// "repo" based on the rendezvous hashing scheme. This way, when the gitserver instance receives
 	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
-	// the repo from the URL set in MigrateFrom - the gitserver instance that owns this repo based
+	// the repo from the URL set in CloneFromShard - the gitserver instance that owns this repo based
 	// on the existing hashing scheme.
 	uri := "http://" + c.RendezvousAddrForRepo(repo) + "/repo-update"
 	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
@@ -1074,6 +1049,7 @@ func (c *ClientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
+//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 // do performs a request to a gitserver instance based on the address in the uri argument.
 func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)

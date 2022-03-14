@@ -3,7 +3,7 @@ import React, { useMemo, useContext } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
@@ -192,7 +192,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         <>
             <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
-                    <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (

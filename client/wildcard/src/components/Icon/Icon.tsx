@@ -4,7 +4,7 @@ import React, { ElementType, SVGProps } from 'react'
 import { ICON_SIZES } from './constants'
 import styles from './Icon.module.scss'
 
-interface IconProps extends SVGProps<SVGSVGElement> {
+export interface IconProps extends SVGProps<SVGSVGElement> {
     className?: string
     /**
      * The variant style of the icon. defaults to 'sm'

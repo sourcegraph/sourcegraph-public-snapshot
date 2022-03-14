@@ -1,4 +1,3 @@
-import { isArray } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -7,7 +6,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
@@ -26,7 +25,7 @@ export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ nod
         <div className="d-flex justify-content-between">
             <h3 className="mb-0">Execution timeline</h3>
             <Button className="p-0 m-0" onClick={onCancel} variant="link" size="sm">
-                <CloseIcon className="icon-inline" />
+                <Icon as={CloseIcon} />
             </Button>
         </div>
         <ExecutionTimeline node={node} />
@@ -135,12 +134,14 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     value: E | E[],
     expand: boolean
 ): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
-    const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
-    const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
+    const finished = Array.isArray(value)
+        ? value.every(logEntry => logEntry.exitCode !== null)
+        : value.exitCode !== null
+    const success = Array.isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
-        date: isArray(value) ? value[0].startTime : value.startTime,
+        date: Array.isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
         expanded: expand || !(success || !finished),
     }

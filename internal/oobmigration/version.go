@@ -27,18 +27,18 @@ const (
 )
 
 // compareVersions returns the relationship between `a (op) b`.
-func compareVersions(a, b Version) (VersionOrder, error) {
+func compareVersions(a, b Version) VersionOrder {
 	for _, pair := range [][2]int{
 		{a.Major, b.Major},
 		{a.Minor, b.Minor},
 	} {
 		if pair[0] < pair[1] {
-			return VersionOrderBefore, nil
+			return VersionOrderBefore
 		}
 		if pair[0] > pair[1] {
-			return VersionOrderAfter, nil
+			return VersionOrderAfter
 		}
 	}
 
-	return VersionOrderEqual, nil
+	return VersionOrderEqual
 }

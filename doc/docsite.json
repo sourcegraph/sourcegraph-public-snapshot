@@ -8,6 +8,5 @@
   "assetsBaseURLPath": "/assets/",
   "check": {
     "ignoreURLPattern": "(^https?://)|(^#)|(^mailto:(hi|support|security|feedback)@sourcegraph\\.com(\\?|$))|(^chrome://)|(^/@)"
-  },
-  "search": {"skipIndexURLPattern": ".*insights.*"}
+  }
 }

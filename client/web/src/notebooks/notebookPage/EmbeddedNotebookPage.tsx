@@ -1,9 +1,10 @@
 import { noop } from 'lodash'
 import React, { useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
+import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { asError, isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -36,7 +37,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
 
     const platformContext = useMemo(() => createPlatformContext(), [])
     const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
-    const isMacPlatformMemoized = useMemo(() => isMacPlatform(), [])
 
     const notebookOrError = useObservable(
         useMemo(
@@ -70,7 +70,6 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     onUpdateBlocks={noop}
                     viewerCanManage={false}
                     globbing={true}
-                    isMacPlatform={isMacPlatformMemoized}
                     fetchRepository={fetchRepository}
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     resolveRevision={resolveRevision}
@@ -79,6 +78,8 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     platformContext={platformContext}
                     extensionsController={extensionsController}
                     exportedFileName={convertNotebookTitleToFileName(notebookOrError.title)}
+                    // Copying is not supported in embedded notebooks
+                    onCopyNotebook={() => NEVER}
                     isEmbedded={true}
                 />
             )}

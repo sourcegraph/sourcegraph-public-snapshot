@@ -5,8 +5,8 @@ import { Badge, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcar
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { isCaptureGroupInsight, isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
 
@@ -29,14 +29,12 @@ export interface EditInsightPageProps {
 export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
     const { insightID, authenticatedUser } = props
 
-    const { getInsightSubjects, getInsightById } = useContext(CodeInsightsBackendContext)
-
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const { getInsightById } = useContext(CodeInsightsBackendContext)
     const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
 
     const { handleSubmit, handleCancel } = useEditPageHandlers({ originalInsight: insight })
 
-    if (insight === undefined || subjects === undefined) {
+    if (insight === undefined) {
         return <LoadingSpinner inline={false} />
     }
 
@@ -59,7 +57,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     }
 
     return (
-        <Page className="container">
+        <CodeInsightsPage>
             <PageTitle title="Edit code insight" />
 
             <div className="mb-5">
@@ -74,12 +72,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             </div>
 
             {isSearchBasedInsight(insight) && (
-                <EditSearchBasedInsight
-                    insight={insight}
-                    subjects={subjects}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                />
+                <EditSearchBasedInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
             )}
 
             {isCaptureGroupInsight(insight) && (
@@ -87,13 +80,8 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             )}
 
             {isLangStatsInsight(insight) && (
-                <EditLangStatsInsight
-                    insight={insight}
-                    subjects={subjects}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                />
+                <EditLangStatsInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
             )}
-        </Page>
+        </CodeInsightsPage>
     )
 }

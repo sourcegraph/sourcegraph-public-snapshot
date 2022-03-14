@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
-	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -19,36 +19,19 @@ type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
-
-	// CodeMonitorID, if set, is the graphql-encoded ID of the code monitor
-	// that is running the search. This will likely be removed in the future
-	// once the worker can mutate and execute the search directly, but for now,
-	// there are too many dependencies in frontend to do that. For anyone looking
-	// to rip this out in the future, this should be possible once we can build
-	// a static representation of our job tree independently of any resolvers.
-	CodeMonitorID *graphql.ID
-
-	// For tests
-	Settings *schema.Settings
 }
 
 type SearchImplementer interface {
 	Results(context.Context) (*SearchResultsResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
-
-	Inputs() run.SearchInputs
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
-	settings := args.Settings
-	if settings == nil {
-		var err error
-		settings, err = DecodedViewerFinalSettings(ctx, db)
-		if err != nil {
-			return nil, err
-		}
+	settings, err := DecodedViewerFinalSettings(ctx, db)
+	if err != nil {
+		return nil, err
 	}
 
 	inputs, err := run.NewSearchInputs(
@@ -59,6 +42,7 @@ func NewBatchSearchImplementer(ctx context.Context, db database.DB, args *Search
 		args.Query,
 		search.Batch,
 		settings,
+		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		var queryErr *run.QueryError
@@ -87,10 +71,6 @@ type searchResolver struct {
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
-}
-
-func (r *searchResolver) Inputs() run.SearchInputs {
-	return *r.SearchInputs
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings

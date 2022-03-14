@@ -165,7 +165,7 @@ export const ConfigureSourcegraphButton: React.FunctionComponent<ConfigureSource
 }) => (
     <SourcegraphIconButton
         {...commonProps}
-        href={new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
+        href={commonProps.href || new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
         onClick={onConfigureSourcegraphClick}
         label="Configure Sourcegraph"
         title="Set up Sourcegraph for search and code intelligence on private repositories"

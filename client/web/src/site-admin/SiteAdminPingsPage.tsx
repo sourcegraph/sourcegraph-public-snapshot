@@ -93,7 +93,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>Sourcegraph version string (e.g. "vX.X.X")</li>
                 <li>Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)</li>
                 <li>
-                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
+                    Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker
+                    cluster)
                 </li>
                 <li>License key associated with your Sourcegraph subscription</li>
                 <li>Aggregate count of current monthly users</li>
@@ -301,26 +302,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                             Browser extension
                             <ul>
                                 <li>
-                                    Total number of users who viewed the "install browser extension" CTA on the file
-                                    page
+                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
+                                    / search pages today
                                 </li>
                                 <li>
-                                    Total number of users who clicked the "install browser extension" CTA on the file
-                                    page
+                                    Number of views / clicks on the "install browser extension" CTA on the file / search
+                                    pages today
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            IDE extension
+                            <ul>
+                                <li>
+                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
+                                    search pages today
                                 </li>
                                 <li>
-                                    Total number of users who viewed the "install browser extension" CTA on the search
-                                    page
-                                </li>
-                                <li>
-                                    Total number of users who clicked the "install browser extension" CTA on the search
-                                    page
-                                </li>
-                                <li>Total number of views of the "install browser extension" CTA on the file page</li>
-                                <li>Total number of clicks on the "install browser extension" CTA on the file page</li>
-                                <li>Total number of views of the "install browser extension" CTA on the search page</li>
-                                <li>
-                                    Total number of clicks on the "install browser extension" CTA on the search page
+                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
+                                    pages today
                                 </li>
                             </ul>
                         </li>
