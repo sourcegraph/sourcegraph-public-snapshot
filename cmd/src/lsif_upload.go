@@ -87,13 +87,14 @@ func handleLSIFUpload(args []string) error {
 
 	if lsifUploadFlags.json {
 		serialized, err := json.Marshal(map[string]interface{}{
-			"repo":      lsifUploadFlags.repo,
-			"commit":    lsifUploadFlags.commit,
-			"root":      lsifUploadFlags.root,
-			"file":      lsifUploadFlags.file,
-			"indexer":   lsifUploadFlags.indexer,
-			"uploadId":  uploadID,
-			"uploadUrl": uploadURL,
+			"repo":           lsifUploadFlags.repo,
+			"commit":         lsifUploadFlags.commit,
+			"root":           lsifUploadFlags.root,
+			"file":           lsifUploadFlags.file,
+			"indexer":        lsifUploadFlags.indexer,
+			"indexerVersion": lsifUploadFlags.indexerVersion,
+			"uploadId":       uploadID,
+			"uploadUrl":      uploadURL,
 		})
 		if err != nil {
 			return err
@@ -155,6 +156,7 @@ func lsifUploadOptions(out *output.Output) upload.UploadOptions {
 			Commit:            lsifUploadFlags.commit,
 			Root:              lsifUploadFlags.root,
 			Indexer:           lsifUploadFlags.indexer,
+			IndexerVersion:    lsifUploadFlags.indexerVersion,
 			AssociatedIndexID: associatedIndexID,
 		},
 		SourcegraphInstanceOptions: upload.SourcegraphInstanceOptions{
@@ -188,6 +190,7 @@ func printInferredArguments(out *output.Output) {
 	block.Writef("root: %s", lsifUploadFlags.root)
 	block.Writef("file: %s", lsifUploadFlags.file)
 	block.Writef("indexer: %s", lsifUploadFlags.indexer)
+	block.Writef("indexerVersion: %s", lsifUploadFlags.indexerVersion)
 	block.Close()
 }
 

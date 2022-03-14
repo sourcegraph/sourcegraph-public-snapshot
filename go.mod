@@ -19,7 +19,7 @@ require (
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220218193119-f6123c1144b4
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220314135113-5b7b17c7f27a
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
@@ -56,7 +56,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
+	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

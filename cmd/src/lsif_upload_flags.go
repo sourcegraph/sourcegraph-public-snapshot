@@ -22,6 +22,7 @@ var lsifUploadFlags struct {
 	commit            string
 	root              string
 	indexer           string
+	indexerVersion    string
 	associatedIndexID int
 
 	// SourcegraphInstanceOptions
@@ -54,6 +55,7 @@ func init() {
 	lsifUploadFlagSet.StringVar(&lsifUploadFlags.commit, "commit", "", `The 40-character hash of the commit. Defaults to the currently checked-out commit.`)
 	lsifUploadFlagSet.StringVar(&lsifUploadFlags.root, "root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located.`)
 	lsifUploadFlagSet.StringVar(&lsifUploadFlags.indexer, "indexer", "", `The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
+	lsifUploadFlagSet.StringVar(&lsifUploadFlags.indexerVersion, "indexerVersion", "", `The version of the indexer that generated the dump. This will override the 'toolInfo.version' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
 	lsifUploadFlagSet.IntVar(&lsifUploadFlags.associatedIndexID, "associated-index-id", -1, "ID of the associated index record for this upload. For internal use only.")
 
 	// SourcegraphInstanceOptions
@@ -131,6 +133,10 @@ func inferMissingLSIFUploadFlags() (inferErrors []argumentInferenceError) {
 		inferErrors = append(inferErrors, argumentInferenceError{"file", err})
 	}
 
+	indexerName, indexerVersion, readIndexerNameAndVersionErr := readIndexerNameAndVersion()
+	getIndexerName := func() (string, error) { return indexerName, readIndexerNameAndVersionErr }
+	getIndexerVersion := func() (string, error) { return indexerVersion, readIndexerNameAndVersionErr }
+
 	if err := inferUnsetFlag("repo", &lsifUploadFlags.repo, codeintel.InferRepo); err != nil {
 		inferErrors = append(inferErrors, *err)
 	}
@@ -140,7 +146,10 @@ func inferMissingLSIFUploadFlags() (inferErrors []argumentInferenceError) {
 	if err := inferUnsetFlag("root", &lsifUploadFlags.root, inferIndexRoot); err != nil {
 		inferErrors = append(inferErrors, *err)
 	}
-	if err := inferUnsetFlag("indexer", &lsifUploadFlags.indexer, readIndexerName); err != nil {
+	if err := inferUnsetFlag("indexer", &lsifUploadFlags.indexer, getIndexerName); err != nil {
+		inferErrors = append(inferErrors, *err)
+	}
+	if err := inferUnsetFlag("indexerVersion", &lsifUploadFlags.indexerVersion, getIndexerVersion); err != nil {
 		inferErrors = append(inferErrors, *err)
 	}
 
@@ -187,17 +196,18 @@ func inferIndexRoot() (string, error) {
 	return codeintel.InferRoot(lsifUploadFlags.file)
 }
 
-// readIndexerName returns the indexer name read from the configured index file.
+// readIndexerNameAndVersion returns the indexer name and version values read from the
+// toolInfo value in the configured index file.
 //
 // Note: This function must not be called before lsifUploadFlagSet.Parse.
-func readIndexerName() (string, error) {
+func readIndexerNameAndVersion() (string, string, error) {
 	file, err := os.Open(lsifUploadFlags.file)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer file.Close()
 
-	return upload.ReadIndexerName(file)
+	return upload.ReadIndexerNameAndVersion(file)
 }
 
 // validateLSIFUploadFlags returns an error if any of the parsed flag values are illegal.
