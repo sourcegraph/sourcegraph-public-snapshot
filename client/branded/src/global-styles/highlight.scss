@@ -702,6 +702,7 @@
     --hl-gray-5: #96b5b4;
     --hl-gray-6: #969896;
     --hl-dark-green: #359448;
+    --hl-cyan: #2aa198;
     --hl-dark-blue-1: #329af0;
     --hl-dark-blue-2: #268bd2;
     --hl-dark-blue-3: #35a5ff;
@@ -712,7 +713,9 @@
     --hl-red: #ffb0af;
     --hl-green-1: #d3f9d8;
     --hl-green-2: #a3be8c;
-    --hl-purple: #b48ead;
+    // --hl-purple: #b48ead;
+    --hl-purple: #6c71c4;
+    // --hl-purple: #C678DD;
     --hl-orange: #d08770;
     --hl-brown: #ab7967;
     --hl-black: #2b303b;
@@ -948,7 +951,7 @@
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierModule {
-        color: var(--hl-blue);
+        color: var(--hl-cyan);
     }
     .hl-typed-IdentifierFunction {
         color: var(--hl-yellow);

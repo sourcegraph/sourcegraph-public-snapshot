@@ -1,7 +1,7 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 381
-expression: "dump_document(document, src)"
+assertion_line: 439
+expression: "dump_document(&document, src)"
 
 ---
   package main
@@ -15,7 +15,7 @@ expression: "dump_document(document, src)"
 //^^^^ IdentifierKeyword
 //     ^^^^ IdentifierFunctionDefinition
    fmt.Println("Hello, world", 5)
-// ^^^ IdentifierBuiltin
+// ^^^ Identifier
 //     ^^^^^^^ IdentifierFunctionDefinition
 //             ^^^^^^^^^^^^^^ StringLiteral
 //                           ^ PunctuationDelimiter
