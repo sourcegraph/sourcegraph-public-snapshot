@@ -13,8 +13,10 @@ import (
 )
 
 var (
-	repoOwner = "sourcegraph"
-	repoName  = "sourcegraph"
+	repoOwner           = "sourcegraph"
+	repoName            = "sourcegraph"
+	commitsPerPage      = 30
+	maxCommitsPageCount = 5
 )
 
 var (
@@ -41,12 +43,12 @@ func NewDeploymentNotifier(ghc *github.Client, vr VersionRequester, targetCommit
 func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit string) ([]*github.RepositoryCommit, error) {
 	var page = 1
 	var commits []*github.RepositoryCommit
-	for page != 0 && page != 4 {
+	for page != 0 && page != maxCommitsPageCount {
 		cs, resp, err := dn.ghc.Repositories.ListCommits(ctx, repoOwner, repoName, &github.CommitsListOptions{
 			SHA: "main",
 			ListOptions: github.ListOptions{
 				Page:    page,
-				PerPage: 30,
+				PerPage: commitsPerPage,
 			},
 		})
 		if err != nil {
@@ -64,7 +66,7 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit stri
 		}
 		page = resp.NextPage
 	}
-	return nil, errors.Newf("commit %s not found in the last 90 commits", lastCommit)
+	return nil, errors.Newf("commit %s not found in the last %d commits", lastCommit, maxCommitsPageCount*commitsPerPage)
 }
 
 func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, liveCommit string) ([]*github.PullRequest, error) {
@@ -114,7 +116,6 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 	}
 
 	return &report, nil
-
 }
 
 func (dn *DeploymentNotifier) deployedApps() []string {

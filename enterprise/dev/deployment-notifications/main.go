@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -13,46 +15,76 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var ghToken = os.Getenv("GITHUB_TOKEN")
+type Flags struct {
+	SourcegraphCommit string
+	MockLiveCommit    string
+	GitHubToken       string
+	Pretend           bool
+	Environment       string
+}
+
+func (f *Flags) Parse() {
+	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
+	flag.StringVar(&f.SourcegraphCommit, "sourcegraph.commit", "", "Sourcegraph commit being deployed")
+	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
+	flag.StringVar(&f.MockLiveCommit, "mock.live-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
+	flag.BoolVar(&f.Pretend, "pretend", false, "Pretend to post notifications, printing to stdout instead")
+	flag.Parse()
+}
 
 func main() {
 	ctx := context.Background()
+
+	flags := &Flags{}
+	flags.Parse()
+	if flags.Environment == "" {
+		log.Fatalf("-enviroment must be specified: preprod or production.")
+	}
+	if flags.SourcegraphCommit == "" {
+		log.Fatalf("-sourcegraph.commit must be specified.")
+	}
+
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: ghToken},
+		&oauth2.Token{AccessToken: flags.GitHubToken},
 	)))
 
 	changedFiles, err := getChangedFiles()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	sha1 := os.Getenv("CI_PREPROD_COMMIT")
-
-	// Force last commit for testing purposes
-	// lastCommit = "cd0799fa3686c87909ad81570d17469e9840a230"
+	var vr VersionRequester
+	if flags.MockLiveCommit != "" {
+		vr = NewMockVersionRequester(flags.MockLiveCommit, nil)
+	} else {
+		NewAPIVersionRequester(flags.Environment)
+	}
 
 	dn := NewDeploymentNotifier(
 		ghc,
-		// NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
-		NewAPIVersionRequester("preprod"),
-		sha1,
+		vr,
+		flags.SourcegraphCommit,
 		changedFiles,
 	)
 
 	report, err := dn.Report(ctx)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	out, _ := renderComment(report)
-	fmt.Println(out)
-	for _, pr := range report.PullRequests {
-		fmt.Println(pr.GetNumber())
+	if flags.Pretend {
+		out, _ := renderComment(report)
+		fmt.Println(out)
+		for _, pr := range report.PullRequests {
+			fmt.Println(pr.GetNumber())
+		}
+	} else {
+		panic("not implemented")
 	}
 }
 
 func getChangedFiles() ([]string, error) {
-	diffCommand := []string{"diff", "--name-only", "HEAD~5"}
+	diffCommand := []string{"diff", "--name-only", "@^"}
 	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		return nil, err
 	} else {
@@ -60,35 +92,6 @@ func getChangedFiles() ([]string, error) {
 	}
 }
 
-func getPullRequestsSinceCommit(ctx context.Context, ghc *github.Client, sha1 string) ([]*github.PullRequest, error) {
-	var pullsSinceLastCommit []*github.PullRequest
-	lines, err := GitCmd("log", "--format=%H", fmt.Sprintf("HEAD...%s", sha1))
-	if err != nil {
-		return nil, err
-	}
-	commits := strings.Split(lines, "\n")
-	commits = commits[1 : len(commits)-1]
-
-	for _, sha1 := range commits {
-		pulls, _, err := ghc.PullRequests.ListPullRequestsWithCommit(
-			ctx,
-			"sourcegraph",
-			"sourcegraph",
-			sha1,
-			&github.PullRequestListOptions{
-				State: "merged",
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		pullsSinceLastCommit = append(pullsSinceLastCommit, pulls...)
-	}
-
-	return pullsSinceLastCommit, nil
-}
-
-// Extracted from sg, keeping it here for testing purposes
 func GitCmd(args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Env = append(os.Environ(),
@@ -100,7 +103,6 @@ func GitCmd(args ...string) (string, error) {
 	return InRoot(cmd)
 }
 
-// Extracted from sg, keeping it here for testing purposes
 func InRoot(cmd *exec.Cmd) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
