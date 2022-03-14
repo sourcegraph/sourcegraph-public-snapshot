@@ -12,7 +12,6 @@ const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlockInp
 
 const defaultProps = {
     id: 'block-id',
-    setFileInput: noop,
     repositoryName: 'github.com/sourcegraph/sourcegraph',
     revision: 'main',
     filePath: 'client/web/file.tsx',
