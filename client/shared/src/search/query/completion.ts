@@ -19,6 +19,7 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 export const REPO_DEPS_PREDICATE_REGEX = /^(deps|dependencies)\((.*?)\)?$/
+export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 
 /**
  * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
@@ -257,8 +258,15 @@ async function completeFilter(
     if (!resolvedFilter) {
         return null
     }
+
+    // FIXME(tsenart): We need to refactor completions to work with
+    // complex predicates like repo:dependencies()
+    // For now we just disable all static suggestions for a predicate's filter
+    // if we are inside that predicate.
+    const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
+
     let staticSuggestions: Monaco.languages.CompletionItem[] = []
-    if (resolvedFilter.definition.discreteValues) {
+    if (resolvedFilter.definition.discreteValues && !insidePredicate) {
         staticSuggestions = resolvedFilter.definition.discreteValues(token.value, isSourcegraphDotCom).map(
             ({ label, insertText, asSnippet }, index): Monaco.languages.CompletionItem => ({
                 label,
