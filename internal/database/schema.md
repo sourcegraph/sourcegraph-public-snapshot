@@ -1521,8 +1521,8 @@ Stores the retention policy of code intellience data for a repository.
  expired                | boolean                  |           | not null | false
  last_retention_scan_at | timestamp with time zone |           |          | 
  reference_count        | integer                  |           |          | 
- queued_at              | timestamp with time zone |           |          | 
  indexer_version        | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2619,6 +2619,7 @@ Foreign-key constraints:
  id                     | integer                  |           |          | 
  commit                 | text                     |           |          | 
  root                   | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
  uploaded_at            | timestamp with time zone |           |          | 
  state                  | text                     |           |          | 
  failure_message        | text                     |           |          | 
@@ -2646,6 +2647,7 @@ Foreign-key constraints:
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -2675,6 +2677,7 @@ Foreign-key constraints:
  id                     | integer                  |           |          | 
  commit                 | text                     |           |          | 
  root                   | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
  uploaded_at            | timestamp with time zone |           |          | 
  state                  | text                     |           |          | 
  failure_message        | text                     |           |          | 
@@ -2703,6 +2706,7 @@ Foreign-key constraints:
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -2789,6 +2793,7 @@ Foreign-key constraints:
  id                     | integer                  |           |          | 
  commit                 | text                     |           |          | 
  root                   | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
  uploaded_at            | timestamp with time zone |           |          | 
  state                  | text                     |           |          | 
  failure_message        | text                     |           |          | 
@@ -2816,6 +2821,7 @@ Foreign-key constraints:
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
