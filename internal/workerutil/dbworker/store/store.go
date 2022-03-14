@@ -395,10 +395,12 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 	ctx, endObservation := s.operations.maxDurationInQueue.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	now := s.now()
+
 	ageInSeconds, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		maxDurationInQueueQuery,
 		quote(s.options.ViewName),
-		quote(s.options.ViewName),
+		now,
 		s.options.MaxNumRetries,
 	)))
 	if err != nil {
@@ -411,13 +413,20 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 	return time.Duration(ageInSeconds) * time.Second, nil
 }
 
-// TODO - need to consider process_after
 const maxDurationInQueueQuery = `
 -- source: internal/workerutil/store.go:MaxDurationInQueue
+WITH candidates AS (
+	SELECT * FROM %s WHERE {process_after} IS NULL OR {process_after} <= %s
+)
 SELECT age FROM (
-	SELECT EXTRACT(EPOCH FROM NOW() - {queued_at})::integer AS age FROM %s WHERE {state} = 'queued'
-	UNION
-	(SELECT EXTRACT(EPOCH FROM NOW() - {finished_at})::integer AS age FROM %s WHERE {state} = 'errored' AND {num_failures} < %s)
+		SELECT EXTRACT(EPOCH FROM NOW() - {queued_at})::integer AS age
+		FROM candidates
+		WHERE {state} = 'queued'
+	UNION (
+		SELECT EXTRACT(EPOCH FROM NOW() - {finished_at})::integer AS age
+		FROM candidates
+		WHERE {state} = 'errored' AND  {num_failures} < %s
+	)
 ) s
 WHERE age IS NOT NULL
 ORDER BY age DESC

@@ -121,7 +121,6 @@ func TestStoreMaxDurationInQueue(t *testing.T) {
 	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, created_at)
 		VALUES
-			-- TODO
 			(1, 'queued', NOW() - '20 minutes'::interval), -- young
 			(2, 'queued', NOW() - '30 minutes'::interval), -- oldest queued
 			(3, 'state2', NOW() - '40 minutes'::interval), -- wrong state
@@ -146,7 +145,6 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, created_at, finished_at, num_failures)
 		VALUES
-			-- TODO
 			(1, 'queued',  NOW() - '10 minutes'::interval, NULL,  0), -- young
 			(2, 'errored', NOW(), NOW() - '30 minutes'::interval, 2), -- oldest retryable error'd
 			(3, 'state2',  NOW() - '40 minutes'::interval, NULL,  0), -- wrong state
