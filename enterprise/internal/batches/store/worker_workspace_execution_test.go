@@ -26,8 +26,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
-	mockDB := database.NewMockDBFrom(db)
-	s := New(db, &observation.TestContext, nil).With(mockDB)
+	s := New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
 	// Setup all the associations
@@ -80,7 +79,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Fatal(err)
 	}
 
-	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext}
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext, accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID }}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
 	setProcessing := func(t *testing.T) {
@@ -195,13 +194,19 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 		accessTokens := database.NewMockAccessTokenStore()
 		accessTokens.HardDeleteByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			panic("shit")
 			if id != tokenID {
 				t.Fatalf("wrong token deleted")
 			}
 			return errors.New("internal database error")
 		})
-		mockDB.AccessTokensFunc.SetDefaultReturn(accessTokens)
+
+		prevDeleter := executionStore.accessTokenDeleterForTX
+		executionStore.accessTokenDeleterForTX = func(tx *Store) accessTokenHardDeleter {
+			return accessTokens.HardDeleteByID
+		}
+		t.Cleanup(func() {
+			executionStore.accessTokenDeleterForTX = prevDeleter
+		})
 
 		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
 		if !ok || err != nil {
@@ -260,7 +265,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		t.Fatal(err)
 	}
 
-	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext}
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext, accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter { return tx.DatabaseDB().AccessTokens().HardDeleteByID }}
 	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
 	attachAccessToken := func(t *testing.T) int64 {
