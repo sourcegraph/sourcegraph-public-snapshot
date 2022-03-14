@@ -19,7 +19,7 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 export const REPO_DEPS_PREDICATE_REGEX = /^(deps|dependencies)\((.*?)\)?$/
-export const PREDICATE_REGEX = /^([\a-zA-Z\.]+)\((.*?)\)?$/
+export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
 
 /**
  * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
