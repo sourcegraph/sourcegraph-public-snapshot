@@ -33,7 +33,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	insightsStore := store.New(insightsDB, insightPermStore)
 
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	// DB, not the TimescaleDB (which we use only for storing insights data.) 
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Create basic metrics for recording information about background jobs.
