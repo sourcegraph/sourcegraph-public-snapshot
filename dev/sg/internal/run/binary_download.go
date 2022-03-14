@@ -2,6 +2,8 @@ package run
 
 import (
 	"bytes"
+	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,38 +17,49 @@ import (
 )
 
 func Download(bin DownloadBinary) error {
-	urlTmpl, err := template.New("url-tmpl").Parse(bin.URL)
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
+	}
+	targetFile := filepath.Join(repoRoot, bin.TargetFile)
+
+	// Skip download if file already exists
+	if ok, _ := fileExists(targetFile); ok {
+		return nil
 	}
 
-	var renderedUrl bytes.Buffer
-	err = urlTmpl.Execute(&renderedUrl, map[string]string{
-		"GOARCH":        runtime.GOARCH,
-		"GOOS_WITH_MAC": strings.ReplaceAll(runtime.GOOS, "darwin", "mac"),
-	})
+	url, err := renderField("url", bin.URL)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to render field %q as template", "url")
 	}
 
-	resp, err := http.Get(renderedUrl.String())
+	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.Newf("not okay man")
+		return errors.Newf("GET %s failed, status code is not OK: %d", url, resp.StatusCode)
 	}
+	defer resp.Body.Close()
 
 	tmpDirName, err := os.MkdirTemp("", "sg-binary-download*")
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.Remove(tmpDirName) }()
+	defer func() {
+		// Clean up the temporary directory but ignore any possible errors
+		_ = os.Remove(tmpDirName)
+	}()
 
-	if err := unpack.Tgz(resp.Body, tmpDirName, unpack.Opts{}); err != nil {
-		return errors.Wrap(err, "unpacking failed")
+	// Only extract the file that we want
+	opts := unpack.Opts{
+		Filter: func(path string, file fs.FileInfo) bool {
+			return path == bin.FileInArchive && !file.IsDir()
+		},
+	}
+	if err := unpack.Tgz(resp.Body, tmpDirName, opts); err != nil {
+		return errors.Wrap(err, "unpacking archive failed")
 	}
 
 	fileInArchive := filepath.Join(tmpDirName, bin.FileInArchive)
@@ -54,12 +67,6 @@ func Download(bin DownloadBinary) error {
 		return errors.Newf("expected %s to exist in extracted archive at %s, but does not", bin.FileInArchive, tmpDirName)
 	}
 
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-
-	targetFile := filepath.Join(repoRoot, bin.TargetFile)
 	if err := os.Rename(fileInArchive, targetFile); err != nil {
 		return err
 	}
@@ -76,4 +83,26 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func renderField(name, content string) (string, error) {
+	t, err := template.New(fmt.Sprintf("field-%s", name)).Parse(content)
+	if err != nil {
+		return "", err
+	}
+
+	var rendered bytes.Buffer
+	if err := t.Execute(&rendered, templatedFieldsData); err != nil {
+		return "", err
+	}
+
+	return rendered.String(), nil
+}
+
+var templatedFieldsData = map[string]string{
+	"GOARCH": runtime.GOARCH,
+	"GOOS":   runtime.GOOS,
+	// Some package use "mac" instead of "darwin" but leave the the other OS
+	// names the same.
+	"GOOS_WITH_MAC": strings.ReplaceAll(runtime.GOOS, "darwin", "mac"),
 }

@@ -297,13 +297,11 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy_${CADDY_VERSION}
+    cmd: .bin/caddy_2.4.5 run --watch --config=dev/Caddyfile
     download_binary:
       url: https://github.com/caddyserver/caddy/releases/download/v2.4.5/caddy_2.4.5_{{ .GOOS_WITH_MAC }}_{{ .GOARCH }}.tar.gz
       file_in_archive: caddy
       target_file: .bin/caddy_2.4.5
-    env:
-      CADDY_VERSION: 2.4.5
 
   web:
     cmd: ./node_modules/.bin/gulp --color dev
