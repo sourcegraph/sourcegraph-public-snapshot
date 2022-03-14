@@ -54,9 +54,10 @@ import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
-import styles from './ReferencesPanel.module.scss'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+
+import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
