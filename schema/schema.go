@@ -729,6 +729,8 @@ type GitHubConnection struct {
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Orgs description: An array of organization names identifying GitHub organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
+	// Pending description: Whether the code host connection is in a pending state.
+	Pending bool `json:"pending,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to GitHub.
 	RateLimit *GitHubRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "owner/name" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
