@@ -150,12 +150,11 @@
 - All form inputs have a corresponding `<label>` element or `aria-label` attribute.
 - Related form elements are grouped with `<fieldset>`.
   - Example: A group of radio buttons should be grouped within a `fieldset`
-- Any form input errors are displayed in a list above the form after submission.
-  - TODO: Check
 - Any errors are correctly associated with the relevant input.
-  - Use `aria-describedby` to link. TODO: Check
 - It is possible to identify error, warning and success states of the form through text.
   - We cannot assume that a user can identify these through color alone.
+
+**Note:** Forms can be complex! We heavily encourage you to to seek further information using the [W3 forms guide](https://www.w3.org/WAI/tutorials/forms/). Accessibility guidelines can differ depending on the type of form.
 
 **How to test:**
 
@@ -163,7 +162,8 @@
 - Complete the form using a screen reader. Be sure to test all states, including any errors.
 
 **Tips**:
-- Use the `<form>`> element? TODO: Check
+
+- If you are still unsure about something, consult the [W3 guide on forms](https://www.w3.org/WAI/tutorials/forms/).
 </details>
 
 ### Color contrast
