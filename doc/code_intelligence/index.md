@@ -90,26 +90,6 @@ Once setup, code intelligence is available for use across popular development to
 - While looking at diffs in your code review tool, via [integrations](../../../integration/index.md)
 - In the [Sourcegraph API](https://docs.sourcegraph.com/api/graphql)
 
-<!-- <div class="getting-started"> -->
-<!--   <a href="../../integration/browser_extension" class="btn" alt="Install the browser extension"> -->
-<!--    <span>Install the browser extension</span> -->
-<!--    </br> -->
-<!--    Add code intelligence to your code host and/or code review tool by installing the Sourcegraph browser extension. -->
-<!--   </a> -->
-
-<!--   <a href="https://www.youtube.com/watch?v=kRFeSK5yCh8" class="btn" alt="Watch the code intelligence demo video"> -->
-<!--    <span>Demo video</span> -->
-<!--    </br> -->
-<!--    Watch the code intelligence demo video to see it in action on GitHub. -->
-<!--   </a> -->
-
-<!--   <a href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references" class="btn" alt="Try code intelligence on public code"> -->
-<!--    <span>Try on public code</span> -->
-<!--    </br> -->
-<!--    Interested in trying code intelligence out on public code? See this sample file on Sourcegraph Cloud. -->
-<!--   </a> -->
-<!-- </div> -->
-
 ## [Explanations](explanations/index.md)
 
 - [Introduction to code intelligence](explanations/introduction_to_code_intelligence.md)
