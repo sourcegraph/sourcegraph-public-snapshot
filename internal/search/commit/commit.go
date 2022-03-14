@@ -102,15 +102,18 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 			})
 		}
 
-		bounded.Go(func() error {
+		doSearch := func(args *gitprotocol.SearchRequest) error {
 			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
-
 			return err
+		}
+
+		bounded.Go(func() error {
+			return doSearch(args)
 		})
 	}
 
