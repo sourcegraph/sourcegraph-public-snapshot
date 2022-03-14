@@ -622,7 +622,7 @@
       "default": -1,
       "group": "External services"
     },
-    "highlights": {
+    "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",

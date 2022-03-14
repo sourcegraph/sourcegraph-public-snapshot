@@ -1736,8 +1736,6 @@ type SiteConfiguration struct {
 	GithubClientID string `json:"githubClientID,omitempty"`
 	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
 	GithubClientSecret string `json:"githubClientSecret,omitempty"`
-	// Highlights description: Syntax highlighting configuration
-	Highlights *SyntaxHighlighting `json:"highlights,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts
@@ -1804,6 +1802,8 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
+	// SyntaxHighlighting description: Syntax highlighting configuration
+	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins

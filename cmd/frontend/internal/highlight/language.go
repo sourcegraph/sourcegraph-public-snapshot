@@ -24,9 +24,7 @@ type languagePattern struct {
 	language string
 }
 
-// TODO: Decide on capitalization, cause it's a nightmare otherwise.
-// TODO: Validate that those are available filetypes, otherwise it's kind of
-//       also pointless (for example, how to tell them that C# is not OK, but c_sharp is?)
+// TODO: Later get an exhaustive list for this, or add to documentation.
 type syntaxHighlightConfig struct {
 	// Order does not matter. Evaluated before Patterns
 	Extensions map[string]string
@@ -57,7 +55,7 @@ var engineConfig = syntaxEngineConfig{
 
 func init() {
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		highlights := c.SiteConfig().Highlights
+		highlights := c.SiteConfig().SyntaxHighlighting
 		if highlights == nil {
 			return
 		}
@@ -65,7 +63,12 @@ func init() {
 		if _, ok := engineNameToEngineType(highlights.Engine.Default); !ok {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlights.Engine.Default)))
 		}
-		// TODO: Probably should validate the other ones?... but they are validated in schema
+
+		for _, engine := range highlights.Engine.Overrides {
+			if _, ok := engineNameToEngineType(engine); !ok {
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", engine)))
+			}
+		}
 
 		for _, pattern := range highlights.Languages.Patterns {
 			if _, err := regexp.Compile(pattern.Pattern); err != nil {
@@ -83,24 +86,24 @@ func init() {
 				return
 			}
 
-			if config.Highlights == nil {
+			if config.SyntaxHighlighting == nil {
 				return
 			}
 
-			if defaultEngine, ok := engineNameToEngineType(config.Highlights.Engine.Default); ok {
+			if defaultEngine, ok := engineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
 				engineConfig.Default = defaultEngine
 			}
 
 			engineConfig.Overrides = map[string]EngineType{}
-			for name, engine := range config.Highlights.Engine.Overrides {
+			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
 				if overrideEngine, ok := engineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
 				}
 			}
 
-			highlightConfig.Extensions = config.Highlights.Languages.Extensions
+			highlightConfig.Extensions = config.SyntaxHighlighting.Languages.Extensions
 			highlightConfig.Patterns = []languagePattern{}
-			for _, pattern := range config.Highlights.Languages.Patterns {
+			for _, pattern := range config.SyntaxHighlighting.Languages.Patterns {
 				if re, err := regexp.Compile(pattern.Pattern); err == nil {
 					highlightConfig.Patterns = append(highlightConfig.Patterns, languagePattern{pattern: re, language: pattern.Language})
 				}
@@ -121,13 +124,13 @@ func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
 }
 
 // Matches against config. Only returns values if there is a match.
-func getLanguageFromConfig(path string) (string, bool) {
+func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, bool) {
 	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
-	if ft, ok := highlightConfig.Extensions[extension]; ok {
+	if ft, ok := config.Extensions[extension]; ok {
 		return ft, true
 	}
 
-	for _, pattern := range highlightConfig.Patterns {
+	for _, pattern := range config.Patterns {
 		if pattern.pattern != nil && pattern.pattern.MatchString(path) {
 			return pattern.language, true
 		}
@@ -139,7 +142,7 @@ func getLanguageFromConfig(path string) (string, bool) {
 // getLanguage will return the name of the language and default back to enry if
 // no language could be found.
 func getLanguage(path string, contents string) (string, bool) {
-	ft, found := getLanguageFromConfig(path)
+	ft, found := getLanguageFromConfig(highlightConfig, path)
 	if found {
 		return ft, true
 	}
@@ -147,10 +150,10 @@ func getLanguage(path string, contents string) (string, bool) {
 	return enry.GetLanguage(path, []byte(contents)), false
 }
 
-// TODO: Expose as an endpoint so you can type in a path and get the result in the front end?
+// DetectSyntaxHighlightingLanguage will calculate the SyntaxEngineQuery from a given
+// path and contents. First it will determine if there are any configuration overrides
+// and then, if none, return the 'enry' default language detection
 func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngineQuery {
-	fmt.Println("DETECT:", path, engineConfig.Overrides)
-
 	lang, override := getLanguage(path, contents)
 	lang = strings.ToLower(lang)
 
