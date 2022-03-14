@@ -36,7 +36,6 @@ import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
-import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
@@ -51,8 +50,7 @@ export interface NotebookComponentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
-        FileBlockValidationFunctions {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]

@@ -26,34 +26,12 @@ const defaultProps = {
     revision: 'main',
     filePath: 'client/web/file.tsx',
     lineRangeInput: '123-321',
+    sourcegraphSearchLanguageId: 'sourcegraph',
+    queryInput: '',
+    setQueryInput: noop,
+    debouncedSetQueryInput: noop,
+    onFileSelected: noop,
+    onRunBlock: noop,
 }
 
-add('default', () => <WebStory>{() => <NotebookFileBlockInputs {...defaultProps} />}</WebStory>)
-
-add('all valid', () => (
-    <WebStory>
-        {() => (
-            <NotebookFileBlockInputs
-                {...defaultProps}
-                isRepositoryNameValid={true}
-                isFilePathValid={true}
-                isRevisionValid={true}
-                isLineRangeValid={true}
-            />
-        )}
-    </WebStory>
-))
-
-add('all invalid', () => (
-    <WebStory>
-        {() => (
-            <NotebookFileBlockInputs
-                {...defaultProps}
-                isRepositoryNameValid={false}
-                isFilePathValid={false}
-                isRevisionValid={false}
-                isLineRangeValid={false}
-            />
-        )}
-    </WebStory>
-))
+add('default', () => <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>)

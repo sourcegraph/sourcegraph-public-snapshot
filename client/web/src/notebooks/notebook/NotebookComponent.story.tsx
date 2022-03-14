@@ -12,7 +12,6 @@ import {
 
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
-import { RepositoryFields } from '../../graphql-operations'
 
 import { NotebookComponent } from './NotebookComponent'
 
@@ -36,9 +35,6 @@ const blocks: BlockInit[] = [
     },
 ]
 
-const resolveRevision = () => of({ commitID: 'commit1', defaultBranch: 'main', rootTreeURL: '' })
-const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
-
 add('default', () => (
     <WebStory>
         {props => (
@@ -54,8 +50,6 @@ add('default', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
-                fetchRepository={fetchRepository}
-                resolveRevision={resolveRevision}
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
@@ -82,8 +76,6 @@ add('default read-only', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
-                fetchRepository={fetchRepository}
-                resolveRevision={resolveRevision}
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
