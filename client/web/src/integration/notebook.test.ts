@@ -349,7 +349,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/web/index.ts#1-20github.com/sourcegraph/sourcegraph@branch')
+        expect(fileBlockHeaderText).toEqual('client/web/index.tsgithub.com/sourcegraph/sourcegraph@branch')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
