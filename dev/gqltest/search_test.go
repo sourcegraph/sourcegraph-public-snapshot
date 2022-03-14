@@ -88,11 +88,11 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// This test runs after all others because its adds a NPM external service
+	// This test runs after all others because its adds a npm external service
 	// which expands the set of repositories in the instance. All previous tests
 	// assume only the repos from gqltest-github-search exist.
 	//
-	// Adding and deleting the NPM external service in between all other tests is
+	// Adding and deleting the npm external service in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
 	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
@@ -1384,9 +1384,9 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 		}
 
 		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindNPMPackages,
+			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
-			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
+			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
 				Registry: "https://registry.npmjs.org",
 				Dependencies: []string{
 					"urql@2.2.0", // We're searching the dependencies of this repo.
@@ -1397,7 +1397,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		// Set up a NPM external service to test dependencies search
+		// Set up a npm external service to test dependencies search
 		t.Cleanup(func() {
 			if err := client.UpdateSiteConfiguration(&oldConfig); err != nil {
 				t.Fatal(err)

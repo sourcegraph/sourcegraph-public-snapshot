@@ -407,6 +407,6 @@ We measure our generated production build through [Bundlesize](https://github.co
 If `Bundlesize` fails, it is likely because one of the generated bundles has gone over the maximum size we have set. This can be due to numerous reasons, to fix this you should check:
 
 1. That you are lazy-loading code where possible.
-2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an NPM dependency.
+2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
