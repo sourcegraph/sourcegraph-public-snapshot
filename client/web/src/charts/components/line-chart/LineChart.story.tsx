@@ -14,15 +14,15 @@ export default {
 } as Meta
 
 export const LineChartsVitrina = () => (
-    <div className='d-flex flex-wrap'>
-        <PlainChart/>
-        <PlainStackedChart/>
-        <WithLegendExample/>
-        <WithHugeData/>
-        <WithZeroOneData/>
-        <WithDataSteps/>
-        <WithDataMissingValues/>
-        <StackedWithDataMissingValues/>
+    <div className="d-flex flex-wrap">
+        <PlainChart />
+        <PlainStackedChart />
+        <WithLegendExample />
+        <WithHugeData />
+        <WithZeroOneData />
+        <WithDataSteps />
+        <WithDataMissingValues />
+        <StackedWithDataMissingValues />
     </div>
 )
 

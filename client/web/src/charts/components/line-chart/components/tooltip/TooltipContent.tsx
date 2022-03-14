@@ -2,7 +2,7 @@ import React, { ReactElement, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
 
-import { DEFAULT_FALLBACK_COLOR } from '../../../../constants';
+import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
 import { LineChartSeries, Point as DataPoint } from '../../types'
 import { isValidNumber, formatYTick } from '../../utils'
 

@@ -1,4 +1,3 @@
-
 export { Tooltip, TooltipContent } from './tooltip'
 export { LegendList } from './legend-list/LegendList'
 export { AxisBottom, AxisLeft } from './axis/Axis'
