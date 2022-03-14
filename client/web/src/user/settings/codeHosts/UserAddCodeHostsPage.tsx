@@ -213,7 +213,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         requestSuccess ? (
             <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
                 <h4>GitHub code host connection pending</h4>
-                An installation request was sent to your GitHub organization’s owners. After the request is approved, finish connecting with GitHub to choose repositories to sync with Sourcegraph.
+                An installation request was sent to your GitHub organization’s owners. After the request is approved,
+                finish connecting with GitHub to choose repositories to sync with Sourcegraph.
             </Alert>
         ) : null
 
