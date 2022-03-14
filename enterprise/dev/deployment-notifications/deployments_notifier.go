@@ -31,6 +31,9 @@ type DeploymentNotifier struct {
 }
 
 func NewDeploymentNotifier(ghc *github.Client, vr VersionRequester, targetCommit string, changedFiles []string) *DeploymentNotifier {
+	if targetCommit == "" {
+		panic("can't operate with a blank target commit")
+	}
 	return &DeploymentNotifier{
 		vr:           vr,
 		ghc:          ghc,
@@ -57,7 +60,7 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit stri
 		commits = append(commits, cs...)
 		var currentCommitIdx int
 		for i, commit := range commits {
-			if commit.GetSHA() == dn.targetCommit {
+			if strings.HasPrefix(commit.GetSHA(), dn.targetCommit) {
 				currentCommitIdx = i
 			}
 			if commit.GetSHA() == lastCommit {

@@ -19,22 +19,6 @@ import (
 
 var updateRecordings = flag.Bool("update", false, "update integration test")
 
-var changedFiles = []string{
-	".buildkite/kubeval.sh",
-	".buildkite/verify-yaml.sh",
-	"base/frontend/sourcegraph-frontend-internal.Deployment.yaml",
-	"base/frontend/sourcegraph-frontend.Deployment.yaml",
-	"base/github-proxy/github-proxy.Deployment.yaml",
-	"base/migrator/migrator.Job.yaml",
-	"base/precise-code-intel/worker.Deployment.yaml",
-	"base/searcher/searcher.Deployment.yaml",
-	"base/symbols/symbols.Deployment.yaml",
-	"base/syntect-server/syntect-server.Deployment.yaml",
-	"base/worker/worker.Deployment.yaml",
-	"configure/postgres-exporter/postgres-exporter-codeintel.Deployment.yaml",
-	"configure/postgres-exporter/postgres-exporter.Deployment.yaml",
-}
-
 func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
 	recording := filepath.Join("testdata", strings.ReplaceAll(t.Name(), " ", "-"))
 	recorder, err := httptestutil.NewRecorder(recording, *updateRecordings, func(i *cassette.Interaction) error {

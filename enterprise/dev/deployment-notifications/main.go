@@ -48,7 +48,7 @@ func main() {
 
 	if flags.GuessSourcegraphCommit {
 		commit, err := guessSourcegraphCommit()
-		if err != nil {
+		if err != nil || commit == "" {
 			log.Fatalf("could not guess commit from changes, %q", err)
 		}
 		flags.SourcegraphCommit = commit

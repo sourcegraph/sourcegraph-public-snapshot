@@ -2,8 +2,9 @@ package main
 
 import (
 	"os/exec"
-	"regexp"
 	"strings"
+
+	"github.com/grafana/regexp"
 )
 
 var imageCommitRegexp = `(?m)^\+\s+image:\s[^/]+\/sourcegraph\/APPNAME:\d{6}_\d{4}-\d{2}-\d{2}_([^@]+)@sha256.*$` // (?m) stands for multiline.
