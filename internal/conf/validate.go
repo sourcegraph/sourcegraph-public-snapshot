@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -203,18 +205,49 @@ func ValidateSite(input string) (messages []string, err error) {
 	return problems.Messages(), nil
 }
 
+// siteConfigSecrets is the list of secrets in site config needs to be redacted
+// before serving or unredacted before saving.
+var siteConfigSecrets = []struct {
+	readPath  string // gjson uses "." as path separator, uses "\" to escape.
+	editPaths []string
+}{
+	{readPath: `executors\.accessToken`, editPaths: []string{"executors.accessToken"}},
+	{readPath: `email\.smtp.password`, editPaths: []string{"email.smtp", "password"}},
+	{readPath: `organizationInvitations.signingKey`, editPaths: []string{"organizationInvitations", "signingKey"}},
+	{readPath: `githubClientSecret`, editPaths: []string{"githubClientSecret"}},
+	{readPath: `dotcom.githubApp\.cloud.clientSecret`, editPaths: []string{"dotcom", "githubApp.cloud", "clientSecret"}},
+	{readPath: `dotcom.githubApp\.cloud.privateKey`, editPaths: []string{"dotcom", "githubApp.cloud", "privateKey"}},
+}
+
+// UnredactSecrets unredacts unchanged secrets back to their original value for
+// the given configuration.
+//
+// Updates to this function should also being reflected in the RedactSecrets.
 func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
+	oldCfg, err := ParseConfig(raw)
+	if err != nil {
+		return input, errors.Wrap(err, "parse old config")
+	}
+
+	oldSecrets := make(map[string]string, len(oldCfg.AuthProviders))
+	for _, ap := range oldCfg.AuthProviders {
+		if ap.Openidconnect != nil {
+			oldSecrets[ap.Openidconnect.ClientID] = ap.Openidconnect.ClientSecret
+		}
+		if ap.Github != nil {
+			oldSecrets[ap.Github.ClientID] = ap.Github.ClientSecret
+		}
+		if ap.Gitlab != nil {
+			oldSecrets[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
+		}
+	}
+
 	newCfg, err := ParseConfig(conftypes.RawUnified{
 		Site: input,
 	})
 	if err != nil {
-		return input, err
+		return input, errors.Wrap(err, "parse new config")
 	}
-	oldCfg, err := ParseConfig(raw)
-	if err != nil {
-		return input, err
-	}
-	oldSecrets := getSecretsMap(oldCfg)
 	for _, ap := range newCfg.AuthProviders {
 		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == RedactedSecret {
 			ap.Openidconnect.ClientSecret = oldSecrets[ap.Openidconnect.ClientID]
@@ -228,35 +261,34 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	}
 	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
 	if err != nil {
-		return input, err
+		return input, errors.Wrap(err, `unredact "auth.providers"`)
 	}
-	if newCfg.ExecutorsAccessToken == RedactedSecret {
-		unredactedSite, err = jsonc.Edit(unredactedSite, oldCfg.ExecutorsAccessToken, "executors.accessToken")
+
+	for _, secret := range siteConfigSecrets {
+		v := gjson.Get(unredactedSite, secret.readPath).String()
+		if v != RedactedSecret {
+			continue
+		}
+
+		unredactedSite, err = jsonc.Edit(unredactedSite, gjson.Get(raw.Site, secret.readPath).String(), secret.editPaths...)
+		if err != nil {
+			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
+		}
 	}
 	return unredactedSite, err
 }
 
-func getSecretsMap(cfg *Unified) map[string]string {
-	secretsMap := make(map[string]string, len(cfg.AuthProviders))
-	for _, ap := range cfg.AuthProviders {
-		if ap.Openidconnect != nil {
-			secretsMap[ap.Openidconnect.ClientID] = ap.Openidconnect.ClientSecret
-		}
-		if ap.Github != nil {
-			secretsMap[ap.Github.ClientID] = ap.Github.ClientSecret
-		}
-		if ap.Gitlab != nil {
-			secretsMap[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
-		}
-	}
-	return secretsMap
-}
-
-func RedactSecrets(raw conftypes.RawUnified) (conftypes.RawUnified, error) {
+// RedactSecrets redacts defined list of secrets from the given configuration. It
+// returns empty configuration if any error occurs during redacting process to
+// prevent accidental leak of secrets in the configuration.
+//
+// Updates to this function should also being reflected in the UnredactSecrets.
+func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
 	cfg, err := ParseConfig(raw)
 	if err != nil {
-		return raw, err
+		return empty, errors.Wrap(err, "parse config")
 	}
+
 	for _, ap := range cfg.AuthProviders {
 		if ap.Openidconnect != nil {
 			ap.Openidconnect.ClientSecret = RedactedSecret
@@ -268,15 +300,25 @@ func RedactSecrets(raw conftypes.RawUnified) (conftypes.RawUnified, error) {
 			ap.Gitlab.ClientSecret = RedactedSecret
 		}
 	}
-	newSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+	redactedSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
 	if err != nil {
-		return raw, err
+		return empty, errors.Wrap(err, `redact "auth.providers"`)
 	}
-	if cfg.ExecutorsAccessToken != "" {
-		newSite, err = jsonc.Edit(newSite, RedactedSecret, "executors.accessToken")
+
+	for _, secret := range siteConfigSecrets {
+		v := gjson.Get(redactedSite, secret.readPath).String()
+		if v == "" {
+			continue
+		}
+
+		redactedSite, err = jsonc.Edit(redactedSite, RedactedSecret, secret.editPaths...)
+		if err != nil {
+			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
+		}
 	}
+
 	return conftypes.RawUnified{
-		Site: newSite,
+		Site: redactedSite,
 	}, err
 }
 
