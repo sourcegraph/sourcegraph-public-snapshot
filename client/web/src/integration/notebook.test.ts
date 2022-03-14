@@ -339,17 +339,28 @@ describe('Search Notebook', () => {
         })
         await driver.page.click(`${fileBlockSelector} [data-testid="file-suggestion-button"]`)
 
-        // Wait for highlighted code to load
-        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+        await driver.replaceText({
+            selector: `[id="${blockIds[2]}-line-range-input"]`,
+            newText: '1-20',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
 
-        // Refocus the entire block (prevents jumping content for below actions)
-        await driver.page.click(fileBlockSelector)
+        // Wait for header to update to load
+        await driver.page.waitForFunction(
+            (fileBlockSelector: string) => {
+                const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
+                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('#')
+            },
+            {},
+            fileBlockSelector
+        )
 
         // Save the inputs
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('client/web/index.tsgithub.com/sourcegraph/sourcegraph@branch')
+        expect(fileBlockHeaderText).toEqual('client/web/index.ts#1-20github.com/sourcegraph/sourcegraph@branch')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
