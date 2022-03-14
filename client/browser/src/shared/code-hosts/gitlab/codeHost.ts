@@ -52,9 +52,10 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
     }
 
     const mount = document.createElement('div')
-    mount.classList.add('btn-group')
-    mount.classList.add('sg-toolbar-mount')
-    mount.classList.add('sg-toolbar-mount-gitlab')
+    mount.classList.add('sg-toolbar-mount', 'sg-toolbar-mount-gitlab')
+    if (getPageInfo().pageKind === GitLabPageKind.Commit) {
+        mount.classList.add('gl-mr-3')
+    }
 
     fileActions.prepend(mount)
 
@@ -231,9 +232,10 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         iconClassName: 's16 align-bottom',
     },
     codeViewToolbarClassProps: {
-        className: styles.codeViewToolbar,
-        actionItemClass: 'btn btn-sm btn-secondary ml-2',
+        className: 'pl-0',
+        actionItemClass: 'btn btn-md gl-button btn-icon',
         actionItemPressedClass: 'active',
+        actionItemIconClass: 'gl-button-icon gl-icon s16',
     },
     hoverOverlayClassProps: {
         className: classNames('card', styles.hoverOverlay),
