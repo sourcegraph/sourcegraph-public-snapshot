@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 )
