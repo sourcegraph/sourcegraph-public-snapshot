@@ -92,6 +92,16 @@ type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }
 
+func isSetupActionValid(setupAction string) bool {
+	for _, a := range []string{"install", "request"} {
+		if setupAction == a {
+			return true
+		}
+	}
+
+	return false
+}
+
 func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !envvar.SourcegraphDotComMode() {
@@ -101,6 +111,12 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		}
 
 		setupAction := r.URL.Query().Get("setup_action")
+
+		if !isSetupActionValid(setupAction) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(fmt.Sprintf("Invalid setup action '%s'", setupAction)))
+			return
+		}
 
 		a := actor.FromContext(r.Context())
 		if !a.IsAuthenticated() {

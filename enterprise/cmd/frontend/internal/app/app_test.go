@@ -70,6 +70,17 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 		assert.Equal(t, "/install-github-app-success", resp.Header().Get("Location"))
 	})
 
+	t.Run("invalid setup action", func(t *testing.T) {
+		resp := httptest.NewRecorder()
+		badReq, err := http.NewRequest(http.MethodGet, "/.setup/github-app-cloud?installation_id=21994992&setup_action=incorrect&state=T3JnOjE%3D", nil)
+		require.Nil(t, err)
+
+		h.ServeHTTP(resp, badReq)
+
+		assert.Equal(t, http.StatusBadRequest, resp.Code)
+		assert.Equal(t, "Invalid setup action 'incorrect'", resp.Body.String())
+	})
+
 	ctx := a.WithActor(req.Context(), &a.Actor{UID: 1})
 	req = req.WithContext(ctx)
 
