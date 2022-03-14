@@ -45,8 +45,8 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 // This validates the password using the Paassord Policy configured
 func validatePasswordUsingPolicy(passwd string) error {
 	letters := 0
-  numbers := false;
-	upperCase := false;
+	numbers := false
+	upperCase := false
 	special := 0;
 	
 	for _, c := range passwd {
