@@ -55,12 +55,10 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     hoverifier,
     extensionsController,
     onRunBlock,
-    onSelectBlock,
     onBlockInputChange,
     ...props
 }) => {
     const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
-    const [isInputFocused, setIsInputFocused] = useState(false)
     const [fileQueryInput, setFileQueryInput] = useState('')
     const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
 
@@ -88,12 +86,11 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
 
     const hideInputs = useCallback(() => {
         setShowInputs(false)
-        setIsInputFocused(false)
-    }, [setShowInputs, setIsInputFocused])
+    }, [setShowInputs])
 
     const isFileSelected = input.repositoryName.length > 0 && input.filePath.length > 0
     const blobLines = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
-    const commonMenuActions = useCommonBlockMenuActions({ isInputFocused, isReadOnly, ...props })
+    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
     const fileURL = useMemo(
         () =>
             toPrettyBlobURL({
@@ -173,15 +170,11 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         <NotebookBlock
             className={styles.block}
             id={id}
-            isReadOnly={isReadOnly}
-            isInputFocused={isInputFocused}
             aria-label="Notebook file block"
             onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onRunBlock={hideInputs}
-            onBlockInputChange={onBlockInputChange}
-            onSelectBlock={onSelectBlock}
+            onHideInput={hideInputs}
             actions={isSelected ? menuActions : linkMenuAction}
             {...props}
         >
@@ -197,8 +190,6 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
                     setQueryInput={setFileQueryInput}
                     debouncedSetQueryInput={debouncedSetFileQueryInput}
                     onRunBlock={hideInputs}
-                    setIsInputFocused={setIsInputFocused}
-                    onSelectBlock={onSelectBlock}
                     onFileSelected={onFileSelected}
                     {...props}
                 />

@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import { debounce } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
@@ -17,14 +17,13 @@ import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
-interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onSelectBlock' | 'onRunBlock'>, ThemeProps {
+interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
     sourcegraphSearchLanguageId: string
     queryInput: string
     lineRange: IHighlightLineRange | null
     setQueryInput: (value: string) => void
     debouncedSetQueryInput: (value: string) => void
-    setIsInputFocused(value: boolean): void
     onLineRangeChange: (lineRange: IHighlightLineRange | null) => void
     onFileSelected: (file: FileBlockInput) => void
 }
@@ -36,8 +35,6 @@ function getFileSuggestionsQuery(queryInput: string): string {
 export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
     id,
     lineRange,
-    setIsInputFocused,
-    onSelectBlock,
     onFileSelected,
     onLineRangeChange,
     ...props
@@ -51,6 +48,12 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         [lineRangeInput]
     )
 
+    useEffect(() => {
+        // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input,
+        // if Enter key was used to show the inputs.
+        setTimeout(() => editor?.focus(), 0)
+    }, [editor])
+
     const onLineRangeInputChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             setLineRangeInput(event.target.value)
@@ -58,24 +61,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         },
         [setLineRangeInput, debouncedOnLineRangeChange]
     )
-
-    const onInputFocus = (event: React.FocusEvent<HTMLInputElement>): void => {
-        onSelectBlock(id)
-        setIsInputFocused(true)
-        event.preventDefault()
-        event.stopPropagation()
-    }
-
-    const onInputBlur = (event: React.FocusEvent<HTMLInputElement>): void => {
-        // relatedTarget contains the element that will receive focus after the blur.
-        const relatedTarget = event.relatedTarget && (event.relatedTarget as HTMLElement)
-        // If relatedTarget is another input from the same block we
-        // want to keep the input focused. Otherwise this will result in quickly flashing focus between elements.
-        if (relatedTarget?.tagName.toLowerCase() !== 'input' && !relatedTarget?.closest('.monaco-editor')) {
-            setIsInputFocused(false)
-        }
-        event.stopPropagation()
-    }
 
     const fetchFileSuggestions = useCallback(
         (query: string) =>
@@ -118,8 +103,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                 id={id}
                 editor={editor}
                 setEditor={setEditor}
-                setIsInputFocused={setIsInputFocused}
-                onSelectBlock={onSelectBlock}
                 label="Find a file using a Sourcegraph search query"
                 queryPrefix="type:path"
                 fetchSuggestions={fetchFileSuggestions}
@@ -135,8 +118,6 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
                     className={classNames('form-control', isLineRangeValid === false && 'is-invalid')}
                     value={lineRangeInput}
                     onChange={onLineRangeInputChange}
-                    onBlur={onInputBlur}
-                    onFocus={onInputFocus}
                     placeholder="Enter a single line (1), a line range (1-10), or leave empty to show the entire file."
                 />
                 {isLineRangeValid === false && (

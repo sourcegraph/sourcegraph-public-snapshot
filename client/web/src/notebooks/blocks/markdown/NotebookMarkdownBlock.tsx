@@ -14,6 +14,7 @@ import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import blockStyles from '../NotebookBlock.module.scss'
+import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
@@ -30,7 +31,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     isReadOnly,
     onBlockInputChange,
     onRunBlock,
-    onSelectBlock,
     ...props
 }) => {
     const [isEditing, setIsEditing] = useState(!isReadOnly && input.length === 0)
@@ -49,12 +49,12 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         onBlockInputChange,
     ])
 
-    const { isInputFocused } = useMonacoBlockInput({
+    useMonacoBlockInput({
         editor,
         id,
+        tabMovesFocus: false,
         ...props,
         onInputChange,
-        onSelectBlock,
         onRunBlock: runBlock,
     })
 
@@ -64,9 +64,8 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
         if (!isEditing) {
             setIsEditing(true)
-            onSelectBlock(id)
         }
-    }, [id, isReadOnly, isEditing, setIsEditing, onSelectBlock])
+    }, [isReadOnly, isEditing, setIsEditing])
 
     // setTimeout turns on editing mode in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {
@@ -82,11 +81,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
     }, [isEditing, editor])
 
-    const commonMenuActions = useCommonBlockMenuActions({
-        isInputFocused,
-        isReadOnly,
-        ...props,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
 
     const modifierKeyLabel = useModifierKeyLabel()
     const menuActions = useMemo(() => {
@@ -113,30 +108,19 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     const notebookBlockProps = useMemo(
         () => ({
             id,
-            isInputFocused,
             onEnterBlock,
             isReadOnly,
             isSelected,
             onRunBlock,
             onBlockInputChange,
-            onSelectBlock,
             actions: isSelected ? menuActions : [],
             'aria-label': 'Notebook markdown block',
             ...props,
         }),
-        [
-            id,
-            isInputFocused,
-            isReadOnly,
-            isSelected,
-            menuActions,
-            onBlockInputChange,
-            onEnterBlock,
-            onRunBlock,
-            onSelectBlock,
-            props,
-        ]
+        [id, isReadOnly, isSelected, menuActions, onBlockInputChange, onEnterBlock, onRunBlock, props]
     )
+
+    const isInputFocused = useIsBlockInputFocused(id)
 
     if (!isEditing) {
         return (

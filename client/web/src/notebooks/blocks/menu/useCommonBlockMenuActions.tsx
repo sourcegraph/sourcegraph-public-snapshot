@@ -7,24 +7,21 @@ import React, { useMemo } from 'react'
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 
 import { BlockProps } from '../..'
+import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { BlockMenuAction } from './NotebookBlockMenu'
 
-interface UseCommonBlockMenuActionsOptions
-    extends Pick<BlockProps, 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'> {
-    isInputFocused: boolean
-}
-
 export const useCommonBlockMenuActions = ({
-    isInputFocused,
+    id,
     isReadOnly,
     onMoveBlock,
     onDeleteBlock,
     onDuplicateBlock,
-}: UseCommonBlockMenuActionsOptions): BlockMenuAction[] => {
+}: Pick<BlockProps, 'id' | 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'>): BlockMenuAction[] => {
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
     const modifierKeyLabel = useModifierKeyLabel()
+    const isInputFocused = useIsBlockInputFocused(id)
     return useMemo(() => {
         if (isReadOnly) {
             return []

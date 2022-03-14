@@ -13,7 +13,7 @@ import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookSymbolBlockInput.module.scss'
 
-interface NotebookSymbolBlockInputProps extends ThemeProps, Pick<BlockProps, 'onRunBlock' | 'onSelectBlock'> {
+interface NotebookSymbolBlockInputProps extends ThemeProps, Pick<BlockProps, 'onRunBlock'> {
     id: string
     sourcegraphSearchLanguageId: string
     editor: Monaco.editor.IStandaloneCodeEditor | undefined
@@ -22,7 +22,6 @@ interface NotebookSymbolBlockInputProps extends ThemeProps, Pick<BlockProps, 'on
     setQueryInput: (value: string) => void
     debouncedSetQueryInput: (value: string) => void
     onSymbolSelected: (symbol: SymbolBlockInput) => void
-    setIsInputFocused: (isFocused: boolean) => void
 }
 
 function getSymbolSuggestionsQuery(queryInput: string): string {
