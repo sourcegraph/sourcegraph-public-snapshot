@@ -4,6 +4,8 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import * as React from 'react'
 
+import { Icon } from '@sourcegraph/wildcard'
+
 /**
  * Returns the icon for the repository's code host
  */
@@ -19,12 +21,12 @@ export const RepoIcon: React.FunctionComponent<{ repoName: string; className?: s
 
     const hostName = repoName.split('/')[0]
 
-    const Icon: React.ComponentType<MdiReactIconProps> | undefined = iconMap[hostName]
+    const CodehostIcon: React.ComponentType<MdiReactIconProps> | undefined = iconMap[hostName]
 
-    if (Icon) {
+    if (CodehostIcon) {
         return (
             <span role="img" aria-label={hostName} title={hostName}>
-                <Icon className={className} />
+                <Icon className={className} as={CodehostIcon} />
             </span>
         )
     }

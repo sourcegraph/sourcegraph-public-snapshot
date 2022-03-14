@@ -6,7 +6,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 import styles from './ActivationChecklist.module.scss'
@@ -25,19 +25,19 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
 }: ActivationChecklistItemProps) => (
     <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
-            <span className={classNames('icon-inline', styles.iconContainer, styles.iconDown)}>
+            <Icon className={classNames(styles.iconContainer, styles.iconDown)} as="span">
                 <ChevronDownIcon className={styles.icon} />
-            </span>
-            <span className={classNames('icon-inline', styles.iconContainer, styles.iconRight)}>
+            </Icon>
+            <Icon className={classNames(styles.iconContainer, styles.iconRight)} as="span">
                 <ChevronRightIcon className={styles.icon} />
-            </span>
+            </Icon>
             <span>{props.title}</span>
         </div>
         <div>
             {props.done ? (
-                <CheckCircleIcon className="icon-inline text-success" />
+                <Icon className="text-success" as={CheckCircleIcon} />
             ) : (
-                <CheckboxBlankCircleOutlineIcon className="icon-inline text-muted" />
+                <Icon className="text-muted" as={CheckboxBlankCircleOutlineIcon} />
             )}
         </div>
     </div>

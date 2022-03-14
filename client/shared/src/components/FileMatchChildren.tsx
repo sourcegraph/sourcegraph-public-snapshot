@@ -286,7 +286,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     data-testid="file-match-children-item"
                     {...openInNewTabProps}
                 >
-                    <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
+                    <SymbolIcon kind={symbol.kind} className="mr-1" />
                     <code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}

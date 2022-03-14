@@ -5,16 +5,17 @@ import React, { useCallback } from 'react'
 import {
     Button,
     Card,
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-    Position,
     Tab,
     TabList,
     TabPanel,
     TabPanels,
     Tabs,
     useLocalStorage,
+    Icon,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
 } from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
@@ -77,7 +78,7 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <Popover>
         <PopoverTrigger as={Button} className="text-decoration-none px-2" variant="link">
-            <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
+            <span className="text-muted">Ext</span> <Icon as={MenuUpIcon} />
         </PopoverTrigger>
         <PopoverContent position={Position.leftEnd}>
             <ExtensionDevelopmentTools {...props} />

@@ -58,7 +58,7 @@ export const getRepoFilterLinks = (
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = RepoIcon({
             repoName: label,
-            className: classNames('icon-inline text-muted', styles.sidebarSectionIcon),
+            className: classNames('text-muted', styles.sidebarSectionIcon),
         })
 
         return (
