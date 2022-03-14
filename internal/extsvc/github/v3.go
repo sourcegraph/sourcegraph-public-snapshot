@@ -203,8 +203,11 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
+	// fmt.Println("----v3 7")
+
 	err := c.rateLimit.Wait(ctx)
 	if err != nil {
+		fmt.Println("----v3 error ", err)
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
 		if ctx.Err() != nil {
@@ -213,6 +216,8 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 
 		return nil, errInternalRateLimitExceeded
 	}
+
+	// fmt.Println("----v3 8")
 
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
@@ -433,12 +438,14 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	// We only care about headers
 	var dest struct{}
 	respState, err := c.get(ctx, "/", &dest)
-	if err != nil && respState.statusCode != 200 {
+	fmt.Println("--- status", respState.statusCode)
+
+	// Note while debugging: the call above returns an EOF error and, in consequence, we fail to get scopes...
+	if err != nil && (respState.statusCode < 200 || respState.statusCode >= 400) {
 		return nil, err
 	}
 
 	scope := respState.headers.Get("x-oauth-scopes")
-
 	if scope == "" {
 		return []string{}, nil
 	}
@@ -446,7 +453,7 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	return strings.Split(scope, ", "), nil
 }
 
-// ListRepositoryCollaborators lists GitHub users that has access to the repository.
+// ListReposixtoryCollaborators lists GitHub users that has access to the repository.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1). If no affiliations are provided, all users with access to the repository

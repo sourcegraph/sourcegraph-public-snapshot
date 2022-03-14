@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -30,18 +31,24 @@ type codeHostRepositoryResolver struct {
 	codeHostErrs string
 }
 
-type affiliatedRepositoriesConnection struct {
-	userID   int32
-	orgID    int32
-	codeHost int64
-	query    string
-	once     sync.Once
-	nodes    []*codeHostRepositoryResolver
-	err      error
-	db       database.DB
+type svcResult struct {
+	nodes []*codeHostRepositoryResolver
+	err   string
 }
 
-func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+type affiliatedRepositoriesConnection struct {
+	userID     int32
+	orgID      int32
+	codeHost   int64
+	query      string
+	once       sync.Once
+	svcResults []*svcResult
+	// nodes    []*codeHostRepositoryResolver
+	err error
+	db  database.DB
+}
+
+func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*svcResult, error) {
 	a.once.Do(func() {
 		var (
 			svcs []*types.ExternalService
@@ -85,7 +92,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			svcsByID = make(map[int64]*types.ExternalService)
 			pending  int
 		)
-		for _, svc := range svcs {
+		for i, svc := range svcs {
 			svcsByID[svc.ID] = svc
 			src, err := repos.NewSource(a.db.ExternalServices(), svc, cf)
 			if err != nil {
@@ -97,6 +104,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				continue
 			}
 			pending++
+
 			svcID := svc.ID
 			goroutine.Go(func() {
 				affiliated, err := af.AffiliatedRepositories(ctx)
@@ -115,19 +123,26 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			return
 		}
 
-		// collect all results
-		a.nodes = []*codeHostRepositoryResolver{}
-		var errResult map[int64]string
-		dict := make(map[int64]string)
+		var fetchErrors []error
+		var nodes []*codeHostRepositoryResolver
+		a.svcResults = []*svcResult{}
+
 		for i := 0; i < pending; i++ {
 			select {
 			case result := <-results:
-				if result.err != nil {
+				if result.err != nil { // if an errors comes from results.err, repos is an empty array
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
+					fetchErrors = append(fetchErrors, result.err)
 
-					errResult = setErrorPerCodeHost(dict, result.svcID, "err goes here")
-					// fetchErrors = append(fetchErrors, errors.New("Error from "+svcsByID[result.svcID].DisplayName+" - "+result.err.Error()))
+					// Get the error from the code host so we can return it.
+					errMessage := "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
+					a.svcResults = append(a.svcResults, &svcResult{
+						nodes: nn,
+						err:   errMessage,
+					})
+
+					continue
 				}
 
 				for _, repo := range result.repos {
@@ -139,47 +154,60 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 					}
 
 					repo := repo
-					errorFromCodeHost, _ := errResult[repo.CodeHostID]
-
-					if len(errResult) > 0 {
-						a.nodes = append(a.nodes, &codeHostRepositoryResolver{
-							db:           a.db,
-							codeHost:     svcsByID[repo.CodeHostID],
-							repo:         &repo,
-							codeHostErrs: errorFromCodeHost,
-						})
-					} else {
-						a.nodes = append(a.nodes, &codeHostRepositoryResolver{
-							db:           a.db,
-							codeHost:     svcsByID[repo.CodeHostID],
-							repo:         &repo,
-							codeHostErrs: errorFromCodeHost,
-						})
-					}
+					nodes = append(nodes, &codeHostRepositoryResolver{
+						repo:     &repo,
+						codeHost: svcsByID[repo.CodeHostID],
+						db:       a.db,
+					})
 				}
+
+				var errMessage string
+				a.svcResults = append(a.svcResults, &svcResult{
+					nodes: nodes,
+					err:   errMessage,
+				})
+
 			case <-ctx.Done():
 				a.err = ctx.Err()
 				return
 			}
 		}
 
-		sort.Slice(a.nodes, func(i, j int) bool {
-			return a.nodes[i].repo.Name < a.nodes[j].repo.Name
+		sort.Slice(nodes, func(i, j int) bool {
+			return nodes[i].repo.Name < nodes[j].repo.Name
 		})
 
-		// if len(fetchErrors) == pending {
-		if len(errResult) == pending {
+		if len(fetchErrors) == pending {
 			// All hosts failed
-			a.nodes = nil
+			for _, aa := range a.svcResults {
+				aa.nodes = nil
+			}
 			a.err = errors.New("failed to fetch from any code host")
 		}
 	})
 
 	if envvar.SourcegraphDotComMode() && a.orgID != 0 {
-		a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(a.nodes)))
+		for _, aa := range a.svcResults {
+			a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(aa.nodes)))
+		}
 	}
 
-	return a.nodes, a.err
+	// DEBUGGING BLOCK:
+	fmt.Println("------ DEBUGGING - START")
+	for i, aaa := range a.svcResults {
+		fmt.Println(i, len(aaa.nodes), aaa.err)
+	}
+	fmt.Println("------ END")
+
+	return a.svcResults, a.err
+}
+
+func (s *svcResult) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	return nil, nil
+}
+
+func (s *svcResult) Err(ctx context.Context) (*string, error) {
+	return nil, nil
 }
 
 func setErrorPerCodeHost(dict map[int64]string, id int64, err string) map[int64]string {
@@ -187,7 +215,6 @@ func setErrorPerCodeHost(dict map[int64]string, id int64, err string) map[int64]
 	if ok {
 		return dict
 	}
-
 	dict[id] = err
 	return dict
 }
