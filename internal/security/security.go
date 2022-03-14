@@ -1,4 +1,4 @@
-// Package PasswordPolciy implements a configurable password policy
+// Package security implements a configurable password policy
 package security
 
 import (
