@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -91,6 +92,16 @@ type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }
 
+func isSetupActionValid(setupAction string) bool {
+	for _, a := range []string{"install", "request"} {
+		if setupAction == a {
+			return true
+		}
+	}
+
+	return false
+}
+
 func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !envvar.SourcegraphDotComMode() {
@@ -101,7 +112,31 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 
 		setupAction := r.URL.Query().Get("setup_action")
 
+		if !isSetupActionValid(setupAction) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(fmt.Sprintf("Invalid setup action '%s'", setupAction)))
+			return
+		}
+
+		a := actor.FromContext(r.Context())
+		if !a.IsAuthenticated() {
+			if setupAction == "install" {
+				http.Redirect(w, r, "/install-github-app-success", http.StatusFound)
+				return
+			}
+
+			if setupAction == "request" {
+				http.Redirect(w, r, "/install-github-app-request", http.StatusFound)
+				return
+			}
+		}
+
 		state := r.URL.Query().Get("state")
+		if state == "" && setupAction == "install" {
+			http.Redirect(w, r, "/settings", http.StatusFound)
+			return
+		}
+
 		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -123,6 +158,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 
 		if setupAction == "request" {
 			http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts?reason=request", org.Name), http.StatusFound)
+			return
 		}
 
 		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
