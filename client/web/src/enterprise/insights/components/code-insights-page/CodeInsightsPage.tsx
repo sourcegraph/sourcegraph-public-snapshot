@@ -16,7 +16,7 @@ export const CodeInsightsPage: React.FunctionComponent<CodeInsightsPageProps> = 
 
     return (
         <Page {...props}>
-            {!licensed && <CodeInsightsLimitAccessBanner className="mb-3" />}
+            {!licensed && <CodeInsightsLimitAccessBanner className="mb-4" />}
             {props.children}
         </Page>
     )

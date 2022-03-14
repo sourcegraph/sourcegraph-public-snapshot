@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
 
@@ -28,10 +27,11 @@ type Job interface {
 
 var allJobs = []Job{
 	&zoekt.ZoektRepoSubsetSearch{},
+	&zoekt.ZoektSymbolSearch{},
 	&searcher.Searcher{},
+	&searcher.SymbolSearcher{},
 	&run.RepoSearch{},
-	&textsearch.RepoSubsetTextSearch{},
-	&textsearch.RepoUniverseTextSearch{},
+	&zoekt.GlobalSearch{},
 	&structural.StructuralSearch{},
 	&commit.CommitSearch{},
 	&symbol.RepoSubsetSymbolSearch{},

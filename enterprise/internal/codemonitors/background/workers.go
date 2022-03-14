@@ -12,6 +12,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -169,14 +170,19 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	// For all downstream actions (specifically executing searches),
 	// we should run as the user who owns the code monitor.
 	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
+	ctx = featureflag.WithFlags(ctx, r.db.FeatureFlags())
 
 	settings, err := settings(ctx)
 	if err != nil {
 		return errors.Wrap(err, "query settings")
 	}
 
-	newQuery := newQueryWithAfterFilter(q)
-	results, searchErr := doSearch(ctx, r.db, newQuery, settings)
+	query := q.QueryString
+	if !featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+		// Only add an after filter when repo-aware monitors is disabled
+		query = newQueryWithAfterFilter(q)
+	}
+	results, searchErr := doSearch(ctx, r.db, query, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
@@ -186,7 +192,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, results)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, query, results)
 	if err != nil {
 		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
