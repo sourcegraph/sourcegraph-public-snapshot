@@ -84,7 +84,11 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         [input.filePath, input.repositoryName, input.revision, onFileSelected]
     )
 
-    const onEnterBlock = useCallback(() => setShowInputs(true), [setShowInputs])
+    const onEnterBlock = useCallback(() => {
+        if (!isReadOnly) {
+            setShowInputs(true)
+        }
+    }, [isReadOnly, setShowInputs])
 
     const hideInputs = useCallback(() => {
         setShowInputs(false)
