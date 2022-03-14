@@ -707,12 +707,6 @@ func (s *schedule) upsert(repo configuredRepo) (updated bool) {
 }
 
 func (s *schedule) prioritiseUncloned(uncloned []types.MinimalRepo) {
-	// Set of ids created outside of lock for fast checking.
-	ids := make(map[api.RepoID]struct{}, len(uncloned))
-	for _, repo := range uncloned {
-		ids[repo.ID] = struct{}{}
-	}
-
 	// All non-cloned repos will be due for cloning as if they are newly added
 	// repos.
 	notClonedDue := timeNow().Add(minDelay)
@@ -724,12 +718,15 @@ func (s *schedule) prioritiseUncloned(uncloned []types.MinimalRepo) {
 	// up the queue. Note: we iterate over index because we will be mutating
 	// heap.
 	rescheduleTimer := false
-	for _, repoUpdate := range s.index {
-		if _, ok := ids[repoUpdate.Repo.ID]; !ok {
-			// It not in the uncloned list, skip
-			continue
-		}
-		if repoUpdate.Due.After(notClonedDue) {
+	for _, repo := range uncloned {
+		if repoUpdate := s.index[repo.ID]; repoUpdate == nil {
+			heap.Push(s, &scheduledRepoUpdate{
+				Repo:     configuredRepo{ID: repo.ID, Name: repo.Name},
+				Interval: minDelay,
+				Due:      notClonedDue,
+			})
+			rescheduleTimer = true
+		} else if repoUpdate.Due.After(notClonedDue) {
 			repoUpdate.Due = notClonedDue
 			heap.Fix(s, repoUpdate.Index)
 			rescheduleTimer = true

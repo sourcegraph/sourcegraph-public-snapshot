@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookComputeBlock } from './NotebookComputeBlock'
@@ -24,7 +26,6 @@ add('default', () => (
     <WebStory>
         {props => (
             <NotebookComputeBlock
-                type="compute"
                 {...props}
                 {...noopBlockCallbacks}
                 input=""
@@ -33,7 +34,7 @@ add('default', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
+                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
     </WebStory>

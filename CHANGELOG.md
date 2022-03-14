@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
+- Search: `select:file` and `select:file.directory` now properly deduplicates results. [#32469](https://github.com/sourcegraph/sourcegraph/pull/32469)
 
 ### Removed
 

@@ -746,6 +746,13 @@ type Mutation {
         """
         settingsToEdit: String!
     ): EmptyResponse!
+
+    """
+    Sends an email for testing Sourcegraph's email configuration.
+
+    Only administrators can use this API.
+    """
+    sendTestEmail(to: String!): String!
 }
 
 """
