@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -43,9 +42,8 @@ type affiliatedRepositoriesConnection struct {
 	query      string
 	once       sync.Once
 	svcResults []*svcResult
-	// nodes    []*codeHostRepositoryResolver
-	err error
-	db  database.DB
+	err        error
+	db         database.DB
 }
 
 func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*svcResult, error) {
@@ -92,7 +90,7 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 			svcsByID = make(map[int64]*types.ExternalService)
 			pending  int
 		)
-		for i, svc := range svcs {
+		for _, svc := range svcs {
 			svcsByID[svc.ID] = svc
 			src, err := repos.NewSource(a.db.ExternalServices(), svc, cf)
 			if err != nil {
@@ -138,7 +136,7 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 					// Get the error from the code host so we can return it.
 					errMessage := "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
 					a.svcResults = append(a.svcResults, &svcResult{
-						nodes: nn,
+						nodes: nodes,
 						err:   errMessage,
 					})
 
@@ -159,6 +157,7 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 						codeHost: svcsByID[repo.CodeHostID],
 						db:       a.db,
 					})
+
 				}
 
 				var errMessage string
@@ -192,31 +191,16 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 		}
 	}
 
-	// DEBUGGING BLOCK:
-	fmt.Println("------ DEBUGGING - START")
-	for i, aaa := range a.svcResults {
-		fmt.Println(i, len(aaa.nodes), aaa.err)
-	}
-	fmt.Println("------ END")
-
 	return a.svcResults, a.err
+
 }
 
 func (s *svcResult) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
-	return nil, nil
+	return s.nodes, nil
 }
 
 func (s *svcResult) Err(ctx context.Context) (*string, error) {
 	return nil, nil
-}
-
-func setErrorPerCodeHost(dict map[int64]string, id int64, err string) map[int64]string {
-	_, ok := dict[id]
-	if ok {
-		return dict
-	}
-	dict[id] = err
-	return dict
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
