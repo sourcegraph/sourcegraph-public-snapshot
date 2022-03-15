@@ -107,7 +107,7 @@
 
 **We should ensure that:**
 
-- All action that do not navigate use the `<button>` element.
+- All actions that do not navigate use the `<button>` element.
 - All `<button>` elements have a valid `type` attribute that describes the action.
 - All button elements are recognizable as buttons.
 - All button elements have correct focus styles.
@@ -151,6 +151,7 @@
 - Related form elements are grouped with `<fieldset>`.
   - Example: A group of radio buttons should be grouped within a `fieldset`
 - Any errors are correctly associated with the relevant input.
+  - Tip: Use `aria-describedby` to quickly link any relevant labels to the input.
 - It is possible to identify error, warning and success states of the form through text.
   - We cannot assume that a user can identify these through color alone.
 

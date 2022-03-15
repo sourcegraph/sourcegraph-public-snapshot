@@ -29,9 +29,9 @@ Before starting your audit, you should ensure the following statements are true:
       - [Firefox documentation](https://developer.mozilla.org/en-US/docs/Tools/Responsive_Design_Mode)
 4. Work through relevant sections from the [detailed checklist](detailed-checklist.md) and ensure that there are no issues.
 
-## Raising an bug
+## Raising a bug
 
-If the bug is very small, and you are confident you can quickly fix it - then go ahead and make a PR! If you aren't able to immediately address the bug, then we should create a new GitHub issue using the following steps:
+If the bug is very small, and you are confident you can quickly fix it - then go ahead and make a PR! If you aren't able to immediately address the bug, then you should create a new GitHub issue using the following steps:
 
 1. Open [this GitHub Issue template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=accessibility%2Cwcag%2F2.1%2Cwcag%2F2.1%2Ffixing%2Cestimate%2F3d&template=accessibility_issue.yaml&title=%5BAccessibility%5D%3A+)
     - Provide as much detail as possible about the bug you found, and the behavior you expected to happen.
