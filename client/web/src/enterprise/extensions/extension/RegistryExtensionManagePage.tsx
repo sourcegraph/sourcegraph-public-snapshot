@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -24,6 +25,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
+
 import styles from './RegistryExtensionManagePage.module.scss'
 
 function updateExtension(

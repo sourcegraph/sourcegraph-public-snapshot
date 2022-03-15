@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
 import { AuthenticatedUser } from '../../auth'

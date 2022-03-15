@@ -1,15 +1,16 @@
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE } from '@sourcegraph/wildcard'
 
+import { NavItem, NavLink } from '.'
+
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
-
-import { NavItem, NavLink } from '.'
 
 export interface NavDropdownItem {
     content: React.ReactNode | string

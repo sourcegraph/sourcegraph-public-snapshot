@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import HistoryIcon from 'mdi-react/HistoryIcon'
-import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 

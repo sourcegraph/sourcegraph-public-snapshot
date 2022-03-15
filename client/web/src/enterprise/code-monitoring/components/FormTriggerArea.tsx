@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { QueryState } from '@sourcegraph/search'
 import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'

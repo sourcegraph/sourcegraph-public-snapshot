@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArrowLeftBoldIcon from 'mdi-react/ArrowLeftBoldIcon'
 import ArrowRightBoldIcon from 'mdi-react/ArrowRightBoldIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
-import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -24,6 +25,7 @@ import {
     fetchAllOutOfBandMigrations as defaultFetchAllMigrations,
     fetchSiteUpdateCheck as defaultFetchSiteUpdateCheck,
 } from './backend'
+
 import styles from './SiteAdminMigrationsPage.module.scss'
 
 export interface SiteAdminMigrationsPageProps extends RouteComponentProps<{}>, TelemetryProps {

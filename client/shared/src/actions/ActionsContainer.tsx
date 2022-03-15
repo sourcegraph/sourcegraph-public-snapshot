@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useMemo } from 'react'
+
+import * as H from 'history'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 

@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useEffect } from 'react'
+
+import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'

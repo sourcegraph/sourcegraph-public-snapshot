@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import { lowerCase, upperFirst } from 'lodash'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -21,8 +22,9 @@ import { Branch } from '../Branch'
 
 import { useWorkspacesListConnection } from './backend'
 import { isValidBatchSpecWorkspaceState } from './util'
-import styles from './WorkspacesList.module.scss'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
+
+import styles from './WorkspacesList.module.scss'
 
 export interface WorkspacesListProps {
     batchSpecID: Scalars['ID']

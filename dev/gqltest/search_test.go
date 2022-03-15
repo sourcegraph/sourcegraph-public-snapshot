@@ -1360,30 +1360,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
-		cfg, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldConfig := *cfg
-
-		if cfg.ExperimentalFeatures == nil {
-			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-
-		if cfg.ExperimentalFeatures.NpmPackages != "enabled" {
-			cfg.ExperimentalFeatures.NpmPackages = "enabled"
-		}
-
-		if !cfg.ExperimentalFeatures.DependenciesSearch {
-			cfg.ExperimentalFeatures.DependenciesSearch = true
-		}
-
-		if err = client.UpdateSiteConfiguration(cfg); err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
 			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
@@ -1396,13 +1373,6 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		// Set up a npm external service to test dependencies search
-		t.Cleanup(func() {
-			if err := client.UpdateSiteConfiguration(&oldConfig); err != nil {
-				t.Fatal(err)
-			}
-		})
 
 		err = client.WaitForReposToBeCloned("npm/urql")
 		if err != nil {

@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
+
 import { FetchResult } from '@apollo/client'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -28,6 +29,7 @@ import {
     UserSettingReposContainer,
 } from './components'
 import { CheckboxRepositoryNode } from './RepositoryNode'
+
 import styles from './SelectAffiliatedRepos.module.scss'
 
 export interface AffiliatedReposReference {

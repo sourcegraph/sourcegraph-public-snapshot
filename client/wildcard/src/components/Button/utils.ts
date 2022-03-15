@@ -1,7 +1,8 @@
 import { upperFirst } from 'lodash'
 
-import styles from './Button.module.scss'
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
+
+import styles from './Button.module.scss'
 
 interface GetButtonStyleParameters {
     variant: typeof BUTTON_VARIANTS[number]

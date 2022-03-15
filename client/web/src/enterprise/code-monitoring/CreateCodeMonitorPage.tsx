@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

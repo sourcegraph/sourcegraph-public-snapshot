@@ -914,6 +914,7 @@ type SearchUsagePeriod struct {
 	RepoContainsFile        *SearchCountStatistics
 	RepoContainsContent     *SearchCountStatistics
 	RepoContainsCommitAfter *SearchCountStatistics
+	RepoDependencies        *SearchCountStatistics
 	CountAll                *SearchCountStatistics
 	NonGlobalContext        *SearchCountStatistics
 	OnlyPatterns            *SearchCountStatistics

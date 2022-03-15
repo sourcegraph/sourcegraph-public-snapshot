@@ -1,11 +1,13 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../components/WebStory'
 
-import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 import { FormTriggerArea } from './FormTriggerArea'
+
+import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({
     design: {

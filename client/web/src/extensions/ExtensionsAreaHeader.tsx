@@ -1,5 +1,6 @@
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
+
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { PageHeader, Button, Link } from '@sourcegraph/wildcard'

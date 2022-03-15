@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import { uniq } from 'lodash'
-import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,

@@ -1,11 +1,13 @@
+import React, { useCallback, useState } from 'react'
+
 import { Shortcut, ModifierKey, Key } from '@slimsag/react-shortcuts'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
+
 import styles from './KeyboardShortcutsHelp.module.scss'
 
 interface Props extends KeyboardShortcutsProps {

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { MenuPopover as ReachMenuPopover, MenuItems } from '@reach/menu-button'
 import { Position as ReachPopoverPosition } from '@reach/popover'
 import classNames from 'classnames'
-import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
 import { createRectangle, PopoverContent, PopoverContentProps, Position } from '../Popover'

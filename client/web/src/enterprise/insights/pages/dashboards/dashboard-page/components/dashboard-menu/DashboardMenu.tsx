@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 

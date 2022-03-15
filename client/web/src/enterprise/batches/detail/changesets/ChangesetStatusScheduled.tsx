@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
 import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 

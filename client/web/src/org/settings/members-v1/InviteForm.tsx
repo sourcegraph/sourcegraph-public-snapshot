@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
-import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'

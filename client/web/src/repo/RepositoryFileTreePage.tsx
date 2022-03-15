@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { appendLineRangeQueryParameter, isErrorLike } from '@sourcegraph/common'

@@ -1,5 +1,3 @@
-import classNames from 'classnames'
-import { noop } from 'lodash'
 import React, {
     createContext,
     forwardRef,
@@ -10,6 +8,9 @@ import React, {
     useMemo,
     useState,
 } from 'react'
+
+import classNames from 'classnames'
+import { noop } from 'lodash'
 import FocusLock from 'react-focus-lock'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
@@ -17,6 +18,7 @@ import { useOnClickOutside, useKeyboard } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import { FloatingPanel, FloatingPanelProps } from './floating-panel/FloatingPanel'
+
 import styles from './Popover.module.scss'
 
 export enum PopoverOpenEventReason {
