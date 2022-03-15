@@ -219,14 +219,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const fetchAffiliatedRepos = useCallback(
-        async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
+        async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']> =>
             listAffiliatedRepositories({
                 namespace: owner.id,
                 codeHost: null,
                 query: null,
             })
                 .toPromise()
-                .then(({ affiliatedRepositories: { nodes } }) => nodes),
+                .then(data => data.affiliatedRepositories),
 
         [owner.id]
     )
@@ -280,7 +280,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (hostHasProblems) {
-                // skip this code hots
+                // skip this code host
                 continue
             }
 
@@ -321,7 +321,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const selectedAffiliatedRepos = new Map<string, Repo>()
 
-        const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
+        const affiliatedReposWithMirrorInfo = affiliatedRepos.nodes.map(affiliatedRepo => {
             const foundInSelected = selectedRepos.find(
                 ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
                     // selected repo names formatted: code-host/owner/repository
