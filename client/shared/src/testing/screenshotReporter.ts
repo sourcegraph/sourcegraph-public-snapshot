@@ -1,6 +1,5 @@
 import * as path from 'path'
 
-import jest from '@jest/globals'
 import mocha from 'mocha'
 import { mkdir } from 'mz/fs'
 import * as puppeteer from 'puppeteer'
@@ -10,18 +9,17 @@ import * as puppeteer from 'puppeteer'
  * the browser when a test fails. It is used by e2e and integration tests.
  */
 export function afterEachSaveScreenshotIfFailedWithJest(getPage: () => puppeteer.Page): void {
-    jest.afterEach(async () => {
-        if (hasTestFailures) {
-            await takeScreenshot({
-                page: getPage(),
-                repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
-                screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
-                testName: jest.expect.getState().currentTestName ?? '',
-            })
-
-            hasTestFailures = false
-        }
-    })
+    // jest.afterEach(async () => {
+    //     if (hasTestFailures) {
+    //         await takeScreenshot({
+    //             page: getPage(),
+    //             repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
+    //             screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
+    //             testName: jest.expect.getState().currentTestName ?? '',
+    //         })
+    //         hasTestFailures = false
+    //     }
+    // })
 }
 
 /**

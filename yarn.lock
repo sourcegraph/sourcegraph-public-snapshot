@@ -21330,6 +21330,11 @@ setprototypeof@1.1.1:
   resolved "https://registry.npmjs.org/setprototypeof/-/setprototypeof-1.1.1.tgz#7e95acb24aa92f5885e0abef5ba131330d4ae683"
   integrity sha512-JvdAWfbXeIGaZ9cILp38HntZSFSo3mWg6xGcJJsd+d4aRMOqauag1C63dJfDw7OaMYwEbHMOxEZ1lqVRYP2OAw==
 
+setup-polly-jest@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.npmjs.org/setup-polly-jest/-/setup-polly-jest-0.10.0.tgz#b8d45ea3d1745e3bb9897ec00677bc1cddb83531"
+  integrity sha512-wyMMKvbt7X48G/noBlItBuM/kx0GCQQWgifz1F+aYWLyO7h2tNBJqqra0Tv4DqkImNFVsl8ai2WvbTOW0T4D4Q==
+
 sha.js@~2.4.4:
   version "2.4.11"
   resolved "https://registry.npmjs.org/sha.js/-/sha.js-2.4.11.tgz#37a5cf0b81ecbc6943de109ba2960d1b26584ae7"

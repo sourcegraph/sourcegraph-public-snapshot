@@ -8,6 +8,7 @@ const exportedConfig = {
   displayName: 'web-integration',
   rootDir: __dirname,
   verbose: true,
+  testEnvironment: 'setup-polly-jest/jest-environment-jsdom',
 }
 
 module.exports = exportedConfig
