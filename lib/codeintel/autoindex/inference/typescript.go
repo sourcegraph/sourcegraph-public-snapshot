@@ -22,7 +22,7 @@ func TypeScriptPatterns() []*regexp.Regexp {
 	}
 }
 
-const lsifTscImage = "sourcegraph/lsif-node:autoindex"
+const lsifTypescriptImage = "sourcegraph/lsif-typescript:autoindex"
 const nMuslCommand = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 
 var tscSegmentBlockList = append([]string{"node_modules"}, segmentBlockList...)
@@ -53,7 +53,7 @@ func inferSingleTypeScriptIndexJob(
 
 		dockerSteps = append(dockerSteps, config.DockerStep{
 			Root:     dir,
-			Image:    lsifTscImage,
+			Image:    lsifTypescriptImage,
 			Commands: commands,
 		})
 	}
@@ -73,7 +73,7 @@ func inferSingleTypeScriptIndexJob(
 		dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
 	}
 
-	indexerArgs := []string{"lsif-tsc", "-p", "."}
+	indexerArgs := []string{"lsif-typescript-autoindex", "index"}
 	if shouldInferConfig {
 		indexerArgs = append(indexerArgs, "--inferTSConfig")
 	}
@@ -82,7 +82,7 @@ func inferSingleTypeScriptIndexJob(
 		Steps:       dockerSteps,
 		LocalSteps:  localSteps,
 		Root:        dirWithoutDot(tsConfigPath),
-		Indexer:     lsifTscImage,
+		Indexer:     lsifTypescriptImage,
 		IndexerArgs: indexerArgs,
 		Outfile:     "",
 	}
