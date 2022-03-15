@@ -16,7 +16,7 @@ import styles from './CodeHostItem.module.scss'
 import { scopes } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
-import { ifNotNavigated } from './UserAddCodeHostsPage'
+import { ifNotNavigated, ServiceConfig } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
     kind: ExternalServiceKind
@@ -36,7 +36,6 @@ interface CodeHostItemProps {
     loading?: boolean
     useGitHubApp?: boolean
     reloadComponent?: (reason: string | null) => void
-    pending?: boolean
 }
 
 export interface ParentWindow extends Window {
@@ -60,7 +59,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     loading = false,
     useGitHubApp = false,
     reloadComponent,
-    pending,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -87,6 +85,11 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     const connectAction = isUserOwner ? toAuthProvider : toggleAddConnectionModal
     const updateAction = isUserOwner ? toAuthProvider : toggleUpdateModal
 
+    let serviceConfig: ServiceConfig = { pending: false }
+    if (service) {
+        serviceConfig = JSON.parse(service.config) as ServiceConfig
+    }
+
     return (
         <div className="d-flex align-items-start">
             {onDidAdd && isAddConnectionModalOpen && (
@@ -112,7 +115,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     onDidError={onDidError}
                 />
             )}
-            {service && toggleUpdateModal && onDidUpsert && isUpdateModalOpen && (
+            {service && toggleUpdateModal && onDidUpsert && isUpdateModalOpen && !serviceConfig.pending && (
                 <UpdateCodeHostConnectionModal
                     serviceID={service.id}
                     serviceConfig={service.config}
@@ -126,7 +129,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 />
             )}
             <div className="align-self-center">
-                {service?.warning || service?.lastSyncError ? (
+                {serviceConfig.pending ? (
+                    <Icon className="mb-0 mr-2 text-info" as={AlertCircleIcon} />
+                ) : service?.warning || service?.lastSyncError ? (
                     <Icon className="mb-0 mr-2 text-warning" as={AlertCircleIcon} />
                 ) : service?.id ? (
                     <Icon className="mb-0 mr-2 text-success" as={CheckCircleIcon} />
@@ -137,12 +142,12 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">
-                    {name} {pending ? <Badge color="secondary">Pending</Badge> : null}
+                    {name} {serviceConfig.pending ? <Badge color="secondary">Pending</Badge> : null}
                 </h3>
             </div>
             <div className="align-self-center">
                 {/* Show one of: update, updating, connect, connecting buttons */}
-                {!service?.id ? (
+                {!service?.id || serviceConfig.pending ? (
                     oauthInFlight ? (
                         <LoaderButton
                             loading={true}

@@ -66,6 +66,10 @@ export const ifNotNavigated = (callback: () => void, waitMS: number = 2000): voi
     }, waitMS)
 }
 
+export interface ServiceConfig {
+    pending: boolean
+}
+
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     owner,
     codeHostExternalServices,
@@ -209,14 +213,27 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         []
     )
 
-    const getRequestSuccessBanner = (requestSuccess: boolean): JSX.Element | null =>
-        requestSuccess ? (
-            <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
-                <h4>GitHub code host connection pending</h4>
-                An installation request was sent to your GitHub organization’s owners. After the request is approved,
-                finish connecting with GitHub to choose repositories to sync with Sourcegraph.
-            </Alert>
-        ) : null
+    const getRequestSuccessBanner = (service: ListExternalServiceFields | undefined): JSX.Element | null => {
+        if (!service) {
+            return null
+        }
+        interface ServiceConfig {
+            pending: boolean
+        }
+        const serviceConfig: ServiceConfig = JSON.parse(service.config)
+
+        if (serviceConfig.pending) {
+            return (
+                <Alert className="mb-4" role="alert" key="update-gitlab" variant="info">
+                    <h4>GitHub code host connection pending</h4>
+                    An installation request was sent to your GitHub organization’s owners. After the request is
+                    approved, finish connecting with GitHub to choose repositories to sync with Sourcegraph.
+                </Alert>
+            )
+        }
+
+        return null
+    }
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
@@ -272,6 +289,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     continue
                 }
 
+                const serviceConfig = JSON.parse(service.config) as ServiceConfig
+
+                if (serviceConfig.pending) {
+                    continue
+                }
+
                 // if service is not synced yet or has a "sync now" timestamp
                 // "sync now" timestamp is always less then the epoch time
 
@@ -294,7 +317,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return [
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
-            getRequestSuccessBanner(githubAppInstallRequestSuccess),
+            getRequestSuccessBanner(
+                isServicesByKind(statusOrError) ? statusOrError[ExternalServiceKind.GITHUB] : undefined
+            ),
             getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
             getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
         ]
@@ -451,11 +476,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         loading={kind === ExternalServiceKind.GITHUB && loading && isGitHubAppLoading}
                                         useGitHubApp={kind === ExternalServiceKind.GITHUB && useGitHubApp}
                                         reloadComponent={refetchServices}
-                                        pending={
-                                            githubAppInstallRequestSuccess &&
-                                            kind === ExternalServiceKind.GITHUB &&
-                                            useGitHubApp
-                                        }
                                     />
                                 </CodeHostListItem>
                             ) : null

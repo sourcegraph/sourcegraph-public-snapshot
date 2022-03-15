@@ -156,22 +156,15 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		if setupAction == "request" {
-			http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts?reason=request", org.Name), http.StatusFound)
-			return
-		}
-
-		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
+		externalServices := db.ExternalServices()
+		svcs, err := externalServices.List(r.Context(),
+			database.ExternalServicesListOptions{
+				NamespaceOrgID: org.ID,
+				Kinds:          []string{extsvc.KindGitHub},
+			},
+		)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
+			responseServerError("Failed to list organization code host connections", err)
 			return
 		}
 
@@ -182,15 +175,65 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		externalServices := db.ExternalServices()
-		svcs, err := externalServices.List(r.Context(),
-			database.ExternalServicesListOptions{
-				NamespaceOrgID: org.ID,
-				Kinds:          []string{extsvc.KindGitHub},
-			},
-		)
+		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
 		if err != nil {
-			responseServerError("Failed to list organization code host connections", err)
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		var svc *types.ExternalService
+		if setupAction == "request" {
+
+			displayName := "GitHub"
+			now := time.Now()
+
+			if len(svcs) == 0 {
+				svc = &types.ExternalService{
+					Kind:        extsvc.KindGitHub,
+					DisplayName: displayName,
+					Config: fmt.Sprintf(`
+{
+  "url": "%s",
+  "pending": true,
+  "repos": []
+}
+`, apiURL.String()),
+					NamespaceOrgID: org.ID,
+					CreatedAt:      now,
+					UpdatedAt:      now,
+				}
+			} else if len(svcs) == 1 {
+				// We have an existing github service, update it
+				svc = svcs[0]
+				svc.DisplayName = displayName
+				newConfig, err := jsonc.Edit(svc.Config, "true", "pending")
+				if err != nil {
+					responseServerError("Failed to edit config", err)
+					return
+				}
+				svc.Config = newConfig
+				svc.UpdatedAt = now
+			} else {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
+				return
+			}
+
+			err = db.ExternalServices().Upsert(r.Context(), svc)
+			if err != nil {
+				responseServerError("Failed to upsert code host connection", err)
+				return
+			}
+
+			http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts?reason=request", org.Name), http.StatusFound)
+			return
+		}
+
+		installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
 			return
 		}
 
@@ -206,7 +249,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		}
 		now := time.Now()
 
-		var svc *types.ExternalService
 		if len(svcs) == 0 {
 			svc = &types.ExternalService{
 				Kind:        extsvc.KindGitHub,
