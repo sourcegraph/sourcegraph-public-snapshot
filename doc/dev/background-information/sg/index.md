@@ -109,6 +109,14 @@ To update `sg`, run:
 sg update
 ```
 
+In order to turn on automatic updates, run: 
+
+```sh
+sg update auto enable
+```
+
+On the next command run, if a new version is detected, `sg` will auto update before running.
+
 > NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
 
 ## Usage
@@ -315,6 +323,19 @@ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 sg db add-user -name=foo
+```
+
+### `sg update` - Update sg itself
+
+```bash 
+# Manually update sg
+sg update
+
+# Turn on automatic updates 
+sg update auto enable
+
+# Turn off automatic updates
+sg update auto disable
 ```
 
 ## Configuration
