@@ -692,7 +692,11 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error
 const requeueQuery = `
 -- source: internal/workerutil/store.go:Requeue
 UPDATE %s
-SET {state} = 'queued', {queued_at} = clock_timestamp(), {process_after} = %s
+SET
+	{state} = 'queued',
+	{queued_at} = clock_timestamp(),
+	{started_at} = null,
+	{process_after} = %s
 WHERE {id} = %s
 `
 
@@ -984,6 +988,7 @@ WITH stalled AS (
 UPDATE %s
 SET
 	{state} = 'queued',
+	{queued_at} = clock_timestamp(),
 	{started_at} = null,
 	{num_resets} = {num_resets} + 1
 WHERE {id} IN (SELECT {id} FROM stalled)
