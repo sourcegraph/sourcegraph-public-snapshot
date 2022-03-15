@@ -258,18 +258,20 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string // the tree or commit to produce an archive for
-	Format  string // format of the resulting archive (usually "tar" or "zip")
-
-	// If nonempty, only include these pathspecs.
-	//
-	// ⚠️ Pathspecs have glob-like syntax. To match exact paths, use the magic word "literal":
-	//
-	//     ":(literal)some/path/with/an/aster*sk.go"
-	//
-	// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
-	Pathspecs []string
+	Treeish   string     // the tree or commit to produce an archive for
+	Format    string     // format of the resulting archive (usually "tar" or "zip")
+	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
 }
+
+// Pathspec is a git term for a pattern that matches paths using glob-like syntax.
+// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+type Pathspec string
+
+// Literal matches a path without interpreting "*" or "?" as special characters.
+func Literal(s string) Pathspec { return Pathspec(":(literal)" + s) }
+
+// Suffix matches paths ending with the given suffix (useful for matching paths by basename).
+func Suffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
 // Cmd.StdoutReader with one that knows how to report a repository-not-found
@@ -305,8 +307,8 @@ func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *u
 		"format":  {opt.Format},
 	}
 
-	for _, path := range opt.Pathspecs {
-		q.Add("pathspec", path)
+	for _, pathspec := range opt.Pathspecs {
+		q.Add("pathspec", string(pathspec))
 	}
 
 	return &url.URL{
