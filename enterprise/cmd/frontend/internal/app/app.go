@@ -185,66 +185,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		var svc *types.ExternalService
 		displayName := "GitHub"
 		now := time.Now()
-		if setupAction == "request" {
-
-			if len(svcs) == 0 {
-				svc = &types.ExternalService{
-					Kind:        extsvc.KindGitHub,
-					DisplayName: displayName,
-					Config: fmt.Sprintf(`
-{
-  "url": "%s",
-  "pending": true,
-  "repos": []
-}
-`, apiURL.String()),
-					NamespaceOrgID: org.ID,
-					CreatedAt:      now,
-					UpdatedAt:      now,
-				}
-			} else if len(svcs) == 1 {
-				// We have an existing github service, update it
-				svc = svcs[0]
-				svc.DisplayName = displayName
-				newConfig, err := jsonc.Edit(svc.Config, "true", "pending")
-				if err != nil {
-					responseServerError("Failed to edit config", err)
-					return
-				}
-				svc.Config = newConfig
-				svc.UpdatedAt = now
-			} else {
-				w.WriteHeader(http.StatusBadRequest)
-				_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
-				return
-			}
-
-			err = db.ExternalServices().Upsert(r.Context(), svc)
-			if err != nil {
-				responseServerError("Failed to upsert code host connection", err)
-				return
-			}
-
-			http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts?reason=request", org.Name), http.StatusFound)
-			return
-		}
-
-		installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
-			return
-		}
-
-		ins, err := client.GetAppInstallation(r.Context(), installationID)
-		if err != nil {
-			responseServerError(`Failed to get the installation information using the "installation_id"`, err)
-			return
-		}
-
-		if ins.Account.Login != nil {
-			displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
-		}
 
 		if len(svcs) == 0 {
 			svc = &types.ExternalService{
@@ -252,11 +192,10 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				DisplayName: displayName,
 				Config: fmt.Sprintf(`
 {
-  "url": "%s",
-  "githubAppInstallationID": "%d",
-  "repos": []
+"url": "%s",
+"repos": []
 }
-`, apiURL.String(), installationID),
+	`, apiURL.String()),
 				NamespaceOrgID: org.ID,
 				CreatedAt:      now,
 				UpdatedAt:      now,
@@ -265,16 +204,53 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			// We have an existing github service, update it
 			svc = svcs[0]
 			svc.DisplayName = displayName
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
+			return
+		}
+
+		if setupAction == "request" {
+			newConfig, err := jsonc.Edit(svc.Config, true, "pending")
+			if err != nil {
+				responseServerError("Failed to edit config", err)
+			}
+			svc.Config = newConfig
+		} else if setupAction == "install" {
+			installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
+				return
+			}
+
+			ins, err := client.GetAppInstallation(r.Context(), installationID)
+			if err != nil {
+				responseServerError(`Failed to get the installation information using the "installation_id"`, err)
+				return
+			}
+
+			if ins.Account.Login != nil {
+				displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
+			}
+
+			svc.DisplayName = displayName
 			newConfig, err := jsonc.Edit(svc.Config, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
 			if err != nil {
 				responseServerError("Failed to edit config", err)
 				return
 			}
+			newConfig, err = jsonc.Edit(newConfig, false, "pending")
+			if err != nil {
+				responseServerError("Failed to edit config", err)
+			}
 			svc.Config = newConfig
 			svc.UpdatedAt = now
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
+		}
+
+		err = db.ExternalServices().Upsert(r.Context(), svc)
+		if err != nil {
+			responseServerError("Failed to upsert code host connection", err)
 			return
 		}
 
