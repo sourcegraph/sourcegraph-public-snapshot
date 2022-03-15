@@ -40,7 +40,7 @@ const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left })
     }
 }
 
-export const getToolbarMount = (codeView: HTMLElement, pageKind: GitLabPageKind): HTMLElement => {
+export const getToolbarMount = (codeView: HTMLElement, pageKind?: GitLabPageKind): HTMLElement => {
     const existingMount: HTMLElement | null = codeView.querySelector('.sg-toolbar-mount-gitlab')
     if (existingMount) {
         return existingMount
