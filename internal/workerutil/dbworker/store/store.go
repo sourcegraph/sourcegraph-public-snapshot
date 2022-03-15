@@ -391,6 +391,12 @@ SELECT COUNT(*) FROM %s WHERE (
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
 // been in the queued state (including errored records that can be retried in the future). This method returns
 // an duration of zero if there are no jobs ready for processing.
+//
+// If records backed by this store do not have an initial state of 'queued', or if it is possible to requeue
+// records outside of this package, manual care should be taken to set the queued_at column to the proper time.
+// This method makes no guarantees otherwise.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/32624.
 func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err error) {
 	ctx, endObservation := s.operations.maxDurationInQueue.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -686,7 +692,7 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error
 const requeueQuery = `
 -- source: internal/workerutil/store.go:Requeue
 UPDATE %s
-SET {state} = 'queued', {process_after} = %s
+SET {state} = 'queued', {queued_at} = clock_timestamp(), {process_after} = %s
 WHERE {id} = %s
 `
 
