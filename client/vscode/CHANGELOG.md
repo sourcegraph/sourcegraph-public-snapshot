@@ -2,7 +2,13 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release - 2.2.0
+## Next Release - 2.2.1
+
+### Changes
+
+- TBA
+
+## 2.2.0
 
 ### Changes
 
