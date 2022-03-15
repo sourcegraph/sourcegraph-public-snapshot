@@ -160,10 +160,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	err := checkSgVersion(ctx)
-	if err != nil {
-		fmt.Printf("checking sg version failed: %s\n", err)
-		os.Exit(1)
+	if !(len(os.Args) >= 2 && os.Args[1] == "update") {
+		// If we're not running "sg update ...", we want to check the version first
+		err := checkSgVersion(ctx)
+		if err != nil {
+			fmt.Printf("checking sg version failed: %s\n", err)
+			os.Exit(1)
+		}
 	}
 
 	if *verboseFlag {
