@@ -86,6 +86,8 @@ export function registerWebviews({
                     if (searchSidebarWebviewView !== 'initializing' && searchSidebarWebviewView?.visible) {
                         focusFileExplorer()
                     }
+                    // Clear search result
+                    extensionCoreAPI.emit({ type: 'search_panel_disposed' })
                 })
             }
 

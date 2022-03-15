@@ -112,7 +112,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
             },
             `https://${hostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`
         )
-        platformContext.telemetryService.log('VSCESearchSubmitted')
+        platformContext.telemetryService.log('IDESearchSubmitted')
     }, [
         extensionCoreAPI,
         userQueryState.query,
