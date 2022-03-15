@@ -87,7 +87,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     refetchBatchChange,
     telemetryService,
 }) => {
-    const executionEnabled =
+    const isExecutionEnabled =
         (settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
             settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
@@ -115,7 +115,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         </span>
                     </span>
                 </BatchChangeTab>
-                {!executionEnabled && (
+                {!isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
@@ -125,7 +125,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         </span>
                     </BatchChangeTab>
                 )}
-                {executionEnabled && (
+                {isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
@@ -175,7 +175,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
                         settingsCascade={settingsCascade}
-                        executionEnabled={executionEnabled}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
@@ -186,7 +186,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
-                    {!executionEnabled ? (
+                    {!isExecutionEnabled ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -236,7 +236,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
                         settingsCascade={settingsCascade}
-                        executionEnabled={executionEnabled}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>

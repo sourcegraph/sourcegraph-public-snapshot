@@ -65,7 +65,7 @@ interface Props
         SettingsCascadeProps {
     batchChangeID: Scalars['ID']
     batchChangeState: BatchChangeState
-    executionEnabled: boolean
+    isExecutionEnabled: boolean
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -110,7 +110,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     refetchBatchChange,
     settingsCascade,
     batchChangeState,
-    executionEnabled,
+    isExecutionEnabled,
 }) => {
     // You might look at this destructuring statement and wonder why this isn't
     // just a single context consumer object. The reason is because making it a
@@ -250,12 +250,12 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             return <EmptyArchivedChangesetListElement />
         }
 
-        if (batchChangeState === BatchChangeState.DRAFT && executionEnabled) {
+        if (batchChangeState === BatchChangeState.DRAFT && isExecutionEnabled) {
             return <EmptyDraftChangesetListElement />
         }
 
         return <EmptyChangesetListElement />
-    }, [changesetFilters, onlyArchived, batchChangeState, executionEnabled])
+    }, [changesetFilters, onlyArchived, batchChangeState, isExecutionEnabled])
 
     return (
         <Container>
