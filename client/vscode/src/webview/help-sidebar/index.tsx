@@ -1,13 +1,16 @@
 import '../platform/polyfills'
 
+import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { render } from 'react-dom'
 
-import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { AnchorLink, setLinkComponent, useObservable } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI, HelpSidebarAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
+import { createPlatformContext } from '../platform/context'
 
 import { HelpSidebarView } from './HelpSidebarView'
 
@@ -19,10 +22,29 @@ export const extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI> = Comlink.wrap(p
 
 const helpSidebarAPI: HelpSidebarAPI = {}
 
+const platformContext = createPlatformContext(extensionCoreAPI)
+
 Comlink.expose(helpSidebarAPI, expose)
 
 setLinkComponent(AnchorLink)
 
-const Main: React.FC = () => <HelpSidebarView />
+const Main: React.FC = () => {
+    const authenticatedUser = useObservable(
+        useMemo(() => wrapRemoteObservable(extensionCoreAPI.getAuthenticatedUser()), [])
+    )
+    const instanceURL = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.getInstanceURL()), []))
+    if (authenticatedUser === undefined || instanceURL === undefined) {
+        return <VSCodeProgressRing />
+    }
+
+    return (
+        <HelpSidebarView
+            platformContext={platformContext}
+            extensionCoreAPI={extensionCoreAPI}
+            authenticatedUser={authenticatedUser}
+            instanceURL={instanceURL}
+        />
+    )
+}
 
 render(<Main />, document.querySelector('#root'))

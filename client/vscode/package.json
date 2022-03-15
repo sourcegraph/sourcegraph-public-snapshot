@@ -123,7 +123,12 @@
             "object"
           ],
           "default": {},
-          "examples": [{"github": "gitlab", "master": "main"}],
+          "examples": [
+            {
+              "github": "gitlab",
+              "master": "main"
+            }
+          ],
           "description": "For each item in this object, replace key with value in the remote url."
         },
         "sourcegraph.defaultBranch": {
@@ -138,7 +143,12 @@
             "object"
           ],
           "default": {},
-          "examples": [{"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"}],
+          "examples": [
+            {
+              "Cache-Control": "no-cache",
+              "Proxy-Authenticate": "Basic"
+            }
+          ],
           "description": "Each value pair will be added to the request headers made to your instance."
         }
       }
@@ -208,6 +218,7 @@
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.29",
     "https-browserify": "^1.0.0",
     "stream-http": "^3.2.0"
   }

@@ -1,5 +1,6 @@
 .sidebar-container {
     padding: 0.125rem 0 0 0 !important;
+    color: var(--vscode-foreground);
 
     font-size: var(--vscode-editor-font-size) !important;
 
@@ -22,4 +23,5 @@
     text-overflow: ellipsis;
     overflow: hidden;
     flex-wrap: nowrap;
+    margin-top: 0.5rem;
 }

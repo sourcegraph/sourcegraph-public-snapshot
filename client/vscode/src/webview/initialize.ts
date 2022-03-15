@@ -74,9 +74,9 @@ export async function initializeSearchPanelWebview({
         </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             panel.webview.cspSource
-        }; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
+        }; img-src data: vscode-resource: https:; script-src 'nonce-${nonce}' ; style-src data: ${
         panel.webview.cspSource
-    } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src ${
+    } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:; frame-src https:; font-src ${
         panel.webview.cspSource
     };">
         <title>Sourcegraph Search</title>
@@ -144,7 +144,7 @@ export function initializeSearchSidebarWebview({
             webviewView.webview.cspSource
         }; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
         webviewView.webview.cspSource
-    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
+    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
@@ -179,7 +179,7 @@ export function initializeHelpSidebarWebview({
     const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.js'))
     const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.css'))
     const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
-    const codiconFontSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon.ttf'))
+    const codiconsUri = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicon', 'codicon.css'))
 
     const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
 
@@ -191,21 +191,17 @@ export function initializeHelpSidebarWebview({
 
     // Apply Content-Security-Policy
     webviewView.webview.html = `<!DOCTYPE html>
-    <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()}>
+    <html lang="en" data-panel-id="${panelId}" >
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${
             webviewView.webview.cspSource
-        }; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
-        webviewView.webview.cspSource
-    } http: https: data:; connect-src 'self' http: https:; font-src ${
-        webviewView.webview.cspSource
-    }; vscode-webview: https:;">
+        }; style-src ${webviewView.webview.cspSource}; script-src ${webviewView.webview.cspSource};">
         <title>Help and Feedback</title>
+        <link rel="stylesheet" href="${codiconsUri.toString()}" />
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
-        <link rel="stylesheet" href="${codiconFontSource.toString()}" />
     </head>
     <body class="help-sidebar">
         <div id="root" />

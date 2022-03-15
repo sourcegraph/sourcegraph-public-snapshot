@@ -119,6 +119,13 @@ code {
     font-size: var(--vscode-editor-font-size) !important;
 }
 
+.btn-text {
+    color: var(--vscode-foreground);
+    padding: 0;
+    font-weight: var(--vscode-editor-font-weight) !important;
+    font-size: var(--vscode-editor-font-size) !important;
+}
+
 .input,
 .form-control {
     background-color: var(--vscode-input-background);
