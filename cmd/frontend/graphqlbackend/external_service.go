@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -177,12 +178,18 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 	if err != nil {
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.
-		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err) // here, sometimes, we got errors such as "not an oauth token"...
+		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
+		// here, sometimes, we got errors from one codehost but not from another
+		// in consequence, the code host conexion that had an error shows up  as green but it's not connected...
+		// if we return the error, both code host connextions aren't diplayed
 		return nil, nil
 	}
 	if scopes == nil {
+		fmt.Println("scopes are nil")
 		return nil, nil
 	}
+
+	fmt.Println("scopes...", scopes)
 	return &scopes, nil
 }
 

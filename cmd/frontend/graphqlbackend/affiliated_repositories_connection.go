@@ -125,12 +125,13 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 		for i := 0; i < pending; i++ {
 			select {
 			case result := <-results:
-				if result.err != nil { // if any error comes from results.err, repos is an empty array
+				if result.err != nil { // if any errors come from results.err, repos is an empty array
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 					fetchErrors = append(fetchErrors, result.err)
 
 					errMessage := "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
+					fmt.Println("error message here...")
 					listOfErrors = append(listOfErrors, errMessage)
 
 					continue

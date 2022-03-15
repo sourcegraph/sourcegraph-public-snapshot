@@ -280,6 +280,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (hostHasProblems) {
+                console.log('skiping why?')
                 // skip this code host
                 continue
             }
@@ -310,14 +311,19 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
         }
 
-        if (codeHostProblems.length > 0) {
-            setAffiliateRepoProblems(codeHostProblems)
-        }
-
         const [affiliatedRepos, selectedRepos] = await Promise.all([
             fetchAffiliatedRepos(),
             fetchSelectedRepositories(),
         ])
+
+        if (affiliatedRepos.codeHostErrors !== '') {
+            // Fetch errors from affiliated repositories
+            codeHostProblems.push(asError(`${affiliatedRepos.codeHostErrors}`))
+        }
+
+        if (codeHostProblems.length > 0) {
+            setAffiliateRepoProblems(codeHostProblems)
+        }
 
         const selectedAffiliatedRepos = new Map<string, Repo>()
 
@@ -576,7 +582,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // code hosts were loaded and some were configured
     const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
     const noCodeHostsOrErrors = !hasCodeHosts || hasProblems
-    const hasCodeHostsNoErrors = hasCodeHosts && !hasProblems
+    const hasCodeHostsNoErrors = hasCodeHosts
+    // const hasCodeHostsNoErrors = hasCodeHosts && !hasProblems
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
