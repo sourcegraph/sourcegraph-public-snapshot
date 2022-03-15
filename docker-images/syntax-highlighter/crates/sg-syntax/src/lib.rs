@@ -82,7 +82,7 @@ fn determine_language<'a>(
     q: &SourcegraphQuery,
     syntax_set: &'a SyntaxSet,
 ) -> Result<&'a SyntaxReference, JsonValue> {
-    // If filetype is a453
+    // If filetype is passed, we should choose that if possible.
     if let Some(filetype) = &q.filetype {
         // This is `find_syntax_by_name` except that it doesn't care about
         // case sensitivity or anything like that.
