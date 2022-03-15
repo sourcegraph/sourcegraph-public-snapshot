@@ -10,7 +10,7 @@ Critical telemetry includes only the high-level data below required for billing,
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
 - Sourcegraph version string (e.g. "vX.X.X")
 - Dependency versions (e.g. "6.0.9" for Redis, or "13.0" for Postgres)
-- Deployment type (single Docker image, Docker Compose, Kubernetes cluster, or pure Docker cluster)
+- Deployment type (single Docker image, Docker Compose, Kubernetes cluster, Helm, or pure Docker cluster)
 - License key associated with your Sourcegraph subscription
 - Aggregate count of current monthly users
 - Total count of existing user accounts
@@ -101,7 +101,6 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total count of insights grouped by time interval (step size) in days  
   - Total count of insights set organization visible grouped by insight type
   - Total count of insights grouped by presentation type, series type, and presentation-series type.
-
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
@@ -111,8 +110,16 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of clicks on the code monitor email search link
 - Code Host integration usage data (Browser extension / Native Integration)
   - Aggregate counts of current daily, weekly, and monthly unique users and total events
-  - Aggregate counts of current daily, weekly, and monthly unique users and total events
-  - who visited Sourcegraph instance from browser extension
+  - Aggregate counts of current daily, weekly, and monthly unique users and total events who visited Sourcegraph instance from browser extension
+- IDE extensions usage data
+  - Aggregate counts of current daily, weekly, and monthly searches performed:
+    - Count of unique users who performed searches
+    - Count of total searches performed
+  - Aggregate counts of current daily user state:
+    - Count of users who installed the extension
+    - Count of users who uninstalled the extension 
+  - Aggregate count of current daily redirects from extension to Sourcegraph instance
+
 
 
 - CTA usage data

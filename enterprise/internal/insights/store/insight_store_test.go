@@ -22,9 +22,9 @@ func TestGet(t *testing.T) {
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
-									VALUES (1, 'test title', 'test description', 'unique-1'),
-									       (2, 'test title 2', 'test description 2', 'unique-2')`)
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+									VALUES (1, 'test title', 'test description', 'unique-1', false),
+									       (2, 'test title 2', 'test description 2', 'unique-2', true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,6 +85,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              1,
@@ -105,6 +106,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              2,
@@ -125,6 +127,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "second-color-2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            true,
 			},
 		}
 
@@ -161,6 +164,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              1,
@@ -181,6 +185,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 		}
 
@@ -216,6 +221,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 			{
 				ViewID:              1,
@@ -236,6 +242,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 				PresentationType:    types.Line,
 				GenerationMethod:    types.Search,
+				IsFrozen:            false,
 			},
 		}
 
@@ -249,6 +256,19 @@ func TestGetAll(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	// First test the method on an empty database.
+	t.Run("test empty database", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAll(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]types.InsightViewSeries{}, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
 
 	// Set up some insight views to test pagination and permissions.
 	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
@@ -298,8 +318,6 @@ func TestGetAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	ctx := context.Background()
 
 	t.Run("test all results", func(t *testing.T) {
 		store := NewInsightStore(timescale)

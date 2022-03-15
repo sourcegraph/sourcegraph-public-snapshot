@@ -1,21 +1,19 @@
-import classNames from 'classnames'
-import React, { useRef } from 'react'
+import { noop } from 'lodash'
+import React from 'react'
 import ElmComponent from 'react-elm-components'
 
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BlockProps, ComputeBlock } from '../..'
-import { NotebookBlockMenu } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
-import blockStyles from '../NotebookBlock.module.scss'
-import { useBlockSelection } from '../useBlockSelection'
-import { useBlockShortcuts } from '../useBlockShortcuts'
+import { NotebookBlock } from '../NotebookBlock'
 
 import { Elm } from './component/src/Main.elm'
 import styles from './NotebookComputeBlock.module.scss'
 
-interface ComputeBlockProps extends BlockProps, ComputeBlock, ThemeProps {
-    isMacPlatform: boolean
+interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {
+    platformContext: Pick<PlatformContext, 'sourcegraphURL'>
 }
 
 interface ElmEvent {
@@ -79,68 +77,37 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     output,
     isSelected,
     isLightTheme,
-    isMacPlatform,
+    platformContext,
     isReadOnly,
     onRunBlock,
     onSelectBlock,
     ...props
 }) => {
     const isInputFocused = false
-    const blockElement = useRef<HTMLDivElement>(null)
-
-    const { onSelect } = useBlockSelection({
-        id,
-        blockElement: blockElement.current,
-        isSelected,
-        isInputFocused,
-        onSelectBlock,
-        ...props,
-    })
-
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        isMacPlatform,
-        onEnterBlock: () => {},
-        ...props,
-        onRunBlock: () => {},
-    })
-
-    const modifierKeyLabel = isMacPlatform ? '⌘' : 'Ctrl'
     const commonMenuActions = useCommonBlockMenuActions({
-        modifierKeyLabel,
         isInputFocused,
         isReadOnly,
-        isMacPlatform,
         ...props,
     })
 
-    const blockMenu = isSelected && !isReadOnly && <NotebookBlockMenu id={id} actions={commonMenuActions} />
-
     return (
-        <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
-            {/* See the explanation for the disable above. */}
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <div
-                className={classNames(
-                    blockStyles.block,
-                    styles.input,
-                    (isInputFocused || isSelected) && blockStyles.selected
-                )}
-                onClick={onSelect}
-                onFocus={onSelect}
-                onKeyDown={onKeyDown}
-                // A tabIndex is necessary to make the block focusable.
-                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-                tabIndex={0}
-                aria-label="Notebook compute block"
-                ref={blockElement}
-            >
-                <div className="elm">
-                    {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */}
-                    <ElmComponent src={Elm.Main} ports={setupPorts} flags={null} />
-                </div>
+        <NotebookBlock
+            className={styles.input}
+            id={id}
+            isReadOnly={isReadOnly}
+            isInputFocused={isInputFocused}
+            aria-label="Notebook compute block"
+            onEnterBlock={noop}
+            isSelected={isSelected}
+            onRunBlock={noop}
+            onSelectBlock={onSelectBlock}
+            actions={isSelected ? commonMenuActions : []}
+            {...props}
+        >
+            <div className="elm">
+                {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */}
+                <ElmComponent src={Elm.Main} ports={setupPorts} flags={platformContext.sourcegraphURL} />
             </div>
-            {blockMenu}
-        </div>
+        </NotebookBlock>
     )
 }

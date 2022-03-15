@@ -16,10 +16,11 @@ import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -34,10 +35,6 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { BrowserExtensionAlert } from '../../repo/actions/BrowserExtensionAlert'
 import { IDEExtensionAlert } from '../../repo/actions/IdeExtensionAlert'
-import {
-    HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
-    HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
-} from '../../repo/actions/InstallIntegrationsAlert'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
     useExperimentalFeatures,
@@ -45,7 +42,7 @@ import {
     useSearchStack,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
 
@@ -97,15 +94,15 @@ function useCtaAlert(
         'StreamingSearchResults.hasDismissedSignupAlert',
         false
     )
-    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_BROWSER_EXTENSION_ALERT_KEY,
+    const [hasDismissedBrowserExtensionAlert, setHasDismissedBrowserExtensionAlert] = useTemporarySetting(
+        'cta.browserExtensionAlertDismissed',
         false
     )
-    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useLocalStorage<boolean>(
-        HAS_DISMISSED_IDE_EXTENSION_ALERT_KEY,
+    const [hasDismissedIDEExtensionAlert, setHasDismissedIDEExtensionAlert] = useTemporarySetting(
+        'cta.ideExtensionAlertDismissed',
         false
     )
-    const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     const isUsingIdeIntegration = useIsActiveIdeIntegrationUser()
 
     const displaySignupAndBrowserExtensionCTAsBasedOnCadence = usePersistentCadence(
@@ -128,15 +125,19 @@ function useCtaAlert(
         }
 
         if (
-            !hasDismissedBrowserExtensionAlert &&
+            hasDismissedBrowserExtensionAlert === false &&
             isAuthenticated &&
-            isBrowserExtensionInstalled === false &&
+            isBrowserExtensionActiveUser === false &&
             displaySignupAndBrowserExtensionCTAsBasedOnCadence
         ) {
             return 'browser'
         }
 
-        if (isUsingIdeIntegration === false && displayIDEExtensionCTABasedOnCadence && !hasDismissedIDEExtensionAlert) {
+        if (
+            isUsingIdeIntegration === false &&
+            displayIDEExtensionCTABasedOnCadence &&
+            hasDismissedIDEExtensionAlert === false
+        ) {
             return 'ide'
         }
 
@@ -147,7 +148,7 @@ function useCtaAlert(
         isAuthenticated,
         displaySignupAndBrowserExtensionCTAsBasedOnCadence,
         hasDismissedBrowserExtensionAlert,
-        isBrowserExtensionInstalled,
+        isBrowserExtensionActiveUser,
         isUsingIdeIntegration,
         hasDismissedIDEExtensionAlert,
         displayIDEExtensionCTABasedOnCadence,
@@ -421,15 +422,23 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             onClick: onSignUpClick,
                         }}
                         icon={<SearchBetaIcon />}
-                        className="mr-3"
+                        className="mr-3 percy-display-none"
                         onClose={onCtaAlertDismissed}
                     />
                 )}
                 {ctaToDisplay === 'browser' && (
-                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
+                    <BrowserExtensionAlert
+                        className="mr-3 percy-display-none"
+                        onAlertDismissed={onCtaAlertDismissed}
+                        page="search"
+                    />
                 )}
                 {ctaToDisplay === 'ide' && (
-                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
+                    <IDEExtensionAlert
+                        className="mr-3 percy-display-none"
+                        onAlertDismissed={onCtaAlertDismissed}
+                        page="search"
+                    />
                 )}
                 <StreamingSearchResultsList
                     {...props}

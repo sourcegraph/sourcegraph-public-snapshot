@@ -160,7 +160,7 @@ export const CodeMonitoringLogs: React.FunctionComponent<{ now?: () => Date; _te
                                 noun="monitor"
                                 pluralNoun="monitors"
                                 hasNextPage={hasNextPage}
-                                emptyElement={<div>You haven't created any monitors yet</div>}
+                                emptyElement={<div className={styles.empty}>You haven't created any monitors yet</div>}
                             />
                             {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                         </SummaryContainer>

@@ -1,4 +1,5 @@
 import { ComponentStory, ComponentMeta } from '@storybook/react'
+import { noop } from 'lodash'
 import React, { useEffect } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -22,7 +23,7 @@ function SearchStackWrapper({
         useSearchStackState.setState({ entries, previousEntries, canRestoreSession }, true)
     }, [entries, previousEntries, canRestoreSession])
 
-    return <SearchStack initialOpen={open} />
+    return <SearchStack onCreateNotebook={noop} initialOpen={open} />
 }
 
 export default {

@@ -1,5 +1,5 @@
 import { ApolloCache, ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
-import { forkJoin, from, Observable, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 import {
@@ -116,15 +116,15 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             this.apolloClient.query<HasAvailableCodeInsightResult>({
                 query: gql`
                     query HasAvailableCodeInsight {
-                        insightViews {
-                            pageInfo {
-                                hasNextPage
+                        insightViews(first: 1) {
+                            nodes {
+                                id
                             }
                         }
                     }
                 `,
             })
-        ).pipe(map(({ data }) => data.insightViews.pageInfo.hasNextPage))
+        ).pipe(map(({ data }) => data.insightViews.nodes.length > 0))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for
@@ -476,10 +476,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    public getUiFeatures = (): Observable<UiFeatures> =>
-        forkJoin({
-            licensed: of(true),
-        })
+    public getUiFeatures = (): UiFeatures => ({
+        licensed: true,
+    })
 }
 
 const getRepositoryName = (

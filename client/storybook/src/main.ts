@@ -6,7 +6,6 @@ import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
 import {
     NODE_MODULES_PATH,
@@ -21,6 +20,7 @@ import {
     getTerserPlugin,
     getBabelLoader,
     getBasicCSSLoader,
+    getStatoscopePlugin,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
@@ -189,6 +189,7 @@ const config = {
                 options: {
                     cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
                     report: 'json',
+                    pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
                 },
             },
         })
@@ -216,7 +217,7 @@ const config = {
         }
 
         if (environment.isBundleAnalyzerEnabled) {
-            config.plugins.push(new BundleAnalyzerPlugin())
+            config.plugins.push(getStatoscopePlugin())
         }
 
         if (environment.isSpeedAnalyzerEnabled) {

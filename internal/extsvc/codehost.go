@@ -15,7 +15,7 @@ type CodeHost struct {
 
 func (c *CodeHost) IsPackageHost() bool {
 	switch c.ServiceType {
-	case TypeNPMPackages, TypeJVMPackages:
+	case TypeNpmPackages, TypeJVMPackages:
 		return true
 	}
 	return false
@@ -32,14 +32,14 @@ var (
 	MavenURL    = &url.URL{Host: "maven"}
 	JVMPackages = NewCodeHost(MavenURL, TypeJVMPackages)
 
-	NPMURL      = &url.URL{Host: "npm"}
-	NPMPackages = NewCodeHost(NPMURL, TypeNPMPackages)
+	NpmURL      = &url.URL{Host: "npm"}
+	NpmPackages = NewCodeHost(NpmURL, TypeNpmPackages)
 
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,
 		GitLabDotCom,
 		JVMPackages,
-		NPMPackages,
+		NpmPackages,
 	}
 )
 
