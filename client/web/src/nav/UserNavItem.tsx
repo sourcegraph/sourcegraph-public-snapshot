@@ -22,6 +22,7 @@ import {
     Position,
     AnchorLink,
     Select,
+    Icon,
     Badge,
 } from '@sourcegraph/wildcard'
 
@@ -146,13 +147,9 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 <UserAvatar
                                     user={props.authenticatedUser}
                                     targetID={targetID}
-                                    className={classNames('icon-inline', styles.avatar)}
+                                    className={styles.avatar}
                                 />
-                                {isExpanded ? (
-                                    <ChevronUpIcon className="icon-inline" />
-                                ) : (
-                                    <ChevronDownIcon className="icon-inline" />
-                                )}
+                                <Icon as={isExpanded ? ChevronUpIcon : ChevronDownIcon} />
                             </div>
                         </div>
                         {isExtensionAlertAnimating && (
@@ -249,7 +246,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                             </MenuLink>
                         )}
                         <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                            Help <OpenInNewIcon className="icon-inline" />
+                            Help <Icon as={OpenInNewIcon} />
                         </MenuLink>
                         <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
@@ -261,7 +258,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <MenuDivider />
                         {props.showDotComMarketing && (
                             <MenuLink as={AnchorLink} to="https://about.sourcegraph.com" target="_blank" rel="noopener">
-                                About Sourcegraph <OpenInNewIcon className="icon-inline" />
+                                About Sourcegraph <Icon as={OpenInNewIcon} />
                             </MenuLink>
                         )}
                         {codeHostIntegrationMessaging === 'browser-extension' && (
@@ -271,7 +268,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 target="_blank"
                                 rel="noopener"
                             >
-                                Browser extension <OpenInNewIcon className="icon-inline" />
+                                Browser extension <Icon as={OpenInNewIcon} />
                             </MenuLink>
                         )}
                     </MenuList>

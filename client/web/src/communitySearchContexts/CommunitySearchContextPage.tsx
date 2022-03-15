@@ -19,7 +19,7 @@ import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, useObservable, Link, Card } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
@@ -160,7 +160,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
                                 <h2>
-                                    <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
+                                    <Icon className="mr-2" as={SourceRepositoryMultipleIcon} />
                                     Repositories
                                 </h2>
                                 <p>
@@ -214,7 +214,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('github.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
+                    <Icon className={styles.repoListIcon} as={GithubIcon} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -224,7 +224,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('gitlab.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
+                    <Icon className={styles.repoListIcon} as={GitlabIcon} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -234,7 +234,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('bitbucket.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
+                    <Icon className={styles.repoListIcon} as={BitbucketIcon} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}

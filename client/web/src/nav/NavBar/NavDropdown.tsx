@@ -4,7 +4,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
-import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE } from '@sourcegraph/wildcard'
+import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -121,9 +121,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                         ref={linkReference}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
-                                            <toggleItem.icon
-                                                className={classNames('icon-inline', navItemStyles.icon)}
-                                            />
+                                            <Icon className={navItemStyles.icon} as={toggleItem.icon} />
                                             <span
                                                 className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}
                                             >
@@ -139,15 +137,10 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                         ref={menuButtonReference}
                                     >
                                         <span className={navItemStyles.itemFocusableContent}>
-                                            {isExpanded ? (
-                                                <ChevronUpIcon
-                                                    className={classNames('icon-inline', navItemStyles.icon)}
-                                                />
-                                            ) : (
-                                                <ChevronDownIcon
-                                                    className={classNames('icon-inline', navItemStyles.icon)}
-                                                />
-                                            )}
+                                            <Icon
+                                                className={navItemStyles.icon}
+                                                as={isExpanded ? ChevronUpIcon : ChevronDownIcon}
+                                            />
                                         </span>
                                     </MenuButton>
                                 </div>
