@@ -373,19 +373,6 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 
 	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
 
-	forceResultTypes := result.TypeEmpty
-	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
-		if p.Pattern == "" {
-			// Fallback to literal search for searching repos and files if
-			// the structural search pattern is empty.
-			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-			p.IsStructuralPat = false
-			forceResultTypes = result.Types(0)
-		} else {
-			forceResultTypes = result.TypeStructural
-		}
-	}
-
 	args := search.TextParameters{
 		PatternInfo: p,
 		Query:       q,
@@ -398,7 +385,15 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 		Zoekt:        jargs.Zoekt,
 		SearcherURLs: jargs.SearcherURLs,
 	}
-	args = withResultTypes(args, forceResultTypes)
+
+	args.ResultTypes = computeResultTypes(args, p.Pattern, jargs.SearchInputs.PatternType)
+	if p.Pattern == "" {
+		// Fallback to basic search for searching repos and files if
+		// the structural search pattern is empty.
+		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
+		p.IsStructuralPat = false
+	}
+
 	return args, nil
 }
 
@@ -517,10 +512,10 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 
 // withResultTypes populates the ResultTypes field of args, which drives the kind
 // of search to run (e.g., text search, symbol search).
-func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
+func computeResultTypes(args search.TextParameters, pattern string, searchType query.SearchType) result.Types {
 	var rts result.Types
-	if forceTypes != 0 {
-		rts = forceTypes
+	if searchType == query.SearchTypeStructural && pattern != "" {
+		rts = result.TypeStructural
 	} else {
 		stringTypes, _ := args.Query.StringValues(query.FieldType)
 		if len(stringTypes) == 0 {
@@ -539,8 +534,7 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	if rts.Has(result.TypePath) {
 		args.PatternInfo.PatternMatchesPath = true
 	}
-	args.ResultTypes = rts
-	return args
+	return rts
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.

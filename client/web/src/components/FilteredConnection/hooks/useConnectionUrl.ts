@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 
 import { getUrlQuery, GetUrlQueryParameters } from '../utils'

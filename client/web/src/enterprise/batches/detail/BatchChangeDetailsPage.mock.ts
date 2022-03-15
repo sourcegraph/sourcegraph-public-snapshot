@@ -11,12 +11,14 @@ import {
     BatchChangeChangesetsResult,
     ChangesetCheckState,
     BatchSpecState,
+    BatchChangeState,
 } from '../../../graphql-operations'
 
 const now = new Date()
 
 export const MOCK_BATCH_CHANGE: BatchChangeFields = {
     __typename: 'BatchChange',
+    state: BatchChangeState.OPEN,
     changesetsStats: {
         __typename: 'ChangesetsStats',
         closed: 1,

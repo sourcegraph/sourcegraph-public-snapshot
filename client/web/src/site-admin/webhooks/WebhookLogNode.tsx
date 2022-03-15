@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import { format } from 'date-fns'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Button, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
@@ -10,6 +11,7 @@ import { WebhookLogFields } from '../../graphql-operations'
 
 import { MessagePanel } from './MessagePanel'
 import { StatusCode } from './StatusCode'
+
 import styles from './WebhookLogNode.module.scss'
 
 export interface Props {

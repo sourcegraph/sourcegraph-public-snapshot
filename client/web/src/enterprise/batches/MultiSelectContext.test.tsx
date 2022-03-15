@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
 import React, { useContext, useEffect } from 'react'
+
+import { render } from '@testing-library/react'
 import { act } from 'react-dom/test-utils'
 
 import { MultiSelectContext, MultiSelectContextProvider, MultiSelectContextState } from './MultiSelectContext'

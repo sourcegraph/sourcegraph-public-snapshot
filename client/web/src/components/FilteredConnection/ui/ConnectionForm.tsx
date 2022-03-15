@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useRef } from 'react'
+
+import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'

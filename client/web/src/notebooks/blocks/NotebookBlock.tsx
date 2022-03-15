@@ -1,12 +1,14 @@
-import classNames from 'classnames'
 import React, { useRef } from 'react'
+
+import classNames from 'classnames'
 
 import { BlockProps } from '..'
 
 import { NotebookBlockMenu, NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
-import blockStyles from './NotebookBlock.module.scss'
 import { useBlockSelection } from './useBlockSelection'
 import { useBlockShortcuts } from './useBlockShortcuts'
+
+import blockStyles from './NotebookBlock.module.scss'
 
 interface NotebookBlockProps extends Omit<BlockProps, 'input' | 'output'>, NotebookBlockMenuProps {
     className?: string

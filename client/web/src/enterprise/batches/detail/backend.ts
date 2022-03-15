@@ -121,6 +121,8 @@ const batchChangeFragment = gql`
             ...DiffStatFields
         }
 
+        state
+
         updatedAt
         closedAt
         viewerCanAdminister

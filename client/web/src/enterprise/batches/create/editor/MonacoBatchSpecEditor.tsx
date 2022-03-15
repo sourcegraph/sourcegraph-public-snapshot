@@ -1,8 +1,11 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
+// eslint-disable-next-line import/order
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-yaml'
-import * as React from 'react'
+
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 

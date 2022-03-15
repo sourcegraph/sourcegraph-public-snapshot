@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+
 import { ApolloError } from '@apollo/client'
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'

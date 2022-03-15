@@ -1,8 +1,9 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import RegexIcon from 'mdi-react/RegexIcon'
-import React, { useCallback } from 'react'
 
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import {
@@ -20,6 +21,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
+
 import styles from './Toggles.module.scss'
 
 export interface TogglesProps

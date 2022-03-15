@@ -1,9 +1,10 @@
+import React, { useState, useCallback, useMemo } from 'react'
+
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import DomainIcon from 'mdi-react/DomainIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import WebIcon from 'mdi-react/WebIcon'
-import React, { useState, useCallback, useMemo } from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

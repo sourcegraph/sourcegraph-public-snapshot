@@ -1,10 +1,11 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
-import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
@@ -35,7 +36,6 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 
 import { ORG_PENDING_INVITES_QUERY, ORG_RESEND_INVITATION_MUTATION, ORG_REVOKE_INVITATION_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
-import styles from './OrgPendingInvites.module.scss'
 import {
     getInvitationCreationDateString,
     getInvitationExpiryDateString,
@@ -43,6 +43,8 @@ import {
     getPaginatedItems,
     OrgMemberNotification,
 } from './utils'
+
+import styles from './OrgPendingInvites.module.scss'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 interface OrganizationInvitation {

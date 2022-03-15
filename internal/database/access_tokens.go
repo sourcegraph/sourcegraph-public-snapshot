@@ -327,9 +327,6 @@ func (s *accessTokenStore) DeleteByID(ctx context.Context, id int64) error {
 }
 
 func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
-	if Mocks.AccessTokens.HardDeleteByID != nil {
-		return Mocks.AccessTokens.HardDeleteByID(id)
-	}
 	res, err := s.ExecResult(ctx, sqlf.Sprintf("DELETE FROM access_tokens WHERE id = %s", id))
 	if err != nil {
 		return err

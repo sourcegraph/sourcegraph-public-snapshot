@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { throwError } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 

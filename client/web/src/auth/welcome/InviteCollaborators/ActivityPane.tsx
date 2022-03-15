@@ -1,6 +1,7 @@
+import React, { useEffect, useState } from 'react'
+
 import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
-import React, { useEffect, useState } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'

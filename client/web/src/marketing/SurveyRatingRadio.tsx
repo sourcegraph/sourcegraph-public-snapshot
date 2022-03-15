@@ -1,6 +1,7 @@
+import React, { useState } from 'react'
+
 import classNames from 'classnames'
 import { range } from 'lodash'
-import React, { useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Button } from '@sourcegraph/wildcard'
