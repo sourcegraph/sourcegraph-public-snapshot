@@ -18,7 +18,7 @@ import styles from './GettingStarted.module.scss'
 
 export const showGetStartPage = (context: OrgAreaHeaderContext): boolean =>
     context.getStartedInfo.openBetaEnabled &&
-    (context.getStartedInfo.membersSummary.length === 1 ||
+    ((context.getStartedInfo.membersCount === 1 && context.getStartedInfo.invitesCount === 0) ||
         context.getStartedInfo.reposCount === 0 ||
         context.getStartedInfo.servicesCount === 0)
 
@@ -28,9 +28,10 @@ interface Props extends RouteComponentProps {
     org: OrgAreaOrganizationFields
 }
 
-const Step: React.FunctionComponent<{ completeCondition: boolean; label: string; to?: string }> = ({
+const Step: React.FunctionComponent<{ completeCondition: boolean; textMuted: boolean; label: string; to?: string }> = ({
     completeCondition,
     label,
+    textMuted,
     to,
 }) => (
     <li className={styles.entryItem}>
@@ -43,7 +44,7 @@ const Step: React.FunctionComponent<{ completeCondition: boolean; label: string;
         <h3
             className={classNames({
                 [`${styles.stepText}`]: true,
-                'text-muted': completeCondition,
+                'text-muted': textMuted,
             })}
         >
             {label}
@@ -65,7 +66,7 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({ authent
 
     const codeHostsCompleted = getStartedInfo.servicesCount > 0
     const repoCompleted = getStartedInfo.reposCount > 0
-    const membersCompleted = getStartedInfo.membersSummary.length > 1
+    const membersCompleted = getStartedInfo.membersCount > 1 || getStartedInfo.invitesCount > 0
     const allCompleted = codeHostsCompleted && repoCompleted && membersCompleted
     return (
         <div className="org-members-page">
@@ -82,19 +83,27 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({ authent
                         <Step
                             label="Connect with code hosts"
                             completeCondition={codeHostsCompleted}
+                            textMuted={codeHostsCompleted}
                             to={`/organizations/${org.name}/settings/code-hosts`}
                         />
                         <Step
                             label="Choose repositories to sync with Sourcegraph"
                             completeCondition={repoCompleted}
+                            textMuted={repoCompleted}
                             to={`/organizations/${org.name}/settings/repositories`}
                         />
                         <Step
                             label="Invite your teammates"
                             completeCondition={membersCompleted}
+                            textMuted={membersCompleted}
                             to={`/organizations/${org.name}/settings/members`}
                         />
-                        <Step label="Search across Acmecorp’s code" completeCondition={allCompleted} />
+                        <Step
+                            label="Search across Acmecorp’s code"
+                            completeCondition={allCompleted}
+                            to={allCompleted ? '#' : undefined}
+                            textMuted={!allCompleted}
+                        />
                     </ul>
                 </MarketingBlock>
             </div>

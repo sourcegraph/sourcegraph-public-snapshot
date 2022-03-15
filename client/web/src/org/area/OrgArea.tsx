@@ -24,7 +24,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
-    Maybe,
     OrganizationResult,
     OrganizationVariables,
     OrgAreaOrganizationFields,
@@ -102,12 +101,8 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
 }
 
 export interface OrgGetStartedInfo {
-    membersSummary: {
-        id: string
-        username: string
-        displayName: Maybe<string>
-        avatarURL: Maybe<string>
-    }[]
+    membersCount: number
+    invitesCount: number
     reposCount: number
     servicesCount: number
     openBetaEnabled: boolean
@@ -117,11 +112,9 @@ function queryOrgGetStarted(args: { orgID: string; openBetaEnabled: boolean }): 
     return requestGraphQL<OrgGetStartedResult, OrgGetStartedVariables>(
         gql`
             query OrgGetStarted($orgID: ID!) {
-                autocompleteMembersSearch(organization: $orgID, query: "") {
-                    id
-                    username
-                    displayName
-                    avatarURL
+                membersSummary: orgMembersSummary(organization: $orgID) {
+                    membersCount
+                    invitesCount
                 }
                 repoCount: node(id: $orgID) {
                     ... on Org {
@@ -140,17 +133,13 @@ function queryOrgGetStarted(args: { orgID: string; openBetaEnabled: boolean }): 
         map(dataOrThrowErrors),
         map(data => {
             const result = data as {
-                autocompleteMembersSearch: {
-                    id: string
-                    username: string
-                    displayName: Maybe<string>
-                    avatarURL: Maybe<string>
-                }[]
+                membersSummary: { membersCount: number; invitesCount: number }
                 repoCount: { total: { totalCount: number } }
                 extServices: { totalCount: number }
             }
             return {
-                membersSummary: result.autocompleteMembersSearch,
+                membersCount: result.membersSummary.membersCount,
+                invitesCount: result.membersSummary.invitesCount,
                 reposCount: result.repoCount.total.totalCount,
                 servicesCount: result.extServices.totalCount,
                 openBetaEnabled: args.openBetaEnabled,
@@ -243,7 +232,8 @@ export class OrgArea extends React.Component<Props> {
             useBreadcrumb: props.useBreadcrumb,
             newMembersInviteEnabled: false,
             getStartedInfo: {
-                membersSummary: [],
+                invitesCount: 0,
+                membersCount: 0,
                 servicesCount: 0,
                 reposCount: 0,
                 openBetaEnabled: !!props.featureFlags.get('open-beta-enabled'),

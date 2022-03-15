@@ -191,8 +191,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     const onInviteSent = useCallback(
         (result: IModalInviteResult) => {
             setInvite(result)
+            onRefreshOrg()
         },
-        [setInvite]
+        [setInvite, onRefreshOrg]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {

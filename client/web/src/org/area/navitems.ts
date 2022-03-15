@@ -11,7 +11,7 @@ import { OrgAreaHeaderNavItem } from './OrgHeader'
 
 const calculateLeftGetStartedSteps =  (info: OrgGetStartedInfo): number => {
     let leftSteps = 1;
-    if(info.membersSummary.length ===1) {
+    if(info.invitesCount === 0 && info.membersCount < 2) {
         leftSteps += 1
     }
     if (info.reposCount === 0) {

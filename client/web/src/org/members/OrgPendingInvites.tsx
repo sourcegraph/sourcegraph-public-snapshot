@@ -44,7 +44,9 @@ import {
     OrgMemberNotification,
 } from './utils'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+    onRefreshOrg: () => void
+}
 interface OrganizationInvitation {
     id: string
     recipientEmail?: string
@@ -236,7 +238,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, authenticatedUser, onRefreshOrg }) => {
     const orgId = org.id
     useEffect(() => {
         eventLogger.logViewEvent('OrgPendingInvites', { orgId })
@@ -256,8 +258,9 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
         async (result: IModalInviteResult) => {
             setInvite(result)
             await refetch({ id: orgId })
+            onRefreshOrg()
         },
-        [setInvite, orgId, refetch]
+        [setInvite, orgId, refetch, onRefreshOrg]
     )
 
     const onInviteResentRevoked = useCallback(
@@ -266,8 +269,9 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
             setNotification(message)
             setPage(1)
             await refetch({ id: orgId })
+            onRefreshOrg()
         },
-        [setNotification, orgId, refetch]
+        [setNotification, orgId, refetch, onRefreshOrg]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
