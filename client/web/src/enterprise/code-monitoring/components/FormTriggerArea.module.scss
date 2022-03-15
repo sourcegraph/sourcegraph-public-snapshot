@@ -1,6 +1,6 @@
 .query-input {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
 
     &-preview-link {
         white-space: nowrap;
@@ -9,13 +9,9 @@
         border: 1px solid var(--input-border-color);
         border-top-right-radius: 2px;
         border-bottom-right-radius: 2px;
-
-        &-text {
-            display: flex;
-            align-items: center;
-            line-height: (1/0.75);
-            height: 1rem;
-        }
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem;
 
         &-icon {
             max-height: 1rem;
@@ -26,9 +22,19 @@
     &-field {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
-        font-size: 0.75rem;
+        border-right: none;
+        background-color: var(--color-bg-1);
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         height: calc(1rem + 0.5rem * 2 + 1px * 2); /* 1rem for text, 0.5rem vertical padding, 1px border */
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        overflow: hidden;
+
+        &:focus-within {
+            border: 1px solid var(--input-focus-border-color);
+            box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        }
     }
 }
 

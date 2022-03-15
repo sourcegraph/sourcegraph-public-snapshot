@@ -62,7 +62,7 @@ export interface MonacoQueryInputProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         SearchPatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    isSourcegraphDotCom: boolean // significant for query suggestions
+    isSourcegraphDotCom: boolean // Needed for query suggestions to give different options on dotcom; see SOURCEGRAPH_DOT_COM_REPO_COMPLETION
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
@@ -263,7 +263,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
         const disposable = editor.onDidFocusEditorText(() => {
-            editor.createContextKey('editorTabMovesFocus', true)
+            // Use a small non-zero timeout to avoid being overridden by Monaco defaults when editor is shown/hidden quickly
+            setTimeout(() => editor.createContextKey('editorTabMovesFocus', true), 50)
         })
         return () => disposable.dispose()
     }, [editor])
