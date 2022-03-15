@@ -2271,10 +2271,6 @@ func TestUnfreezeGlobalInsights(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		err = store.UnfreezeGlobalInsights(ctx, 2)
 		if err != nil {
 			t.Fatal(err)
