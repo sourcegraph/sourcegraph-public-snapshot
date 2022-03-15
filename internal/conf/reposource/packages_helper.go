@@ -42,4 +42,4 @@ type PackageDependency interface {
 }
 
 var _ PackageDependency = &MavenDependency{}
-var _ PackageDependency = &NPMDependency{}
+var _ PackageDependency = &NpmDependency{}

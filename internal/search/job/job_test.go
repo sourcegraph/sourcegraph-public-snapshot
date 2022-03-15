@@ -131,7 +131,10 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       ZoektRepoSubset
       Searcher))
-  RepoSubsetSymbol
+  REPOPAGER
+    (PARALLEL
+      ZoektSymbolSearch
+      SymbolSearcher))
   Commit
   Repo
   ComputeExcludedRepos)
@@ -160,7 +163,10 @@ func TestToSearchInputs(t *testing.T) {
       ComputeExcludedRepos))
   (OPTIONAL
     (PARALLEL
-      RepoSubsetSymbol
+      REPOPAGER
+        (PARALLEL
+          ZoektSymbolSearch
+          SymbolSearcher))
       Commit)))
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))
 }

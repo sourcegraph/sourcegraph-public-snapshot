@@ -160,7 +160,7 @@
           }
         },
         "npmPackages": {
-          "description": "Allow adding NPM packages code host connections",
+          "description": "Allow adding npm packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -750,6 +750,16 @@
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
       "type": "integer",
       "default": 15
+    },
+    "permissions.syncOldestUsers": {
+      "description": "Number of user permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
+    },
+    "permissions.syncOldestRepos": {
+      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",

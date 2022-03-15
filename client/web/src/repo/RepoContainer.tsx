@@ -53,7 +53,7 @@ import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
-import { browserExtensionInstalled } from '../tracking/analyticsUtils'
+import { useIsBrowserExtensionActiveUser } from '../tracking/BrowserExtensionTracker'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -324,13 +324,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         (!isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
         'browser-extension'
-    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
     const [hasDismissedPopover, setHasDismissedPopover] = useState(false)
     const [hoverCount, setHoverCount] = useLocalStorage(HOVER_COUNT_KEY, 0)
     const canShowPopover =
         !hasDismissedPopover &&
-        isBrowserExtensionInstalled === false &&
+        isBrowserExtensionActiveUser === false &&
         codeHostIntegrationMessaging === 'browser-extension' &&
         hoverCount >= HOVER_THRESHOLD
 
