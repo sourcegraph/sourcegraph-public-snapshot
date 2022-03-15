@@ -10,7 +10,7 @@ import Element.Border as Border
 import Element.Events
 import Element.Font as F
 import Element.Input as I
-import Html exposing (Html, input, text)
+import Html exposing (Html, a, input, text)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, fail, field, maybe)
 import Json.Decode.Pipeline
@@ -34,11 +34,22 @@ debounceQueryInputMillis =
     400
 
 
+placeholderQuery : String
+placeholderQuery =
+    "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
+
+
+type alias Flags =
+    { sourcegraphURL : String
+    , computeInput : Maybe ComputeInput
+    }
+
+
 
 -- MAIN
 
 
-main : Program String Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
@@ -83,10 +94,16 @@ type alias Model =
     }
 
 
-init : String -> ( Model, Cmd Msg )
-init sourcegraphURL =
-    ( { sourcegraphURL = sourcegraphURL
-      , query = "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( { sourcegraphURL = flags.sourcegraphURL
+      , query =
+            case Maybe.map .queries flags.computeInput of
+                Just (query :: _) ->
+                    query
+
+                _ ->
+                    placeholderQuery
       , dataPoints = 30
       , sortByCount = True
       , reverse = False
@@ -111,10 +128,27 @@ type alias RawEvent =
     }
 
 
+type alias ExperimentalOptions =
+    { dataPoints : Int
+    , sortByCount : Bool
+    , reverse : Bool
+    , excludeStopWords : Bool
+    }
+
+
+type alias ComputeInput =
+    { queries : List String
+    , options : ExperimentalOptions
+    }
+
+
 port receiveEvent : (RawEvent -> msg) -> Sub msg
 
 
 port openStream : ( String, Maybe String ) -> Cmd msg
+
+
+port emitInput : ComputeInput -> Cmd msg
 
 
 
@@ -203,14 +237,34 @@ update msg model =
                         Nothing ->
                             0
             in
-            ( { model | dataPoints = newDataPoints }, Cmd.none )
+            ( { model | dataPoints = newDataPoints }
+            , emitInput
+                { queries = [ model.query ]
+                , options =
+                    { dataPoints = newDataPoints
+                    , sortByCount = model.sortByCount
+                    , reverse = model.reverse
+                    , excludeStopWords = model.excludeStopWords
+                    }
+                }
+            )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
 
         RunCompute ->
             if model.serverless then
-                ( { model | resultsMap = exampleResultsMap }, Cmd.none )
+                ( { model | resultsMap = exampleResultsMap }
+                , emitInput
+                    { queries = [ model.query ]
+                    , options =
+                        { dataPoints = newDataPoints
+                        , sortByCount = model.sortByCount
+                        , reverse = model.reverse
+                        , excludeStopWords = model.excludeStopWords
+                        }
+                    }
+                )
 
             else
                 ( { model | resultsMap = Dict.empty }
