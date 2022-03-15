@@ -21,7 +21,6 @@ describe('collectMetrics', () => {
             collectMetrics('repo:contains.file(foo) r:contains(file:foo content:bar) r:deps(foo) r:dependencies(bar)')
         ).toMatchInlineSnapshot(`
             {
-              "count_and": 3,
               "count_repo_contains": 1,
               "count_repo_contains_file": 1,
               "count_repo_dependencies": 2
