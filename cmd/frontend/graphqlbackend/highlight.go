@@ -61,13 +61,10 @@ func (h *highlightedFileResolver) LSIF() string {
 		EmitDefaults: false,
 	}
 
-	// TODO: @olaf is it OK if I do this?
-	// I'd like to keep on minimizing as much work as possible in the resolver for this.
-	//    I don't think there's any reason to expect that we get back bad response here
-	//    and would it do anything different besides just returning ""?
+	// TODO(tjdevries): We could probably serialize the error, but it wouldn't do anything for now.
 	lsif, err := marshaller.MarshalToString(h.response.LSIF())
 	if err != nil {
-		return ""
+		return "{}"
 	}
 
 	return lsif

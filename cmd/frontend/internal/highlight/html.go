@@ -80,8 +80,8 @@ func DocumentToHTML(code string, document *lsiftyped.Document) (template.HTML, e
 func lsifToHTML(
 	code string,
 	document *lsiftyped.Document,
-	AddRow func(row int32),
-	AddText func(kind lsiftyped.SyntaxKind, line string),
+	addRow func(row int32),
+	addText func(kind lsiftyped.SyntaxKind, line string),
 	validLines map[int32]bool,
 ) {
 	splitLines := strings.Split(code, "\n")
@@ -100,7 +100,7 @@ func lsifToHTML(
 			line = "\n" // important for e.g. selecting whitespace in the produced table
 		}
 
-		AddRow(row)
+		addRow(row)
 
 		lineCharacter := 0
 		for occIndex < len(occurences) && occurences[occIndex].Range[0] < row+1 {
@@ -108,32 +108,32 @@ func lsifToHTML(
 			occIndex += 1
 
 			startRow, startCharacter, endRow, endCharacter := normalizeLsifTypedRange(occ.Range)
-			AddText(occ.SyntaxKind, line[lineCharacter:startCharacter])
+			addText(occ.SyntaxKind, line[lineCharacter:startCharacter])
 
 			if startRow != endRow {
-				AddText(occ.SyntaxKind, line[startCharacter:])
+				addText(occ.SyntaxKind, line[startCharacter:])
 
 				row += 1
 				for row < endRow {
 					line = splitLines[row]
 
-					AddRow(row)
-					AddText(occ.SyntaxKind, line)
+					addRow(row)
+					addText(occ.SyntaxKind, line)
 
 					row += 1
 				}
 
 				line = splitLines[row]
-				AddRow(row)
-				AddText(occ.SyntaxKind, line[:endCharacter])
+				addRow(row)
+				addText(occ.SyntaxKind, line[:endCharacter])
 			} else {
-				AddText(occ.SyntaxKind, line[startCharacter:endCharacter])
+				addText(occ.SyntaxKind, line[startCharacter:endCharacter])
 			}
 
 			lineCharacter = int(endCharacter)
 		}
 
-		AddText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, line[lineCharacter:])
+		addText(lsiftyped.SyntaxKind_UnspecifiedSyntaxKind, line[lineCharacter:])
 
 		row += 1
 	}
