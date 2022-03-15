@@ -1,6 +1,7 @@
+import React, { useCallback, useContext, useState } from 'react'
+
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useCallback, useContext, useState } from 'react'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -22,9 +23,10 @@ import {
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow } from './PreviewFilterRow'
-import styles from './PreviewList.module.scss'
 import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
 import { PreviewSelectRow } from './PreviewSelectRow'
+
+import styles from './PreviewList.module.scss'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']

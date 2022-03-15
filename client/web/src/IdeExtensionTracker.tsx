@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+
 import { useLocation } from 'react-router'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'

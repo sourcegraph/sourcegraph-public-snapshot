@@ -1,8 +1,9 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
-import React, { useMemo } from 'react'
 
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
 import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'

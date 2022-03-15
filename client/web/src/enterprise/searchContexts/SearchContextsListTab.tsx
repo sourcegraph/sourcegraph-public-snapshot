@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
@@ -21,6 +22,7 @@ import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
+
 import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps

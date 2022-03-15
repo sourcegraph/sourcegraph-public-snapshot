@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+
+import classNames from 'classnames'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 

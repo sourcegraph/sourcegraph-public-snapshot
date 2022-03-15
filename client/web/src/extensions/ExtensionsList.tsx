@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
@@ -15,8 +16,9 @@ import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
-import styles from './ExtensionsList.module.scss'
 import { createRecord } from './utils/createRecord'
+
+import styles from './ExtensionsList.module.scss'
 
 interface Props
     extends SettingsCascadeProps,

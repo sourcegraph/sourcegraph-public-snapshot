@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
@@ -25,7 +27,6 @@ import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
-import * as React from 'react'
 
 import { SymbolKind } from '../graphql-operations'
 

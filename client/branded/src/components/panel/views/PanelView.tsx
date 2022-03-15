@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -13,6 +14,7 @@ import { PanelViewWithComponent } from '../Panel'
 
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
+
 import styles from './PanelView.module.scss'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps, TelemetryProps {

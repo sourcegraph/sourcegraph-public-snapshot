@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useState } from 'react'
+
+import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'

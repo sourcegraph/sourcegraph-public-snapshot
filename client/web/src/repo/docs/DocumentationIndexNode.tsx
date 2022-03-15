@@ -1,10 +1,11 @@
+import React, { useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
-import React, { useEffect, useState } from 'react'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
@@ -12,8 +13,9 @@ import { Button, Link } from '@sourcegraph/wildcard'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import styles from './DocumentationIndexNode.module.scss'
 import { DocumentationNodeChild, GQLDocumentationNode, isExcluded, Tag } from './graphql'
+
+import styles from './DocumentationIndexNode.module.scss'
 
 /**
  * Mirrors the GraphQL DocumentationNodeChild interface, but swaps the node out with an extended

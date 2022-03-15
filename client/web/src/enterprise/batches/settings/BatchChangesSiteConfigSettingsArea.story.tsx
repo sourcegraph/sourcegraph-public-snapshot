@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

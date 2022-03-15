@@ -1,9 +1,10 @@
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
@@ -32,10 +33,10 @@ import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUse
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import blockStyles from '../NotebookBlock.module.scss'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
+import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookQueryBlock.module.scss'
 
 interface NotebookQueryBlockProps

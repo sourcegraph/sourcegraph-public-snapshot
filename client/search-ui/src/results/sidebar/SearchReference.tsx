@@ -1,9 +1,10 @@
+import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { renderMarkdown } from '@sourcegraph/common'

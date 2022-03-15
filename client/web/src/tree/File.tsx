@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
+
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import {
     TreeLayerCell,

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
 
 import { ActionEditor, ActionEditorProps } from './ActionEditor'

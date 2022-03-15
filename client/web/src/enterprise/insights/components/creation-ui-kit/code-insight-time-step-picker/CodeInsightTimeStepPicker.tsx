@@ -1,13 +1,15 @@
-import classNames from 'classnames'
 import React, { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
+
+import classNames from 'classnames'
 
 import { InsightStep } from '../../../pages/insights/creation/search-insight/types'
 import { FormGroup } from '../../form/form-group/FormGroup'
 import { FormInput } from '../../form/form-input/FormInput'
 import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 
-import styles from './CodeInsightTimeStepPicker.module.scss'
 import { getDescriptionText } from './get-interval-descrtiption-text/get-interval-description-text'
+
+import styles from './CodeInsightTimeStepPicker.module.scss'
 
 interface CodeInsightTimeStepPickerProps {
     value: string | number

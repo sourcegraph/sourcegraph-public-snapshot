@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
@@ -14,6 +15,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/Dynamica
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { ExtensionAreaRouteContext } from './ExtensionArea'
+
 import styles from './RegistryExtensionManifestPage.module.scss'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{

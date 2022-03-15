@@ -1,5 +1,6 @@
-import * as H from 'history'
 import * as React from 'react'
+
+import * as H from 'history'
 
 import { Controller as ClientController } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'

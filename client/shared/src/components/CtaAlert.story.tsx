@@ -1,5 +1,6 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { ExtensionRadialGradientIcon } from '@sourcegraph/web/src/components/CtaIcons'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'

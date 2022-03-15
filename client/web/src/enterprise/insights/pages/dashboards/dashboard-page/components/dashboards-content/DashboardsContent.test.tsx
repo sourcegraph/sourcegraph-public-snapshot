@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import { MockedResponse } from '@apollo/client/testing'
 import { waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import React from 'react'
 import sinon from 'sinon'
 
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'

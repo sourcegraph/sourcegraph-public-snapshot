@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Link } from '@sourcegraph/wildcard'

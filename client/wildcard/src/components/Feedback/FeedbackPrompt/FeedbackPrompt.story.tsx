@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -7,9 +8,9 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { PopoverTrigger } from '../..'
 import { Button } from '../../Button'
 
-import styles from './FeedbackPrompt.module.scss'
-
 import { FeedbackPrompt } from '.'
+
+import styles from './FeedbackPrompt.module.scss'
 
 const config: Meta = {
     title: 'wildcard/FeedbackPrompt',

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
-import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { CardBody, Card, Link } from '@sourcegraph/wildcard'

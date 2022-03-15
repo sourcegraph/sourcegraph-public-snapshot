@@ -1,9 +1,10 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import MessageTextOutlineIcon from 'mdi-react/MessageTextOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'

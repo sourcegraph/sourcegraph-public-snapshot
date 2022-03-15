@@ -1,5 +1,6 @@
-import EyeIcon from 'mdi-react/EyeIcon'
 import React, { useEffect } from 'react'
+
+import EyeIcon from 'mdi-react/EyeIcon'
 import { useLocation } from 'react-router'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'

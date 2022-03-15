@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
+
+import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery, ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,8 +15,9 @@ import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
 import { SearchExample, exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
-import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
+
+import styles from './LoggedOutHomepage.module.scss'
 
 export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
 

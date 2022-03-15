@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 interface OptionsPageAdvancedSettingsProps {
     optionFlags: { key: string; label: string; value: boolean }[]

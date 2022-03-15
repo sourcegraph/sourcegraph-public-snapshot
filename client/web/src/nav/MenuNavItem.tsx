@@ -1,9 +1,10 @@
+import React, { ComponentType, forwardRef } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { ComponentType, forwardRef } from 'react'
 
 import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
 

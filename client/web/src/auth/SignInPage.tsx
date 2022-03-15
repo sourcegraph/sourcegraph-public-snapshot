@@ -1,9 +1,10 @@
+import React, { useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { partition } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import React, { useEffect, useState } from 'react'
 import { Redirect } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -18,8 +19,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
 import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface SignInPageProps {
     location: H.Location

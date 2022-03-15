@@ -1,5 +1,6 @@
-import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
+
+import WrapIcon from 'mdi-react/WrapIcon'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 

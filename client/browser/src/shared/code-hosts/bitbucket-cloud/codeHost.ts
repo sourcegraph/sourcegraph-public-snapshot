@@ -3,11 +3,12 @@ import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { getContext } from './context'
 import { commitDOMFunctions, pullRequestDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getFileInfoForCommit, getFileInfoForPullRequest, getFileInfoFromSingleFileSourceCodeView } from './fileInfo'
 import { isPullRequestView } from './scrape'
+
+import styles from './codeHost.module.scss'
 
 function checkIsBitbucketCloud(): boolean {
     return location.hostname === 'bitbucket.org'

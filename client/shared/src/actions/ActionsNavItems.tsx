@@ -1,6 +1,7 @@
+import React, { useMemo, useRef } from 'react'
+
 import classNames from 'classnames'
 import { identity } from 'lodash'
-import React, { useMemo, useRef } from 'react'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
@@ -16,6 +17,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps } from './ActionsContainer'
+
 import styles from './ActionsNavItems.module.scss'
 
 export interface ActionNavItemsClassProps {

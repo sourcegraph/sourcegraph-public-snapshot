@@ -1,9 +1,11 @@
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { ReactElement } from 'react'
+
+import CloseIcon from 'mdi-react/CloseIcon'
 import { components, ClearIndicatorProps } from 'react-select'
 
-import styles from './MultiSelect.module.scss'
 import { MultiSelectOption } from './types'
+
+import styles from './MultiSelect.module.scss'
 
 // Overwrite the clear indicator with `CloseIcon`
 export const ClearIndicator = <OptionValue extends unknown = unknown>(

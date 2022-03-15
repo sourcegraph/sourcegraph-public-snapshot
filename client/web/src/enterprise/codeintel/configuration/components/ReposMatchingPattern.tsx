@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import TrashIcon from 'mdi-react/TrashIcon'
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 

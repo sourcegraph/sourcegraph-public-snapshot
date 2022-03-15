@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
@@ -51,6 +52,7 @@ import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { getRevisions } from './sidebar/Revisions'
+
 import styles from './StreamingSearchResults.module.scss'
 
 export interface StreamingSearchResultsProps

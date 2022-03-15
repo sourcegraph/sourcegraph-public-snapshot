@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import React from 'react'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList } from '@sourcegraph/wildcard'
@@ -8,8 +9,9 @@ import { Button, Link, Menu, MenuButton, MenuDivider, MenuItem, MenuList } from 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
-import styles from './ExtensionRegistrySidenav.module.scss'
 import { extensionBannerIconURL } from './icons'
+
+import styles from './ExtensionRegistrySidenav.module.scss'
 
 const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
     all: 'Show all',

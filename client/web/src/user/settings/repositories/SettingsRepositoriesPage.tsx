@@ -1,5 +1,6 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
@@ -49,6 +50,7 @@ import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+
 import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props

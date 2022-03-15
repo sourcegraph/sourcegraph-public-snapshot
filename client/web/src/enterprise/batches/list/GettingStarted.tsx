@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Container, CardBody, Card, Link } from '@sourcegraph/wildcard'
 

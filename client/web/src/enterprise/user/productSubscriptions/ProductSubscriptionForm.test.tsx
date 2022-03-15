@@ -1,5 +1,6 @@
-import { createMemoryHistory } from 'history'
 import React from 'react'
+
+import { createMemoryHistory } from 'history'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 

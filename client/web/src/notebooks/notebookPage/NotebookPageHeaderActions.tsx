@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import DomainIcon from 'mdi-react/DomainIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
@@ -5,7 +7,6 @@ import LockIcon from 'mdi-react/LockIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
@@ -32,9 +33,10 @@ import {
 } from '../backend'
 
 import { DeleteNotebookModal } from './DeleteNotebookModal'
-import styles from './NotebookPageHeaderActions.module.scss'
 import { ShareOption } from './NotebookShareOptionsDropdown'
 import { ShareNotebookModal } from './ShareNotebookModal'
+
+import styles from './NotebookPageHeaderActions.module.scss'
 
 export interface NotebookPageHeaderActionsProps extends TelemetryProps {
     isSourcegraphDotCom: boolean

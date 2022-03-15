@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { isObject } from 'lodash'
-import React from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -10,6 +11,7 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ChartViewContent, ChartViewContentLayout } from './chart-view-content/ChartViewContent'
+
 import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>

@@ -1,7 +1,9 @@
-import classNames from 'classnames'
 import React, { ElementType, SVGProps } from 'react'
 
+import classNames from 'classnames'
+
 import { ICON_SIZES } from './constants'
+
 import styles from './Icon.module.scss'
 
 export interface IconProps extends SVGProps<SVGSVGElement> {

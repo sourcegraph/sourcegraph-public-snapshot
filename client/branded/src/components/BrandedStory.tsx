@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

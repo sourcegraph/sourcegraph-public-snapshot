@@ -1,5 +1,3 @@
-import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, {
     useCallback,
     useRef,
@@ -9,6 +7,9 @@ import React, {
     useMemo,
     useState,
 } from 'react'
+
+import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
 import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
@@ -22,6 +23,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Badge, Button, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
+
 import styles from './SearchContextMenu.module.scss'
 
 export const SearchContextMenuItem: React.FunctionComponent<

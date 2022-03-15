@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -7,7 +9,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
@@ -32,9 +33,10 @@ import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
-import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'
 import { EmptyCommandListContainer } from './EmptyCommandListContainer'
+
+import styles from './CommandList.module.scss'
 
 /**
  * Customizable CSS classes for elements of the the command list button.

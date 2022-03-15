@@ -1,8 +1,9 @@
+import React, { useState, useEffect, useCallback } from 'react'
+
 import { formatDistance, isBefore, parseISO } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
-import React, { useState, useEffect, useCallback } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'

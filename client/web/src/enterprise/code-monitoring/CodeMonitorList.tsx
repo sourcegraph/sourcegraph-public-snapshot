@@ -1,5 +1,6 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
+
+import PlusIcon from 'mdi-react/PlusIcon'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
@@ -13,6 +14,7 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+
 import styles from './CodeMonitorList.module.scss'
 
 type CodeMonitorFilter = 'all' | 'user'

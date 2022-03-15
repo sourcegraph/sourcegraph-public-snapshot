@@ -1,6 +1,7 @@
+import React, { useContext, useMemo } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 
 import { asError } from '@sourcegraph/common'

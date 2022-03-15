@@ -1,9 +1,10 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useMemo } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { PathMatch, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
@@ -14,8 +15,9 @@ import { parseLineRange } from '../../serialize'
 import { fetchSuggestions } from '../suggestions'
 
 import { NotebookFileBlockInput } from './NotebookFileBlockInput'
-import styles from './NotebookFileBlockInputs.module.scss'
 import { FileBlockInputValidationResult } from './useFileBlockInputValidation'
+
+import styles from './NotebookFileBlockInputs.module.scss'
 
 interface NotebookFileBlockInputsProps
     extends FileBlockInputValidationResult,

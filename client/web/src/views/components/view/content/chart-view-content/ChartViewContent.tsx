@@ -1,13 +1,15 @@
+import React, { FunctionComponent, useCallback } from 'react'
+
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
+
 import styles from './ChartViewContent.module.scss'
 
 export enum ChartViewContentLayout {

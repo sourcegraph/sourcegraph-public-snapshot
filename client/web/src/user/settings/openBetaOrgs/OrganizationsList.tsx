@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { Maybe } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'

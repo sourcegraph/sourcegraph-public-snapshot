@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React from 'react'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Icon } from '@sourcegraph/wildcard'

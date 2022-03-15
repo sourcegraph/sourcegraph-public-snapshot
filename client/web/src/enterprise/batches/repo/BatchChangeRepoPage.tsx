@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useMemo } from 'react'
+
+import * as H from 'history'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

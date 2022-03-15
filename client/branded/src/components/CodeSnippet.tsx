@@ -1,7 +1,8 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { useMemo } from 'react'
 
 import { highlightCodeSafe } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'

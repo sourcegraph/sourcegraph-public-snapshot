@@ -1,8 +1,9 @@
+import * as React from 'react'
+
 import { MdiReactIconProps } from 'mdi-react'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import * as React from 'react'
 
 /**
  * Returns the icon for the repository's code host

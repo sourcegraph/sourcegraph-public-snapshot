@@ -1,9 +1,10 @@
 import 'focus-visible'
+import { ReactElement } from 'react'
+
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
 import { DecoratorFunction } from '@storybook/addons'
 import isChromatic from 'chromatic/isChromatic'
-import { ReactElement } from 'react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'

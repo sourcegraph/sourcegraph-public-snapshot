@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
@@ -32,10 +34,10 @@ import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
-import * as React from 'react'
+
+import { Tag } from './graphql'
 
 import styles from './DocumentationIcon.module.scss'
-import { Tag } from './graphql'
 
 /**
  * Returns the icon component for a given documentation tag

@@ -1,5 +1,6 @@
-import { isEqual } from 'lodash'
 import { useRef } from 'react'
+
+import { isEqual } from 'lodash'
 
 /**
  * Returns memoized value that is checked with lodash deep memo

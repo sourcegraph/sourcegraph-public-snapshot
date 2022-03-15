@@ -1,3 +1,5 @@
+import React, { VideoHTMLAttributes } from 'react'
+
 import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
@@ -6,7 +8,6 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import React, { VideoHTMLAttributes } from 'react'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'

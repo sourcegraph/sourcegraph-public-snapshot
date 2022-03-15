@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useEffect, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,10 +15,11 @@ import {
 } from '../stores/gettingStartedTourState'
 
 import { GettingStartedTourStepItem, GETTING_STARTED_TOUR_STEP_ITEMS } from './data'
-import styles from './GettingStartedTour.module.scss'
 import { GettingStartedTourSteps } from './GettingStartedTourSteps'
 import { useGettingStartedTourLogEvent } from './useGettingStartedTourLogEvent'
 import { buildURIMarkers, isExternalURL } from './utils'
+
+import styles from './GettingStartedTour.module.scss'
 
 interface CardProps {
     onClose: () => void

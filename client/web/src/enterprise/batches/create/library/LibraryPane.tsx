@@ -1,6 +1,7 @@
+import React, { useState, useCallback } from 'react'
+
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import React, { useState, useCallback } from 'react'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon } from '@sourcegraph/wildcard'
@@ -11,9 +12,10 @@ import { insertNameIntoLibraryItem } from '../yaml-util'
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
-import styles from './LibraryPane.module.scss'
 import minimalSample from './minimal.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
+
+import styles from './LibraryPane.module.scss'
 
 interface LibraryItem {
     name: string

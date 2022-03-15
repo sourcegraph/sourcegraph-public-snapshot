@@ -1,4 +1,3 @@
-import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 import React, {
     ChangeEvent,
     FocusEvent,
@@ -10,13 +9,16 @@ import React, {
     useState,
 } from 'react'
 
+import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
+
 import { FlexTextArea } from '@sourcegraph/wildcard'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
-import styles from './RepositoriesField.module.scss'
 import { RepositoryFieldProps } from './types'
 import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term'
+
+import styles from './RepositoriesField.module.scss'
 
 /**
  * Renders multi repositories input with suggestions.

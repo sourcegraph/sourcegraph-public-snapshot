@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { forwardRef, useEffect, useRef, useState } from 'react'
+
+import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

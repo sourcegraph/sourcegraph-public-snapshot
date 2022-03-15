@@ -1,9 +1,10 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import RegexIcon from 'mdi-react/RegexIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
 
 import styles from './AnnotatedSearchExample.module.scss'
 

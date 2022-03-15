@@ -1,14 +1,16 @@
+import React, { forwardRef } from 'react'
+
 import { AxisLeft as VisxAxisLeft, AxisBottom as VisxAsixBottom } from '@visx/axis'
 import { AxisScale } from '@visx/axis/lib/types'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import classNames from 'classnames'
-import React, { forwardRef } from 'react'
 
 import { formatXTick, formatYTick, getXScaleTicks, getYScaleTicks } from '../../utils/ticks'
 
-import styles from './Axis.module.scss'
 import { getTickXProps, getTickYProps, Tick } from './Tick'
+
+import styles from './Axis.module.scss'
 
 interface AxisLeftProps {
     top: number

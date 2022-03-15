@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import LockIcon from 'mdi-react/LockIcon'
-import * as React from 'react'
 
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 

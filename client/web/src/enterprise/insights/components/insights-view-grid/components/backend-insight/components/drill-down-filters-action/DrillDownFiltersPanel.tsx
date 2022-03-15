@@ -1,6 +1,7 @@
+import React, { DOMAttributes, useRef } from 'react'
+
 import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { DOMAttributes, useRef } from 'react'
 
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 

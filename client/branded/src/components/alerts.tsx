@@ -1,5 +1,6 @@
-import { upperFirst } from 'lodash'
 import React, { HTMLAttributes } from 'react'
+
+import { upperFirst } from 'lodash'
 
 import { asError, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'

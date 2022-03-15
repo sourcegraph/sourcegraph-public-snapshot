@@ -1,9 +1,10 @@
+import React, { useState, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
-import React, { useState, useCallback, useEffect } from 'react'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Hoverifier } from '@sourcegraph/codeintellify'
@@ -30,6 +31,7 @@ import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
+
 import styles from './ExternalChangesetNode.module.scss'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {

@@ -1,12 +1,14 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
-import React from 'react'
 
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import styles from './RepositoryCompareHeader.module.scss'
 import { RepositoryComparePopover } from './RepositoryComparePopover'
+
+import styles from './RepositoryCompareHeader.module.scss'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string

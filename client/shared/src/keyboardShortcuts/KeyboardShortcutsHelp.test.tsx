@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { fireEvent, waitFor, screen } from '@testing-library/react'
-import React from 'react'
 
 import { renderWithBrandedContext } from '../testing'
 

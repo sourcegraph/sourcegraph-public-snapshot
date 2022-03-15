@@ -1,5 +1,6 @@
-import { cleanup, fireEvent } from '@testing-library/react'
 import React from 'react'
+
+import { cleanup, fireEvent } from '@testing-library/react'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 

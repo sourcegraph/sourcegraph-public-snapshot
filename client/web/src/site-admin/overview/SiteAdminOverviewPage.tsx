@@ -1,5 +1,6 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect, useMemo } from 'react'
+
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 

@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback, useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -17,6 +18,7 @@ import {
     queryBatchChangeBatchSpecs as _queryBatchChangeBatchSpecs,
 } from './backend'
 import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
+
 import styles from './BatchSpecsPage.module.scss'
 
 export interface BatchSpecsPageProps extends Omit<BatchSpecListProps, 'currentSpecID'> {}

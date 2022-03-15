@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { Button, Card } from '@sourcegraph/wildcard'

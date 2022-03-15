@@ -1,6 +1,7 @@
+import React, { forwardRef, useEffect, useLayoutEffect, useRef } from 'react'
+
 import { Placement, VirtualElement, Strategy, flip } from '@floating-ui/core'
 import { getScrollParents, computePosition, shift, limitShift, offset } from '@floating-ui/dom'
-import React, { forwardRef, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 export type Target = Element | VirtualElement

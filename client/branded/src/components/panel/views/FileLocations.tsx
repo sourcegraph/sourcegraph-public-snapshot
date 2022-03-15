@@ -1,8 +1,9 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'

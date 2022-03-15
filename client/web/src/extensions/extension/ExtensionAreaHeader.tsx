@@ -1,6 +1,7 @@
+import React, { useState, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useState, useCallback, useMemo } from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -13,8 +14,9 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import styles from './ExtensionAreaHeader.module.scss'
 import { ExtensionStatusBadge } from './ExtensionStatusBadge'
+
+import styles from './ExtensionAreaHeader.module.scss'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]

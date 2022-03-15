@@ -1,10 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { ForwardReferenceComponent } from '../../../types'
-import typographyStyles from '../Typography.module.scss'
 import { getAlignmentStyle, getFontWeightStyle, getModeStyle, TypographyProps } from '../utils'
 
+import typographyStyles from '../Typography.module.scss'
 import styles from './Label.module.scss'
 
 interface LabelProps extends React.HTMLAttributes<HTMLLabelElement>, TypographyProps {

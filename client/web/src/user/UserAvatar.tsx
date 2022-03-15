@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 

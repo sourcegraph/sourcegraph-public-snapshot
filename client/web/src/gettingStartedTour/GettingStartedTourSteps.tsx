@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import { Accordion, AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 import classNames from 'classnames'
 import { groupBy } from 'lodash'
 import ArrowDropDownIcon from 'mdi-react/ArrowDropDownIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useLocation } from 'react-router-dom'
 
@@ -13,10 +14,11 @@ import { Link } from '@sourcegraph/wildcard'
 import { useGettingStartedTourState } from '../stores/gettingStartedTourState'
 
 import { GettingStartedTourStepItem } from './data'
-import styles from './GettingStartedTour.module.scss'
 import { GettingStartedTourInfoAgent, GettingStartedTourCompletionAgent } from './GettingStartedTourAgents'
 import { useGettingStartedTourLogEvent } from './useGettingStartedTourLogEvent'
 import { buildURIMarkers, isExternalURL, parseURIMarkers } from './utils'
+
+import styles from './GettingStartedTour.module.scss'
 
 interface LinkOrAnchorProps {
     href: string

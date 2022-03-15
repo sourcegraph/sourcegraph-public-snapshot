@@ -1,8 +1,9 @@
+import React, { useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
-import React, { useCallback, useMemo } from 'react'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -14,6 +15,7 @@ import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationIndexNode, IndexNode } from './DocumentationIndexNode'
 import { GQLDocumentationNode, GQLDocumentationPathInfo, isExcluded, Tag } from './graphql'
+
 import styles from './RepositoryDocumentationSidebar.module.scss'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {

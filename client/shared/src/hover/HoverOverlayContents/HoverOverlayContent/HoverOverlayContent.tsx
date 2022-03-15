@@ -1,14 +1,15 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import React from 'react'
 
 import { asError, renderMarkdown } from '@sourcegraph/common'
 import { Alert, AlertProps, Badge } from '@sourcegraph/wildcard'
 
 import { HoverMerged } from '../../../api/client/types/hover'
+
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
 import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'
-
 import style from './HoverOverlayContent.module.scss'
 
 interface HoverOverlayContentProps {

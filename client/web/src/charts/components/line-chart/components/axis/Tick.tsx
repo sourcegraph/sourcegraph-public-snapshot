@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { bottomTickLabelProps } from '@visx/axis/lib/axis/AxisBottom'
 import { leftTickLabelProps } from '@visx/axis/lib/axis/AxisLeft'
 import { TickLabelProps, TickRendererProps } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
 import { Text } from '@visx/text'
 import { TextProps } from '@visx/text/lib/Text'
-import React from 'react'
 
 import { formatXLabel } from '../../utils/ticks'
 

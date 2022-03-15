@@ -1,6 +1,7 @@
+import React, { useEffect, useState } from 'react'
+
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import React, { useEffect, useState } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { Link, Icon } from '@sourcegraph/wildcard'

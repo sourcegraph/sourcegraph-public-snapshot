@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

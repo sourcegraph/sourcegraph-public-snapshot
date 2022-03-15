@@ -1,10 +1,11 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
-import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -29,8 +30,9 @@ import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
-import styles from './CommunitySearchContextPage.module.scss'
 import { CommunitySearchContextMetadata } from './types'
+
+import styles from './CommunitySearchContextPage.module.scss'
 
 export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,

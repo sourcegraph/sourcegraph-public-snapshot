@@ -1,7 +1,8 @@
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'

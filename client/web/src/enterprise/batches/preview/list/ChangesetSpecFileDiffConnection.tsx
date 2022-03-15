@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback } from 'react'
+
+import * as H from 'history'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileDiffConnection } from '@sourcegraph/web/src/components/diff/FileDiffConnection'

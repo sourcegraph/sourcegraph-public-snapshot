@@ -1,6 +1,7 @@
+import React, { FunctionComponent } from 'react'
+
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { FunctionComponent } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard/src/components/Link'

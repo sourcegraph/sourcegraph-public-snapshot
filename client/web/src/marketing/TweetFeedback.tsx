@@ -1,5 +1,6 @@
-import TwitterIcon from 'mdi-react/TwitterIcon'
 import * as React from 'react'
+
+import TwitterIcon from 'mdi-react/TwitterIcon'
 
 import { ButtonLink } from '@sourcegraph/wildcard'
 

@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useMemo, useEffect } from 'react'
+
+import * as H from 'history'
 import { Subject } from 'rxjs'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 
@@ -26,13 +27,14 @@ import {
 } from '../detail/backend'
 import { getLSPTextDocumentPositionParameters } from '../utils'
 
-import styles from './BatchChangeCloseChangesetsList.module.scss'
 import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
 } from './BatchChangeCloseHeader'
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
+
+import styles from './BatchChangeCloseChangesetsList.module.scss'
 
 interface Props
     extends ThemeProps,

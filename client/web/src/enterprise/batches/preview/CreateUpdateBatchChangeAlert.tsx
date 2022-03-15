@@ -1,6 +1,7 @@
+import React, { useCallback, useContext, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useContext, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
@@ -12,6 +13,7 @@ import { MultiSelectContext } from '../MultiSelectContext'
 
 import { createBatchChange, applyBatchChange } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
+
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {

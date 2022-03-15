@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Button, TextArea, Link, Icon } from '@sourcegraph/wildcard'
 

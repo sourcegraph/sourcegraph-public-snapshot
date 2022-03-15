@@ -1,3 +1,5 @@
+import React from 'react'
+
 import {
     Tab as ReachTab,
     TabList as ReachTabList,
@@ -12,13 +14,13 @@ import {
     useTabsContext,
 } from '@reach/tabs'
 import classNames from 'classnames'
-import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
 
 import { TabPanelIndexContext, TabsSettingsContext, useTabsSettings } from './context'
-import styles from './Tabs.module.scss'
 import { useShouldPanelRender } from './useShouldPanelRender'
+
+import styles from './Tabs.module.scss'
 
 export { useTabsContext }
 

@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { delay, startWith } from 'rxjs/operators'
 
@@ -19,10 +20,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
-import blockStyles from '../NotebookBlock.module.scss'
 import { fetchSuggestions } from '../suggestions'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
+import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookSymbolBlockInput.module.scss'
 
 interface NotebookSymbolBlockInputProps extends ThemeProps, Pick<BlockProps, 'onRunBlock' | 'onSelectBlock'> {

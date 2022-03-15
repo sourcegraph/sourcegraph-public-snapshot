@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
-import * as H from 'history'
 import * as React from 'react'
+
+import * as H from 'history'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,

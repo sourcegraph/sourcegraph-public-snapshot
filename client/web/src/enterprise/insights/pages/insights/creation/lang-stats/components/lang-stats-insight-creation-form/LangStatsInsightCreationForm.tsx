@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'

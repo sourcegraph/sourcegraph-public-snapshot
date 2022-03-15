@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import CheckIcon from 'mdi-react/CheckIcon'
-import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'

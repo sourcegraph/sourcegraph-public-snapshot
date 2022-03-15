@@ -1,5 +1,6 @@
-import { render, RenderResult, cleanup, fireEvent, waitFor, screen } from '@testing-library/react'
 import React from 'react'
+
+import { render, RenderResult, cleanup, fireEvent, waitFor, screen } from '@testing-library/react'
 
 import { Tooltip } from './Tooltip'
 

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { cleanup } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

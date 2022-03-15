@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -18,8 +19,9 @@ import {
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
 
-import styles from './BatchChangeNode.module.scss'
 import { BatchChangeStatePill } from './BatchChangeStatePill'
+
+import styles from './BatchChangeNode.module.scss'
 
 export interface BatchChangeNodeProps {
     node: ListBatchChange

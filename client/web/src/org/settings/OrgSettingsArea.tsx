@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'

@@ -1,6 +1,7 @@
+import React, { useState } from 'react'
+
 import * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'

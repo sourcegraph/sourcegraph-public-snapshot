@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
@@ -23,8 +24,9 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
-import styles from './SiteAdminSurveyResponsesPage.module.scss'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
+
+import styles from './SiteAdminSurveyResponsesPage.module.scss'
 
 interface SurveyResponseNodeProps {
     /**

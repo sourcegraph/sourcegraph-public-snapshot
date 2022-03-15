@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
-import React from 'react'
 import { of, Observable } from 'rxjs'
 import { WildcardMockLink } from 'wildcard-mock-link'
 

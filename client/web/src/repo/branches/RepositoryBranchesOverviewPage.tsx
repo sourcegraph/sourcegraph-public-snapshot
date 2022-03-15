@@ -1,5 +1,6 @@
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
+
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -17,6 +18,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+
 import styles from './RepositoryBranchesOverviewPage.module.scss'
 
 interface Data {

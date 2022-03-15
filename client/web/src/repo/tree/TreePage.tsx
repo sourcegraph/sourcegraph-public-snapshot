@@ -1,3 +1,5 @@
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
@@ -12,7 +14,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -62,6 +63,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+
 import styles from './TreePage.module.scss'
 
 const fetchTreeCommits = memoizeObservable(

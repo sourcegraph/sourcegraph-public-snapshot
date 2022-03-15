@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 
 import { AnchorLink } from '../AnchorLink'
 

@@ -1,5 +1,6 @@
-import { Location } from 'history'
 import React from 'react'
+
+import { Location } from 'history'
 import { match } from 'react-router'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 

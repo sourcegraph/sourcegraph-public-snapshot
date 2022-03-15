@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Form } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
@@ -36,7 +37,6 @@ import { AuthenticatedUser } from '../../auth'
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 import { parseConfig } from './repositoryRevisionsConfigParser'
-import styles from './SearchContextForm.module.scss'
 import {
     getSelectedNamespace,
     getSelectedNamespaceFromUser,
@@ -45,6 +45,8 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
+
+import styles from './SearchContextForm.module.scss'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32

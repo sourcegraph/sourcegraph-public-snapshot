@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useLayoutEffect, useRef } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'

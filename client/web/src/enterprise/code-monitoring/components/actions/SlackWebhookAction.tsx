@@ -1,15 +1,17 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { Alert, Button, Input, Link, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
-import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
+
+import styles from '../FormActionArea.module.scss'
 
 export const SEND_TEST_SLACK_WEBHOOK = gql`
     mutation SendTestSlackWebhook($namespace: ID!, $description: String!, $slackWebhook: MonitorSlackWebhookInput!) {

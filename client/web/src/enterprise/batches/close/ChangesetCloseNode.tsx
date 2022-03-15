@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -11,9 +12,10 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourceg
 import { ChangesetFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
-import styles from './ChangesetCloseNode.module.scss'
 import { ExternalChangesetCloseNode } from './ExternalChangesetCloseNode'
 import { HiddenExternalChangesetCloseNode } from './HiddenExternalChangesetCloseNode'
+
+import styles from './ChangesetCloseNode.module.scss'
 
 export interface ChangesetCloseNodeProps extends ThemeProps {
     node: ChangesetFields

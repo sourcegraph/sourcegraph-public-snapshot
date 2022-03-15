@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
-import React from 'react'
 
 export interface Props {
     code: number

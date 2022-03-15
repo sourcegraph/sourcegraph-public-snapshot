@@ -6,6 +6,7 @@ import { Button, Modal, Link } from '@sourcegraph/wildcard'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 
 import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './components/MediaCharts'
+
 import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent = () => {

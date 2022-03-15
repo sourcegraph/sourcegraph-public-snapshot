@@ -1,5 +1,6 @@
-import { noop } from 'lodash'
 import React, { useMemo } from 'react'
+
+import { noop } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'

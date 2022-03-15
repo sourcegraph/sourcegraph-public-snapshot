@@ -1,5 +1,6 @@
-import Popper from 'popper.js'
 import { useEffect, useRef, useState } from 'react'
+
+import Popper from 'popper.js'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 

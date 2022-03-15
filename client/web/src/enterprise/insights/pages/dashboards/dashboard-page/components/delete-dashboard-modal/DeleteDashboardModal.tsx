@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -10,8 +11,9 @@ import { Button, Modal } from '@sourcegraph/wildcard'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CustomInsightDashboard } from '../../../../../core/types'
 
-import styles from './DeleteDashobardModal.module.scss'
 import { useDeleteDashboardHandler } from './hooks/use-delete-dashboard-handler'
+
+import styles from './DeleteDashobardModal.module.scss'
 
 export interface DeleteDashboardModalProps {
     dashboard: CustomInsightDashboard

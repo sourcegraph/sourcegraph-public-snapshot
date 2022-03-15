@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -26,8 +27,9 @@ import { enterpriseTrial } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignupEmailField } from './SignupEmailField'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 export interface SignUpArguments {
     email: string

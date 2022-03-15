@@ -1,6 +1,7 @@
+import React, { useContext, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useContext, useMemo, useEffect } from 'react'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

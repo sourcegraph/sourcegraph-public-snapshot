@@ -1,5 +1,6 @@
-import { cleanup, getByText, render } from '@testing-library/react'
 import * as React from 'react'
+
+import { cleanup, getByText, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import { map } from 'rxjs/operators'

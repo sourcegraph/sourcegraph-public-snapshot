@@ -1,8 +1,9 @@
+import React, { useEffect } from 'react'
+
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import { renderHook, act as actHook } from '@testing-library/react-hooks'
-import React, { useEffect } from 'react'
 
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
 import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from './TemporarySettingsStorage'

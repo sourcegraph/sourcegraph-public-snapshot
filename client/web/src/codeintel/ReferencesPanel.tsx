@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
@@ -5,7 +7,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
@@ -53,9 +54,10 @@ import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
-import styles from './ReferencesPanel.module.scss'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+
+import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 

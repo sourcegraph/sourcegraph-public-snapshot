@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'

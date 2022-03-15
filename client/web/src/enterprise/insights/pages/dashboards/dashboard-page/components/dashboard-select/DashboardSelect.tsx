@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import React from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
 
@@ -18,6 +19,7 @@ import {
 
 import { MenuButton } from './components/menu-button/MenuButton'
 import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
+
 import styles from './DashboardSelect.module.scss'
 
 const LABEL_ID = 'insights-dashboards--select'

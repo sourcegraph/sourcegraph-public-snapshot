@@ -1,5 +1,6 @@
-import * as H from 'history'
 import * as React from 'react'
+
+import * as H from 'history'
 
 import { anyOf, isInstanceOf, isExternalLink } from '@sourcegraph/common'
 

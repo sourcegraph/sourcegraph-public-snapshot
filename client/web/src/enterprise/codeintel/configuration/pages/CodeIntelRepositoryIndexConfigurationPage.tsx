@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { FunctionComponent, useEffect } from 'react'
+
+import * as H from 'history'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

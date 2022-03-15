@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
@@ -11,9 +12,10 @@ import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../
 import { CodeInsightsLearnMore } from '../getting-started/components/code-insights-learn-more/CodeInsightsLearnMore'
 import { CodeInsightsTemplates } from '../getting-started/components/code-insights-templates/CodeInsightsTemplates'
 
-import styles from './CodeInsightsDotComGetStarted.module.scss'
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
 import { SourcegraphInstallLocallyIcon } from './components/SourcegraphInstallLocallyIcon'
+
+import styles from './CodeInsightsDotComGetStarted.module.scss'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 

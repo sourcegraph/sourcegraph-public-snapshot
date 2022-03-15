@@ -1,7 +1,8 @@
+import React, { useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Button, Badge, Icon } from '@sourcegraph/wildcard'
@@ -12,11 +13,12 @@ import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql
 import { Owner } from '../cloud-ga'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import styles from './CodeHostItem.module.scss'
 import { scopes } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { ifNotNavigated, ServiceConfig } from './UserAddCodeHostsPage'
+
+import styles from './CodeHostItem.module.scss'
 
 interface CodeHostItemProps {
     kind: ExternalServiceKind

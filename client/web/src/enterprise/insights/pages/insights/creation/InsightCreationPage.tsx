@@ -1,4 +1,5 @@
 import React, { useContext, useMemo } from 'react'
+
 import { useHistory } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

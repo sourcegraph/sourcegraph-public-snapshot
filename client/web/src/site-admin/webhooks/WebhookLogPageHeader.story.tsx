@@ -1,6 +1,7 @@
+import React, { useState } from 'react'
+
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import React, { useState } from 'react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'

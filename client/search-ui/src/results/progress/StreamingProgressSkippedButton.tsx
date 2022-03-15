@@ -1,12 +1,14 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
-import styles from './StreamingProgressSkippedButton.module.scss'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
+
+import styles from './StreamingProgressSkippedButton.module.scss'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<
     Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>

@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -16,8 +17,9 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 
-import styles from './DocumentationExamplesListItem.module.scss'
 import { fetchDocumentationBlame } from './graphql'
+
+import styles from './DocumentationExamplesListItem.module.scss'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location

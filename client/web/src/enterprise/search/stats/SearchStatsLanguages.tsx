@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react'
+
 import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'

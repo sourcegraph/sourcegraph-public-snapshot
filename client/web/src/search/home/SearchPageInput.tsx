@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
+
+import * as H from 'history'
 import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'

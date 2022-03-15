@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import BeakerQuestionIcon from 'mdi-react/BeakerQuestionIcon'
@@ -10,7 +12,6 @@ import SourceBranchSyncIcon from 'mdi-react/SourceBranchSyncIcon'
 import TrashIcon from 'mdi-react/TrashIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
 import UploadNetworkIcon from 'mdi-react/UploadNetworkIcon'
-import React from 'react'
 
 import { Icon } from '@sourcegraph/wildcard'
 

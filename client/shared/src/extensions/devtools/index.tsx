@@ -1,6 +1,7 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback } from 'react'
 
 import {
     Button,
@@ -21,6 +22,7 @@ import { PlatformContextProps } from '../../platform/context'
 import { ExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'
+
 import styles from './index.module.scss'
 
 export interface ExtensionsDevelopmentToolsProps

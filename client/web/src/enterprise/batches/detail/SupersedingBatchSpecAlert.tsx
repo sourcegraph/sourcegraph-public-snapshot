@@ -1,5 +1,6 @@
-import { parseISO } from 'date-fns'
 import React from 'react'
+
+import { parseISO } from 'date-fns'
 
 import { Link } from '@sourcegraph/wildcard'
 

@@ -1,5 +1,6 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { MockedStoryProvider } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'

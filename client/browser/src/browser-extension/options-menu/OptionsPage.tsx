@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
@@ -5,7 +7,6 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
@@ -15,8 +16,9 @@ import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/sr
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
-import styles from './OptionsPage.module.scss'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
+
+import styles from './OptionsPage.module.scss'
 
 import '@reach/combobox/styles.css'
 

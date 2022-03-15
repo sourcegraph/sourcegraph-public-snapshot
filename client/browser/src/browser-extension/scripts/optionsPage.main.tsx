@@ -1,8 +1,9 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import { trimEnd, uniq } from 'lodash'
 import { render } from 'react-dom'
 import { from, noop, Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'

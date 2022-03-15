@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
-import React from 'react'
 
 import { ForwardReferenceComponent, Icon, IconProps } from '@sourcegraph/wildcard'
 

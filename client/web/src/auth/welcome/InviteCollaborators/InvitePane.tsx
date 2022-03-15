@@ -1,6 +1,7 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -15,8 +16,9 @@ import { UserAvatar } from '../../../user/UserAvatar'
 import { useSteps } from '../../Steps'
 
 import { InvitableCollaborator } from './InviteCollaborators'
-import styles from './InviteCollaborators.module.scss'
 import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
+
+import styles from './InviteCollaborators.module.scss'
 
 const SELECT_REPOS_STEP = 2
 

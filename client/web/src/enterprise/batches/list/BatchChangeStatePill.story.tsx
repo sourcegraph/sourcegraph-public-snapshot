@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { upperFirst } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState, BatchSpecState } from '../../../graphql-operations'

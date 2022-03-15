@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { EMPTY, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'

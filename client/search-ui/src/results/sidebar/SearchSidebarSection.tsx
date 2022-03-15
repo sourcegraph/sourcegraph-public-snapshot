@@ -1,12 +1,14 @@
+import React, { useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { Button } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
+
 import styles from './SearchSidebarSection.module.scss'
 
 export const SearchSidebarSection: React.FunctionComponent<{

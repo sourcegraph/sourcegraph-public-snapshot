@@ -1,5 +1,6 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
+
+import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 

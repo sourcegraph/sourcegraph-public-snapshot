@@ -1,5 +1,6 @@
-import { noop } from 'lodash'
 import React from 'react'
+
+import { noop } from 'lodash'
 import ElmComponent from 'react-elm-components'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -10,6 +11,7 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 
 import { Elm } from './component/src/Main.elm'
+
 import styles from './NotebookComputeBlock.module.scss'
 
 interface ComputeBlockProps extends BlockProps<ComputeBlock>, ThemeProps {

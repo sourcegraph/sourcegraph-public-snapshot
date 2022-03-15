@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import * as H from 'history'
 import { noop } from 'lodash'
-import React from 'react'
 import { concat, EMPTY, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
 

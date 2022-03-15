@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useState, useRef, SyntheticEvent, useCallback, useMemo, useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
@@ -8,8 +9,9 @@ import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 
 import { Footer } from './Footer'
-import styles from './TeamsBeta.module.scss'
 import { useHubSpotForm } from './useHubSpotForm'
+
+import styles from './TeamsBeta.module.scss'
 
 const PORTAL_ID = '2762526'
 const FORM_ID = 'b65cc7a2-75ad-4114-be4c-cd9637e7c068'

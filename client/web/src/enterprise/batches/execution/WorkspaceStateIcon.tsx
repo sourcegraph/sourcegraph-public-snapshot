@@ -1,10 +1,11 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React from 'react'
 
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 

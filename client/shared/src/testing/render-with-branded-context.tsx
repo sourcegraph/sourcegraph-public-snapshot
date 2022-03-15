@@ -1,6 +1,7 @@
+import React, { ReactNode } from 'react'
+
 import { RenderResult, render } from '@testing-library/react'
 import { MemoryHistory, createMemoryHistory } from 'history'
-import React, { ReactNode } from 'react'
 import { Router } from 'react-router-dom'
 
 import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'

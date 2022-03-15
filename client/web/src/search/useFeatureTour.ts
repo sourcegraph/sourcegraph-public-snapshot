@@ -1,10 +1,12 @@
 import { useEffect, useMemo } from 'react'
+
 import Shepherd from 'shepherd.js'
 
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import styles from './FeatureTour.module.scss'
 import { defaultTourOptions } from './input/tour-options'
+
+import styles from './FeatureTour.module.scss'
 
 export const HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
 export const HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY = 'has-seen-create-code-monitor-feature-tour'

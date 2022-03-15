@@ -1,5 +1,6 @@
-import * as Monaco from 'monaco-editor'
 import { useState, useEffect } from 'react'
+
+import * as Monaco from 'monaco-editor'
 
 import { BlockProps } from '..'
 

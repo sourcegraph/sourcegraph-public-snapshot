@@ -1,15 +1,17 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { Alert, Button, Input, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
-import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
+
+import styles from '../FormActionArea.module.scss'
 
 export const SEND_TEST_WEBHOOK = gql`
     mutation SendTestWebhook($namespace: ID!, $description: String!, $webhook: MonitorWebhookInput!) {

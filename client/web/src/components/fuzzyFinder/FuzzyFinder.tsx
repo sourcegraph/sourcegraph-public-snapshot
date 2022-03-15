@@ -1,6 +1,7 @@
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
+
 import { ApolloError, useQuery } from '@apollo/client'
 import * as H from 'history'
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'

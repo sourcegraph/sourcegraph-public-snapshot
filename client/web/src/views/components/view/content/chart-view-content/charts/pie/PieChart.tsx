@@ -1,6 +1,7 @@
+import React, { ReactElement, useMemo, useState } from 'react'
+
 import { Group } from '@visx/group'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
-import React, { ReactElement, useMemo, useState } from 'react'
 import { noop } from 'rxjs'
 import { PieChartContent } from 'sourcegraph'
 
@@ -8,6 +9,7 @@ import { MaybeLink } from '../MaybeLink'
 
 import { PieArc } from './components/PieArc'
 import { distributePieArcs } from './distribute-pie-data'
+
 import styles from './PieChart.module.scss'
 
 // Visual settings

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
-import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'

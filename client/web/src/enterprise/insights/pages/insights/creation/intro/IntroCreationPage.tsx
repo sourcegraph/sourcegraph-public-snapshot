@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+
 import { useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
@@ -14,6 +15,7 @@ import {
     LangStatsInsightCard,
     SearchInsightCard,
 } from './cards/InsightCards'
+
 import styles from './IntroCreationPage.module.scss'
 
 interface IntroCreationPageProps extends TelemetryProps {}

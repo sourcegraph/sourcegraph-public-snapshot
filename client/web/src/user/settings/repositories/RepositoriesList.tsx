@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -13,8 +14,9 @@ import { Container } from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoryFields, UserRepositoriesResult, Maybe } from '../../../graphql-operations'
 
-import styles from './RepositoriesList.module.scss'
 import { RepositoryNode } from './RepositoryNode'
+
+import styles from './RepositoriesList.module.scss'
 
 interface Props {
     queryRepos: (

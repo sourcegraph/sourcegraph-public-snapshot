@@ -1,13 +1,3 @@
-import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import TextBoxIcon from 'mdi-react/TextBoxIcon'
-import TrashIcon from 'mdi-react/TrashCanIcon'
 import React, {
     useCallback,
     useState,
@@ -19,6 +9,17 @@ import React, {
     useEffect,
     useLayoutEffect,
 } from 'react'
+
+import classNames from 'classnames'
+import { LocationDescriptor } from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
+import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
+import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
+import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
+import PencilIcon from 'mdi-react/PencilIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
+import TextBoxIcon from 'mdi-react/TextBoxIcon'
+import TrashIcon from 'mdi-react/TrashCanIcon'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'

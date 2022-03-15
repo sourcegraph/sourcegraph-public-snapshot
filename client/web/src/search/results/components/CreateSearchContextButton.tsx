@@ -1,5 +1,6 @@
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React from 'react'
+
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'

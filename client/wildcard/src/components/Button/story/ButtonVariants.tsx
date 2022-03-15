@@ -1,5 +1,6 @@
-import { startCase } from 'lodash'
 import React from 'react'
+
+import { startCase } from 'lodash'
 import 'storybook-addon-designs'
 
 import { Button, ButtonProps } from '../Button'

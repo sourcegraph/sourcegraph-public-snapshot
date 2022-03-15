@@ -1,6 +1,7 @@
+import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import { camelCase } from 'lodash'
-import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -23,10 +24,11 @@ import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import { BackendAlertOverlay } from './BackendAlertOverlay'
-import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
+
+import styles from './BackendInsight.module.scss'
 
 interface BackendInsightProps
     extends TelemetryProps,

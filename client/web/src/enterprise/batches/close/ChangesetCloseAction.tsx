@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
-import React from 'react'
 
 import styles from './ChangesetCloseAction.module.scss'
 

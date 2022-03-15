@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useContext, useEffect, useRef } from 'react'
+
+import * as H from 'history'
 import { Form } from 'reactstrap'
 
 import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'

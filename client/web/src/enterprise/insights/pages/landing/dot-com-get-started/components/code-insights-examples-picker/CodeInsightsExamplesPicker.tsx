@@ -1,6 +1,7 @@
+import React, { useLayoutEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import { throttle } from 'lodash'
-import React, { useLayoutEffect, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link } from '@sourcegraph/wildcard'
@@ -8,8 +9,9 @@ import { Button, Card, CardBody, Link } from '@sourcegraph/wildcard'
 import { CodeInsightExample } from '../../../getting-started/components/code-insights-examples/CodeInsightsExamples'
 
 import { CodeInsightsExamplesSlider } from './code-insights-examples-slider/CodeInsightsExamplesSlider'
-import styles from './CodeInsightsExamplesPicker.module.scss'
 import { EXAMPLES } from './examples'
+
+import styles from './CodeInsightsExamplesPicker.module.scss'
 
 interface CodeInsightsExamplesPickerProps extends TelemetryProps {}
 

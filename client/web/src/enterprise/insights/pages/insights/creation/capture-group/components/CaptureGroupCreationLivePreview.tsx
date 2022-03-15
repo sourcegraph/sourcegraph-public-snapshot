@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+
 import { ChartContent, LineChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'

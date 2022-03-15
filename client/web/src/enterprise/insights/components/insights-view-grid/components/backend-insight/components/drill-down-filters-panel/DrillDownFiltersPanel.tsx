@@ -11,6 +11,7 @@ import {
     DrillDownInsightCreationForm,
     DrillDownInsightCreationFormValues,
 } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+
 import styles from './DrillDownFiltersPanel.module.scss'
 
 enum DrillDownFiltersStep {

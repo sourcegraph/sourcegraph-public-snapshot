@@ -1,18 +1,20 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
 
-import styles from './MonitorLogNode.module.scss'
 import { TriggerEvent } from './TriggerEvent'
+
+import styles from './MonitorLogNode.module.scss'
 
 const clickCatcher = (event: React.MouseEvent<HTMLAnchorElement>): void => {
     event.stopPropagation()

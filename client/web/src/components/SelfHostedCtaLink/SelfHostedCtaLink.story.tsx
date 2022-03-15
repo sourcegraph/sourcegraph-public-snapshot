@@ -1,5 +1,6 @@
-import { DecoratorFn, Meta } from '@storybook/react'
 import React from 'react'
+
+import { DecoratorFn, Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 

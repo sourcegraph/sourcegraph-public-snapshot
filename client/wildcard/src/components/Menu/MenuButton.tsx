@@ -1,5 +1,6 @@
-import { MenuButton as ReachMenuButton } from '@reach/menu-button'
 import React from 'react'
+
+import { MenuButton as ReachMenuButton } from '@reach/menu-button'
 
 import { ForwardReferenceComponent } from '../../types'
 import { Button, ButtonProps } from '../Button'

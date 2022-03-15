@@ -1,4 +1,5 @@
 import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
+
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isErrorLike } from '@sourcegraph/common'

@@ -1,6 +1,7 @@
+import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
+
 import * as H from 'history'
 import { editor } from 'monaco-editor'
-import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

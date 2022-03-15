@@ -1,8 +1,9 @@
+import * as React from 'react'
+import { useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
-import * as React from 'react'
-import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'

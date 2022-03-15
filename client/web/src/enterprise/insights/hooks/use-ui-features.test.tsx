@@ -1,5 +1,6 @@
-import { renderHook } from '@testing-library/react-hooks'
 import React from 'react'
+
+import { renderHook } from '@testing-library/react-hooks'
 
 import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'

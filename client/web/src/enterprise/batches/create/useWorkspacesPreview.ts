@@ -1,6 +1,7 @@
+import { useCallback, useMemo, useState, useEffect } from 'react'
+
 import { FetchResult } from '@apollo/client'
 import { noop } from 'lodash'
-import { useCallback, useMemo, useState, useEffect } from 'react'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 

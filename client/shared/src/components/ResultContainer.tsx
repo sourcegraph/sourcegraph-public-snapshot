@@ -1,16 +1,18 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
+import React, { useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Button } from '@sourcegraph/wildcard'
 
-import styles from './ResultContainer.module.scss'
 import { SearchResultStar } from './SearchResultStar'
+
+import styles from './ResultContainer.module.scss'
 
 export interface Props {
     /**

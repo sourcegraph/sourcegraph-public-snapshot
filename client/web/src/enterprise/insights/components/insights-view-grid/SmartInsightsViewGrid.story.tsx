@@ -1,5 +1,6 @@
-import { Meta } from '@storybook/react'
 import React from 'react'
+
+import { Meta } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

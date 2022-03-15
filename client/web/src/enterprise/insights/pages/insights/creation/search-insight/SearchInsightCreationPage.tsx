@@ -14,10 +14,11 @@ import {
     SearchInsightCreationContent,
     SearchInsightCreationContentProps,
 } from './components/search-insight-creation-content/SearchInsightCreationContent'
-import styles from './SearchInsightCreationPage.module.scss'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
+
+import styles from './SearchInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
     insight: SearchBasedInsight

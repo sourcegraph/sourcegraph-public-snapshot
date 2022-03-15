@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -73,8 +74,9 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import styles from './Blob.module.scss'
 import { LineDecorator } from './LineDecorator'
+
+import styles from './Blob.module.scss'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.

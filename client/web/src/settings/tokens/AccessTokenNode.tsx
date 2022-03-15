@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 import { map, mapTo } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -19,6 +20,7 @@ import {
 import { userURL } from '../../user'
 
 import { AccessTokenCreatedAlert } from './AccessTokenCreatedAlert'
+
 import styles from './AccessTokenNode.module.scss'
 
 export const accessTokenFragment = gql`

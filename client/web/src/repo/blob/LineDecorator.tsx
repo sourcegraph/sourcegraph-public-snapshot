@@ -1,5 +1,6 @@
-import isAbsoluteUrl from 'is-absolute-url'
 import React, { useLayoutEffect } from 'react'
+
+import isAbsoluteUrl from 'is-absolute-url'
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
 

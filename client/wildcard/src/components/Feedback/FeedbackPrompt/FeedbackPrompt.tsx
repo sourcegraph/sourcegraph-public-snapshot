@@ -1,6 +1,7 @@
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -10,8 +11,9 @@ import { useAutoFocus, useLocalStorage } from '../../..'
 import { Modal } from '../../Modal'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
-import styles from './FeedbackPrompt.module.scss'
 import { IconRadioButtons } from './IconRadioButtons'
+
+import styles from './FeedbackPrompt.module.scss'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {

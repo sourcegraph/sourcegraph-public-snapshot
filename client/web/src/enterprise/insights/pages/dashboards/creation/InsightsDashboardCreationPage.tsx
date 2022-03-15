@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
@@ -17,6 +18,7 @@ import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from './components/InsightsDashboardCreationContent'
+
 import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}

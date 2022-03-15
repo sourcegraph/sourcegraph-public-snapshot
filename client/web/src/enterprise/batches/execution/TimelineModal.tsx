@@ -1,9 +1,10 @@
+import React, { useMemo } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
 import { Button, Modal, Icon } from '@sourcegraph/wildcard'
