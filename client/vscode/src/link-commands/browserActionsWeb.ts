@@ -6,7 +6,7 @@ import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
  * browser Actions for Web does not run node modules to get git info
  * Open active file in the browser on the configured Sourcegraph instance.
  */
-export async function browserActions(action: string): Promise<void> {
+export async function browserActions(action: string, logRedirectEvent: (uri: string) => void): Promise<void> {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
         throw new Error('No active editor')
@@ -32,6 +32,8 @@ export async function browserActions(action: string): Promise<void> {
     } else {
         await vscode.window.showInformationMessage('Non-Remote files are not supported on VS Code Web currently')
     }
+    // Log redirect events
+    logRedirectEvent(sourcegraphUrl)
 
     // Open in browser or Copy file link
     if (action === 'open' && sourcegraphUrl) {

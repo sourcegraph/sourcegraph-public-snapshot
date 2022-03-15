@@ -1,4 +1,5 @@
 import 'cross-fetch/polyfill'
+
 import { of, ReplaySubject } from 'rxjs'
 import vscode, { env } from 'vscode'
 
@@ -8,6 +9,7 @@ import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { logEvent } from './backend/eventLogger'
+import { initializeInstantVersionNumber } from './backend/instanceVersion'
 import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSearchContexts } from './backend/searchContexts'
 import { initializeSourcegraphSettings } from './backend/sourcegraphSettings'
@@ -19,9 +21,10 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
+import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
@@ -58,9 +61,9 @@ import { focusSearchPanel, registerWebviews } from './webview/commands'
 export function activate(context: vscode.ExtensionContext): void {
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
-
     invalidateContextOnSettingsChange({ context, stateMachine })
     initializeSearchContexts({ localStorageService, stateMachine, context })
+    const eventSourceType = initializeInstantVersionNumber(localStorageService)
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
@@ -86,7 +89,6 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     )
-
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
@@ -114,6 +116,7 @@ export function activate(context: vscode.ExtensionContext): void {
         copyLink: (uri: string) =>
             env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
         setAccessToken: accessToken => updateAccessTokenSetting(accessToken),
+        setEndpointUri: uri => updateEndpointSetting(uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,
@@ -127,6 +130,7 @@ export function activate(context: vscode.ExtensionContext): void {
         getLocalStorageItem: key => localStorageService.getValue(key),
         setLocalStorageItem: (key: string, value: string) => localStorageService.setValue(key, value),
         logEvents: (variables: Event) => logEvent(variables),
+        getEventSource: eventSourceType,
     }
 
     // Also initializes code intel.
@@ -138,5 +142,6 @@ export function activate(context: vscode.ExtensionContext): void {
         fs,
         instanceURL: initialInstanceURL,
     })
-    initializeCodeSharingCommands({ context })
+    initializeCodeSharingCommands(context, eventSourceType, localStorageService)
+    watchUninstall(eventSourceType, localStorageService)
 }

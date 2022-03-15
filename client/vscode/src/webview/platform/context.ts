@@ -36,13 +36,16 @@ export interface VSCodePlatformContext
         variables: V
         mightContainPrivateInfo: boolean
         overrideAccessToken?: string
+        overrideSourcegraphURL?: string
     }) => Observable<GraphQLResult<R>>
 }
 
 export function createPlatformContext(extensionCoreAPI: Comlink.Remote<ExtensionCoreAPI>): VSCodePlatformContext {
     const context: VSCodePlatformContext = {
-        requestGraphQL({ request, variables, overrideAccessToken }) {
-            return from(extensionCoreAPI.requestGraphQL(request, variables, overrideAccessToken))
+        requestGraphQL({ request, variables, overrideAccessToken, overrideSourcegraphURL }) {
+            return from(
+                extensionCoreAPI.requestGraphQL(request, variables, overrideAccessToken, overrideSourcegraphURL)
+            )
         },
         // TODO add true Apollo Client support for v2
         getGraphQLClient: () =>

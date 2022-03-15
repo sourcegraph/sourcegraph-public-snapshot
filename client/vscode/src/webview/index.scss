@@ -107,3 +107,21 @@ code {
         background-color: var(--vscode-button-secondaryBackground) !important;
     }
 }
+
+.btn-text-link {
+    color: var(--vscode-textLink-foreground);
+    padding: 0;
+    font-weight: var(--vscode-editor-font-weight) !important;
+    font-size: var(--vscode-editor-font-size) !important;
+}
+
+.input,
+.form-control {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+
+    &:focus {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+    }
+}
