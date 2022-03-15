@@ -23,6 +23,7 @@ export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
 export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason, EMPTY_RECTANGLE } from './Popover'
+export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 
 /**
  * Type Exports
