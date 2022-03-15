@@ -162,6 +162,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         refetchBatchChange={refetchBatchChange}
                         history={history}
@@ -174,6 +175,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
                         settingsCascade={settingsCascade}
+                        executionEnabled={executionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
@@ -222,6 +224,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         history={history}
                         location={location}
@@ -233,6 +236,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
                         settingsCascade={settingsCascade}
+                        executionEnabled={executionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
