@@ -1360,7 +1360,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
-    _, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
 			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
