@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { Observable, ReplaySubject } from 'rxjs'
@@ -41,10 +42,11 @@ import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
-import styles from './NotebookComponent.module.scss'
 import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
+
+import styles from './NotebookComponent.module.scss'
 
 export interface NotebookComponentProps
     extends SearchStreamingProps,

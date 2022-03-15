@@ -1,5 +1,6 @@
-import { noop } from 'lodash'
 import React, { useMemo } from 'react'
+
+import { noop } from 'lodash'
 import * as uuid from 'uuid'
 
 import { NotebookComponent, NotebookComponentProps } from '../../notebooks/notebook/NotebookComponent'

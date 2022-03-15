@@ -1,10 +1,11 @@
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -29,8 +30,9 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
-import styles from './NotebookFileBlock.module.scss'
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
+
+import styles from './NotebookFileBlock.module.scss'
 
 interface NotebookFileBlockProps
     extends BlockProps<FileBlock>,

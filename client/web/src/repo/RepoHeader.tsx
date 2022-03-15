@@ -1,8 +1,9 @@
+import React, { useState, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { useState, useMemo, useEffect } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -21,6 +22,7 @@ import { useBreakpoint } from '../util/dom'
 
 import { ResolvedRevision } from './backend'
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
+
 import styles from './RepoHeader.module.scss'
 
 /**

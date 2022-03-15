@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect, useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 
@@ -7,8 +8,9 @@ import { BlockProps } from '..'
 import { isModifierKeyPressed } from '../notebook/useNotebookEventHandlers'
 
 import { NotebookBlockMenu, NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
-import blockStyles from './NotebookBlock.module.scss'
 import { useIsBlockInputFocused } from './useIsBlockInputFocused'
+
+import blockStyles from './NotebookBlock.module.scss'
 
 interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlockSelected'>, NotebookBlockMenuProps {
     className?: string

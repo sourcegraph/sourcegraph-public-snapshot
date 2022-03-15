@@ -1,14 +1,16 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { Alert, AlertProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import hoverOverlayStyle from '../HoverOverlay.module.scss'
 import { HoverOverlayBaseProps } from '../HoverOverlay.types'
 
 import { HoverOverlayContent } from './HoverOverlayContent'
+
+import hoverOverlayStyle from '../HoverOverlay.module.scss'
 
 interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOrError'> {
     iconClassName?: string

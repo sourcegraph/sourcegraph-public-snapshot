@@ -1,8 +1,9 @@
+import React, { useMemo, useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'

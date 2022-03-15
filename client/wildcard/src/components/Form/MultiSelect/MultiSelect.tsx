@@ -1,22 +1,24 @@
-import classNames from 'classnames'
 import React, { ReactElement } from 'react'
+
+import classNames from 'classnames'
 import Select, { Props as SelectProps, StylesConfig, GroupBase } from 'react-select'
 
 import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
-import selectStyles from '../Select/Select.module.scss'
 
 import { ClearIndicator } from './ClearIndicator'
 import { DropdownIndicator } from './DropdownIndicator'
-import styles from './MultiSelect.module.scss'
 import { MultiValueContainer } from './MultiValueContainer'
 import { MultiValueLabel } from './MultiValueLabel'
 import { MultiValueRemove } from './MultiValueRemove'
 import { STYLES } from './styles'
 import { THEME } from './theme'
 import { MultiSelectOption } from './types'
+
+import selectStyles from '../Select/Select.module.scss'
+import styles from './MultiSelect.module.scss'
 
 export type MultiSelectProps<Option = unknown> = AccessibleFieldProps<
     SelectProps<Option, true> & { options: SelectProps<Option, true>['options'] } & {

@@ -7,6 +7,7 @@ import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../
 import { nullPolicy } from '../hooks/types'
 
 import { DurationSelect } from './DurationSelect'
+
 import styles from './RetentionSettings.module.scss'
 
 export interface RetentionSettingsProps {

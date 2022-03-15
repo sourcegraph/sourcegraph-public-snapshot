@@ -1,5 +1,6 @@
-import UploadIcon from 'mdi-react/UploadIcon'
 import React, { useCallback, useRef } from 'react'
+
+import UploadIcon from 'mdi-react/UploadIcon'
 import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'

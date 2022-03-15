@@ -1,5 +1,6 @@
-import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect } from 'react'
+
+import * as Monaco from 'monaco-editor'
 
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'

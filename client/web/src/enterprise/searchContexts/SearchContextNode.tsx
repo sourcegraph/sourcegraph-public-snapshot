@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React from 'react'
 
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'

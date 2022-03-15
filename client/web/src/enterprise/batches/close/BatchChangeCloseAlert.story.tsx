@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { boolean, number } from '@storybook/addon-knobs'
 import { useState } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 
