@@ -1237,6 +1237,7 @@ WHERE key IN
 	'count_repo_contains_file',
 	'count_repo_contains_content',
 	'count_repo_contains_commit_after',
+	'count_repo_dependencies',
 	'count_count_all',
 	'count_non_global_context',
 	'count_only_patterns',
