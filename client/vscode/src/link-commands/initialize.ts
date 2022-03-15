@@ -1,24 +1,31 @@
 import vscode from 'vscode'
 
+import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
+
+import { version } from '../../package.json'
+import { logEvent } from '../backend/eventLogger'
 import { SourcegraphUri } from '../file-system/SourcegraphUri'
+import { LocalStorageService, ANONYMOUS_USER_ID_KEY } from '../settings/LocalStorageService'
 
 import { browserActions } from './browserActionsNode'
 
-export function initializeCodeSharingCommands({ context }: { context: vscode.ExtensionContext }): void {
+export function initializeCodeSharingCommands(
+    context: vscode.ExtensionContext,
+    eventSourceType: EventSource,
+    localStorageService: LocalStorageService
+): void {
     // Open local file or remote Sourcegraph file in browser
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.openInBrowser', async () => {
-            await browserActions('open')
+            await browserActions('open', logRedirectEvent)
         })
     )
-
     // Copy Sourcegraph link to file
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
-            await browserActions('copy')
+            await browserActions('copy', logRedirectEvent)
         })
     )
-
     // Search Selected Text in Sourcegraph Search Tab
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.selectionSearchWeb', async () => {
@@ -35,6 +42,18 @@ export function initializeCodeSharingCommands({ context }: { context: vscode.Ext
             await vscode.env.openExternal(vscode.Uri.parse(uri))
         })
     )
+    // Log Redirect Event
+    function logRedirectEvent(sourcegraphUrl: string): void {
+        const userEventVariables = {
+            event: 'IDERedirected',
+            userCookieID: localStorageService.getValue(ANONYMOUS_USER_ID_KEY),
+            referrer: 'VSCE',
+            url: sourcegraphUrl,
+            source: eventSourceType,
+            argument: JSON.stringify({ editor: 'vscode', version }),
+        }
+        logEvent(userEventVariables)
+    }
 }
 
 export const vsceUtms =

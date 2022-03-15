@@ -16,7 +16,8 @@ export function invalidateClient(): void {
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
     variables: V,
-    overrideAccessToken?: string
+    overrideAccessToken?: string,
+    overrideSourcegraphURL?: string
 ): Promise<GraphQLResult<R>> => {
     if (invalidated) {
         throw new Error(
@@ -30,7 +31,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     const customHeaders = endpointRequestHeadersSetting()
     // return empty array if no custom header is provided in configuration
     const headers: HeadersInit = Object.entries(customHeaders)
-    const sourcegraphURL = endpointSetting()
+    const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
     const accessToken = accessTokenSetting()
 
     // Add Access Token to request header

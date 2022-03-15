@@ -3,6 +3,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { Event } from '@sourcegraph/web/src/graphql-operations'
@@ -13,11 +14,17 @@ export interface ExtensionCoreAPI {
     /** For search panel webview to signal that it is ready for messages. */
     panelInitialized: (panelId: string) => void
 
-    requestGraphQL: (request: string, variables: any, overrideAccessToken?: string) => Promise<GraphQLResult<any>>
+    requestGraphQL: (
+        request: string,
+        variables: any,
+        overrideAccessToken?: string,
+        overrideSourcegraphURL?: string
+    ) => Promise<GraphQLResult<any>>
     observeSourcegraphSettings: () => ProxySubscribable<SettingsCascadeOrError>
     getAuthenticatedUser: () => ProxySubscribable<AuthenticatedUser | null>
     getInstanceURL: () => ProxySubscribable<string>
     setAccessToken: (accessToken: string) => void
+    setEndpointUri: (uri: string) => void
     /**
      * Observe search box query state.
      * Used to send current query from panel to sidebar.
@@ -55,6 +62,9 @@ export interface ExtensionCoreAPI {
 
     // For Telemetry Service
     logEvents: (variables: Event) => void
+
+    // Get EventSource Type to use based on instance version
+    getEventSource: EventSource
 }
 
 export interface SearchPanelAPI {

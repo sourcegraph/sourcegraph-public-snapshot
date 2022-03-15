@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.0.9",
+  "version": "2.2.0",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": false,
@@ -14,7 +14,7 @@
     "directory": "client/vscode"
   },
   "bugs": {
-    "url": "https://github.com/sourcegraph/sourcegraph-vscode/issues"
+    "url": "https://github.com/sourcegraph/sourcegraph/issues"
   },
   "engines": {
     "vscode": "^1.63.2"
@@ -23,16 +23,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onFileSystem:sourcegraph",
-    "onLanguage:sourcegraph",
-    "onCommand:sourcegraph.search",
-    "onCommand:sourcegraph.openInBrowser",
-    "onCommand:sourcegraph.copyFileLink",
-    "onCommand:sourcegraph.selectionSearchWeb",
-    "onCommand:sourcegraph.openFile",
-    "onView:sourcegraph.searchSidebar",
-    "onView:sourcegraph.files",
-    "onWebviewPanel:sourcegraphSearch"
+    "*"
   ],
   "main": "./dist/node/extension.js",
   "browser": "./dist/webworker/extension.js",

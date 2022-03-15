@@ -139,6 +139,7 @@ type SearchEvent =
     | { type: 'sidebar_query_update'; proposedQueryState: VSCEQueryState; currentQueryState: VSCEQueryState }
 
 type TabsEvent =
+    | { type: 'search_panel_disposed' }
     | { type: 'search_panel_unfocused' }
     | { type: 'search_panel_focused' }
     | { type: 'remote_file_focused' }
@@ -220,6 +221,17 @@ export function createVSCEStateMachine({
             case 'search-home':
             case 'search-results':
                 switch (event.type) {
+                    case 'search_panel_disposed':
+                        return {
+                            ...state,
+                            status: 'search-home',
+                            context: {
+                                ...state.context,
+                                submittedSearchQueryState: null,
+                                searchResults: null,
+                            },
+                        }
+
                     case 'search_panel_unfocused':
                         return {
                             ...state,
