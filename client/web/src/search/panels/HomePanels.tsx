@@ -37,20 +37,22 @@ export type HomePanelsFetchMore = (
     fetchMoreOptions: Partial<HomePanelsQueryVariables>
 ) => Promise<ApolloQueryResult<HomePanelsQueryResult>>
 
+export const HOME_PANELS_QUERY = gql`
+    query HomePanelsQuery($userId: ID!, $firstRecentlySearchedRepositories: Int, $firstRecentSearches: Int) {
+        node(id: $userId) {
+            __typename
+            ...RecentlySearchedRepositoriesFragment
+            ...RecentSearchesPanelFragment
+        }
+    }
+    ${recentlySearchedRepositoriesFragment}
+    ${recentSearchesPanelFragment}
+`
+
 export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
     const userId = props.authenticatedUser?.id || ''
     const { data, fetchMore: rawFetchMore } = useQuery<HomePanelsQueryResult, HomePanelsQueryVariables>(
-        gql`
-            query HomePanelsQuery($userId: ID!, $firstRecentlySearchedRepositories: Int, $firstRecentSearches: Int) {
-                node(id: $userId) {
-                    __typename
-                    ...RecentlySearchedRepositoriesFragment
-                    ...RecentSearchesPanelFragment
-                }
-            }
-            ${recentlySearchedRepositoriesFragment}
-            ${recentSearchesPanelFragment}
-        `,
+        HOME_PANELS_QUERY,
         {
             variables: {
                 userId,
@@ -59,6 +61,8 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
             },
         }
     )
+
+    console.log({ data })
 
     const fetchMore: HomePanelsFetchMore = useCallback(
         (variables: Partial<HomePanelsQueryVariables>) => {
