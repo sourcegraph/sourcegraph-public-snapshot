@@ -75,7 +75,7 @@ func DocumentToHTML(code string, document *lsiftyped.Document) (template.HTML, e
 	return template.HTML(buf.String()), nil
 }
 
-// lsifToHTML iterates of code and a document to dispatch to AddRow and AddText
+// lsifToHTML iterates on code and a document to dispatch to AddRow and AddText
 // which can be used to generate different kinds of HTML.
 func lsifToHTML(
 	code string,

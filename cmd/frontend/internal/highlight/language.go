@@ -160,7 +160,7 @@ func getLanguage(path string, contents string) (string, bool) {
 // path and contents. First it will determine if there are any configuration overrides
 // and then, if none, return the 'enry' default language detection
 func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngineQuery {
-	lang, override := getLanguage(path, contents)
+	lang, langOverride := getLanguage(path, contents)
 	lang = strings.ToLower(lang)
 
 	engine := engineConfig.Default
@@ -170,7 +170,7 @@ func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngine
 
 	return SyntaxEngineQuery{
 		Language:         lang,
-		LanguageOverride: override,
+		LanguageOverride: langOverride,
 		Engine:           engine,
 	}
 }

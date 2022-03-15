@@ -109,8 +109,21 @@ type Metadata struct {
 var ErrBinary = errors.New("cannot render binary file")
 
 type HighlightedCode struct {
-	code     string
-	html     template.HTML
+	// The code as a string. Not HTML
+	code string
+
+	// Formatted HTML. This is generally from syntect, as LSIF documents
+	// will be formatted on the fly using HighlightedCode.document
+	//
+	// Can be an empty string if we have an lsiftyped.Document instead.
+	// Access via HighlightedCode.HTML()
+	html template.HTML
+
+	// The document returned which contains SyntaxKinds. These are used
+	// to generate formatted HTML.
+	//
+	// This is optional because not every language has a treesitter parser
+	// and queries that can send back an lsiftyped.Document
 	document *lsiftyped.Document
 }
 
@@ -179,8 +192,20 @@ func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]temp
 	return lines, nil
 }
 
-// TODO(tjdevries): A bit weird that it's string and not template.HTML...
+// LinesForRanges returns a list of list of strings (which are valid HTML). Each list of strings is a set
+// of HTML lines correspond to the range passed in ranges.
+//
+// This is the corresponding function for SplitLineRanges, but uses lsiftyped.
+//
+// TODO(tjdevries): The call heirarchy could be reversed later to only have one entry point
 func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
+	if h.document == nil {
+		return nil, errors.New("must have a document")
+	}
+
+	// We use `h.code` here because we just want to find out what the max line number
+	// is that we should consider a valid line. This bounds our ranges to make sure that we
+	// are only including and slicing from valid lines.
 	maxLines := len(strings.Split(h.code, "\n"))
 
 	validLines := map[int32]bool{}
