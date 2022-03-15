@@ -175,7 +175,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return p, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 		eauthz.MockProviderFromExternalService = nil
 	}()
@@ -275,7 +274,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -372,7 +370,6 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -481,7 +478,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -561,7 +557,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
