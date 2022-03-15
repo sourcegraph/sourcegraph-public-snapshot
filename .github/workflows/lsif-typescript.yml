@@ -1,6 +1,9 @@
 name: lsif-typescript
 on:
   push:
+    paths:
+      - '**.ts'
+      - '**.js'
 
 jobs:
   lsif-typescript:
