@@ -1,5 +1,5 @@
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c AS p4cli
+FROM sourcegraph/alpine-3.12:137065_2022-03-15_8d18149c8604@sha256:1ed854101d8f0e966ab6dc0ffc0433db39bd44bc4867fb94c4ba90cb78b6219c AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
@@ -7,13 +7,13 @@ RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     chmod +x /usr/local/bin/p4
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c AS p4-fusion
+FROM sourcegraph/alpine-3.12:137065_2022-03-15_8d18149c8604@sha256:1ed854101d8f0e966ab6dc0ffc0433db39bd44bc4867fb94c4ba90cb78b6219c AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
 # Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c AS coursier
+FROM sourcegraph/alpine-3.12:137065_2022-03-15_8d18149c8604@sha256:1ed854101d8f0e966ab6dc0ffc0433db39bd44bc4867fb94c4ba90cb78b6219c AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -21,7 +21,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
+FROM sourcegraph/alpine-3.12:137065_2022-03-15_8d18149c8604@sha256:1ed854101d8f0e966ab6dc0ffc0433db39bd44bc4867fb94c4ba90cb78b6219c
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
