@@ -121,6 +121,21 @@ func checkSgVersion() {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+
+		err := updateCommand.Exec(context.TODO(), nil)
+		if err != nil {
+			panic(err)
+		}
+
+		sgPath, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(sgPath)
+
+		if err := syscall.Exec(sgPath, os.Args, os.Environ()); err != nil {
+			panic(err)
+		}
 	}
 }
 
