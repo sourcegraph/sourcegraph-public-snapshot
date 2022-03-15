@@ -890,6 +890,10 @@ type GitoliteConnection struct {
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
 	// Host description: Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).
 	Host string `json:"host"`
+	// Phabricator description: This is DEPRECATED
+	Phabricator *Phabricator `json:"phabricator,omitempty"`
+	// PhabricatorMetadataCommand description: This is DEPRECATED
+	PhabricatorMetadataCommand string `json:"phabricatorMetadataCommand,omitempty"`
 	// Prefix description: Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., "gitolite.example.com/".
 	//
 	// It is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
@@ -1338,6 +1342,14 @@ type PermissionsUserMapping struct {
 	BindID string `json:"bindID,omitempty"`
 	// Enabled description: Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+// Phabricator description: This is DEPRECATED
+type Phabricator struct {
+	// CallsignCommand description:  Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
+	CallsignCommand string `json:"callsignCommand"`
+	// Url description: URL of the Phabricator instance that integrates with this Gitolite instance. This should be set
+	Url string `json:"url"`
 }
 
 // PhabricatorConnection description: Configuration for a connection to Phabricator.
