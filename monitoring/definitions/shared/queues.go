@@ -53,6 +53,11 @@ func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedO
 	}
 }
 
+// MaxAge creates an observable from the given options backed by the max of the counters
+// specifying the age of the oldest unprocessed record in the queue.
+//
+// Requires a:
+//   - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
 func (queueConstructor) MaxAge(options ObservableConstructorOptions) sharedObservable {
 	return func(containerName string, owner monitoring.ObservableOwner) Observable {
 		filters := makeFilters(containerName, options.Filters...)
@@ -77,15 +82,19 @@ type QueueSizeGroupOptions struct {
 	// QueueGrowthRate transforms the default observable used to construct the queue growth rate panel.
 	QueueGrowthRate ObservableOption
 
+	// QueueMaxAge transforms the default observable used to construct the queue's oldest record age panel.
 	QueueMaxAge ObservableOption
 }
 
 // NewGroup creates a group containing panels displaying metrics to monitor the size and growth rate
-// of a queue of work within the given container.
+// of a queue of work within the given container, as well as the age of the oldest unprocessed entry
+// in the queue.
 //
 // Requires a:
 //   - gauge of the format `src_{options.MetricNameRoot}_total`
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
+// Optionally a:
+// 	 - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
 //
 // The queue size metric should be created via a Prometheus gauge function in the Go backend. For
 // instructions on how to create the processor metrics, see the `NewWorkerutilGroup` function in

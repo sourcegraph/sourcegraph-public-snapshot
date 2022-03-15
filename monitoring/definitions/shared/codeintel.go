@@ -50,6 +50,7 @@ func (codeIntelligence) NewResolversGroup(containerName string) monitoring.Group
 
 // src_codeintel_upload_total
 // src_codeintel_upload_processor_total
+// src_codeintel_upload_queued_duration_seconds_total
 func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -106,6 +107,7 @@ func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring
 
 // src_codeintel_commit_graph_total
 // src_codeintel_commit_graph_processor_total
+// src_codeintel_commit_graph_queued_duration_seconds_total
 func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -193,6 +195,7 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 
 // src_codeintel_dependency_index_total
 // src_codeintel_dependency_index_processor_total
+// src_codeintel_dependency_index_queued_duration_seconds_total
 func (codeIntelligence) NewDependencyIndexQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -247,6 +250,7 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 
 // src_executor_total
 // src_executor_processor_total
+// src_executor_queued_duration_seconds_total
 func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
