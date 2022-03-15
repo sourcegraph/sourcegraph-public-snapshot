@@ -514,19 +514,8 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 // of search to run (e.g., text search, symbol search).
 func computeResultTypes(args search.TextParameters, pattern string, searchType query.SearchType) result.Types {
 	var rts result.Types
-	forceResultTypes := result.TypeEmpty
-	if searchType == query.SearchTypeStructural {
-		if pattern == "" {
-			// Fallback to basic search for searching repos and files if
-			// the structural search pattern is empty.
-			forceResultTypes = result.TypeEmpty
-		} else {
-			forceResultTypes = result.TypeStructural
-		}
-	}
-
-	if forceResultTypes != 0 {
-		rts = forceResultTypes
+	if searchType == query.SearchTypeStructural && pattern != "" {
+		rts = result.TypeStructural
 	} else {
 		stringTypes, _ := args.Query.StringValues(query.FieldType)
 		if len(stringTypes) == 0 {
