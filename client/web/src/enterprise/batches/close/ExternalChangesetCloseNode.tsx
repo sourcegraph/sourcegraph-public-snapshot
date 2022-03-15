@@ -1,8 +1,9 @@
+import React, { useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useState, useCallback } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Hoverifier } from '@sourcegraph/codeintellify'
@@ -22,6 +23,7 @@ import { ChangesetReviewStatusCell } from '../detail/changesets/ChangesetReviewS
 import { ExternalChangesetInfoCell } from '../detail/changesets/ExternalChangesetInfoCell'
 
 import { ChangesetCloseActionClose, ChangesetCloseActionKept } from './ChangesetCloseAction'
+
 import styles from './ExternalChangesetCloseNode.module.scss'
 
 export interface ExternalChangesetCloseNodeProps extends ThemeProps {

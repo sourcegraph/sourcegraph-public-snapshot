@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'

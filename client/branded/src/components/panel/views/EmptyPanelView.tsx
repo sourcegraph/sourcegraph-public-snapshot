@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CancelIcon from 'mdi-react/CancelIcon'
-import React from 'react'
 
 import styles from './EmptyPanelView.module.scss'
 

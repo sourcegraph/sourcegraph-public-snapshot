@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
@@ -7,6 +8,7 @@ import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { HiddenExternalChangesetInfoCell } from './HiddenExternalChangesetInfoCell'
+
 import styles from './HiddenExternalChangesetNode.module.scss'
 
 export interface HiddenExternalChangesetNodeProps {

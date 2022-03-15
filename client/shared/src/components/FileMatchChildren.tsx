@@ -1,6 +1,7 @@
+import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -26,9 +27,10 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '../util/useCodeIntelViewerUpdates'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './ranking/PerFileResultRanking'
+
+import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location

@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 

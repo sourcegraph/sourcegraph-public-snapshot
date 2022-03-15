@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React from 'react'
 
 import { Button, Card, Link } from '@sourcegraph/wildcard'
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react'
+
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'

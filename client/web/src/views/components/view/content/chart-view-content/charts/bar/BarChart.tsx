@@ -1,3 +1,5 @@
+import React, { ReactElement, useCallback, useMemo } from 'react'
+
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event'
 import { GridRows } from '@visx/grid'
@@ -7,7 +9,6 @@ import { Bar } from '@visx/shape'
 import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
 import classNames from 'classnames'
 import { range } from 'lodash'
-import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
 
 import { MaybeLink } from '../MaybeLink'

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'

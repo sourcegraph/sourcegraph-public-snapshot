@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { render } from '@testing-library/react'
 
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'

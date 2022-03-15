@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -15,9 +16,10 @@ import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 import { UserAvatar } from '../user/UserAvatar'
 
-import styles from './CloudSignUpPage.module.scss'
 import { ExternalsAuth } from './ExternalsAuth'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
+
+import styles from './CloudSignUpPage.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps, FeatureFlagProps {
     source: string | null

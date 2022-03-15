@@ -1,3 +1,5 @@
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+
 import {
     Combobox,
     ComboboxInput,
@@ -7,7 +9,6 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 

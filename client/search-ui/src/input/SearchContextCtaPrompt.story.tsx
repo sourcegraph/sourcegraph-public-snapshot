@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'

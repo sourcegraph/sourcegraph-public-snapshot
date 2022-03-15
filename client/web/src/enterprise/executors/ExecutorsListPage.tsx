@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 

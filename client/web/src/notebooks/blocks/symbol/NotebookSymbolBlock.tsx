@@ -1,3 +1,5 @@
+import React, { useState, useMemo, useCallback } from 'react'
+
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -5,7 +7,6 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useMemo, useCallback } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -30,8 +31,9 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
-import styles from './NotebookSymbolBlock.module.scss'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
+
+import styles from './NotebookSymbolBlock.module.scss'
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
