@@ -24,6 +24,7 @@ export const BatchChangeListFilters: React.FunctionComponent<BatchChangeListFilt
     ...props
 }) => (
     <>
+        {/* TODO: This should be a proper label. MultiSelect currently doesn't support that being inline though, so this is for later. */}
         <h4 className="mb-0 mr-2">Status</h4>
         <MultiSelect
             {...props}
