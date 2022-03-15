@@ -53,7 +53,7 @@ func (h *highlightedFileResolver) HTML() string {
 }
 func (h *highlightedFileResolver) LSIF() string {
 	if h.response == nil {
-		return ""
+		return "{}"
 	}
 
 	marshaller := &jsonpb.Marshaler{
