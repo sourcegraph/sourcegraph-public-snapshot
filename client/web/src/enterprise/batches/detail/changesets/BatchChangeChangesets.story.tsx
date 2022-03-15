@@ -11,6 +11,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
+import { BatchChangeState } from '../../../../graphql-operations'
 import { CHANGESETS, queryExternalChangesetWithFileDiffs } from '../backend'
 
 import { BatchChangeChangesets } from './BatchChangeChangesets'
@@ -68,6 +69,8 @@ add('List of changesets', () => (
                     batchChangeID="batchid"
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    batchChangeState={BatchChangeState.OPEN}
+                    isExecutionEnabled={false}
                 />
             </MockedTestProvider>
         )}
@@ -88,6 +91,8 @@ add('List of expanded changesets', () => (
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
                     expandByDefault={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    batchChangeState={BatchChangeState.OPEN}
+                    isExecutionEnabled={false}
                 />
             </MockedTestProvider>
         )}
