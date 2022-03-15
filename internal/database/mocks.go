@@ -21331,6 +21331,9 @@ func (c OrgMemberStoreWithFuncCall) Results() []interface{} {
 // package github.com/sourcegraph/sourcegraph/internal/database) used for
 // unit testing.
 type MockOrgStore struct {
+	// AddOrgsOpenBetaStatsFunc is an instance of a mock function object
+	// controlling the behavior of the method AddOrgsOpenBetaStats.
+	AddOrgsOpenBetaStatsFunc *OrgStoreAddOrgsOpenBetaStatsFunc
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *OrgStoreCountFunc
@@ -21371,6 +21374,9 @@ type MockOrgStore struct {
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *OrgStoreUpdateFunc
+	// UpdateOrgsOpenBetaStatsFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateOrgsOpenBetaStats.
+	UpdateOrgsOpenBetaStatsFunc *OrgStoreUpdateOrgsOpenBetaStatsFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *OrgStoreWithFunc
@@ -21380,6 +21386,11 @@ type MockOrgStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockOrgStore() *MockOrgStore {
 	return &MockOrgStore{
+		AddOrgsOpenBetaStatsFunc: &OrgStoreAddOrgsOpenBetaStatsFunc{
+			defaultHook: func(context.Context, int32, string) (string, error) {
+				return "", nil
+			},
+		},
 		CountFunc: &OrgStoreCountFunc{
 			defaultHook: func(context.Context, OrgsListOptions) (int, error) {
 				return 0, nil
@@ -21445,6 +21456,11 @@ func NewMockOrgStore() *MockOrgStore {
 				return nil, nil
 			},
 		},
+		UpdateOrgsOpenBetaStatsFunc: &OrgStoreUpdateOrgsOpenBetaStatsFunc{
+			defaultHook: func(context.Context, string, int32) error {
+				return nil
+			},
+		},
 		WithFunc: &OrgStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) OrgStore {
 				return nil
@@ -21457,6 +21473,11 @@ func NewMockOrgStore() *MockOrgStore {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockOrgStore() *MockOrgStore {
 	return &MockOrgStore{
+		AddOrgsOpenBetaStatsFunc: &OrgStoreAddOrgsOpenBetaStatsFunc{
+			defaultHook: func(context.Context, int32, string) (string, error) {
+				panic("unexpected invocation of MockOrgStore.AddOrgsOpenBetaStats")
+			},
+		},
 		CountFunc: &OrgStoreCountFunc{
 			defaultHook: func(context.Context, OrgsListOptions) (int, error) {
 				panic("unexpected invocation of MockOrgStore.Count")
@@ -21522,6 +21543,11 @@ func NewStrictMockOrgStore() *MockOrgStore {
 				panic("unexpected invocation of MockOrgStore.Update")
 			},
 		},
+		UpdateOrgsOpenBetaStatsFunc: &OrgStoreUpdateOrgsOpenBetaStatsFunc{
+			defaultHook: func(context.Context, string, int32) error {
+				panic("unexpected invocation of MockOrgStore.UpdateOrgsOpenBetaStats")
+			},
+		},
 		WithFunc: &OrgStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) OrgStore {
 				panic("unexpected invocation of MockOrgStore.With")
@@ -21534,6 +21560,9 @@ func NewStrictMockOrgStore() *MockOrgStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockOrgStoreFrom(i OrgStore) *MockOrgStore {
 	return &MockOrgStore{
+		AddOrgsOpenBetaStatsFunc: &OrgStoreAddOrgsOpenBetaStatsFunc{
+			defaultHook: i.AddOrgsOpenBetaStats,
+		},
 		CountFunc: &OrgStoreCountFunc{
 			defaultHook: i.Count,
 		},
@@ -21573,10 +21602,125 @@ func NewMockOrgStoreFrom(i OrgStore) *MockOrgStore {
 		UpdateFunc: &OrgStoreUpdateFunc{
 			defaultHook: i.Update,
 		},
+		UpdateOrgsOpenBetaStatsFunc: &OrgStoreUpdateOrgsOpenBetaStatsFunc{
+			defaultHook: i.UpdateOrgsOpenBetaStats,
+		},
 		WithFunc: &OrgStoreWithFunc{
 			defaultHook: i.With,
 		},
 	}
+}
+
+// OrgStoreAddOrgsOpenBetaStatsFunc describes the behavior when the
+// AddOrgsOpenBetaStats method of the parent MockOrgStore instance is
+// invoked.
+type OrgStoreAddOrgsOpenBetaStatsFunc struct {
+	defaultHook func(context.Context, int32, string) (string, error)
+	hooks       []func(context.Context, int32, string) (string, error)
+	history     []OrgStoreAddOrgsOpenBetaStatsFuncCall
+	mutex       sync.Mutex
+}
+
+// AddOrgsOpenBetaStats delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockOrgStore) AddOrgsOpenBetaStats(v0 context.Context, v1 int32, v2 string) (string, error) {
+	r0, r1 := m.AddOrgsOpenBetaStatsFunc.nextHook()(v0, v1, v2)
+	m.AddOrgsOpenBetaStatsFunc.appendCall(OrgStoreAddOrgsOpenBetaStatsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AddOrgsOpenBetaStats
+// method of the parent MockOrgStore instance is invoked and the hook queue
+// is empty.
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) SetDefaultHook(hook func(context.Context, int32, string) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AddOrgsOpenBetaStats method of the parent MockOrgStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) PushHook(hook func(context.Context, int32, string) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, int32, string) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) nextHook() func(context.Context, int32, string) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) appendCall(r0 OrgStoreAddOrgsOpenBetaStatsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgStoreAddOrgsOpenBetaStatsFuncCall
+// objects describing the invocations of this function.
+func (f *OrgStoreAddOrgsOpenBetaStatsFunc) History() []OrgStoreAddOrgsOpenBetaStatsFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgStoreAddOrgsOpenBetaStatsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgStoreAddOrgsOpenBetaStatsFuncCall is an object that describes an
+// invocation of method AddOrgsOpenBetaStats on an instance of MockOrgStore.
+type OrgStoreAddOrgsOpenBetaStatsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgStoreAddOrgsOpenBetaStatsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgStoreAddOrgsOpenBetaStatsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // OrgStoreCountFunc describes the behavior when the Count method of the
@@ -22956,6 +23100,117 @@ func (c OrgStoreUpdateFuncCall) Args() []interface{} {
 // invocation.
 func (c OrgStoreUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// OrgStoreUpdateOrgsOpenBetaStatsFunc describes the behavior when the
+// UpdateOrgsOpenBetaStats method of the parent MockOrgStore instance is
+// invoked.
+type OrgStoreUpdateOrgsOpenBetaStatsFunc struct {
+	defaultHook func(context.Context, string, int32) error
+	hooks       []func(context.Context, string, int32) error
+	history     []OrgStoreUpdateOrgsOpenBetaStatsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateOrgsOpenBetaStats delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockOrgStore) UpdateOrgsOpenBetaStats(v0 context.Context, v1 string, v2 int32) error {
+	r0 := m.UpdateOrgsOpenBetaStatsFunc.nextHook()(v0, v1, v2)
+	m.UpdateOrgsOpenBetaStatsFunc.appendCall(OrgStoreUpdateOrgsOpenBetaStatsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateOrgsOpenBetaStats method of the parent MockOrgStore instance is
+// invoked and the hook queue is empty.
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) SetDefaultHook(hook func(context.Context, string, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateOrgsOpenBetaStats method of the parent MockOrgStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) PushHook(hook func(context.Context, string, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, int32) error {
+		return r0
+	})
+}
+
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) nextHook() func(context.Context, string, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) appendCall(r0 OrgStoreUpdateOrgsOpenBetaStatsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OrgStoreUpdateOrgsOpenBetaStatsFuncCall
+// objects describing the invocations of this function.
+func (f *OrgStoreUpdateOrgsOpenBetaStatsFunc) History() []OrgStoreUpdateOrgsOpenBetaStatsFuncCall {
+	f.mutex.Lock()
+	history := make([]OrgStoreUpdateOrgsOpenBetaStatsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OrgStoreUpdateOrgsOpenBetaStatsFuncCall is an object that describes an
+// invocation of method UpdateOrgsOpenBetaStats on an instance of
+// MockOrgStore.
+type OrgStoreUpdateOrgsOpenBetaStatsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OrgStoreUpdateOrgsOpenBetaStatsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OrgStoreUpdateOrgsOpenBetaStatsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // OrgStoreWithFunc describes the behavior when the With method of the

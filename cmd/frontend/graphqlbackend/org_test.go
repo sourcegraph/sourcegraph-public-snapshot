@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/graph-gophers/graphql-go/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -218,6 +220,141 @@ func TestOrganization(t *testing.T) {
 					}
 				}
 				`,
+			},
+		})
+	})
+}
+
+func TestCreateOrganization(t *testing.T) {
+	userID := int32(1)
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: false}, nil)
+
+	mockedOrg := types.Org{ID: 42, Name: "acme"}
+	orgs := database.NewMockOrgStore()
+	orgs.CreateFunc.SetDefaultReturn(&mockedOrg, nil)
+
+	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: mockedOrg.ID, UserID: userID}, nil)
+
+	db := database.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: userID})
+
+	t.Run("Creates organization", func(t *testing.T) {
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
+				createOrganization(name: $name, displayName: $displayName) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: fmt.Sprintf(`
+			{
+				"createOrganization": {
+					"id": "%s",
+					"name": "%s"
+				}
+			}
+			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
+			Variables: map[string]interface{}{
+				"name": "acme",
+			},
+		})
+	})
+
+	t.Run("Creates organization and sets statistics", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		id, err := uuid.NewV4()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		orgs.UpdateOrgsOpenBetaStatsFunc.SetDefaultReturn(nil)
+		defer func() {
+			orgs.UpdateOrgsOpenBetaStatsFunc = nil
+		}()
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation CreateOrganization($name: String!, $displayName: String, $statsID: ID) {
+				createOrganization(name: $name, displayName: $displayName, statsID: $statsID) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: fmt.Sprintf(`
+			{
+				"createOrganization": {
+					"id": "%s",
+					"name": "%s"
+				}
+			}
+			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
+			Variables: map[string]interface{}{
+				"name":    "acme",
+				"statsID": id.String(),
+			},
+		})
+	})
+
+	t.Run("Fails for unauthenticated user", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: context.Background(),
+			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
+				createOrganization(name: $name, displayName: $displayName) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "no current user",
+					Path:    []interface{}{string("createOrganization")},
+				},
+			},
+			Variables: map[string]interface{}{
+				"name": "test",
+			},
+		})
+	})
+
+	t.Run("Fails for suspicious organization name", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
+				createOrganization(name: $name, displayName: $displayName) {
+					id
+                    name
+				}
+			}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: `rejected suspicious name "test"`,
+					Path:    []interface{}{string("createOrganization")},
+				},
+			},
+			Variables: map[string]interface{}{
+				"name": "test",
 			},
 		})
 	})

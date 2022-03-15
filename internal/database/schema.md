@@ -1784,6 +1784,20 @@ Referenced by:
 
 ```
 
+# Table "public.orgs_open_beta_stats"
+```
+   Column   |           Type           | Collation | Nullable |      Default      
+------------+--------------------------+-----------+----------+-------------------
+ id         | uuid                     |           | not null | gen_random_uuid()
+ user_id    | integer                  |           |          | 
+ org_id     | integer                  |           |          | 
+ created_at | timestamp with time zone |           |          | now()
+ data       | jsonb                    |           | not null | '{}'::jsonb
+Indexes:
+    "orgs_open_beta_stats_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.out_of_band_migrations"
 ```
           Column          |           Type           | Collation | Nullable |                      Default                       
