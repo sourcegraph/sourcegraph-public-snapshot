@@ -24,10 +24,10 @@ func ParseMavenDependencyOrPanic(t *testing.T, value string) *MavenDependency {
 }
 
 func TestGreaterThan(t *testing.T) {
-	assert.True(t, versionGreaterThan("11.2.0", "1.2.0"))
-	assert.True(t, versionGreaterThan("11.2.0", "2.2.0"))
-	assert.True(t, versionGreaterThan("11.2.0", "11.2.0-M1"))
-	assert.False(t, versionGreaterThan("11.2.0-M11", "11.2.0"))
+	assert.True(t, VersionGreaterThan("11.2.0", "1.2.0"))
+	assert.True(t, VersionGreaterThan("11.2.0", "2.2.0"))
+	assert.True(t, VersionGreaterThan("11.2.0", "11.2.0-M1"))
+	assert.False(t, VersionGreaterThan("11.2.0-M11", "11.2.0"))
 }
 
 func TestSortDependencies(t *testing.T) {
