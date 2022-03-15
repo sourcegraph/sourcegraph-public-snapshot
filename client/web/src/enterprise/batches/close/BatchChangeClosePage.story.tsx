@@ -90,7 +90,7 @@ const batchChangeDefaults: BatchChangeFields = {
         totalCount: 0,
         nodes: [],
     },
-    state: BatchChangeState.OPEN
+    state: BatchChangeState.OPEN,
 }
 
 const queryChangesets: typeof _queryChangesets = () =>
