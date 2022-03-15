@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { merge, of } from 'rxjs'
-import { last, throttleTime } from 'rxjs/operators'
+import { last, share, throttleTime } from 'rxjs/operators'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -55,7 +55,7 @@ export function useCachedSearchResults(
                 return of(cachedResults?.results)
             }
 
-            const stream = streamSearch(transformedQuery, options)
+            const stream = streamSearch(transformedQuery, options).pipe(share())
 
             // If the throttleTime option `trailing` is set, we will return the
             // final value, but it also removes the guarantee that the output events
