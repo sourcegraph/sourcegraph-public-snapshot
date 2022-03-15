@@ -1,5 +1,6 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
+
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'

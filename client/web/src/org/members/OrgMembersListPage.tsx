@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
-import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
@@ -35,8 +36,9 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { AddMemberToOrgModal } from './AddMemberToOrgModal'
 import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
-import styles from './OrgMembersListPage.module.scss'
 import { getPaginatedItems, OrgMemberNotification } from './utils'
+
+import styles from './OrgMembersListPage.module.scss'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
 interface Member {

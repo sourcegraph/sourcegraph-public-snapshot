@@ -39,7 +39,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
 - Aggregate daily, weekly, and monthly integer counts of the following query syntax:
   - The number of boolean operators (`and`, `or`, `not` keywords)
-  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`)
+  - The number of built-in predicate keywords (`contains`, `contains.file`, `contains.repo`, `contains.commit.after`, `dependencies`)
   - The number of `select` keywords by kind (`repo`, `file`, `content`, `symbol`, `commit.diff.added`, `commit.diff.removed`)
   - The number of queries using the `context:` filter without the default `global` value
   - The number of queries with only patterns (e.g., without filters like `repo:` or `file:`)

@@ -1,8 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
-import React from 'react'
 
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -23,6 +24,7 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
+
 import styles from './SearchResult.module.scss'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {

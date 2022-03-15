@@ -1,6 +1,7 @@
+import React, { useCallback, useState, useMemo } from 'react'
+
 import * as H from 'history'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
-import React, { useCallback, useState, useMemo } from 'react'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 

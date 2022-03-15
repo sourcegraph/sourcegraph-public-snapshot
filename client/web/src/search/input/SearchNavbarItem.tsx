@@ -1,6 +1,7 @@
+import React, { useCallback, useState, useEffect } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
-import React, { useCallback, useState, useEffect } from 'react'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'

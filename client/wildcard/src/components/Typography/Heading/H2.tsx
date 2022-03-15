@@ -1,9 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../../types'
 
 import { Heading, HeadingProps } from './Heading'
+
 import styles from './Heading.module.scss'
 
 type H2Props = HeadingProps

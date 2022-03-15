@@ -1,8 +1,9 @@
 // causes false positive on act()
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
-import { renderHook, act } from '@testing-library/react-hooks'
 import { useMemo, useCallback } from 'react'
+
+import { renderHook, act } from '@testing-library/react-hooks'
 import { Observable, Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sinon from 'sinon'

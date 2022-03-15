@@ -1,10 +1,11 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
@@ -20,8 +21,9 @@ import { Button } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { renderBrandedToString } from '../render-branded-to-string'
 
-import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
+
+import styles from './SearchOnboardingTour.module.scss'
 
 const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,

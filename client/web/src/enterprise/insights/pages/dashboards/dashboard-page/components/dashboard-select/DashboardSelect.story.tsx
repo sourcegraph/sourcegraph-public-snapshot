@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
+
+import { storiesOf } from '@storybook/react'
 
 import { AuthenticatedUser } from '../../../../../../../auth'
 import { WebStory } from '../../../../../../../components/WebStory'

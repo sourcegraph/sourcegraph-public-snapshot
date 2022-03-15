@@ -1,7 +1,8 @@
+import React from 'react'
+
 import * as H from 'history'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -18,12 +19,13 @@ import {
 import { BatchSpec, BatchSpecDownloadButton } from '../BatchSpec'
 
 import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
-import styles from './BatchChangePreviewTabs.module.scss'
 import {
     queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
 } from './list/backend'
 import { PreviewList } from './list/PreviewList'
+
+import styles from './BatchChangePreviewTabs.module.scss'
 
 export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
     batchSpecID: string

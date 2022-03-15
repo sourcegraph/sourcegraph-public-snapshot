@@ -1,9 +1,10 @@
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -38,8 +39,9 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode, isExcluded, Tag } from './graphql'
-import styles from './RepositoryDocumentationPage.module.scss'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
+
+import styles from './RepositoryDocumentationPage.module.scss'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <Alert className="m-2" variant="danger">

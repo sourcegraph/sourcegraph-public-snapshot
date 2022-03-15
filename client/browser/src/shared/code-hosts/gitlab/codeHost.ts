@@ -13,11 +13,12 @@ import { createNotificationClassNameGetter } from '../shared/getNotificationClas
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { queryWithSelector, ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
+
+import styles from './codeHost.module.scss'
 
 export function checkIsGitlab(): boolean {
     return !!document.head.querySelector('meta[content="GitLab"]')
