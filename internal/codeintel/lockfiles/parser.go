@@ -14,7 +14,10 @@ var parsers = map[string]parser{
 	"yarn.lock":         parseYarnLockFile,
 }
 
-var lockfilePaths = func() []string {
+// lockfilePathspecs is the list of git pathspecs that match lockfiles.
+//
+// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+var lockfilePathspecs = func() []string {
 	paths := make([]string, 0, len(parsers))
 	for filename := range parsers {
 		paths = append(paths, "*"+filename)

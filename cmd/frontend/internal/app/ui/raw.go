@@ -178,12 +178,17 @@ func serveRaw(db database.DB) handlerFunc {
 			metricRunning.Inc()
 			defer metricRunning.Dec()
 
+			// Use the ":(literal)" syntax to ensure that the path is not treated as a glob-like pattern.
+			//
+			// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+			pathspec := ":(literal)" + relativePath
+
 			// NOTE: we do not use vfsutil since most archives are just streamed once so
 			// caching locally is not useful. Additionally we transfer the output over the
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
 			f, err := git.ArchiveReaderWithSubRepo(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Paths: []string{relativePath}})
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []string{pathspec}})
 			if err != nil {
 				return err
 			}

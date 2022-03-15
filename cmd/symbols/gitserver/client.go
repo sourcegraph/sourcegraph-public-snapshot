@@ -49,10 +49,18 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	}})
 	defer endObservation(1, observation.Args{})
 
+	pathSpecs := []string{}
+	for _, path := range paths {
+		// Use the ":(literal)" syntax to ensure that the path is not treated as a glob-like pattern.
+		//
+		// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+		pathSpecs = append(pathSpecs, ":(literal)"+path)
+	}
+
 	opts := gitserver.ArchiveOptions{
-		Treeish: string(commit),
-		Format:  "tar",
-		Paths:   paths,
+		Treeish:   string(commit),
+		Format:    "tar",
+		Pathspecs: pathSpecs,
 	}
 
 	return git.ArchiveReader(ctx, repo, opts)

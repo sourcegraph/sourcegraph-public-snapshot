@@ -258,9 +258,17 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string   // the tree or commit to produce an archive for
-	Format  string   // format of the resulting archive (usually "tar" or "zip")
-	Paths   []string // if nonempty, only include these paths
+	Treeish string // the tree or commit to produce an archive for
+	Format  string // format of the resulting archive (usually "tar" or "zip")
+
+	// If nonempty, only include these pathspecs.
+	//
+	// ⚠️ Pathspecs have glob-like syntax. To match exact paths, use the magic word "literal":
+	//
+	//     ":(literal)some/path/with/an/aster*sk.go"
+	//
+	// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+	Pathspecs []string
 }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
@@ -297,8 +305,8 @@ func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *u
 		"format":  {opt.Format},
 	}
 
-	for _, path := range opt.Paths {
-		q.Add("path", path)
+	for _, path := range opt.Pathspecs {
+		q.Add("pathspec", path)
 	}
 
 	return &url.URL{
