@@ -9,6 +9,7 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 - Add pings for Sourcegraph ide extensions usage metrics [issues/29124](https://github.com/sourcegraph/sourcegraph/issues/29124)
 - Add input fields to update Sourcegraph instance url [issues/31804](https://github.com/sourcegraph/sourcegraph/issues/31804)
 - Clear search results on tab close [issues/30583](https://github.com/sourcegraph/sourcegraph/issues/30583)
+- Add Help and Feedback sidebar [issues/31021](https://github.com/sourcegraph/sourcegraph/issues/31021)
 
 ## 2.0.9
 

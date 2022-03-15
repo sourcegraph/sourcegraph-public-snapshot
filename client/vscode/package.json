@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "sourcegraph-vsce",
+  "name": "sourcegraph",
   "displayName": "Sourcegraph",
   "version": "2.2.0",
   "description": "Sourcegraph for VS Code",
