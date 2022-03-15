@@ -402,11 +402,19 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 	defer endObservation(1, observation.Args{})
 
 	now := s.now()
+	retryAfter := int(s.options.RetryAfter / time.Second)
 
 	ageInSeconds, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		maxDurationInQueueQuery,
+		// candidates
 		quote(s.options.ViewName),
+		// oldest_queued
 		now,
+		// oldest_retryable
+		retryAfter,
+		retryAfter,
+		now,
+		retryAfter,
 		s.options.MaxNumRetries,
 	)))
 	if err != nil {
@@ -424,29 +432,38 @@ const maxDurationInQueueQuery = `
 WITH
 candidates AS (
 	SELECT * FROM %s
-	WHERE ({process_after} IS NULL OR {process_after} <= %s)
 ),
-oldest_queued_at AS (
-	SELECT {queued_at} AS last_queued_at
+oldest_queued AS (
+	SELECT
+		-- Select when the record was most recently dequeueable
+		GREATEST({queued_at}, {process_after}) AS last_queued_at
 	FROM candidates
-	WHERE {queued_at} IS NOT NULL AND {state} = 'queued'
-	ORDER BY last_queued_at LIMIT 1
+	WHERE
+		{state} = 'queued' AND
+		({process_after} IS NULL OR {process_after} <= %s)
 ),
-oldest_resettable_at AS (
-	SELECT {finished_at} AS last_queued_at
+oldest_retryable AS (
+	SELECT
+		-- Select when the record was most recently dequeueable
+		{finished_at} + (%s * '1 second'::interval) AS last_queued_at
 	FROM candidates
-	WHERE {finished_at} IS NOT NULL AND {state} = 'errored' AND {num_failures} < %s
-	ORDER BY last_queued_at LIMIT 1
-),
-oldest_combined_queued_at AS (
+	WHERE
+		%s > 0 AND
+		{state} = 'errored' AND
+		%s - {finished_at} > (%s * '1 second'::interval) AND
+		{num_failures} < %s
+)
+SELECT EXTRACT(EPOCH FROM NOW() - (
 	(
-		SELECT last_queued_at FROM oldest_queued_at
-		UNION
-		SELECT last_queued_at FROM oldest_resettable_at
+		SELECT last_queued_at FROM oldest_queued
+		ORDER BY last_queued_at LIMIT 1
+	)
+	UNION
+	(
+		SELECT last_queued_at FROM oldest_retryable
 	)
 	ORDER BY last_queued_at LIMIT 1
-)
-SELECT EXTRACT(EPOCH FROM NOW() - (SELECT last_queued_at FROM oldest_combined_queued_at))::integer AS age
+))::integer AS age
 `
 
 // columnsUpdatedByDequeue are the unmapped column names modified by the dequeue method.
