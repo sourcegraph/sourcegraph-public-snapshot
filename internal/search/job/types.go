@@ -27,12 +27,13 @@ type Job interface {
 
 var allJobs = []Job{
 	&zoekt.ZoektRepoSubsetSearch{},
+	&zoekt.ZoektSymbolSearch{},
 	&searcher.Searcher{},
+	&searcher.SymbolSearcher{},
 	&run.RepoSearch{},
 	&zoekt.GlobalSearch{},
 	&structural.StructuralSearch{},
 	&commit.CommitSearch{},
-	&symbol.RepoSubsetSymbolSearch{},
 	&symbol.RepoUniverseSymbolSearch{},
 	&repos.ComputeExcludedRepos{},
 	&noopJob{},

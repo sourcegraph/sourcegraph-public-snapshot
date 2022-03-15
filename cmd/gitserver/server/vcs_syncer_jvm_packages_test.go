@@ -121,6 +121,8 @@ var maliciousPaths []string = []string{
 	"/sh", "/usr/bin/sh",
 	// Paths into .git which may trigger when git runs a hook
 	".git/blah", ".git/hooks/pre-commit",
+	// Paths into a nested .git which may trigger when git runs a hook
+	"src/.git/blah", "src/.git/hooks/pre-commit",
 	// Relative paths which stray outside
 	"../foo/../bar", "../../../usr/bin/sh",
 }

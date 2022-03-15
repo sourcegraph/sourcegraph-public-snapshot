@@ -7,7 +7,6 @@ import styles from './Resizable.module.scss'
 
 interface Props<C extends React.ReactElement = React.ReactElement> {
     className?: string
-    handleClassName?: string
 
     /**
      * Where the resize handle is (which also determines the axis along which the element can be
@@ -24,6 +23,16 @@ interface Props<C extends React.ReactElement = React.ReactElement> {
      * The default size for the element.
      */
     defaultSize: number
+
+    /**
+     * The minimum size for the element.
+     */
+    minSize?: number
+
+    /**
+     * The maximum size for the element.
+     */
+    maxSize?: number
 
     /**
      * The element that is resizable on its right side.
@@ -45,6 +54,20 @@ const handleClassNameMap: Record<Props['handlePosition'], string> = {
 
 const isHorizontal = (handlePosition: Props['handlePosition']): boolean =>
     handlePosition === 'right' || handlePosition === 'left'
+
+const isLessThanOrEqualMax = (size: number, maxSize?: number): boolean => {
+    if (!maxSize) {
+        return true
+    }
+    return size <= maxSize
+}
+
+const isGreaterThanOrEqualMin = (size: number, minSize?: number): boolean => {
+    if (!minSize) {
+        return true
+    }
+    return size >= minSize
+}
 
 interface State {
     resizing: boolean
@@ -75,7 +98,11 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
         const storedSize = localStorage.getItem(`${Resizable.STORAGE_KEY_PREFIX}${this.props.storageKey}`)
         if (storedSize !== null) {
             const sizeNumber = parseInt(storedSize, 10)
-            if (sizeNumber >= 0) {
+            if (
+                sizeNumber >= 0 &&
+                isLessThanOrEqualMax(sizeNumber, this.props.maxSize) &&
+                isGreaterThanOrEqualMin(sizeNumber, this.props.minSize)
+            ) {
                 return sizeNumber
             }
         }
@@ -98,7 +125,7 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
 
     public render(): React.ReactNode {
         const { size, resizing } = this.state
-        const { element, handlePosition, handleClassName, className } = this.props
+        const { element, handlePosition, className } = this.props
 
         return (
             <div
@@ -113,8 +140,7 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
                     className={classNames(
                         styles.handle,
                         handleClassNameMap[handlePosition],
-                        resizing && styles.handleResizing,
-                        handleClassName
+                        resizing && styles.handleResizing
                     )}
                     onMouseDown={this.onMouseDown}
                 />
@@ -142,8 +168,13 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
                     if (event.shiftKey) {
                         size = Math.ceil(size / 20) * 20
                     }
-                    this.setState({ size })
-                    this.sizeUpdates.next(size)
+                    if (
+                        isLessThanOrEqualMax(size, this.props.maxSize) &&
+                        isGreaterThanOrEqualMin(size, this.props.minSize)
+                    ) {
+                        this.setState({ size })
+                        this.sizeUpdates.next(size)
+                    }
                 }
             }
 

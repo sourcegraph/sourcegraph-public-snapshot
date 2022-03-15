@@ -456,6 +456,26 @@ Referenced by:
 
 ```
 
+# Table "public.cm_last_searched"
+```
+   Column    |  Type  | Collation | Nullable | Default 
+-------------+--------+-----------+----------+---------
+ monitor_id  | bigint |           | not null | 
+ args_hash   | bigint |           | not null | 
+ commit_oids | text[] |           | not null | 
+Indexes:
+    "cm_last_searched_pkey" PRIMARY KEY, btree (monitor_id, args_hash)
+Foreign-key constraints:
+    "cm_last_searched_monitor_id_fkey" FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE
+
+```
+
+The last searched commit hashes for the given code monitor and unique set of search arguments
+
+**args_hash**: A unique hash of the gitserver search arguments to identify this search job
+
+**commit_oids**: The set of commit OIDs that was previously successfully searched and should be excluded on the next run
+
 # Table "public.cm_monitors"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -478,6 +498,7 @@ Foreign-key constraints:
     "cm_monitors_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 Referenced by:
     TABLE "cm_emails" CONSTRAINT "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_monitor_id_fkey" FOREIGN KEY (monitor_id) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_slack_webhooks" CONSTRAINT "cm_slack_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_queries" CONSTRAINT "cm_triggers_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
@@ -1492,6 +1513,7 @@ Stores the retention policy of code intellience data for a repository.
  expired                | boolean                  |           | not null | false
  last_retention_scan_at | timestamp with time zone |           |          | 
  reference_count        | integer                  |           |          | 
+ indexer_version        | text                     |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1520,6 +1542,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**indexer_version**: The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
 **last_retention_scan_at**: The last time this upload was checked against data retention policies.
 
@@ -2591,6 +2615,7 @@ Foreign-key constraints:
  finished_at            | timestamp with time zone |           |          | 
  repository_id          | integer                  |           |          | 
  indexer                | text                     |           |          | 
+ indexer_version        | text                     |           |          | 
  num_parts              | integer                  |           |          | 
  uploaded_parts         | integer[]                |           |          | 
  process_after          | timestamp with time zone |           |          | 
@@ -2617,6 +2642,7 @@ Foreign-key constraints:
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -2645,6 +2671,7 @@ Foreign-key constraints:
  finished_at            | timestamp with time zone |           |          | 
  repository_id          | integer                  |           |          | 
  indexer                | text                     |           |          | 
+ indexer_version        | text                     |           |          | 
  num_parts              | integer                  |           |          | 
  uploaded_parts         | integer[]                |           |          | 
  process_after          | timestamp with time zone |           |          | 
@@ -2672,6 +2699,7 @@ Foreign-key constraints:
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,
@@ -2757,6 +2785,7 @@ Foreign-key constraints:
  finished_at            | timestamp with time zone |           |          | 
  repository_id          | integer                  |           |          | 
  indexer                | text                     |           |          | 
+ indexer_version        | text                     |           |          | 
  num_parts              | integer                  |           |          | 
  uploaded_parts         | integer[]                |           |          | 
  process_after          | timestamp with time zone |           |          | 
@@ -2783,6 +2812,7 @@ Foreign-key constraints:
     u.finished_at,
     u.repository_id,
     u.indexer,
+    u.indexer_version,
     u.num_parts,
     u.uploaded_parts,
     u.process_after,

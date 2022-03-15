@@ -1,5 +1,5 @@
 // Code for interfacing with Javascript and Typescript package registries such
-// as NPMJS.com.
+// as npmjs.com.
 package npm
 
 import (
@@ -34,15 +34,15 @@ type Client interface {
 	//
 	// It is preferable to use this method instead of calling GetDependencyInfo for
 	// multiple versions of a package in a loop.
-	GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (*PackageInfo, error)
+	GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackage) (*PackageInfo, error)
 
 	// GetDependencyInfo gets a dependency's data from the registry.
-	GetDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (*DependencyInfo, error)
+	GetDependencyInfo(ctx context.Context, dep *reposource.NpmDependency) (*DependencyInfo, error)
 
 	// FetchTarball fetches the sources in .tar.gz format for a dependency.
 	//
 	// The caller should close the returned reader after reading.
-	FetchTarball(ctx context.Context, dep *reposource.NPMDependency) (io.ReadCloser, error)
+	FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error)
 }
 
 var (
@@ -62,7 +62,7 @@ func init() {
 	// so we don't need to set up any on-disk caching here.
 }
 
-func FetchSources(ctx context.Context, client Client, dependency *reposource.NPMDependency) (tarball io.ReadCloser, err error) {
+func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmDependency) (tarball io.ReadCloser, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
@@ -71,7 +71,7 @@ func FetchSources(ctx context.Context, client Client, dependency *reposource.NPM
 	return client.FetchTarball(ctx, dependency)
 }
 
-func Exists(ctx context.Context, client Client, dependency *reposource.NPMDependency) (exists bool, err error) {
+func Exists(ctx context.Context, client Client, dependency *reposource.NpmDependency) (exists bool, err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Bool("exists", exists),
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
@@ -94,7 +94,7 @@ type HTTPClient struct {
 	credentials string
 }
 
-func NewHTTPClient(registryURL string, rateLimit *schema.NPMRateLimit, credentials string) *HTTPClient {
+func NewHTTPClient(registryURL string, rateLimit *schema.NpmRateLimit, credentials string) *HTTPClient {
 	var requestsPerHour float64
 	if rateLimit == nil || !rateLimit.Enabled {
 		requestsPerHour = math.Inf(1)
@@ -116,7 +116,7 @@ type PackageInfo struct {
 	Versions    map[string]*DependencyInfo `json:"versions"`
 }
 
-func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NPMPackage) (info *PackageInfo, err error) {
+func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackage) (info *PackageInfo, err error) {
 	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
 	body, err := client.makeGetRequest(ctx, url)
 	if err != nil {
@@ -127,7 +127,7 @@ func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NP
 		return nil, err
 	}
 	if len(pkgInfo.Versions) == 0 {
-		return nil, errors.Newf("NPM returned empty list of versions")
+		return nil, errors.Newf("npm returned empty list of versions")
 	}
 	return &pkgInfo, nil
 }
@@ -145,13 +145,13 @@ type illFormedJSONError struct {
 }
 
 func (i illFormedJSONError) Error() string {
-	return fmt.Sprintf("unexpected JSON output from NPM request: url=%s", i.url)
+	return fmt.Sprintf("unexpected JSON output from npm request: url=%s", i.url)
 }
 
 func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx),
 		req.WithContext(ctx),
-		nethttp.OperationName("NPM"),
+		nethttp.OperationName("npm"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 	startWait := time.Now()
@@ -159,7 +159,7 @@ func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Resp
 		return nil, err
 	}
 	if d := time.Since(startWait); d > 200*time.Millisecond {
-		log15.Warn("NPM self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
+		log15.Warn("npm self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 	}
 	return client.doer.Do(req)
 }
@@ -171,7 +171,7 @@ type npmError struct {
 
 func (n npmError) Error() string {
 	if 100 <= n.statusCode && n.statusCode <= 599 {
-		return fmt.Sprintf("NPM HTTP response %d: %s", n.statusCode, n.err.Error())
+		return fmt.Sprintf("npm HTTP response %d: %s", n.statusCode, n.err.Error())
 	}
 	return n.err.Error()
 }
@@ -203,7 +203,7 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 	return io.NopCloser(&bodyBuffer), nil
 }
 
-func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NPMDependency) (*DependencyInfo, error) {
+func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmDependency) (*DependencyInfo, error) {
 	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getpackageversion
 	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
 	body, err := client.makeGetRequest(ctx, url)
@@ -217,7 +217,7 @@ func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource
 	return &info, nil
 }
 
-func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NPMDependency) (io.ReadCloser, error) {
+func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmDependency) (io.ReadCloser, error) {
 	info, err := client.GetDependencyInfo(ctx, dep)
 	if err != nil {
 		return nil, err

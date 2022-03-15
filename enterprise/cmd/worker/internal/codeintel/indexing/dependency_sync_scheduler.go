@@ -22,7 +22,7 @@ import (
 
 var schemeToExternalService = map[string]string{
 	dependenciesStore.JVMPackagesScheme: extsvc.KindJVMPackages,
-	dependenciesStore.NPMPackagesScheme: extsvc.KindNPMPackages,
+	dependenciesStore.NpmPackagesScheme: extsvc.KindNpmPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
