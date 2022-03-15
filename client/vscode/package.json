@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "sourcegraph",
+  "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
   "version": "2.0.9",
   "description": "Sourcegraph for VS Code",
