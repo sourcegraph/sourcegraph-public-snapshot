@@ -583,7 +583,7 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
-	// NpmPackages description: Allow adding NPM packages code host connections
+	// NpmPackages description: Allow adding npm packages code host connections
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
 	Pagure string `json:"pagure,omitempty"`
@@ -1026,26 +1026,6 @@ type MountedEncryptionKey struct {
 	Version    string `json:"version,omitempty"`
 }
 
-// NPMPackagesConnection description: Configuration for a connection to an NPM packages repository.
-type NPMPackagesConnection struct {
-	// Credentials description: Access token for logging into the NPM registry.
-	Credentials string `json:"credentials,omitempty"`
-	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which NPM packages to mirror on Sourcegraph.
-	Dependencies []string `json:"dependencies,omitempty"`
-	// RateLimit description: Rate limit applied when making background API requests to the NPM registry.
-	RateLimit *NPMRateLimit `json:"rateLimit,omitempty"`
-	// Registry description: The URL at which the NPM registry can be found.
-	Registry string `json:"registry"`
-}
-
-// NPMRateLimit description: Rate limit applied when making background API requests to the NPM registry.
-type NPMRateLimit struct {
-	// Enabled description: true if rate limiting is enabled.
-	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
-	RequestsPerHour float64 `json:"requestsPerHour"`
-}
-
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
 type NoOpEncryptionKey struct {
 	Type string `json:"type"`
@@ -1158,6 +1138,26 @@ type NotifierWebhook struct {
 	Type        string `json:"type"`
 	Url         string `json:"url"`
 	Username    string `json:"username,omitempty"`
+}
+
+// NpmPackagesConnection description: Configuration for a connection to an npm packages repository.
+type NpmPackagesConnection struct {
+	// Credentials description: Access token for logging into the npm registry.
+	Credentials string `json:"credentials,omitempty"`
+	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which npm packages to mirror on Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the npm registry.
+	RateLimit *NpmRateLimit `json:"rateLimit,omitempty"`
+	// Registry description: The URL at which the npm registry can be found.
+	Registry string `json:"registry"`
+}
+
+// NpmRateLimit description: Rate limit applied when making background API requests to the npm registry.
+type NpmRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type OAuthIdentity struct {
 	Type string `json:"type"`
@@ -1780,6 +1780,10 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
+	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration
+	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
+	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration
+	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	PermissionsSyncScheduleInterval int `json:"permissions.syncScheduleInterval,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).

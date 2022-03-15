@@ -1240,10 +1240,10 @@ const PAGURE: AddExternalServiceOptions = {
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
-    title: 'NPM Dependencies',
+    title: 'npm Dependencies',
     icon: NpmIcon,
     jsonSchema: npmPackagesSchemaJSON,
-    defaultDisplayName: 'NPM Dependencies',
+    defaultDisplayName: 'npm Dependencies',
     defaultConfig: `{
   "registry": "https://registry.npmjs.org",
   "dependencies": []
@@ -1252,7 +1252,7 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <Field>registry</Field> to the applicable NPM registry. For example,
+                    In the configuration below, set <Field>registry</Field> to the applicable npm registry. For example,
                     <code>"https://registry.npmjs.mycompany.com"</code> or <code>"https://registry.npmjs.org"</code>.
                     Note that this URL may not be the same as where packages can be searched (such as{' '}
                     <code>https://www.npmjs.org</code>). If you're unsure about the exact URL URL for a custom registry,

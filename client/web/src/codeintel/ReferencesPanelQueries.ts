@@ -177,7 +177,7 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
         }
     }
 
-    query CoolCodeIntelHighlightedBlob($repository: String!, $commit: String!, $path: String!) {
+    query ReferencesPanelHighlightedBlob($repository: String!, $commit: String!, $path: String!) {
         repository(name: $repository) {
             id
             commit(rev: $commit) {
