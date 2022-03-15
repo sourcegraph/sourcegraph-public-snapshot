@@ -183,7 +183,7 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() string {
-	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
+	return r.repoResolver.URL() + "/-/commit/" + r.preferredCommitish()
 }
 
 func (r *GitCommitResolver) CanonicalURL() string {
@@ -322,9 +322,9 @@ type behindAheadCountsResolver struct{ behind, ahead int32 }
 func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
 func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
-// inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
-// canonical OID for the revision.
-func (r *GitCommitResolver) inputRevOrImmutableRev() string {
+// preferredCommitish returns the preferred commit-ish suitable for use in
+// (not necessarily canonical) user-facing URLs, such as for navigation.
+func (r *GitCommitResolver) preferredCommitish() string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return escapePathForURL(*r.inputRev)
 	}
@@ -332,7 +332,7 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
-// revision. Unlike inputRevOrImmutableRev, it does NOT use the OID if no input revspec is
+// revision. Unlike preferredCommitish, it does NOT include a commit-ish if no input revspec is
 // given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
