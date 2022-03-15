@@ -19,27 +19,8 @@ import (
 func TestListDependencies(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("empty ls-files return", func(t *testing.T) {
-		gitSvc := NewMockGitService()
-		gitSvc.LsFilesFunc.SetDefaultReturn([]string{}, nil)
-
-		got, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(got) != 0 {
-			t.Fatalf("expected no dependencies")
-		}
-	})
-
 	t.Run("npm", func(t *testing.T) {
 		gitSvc := NewMockGitService()
-		gitSvc.LsFilesFunc.SetDefaultReturn([]string{
-			"client/package-lock.json",
-			"package-lock.json",
-			"yarn.lock",
-		}, nil)
 
 		yarnLock, err := os.Open("testdata/parse/yarn.lock/yarn_normal.lock")
 		if err != nil {
