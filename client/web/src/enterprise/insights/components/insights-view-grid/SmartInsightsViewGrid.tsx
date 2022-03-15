@@ -1,5 +1,6 @@
-import { isEqual } from 'lodash'
 import React, { memo, useCallback, useEffect, useState } from 'react'
+
+import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

@@ -1,3 +1,4 @@
+import { resolveFieldAlias } from './filters'
 import { scanPredicate } from './predicates'
 import { scanSearchQuery } from './scanner'
 import { KeywordKind } from './token'
@@ -18,6 +19,7 @@ interface Metrics {
     count_repo_contains_file?: number
     count_repo_contains_content?: number
     count_repo_contains_commit_after?: number
+    count_repo_dependencies?: number
     count_count_all?: number
     count_non_global_context?: number
     count_only_patterns?: number
@@ -29,6 +31,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
     if (tokens.type !== 'success') {
         return undefined
     }
+
     let count_or = 0
     let count_and = 0
     let count_not = 0
@@ -42,6 +45,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
     let count_repo_contains_file = 0
     let count_repo_contains_content = 0
     let count_repo_contains_commit_after = 0
+    let count_repo_dependencies = 0
     let count_count_all = 0
     let count_non_global_context = 0
     let count_only_patterns = 0
@@ -89,7 +93,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                 if (!token.value) {
                     continue
                 }
-                switch (token.field.value) {
+                switch (resolveFieldAlias(token.field.value)) {
                     case 'select':
                         switch (token.value.value) {
                             case 'repo':
@@ -129,6 +133,12 @@ export const collectMetrics = (query: string): Metrics | undefined => {
                             case 'contains.commit.after':
                                 count_repo_contains_commit_after += 1
                                 break
+                            case 'deps':
+                                count_repo_dependencies += 1
+                                break
+                            case 'dependencies':
+                                count_repo_dependencies += 1
+                                break
                         }
                     }
                     case 'count': {
@@ -164,6 +174,7 @@ export const collectMetrics = (query: string): Metrics | undefined => {
         count_repo_contains_file: nonzero(count_repo_contains_file),
         count_repo_contains_content: nonzero(count_repo_contains_content),
         count_repo_contains_commit_after: nonzero(count_repo_contains_commit_after),
+        count_repo_dependencies: nonzero(count_repo_dependencies),
         // RFC 384: exhaustive search frequency
         count_count_all: nonzero(count_count_all),
         // RFC 384: context usage

@@ -1,3 +1,5 @@
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
@@ -12,7 +14,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -42,16 +43,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL, buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Button,
-    useObservable,
-    ButtonGroup,
-    Link,
-    ProductStatusBadge,
-} from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -71,6 +63,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+
 import styles from './TreePage.module.scss'
 
 const fetchTreeCommits = memoizeObservable(
@@ -333,7 +326,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
+    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch !== 'disabled'
     const repoDepsSearchQueryURL = buildSearchURLQuery(
         `repo:deps(${repoFilterForRepoRevision(repo.name, false, revision)})`,
         SearchPatternType.literal,
@@ -441,7 +434,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 as={Link}
                                             >
                                                 <GraphOutlineIcon className="icon-inline" /> Dependencies{' '}
-                                                <ProductStatusBadge status="beta" />
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}

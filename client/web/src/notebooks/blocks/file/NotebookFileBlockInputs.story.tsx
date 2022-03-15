@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -14,7 +15,6 @@ const defaultProps = {
     id: 'block-id',
     showRevisionInput: true,
     showLineRangeInput: true,
-    isMacPlatform: false,
     setIsInputFocused: noop,
     setFileInput: noop,
     setLineRangeInput: noop,

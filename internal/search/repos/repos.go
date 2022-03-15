@@ -65,7 +65,7 @@ type Resolver struct {
 }
 
 func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Paginate", "")
+	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -529,7 +529,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		tr.Finish()
 	}()
 
-	if !conf.ExperimentalFeatures().DependenciesSearch {
+	if !conf.DependeciesSearchEnabled() {
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 

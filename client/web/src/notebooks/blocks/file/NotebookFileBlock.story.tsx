@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
@@ -47,7 +48,6 @@ add('default', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={false}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
@@ -70,7 +70,6 @@ add('edit mode', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={false}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}
@@ -93,7 +92,6 @@ add('error fetching file', () => (
                 isSelected={true}
                 isReadOnly={false}
                 isOtherBlockSelected={false}
-                isMacPlatform={true}
                 isSourcegraphDotCom={false}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 resolveRevision={resolveRevision}

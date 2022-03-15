@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
@@ -16,6 +17,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
+
 import styles from './SiteAdminCreateUserPage.module.scss'
 
 interface State {

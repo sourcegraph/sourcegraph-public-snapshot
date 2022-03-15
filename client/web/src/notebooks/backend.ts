@@ -75,6 +75,25 @@ const notebooksFragment = gql`
                     }
                 }
             }
+            ... on SymbolBlock {
+                __typename
+                id
+                symbolInput {
+                    __typename
+                    repositoryName
+                    filePath
+                    revision
+                    lineContext
+                    symbolName
+                    symbolContainerName
+                    symbolKind
+                }
+            }
+            ... on ComputeBlock {
+                __typename
+                id
+                computeInput
+            }
         }
     }
 `

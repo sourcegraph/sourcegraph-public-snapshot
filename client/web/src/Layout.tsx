@@ -1,4 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -36,10 +37,8 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagProps } from './featureFlags/featureFlags'
-import { isCoolCodeIntelEnabled } from './global/CoolCodeIntel'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
@@ -64,6 +63,8 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
+
+import styles from './Layout.module.scss'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -186,9 +187,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     //     setTosAccepted(true)
     // }, [])
 
-    // Experimental reference panel
-    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -271,8 +269,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {!coolCodeIntelEnabled &&
-                parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}

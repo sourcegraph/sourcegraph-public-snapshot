@@ -1,6 +1,6 @@
-/* eslint-disable jsx-a11y/media-has-caption */
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
@@ -12,9 +12,10 @@ import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../
 import { CodeInsightsLearnMore } from '../getting-started/components/code-insights-learn-more/CodeInsightsLearnMore'
 import { CodeInsightsTemplates } from '../getting-started/components/code-insights-templates/CodeInsightsTemplates'
 
-import styles from './CodeInsightsDotComGetStarted.module.scss'
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
 import { SourcegraphInstallLocallyIcon } from './components/SourcegraphInstallLocallyIcon'
+
+import styles from './CodeInsightsDotComGetStarted.module.scss'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
@@ -93,7 +94,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                                 <Button
                                     variant="primary"
                                     as={Link}
-                                    to="https://about.sourcegraph.com/contact/request-code-insights-demo"
+                                    to="https://about.sourcegraph.com/contact/request-code-insights-demo?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
                                     target="_blank"
                                     rel="noopener"
                                     onClick={handleScheduleDemoClick}
@@ -159,7 +160,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<CodeInsightsD
                                 <Button
                                     as={Link}
                                     variant="primary"
-                                    to="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-code-insights&term="
+                                    to="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
                                     onClick={handleInstallLocalInstanceClick}
                                 >
                                     Install local instance

@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
-import React from 'react'
 
 import { subtypeOf } from '@sourcegraph/common'
 import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'

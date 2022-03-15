@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
@@ -40,9 +41,10 @@ import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
 import { NotebookContent } from './NotebookContent'
-import styles from './NotebookPage.module.scss'
 import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
+
+import styles from './NotebookPage.module.scss'
 
 interface NotebookPageProps
     extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
@@ -50,11 +52,10 @@ interface NotebookPageProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
-    isMacPlatform: boolean
     resolveRevision?: typeof _resolveRevision
     fetchRepository?: typeof _fetchRepository
     fetchNotebook?: typeof _fetchNotebook
@@ -150,12 +151,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     }, [updateQueue, latestNotebook, onUpdateNotebook, setUpdateQueue])
 
     const onUpdateBlocks = useCallback(
-        (blocks: Block[]) =>
-            setUpdateQueue(queue =>
-                queue.concat([
-                    { blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])) },
-                ])
-            ),
+        (blocks: Block[]) => setUpdateQueue(queue => queue.concat([{ blocks: blocks.map(blockToGQLInput) }])),
         [setUpdateQueue]
     )
 

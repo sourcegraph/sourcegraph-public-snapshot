@@ -1,3 +1,5 @@
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+
 import {
     Combobox,
     ComboboxInput,
@@ -7,7 +9,8 @@ import {
     ComboboxList,
 } from '@reach/combobox'
 import classNames from 'classnames'
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+
+import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
@@ -25,7 +28,6 @@ interface NotebookFileBlockInputProps {
     suggestions?: string[]
     suggestionsIcon?: JSX.Element
     isValid?: boolean
-    isMacPlatform: boolean
     focusInput?: boolean
     dataTestId?: string
 }
@@ -42,11 +44,11 @@ export const NotebookFileBlockInput: React.FunctionComponent<NotebookFileBlockIn
     suggestions,
     suggestionsIcon,
     isValid,
-    isMacPlatform,
     focusInput,
     dataTestId,
 }) => {
     const [inputValue, setInputValue] = useState(value)
+    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
     const onSelect = useCallback(
         (value: string) => {
             setInputValue(value)

@@ -1,14 +1,16 @@
+import * as React from 'react'
+
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import * as React from 'react'
 
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
+
 import styles from './ActivationChecklist.module.scss'
 
 interface ActivationChecklistItemProps extends ActivationStep {

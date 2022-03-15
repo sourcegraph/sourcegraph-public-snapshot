@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
@@ -242,6 +243,7 @@ func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesAr
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
+	StatsID     *string
 }) (*OrgResolver, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
@@ -251,13 +253,22 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := database.Orgs(r.db).Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := r.db.Orgs().Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
 
+	// Write the org_id into orgs open beta stats table on Cloud
+	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
+		// we do not throw errors here as this is best effort
+		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
+		if err != nil {
+			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
+		}
+	}
+
 	// Add the current user as the first member of the new org.
-	_, err = database.OrgMembers(r.db).Create(ctx, newOrg.ID, a.UID)
+	_, err = r.db.OrgMembers().Create(ctx, newOrg.ID, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -377,6 +388,26 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		)
 	}
 	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
+	Stats JSONCString
+}) (*graphql.ID, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+	if args == nil || !json.Valid([]byte(args.Stats)) {
+		return nil, errors.New("must supply valid json")
+	}
+
+	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
+	if err != nil {
+		return nil, err
+	}
+
+	graphqlID := graphql.ID(id)
+	return &graphqlID, nil
 }
 
 type ListOrgRepositoriesArgs struct {

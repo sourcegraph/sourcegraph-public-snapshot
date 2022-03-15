@@ -7,8 +7,9 @@ import { isValidNumber } from '../../utils/data-guards'
 import { formatYTick } from '../../utils/ticks'
 import { FloatingPanel, Target } from '../floating-panel/FloatingPanel'
 
-import styles from './Tooltip.module.scss'
 import { getListWindow } from './utils/get-list-window'
+
+import styles from './Tooltip.module.scss'
 
 /**
  * Default value for line color in case if we didn't get color for line from content config.

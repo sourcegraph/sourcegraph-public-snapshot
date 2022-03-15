@@ -1,5 +1,6 @@
-import { ApolloError, QueryResult } from '@apollo/client'
 import { useEffect, useRef, useState } from 'react'
+
+import { ApolloError, QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
@@ -19,7 +20,7 @@ import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-} from './CoolCodeIntelQueries'
+} from './ReferencesPanelQueries'
 
 export interface UsePreciseCodeIntelResult {
     lsifData?: PreciseCodeIntelForLocationFields

@@ -1,6 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
+import { SymbolKind } from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
@@ -63,6 +65,29 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
                     size="sm"
                 >
                     + Code
+                </Button>
+                <Button
+                    className={classNames('ml-2', styles.addBlockButton)}
+                    onClick={() =>
+                        onAddBlock(index, {
+                            type: 'symbol',
+                            input: {
+                                repositoryName: '',
+                                revision: '',
+                                filePath: '',
+                                symbolName: '',
+                                symbolContainerName: '',
+                                symbolKind: SymbolKind.UNKNOWN,
+                                lineContext: 3,
+                            },
+                        })
+                    }
+                    data-testid="add-symbol-button"
+                    outline={true}
+                    variant="secondary"
+                    size="sm"
+                >
+                    + Symbol
                 </Button>
                 {showComputeComponent ? (
                     <Button

@@ -1,6 +1,7 @@
+import React, { useEffect } from 'react'
+
 import classNames from 'classnames'
 import { snakeCase } from 'lodash'
-import React, { useEffect } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
@@ -11,6 +12,7 @@ import { getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 
 import { CodeHostContext } from './codeHost'
 import { SignInButton } from './SignInButton'
+
 import styles from './ViewOnSourcegraphButton.module.scss'
 
 export interface ViewOnSourcegraphButtonClassProps {

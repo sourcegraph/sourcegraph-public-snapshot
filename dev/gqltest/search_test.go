@@ -88,11 +88,11 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// This test runs after all others because its adds a NPM external service
+	// This test runs after all others because its adds a npm external service
 	// which expands the set of repositories in the instance. All previous tests
 	// assume only the repos from gqltest-github-search exist.
 	//
-	// Adding and deleting the NPM external service in between all other tests is
+	// Adding and deleting the npm external service in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
 	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
@@ -1360,33 +1360,10 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 	return func(t *testing.T) {
 		t.Helper()
 
-		cfg, err := client.SiteConfiguration()
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		oldConfig := *cfg
-
-		if cfg.ExperimentalFeatures == nil {
-			cfg.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-
-		if cfg.ExperimentalFeatures.NpmPackages != "enabled" {
-			cfg.ExperimentalFeatures.NpmPackages = "enabled"
-		}
-
-		if !cfg.ExperimentalFeatures.DependenciesSearch {
-			cfg.ExperimentalFeatures.DependenciesSearch = true
-		}
-
-		if err = client.UpdateSiteConfiguration(cfg); err != nil {
-			t.Fatal(err)
-		}
-
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        extsvc.KindNPMPackages,
+		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindNpmPackages,
 			DisplayName: "gqltest-npm-search",
-			Config: mustMarshalJSONString(&schema.NPMPackagesConnection{
+			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
 				Registry: "https://registry.npmjs.org",
 				Dependencies: []string{
 					"urql@2.2.0", // We're searching the dependencies of this repo.
@@ -1396,13 +1373,6 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		// Set up a NPM external service to test dependencies search
-		t.Cleanup(func() {
-			if err := client.UpdateSiteConfiguration(&oldConfig); err != nil {
-				t.Fatal(err)
-			}
-		})
 
 		err = client.WaitForReposToBeCloned("npm/urql")
 		if err != nil {

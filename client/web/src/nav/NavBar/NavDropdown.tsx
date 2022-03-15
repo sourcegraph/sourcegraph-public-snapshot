@@ -1,15 +1,16 @@
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
-import { Link, Menu, MenuButton, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
+import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE } from '@sourcegraph/wildcard'
+
+import { NavItem, NavLink } from '.'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
-
-import { NavItem, NavLink } from '.'
 
 export interface NavDropdownItem {
     content: React.ReactNode | string
@@ -88,7 +89,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     // and then use CSS @media queries to toggle between them.
     return (
         <>
-            {/* 
+            {/*
                 Add `position-relative` here for `absolute` position of `MenuButton` below
                 => `MenuButton` won't change its height when hovering + indicator
                 => `MenuList` won't change its position when opening
@@ -154,8 +155,8 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             </div>
 
                             <MenuList
-                                position={Position.bottomStart}
                                 className={styles.navDropdownContainer}
+                                targetPadding={EMPTY_RECTANGLE}
                                 onMouseEnter={() => setIsOverList(true)}
                                 onMouseLeave={() => setIsOverList(false)}
                             >

@@ -355,7 +355,6 @@ func runWatch(
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
-					installDone <- cmd.Name
 					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})

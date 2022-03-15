@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { observeResize, hasProperty } from '@sourcegraph/common'
 import {
@@ -135,7 +136,7 @@ const hasKeybindingService = (
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
 
-const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
+export const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
     selectionStartLineNumber: range.startLineNumber,
     positionLineNumber: range.endLineNumber,
     selectionStartColumn: range.startColumn,

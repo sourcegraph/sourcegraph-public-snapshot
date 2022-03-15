@@ -1,8 +1,9 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { sortBy } from 'lodash'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Unsubscribable } from 'sourcegraph'
 
 import { isDefined } from '@sourcegraph/common'

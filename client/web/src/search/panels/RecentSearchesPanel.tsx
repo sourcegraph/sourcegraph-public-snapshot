@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -15,8 +16,9 @@ import { EventLogResult } from '../backend'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import styles from './RecentSearchesPanel.module.scss'
 import { ShowMoreButton } from './ShowMoreButton'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface RecentSearch {
     count: number

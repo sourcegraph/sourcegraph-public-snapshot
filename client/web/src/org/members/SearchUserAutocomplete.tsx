@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+
 import { useLazyQuery } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Input } from '@sourcegraph/wildcard'
@@ -11,6 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { SEARCH_USERS_AUTOCOMPLETE_QUERY } from './gqlQueries'
+
 import styles from './SearchUserAutocomplete.module.scss'
 
 interface IUserItem {
