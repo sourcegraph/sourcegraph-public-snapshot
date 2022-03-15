@@ -264,10 +264,6 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
     )
 }
 
-export function fetchRecentSearches(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
-    return fetchEvents(userId, first, 'SearchResultsQueried')
-}
-
 export function fetchRecentFileViews(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
 }

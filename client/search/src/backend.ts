@@ -420,14 +420,6 @@ function fetchEvents(
     )
 }
 
-export function fetchRecentSearches(
-    userId: Scalars['ID'],
-    first: number,
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<EventLogResult | null> {
-    return fetchEvents(userId, first, 'SearchResultsQueried', platformContext)
-}
-
 export function fetchRecentFileViews(
     userId: Scalars['ID'],
     first: number,

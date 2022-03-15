@@ -134,7 +134,6 @@ export function quoteIfNeeded(string: string): string {
 
 export interface HomePanelsProps {
     fetchSavedSearches: () => Observable<ISavedSearch[]>
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
 
