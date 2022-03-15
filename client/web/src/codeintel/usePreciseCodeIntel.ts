@@ -106,10 +106,20 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
                     continue
                 }
 
+                const resource = {
+                    path: result.file.path,
+                    content: result.file.content,
+                    repository: result.repository,
+                    commit: {
+                        oid: result.file.commit.oid,
+                    },
+                }
+
                 for (const lineMatch of result.lineMatches) {
+                    console.log('lineMatch', lineMatch)
                     const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({
                         // TODO: only using first offset?
-                        position: { line: lineMatch.lineNumber, character: lineMatch.offsetAndLengths[0][0] },
+                        position: { line: lineMatch.lineNumber + 1, character: lineMatch.offsetAndLengths[0][0] + 1 },
                     })
                     const url = appendLineRangeQueryParameter(
                         appendSubtreeQueryParameter(result.file.url),
@@ -117,14 +127,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
                     )
                     newReferences.push({
                         url,
-                        resource: {
-                            path: result.file.path,
-                            content: result.file.content,
-                            repository: result.repository,
-                            commit: {
-                                oid: result.file.commit.oid,
-                            },
-                        },
+                        resource,
                         range: {
                             start: {
                                 line: lineMatch.lineNumber,
@@ -132,7 +135,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
                             },
                             end: {
                                 line: lineMatch.lineNumber,
-                                character: lineMatch.offsetAndLengths[0][2],
+                                character: lineMatch.offsetAndLengths[0][0] + lineMatch.offsetAndLengths[0][1],
                             },
                         },
                     })
@@ -140,14 +143,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
 
                 const symbolReferences = result.symbols.map(symbol => ({
                     url: symbol.location.url,
-                    resource: {
-                        path: symbol.location.resource.path,
-                        content: '',
-                        commit: {
-                            oid: result.file.commit.oid,
-                        },
-                        repository: result.repository,
-                    },
+                    resource,
                     range: symbol.location.range,
                 }))
                 for (const symbolReference of symbolReferences) {
