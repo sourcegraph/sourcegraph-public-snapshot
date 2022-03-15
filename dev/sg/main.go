@@ -38,6 +38,7 @@ var (
 	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
 	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
+	skipAutoUpdatesFlag = rootFlagSet.Bool("skip-auto-update", false, "prevent sg from automatically updating itself")
 
 	rootCommand = &ffcli.Command{
 		ShortUsage: "sg [flags] <subcommand>",
@@ -120,7 +121,7 @@ func checkSgVersion(ctx context.Context) error {
 		return nil
 	}
 
-	if !getAutoUpdateSetting(ctx) {
+	if *skipAutoUpdatesFlag {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
@@ -160,7 +161,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !(len(os.Args) >= 2 && os.Args[1] == "update") {
+	isUpdateCmd := len(os.Args) >= 2 && os.Args[1] == "update"
+	if !isUpdateCmd {
 		// If we're not running "sg update ...", we want to check the version first
 		err := checkSgVersion(ctx)
 		if err != nil {

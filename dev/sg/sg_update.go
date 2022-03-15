@@ -8,7 +8,6 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -17,14 +16,6 @@ var (
 	updateFlags   = flag.NewFlagSet("sg update", flag.ExitOnError)
 	updateToLocal = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
 )
-
-// autoUpdateSetting struct to store auto update setting in the secrets.
-type autoUpdateSetting struct {
-	Auto bool `json:"auto"`
-}
-
-// autoUpdateSecretsKey is the key under which this setting is filed in the secrets
-var autoUpdateSecretsKey = "auto-update"
 
 var updateCommand = &ffcli.Command{
 	Name:       "update",
@@ -36,21 +27,6 @@ var updateCommand = &ffcli.Command{
   sg version changelog -next
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
-	Subcommands: []*ffcli.Command{{
-		Name:       "auto",
-		ShortUsage: "sg update auto [enable|disable]",
-		ShortHelp:  "Enable or disable sg auto-updates",
-		Exec: func(ctx context.Context, args []string) error {
-			if len(args) < 1 || (args[0] != "disable" && args[0] != "enable") {
-				return flag.ErrHelp
-			}
-			sec := secrets.FromContext(ctx)
-			if args[0] == "enable" {
-				return sec.PutAndSave(autoUpdateSecretsKey, autoUpdateSetting{Auto: true})
-			}
-			return sec.PutAndSave(autoUpdateSecretsKey, autoUpdateSetting{Auto: false})
-		},
-	}},
 	Exec: func(ctx context.Context, args []string) error {
 		if *updateToLocal {
 			stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StylePending, "Upgrading to local copy of 'dev/sg'..."))
@@ -120,11 +96,4 @@ Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 		writeSuccessLinef("Update succeeded!")
 		return nil
 	},
-}
-
-func getAutoUpdateSetting(ctx context.Context) bool {
-	sec := secrets.FromContext(ctx)
-	var setting autoUpdateSetting
-	_ = sec.Get(autoUpdateSecretsKey, &setting)
-	return setting.Auto
 }
