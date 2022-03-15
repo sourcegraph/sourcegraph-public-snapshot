@@ -38,9 +38,7 @@ type HighlightArgs struct {
 }
 
 type highlightedFileResolver struct {
-	aborted bool
-	// html    template.HTML
-
+	aborted  bool
 	response *highlight.HighlightedCode
 }
 
@@ -104,5 +102,6 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 	if err != nil {
 		return nil, err
 	}
+
 	return result, nil
 }

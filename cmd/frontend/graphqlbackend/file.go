@@ -65,5 +65,9 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	}
 
 	html, err := response.HTML()
+	if err != nil {
+		return "", err
+	}
+
 	return string(html), err
 }
