@@ -71,7 +71,7 @@ export interface SearchBoxEditor {
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
-    const { queryState } = props
+    const { queryState, setEditor: setParentEditor } = props
 
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
@@ -79,9 +79,9 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
     const onEditorCreated = useCallback(
         (editor: Monaco.editor.IStandaloneCodeEditor) => {
             setEditor(editor)
-            props.setEditor?.(editor)
+            setParentEditor?.(editor)
         },
-        [props.setEditor]
+        [setParentEditor]
     )
 
     return (

@@ -169,6 +169,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         telemetryService,
         onFirstResultLoad,
         extensionsController,
+        onSelect,
     } = props
 
     const fetchHighlightedFileRangeLines = React.useCallback(
@@ -261,7 +262,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const href = event.currentTarget.getAttribute('data-href')
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
-                    props.onSelect(index)
+                    onSelect(index)
                     if (props.openInNewTab || event.ctrlKey || event.metaKey || event.shiftKey) {
                         openLinkInNewTab(href, event, 'primary')
                     } else {
@@ -270,7 +271,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 }
             }
         },
-        [props.openInNewTab, props.onSelect, history]
+        [props.openInNewTab, onSelect, history]
     )
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined

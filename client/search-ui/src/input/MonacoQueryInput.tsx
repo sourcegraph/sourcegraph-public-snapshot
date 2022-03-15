@@ -20,8 +20,9 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import styles from './MonacoQueryInput.module.scss'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
+
+import styles from './MonacoQueryInput.module.scss'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,

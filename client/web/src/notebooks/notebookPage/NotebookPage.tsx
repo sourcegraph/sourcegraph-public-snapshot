@@ -51,7 +51,10 @@ interface NotebookPageProps
         SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'extensionsController' | 'platformContext' | 'executedQuery'
+        >,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null

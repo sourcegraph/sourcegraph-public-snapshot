@@ -97,7 +97,7 @@ This extension contributes the following settings:
 
 ## Questions & Feedback
 
-Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension. 
+Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension.
 
 New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
 
@@ -113,6 +113,7 @@ Click [here](https://marketplace.visualstudio.com/items/sourcegraph.sourcegraph/
 VS Code will auto-update extensions to the highest version available. Even if you have opted into a pre-release version, you will be updated to the released version when a higher version is released.
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.```
+
 ## Development
 
 To develop the extension:
