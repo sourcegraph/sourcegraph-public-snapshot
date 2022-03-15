@@ -14,6 +14,7 @@ import {
     ChangesetSpecType,
     ChangesetState,
     BatchChangeFields,
+    BatchSpecState,
 } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
@@ -78,6 +79,9 @@ const batchChangeDefaults: BatchChangeFields = {
             pageInfo: { hasNextPage: false },
             totalCount: 0,
         },
+    },
+    batchSpecs: {
+        nodes: [{ state: BatchSpecState.COMPLETED }],
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',

@@ -10,6 +10,7 @@ import {
     ChangesetState,
     BatchChangeChangesetsResult,
     ChangesetCheckState,
+    BatchSpecState,
 } from '../../../graphql-operations'
 
 const now = new Date()
@@ -57,6 +58,9 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             pageInfo: { hasNextPage: false },
             totalCount: 0,
         },
+    },
+    batchSpecs: {
+        nodes: [{ state: BatchSpecState.COMPLETED }],
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
