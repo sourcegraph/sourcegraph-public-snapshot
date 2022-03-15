@@ -5,13 +5,13 @@ import (
 	"unicode"
 )
 
-// versionGreaterThan is a generalized version of comparing two strings
+// VersionGreaterThan is a generalized version of comparing two strings
 // using semantic versioning that allows for non-numeric characters.
 // When a non-numeric character is encountered, the comparison switches to
 // lexicographic.
 //
 // For example, 11.0x > 11.0a > 11.0 > 8.0.
-func versionGreaterThan(version1, version2 string) bool {
+func VersionGreaterThan(version1, version2 string) bool {
 	index := 0
 	end := len(version1)
 	if len(version2) < end {

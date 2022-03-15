@@ -70,7 +70,7 @@ type MavenDependency struct {
 func SortDependencies(dependencies []*MavenDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
 		if dependencies[i].MavenModule.Equal(dependencies[j].MavenModule) {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
+			return VersionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}
 		return dependencies[i].MavenModule.SortText() > dependencies[j].MavenModule.SortText()
 	})
