@@ -1,5 +1,6 @@
-import GithubIcon from 'mdi-react/GithubIcon'
 import React from 'react'
+
+import GithubIcon from 'mdi-react/GithubIcon'
 
 import { Card, CardBody, PageHeader } from '@sourcegraph/wildcard'
 
