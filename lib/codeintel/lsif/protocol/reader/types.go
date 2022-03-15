@@ -44,6 +44,7 @@ type Moniker struct {
 type PackageInformation struct {
 	Name    string
 	Version string
+	Manager string
 }
 
 type Diagnostic struct {

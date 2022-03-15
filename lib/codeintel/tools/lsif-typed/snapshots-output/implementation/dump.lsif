@@ -8,7 +8,7 @@
 {"id":8,"type":"edge","label":"textDocument/hover","inV":5,"outV":3}
 {"id":9,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"export","scheme":"reprolang"}
 {"id":10,"type":"edge","label":"moniker","inV":9,"outV":3}
-{"id":11,"name":"implementation","version":"1.0.0","type":"vertex","label":"packageInformation"}
+{"id":11,"name":"implementation","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
 {"id":12,"type":"edge","label":"packageInformation","inV":11,"outV":9}
 {"id":13,"type":"vertex","label":"definitionResult"}
 {"id":14,"type":"vertex","label":"resultSet"}

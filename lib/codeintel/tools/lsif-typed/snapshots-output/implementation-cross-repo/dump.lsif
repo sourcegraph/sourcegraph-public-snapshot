@@ -8,7 +8,7 @@
 {"id":8,"type":"edge","label":"textDocument/hover","inV":5,"outV":3}
 {"id":9,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation-cross-repo 1.0.0 bird.repro/bird#","kind":"export","scheme":"reprolang"}
 {"id":10,"type":"edge","label":"moniker","inV":9,"outV":3}
-{"id":11,"name":"implementation-cross-repo","version":"1.0.0","type":"vertex","label":"packageInformation"}
+{"id":11,"name":"implementation-cross-repo","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
 {"id":12,"type":"edge","label":"packageInformation","inV":11,"outV":9}
 {"id":13,"type":"vertex","label":"document","uri":"file:/root/bird.repro"}
 {"id":14,"type":"vertex","label":"resultSet"}
@@ -18,7 +18,7 @@
 {"id":18,"type":"edge","label":"textDocument/hover","inV":16,"outV":14}
 {"id":19,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"import","scheme":"reprolang"}
 {"id":20,"type":"edge","label":"moniker","inV":19,"outV":14}
-{"id":21,"name":"implementation","version":"1.0.0","type":"vertex","label":"packageInformation"}
+{"id":21,"name":"implementation","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
 {"id":22,"type":"edge","label":"packageInformation","inV":21,"outV":19}
 {"id":23,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager implementation 1.0.0 animal.repro/animal#","kind":"implementation","scheme":"reprolang"}
 {"id":24,"type":"edge","label":"moniker","inV":23,"outV":3}

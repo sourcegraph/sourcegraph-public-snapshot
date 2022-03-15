@@ -112,6 +112,7 @@ func (g *graph) emitPackage(pkg *lsiftyped.Package) int {
 	graphID = g.emitVertex("packageInformation", PackageInformation{
 		Name:    pkg.Name,
 		Version: pkg.Version,
+		Manager: pkg.Manager,
 	})
 	g.packageToGraphID[pkg.ID()] = graphID
 	return graphID
@@ -259,9 +260,20 @@ func (g *graph) emitMonikerVertex(symbolID string, kind string, resultSetID int)
 	// Accept the symbol as long as it has a non-empty scheme. We ignore
 	// parse errors because we can still provide accurate
 	// definition/references/hover within a repo.
+	scheme := symbol.Scheme
+	if symbol.Package != nil {
+		// NOTE: these special cases are needed since the Sourcegraph backend uses the "scheme" field of monikers where
+		// it should use the "manager" field of packageInformation instead.
+		switch symbol.Scheme {
+		case "lsif-java":
+			scheme = "semanticdb"
+		case "lsif-typescript":
+			scheme = "npm"
+		}
+	}
 	monikerID := g.emitVertex("moniker", Moniker{
 		Kind:       kind,
-		Scheme:     symbol.Scheme,
+		Scheme:     scheme,
 		Identifier: symbolID,
 	})
 	g.emitEdge("moniker", Edge{OutV: resultSetID, InV: monikerID})
@@ -380,6 +392,7 @@ type jsonElement struct {
 	ID               int              `json:"id"`
 	Name             string           `json:"name,omitempty"`
 	Version          string           `json:"version,omitempty"`
+	Manager          string           `json:"manager,omitempty"`
 	ProjectRoot      string           `json:"projectRoot,omitempty"`
 	PositionEncoding string           `json:"positionEncoding,omitempty"`
 	ToolInfo         *jsonToolInfo    `json:"toolInfo,omitempty"`
@@ -443,6 +456,7 @@ func ElementsToJsonElements(els []Element) []jsonElement {
 				pkg := el.Payload.(PackageInformation)
 				object.Name = pkg.Name
 				object.Version = pkg.Version
+				object.Manager = pkg.Manager
 			case "definitionResult",
 				"implementationResult",
 				"referenceResult",
