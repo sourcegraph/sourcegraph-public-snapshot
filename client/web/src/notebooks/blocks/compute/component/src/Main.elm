@@ -49,7 +49,7 @@ type alias Flags =
 -- MAIN
 
 
-main : Program Flags Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.element
         { init = init
@@ -94,8 +94,24 @@ type alias Model =
     }
 
 
-init : Flags -> ( Model, Cmd Msg )
-init flags =
+init : Decode.Value -> ( Model, Cmd Msg )
+init json =
+    let
+        flags =
+            case Decode.decodeValue flagsDecoder json of
+                Ok result ->
+                    result
+
+                Err _ ->
+                    -- no initial flags
+                    { sourcegraphURL = ""
+                    , computeInput =
+                        Just
+                            { computeQueries = [ placeholderQuery ]
+                            , experimentalOptions = Nothing
+                            }
+                    }
+    in
     ( { sourcegraphURL = flags.sourcegraphURL
       , query =
             case Maybe.map .computeQueries flags.computeInput of
@@ -134,7 +150,7 @@ type alias ExperimentalOptions =
 
 type alias ComputeInput =
     { computeQueries : List String
-    , experimentalOptions : ExperimentalOptions
+    , experimentalOptions : Maybe ExperimentalOptions
     }
 
 
@@ -247,7 +263,7 @@ update msg model =
                 , Cmd.batch
                     [ emitInput
                         { computeQueries = [ model.query ]
-                        , experimentalOptions = {}
+                        , experimentalOptions = Just {}
                         }
                     , openStream
                         ( Url.Builder.crossOrigin
@@ -609,6 +625,20 @@ type alias TextResult =
 
 
 -- DECODERS
+
+
+flagsDecoder : Decoder Flags
+flagsDecoder =
+    Decode.succeed Flags
+        |> Json.Decode.Pipeline.required "sourcegraphURL" Decode.string
+        |> Json.Decode.Pipeline.required "computeInput" (Decode.nullable computeInputDecoder)
+
+
+computeInputDecoder : Decoder ComputeInput
+computeInputDecoder =
+    Decode.succeed ComputeInput
+        |> Json.Decode.Pipeline.required "computeQueries" (Decode.list Decode.string)
+        |> Json.Decode.Pipeline.optional "experimentalOptions" (Decode.maybe (Decode.succeed ExperimentalOptions)) Nothing
 
 
 resultDecoder : Decoder Result
