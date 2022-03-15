@@ -241,7 +241,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
 
     const showSelectRow = viewerCanAdminister && (selected === 'all' || selected.size > 0)
 
-    const renderEmptyElement = useCallback(() => {
+    const emptyElement = useMemo(() => {
         if (filtersSelected(changesetFilters)) {
             return <EmptyChangesetSearchElement />
         }
@@ -314,7 +314,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                                 noun="changeset"
                                 pluralNoun="changesets"
                                 hasNextPage={hasNextPage}
-                                emptyElement={renderEmptyElement()}
+                                emptyElement={emptyElement}
                             />
                             {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                         </SummaryContainer>
