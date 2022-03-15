@@ -1,7 +1,8 @@
+import React, { useEffect } from 'react'
+
 import classNames from 'classnames'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
