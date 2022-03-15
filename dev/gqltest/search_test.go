@@ -1101,6 +1101,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			name   string
 			query  string
 			counts counts
+			err    string
 		}{
 			{
 				name:   `repo contains file`,
@@ -1156,11 +1157,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo contains with non-matching repo filter`,
 				query:  `repo:nonexist repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 0},
+				err:    `request GraphQL: no resolved repositories`,
 			},
 			{
-				`repo contains respects parameters that affect repo search (fork)`,
-				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
-				counts{Repo: 1},
+				name:   `repo contains respects parameters that affect repo search (fork)`,
+				query:  `repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
@@ -1178,30 +1180,35 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 6},
 			},
 			{
-				`repo has commit after`,
-				`repo:go-diff repo:contains.commit.after(10 years ago)`,
-				counts{Repo: 1},
+				name:   `repo has commit after`,
+				query:  `repo:go-diff repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`repo has commit after no results`,
-				`repo:go-diff repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `repo has commit after no results`,
+				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 			{
-				`unscoped repo has commit after no results`,
-				`repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `unscoped repo has commit after no results`,
+				query:  `repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 		}
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				results, err := client.SearchAll(test.query)
-				if err != nil {
-					t.Fatal(err)
+
+				if test.err == "" {
+					test.err = "<nil>"
 				}
 
-				count := countResults(results)
+				if test.err != fmt.Sprint(err) {
+					t.Fatalf("error mismatch, have %q, want %q", err, test.err)
+				}
+
+				count := countResults(results.Results)
 				if diff := cmp.Diff(test.counts, count); diff != "" {
 					t.Fatalf("mismatch (-want +got):\n%s", diff)
 				}
