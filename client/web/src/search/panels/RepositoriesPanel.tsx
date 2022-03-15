@@ -50,7 +50,6 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     telemetryService,
     recentlySearchedRepositories,
     fetchMore,
-    authenticatedUser,
 }) => {
     const [searchEventLogs, setSearchEventLogs] = useState(
         recentlySearchedRepositories.recentlySearchedRepositoriesLogs
@@ -108,11 +107,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
         setItemsToLoad(newItemsToLoad)
 
         const { data } = await fetchMore({
-            variables: {
-                userId: authenticatedUser?.id || '',
-                firstRecentlySearchedRepositories: newItemsToLoad,
-                firstRecentSearches: 0,
-            },
+            firstRecentlySearchedRepositories: newItemsToLoad,
         })
 
         if (data === undefined) {

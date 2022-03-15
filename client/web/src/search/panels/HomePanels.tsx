@@ -1,7 +1,7 @@
 import { ApolloQueryResult, FetchMoreQueryOptions, gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import * as React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -34,11 +34,12 @@ export const RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD = 50
 export const RECENT_SEARCHES_TO_LOAD = 20
 
 export type HomePanelsFetchMore = (
-    fetchMoreOptions: FetchMoreQueryOptions<HomePanelsQueryVariables, HomePanelsQueryResult>
+    fetchMoreOptions: Partial<HomePanelsQueryVariables>
 ) => Promise<ApolloQueryResult<HomePanelsQueryResult>>
 
 export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
-    const { data, fetchMore } = useQuery<HomePanelsQueryResult, HomePanelsQueryVariables>(
+    const userId = props.authenticatedUser?.id || ''
+    const { data, fetchMore: rawFetchMore } = useQuery<HomePanelsQueryResult, HomePanelsQueryVariables>(
         gql`
             query HomePanelsQuery($userId: ID!, $firstRecentlySearchedRepositories: Int, $firstRecentSearches: Int) {
                 node(id: $userId) {
@@ -52,11 +53,25 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
         `,
         {
             variables: {
-                userId: props.authenticatedUser?.id || '',
+                userId,
                 firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
                 firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
             },
         }
+    )
+
+    const fetchMore: HomePanelsFetchMore = useCallback(
+        (variables: Partial<HomePanelsQueryVariables>) => {
+            return rawFetchMore({
+                variables: {
+                    userId,
+                    firstRecentlySearchedRepositories: 0,
+                    firstRecentSearches: 0,
+                    ...variables,
+                },
+            })
+        },
+        [rawFetchMore]
     )
 
     useEffect(() => {

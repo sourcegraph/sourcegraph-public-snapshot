@@ -57,7 +57,6 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
     telemetryService,
     recentSearches,
     fetchMore,
-    authenticatedUser,
 }) => {
     const [searchEventLogs, setSearchEventLogs] = useState(recentSearches.recentSearchesLogs)
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_SEARCHES_TO_LOAD)
@@ -141,11 +140,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
         setItemsToLoad(newItemsToLoad)
 
         const { data } = await fetchMore({
-            variables: {
-                userId: authenticatedUser?.id || '',
-                firstRecentlySearchedRepositories: 0,
-                firstRecentSearches: newItemsToLoad,
-            },
+            firstRecentSearches: newItemsToLoad,
         })
 
         if (data === undefined) {
