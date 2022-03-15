@@ -400,8 +400,8 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 	ageInSeconds, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		maxDurationInQueueQuery,
 		quote(s.options.ViewName),
-		s.options.MaxNumRetries,
 		now,
+		s.options.MaxNumRetries,
 	)))
 	if err != nil {
 		return 0, err
@@ -418,9 +418,7 @@ const maxDurationInQueueQuery = `
 WITH
 candidates AS (
 	SELECT * FROM %s
-	WHERE
-	{num_failures} < %s AND
-	({process_after} IS NULL OR {process_after} <= %s)
+	WHERE ({process_after} IS NULL OR {process_after} <= %s)
 ),
 oldest_queued_at AS (
 	SELECT {queued_at} AS last_queued_at
@@ -431,7 +429,7 @@ oldest_queued_at AS (
 oldest_resettable_at AS (
 	SELECT {finished_at} AS last_queued_at
 	FROM candidates
-	WHERE {finished_at} IS NOT NULL AND {state} = 'errored'
+	WHERE {finished_at} IS NOT NULL AND {state} = 'errored' AND {num_failures} < %s
 	ORDER BY last_queued_at LIMIT 1
 ),
 oldest_combined_queued_at AS (
