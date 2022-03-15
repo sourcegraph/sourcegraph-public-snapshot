@@ -9,9 +9,9 @@ import { showGetStartPage } from '../openBeta/GettingStarted'
 import { OrgGetStartedInfo } from './OrgArea'
 import { OrgAreaHeaderNavItem } from './OrgHeader'
 
-const calculateLeftGetStartedSteps =  (info: OrgGetStartedInfo): number => {
-    let leftSteps = 1;
-    if(info.invitesCount === 0 && info.membersCount < 2) {
+const calculateLeftGetStartedSteps = (info: OrgGetStartedInfo): number => {
+    let leftSteps = 1
+    if (info.invitesCount === 0 && info.membersCount < 2) {
         leftSteps += 1
     }
     if (info.reposCount === 0) {
@@ -21,17 +21,17 @@ const calculateLeftGetStartedSteps =  (info: OrgGetStartedInfo): number => {
         leftSteps += 1
     }
 
-    return leftSteps;
+    return leftSteps
 }
 
 export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {
         to: '/getstarted',
         label: 'Get started',
-        dynamicLabel: ({getStartedInfo: info}) => `Get started ${calculateLeftGetStartedSteps(info)}`,
+        dynamicLabel: ({ getStartedInfo: info }) => `Get started ${calculateLeftGetStartedSteps(info)}`,
         icon: PlayCircleOutlineIcon,
         isActive: (_match, location) => location.pathname.includes('getstarted'),
-        condition: showGetStartPage
+        condition: showGetStartPage,
     },
     {
         to: '/settings/members',
