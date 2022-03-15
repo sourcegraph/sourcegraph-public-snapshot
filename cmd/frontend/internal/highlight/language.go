@@ -19,6 +19,12 @@ const (
 	EngineSyntect
 )
 
+var engineToDisplay map[EngineType]string = map[EngineType]string{
+	EngineInvalid:    "invalid",
+	EngineSyntect:    "syntect",
+	EngineTreeSitter: "tree-sitter",
+}
+
 type languagePattern struct {
 	pattern  *regexp.Regexp
 	language string

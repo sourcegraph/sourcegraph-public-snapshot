@@ -108,12 +108,6 @@ type Metadata struct {
 // ErrBinary is returned when a binary file was attempted to be highlighted.
 var ErrBinary = errors.New("cannot render binary file")
 
-var engineToDisplay map[EngineType]string = map[EngineType]string{
-	EngineInvalid:    "invalid",
-	EngineSyntect:    "syntect",
-	EngineTreeSitter: "tree-sitter",
-}
-
 type HighlightedCode struct {
 	code     string
 	html     template.HTML
@@ -141,7 +135,7 @@ func (h *HighlightedCode) LSIF() *lsiftyped.Document {
 // original, highlighted file.
 func (h *HighlightedCode) SplitHighlightedLines(wholeRow bool) ([]template.HTML, error) {
 	if h.document != nil {
-		return DocumentToSplitHTML(h.code, h.document)
+		return DocumentToSplitHTML(h.code, h.document, wholeRow)
 	}
 
 	input, err := h.HTML()
@@ -211,7 +205,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	var currentCell *html.Node
 
 	addRow := func(row int32) {
-		tr, cell := newRow(row)
+		tr, cell := newHtmlRow(row, true)
 
 		// Add our newest row to our list
 		htmlRows[row] = tr
@@ -221,7 +215,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	}
 
 	addText := func(kind lsiftyped.SyntaxKind, line string) {
-		appendText(currentCell, kind, line)
+		appendTextToNode(currentCell, kind, line)
 	}
 
 	lsifToHTML(h.code, h.document, addRow, addText, validLines)
@@ -291,8 +285,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	if !client.IsTreesitterSupported(filetypeQuery.Language) {
 		filetypeQuery.Engine = EngineSyntect
 	}
-
-	fmt.Println("ENGINE :", p.Filepath, filetypeQuery.Engine)
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("revision", p.Metadata.Revision),
@@ -549,7 +541,6 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 		return nil, aborted, err
 	}
 
-	// htmlText, err := highlightResponse.HTML()
 	lines, err := highlightResponse.SplitHighlightedLines(false)
 
 	return lines, aborted, err
