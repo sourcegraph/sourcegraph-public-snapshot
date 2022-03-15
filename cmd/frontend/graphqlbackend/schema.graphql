@@ -3722,6 +3722,14 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
+    The canonical commit-ish (a hash, a tag etc., see https://git-scm.com/docs/gitglossary)
+    that should be used for identifying a commit in a stable way, such as in canonical URLs.
+
+    This is separate from oid because git hashes are not meaningful for synthetic git repos,
+    such as those generated from package repos or from a Perforce import.
+    """
+    preferredCanonicalCommitish: String!
+    """
     This commit's author.
     """
     author: Signature!

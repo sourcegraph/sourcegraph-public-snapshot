@@ -47,6 +47,8 @@ func ensureAbsoluteCommit(commitID api.CommitID) error {
 // The zero value should contain appropriate default values.
 type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
+
+	IncludeTags bool
 }
 
 var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{

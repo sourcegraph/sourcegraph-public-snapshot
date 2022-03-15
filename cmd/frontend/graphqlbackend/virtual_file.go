@@ -42,7 +42,7 @@ func (r *virtualFileResolver) URL(ctx context.Context) (string, error) {
 	return "", nil
 }
 
-func (r *virtualFileResolver) CanonicalURL() string {
+func (r *virtualFileResolver) CanonicalURL(_ context.Context) string {
 	// Todo: allow viewing arbitrary files in the webapp.
 	return ""
 }

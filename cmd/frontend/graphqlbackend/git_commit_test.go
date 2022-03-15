@@ -36,19 +36,40 @@ func TestGitCommitResolver(t *testing.T) {
 			Email: "alice@bob.com",
 			Date:  time.Now(),
 		},
+		Tags: []string{"v1.0", "v2.0"},
 	}
 
-	t.Run("URL Escaping", func(t *testing.T) {
+	t.Run("URLs", func(t *testing.T) {
 		repo := NewRepositoryResolver(db, &types.Repo{Name: "xyz"})
 		commitResolver := NewGitCommitResolver(db, repo, "c1", commit)
+
+		require.Equal(t, "/xyz/-/commit/c1", commitResolver.URL(ctx))
+		require.Equal(t, "/xyz/-/commit/c1", commitResolver.CanonicalURL(ctx))
+
 		inputRev := "master^1"
 		commitResolver.inputRev = &inputRev
-		require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
+		require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL(ctx))
+		require.Equal(t, "/xyz/-/commit/c1", commitResolver.CanonicalURL(ctx))
 
 		treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
 		url, err := treeResolver.URL(ctx)
 		require.Nil(t, err)
 		require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
+	})
+
+	t.Run("Tags", func(t *testing.T) {
+		repo := NewRepositoryResolver(db, &types.Repo{Name: "npm/pkg"})
+		commitResolver := NewGitCommitResolver(db, repo, "c1", commit)
+
+		require.Equal(t, "/npm/pkg/-/commit/v2.0", commitResolver.URL(ctx))
+		require.Equal(t, "v2.0", commitResolver.PreferredCanonicalCommitish(ctx))
+
+		inputRev := "master"
+		commitResolver.inputRev = &inputRev
+
+		require.Equal(t, "/npm/pkg/-/commit/master", commitResolver.URL(ctx))
+		require.Equal(t, "v2.0", commitResolver.PreferredCanonicalCommitish(ctx))
+		require.Equal(t, "/npm/pkg/-/commit/v2.0", commitResolver.CanonicalURL(ctx))
 	})
 
 	t.Run("Lazy loading", func(t *testing.T) {
@@ -98,13 +119,13 @@ func TestGitCommitResolver(t *testing.T) {
 			name: "url",
 			want: "/bob-repo/-/commit/c1",
 			have: func(r *GitCommitResolver) (interface{}, error) {
-				return r.URL(), nil
+				return r.URL(ctx), nil
 			},
 		}, {
 			name: "canonical-url",
 			want: "/bob-repo/-/commit/c1",
 			have: func(r *GitCommitResolver) (interface{}, error) {
-				return r.CanonicalURL(), nil
+				return r.CanonicalURL(ctx), nil
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {

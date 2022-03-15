@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -114,6 +115,11 @@ func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
 func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
 	repo, err := r.repo(ctx)
 	return repo.Private, err
+}
+
+func (r *RepositoryResolver) IsPackageRepo() bool {
+	name := r.Name()
+	return strings.HasPrefix(name, "maven/") || strings.HasPrefix(name, "npm/")
 }
 
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
