@@ -363,10 +363,11 @@ const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ match, ...
             exact={true}
         />
         <Route
-            path={`${match.url}/`}
+            path={match.url}
             render={() => <ExecutionWorkspacesPage {...props} executionURL={match.url} />}
             exact={true}
         />
+        <Route component={NotFoundPage} key="hardcoded-key" />
     </Switch>
 )
 
