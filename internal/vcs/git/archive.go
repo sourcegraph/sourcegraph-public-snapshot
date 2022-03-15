@@ -16,6 +16,9 @@ const (
 
 	// ArchiveFormatTar indicates a tar archive is desired.
 	ArchiveFormatTar = "tar"
+
+	// maxPathLength is the maximum number of characters total in the requested paths that we can request from gitserver
+	maxPathLength = 100000
 )
 
 // ArchiveReader streams back the file contents of an archived git repo.
@@ -37,6 +40,9 @@ func ArchiveReader(
 			if err != nil {
 				return nil, errors.Wrap(err, "LsFiles in ArchiveReader")
 			}
+			if tooManyPaths(filteredFiles) {
+				return nil, errors.Newf("too many files to pass to git archive: %d", len(filteredFiles))
+			}
 			options.Paths = filteredFiles
 		}
 	}
@@ -51,4 +57,15 @@ func validateOptions(opts gitserver.ArchiveOptions) (gitserver.ArchiveOptions, e
 		opts.Paths = []string{"."}
 	}
 	return opts, nil
+}
+
+func tooManyPaths(paths []string) bool {
+	totalLen := 0
+	for _, path := range paths {
+		totalLen += len(path)
+		if totalLen >= maxPathLength {
+			return true
+		}
+	}
+	return false
 }
