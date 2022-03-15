@@ -45,6 +45,8 @@ type V4Client struct {
 	// httpClient is the HTTP client used to make requests to the GitHub API.
 	httpClient httpcli.Doer
 
+	newCache NewCacheFactory
+
 	// rateLimitMonitor is the API rate limit monitor.
 	rateLimitMonitor *ratelimit.Monitor
 
@@ -337,7 +339,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
-	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient, nil)
+	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient, c.newCache)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		log15.Warn("Failed to fetch GitHub enterprise version",

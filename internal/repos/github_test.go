@@ -821,7 +821,8 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 			}, nil
 		},
 	}
-	client := github.NewV3Client(baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer, nil)
+	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+	client := github.NewV3Client(baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer, newCache)
 
 	tests := []struct {
 		name           string

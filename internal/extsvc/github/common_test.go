@@ -65,7 +65,7 @@ func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
 	return newTestClientWithAuthenticator(t, nil, cli, nil)
 }
 
-func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
+func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer, newCache NewCacheFactory) *V3Client {
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}

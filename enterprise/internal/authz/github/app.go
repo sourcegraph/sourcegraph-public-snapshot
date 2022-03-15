@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,7 +38,8 @@ func newAppProvider(
 	}
 
 	apiURL, _ := github.APIRoot(baseURL)
-	appClient := github.NewV3Client(apiURL, auther, cli, nil)
+	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+	appClient := github.NewV3Client(apiURL, auther, cli, newCache)
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
@@ -49,7 +51,7 @@ func newAppProvider(
 
 			auther = &auth.OAuthBearerToken{Token: token}
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(apiURL, auther, cli, nil),
+				V3Client: github.NewV3Client(apiURL, auther, cli, newCache),
 			}, nil
 		},
 	}, nil

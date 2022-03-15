@@ -48,7 +48,7 @@ type V3Client struct {
 	httpClient httpcli.Doer
 
 	//
-	newCacheFunc NewCacheFunc
+	NewCacheFactory NewCacheFactory
 
 	// orgsCache is the organizations cache associated with the token.
 	orgsCache Cache
@@ -72,7 +72,7 @@ type V3Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
+func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFactory) *V3Client {
 	return newV3Client(apiURL, a, "rest", cli, newCache)
 }
 
@@ -81,11 +81,11 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCac
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
+func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFactory) *V3Client {
 	return newV3Client(apiURL, a, "search", cli, newCache)
 }
 
-func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer, newCache NewCacheFunc) *V3Client {
+func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer, newCache NewCacheFactory) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -118,7 +118,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
 		auth:             a,
 		httpClient:       cli,
-		newCacheFunc:     newCache,
+		NewCacheFactory:  newCache,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
 		orgsCache:        newOrgsCache(a, newCache),
@@ -131,7 +131,7 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.apiURL, a, c.resource, c.httpClient, c.newCacheFunc)
+	return newV3Client(c.apiURL, a, c.resource, c.httpClient, c.NewCacheFactory)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -220,7 +220,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
-func newOrgsCache(a auth.Authenticator, newCache NewCacheFunc) Cache {
+func newOrgsCache(a auth.Authenticator, newCache NewCacheFactory) Cache {
 	if a == nil {
 		log15.Warn("Cannot initialize orgsCache for nil auth")
 		return nil
@@ -234,7 +234,7 @@ func newOrgsCache(a auth.Authenticator, newCache NewCacheFunc) Cache {
 // store is Redis. A checksum of the authenticator and API URL are used as a
 // Redis key prefix to prevent collisions with caches for different
 // authentication and API URLs.
-func newRepoCache(apiURL *url.URL, a auth.Authenticator, newCache NewCacheFunc) Cache {
+func newRepoCache(apiURL *url.URL, a auth.Authenticator, newCache NewCacheFactory) Cache {
 	var cacheTTL time.Duration
 	if urlIsGitHubDotCom(apiURL) {
 		cacheTTL = 10 * time.Minute

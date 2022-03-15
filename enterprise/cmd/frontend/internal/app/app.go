@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -69,7 +70,8 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(apiURL, auther, nil, nil)
+	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+	client := github.NewV3Client(apiURL, auther, nil, newCache)
 
 	enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 		return newGitHubAppCloudSetupHandler(db, apiURL, client)

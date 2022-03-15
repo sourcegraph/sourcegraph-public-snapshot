@@ -5,4 +5,4 @@ type Cache interface {
 	Set(key string, b []byte)
 }
 
-type NewCacheFunc func(key string, ttl int) Cache
+type NewCacheFactory func(key string, ttl int) Cache
