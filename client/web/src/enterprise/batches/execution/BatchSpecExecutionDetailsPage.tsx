@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -137,8 +137,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                 />
                 <Route
                     path={`${match.url}/execution`}
-                    render={() => <ExecutionPage batchSpec={batchSpec} isLightTheme={isLightTheme} />}
-                    exact={true}
+                    render={props => <ExecutionPage {...props} batchSpec={batchSpec} isLightTheme={isLightTheme} />}
                 />
                 <Route
                     path={`${match.url}/preview`}
@@ -348,50 +347,74 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLig
 
 const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
 
-interface ExecutionPageProps extends ThemeProps {
+interface ExecutionPageProps extends ThemeProps, RouteComponentProps<{}> {
     batchSpec: BatchSpecExecutionFields
 }
 
-const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ batchSpec, isLightTheme }) => {
-    const history = useHistory()
+const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ match, ...props }) => (
+    <Switch>
+        <Route
+            path={`${match.url}/workspaces/:workspaceID`}
+            render={({
+                match: {
+                    params: { workspaceID },
+                },
+            }: RouteComponentProps<{ workspaceID: string }>) => (
+                <ExecutionWorkspacesPage {...props} executionURL={match.url} selectedWorkspaceID={workspaceID} />
+            )}
+            exact={true}
+        />
+        <Route
+            path={match.url}
+            render={() => <ExecutionWorkspacesPage {...props} executionURL={match.url} />}
+            exact={true}
+        />
+        <Route component={NotFoundPage} key="hardcoded-key" />
+    </Switch>
+)
 
-    // Read the selected workspace from the URL params.
-    const selectedWorkspace = useMemo(() => {
-        const query = new URLSearchParams(history.location.search)
-        return query.get('workspace')
-    }, [history.location.search])
+interface ExecutionWorkspacesPageProps extends ThemeProps {
+    executionURL: string
+    batchSpec: BatchSpecExecutionFields
+    selectedWorkspaceID?: string
+}
 
-    return (
-        <>
-            {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
-            <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
-                <Resizable
-                    defaultSize={500}
-                    minSize={405}
-                    maxSize={1400}
-                    handlePosition="right"
-                    storageKey={WORKSPACES_LIST_SIZE}
-                    element={
-                        <div className="w-100 d-flex flex-column">
-                            <h3 className="mb-2">Workspaces</h3>
-                            <div className={styles.workspacesList}>
-                                <WorkspacesList
-                                    batchSpecID={batchSpec.id}
-                                    selectedNode={selectedWorkspace ?? undefined}
-                                />
-                            </div>
+const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPageProps> = ({
+    batchSpec,
+    selectedWorkspaceID,
+    executionURL,
+    isLightTheme,
+}) => (
+    <>
+        {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
+        <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
+            <Resizable
+                defaultSize={500}
+                minSize={405}
+                maxSize={1400}
+                handlePosition="right"
+                storageKey={WORKSPACES_LIST_SIZE}
+                element={
+                    <div className="w-100 d-flex flex-column">
+                        <h3 className="mb-2">Workspaces</h3>
+                        <div className={styles.workspacesList}>
+                            <WorkspacesList
+                                batchSpecID={batchSpec.id}
+                                selectedNode={selectedWorkspaceID}
+                                executionURL={executionURL}
+                            />
                         </div>
-                    }
-                />
-                <div className="d-flex flex-grow-1">
-                    <div className="d-flex overflow-auto w-100">
-                        <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
                     </div>
+                }
+            />
+            <div className="d-flex flex-grow-1">
+                <div className="d-flex overflow-auto w-100">
+                    <SelectedWorkspace workspace={selectedWorkspaceID ?? null} isLightTheme={isLightTheme} />
                 </div>
             </div>
-        </>
-    )
-}
+        </div>
+    </>
+)
 
 interface PreviewPageProps extends TelemetryProps, ThemeProps {
     batchSpecID: Scalars['ID']
