@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import * as H from 'history'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 
@@ -8,7 +9,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, CardBody, Card, Link, MultiSelectState, Container } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, MultiSelectState, Container, MultiSelectOption } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -36,7 +37,7 @@ import {
 } from '../../../graphql-operations'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
-import { BatchChangeListFilters, DRAFT_STATUS, OPEN_STATUS } from './BatchChangeListFilters'
+import { BatchChangeListFilters, CLOSED_STATUS, DRAFT_STATUS, OPEN_STATUS } from './BatchChangeListFilters'
 import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
@@ -45,7 +46,7 @@ import { NewBatchChangeButton } from './NewBatchChangeButton'
 
 export interface BatchChangeListPageProps
     extends TelemetryProps,
-        Pick<RouteComponentProps, 'location'>,
+        Pick<RouteComponentProps, 'location' | 'history'>,
         SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
@@ -60,8 +61,30 @@ const BATCH_CHANGES_PER_PAGE_COUNT = 15
 
 // Drafts are a new feature of severside execution that for now should not be shown if
 // execution is not enabled.
-const getInitialFilters = (isExecutionEnabled: boolean): MultiSelectState<BatchChangeState> =>
-    isExecutionEnabled ? [OPEN_STATUS, DRAFT_STATUS] : [OPEN_STATUS]
+const getInitialFilters = (isExecutionEnabled: boolean, location: H.Location): MultiSelectState<BatchChangeState> => {
+    const parsedSearch = new URLSearchParams(location.search)
+    const stateParameter = parsedSearch.get('state')
+    if (stateParameter) {
+        const values = stateParameter.split(',')
+        const parsedStates: MultiSelectOption<BatchChangeState>[] = []
+        for (const value of values) {
+            switch (value.toLocaleLowerCase()) {
+                case 'open':
+                    parsedStates.push(OPEN_STATUS)
+                    break
+                case 'draft':
+                    parsedStates.push(DRAFT_STATUS)
+                    break
+                case 'closed':
+                    parsedStates.push(CLOSED_STATUS)
+                    break
+                default:
+            }
+        }
+        return parsedStates
+    }
+    return isExecutionEnabled ? [OPEN_STATUS, DRAFT_STATUS] : [OPEN_STATUS]
+}
 
 /**
  * A list of all batch changes on the Sourcegraph instance.
@@ -70,6 +93,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     canCreate,
     namespaceID,
     headingElement,
+    history,
     location,
     openTab,
     settingsCascade,
@@ -81,8 +105,12 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
 
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
     const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>(
-        getInitialFilters(isExecutionEnabled)
+        getInitialFilters(isExecutionEnabled, location)
     )
+    // We keep state to track to the last total count of batch changes in the connection
+    // to avoid the display flickering as the connection is loading more data or a
+    // different set of filtered data.
+    const [lastTotalCount, setLastTotalCount] = useState<number>()
 
     // We use the license and usage query to check whether or not there are any batch
     // changes _at all_. If there aren't, we automatically switch the user to the "Getting
@@ -130,9 +158,25 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
             if (data.node.__typename !== 'Org' && data.node.__typename !== 'User') {
                 throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
             }
+
+            // Persist the new filter states to the URL.
+            const newSearchParameters = new URLSearchParams(location.search)
+            newSearchParameters.set('state', filterStates.join(','))
+            history.push({
+                ...location,
+                search: newSearchParameters.toString(),
+            })
+
             return data.node.batchChanges
         },
     })
+
+    useEffect(() => {
+        // If the data in the connection updates with new results, update the total count.
+        if (connection) {
+            setLastTotalCount(connection.totalCount!)
+        }
+    }, [connection])
 
     const currentTotalCount = licenseAndUsageInfo?.allBatchChanges.totalCount
 
@@ -152,9 +196,10 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 <Container className="mb-4">
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
-                            {typeof currentTotalCount === 'number' && (
+                            {typeof currentTotalCount === 'number' && lastTotalCount !== undefined && (
                                 <h3 className="align-self-end flex-1">
-                                    {currentTotalCount} {pluralize('batch change', currentTotalCount)}
+                                    {lastTotalCount} of {currentTotalCount}{' '}
+                                    {pluralize('batch change', currentTotalCount)}
                                 </h3>
                             )}
                             <BatchChangeListFilters
