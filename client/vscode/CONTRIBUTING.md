@@ -4,19 +4,19 @@ Thank you for your interest in contributing to Sourcegraph!
 The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph VS Code Extension.
 _Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for general information regarding contributing to any Sourcegraph repository._
 
-### Feedback
+## Feedback
 
 Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions about how we can improve the extension to our [GitHub Feedback discussion board](https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback).
 
-### Issues / Bugs
+## Issues / Bugs
 
 New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new/choose) using the `vscode-extension` label.
 
-### Development
+## Development
 
 Please refer to the [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev) to get started.
 
-#### Build and run
+### Build and run
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
 1. Install dependencies via `yarn` for the Sourcegraph repository
@@ -26,15 +26,15 @@ Please refer to the [Developing Sourcegraph guide](https://docs.sourcegraph.com/
 1. Run `yarn build` to build or `yarn watch:node` / `yarn watch:web` to build and watch the tasks
 1. Select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu to see your changes
 
-#### Debugging
+### Debugging
 
 Please refer to the [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute#debugging) guide by VS Code for debugging tips.
 
-### Questions
+## Questions
 
 If you need guidances or have any questions regarding Sourcegraph or the extension in general, we invite you to connect with us on the [Sourcegraph Community Slack group](https://about.sourcegraph.com/community).
 
-### Resources
+## Resources
 
 - [Changelog](https://marketplace.visualstudio.com/items/sourcegraph.sourcegraph/changelog)
 - [Code of Conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/)
@@ -42,6 +42,6 @@ If you need guidances or have any questions regarding Sourcegraph or the extensi
 - [Issue Tracker](https://github.com/sourcegraph/sourcegraph/labels/vscode-extension)
 - [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)
 
-### License
+## License
 
 Apache
