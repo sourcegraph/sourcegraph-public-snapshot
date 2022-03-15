@@ -400,8 +400,8 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 	ageInSeconds, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		maxDurationInQueueQuery,
 		quote(s.options.ViewName),
-		now,
 		s.options.MaxNumRetries,
+		now,
 	)))
 	if err != nil {
 		return 0, err
@@ -415,22 +415,34 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 
 const maxDurationInQueueQuery = `
 -- source: internal/workerutil/store.go:MaxDurationInQueue
-WITH candidates AS (
-	SELECT * FROM %s WHERE {process_after} IS NULL OR {process_after} <= %s
-)
-SELECT age FROM (
-		SELECT EXTRACT(EPOCH FROM NOW() - {queued_at})::integer AS age
-		FROM candidates
-		WHERE {state} = 'queued'
-	UNION (
-		SELECT EXTRACT(EPOCH FROM NOW() - {finished_at})::integer AS age
-		FROM candidates
-		WHERE {state} = 'errored' AND  {num_failures} < %s
+WITH
+candidates AS (
+	SELECT * FROM %s
+	WHERE
+	{num_failures} < %s AND
+	({process_after} IS NULL OR {process_after} <= %s)
+),
+oldest_queued_at AS (
+	SELECT {queued_at} AS last_queued_at
+	FROM candidates
+	WHERE {queued_at} IS NOT NULL AND {state} = 'queued'
+	ORDER BY last_queued_at LIMIT 1
+),
+oldest_resettable_at AS (
+	SELECT {finished_at} AS last_queued_at
+	FROM candidates
+	WHERE {finished_at} IS NOT NULL AND {state} = 'errored'
+	ORDER BY last_queued_at LIMIT 1
+),
+oldest_combined_queued_at AS (
+	(
+		SELECT last_queued_at FROM oldest_queued_at
+		UNION
+		SELECT last_queued_at FROM oldest_resettable_at
 	)
-) s
-WHERE age IS NOT NULL
-ORDER BY age DESC
-LIMIT 1
+	ORDER BY last_queued_at LIMIT 1
+)
+SELECT EXTRACT(EPOCH FROM NOW() - (SELECT last_queued_at FROM oldest_combined_queued_at))::integer AS age
 `
 
 // columnsUpdatedByDequeue are the unmapped column names modified by the dequeue method.
