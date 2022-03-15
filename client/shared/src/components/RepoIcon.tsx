@@ -18,8 +18,8 @@ export const RepoIcon: React.FunctionComponent<{ repoName: string; className?: s
         'github.com': GithubIcon,
         'gitlab.com': GitlabIcon,
         'bitbucket.com': BitbucketIcon,
-        'maven': LanguageJavaIcon,
-        'npm': NpmIcon,
+        maven: LanguageJavaIcon,
+        npm: NpmIcon,
     }
 
     const hostName = repoName.split('/')[0]
