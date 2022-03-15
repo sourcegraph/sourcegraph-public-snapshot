@@ -35,22 +35,46 @@ type HighlightArgs struct {
 	DisableTimeout     bool
 	IsLightTheme       *bool
 	HighlightLongLines bool
-	TreeSitterEnabled  bool
 }
 
 type highlightedFileResolver struct {
-	aborted bool
-	html    template.HTML
-
-	// JSON encoded form of lsiftyped.Document
-	lsif string
+	aborted  bool
+	response *highlight.HighlightedCode
 }
 
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
-func (h *highlightedFileResolver) HTML() string  { return string(h.html) }
-func (h *highlightedFileResolver) LSIF() string  { return h.lsif }
+func (h *highlightedFileResolver) HTML() string {
+	html, err := h.response.HTML()
+	if err != nil {
+		return ""
+	}
+
+	return string(html)
+}
+func (h *highlightedFileResolver) LSIF() string {
+	if h.response == nil {
+		return ""
+	}
+
+	marshaller := &jsonpb.Marshaler{
+		EnumsAsInts:  true,
+		EmitDefaults: false,
+	}
+
+	// TODO(tjdevries): We could probably serialize the error, but it wouldn't do anything for now.
+	lsif, err := marshaller.MarshalToString(h.response.LSIF())
+	if err != nil {
+		return "{}"
+	}
+
+	return lsif
+}
 func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
-	return highlight.SplitLineRanges(h.html, args.Ranges)
+	if h.response != nil && h.response.LSIF() != nil {
+		return h.response.LinesForRanges(args.Ranges)
+	}
+
+	return highlight.SplitLineRanges(template.HTML(h.HTML()), args.Ranges)
 }
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
@@ -60,29 +84,21 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
 
-	html, document, aborted, err := highlight.Code(ctx, highlight.Params{
+	response, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
 		HighlightLongLines: args.HighlightLongLines,
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,
-		TreeSitterEnabled:  args.TreeSitterEnabled,
 	})
-	result.html = html
+
 	result.aborted = aborted
-
-	if document != nil {
-		marshaller := &jsonpb.Marshaler{
-			EnumsAsInts:  true,
-			EmitDefaults: false,
-		}
-
-		result.lsif, err = marshaller.MarshalToString(document)
-	}
+	result.response = response
 
 	if err != nil {
 		return nil, err
 	}
+
 	return result, nil
 }

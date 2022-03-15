@@ -2,7 +2,7 @@ package search
 
 import (
 	"context"
-	"html/template"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -96,12 +96,13 @@ func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, p
 // DecorateFileHTML returns decorated HTML rendering of file content. If
 // successful and within bounds of timeout and line size, it returns HTML marked
 // up with highlight classes. In other cases, it returns plaintext HTML.
-func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (template.HTML, error) {
+func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightedCode, error) {
 	content, err := fetchContent(ctx, repo, commit, path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	result, _, aborted, err := highlight.Code(ctx, highlight.Params{
+
+	highlightResponse, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            content,
 		Filepath:           path,
 		DisableTimeout:     false, // use default 3 second timeout
@@ -112,24 +113,29 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 		},
 	})
 	if err != nil {
-		return "", err
-	}
-	if aborted {
-		// code decoration aborted, returns plaintext HTML.
-		return result, nil
+		return nil, err
 	}
 
-	return result, nil
+	// TODO: Can I remove this?
+	if aborted {
+		// code decoration aborted, returns plaintext HTML.
+		return highlightResponse, nil
+	}
+
+	return highlightResponse, nil
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
 func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
-	html, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
+	fmt.Println("==> DecorateFileHunksHTML")
+
+	response, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
 	if err != nil {
 		log15.Warn("stream result decoration could not highlight file", "error", err)
 		return nil
 	}
-	lines, err := highlight.SplitHighlightedLines(html, true)
+
+	lines, err := response.SplitHighlightedLines(true)
 	if err != nil {
 		log15.Warn("stream result decoration could not split highlighted file", "error", err)
 		return nil
