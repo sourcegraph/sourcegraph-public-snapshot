@@ -22,7 +22,7 @@
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook /out/.*test.js",
-    "test-integration:base": "jest --runInBand --config=client/web/src/integration/jest.config.js",
+    "test-integration:base": "jest --runInBand --config=client/web/src/integration/jest.config.js client/web/src/integration/repository.test.ts",
     "test-integration": "yarn test-integration:base",
     "test-browser-integration": "yarn --cwd client/browser run test-integration",
     "cover-integration:base": "nyc --hook-require=false yarn test-integration:base",
