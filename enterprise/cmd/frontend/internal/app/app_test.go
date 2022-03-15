@@ -115,8 +115,9 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 			wantConfig := `
 {
   "url": "https://github.com",
+  "repos": [],
   "githubAppInstallationID": "21994992",
-  "repos": []
+  "pending": false
 }
 `
 			assert.Equal(t, wantConfig, svc.Config)
@@ -159,7 +160,8 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 {
   "url": "https://github.com",
   "repos": [],
-  "githubAppInstallationID": "21994992"
+  "githubAppInstallationID": "21994992",
+  "pending": false
 }
 `
 			assert.Equal(t, wantConfig, svc.Config)

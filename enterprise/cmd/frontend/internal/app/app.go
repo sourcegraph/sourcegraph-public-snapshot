@@ -192,10 +192,10 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				DisplayName: displayName,
 				Config: fmt.Sprintf(`
 {
-"url": "%s",
-"repos": []
+  "url": "%s",
+  "repos": []
 }
-	`, apiURL.String()),
+`, apiURL.String()),
 				NamespaceOrgID: org.ID,
 				CreatedAt:      now,
 				UpdatedAt:      now,
