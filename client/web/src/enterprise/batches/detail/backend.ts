@@ -158,7 +158,8 @@ const batchChangeFragment = gql`
         }
 
         # TODO: We ought to be able to filter these by state, but because state is only computed
-        # in the resolver and not persisted to the DB, it's currently expensive and messy to do so.
+        # in the resolver and not persisted to the DB, it's currently expensive and messy to do so,
+        # so for now we fetch the first 100 and count the active ones clientside.
         batchSpecs(first: 100) {
             nodes {
                 state
