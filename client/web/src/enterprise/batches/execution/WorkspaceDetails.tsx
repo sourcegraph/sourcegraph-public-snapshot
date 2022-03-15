@@ -189,15 +189,10 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
                     )}
                     {workspace.changesetSpecs.map((changesetSpec, index) => (
-                        <>
-                            <ChangesetSpecNode
-                                key={changesetSpec.id}
-                                node={changesetSpec}
-                                index={index}
-                                isLightTheme={isLightTheme}
-                            />
+                        <React.Fragment key={changesetSpec.id}>
+                            <ChangesetSpecNode node={changesetSpec} index={index} isLightTheme={isLightTheme} />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
             )}

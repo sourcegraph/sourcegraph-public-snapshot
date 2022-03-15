@@ -30,9 +30,15 @@ export interface WorkspacesListProps {
     batchSpecID: Scalars['ID']
     /** The currently selected workspace node id. Will be highlighted. */
     selectedNode?: Scalars['ID']
+    /** The URL path to the execution page this workspaces list is shown on. */
+    executionURL: string
 }
 
-export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({ batchSpecID, selectedNode }) => {
+export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({
+    batchSpecID,
+    selectedNode,
+    executionURL,
+}) => {
     const [filters, setFilters] = useState<WorkspaceFilters>()
     const { loading, hasNextPage, fetchMore, connection, error } = useWorkspacesListConnection(
         batchSpecID,
@@ -46,7 +52,12 @@ export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({ b
             <WorkspaceFilterRow onFiltersChange={setFilters} />
             <ConnectionList as="ul" className="list-group list-group-flush">
                 {connection?.nodes?.map(node => (
-                    <WorkspaceNode key={node.id} node={node} selectedNode={selectedNode} />
+                    <WorkspaceNode
+                        key={node.id}
+                        node={node}
+                        isSelected={node.id === selectedNode}
+                        workspaceURL={`${executionURL}/workspaces/${node.id}`}
+                    />
                 ))}
             </ConnectionList>
             {/* We don't want to flash a loader on reloads: */}
@@ -70,14 +81,15 @@ export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({ b
 
 interface WorkspaceNodeProps {
     node: BatchSpecWorkspaceListFields
-    selectedNode?: Scalars['ID']
+    isSelected: boolean
+    workspaceURL: string
 }
 
-const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, selectedNode }) => (
+const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, isSelected, workspaceURL }) => (
     <li className={classNames('list-group-item', styles.listGroupItem)}>
         <Link
-            to={`?workspace=${node.id}`}
-            className={classNames(styles.workspaceListNode, node.id === selectedNode && styles.workspaceSelected)}
+            to={workspaceURL}
+            className={classNames(styles.workspaceListNode, isSelected && styles.workspaceSelected)}
         >
             <div className="d-flex mb-1">
                 <span>
