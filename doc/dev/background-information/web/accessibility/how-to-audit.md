@@ -24,7 +24,7 @@ Before starting your audit, you should ensure the following statements are true:
     - Would a user be able to sufficiently read all required content in the journey?
     - Would a user be able to correctly and predictably perform each important **action**?
       - Keep in mind that it is typically harder to select small buttons and icons using a touch device.
-    - **Note:** You don't need to use a physical mobile device to test this. Most browsers support simulating a mobile viewport - just ensure it is set to **320px**.
+    - **Note:** You don't need to use a physical mobile device to test this. Most browsers support emulating a mobile viewport - just ensure it is set to **320px**.
       - [Chrome documentation](https://developer.chrome.com/docs/devtools/device-mode/#viewport)
       - [Firefox documentation](https://developer.mozilla.org/en-US/docs/Tools/Responsive_Design_Mode)
 4. Work through relevant sections from the [detailed checklist](detailed-checklist.md) and ensure that there are no issues.
