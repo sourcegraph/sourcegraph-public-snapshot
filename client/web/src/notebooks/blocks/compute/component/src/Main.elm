@@ -129,16 +129,12 @@ type alias RawEvent =
 
 
 type alias ExperimentalOptions =
-    { dataPoints : Int
-    , sortByCount : Bool
-    , reverse : Bool
-    , excludeStopWords : Bool
-    }
+    {}
 
 
 type alias ComputeInput =
     { queries : List String
-    , options : ExperimentalOptions
+    , experimentalOptions : ExperimentalOptions
     }
 
 
@@ -237,44 +233,30 @@ update msg model =
                         Nothing ->
                             0
             in
-            ( { model | dataPoints = newDataPoints }
-            , emitInput
-                { queries = [ model.query ]
-                , options =
-                    { dataPoints = newDataPoints
-                    , sortByCount = model.sortByCount
-                    , reverse = model.reverse
-                    , excludeStopWords = model.excludeStopWords
-                    }
-                }
-            )
+            ( { model | dataPoints = newDataPoints }, Cmd.none )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
 
         RunCompute ->
             if model.serverless then
-                ( { model | resultsMap = exampleResultsMap }
-                , emitInput
-                    { queries = [ model.query ]
-                    , options =
-                        { dataPoints = newDataPoints
-                        , sortByCount = model.sortByCount
-                        , reverse = model.reverse
-                        , excludeStopWords = model.excludeStopWords
-                        }
-                    }
-                )
+                ( { model | resultsMap = exampleResultsMap }, Cmd.none )
 
             else
                 ( { model | resultsMap = Dict.empty }
-                , openStream
-                    ( Url.Builder.crossOrigin
-                        model.sourcegraphURL
-                        [ ".api", "compute", "stream" ]
-                        [ Url.Builder.string "q" model.query ]
-                    , Nothing
-                    )
+                , Cmd.batch
+                    [ emitInput
+                        { queries = [ model.query ]
+                        , experimentalOptions = {}
+                        }
+                    , openStream
+                        ( Url.Builder.crossOrigin
+                            model.sourcegraphURL
+                            [ ".api", "compute", "stream" ]
+                            [ Url.Builder.string "q" model.query ]
+                        , Nothing
+                        )
+                    ]
                 )
 
         OnResults r ->
