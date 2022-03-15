@@ -26,7 +26,5 @@ add('ActiveExecutionNotice', () => {
         [numberActive, numberComplete]
     )
 
-    console.log({ specs })
-
-    return <WebStory>{() => <ActiveExecutionNotice batchSpecs={specs} />}</WebStory>
+    return <WebStory>{() => <ActiveExecutionNotice batchSpecs={specs} batchChangeURL="lol.fake" />}</WebStory>
 })

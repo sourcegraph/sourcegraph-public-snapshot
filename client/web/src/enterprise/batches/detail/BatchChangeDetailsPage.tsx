@@ -138,7 +138,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             />
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
-            <ActiveExecutionNotice batchSpecs={batchChange.batchSpecs.nodes} className="mb-3" />
+            <ActiveExecutionNotice
+                batchSpecs={batchChange.batchSpecs.nodes}
+                batchChangeURL={batchChange.url}
+                className="mb-3"
+            />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={batchChange.changesetsStats.unpublished}
