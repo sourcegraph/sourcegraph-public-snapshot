@@ -266,7 +266,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}
 	}
 
-	if errors.Is(err, searchrepos.ErrNoResolvedRepos) {
+	if !o.HasResults && errors.Is(err, searchrepos.ErrNoResolvedRepos) {
 		return o.alertForNoResolvedRepos(ctx, o.Query), nil
 	}
 
