@@ -26,8 +26,7 @@ interface UseAffiliatedReposResult {
 const AFFILIATED_REPOS = gql`
     query UserAffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
         affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
-            svcResults {
-                nodes {
+            nodes {
                 name
                 codeHost {
                     kind
@@ -36,7 +35,6 @@ const AFFILIATED_REPOS = gql`
                 }
                 private
             }
-        }
         }
     }
 `
@@ -54,7 +52,7 @@ export const useAffiliatedRepos = (userId: string): UseAffiliatedReposResult => 
     )
 
     return {
-        affiliatedRepos: data?.affiliatedRepositories.svcResults,
+        affiliatedRepos: data?.affiliatedRepositories.nodes,
         loadingAffiliatedRepos: loading,
         errorAffiliatedRepos: error,
         refetchAffiliatedRepos: refetch,

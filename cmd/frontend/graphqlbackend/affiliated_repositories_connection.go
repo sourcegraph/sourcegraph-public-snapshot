@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -24,29 +25,25 @@ var (
 )
 
 type codeHostRepositoryResolver struct {
-	repo         *types.CodeHostRepository
-	codeHost     *types.ExternalService
-	db           database.DB
-	codeHostErrs string
-}
-
-type svcResult struct {
-	nodes []*codeHostRepositoryResolver
-	err   string
+	repo     *types.CodeHostRepository
+	codeHost *types.ExternalService
+	db       database.DB
 }
 
 type affiliatedRepositoriesConnection struct {
-	userID     int32
-	orgID      int32
-	codeHost   int64
-	query      string
-	once       sync.Once
-	svcResults []*svcResult
-	err        error
-	db         database.DB
+	userID   int32
+	orgID    int32
+	codeHost int64
+	query    string
+
+	once           sync.Once
+	nodes          []*codeHostRepositoryResolver
+	err            error
+	db             database.DB
+	codeHostErrors string
 }
 
-func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*svcResult, error) {
+func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context) (*affiliatedRepositoriesConnection, error) {
 	a.once.Do(func() {
 		var (
 			svcs []*types.ExternalService
@@ -122,23 +119,19 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 		}
 
 		var fetchErrors []error
-		var nodes []*codeHostRepositoryResolver
-		a.svcResults = []*svcResult{}
+		var listOfErrors []string
 
+		a.nodes = []*codeHostRepositoryResolver{}
 		for i := 0; i < pending; i++ {
 			select {
 			case result := <-results:
-				if result.err != nil { // if an errors comes from results.err, repos is an empty array
+				if result.err != nil { // if any error comes from results.err, repos is an empty array
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 					fetchErrors = append(fetchErrors, result.err)
 
-					// Get the error from the code host so we can return it.
 					errMessage := "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
-					a.svcResults = append(a.svcResults, &svcResult{
-						nodes: nodes,
-						err:   errMessage,
-					})
+					listOfErrors = append(listOfErrors, errMessage)
 
 					continue
 				}
@@ -152,19 +145,12 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 					}
 
 					repo := repo
-					nodes = append(nodes, &codeHostRepositoryResolver{
-						repo:     &repo,
-						codeHost: svcsByID[repo.CodeHostID],
+					a.nodes = append(a.nodes, &codeHostRepositoryResolver{
 						db:       a.db,
+						codeHost: svcsByID[repo.CodeHostID],
+						repo:     &repo,
 					})
-
 				}
-
-				var errMessage string
-				a.svcResults = append(a.svcResults, &svcResult{
-					nodes: nodes,
-					err:   errMessage,
-				})
 
 			case <-ctx.Done():
 				a.err = ctx.Err()
@@ -172,38 +158,42 @@ func (a *affiliatedRepositoriesConnection) SvcResults(ctx context.Context) ([]*s
 			}
 		}
 
-		sort.Slice(nodes, func(i, j int) bool {
-			return nodes[i].repo.Name < nodes[j].repo.Name
+		sort.Slice(a.nodes, func(i, j int) bool {
+			return a.nodes[i].repo.Name < a.nodes[j].repo.Name
 		})
 
 		if len(fetchErrors) == pending {
 			// All hosts failed
-			for _, aa := range a.svcResults {
-				aa.nodes = nil
-			}
+			a.nodes = nil
 			a.err = errors.New("failed to fetch from any code host")
 		}
+
+		a.codeHostErrors = strings.Join(listOfErrors, ",")
 	})
 
+	return a, a.err
+}
+
+func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	nodesAndErrors, _ := a.getNodesAndErrors(ctx)
+
 	if envvar.SourcegraphDotComMode() && a.orgID != 0 {
-		for _, aa := range a.svcResults {
-			a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(aa.nodes)))
-		}
+		a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(a.nodes)))
+	}
+	return nodesAndErrors.nodes, nil
+}
+
+func (a *affiliatedRepositoriesConnection) CodeHostErrors(ctx context.Context) (string, error) {
+	nodesAndErrors, err := a.getNodesAndErrors(ctx)
+	if err != nil {
+		return a.codeHostErrors, err
 	}
 
-	return a.svcResults, a.err
-
-}
-
-func (s *svcResult) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
-	return s.nodes, nil
-}
-
-func (s *svcResult) Err(ctx context.Context) (*string, error) {
-	return nil, nil
+	return nodesAndErrors.codeHostErrors, nil
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
+	fmt.Println("name", r.repo.Name)
 	return r.repo.Name
 }
 
@@ -216,10 +206,6 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 		db:              r.db,
 		externalService: r.codeHost,
 	}
-}
-
-func (r *codeHostRepositoryResolver) CodeHostErrs() *string {
-	return &r.codeHostErrs
 }
 
 func allowPrivate(ctx context.Context, db database.DB, userID, orgID int32) (bool, error) {

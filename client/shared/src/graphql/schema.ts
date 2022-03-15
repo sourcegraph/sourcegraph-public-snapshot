@@ -16320,6 +16320,11 @@ export interface ICodeHostRepositoryConnection {
     __typename: 'CodeHostRepositoryConnection'
 
     /**
+     * Errors returned from the code host.
+     */
+    codeHostErrors: string
+
+    /**
      * A list of repositories affiliated with a code host.
      */
     nodes: ICodeHostRepository[]

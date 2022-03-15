@@ -412,10 +412,9 @@ func (rs MinimalRepos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
 func (rs MinimalRepos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 type CodeHostRepository struct {
-	Name         string
-	CodeHostID   int64
-	Private      bool
-	CodeHostErrs string
+	Name       string
+	CodeHostID int64
+	Private    bool
 }
 
 // RepoGitserverStatus includes basic repo data along with the current gitserver
