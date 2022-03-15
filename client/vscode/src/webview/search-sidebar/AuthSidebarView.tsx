@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
@@ -233,13 +234,15 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                     Not a private instance user?
                 </button>
             )}
-            <button
-                type="button"
-                className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
-                onClick={onSignUpClick}
-            >
-                Create an account
-            </button>
+            <div className="my-0">
+                <button
+                    type="button"
+                    className={classNames(styles.ctaParagraph, 'btn btn-text-link text-left my-0')}
+                    onClick={onSignUpClick}
+                >
+                    Create an account
+                </button>
+            </div>
         </>
     )
 }

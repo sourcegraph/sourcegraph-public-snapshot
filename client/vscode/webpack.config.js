@@ -24,6 +24,9 @@ const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development
  * @param {*} targetType See https://webpack.js.org/configuration/target/
  */
 function getExtensionCoreConfiguration(targetType) {
+  if (typeof targetType !== 'string') {
+    return
+  }
   return {
     context: __dirname, // needed when running `gulp` from the root dir
     mode,
