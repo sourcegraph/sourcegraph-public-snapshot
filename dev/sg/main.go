@@ -126,19 +126,19 @@ func checkSgVersion(ctx context.Context) error {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-	} else {
-		stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-		err := updateCommand.Exec(ctx, nil)
-		if err != nil {
-			return err
-		}
-		sgPath, err := os.Executable()
-		if err != nil {
-			return err
-		}
-		return syscall.Exec(sgPath, os.Args, os.Environ())
+		return nil
 	}
-	return nil
+
+	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	err = updateCommand.Exec(ctx, nil)
+	if err != nil {
+		return err
+	}
+	sgPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	return syscall.Exec(sgPath, os.Args, os.Environ())
 }
 
 func loadSecrets() error {
