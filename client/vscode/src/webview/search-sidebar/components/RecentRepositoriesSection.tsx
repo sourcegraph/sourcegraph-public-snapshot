@@ -1,7 +1,8 @@
+import React, { useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useMemo, useState } from 'react'
 
 import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -12,6 +13,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
+
 import styles from '../SearchSidebarView.module.scss'
 
 export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarProps> = ({

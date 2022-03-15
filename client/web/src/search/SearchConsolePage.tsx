@@ -31,7 +31,7 @@ import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController'>,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'executedQuery'>,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
