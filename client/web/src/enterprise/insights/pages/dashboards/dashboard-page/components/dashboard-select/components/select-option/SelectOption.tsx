@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { ListboxOption } from '@reach/listbox'
 import classNames from 'classnames'
-import React from 'react'
 
 import { RealInsightDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'

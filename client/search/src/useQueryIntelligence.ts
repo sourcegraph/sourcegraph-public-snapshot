@@ -1,5 +1,6 @@
-import * as Monaco from 'monaco-editor'
 import { useEffect, useMemo } from 'react'
+
+import * as Monaco from 'monaco-editor'
 import { Observable } from 'rxjs'
 import * as uuid from 'uuid'
 

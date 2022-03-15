@@ -1,7 +1,8 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
 import { NavLink as RouterLink } from 'react-router-dom'
 
@@ -41,10 +42,11 @@ import { BatchSpec } from '../BatchSpec'
 import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
 import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
-import styles from './BatchSpecExecutionDetailsPage.module.scss'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { WorkspacesList } from './WorkspacesList'
+
+import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
 export interface BatchSpecExecutionDetailsPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchSpecID: Scalars['ID']

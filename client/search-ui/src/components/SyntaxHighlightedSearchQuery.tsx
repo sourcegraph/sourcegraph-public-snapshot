@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { Fragment, useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 

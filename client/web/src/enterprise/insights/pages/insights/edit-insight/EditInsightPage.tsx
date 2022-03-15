@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 import { Badge, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 

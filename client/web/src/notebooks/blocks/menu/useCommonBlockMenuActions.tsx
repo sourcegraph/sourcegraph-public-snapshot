@@ -1,8 +1,9 @@
+import React, { useMemo } from 'react'
+
 import ArrowDownIcon from 'mdi-react/ArrowDownIcon'
 import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
 import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { useMemo } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 

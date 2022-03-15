@@ -1,8 +1,9 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -24,6 +25,7 @@ import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../e
 
 import { createExtension, queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
+
 import styles from './RegistryNewExtensionPage.module.scss'
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}>, BreadcrumbSetters {

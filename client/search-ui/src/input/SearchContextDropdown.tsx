@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
@@ -11,8 +12,9 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
-import styles from './SearchContextDropdown.module.scss'
 import { SearchContextMenu } from './SearchContextMenu'
+
+import styles from './SearchContextDropdown.module.scss'
 
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,

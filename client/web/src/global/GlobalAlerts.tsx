@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
-import * as React from 'react'
 import { Subscription } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -21,8 +22,9 @@ import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 
 import { GlobalAlert } from './GlobalAlert'
-import styles from './GlobalAlerts.module.scss'
 import { Notices } from './Notices'
+
+import styles from './GlobalAlerts.module.scss'
 
 interface Props extends SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null

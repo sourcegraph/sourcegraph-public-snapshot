@@ -1,10 +1,11 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
 import DeltaIcon from 'mdi-react/DeltaIcon'
 import GateArrowRightIcon from 'mdi-react/GateArrowRightIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React from 'react'
 
 import { ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
 

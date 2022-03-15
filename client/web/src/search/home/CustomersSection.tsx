@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link } from '@sourcegraph/wildcard'

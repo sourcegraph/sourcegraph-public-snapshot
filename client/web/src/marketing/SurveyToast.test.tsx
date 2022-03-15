@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { cleanup, within, fireEvent } from '@testing-library/react'
-import React from 'react'
 import { take } from 'rxjs/operators'
 
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'

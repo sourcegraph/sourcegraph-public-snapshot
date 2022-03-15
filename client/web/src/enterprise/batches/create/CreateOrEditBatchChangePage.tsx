@@ -1,10 +1,11 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -45,7 +46,6 @@ import {
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
-import styles from './CreateOrEditBatchChangePage.module.scss'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
@@ -59,6 +59,8 @@ import { useWorkspacesPreview } from './useWorkspacesPreview'
 import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+
+import styles from './CreateOrEditBatchChangePage.module.scss'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**

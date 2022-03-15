@@ -1,9 +1,11 @@
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { ReactElement } from 'react'
+
+import CloseIcon from 'mdi-react/CloseIcon'
 import { components, MultiValueRemoveProps } from 'react-select'
 
-import styles from './MultiSelect.module.scss'
 import { MultiSelectOption } from './types'
+
+import styles from './MultiSelect.module.scss'
 
 // Overwrite the multi value remove indicator with `CloseIcon`
 export const MultiValueRemove = <OptionValue extends unknown = unknown>(

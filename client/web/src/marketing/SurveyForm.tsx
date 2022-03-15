@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -9,8 +10,9 @@ import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-import styles from './SurveyPage.module.scss'
 import { SurveyRatingRadio } from './SurveyRatingRadio'
+
+import styles from './SurveyPage.module.scss'
 
 interface SurveyFormProps {
     authenticatedUser: AuthenticatedUser | null
