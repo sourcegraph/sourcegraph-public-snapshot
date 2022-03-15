@@ -1,7 +1,8 @@
+import React, { ReactElement, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { ReactElement, useCallback, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { delay, startWith } from 'rxjs/operators'
 
@@ -17,9 +18,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
-import blockStyles from '../NotebookBlock.module.scss'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
+import blockStyles from '../NotebookBlock.module.scss'
 import styles from './SearchTypeSuggestionsInput.module.scss'
 
 interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
