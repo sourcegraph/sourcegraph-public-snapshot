@@ -87,7 +87,6 @@ $enable-transitions: false;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/grid';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
@@ -112,6 +111,7 @@ $enable-transitions: false;
 @import './tabs';
 @import './progress';
 @import './collapse';
+@import './grid';
 
 * {
     box-sizing: border-box;
