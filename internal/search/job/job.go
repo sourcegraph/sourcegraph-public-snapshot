@@ -386,20 +386,14 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 		SearcherURLs: jargs.SearcherURLs,
 	}
 
-	forceResultTypes := result.TypeEmpty
-	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
-		if p.Pattern == "" {
-			// Fallback to literal search for searching repos and files if
-			// the structural search pattern is empty.
-			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-			p.IsStructuralPat = false
-			forceResultTypes = result.Types(0)
-		} else {
-			forceResultTypes = result.TypeStructural
-		}
+	args.ResultTypes = computeResultTypes(args, p.Pattern, jargs.SearchInputs.PatternType)
+	if p.Pattern == "" {
+		// Fallback to basic search for searching repos and files if
+		// the structural search pattern is empty.
+		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
+		p.IsStructuralPat = false
 	}
 
-	args.ResultTypes = computeResultTypes(args, forceResultTypes)
 	return args, nil
 }
 
@@ -518,10 +512,21 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 
 // withResultTypes populates the ResultTypes field of args, which drives the kind
 // of search to run (e.g., text search, symbol search).
-func computeResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
+func computeResultTypes(args search.TextParameters, pattern string, searchType query.SearchType) result.Types {
 	var rts result.Types
-	if forceTypes != 0 {
-		rts = forceTypes
+	forceResultTypes := result.TypeEmpty
+	if searchType == query.SearchTypeStructural {
+		if pattern == "" {
+			// Fallback to basic search for searching repos and files if
+			// the structural search pattern is empty.
+			forceResultTypes = result.TypeEmpty
+		} else {
+			forceResultTypes = result.TypeStructural
+		}
+	}
+
+	if forceResultTypes != 0 {
+		rts = forceResultTypes
 	} else {
 		stringTypes, _ := args.Query.StringValues(query.FieldType)
 		if len(stringTypes) == 0 {
