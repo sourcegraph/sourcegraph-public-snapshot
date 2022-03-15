@@ -15,6 +15,7 @@ import {
     ChangesetSpecType,
     ChangesetState,
     BatchChangeFields,
+    BatchChangeState,
 } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
@@ -89,6 +90,7 @@ const batchChangeDefaults: BatchChangeFields = {
         totalCount: 0,
         nodes: [],
     },
+    state: BatchChangeState.OPEN,
 }
 
 const queryChangesets: typeof _queryChangesets = () =>

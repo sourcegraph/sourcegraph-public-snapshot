@@ -78,3 +78,13 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
         pageInfo: { endCursor: null, hasNextPage: false },
     },
 }
+
+export const EMPTY_BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node'] = {
+    ...MOCK_BATCH_CHANGE,
+    changesets: {
+        __typename: 'ChangesetConnection',
+        totalCount: 0,
+        nodes: [],
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
