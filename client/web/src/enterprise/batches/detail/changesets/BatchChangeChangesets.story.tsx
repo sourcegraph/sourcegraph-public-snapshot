@@ -107,10 +107,8 @@ add('List of expanded changesets', () => (
 ))
 
 add('Draft without changesets', () => {
-    const label = 'batchChangeState';
-    const options = Object.keys(BatchChangeState);
-    const defaultValue = BatchChangeState.DRAFT;
-    const batchChangeState = select(label, options, defaultValue)
+    const options = Object.keys(BatchChangeState)
+    const batchChangeState = select('batchChangeState', options, BatchChangeState.DRAFT)
 
     return (
         <WebStory>
