@@ -92,18 +92,18 @@ func setMaxOpenFiles() error {
 	return nil
 }
 
-func checkSgVersion() {
+func checkSgVersion(ctx context.Context) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		// Ignore the error, because we only want to check the version if we're
 		// in sourcegraph/sourcegraph
-		return
+		return nil
 	}
 
 	if BuildCommit == "dev" {
 		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
 		// and we don't need to display this message.
-		return
+		return nil
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
@@ -115,28 +115,31 @@ func checkSgVersion() {
 		os.Exit(1)
 	}
 
+	// Fetch the auto-update setting from the secrets
+
 	out = strings.TrimSpace(out)
 	if out != "" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-
-		err := updateCommand.Exec(context.TODO(), nil)
-		if err != nil {
-			panic(err)
-		}
-
-		sgPath, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(sgPath)
-
-		if err := syscall.Exec(sgPath, os.Args, os.Environ()); err != nil {
-			panic(err)
+		if !getAutoUpdateSetting(ctx) {
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+		} else {
+			stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+			err := updateCommand.Exec(context.TODO(), nil)
+			if err != nil {
+				return err
+			}
+			sgPath, err := os.Executable()
+			if err != nil {
+				return err
+			}
+			if err := syscall.Exec(sgPath, os.Args, os.Environ()); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func loadSecrets() error {
@@ -159,7 +162,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	checkSgVersion()
+	err := checkSgVersion(ctx)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+		os.Exit(1)
+	}
+
 	if *verboseFlag {
 		stdout.Out.SetVerbose()
 	}
