@@ -98,10 +98,7 @@
         "dependenciesSearch": {
           "description": "Enables support for repo:dependencies predicate queries.",
           "type": "string",
-          "enum": [
-            "enabled",
-            "disabled"
-          ],
+          "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
         "andOrQuery": {
