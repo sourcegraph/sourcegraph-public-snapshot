@@ -1,14 +1,14 @@
-import React, { memo, useCallback, useEffect, useState } from 'react'
-
 import { isEqual } from 'lodash'
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ViewGrid } from '../../../../views'
-import { Insight } from '../../core/types'
+import { Insight, InsightsDashboardScope } from '../../core/types'
 import { getTrackingTypeByInsightType } from '../../pings'
 
+import { LockedBanner } from './components/locked-banner/LockedBanner'
 import { SmartInsight } from './components/smart-insight/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
@@ -18,6 +18,7 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
      * insights.
      */
     insights: Insight[]
+    dashboardScope: InsightsDashboardScope
 }
 
 const INSIGHT_PAGE_CONTEXT = {}
@@ -27,19 +28,29 @@ const INSIGHT_PAGE_CONTEXT = {}
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
-    const { telemetryService, insights } = props
+    const { telemetryService, insights, dashboardScope } = props
 
     const [layouts, setLayouts] = useState<Layouts>({})
     const [resizingView, setResizeView] = useState<Layout | null>(null)
 
+    // TODO: remove this once backend starts providing the "locked" value
+    const parsedInsights = useMemo(
+        () =>
+            insights.map((insight, index) => ({
+                ...insight,
+                locked: dashboardScope !== InsightsDashboardScope.Global || index > 2,
+            })),
+        [insights, dashboardScope]
+    )
+
     useEffect(() => {
-        setLayouts(insightLayoutGenerator(insights))
-    }, [insights])
+        setLayouts(insightLayoutGenerator(parsedInsights))
+    }, [parsedInsights])
 
     const trackUICustomization = useCallback(
         (item: Layout) => {
             try {
-                const insight = insights.find(insight => item.i === insight.id)
+                const insight = parsedInsights.find(insight => item.i === insight.id)
 
                 if (insight) {
                     const insightType = getTrackingTypeByInsightType(insight.viewType)
@@ -50,7 +61,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                 // noop
             }
         },
-        [telemetryService, insights]
+        [telemetryService, parsedInsights]
     )
 
     const handleResizeStart = useCallback(
@@ -67,9 +78,9 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
 
     const handleLayoutChange = useCallback(
         (currentLayout: Layout[], allLayouts: Layouts): void => {
-            setLayouts(recalculateGridLayout(allLayouts, insights))
+            setLayouts(recalculateGridLayout(allLayouts, parsedInsights))
         },
-        [insights]
+        [parsedInsights]
     )
 
     return (
@@ -80,7 +91,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
             onDragStart={trackUICustomization}
             onLayoutChange={handleLayoutChange}
         >
-            {insights.map(insight => (
+            {parsedInsights.map(insight => (
                 <SmartInsight
                     key={insight.id}
                     insight={insight}
@@ -90,7 +101,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     // only for the dashboard (insights) page
                     where="insightsPage"
                     context={INSIGHT_PAGE_CONTEXT}
-                    alternate={insight.locked ? <div>Locked</div> : undefined}
+                    alternate={insight.locked ? <LockedBanner /> : undefined}
                 />
             ))}
         </ViewGrid>

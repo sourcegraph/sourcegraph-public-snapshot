@@ -5,6 +5,7 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
+import { parseDashboardScope } from '../../../../../../../core/backend/utils/parse-dashboard-scope'
 import { InsightDashboard } from '../../../../../../../core/types'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
@@ -28,10 +29,16 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
         return <LoadingSpinner inline={false} />
     }
 
+    const dashboardScope = parseDashboardScope(dashboard.grants)
+
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
             {insights.length > 0 ? (
-                <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
+                <SmartInsightsViewGrid
+                    insights={insights}
+                    telemetryService={telemetryService}
+                    dashboardScope={dashboardScope}
+                />
             ) : (
                 <EmptyInsightDashboard dashboard={dashboard} onAddInsight={onAddInsightRequest} />
             )}
