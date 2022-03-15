@@ -115,8 +115,6 @@ func checkSgVersion(ctx context.Context) error {
 		os.Exit(1)
 	}
 
-	// Fetch the auto-update setting from the secrets
-
 	out = strings.TrimSpace(out)
 	if out != "" {
 		if !getAutoUpdateSetting(ctx) {
