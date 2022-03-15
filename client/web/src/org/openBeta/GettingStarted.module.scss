@@ -1,0 +1,44 @@
+.entry-items {
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    li {
+        display: flex;
+        gap: 1rem;
+        &:first-child {
+            border-top: unset;
+        }
+        list-style: none;
+        padding: 0.8rem 1.5rem;
+        border-top: 1px solid var(--border-color-2);
+
+        h3 {
+            margin: 0;
+        }
+    }
+}
+
+.entry-item {
+    width: 100%;
+}
+
+.box-container {
+    padding: 0 !important;
+}
+
+.icon-muted {
+    color: var(--icon-color);
+    opacity: 0.4;
+}
+
+.icon-container {
+    width: 1rem;
+}
+
+.step-text {
+    flex: 1;
+}
+
+.link-container {
+    width: 1rem;
+}

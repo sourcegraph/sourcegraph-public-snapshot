@@ -135,6 +135,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 type: 'org',
                                                 name: props.org.displayName || props.org.name,
                                             }}
+                                            onRefreshOrg={props.onOrganizationUpdate}
                                             context={window.context}
                                             routingPrefix={`${props.org.url}/settings`}
                                             telemetryService={props.telemetryService}
@@ -155,6 +156,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 type: 'org',
                                                 name: props.org.displayName || props.org.name,
                                             }}
+                                            onRefreshOrg={props.onOrganizationUpdate}
                                             routingPrefix={`${props.org.url}/settings`}
                                             onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                         />

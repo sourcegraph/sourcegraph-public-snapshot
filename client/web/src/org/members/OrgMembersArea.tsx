@@ -48,7 +48,11 @@ export const OrgMembersArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <OrgMembersListPage {...routeComponentProps} {...props} />
+                                    <OrgMembersListPage
+                                        {...routeComponentProps}
+                                        {...props}
+                                        onRefreshOrg={props.onOrganizationUpdate}
+                                    />
                                 )}
                             />
                             <Route

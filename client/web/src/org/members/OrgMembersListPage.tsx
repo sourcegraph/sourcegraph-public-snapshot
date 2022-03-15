@@ -38,7 +38,9 @@ import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } fro
 import styles from './OrgMembersListPage.module.scss'
 import { getPaginatedItems, OrgMemberNotification } from './utils'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+    onRefreshOrg: () => void
+}
 interface Member {
     id: string
     username: string
@@ -168,7 +170,7 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser, onRefreshOrg }) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [notification, setNotification] = useState<string>()
     const [page, setPage] = useState(1)
@@ -205,8 +207,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
         async (username: string) => {
             setNotification(`You succesfully added ${username} to ${org.name}`)
             await onShouldRefetch()
+            onRefreshOrg()
         },
-        [setNotification, onShouldRefetch, org.name]
+        [setNotification, onShouldRefetch, org.name, onRefreshOrg]
     )
 
     const onMemberRemoved = useCallback(
@@ -214,8 +217,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
             setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
             setPage(1)
             await onShouldRefetch()
+            onRefreshOrg()
         },
-        [setNotification, onShouldRefetch, org.name]
+        [setNotification, onShouldRefetch, org.name, onRefreshOrg]
     )
 
     const onNotificationDismiss = useCallback(() => {

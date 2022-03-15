@@ -9,7 +9,7 @@ import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaPageProps } from './OrgArea'
+import { OrgAreaPageProps, OrgGetStartedInfo } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     isSourcegraphDotCom: boolean
@@ -20,6 +20,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
 export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
     newMembersInviteEnabled: boolean
+    getStartedInfo: OrgGetStartedInfo
 }
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {
@@ -39,6 +40,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
     className = '',
     isSourcegraphDotCom,
     newMembersInviteEnabled,
+    getStartedInfo,
 }) => {
     const context = {
         batchChangesEnabled,
@@ -47,6 +49,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
         org,
         isSourcegraphDotCom,
         newMembersInviteEnabled,
+        getStartedInfo,
     }
 
     return (
@@ -76,7 +79,15 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true, isActive }) =>
+                                    ({
+                                        to,
+                                        label,
+                                        exact,
+                                        icon: Icon,
+                                        condition = () => true,
+                                        isActive,
+                                        dynamicLabel,
+                                    }) =>
                                         condition(context) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
@@ -93,7 +104,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                                     <span>
                                                         {Icon && <Icon className="icon-inline" />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
-                                                            {label}
+                                                            {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>
                                                     </span>
                                                 </NavLink>

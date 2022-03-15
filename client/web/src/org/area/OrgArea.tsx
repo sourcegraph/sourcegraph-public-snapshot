@@ -22,12 +22,16 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
+    Maybe,
     OrganizationResult,
     OrganizationVariables,
     OrgAreaOrganizationFields,
     OrgFeatureFlagValueResult,
     OrgFeatureFlagValueVariables,
+    OrgGetStartedResult,
+    OrgGetStartedVariables,
 } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
@@ -97,6 +101,64 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
     )
 }
 
+export interface OrgGetStartedInfo {
+    membersSummary: {
+        id: string
+        username: string
+        displayName: Maybe<string>
+        avatarURL: Maybe<string>
+    }[]
+    reposCount: number
+    servicesCount: number
+    openBetaEnabled: boolean
+}
+
+function queryOrgGetStarted(args: { orgID: string; openBetaEnabled: boolean }): Observable<OrgGetStartedInfo> {
+    return requestGraphQL<OrgGetStartedResult, OrgGetStartedVariables>(
+        gql`
+            query OrgGetStarted($orgID: ID!) {
+                autocompleteMembersSearch(organization: $orgID, query: "") {
+                    id
+                    username
+                    displayName
+                    avatarURL
+                }
+                repoCount: node(id: $orgID) {
+                    ... on Org {
+                        total: repositories(cloned: true, notCloned: true) {
+                            totalCount(precise: true)
+                        }
+                    }
+                }
+                extServices: externalServices(namespace: $orgID) {
+                    totalCount
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            const result = data as {
+                autocompleteMembersSearch: {
+                    id: string
+                    username: string
+                    displayName: Maybe<string>
+                    avatarURL: Maybe<string>
+                }[]
+                repoCount: { total: { totalCount: number } }
+                extServices: { totalCount: number }
+            }
+            return {
+                membersSummary: result.autocompleteMembersSearch,
+                reposCount: result.repoCount.total.totalCount,
+                servicesCount: result.extServices.totalCount,
+                openBetaEnabled: args.openBetaEnabled,
+            }
+        })
+    )
+}
+
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
@@ -114,6 +176,7 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        FeatureFlagProps,
         ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -132,6 +195,7 @@ interface State extends BreadcrumbSetters {
      */
     orgOrError?: OrgAreaOrganizationFields | ErrorLike
     newMembersInviteEnabled: boolean
+    getStartedInfo: OrgGetStartedInfo
 }
 
 /**
@@ -159,6 +223,7 @@ export interface OrgAreaPageProps
     isSourcegraphDotCom: boolean
 
     newMembersInviteEnabled: boolean
+    getStartedInfo: OrgGetStartedInfo
 }
 
 /**
@@ -177,6 +242,12 @@ export class OrgArea extends React.Component<Props> {
             setBreadcrumb: props.setBreadcrumb,
             useBreadcrumb: props.useBreadcrumb,
             newMembersInviteEnabled: false,
+            getStartedInfo: {
+                membersSummary: [],
+                servicesCount: 0,
+                reposCount: 0,
+                openBetaEnabled: !!props.featureFlags.get('open-beta-enabled'),
+            },
         }
     }
 
@@ -221,6 +292,30 @@ export class OrgArea extends React.Component<Props> {
                         )
                     })
                 )
+                .pipe(
+                    switchMap(state => {
+                        const openBetaEnabled = !!this.props.featureFlags.get('open-beta-enabled')
+                        const orgGetStartedObservable =
+                            state.orgOrError && !isErrorLike(state.orgOrError) && openBetaEnabled
+                                ? queryOrgGetStarted({
+                                      orgID: state.orgOrError.id,
+                                      openBetaEnabled,
+                                  })
+                                : of(this.state.getStartedInfo)
+                        return orgGetStartedObservable.pipe(
+                            catchError((): [OrgGetStartedInfo] => [this.state.getStartedInfo]), // set flag to false in case of error reading it
+                            map(getStartedInfo =>
+                                !state.orgOrError
+                                    ? { getStartedInfo, newMembersInviteEnabled: state.newMembersInviteEnabled }
+                                    : {
+                                          orgOrError: state.orgOrError,
+                                          getStartedInfo,
+                                          newMembersInviteEnabled: state.newMembersInviteEnabled,
+                                      }
+                            )
+                        )
+                    })
+                )
                 .subscribe(
                     stateUpdate => {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
@@ -234,6 +329,7 @@ export class OrgArea extends React.Component<Props> {
                                 setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
                                 newMembersInviteEnabled: stateUpdate.newMembersInviteEnabled,
+                                getStartedInfo: stateUpdate.getStartedInfo,
                             })
                         } else {
                             this.setState(stateUpdate)
@@ -286,6 +382,7 @@ export class OrgArea extends React.Component<Props> {
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
             newMembersInviteEnabled: this.state.newMembersInviteEnabled,
+            getStartedInfo: this.state.getStartedInfo,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
