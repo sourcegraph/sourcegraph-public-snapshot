@@ -107,7 +107,6 @@ func checkSgVersion(ctx context.Context) error {
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
-
 	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
 		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
@@ -116,26 +115,27 @@ func checkSgVersion(ctx context.Context) error {
 	}
 
 	out = strings.TrimSpace(out)
-	if out != "" {
-		if !getAutoUpdateSetting(ctx) {
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
-		} else {
-			stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-			err := updateCommand.Exec(context.TODO(), nil)
-			if err != nil {
-				return err
-			}
-			sgPath, err := os.Executable()
-			if err != nil {
-				return err
-			}
-			if err := syscall.Exec(sgPath, os.Args, os.Environ()); err != nil {
-				return err
-			}
+	if out == "" {
+		// No newer commits found. sg is up to date.
+		return nil
+	}
+
+	if !getAutoUpdateSetting(ctx) {
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+	} else {
+		stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+		err := updateCommand.Exec(ctx, nil)
+		if err != nil {
+			return err
 		}
+		sgPath, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		return syscall.Exec(sgPath, os.Args, os.Environ())
 	}
 	return nil
 }
@@ -162,7 +162,7 @@ func main() {
 
 	err := checkSgVersion(ctx)
 	if err != nil {
-		fmt.Printf("error: %s\n", err)
+		fmt.Printf("checking sg version failed: %s\n", err)
 		os.Exit(1)
 	}
 
