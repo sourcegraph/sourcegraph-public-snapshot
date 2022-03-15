@@ -1,0 +1,30 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin: 0.5rem 2rem auto 2rem;
+    max-height: 186px;
+}
+
+.icon {
+    color: var(--icon-color);
+    margin-bottom: 1rem;
+}
+
+.label {
+    font-size: 0.75rem;
+    letter-spacing: (0.25/14) + em;
+    text-transform: uppercase;
+    color: var(--purple-03);
+    border-right: solid 1px var(--purple-03);
+    padding-right: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.message {
+    color: var(--text-muted);
+}
