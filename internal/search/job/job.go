@@ -373,6 +373,19 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 
 	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
 
+	args := search.TextParameters{
+		PatternInfo: p,
+		Query:       q,
+		Features:    toFeatures(jargs.SearchInputs.Features),
+		Timeout:     search.TimeoutDuration(b),
+
+		// UseFullDeadline if timeout: set or we are streaming.
+		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
+
+		Zoekt:        jargs.Zoekt,
+		SearcherURLs: jargs.SearcherURLs,
+	}
+
 	forceResultTypes := result.TypeEmpty
 	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
 		if p.Pattern == "" {
@@ -386,19 +399,7 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 		}
 	}
 
-	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       q,
-		Features:    toFeatures(jargs.SearchInputs.Features),
-		Timeout:     search.TimeoutDuration(b),
-
-		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
-
-		Zoekt:        jargs.Zoekt,
-		SearcherURLs: jargs.SearcherURLs,
-	}
-	args = withResultTypes(args, forceResultTypes)
+	args.ResultTypes = computeResultTypes(args, forceResultTypes)
 	return args, nil
 }
 
@@ -517,7 +518,7 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 
 // withResultTypes populates the ResultTypes field of args, which drives the kind
 // of search to run (e.g., text search, symbol search).
-func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
+func computeResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
 	var rts result.Types
 	if forceTypes != 0 {
 		rts = forceTypes
@@ -539,8 +540,7 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 	if rts.Has(result.TypePath) {
 		args.PatternInfo.PatternMatchesPath = true
 	}
-	args.ResultTypes = rts
-	return args
+	return rts
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
