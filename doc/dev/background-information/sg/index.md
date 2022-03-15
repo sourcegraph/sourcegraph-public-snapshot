@@ -104,7 +104,7 @@ Then make sure that `~/my/path` is in your `$PATH`.
 
 Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
 
-To force a manuat update of `sg`, run:
+To force a manual update of `sg`, run:
 
 ```sh
 sg update
