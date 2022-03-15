@@ -68,10 +68,12 @@
     },
     "phabricatorMetadataCommand": {
       "description": "This is DEPRECATED",
+      "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
       "type": "string"
     },
     "phabricator": {
       "description": "This is DEPRECATED",
+      "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
       "type": "object",
       "required": ["url", "callsignCommand"],
       "additionalProperties": false,
