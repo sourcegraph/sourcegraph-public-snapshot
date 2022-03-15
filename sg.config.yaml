@@ -198,7 +198,9 @@ commands:
       - cmd/worker
 
   enterprise-worker:
-    cmd: .bin/worker
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/worker
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
