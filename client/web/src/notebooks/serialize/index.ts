@@ -168,7 +168,7 @@ export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
         case 'symbol':
             return { id: block.id, type: NotebookBlockType.SYMBOL, symbolInput: block.input }
         case 'compute':
-            throw new Error('Unreachable: Compute block deserialization not supported yet.')
+            return { id: block.id, type: NotebookBlockType.COMPUTE, computeInput: block.input }
     }
 }
 
@@ -189,6 +189,12 @@ export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInp
                 id: block.id,
                 type: NotebookBlockType.SYMBOL,
                 symbolInput: block.symbolInput,
+            }
+        case 'ComputeBlock':
+            return {
+                id: block.id,
+                type: NotebookBlockType.COMPUTE,
+                computeInput: block.computeInput,
             }
     }
 }
