@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import React, { useCallback, useEffect } from 'react'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, Toggles } from '@sourcegraph/search-ui'
@@ -14,10 +15,11 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
-import searchBoxStyle from '../input/SearchBox.module.scss'
-import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
+
+import searchBoxStyle from '../input/SearchBox.module.scss'
+import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
 import styles from './NoResultsPage.module.scss'
 
 const noop = (): void => {}

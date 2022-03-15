@@ -10,5 +10,8 @@ snapshot:
     .percy-inactive-element {
       pointer-events: none !important;
     }
+    .percy-display-none {
+      display: none !important;
+    }
 discovery:
   disable-cache: true

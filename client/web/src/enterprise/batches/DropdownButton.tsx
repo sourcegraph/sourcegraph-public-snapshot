@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import VisuallyHidden from '@reach/visually-hidden'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
     ProductStatusBadge,

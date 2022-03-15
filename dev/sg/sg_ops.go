@@ -37,7 +37,7 @@ var (
 		Name:        "update-images",
 		ShortUsage:  "sg ops update-images [flags] <dir>",
 		ShortHelp:   "Updates images in given directory to latest published image",
-		LongHelp:    "Updates images in given directory to latest published image",
+		LongHelp:    "Updates images in given directory to latest published image.\nEx: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`",
 		UsageFunc:   nil,
 		FlagSet:     opsUpdateImagesFlagSet,
 		Options:     nil,
@@ -68,19 +68,22 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
-	var dockerCredentials *credentials.Credentials
+	dockerCredentials := &credentials.Credentials{
+		ServerURL: "https://index.docker.io/v1/",
+		Username:  *opsUpdateImagesContainerRegistryUsernameFlag,
+		Secret:    *opsUpdateImagesContainerRegistryPasswordFlag,
+	}
 	var err error
 	if *opsUpdateImagesContainerRegistryUsernameFlag == "" || *opsUpdateImagesContainerRegistryPasswordFlag == "" {
-		dockerCredentials, err = docker.GetCredentialsFromStore("https://index.docker.io/v1/")
+		dockerCredentials, err = docker.GetCredentialsFromStore(dockerCredentials.ServerURL)
 		if err != nil {
 			// We do not want any error handling here, just fallback to anonymous requests
 			writeWarningLinef("Registry credentials are not provided and could not be retrieved from docker config.")
 			writeWarningLinef("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
-			dockerCredentials = &credentials.Credentials{ServerURL: "https://index.docker.io/v1/", Username: "", Secret: ""}
+			dockerCredentials.Username = ""
+			dockerCredentials.Secret = ""
 		} else {
 			writeFingerPointingLinef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
-			opsUpdateImagesContainerRegistryUsernameFlag = &dockerCredentials.Username
-			opsUpdateImagesContainerRegistryPasswordFlag = &dockerCredentials.Secret
 		}
 	}
 

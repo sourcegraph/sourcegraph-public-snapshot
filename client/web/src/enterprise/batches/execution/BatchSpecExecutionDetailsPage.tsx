@@ -1,7 +1,8 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
 import { NavLink as RouterLink } from 'react-router-dom'
 
@@ -9,6 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -40,10 +42,11 @@ import { BatchSpec } from '../BatchSpec'
 import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
 import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
-import styles from './BatchSpecExecutionDetailsPage.module.scss'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { WorkspacesList } from './WorkspacesList'
+
+import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
 export interface BatchSpecExecutionDetailsPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchSpecID: Scalars['ID']
@@ -343,6 +346,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLig
     </div>
 )
 
+const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
+
 interface ExecutionPageProps extends ThemeProps {
     batchSpec: BatchSpecExecutionFields
 }
@@ -360,12 +365,24 @@ const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ batchSpec,
         <>
             {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
             <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
-                <div className={classNames(styles.workspacesListContainer, 'd-flex flex-column')}>
-                    <h3 className="mb-2">Workspaces</h3>
-                    <div className={styles.workspacesList}>
-                        <WorkspacesList batchSpecID={batchSpec.id} selectedNode={selectedWorkspace ?? undefined} />
-                    </div>
-                </div>
+                <Resizable
+                    defaultSize={500}
+                    minSize={405}
+                    maxSize={1400}
+                    handlePosition="right"
+                    storageKey={WORKSPACES_LIST_SIZE}
+                    element={
+                        <div className="w-100 d-flex flex-column">
+                            <h3 className="mb-2">Workspaces</h3>
+                            <div className={styles.workspacesList}>
+                                <WorkspacesList
+                                    batchSpecID={batchSpec.id}
+                                    selectedNode={selectedWorkspace ?? undefined}
+                                />
+                            </div>
+                        </div>
+                    }
+                />
                 <div className="d-flex flex-grow-1">
                     <div className="d-flex overflow-auto w-100">
                         <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />

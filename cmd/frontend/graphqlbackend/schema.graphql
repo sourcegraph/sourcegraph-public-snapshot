@@ -87,7 +87,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String): Org!
+    createOrganization(name: String!, displayName: String, statsID: ID): Org!
     """
     Updates an organization.
 
@@ -879,6 +879,7 @@ enum EventSource {
     CODEHOSTINTEGRATION
     BACKEND
     STATICWEB
+    IDEEXTENSION
 }
 
 """
@@ -3174,7 +3175,6 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -4175,8 +4175,6 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4240,7 +4238,6 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4342,7 +4339,6 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule

@@ -79,7 +79,7 @@ func isPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) (o
 //    the JDK or whether it's a regular Maven artifact. For the JDK, lsif-java
 //    has a special case to emit "export" monikers instead of "import".
 //
-//    This doesn't apply to JS/S because there is no special NPM module
+//    This doesn't apply to JS/S because there is no special npm module
 //    analogous to the JDK.
 //
 // 3. The lsif-java.json file is used as a marker file to enable inference

@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'

@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
+
+import * as H from 'history'
 import { Subject } from 'rxjs'
 import { withLatestFrom, map, filter } from 'rxjs/operators'
 
@@ -44,7 +45,6 @@ import {
     CHANGESETS,
 } from '../backend'
 
-import styles from './BatchChangeChangesets.module.scss'
 import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { ChangesetNode } from './ChangesetNode'
@@ -52,6 +52,8 @@ import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
+
+import styles from './BatchChangeChangesets.module.scss'
 
 interface Props
     extends ThemeProps,

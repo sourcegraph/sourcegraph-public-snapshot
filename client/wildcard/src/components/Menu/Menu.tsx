@@ -1,6 +1,7 @@
+import React, { ComponentType, forwardRef } from 'react'
+
 import { Menu as ReachMenu, MenuProps as ReachMenuProps } from '@reach/menu-button'
 import { isFunction, noop } from 'lodash'
-import React, { ComponentType, forwardRef } from 'react'
 
 import { ForwardReferenceComponent } from '../..'
 import { Popover } from '../Popover'

@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -9,7 +11,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { delay, repeatWhen } from 'rxjs/operators'
 
@@ -51,8 +52,9 @@ import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFi
 
 import { fetchBatchSpecWorkspace, queryBatchSpecWorkspaceStepFileDiffs, retryWorkspaceExecution } from './backend'
 import { TimelineModal } from './TimelineModal'
-import styles from './WorkspaceDetails.module.scss'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
+
+import styles from './WorkspaceDetails.module.scss'
 
 export interface WorkspaceDetailsProps extends ThemeProps {
     id: Scalars['ID']

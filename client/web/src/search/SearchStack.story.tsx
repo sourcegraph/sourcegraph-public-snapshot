@@ -1,6 +1,7 @@
+import React, { useEffect } from 'react'
+
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 import { noop } from 'lodash'
-import React, { useEffect } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 

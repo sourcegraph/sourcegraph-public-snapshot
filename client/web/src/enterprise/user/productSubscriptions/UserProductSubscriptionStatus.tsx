@@ -1,6 +1,7 @@
+import React, { useState, useCallback } from 'react'
+
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
-import React, { useState, useCallback } from 'react'
 
 import { Button, CardFooter, Link, Icon } from '@sourcegraph/wildcard'
 

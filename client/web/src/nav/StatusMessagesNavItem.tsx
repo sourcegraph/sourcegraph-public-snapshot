@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
@@ -6,7 +8,6 @@ import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
 import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
-import React from 'react'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 

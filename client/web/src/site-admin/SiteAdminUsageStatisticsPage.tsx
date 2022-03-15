@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import format from 'date-fns/format'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
@@ -17,6 +18,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+
 import styles from './SiteAdminUsageStatisticsPage.module.scss'
 
 interface ChartData {

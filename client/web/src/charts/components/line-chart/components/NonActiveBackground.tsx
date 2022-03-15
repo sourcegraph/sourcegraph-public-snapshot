@@ -1,6 +1,7 @@
+import React, { ReactElement, useMemo } from 'react'
+
 import { AxisScale } from '@visx/axis/lib/types'
 import { PatternLines } from '@visx/pattern'
-import React, { ReactElement, useMemo } from 'react'
 
 import { LineChartSeries } from '../types'
 import { isValidNumber } from '../utils/data-guards'

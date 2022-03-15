@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,9 +16,10 @@ import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
 } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
-import styles from './LangStatsInsightCreationPage.module.scss'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
+
+import styles from './LangStatsInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
     insight: LangStatsInsight

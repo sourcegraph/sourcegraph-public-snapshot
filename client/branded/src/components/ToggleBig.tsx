@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
-import * as React from 'react'
 
 import styles from './ToggleBig.module.scss'
 

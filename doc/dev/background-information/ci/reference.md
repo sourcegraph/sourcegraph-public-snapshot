@@ -139,7 +139,7 @@ Default pipeline:
 - E2E for chrome extension
 - Extension release
 - Extension release
-- NPM Release
+- npm Release
 - Upload build trace
 
 ### Main branch

@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react'
+
 import { StoreApi, UseBoundStore } from 'zustand'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'

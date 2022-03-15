@@ -1,9 +1,10 @@
+import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
+
 import { useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Alert, Button, ButtonProps, Modal } from '@sourcegraph/wildcard'
@@ -13,8 +14,9 @@ import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } fro
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
-import styles from './InviteMemberModal.module.scss'
 import { AutocompleteSearchUsers } from './SearchUserAutocomplete'
+
+import styles from './InviteMemberModal.module.scss'
 
 export interface IModalInviteResult {
     username: string

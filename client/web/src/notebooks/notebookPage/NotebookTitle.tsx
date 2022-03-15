@@ -1,6 +1,7 @@
+import React, { useEffect, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
-import React, { useEffect, useRef, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useOnClickOutside } from '@sourcegraph/wildcard'

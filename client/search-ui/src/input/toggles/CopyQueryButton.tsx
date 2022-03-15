@@ -1,8 +1,9 @@
+import React, { useCallback, useRef, useEffect } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ClipboardOutlineIcon from 'mdi-react/ClipboardOutlineIcon'
-import React, { useCallback, useRef, useEffect } from 'react'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
