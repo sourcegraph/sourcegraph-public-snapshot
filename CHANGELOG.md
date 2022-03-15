@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Pings now include IDE extensions usage metrics [#32000](https://github.com/sourcegraph/sourcegraph/pull/32000)
 - New EventSource type: `IDEEXTENSION` for IDE extensions-related events [#32000](https://github.com/sourcegraph/sourcegraph/pull/32000)
 - Code Monitoring now has a Logs tab enabled as a [beta feature](https://docs.sourcegraph.com/admin/beta_and_experimental_features). This lets you see recent runs of your code monitors and determine if any notifications were sent or if there were any errors during the run. [#32292](https://github.com/sourcegraph/sourcegraph/pull/32292)
+- New `repo:dependencies(...)` predicate allows you to [search through the dependencies of your repositories](https://docs.sourcegraph.com/code_search/how-to/dependencies_search). This feature is currently in beta and only npm package repositories are supported with dependencies from `package-lock.json` and `yarn.lock` files. [#32405](https://github.com/sourcegraph/sourcegraph/issues/32405)
 
 ### Changed
 
@@ -32,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Timestamps in the webapp will now display local time on hover instead of UTC time [#31672](https://github.com/sourcegraph/sourcegraph/pull/31672)
 - Updated Postgres version from 12.6 to 12.7 [#31933](https://github.com/sourcegraph/sourcegraph/pull/31933)
 - Code Insights will now periodically clean up data series that are not in use. There is a 1 hour grace period where the series can be reattached to a view, after which all of the time series data and metadata will be deleted. [#32094](https://github.com/sourcegraph/sourcegraph/pull/32094)
+- The Phabricator integration with Gitolite code hosts has been deprecated, the fields have been kept to not break existing systems, but the integration does not work anymore
 
 ### Fixed
 
@@ -40,7 +42,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
 - The deprecated GraphQL field `SearchResults.resultCount` has been removed in favor of its replacement, `matchCount`. [#31573](https://github.com/sourcegraph/sourcegraph/pull/31573)
 - The deprecated site-config field `UseJaeger` has been removed. Use `"observability.tracing": { "sampling": "all" }` instead [#31294](https://github.com/sourcegraph/sourcegraph/pull/31294/commits/6793220d6cf1200535a2610d79d2dd9e18c67dca)
 

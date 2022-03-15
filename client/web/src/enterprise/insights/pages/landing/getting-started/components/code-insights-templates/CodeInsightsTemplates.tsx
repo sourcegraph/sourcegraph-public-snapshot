@@ -1,6 +1,7 @@
+import React, { MouseEvent, useContext, useMemo, useState } from 'react'
+
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { MouseEvent, useContext, useMemo, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -31,8 +32,9 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import styles from './CodeInsightsTemplates.module.scss'
 import { Template, TEMPLATE_SECTIONS } from './constants'
+
+import styles from './CodeInsightsTemplates.module.scss'
 
 function getTemplateURL(template: Template): string {
     switch (template.type) {

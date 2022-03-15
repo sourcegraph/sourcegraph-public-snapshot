@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback } from 'react'
+
+import * as H from 'history'
 import { map } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -12,6 +13,7 @@ import { GettingStarted } from '../list/GettingStarted'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
+
 import styles from './RepoBatchChanges.module.scss'
 
 interface Props extends ThemeProps {

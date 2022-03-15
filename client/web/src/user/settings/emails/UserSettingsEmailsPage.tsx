@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -15,6 +16,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
 import { UserEmail } from './UserEmail'
+
 import styles from './UserSettingsEmailsPage.module.scss'
 
 interface Props {

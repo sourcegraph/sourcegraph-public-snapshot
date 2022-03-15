@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { CardBody, Card } from '@sourcegraph/wildcard'

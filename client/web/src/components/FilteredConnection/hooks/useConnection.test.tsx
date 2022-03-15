@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
-import React from 'react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'

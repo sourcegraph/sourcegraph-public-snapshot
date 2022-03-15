@@ -1,13 +1,15 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React from 'react'
 
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
-import styles from './CloudSignUpPage.module.scss'
 import { maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
+
+import styles from './CloudSignUpPage.module.scss'
 
 interface ExternalsAuthProps {
     context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>

@@ -1,8 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React from 'react'
 
 import { Icon, Link } from '@sourcegraph/wildcard'
 

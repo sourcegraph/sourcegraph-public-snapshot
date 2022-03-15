@@ -1,5 +1,6 @@
-import { noop } from 'lodash'
 import React, { useMemo } from 'react'
+
+import { noop } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -61,6 +62,12 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
                             id: block.id,
                             type: 'symbol',
                             input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
+                        }
+                    case 'ComputeBlock':
+                        return {
+                            id: block.id,
+                            type: 'compute',
+                            input: block.computeInput,
                         }
                 }
             }),

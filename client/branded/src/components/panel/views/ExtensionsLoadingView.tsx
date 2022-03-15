@@ -1,5 +1,6 @@
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
+
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 

@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react'
+
 import { MultiValueGenericProps } from 'react-select'
 
 import { MultiSelectOption } from './types'

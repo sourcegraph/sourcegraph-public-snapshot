@@ -1,9 +1,11 @@
-import { Meta } from '@storybook/react'
 import React, { useState } from 'react'
+
+import { Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 
 import { FloatingPanel } from './FloatingPanel'
+
 import styles from './FloatingPanel.story.module.scss'
 
 export default {

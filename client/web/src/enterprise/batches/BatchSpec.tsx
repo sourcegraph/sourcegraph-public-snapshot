@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import { kebabCase } from 'lodash'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-import React, { useMemo } from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, Icon } from '@sourcegraph/wildcard'

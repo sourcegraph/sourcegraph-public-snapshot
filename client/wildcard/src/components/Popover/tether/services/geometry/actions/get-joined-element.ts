@@ -21,6 +21,7 @@ import { POSITION_VARIANTS } from '../constants'
  * │                └──────┘        │               └───────────┘
  *  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
  *```
+ *
  * @param element - Tooltip element rectangle
  * @param target - Target element rectangle
  * @param position - Desirable tooltip position
