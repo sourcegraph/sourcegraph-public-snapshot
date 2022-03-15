@@ -159,7 +159,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         }
 
                         // Replace html with lsif generated HTML, if available
-                        if (blob.highlight.lsif) {
+                        if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
                             blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
                         }
 
