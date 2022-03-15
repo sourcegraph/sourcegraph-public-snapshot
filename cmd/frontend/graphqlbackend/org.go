@@ -253,7 +253,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := database.Orgs(r.db).Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := r.db.Orgs().Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -261,14 +261,14 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	// Write the org_id into orgs open beta stats table on Cloud
 	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
 		// we do not throw errors here as this is best effort
-		err = database.Orgs(r.db).UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
+		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
 		if err != nil {
 			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
 		}
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = database.OrgMembers(r.db).Create(ctx, newOrg.ID, a.UID)
+	_, err = r.db.OrgMembers().Create(ctx, newOrg.ID, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +401,7 @@ func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct 
 		return nil, errors.New("must supply valid json")
 	}
 
-	id, err := database.Orgs(r.db).AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
+	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
 	if err != nil {
 		return nil, err
 	}
