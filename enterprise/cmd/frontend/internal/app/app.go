@@ -168,13 +168,6 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		err = backend.CheckOrgAccess(r.Context(), db, orgID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))
-			return
-		}
-
 		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
@@ -182,11 +175,17 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		var svc *types.ExternalService
-		if setupAction == "request" {
+		err = backend.CheckOrgAccess(r.Context(), db, orgID)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))
+			return
+		}
 
-			displayName := "GitHub"
-			now := time.Now()
+		var svc *types.ExternalService
+		displayName := "GitHub"
+		now := time.Now()
+		if setupAction == "request" {
 
 			if len(svcs) == 0 {
 				svc = &types.ExternalService{
@@ -243,11 +242,9 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			return
 		}
 
-		displayName := "GitHub"
 		if ins.Account.Login != nil {
 			displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
 		}
-		now := time.Now()
 
 		if len(svcs) == 0 {
 			svc = &types.ExternalService{
