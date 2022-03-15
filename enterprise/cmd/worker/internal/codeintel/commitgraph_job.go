@@ -70,7 +70,8 @@ func (j *commitGraphJob) Routines(ctx context.Context) ([]goroutine.BackgroundRo
 	}, func() float64 {
 		age, err := dbStore.MaxStaleAge(context.Background())
 		if err != nil {
-			log15.Error("Failed to determine stale commit graph age", "err", err)
+			log15.Error("Failed to determine stale commit graph age", "error", err)
+			return 0
 		}
 
 		return float64(age) / float64(time.Second)

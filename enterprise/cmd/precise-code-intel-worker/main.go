@@ -37,7 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -111,7 +111,7 @@ func main() {
 	}
 
 	// Initialize metrics
-	mustRegisterQueueMetric(observationContext, workerStore)
+	dbworker.InitPrometheusMetric(observationContext, workerStore, "codeintel", "upload", nil)
 
 	// Initialize worker
 	worker := worker.NewWorker(
@@ -173,32 +173,6 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	}
 
 	return db
-}
-
-func mustRegisterQueueMetric(observationContext *observation.Context, workerStore dbworkerstore.Store) {
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_total",
-		Help: "Total number of uploads in the queued state.",
-	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false, nil)
-		if err != nil {
-			log15.Error("Failed to determine queue size", "err", err)
-		}
-
-		return float64(count)
-	}))
-
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_queued_duration_seconds_total",
-		Help: "The maximum amount of time an upload has been sitting in the queue.",
-	}, func() float64 {
-		age, err := workerStore.MaxDurationInQueue(context.Background())
-		if err != nil {
-			log15.Error("Failed to determine queued duration", "err", err)
-		}
-
-		return float64(age) / float64(time.Second)
-	}))
 }
 
 func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {
