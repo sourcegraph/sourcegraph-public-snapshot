@@ -122,8 +122,10 @@ func (h *HighlightedCode) HTML() (template.HTML, error) {
 	return DocumentToHTML(h.code, h.document)
 }
 
-func (h *HighlightedCode) SetHTML(html template.HTML) {
-	h.html = html
+func NewHighlightedCodeWithHTML(html template.HTML) HighlightedCode {
+	return HighlightedCode{
+		html: html,
+	}
 }
 
 func (h *HighlightedCode) LSIF() *lsiftyped.Document {
@@ -133,9 +135,9 @@ func (h *HighlightedCode) LSIF() *lsiftyped.Document {
 // SplitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func (h *HighlightedCode) SplitHighlightedLines(wholeRow bool) ([]template.HTML, error) {
+func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]template.HTML, error) {
 	if h.document != nil {
-		return DocumentToSplitHTML(h.code, h.document, wholeRow)
+		return DocumentToSplitHTML(h.code, h.document, includeLineNumbers)
 	}
 
 	input, err := h.HTML()
@@ -160,7 +162,7 @@ func (h *HighlightedCode) SplitHighlightedLines(wholeRow bool) ([]template.HTML,
 	tr := table.FirstChild.FirstChild // table > tbody > tr
 	for tr != nil {
 		var render *html.Node
-		if wholeRow {
+		if includeLineNumbers {
 			render = tr
 		} else {
 			render = tr.LastChild.FirstChild // tr > td > div
@@ -177,7 +179,7 @@ func (h *HighlightedCode) SplitHighlightedLines(wholeRow bool) ([]template.HTML,
 	return lines, nil
 }
 
-// TODO: A bit weird that it's string and not template.HTML...
+// TODO(tjdevries): A bit weird that it's string and not template.HTML...
 func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
 	maxLines := len(strings.Split(h.code, "\n"))
 
@@ -582,7 +584,6 @@ type LineRange struct {
 //
 // Input line ranges will automatically be clamped within the bounds of the file.
 func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
-	// TODO: HACK
 	response := &HighlightedCode{
 		html: html,
 	}

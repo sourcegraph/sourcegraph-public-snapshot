@@ -719,15 +719,13 @@ func TestFileDiffHighlighter(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
 
 	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
-		response := &highlight.HighlightedCode{}
-
 		switch p.Filepath {
 		case file1.path:
-			response.SetHTML(template.HTML(highlightedOld))
-			return response, false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedOld))
+			return &response, false, nil
 		case file2.path:
-			response.SetHTML(template.HTML(highlightedNew))
-			return response, false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedNew))
+			return &response, false, nil
 		default:
 			return nil, false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
