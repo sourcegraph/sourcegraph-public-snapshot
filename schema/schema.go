@@ -1630,7 +1630,7 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// ShowSearchNotebook description: Enables the search notebook at search/notebook
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
-	// TreeSitterEnabled description: Enables tree sitter for enabled filetypes
+	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }
 
@@ -1814,6 +1814,8 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
+	// SyntaxHighlighting description: Syntax highlighting configuration
+	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins
@@ -1846,6 +1848,30 @@ type SubRepoPermissions struct {
 	UserCacheSize int `json:"userCacheSize,omitempty"`
 	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
+}
+
+// SyntaxHighlighting description: Syntax highlighting configuration
+type SyntaxHighlighting struct {
+	Engine    SyntaxHighlightingEngine   `json:"engine"`
+	Languages SyntaxHighlightingLanguage `json:"languages"`
+}
+type SyntaxHighlightingEngine struct {
+	// Default description: The default syntax highlighting engine to use
+	Default string `json:"default"`
+	// Overrides description: Manually specify overrides for syntax highlighting engine per language
+	Overrides map[string]string `json:"overrides,omitempty"`
+}
+type SyntaxHighlightingLanguage struct {
+	// Extensions description: Map of extension to language
+	Extensions map[string]string `json:"extensions"`
+	// Patterns description: Map of patterns to language. Will return after first match, if any.
+	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns"`
+}
+type SyntaxHighlightingLanguagePatterns struct {
+	// Language description: Name of the language if pattern matches
+	Language string `json:"language"`
+	// Pattern description: Regular expression which matches the filepath
+	Pattern string `json:"pattern"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
