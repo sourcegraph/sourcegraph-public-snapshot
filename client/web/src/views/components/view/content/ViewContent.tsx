@@ -1,7 +1,6 @@
-import React from 'react'
-
 import classNames from 'classnames'
 import { isObject } from 'lodash'
+import React, { ReactElement } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -11,7 +10,6 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ChartViewContent, ChartViewContentLayout } from './chart-view-content/ChartViewContent'
-
 import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -28,6 +26,8 @@ export interface ViewContentProps extends React.HTMLAttributes<HTMLElement> {
      * the chart datum (pie arc, line point, bar category)
      */
     onDatumLinkClick?: () => void
+
+    alternate?: ReactElement
 }
 
 /**
@@ -38,7 +38,7 @@ export interface ViewContentProps extends React.HTMLAttributes<HTMLElement> {
  * without notice.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
-    const { content, alert, layout, className, onDatumLinkClick, ...attributes } = props
+    const { content, alert, layout, className, onDatumLinkClick, alternate, ...attributes } = props
 
     return (
         <div {...attributes} className={classNames(styles.viewContent, className)}>
@@ -63,6 +63,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                             layout={layout}
                             className="flex-grow-1"
                             onDatumLinkClick={onDatumLinkClick}
+                            alternate={alternate}
                         />
                     </React.Fragment>
                 ) : null

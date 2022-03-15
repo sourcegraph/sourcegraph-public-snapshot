@@ -37,4 +37,5 @@ export interface SyntheticInsightFields {
     id: string
     viewType: InsightType
     dashboardReferenceCount: number
+    locked?: boolean
 }

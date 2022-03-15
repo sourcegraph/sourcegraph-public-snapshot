@@ -16,13 +16,15 @@ export interface LineChartProps<Datum extends object> extends LineChartContentPr
      * By default LineChart doesn't require
      */
     hasChartParentFixedSize?: boolean
+
+    alternate?: ReactElement
 }
 
 /**
  * Display responsive line chart with legend below the chart.
  */
 export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
-    const { width, height, hasChartParentFixedSize, ...otherProps } = props
+    const { width, height, hasChartParentFixedSize, alternate, ...otherProps } = props
     const { layout } = useContext(LineChartSettingsContext)
 
     const hasViewManySeries = otherProps.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
@@ -46,7 +48,9 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 just to calculate right sizes for chart content = rootContainerSizes - legendSizes
             */}
             <ParentSize className={styles.contentParentSize} data-line-chart-size-root="">
-                {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
+                {({ width, height }) => (
+                    <LineChartContent {...otherProps} width={width} height={height} alternate={alternate} />
+                )}
             </ParentSize>
 
             <ScrollBox

@@ -78,6 +78,8 @@ export interface LineChartContentProps<Datum extends object>
      * on the chart was clicked.
      */
     onDatumLinkClick?: (event: React.MouseEvent) => void
+
+    alternate?: ReactElement
 }
 
 export function LineChart<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
@@ -92,7 +94,7 @@ export function LineChart<Datum extends object>(props: LineChartContentProps<Dat
  * Displays line chart content - line chart, tooltip, active point
  */
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
-    const { width, height, data, series, xAxis, onDatumZoneClick = noop, onDatumLinkClick = noop } = props
+    const { width, height, data, series, xAxis, onDatumZoneClick = noop, onDatumLinkClick = noop, alternate } = props
 
     // XYChart must know how to get the right data from datum object in order to render lines and axes
     // Because of that we have to generate map of getters for all kind of data which will be rendered on the chart.
@@ -239,6 +241,10 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ? hoveredDatumLinks[+hoveredDatum.datum.x] ?? hoveredDatumLinks[hoveredDatum.index]
         : null
     const rootClasses = classNames({ [styles.contentWithCursor]: !!hoveredDatumLink })
+
+    if (alternate) {
+        return alternate
+    }
 
     return (
         <div className={classNames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">

@@ -15,6 +15,7 @@ export interface SmartInsightProps<D extends keyof ViewContexts>
     where: D
     context: ViewContexts[D]
     resizing?: boolean
+    alternate?: ReactElement
 }
 
 /**
@@ -22,7 +23,7 @@ export interface SmartInsightProps<D extends keyof ViewContexts>
  * actions.
  */
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof ViewContexts>>((props, reference) => {
-    const { insight, resizing = false, telemetryService, where, context, ...otherProps } = props
+    const { insight, resizing = false, telemetryService, where, context, alternate, ...otherProps } = props
 
     if (isBackendInsight(insight)) {
         return (
@@ -32,6 +33,7 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof View
                 telemetryService={telemetryService}
                 {...otherProps}
                 innerRef={reference}
+                alternate={alternate}
             />
         )
     }
@@ -45,6 +47,7 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof View
             where={where}
             context={context}
             innerRef={reference}
+            alternate={alternate}
             {...otherProps}
         />
     )

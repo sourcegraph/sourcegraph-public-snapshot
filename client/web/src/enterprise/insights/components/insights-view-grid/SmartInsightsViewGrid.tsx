@@ -90,6 +90,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     // only for the dashboard (insights) page
                     where="insightsPage"
                     context={INSIGHT_PAGE_CONTEXT}
+                    alternate={insight.locked ? <div>Locked</div> : undefined}
                 />
             ))}
         </ViewGrid>

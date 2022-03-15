@@ -1,7 +1,6 @@
-import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
-
 import classNames from 'classnames'
 import { camelCase } from 'lodash'
+import React, { ReactElement, Ref, useCallback, useContext, useRef, useState } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -24,11 +23,10 @@ import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import { BackendAlertOverlay } from './BackendAlertOverlay'
+import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
-
-import styles from './BackendInsight.module.scss'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -37,13 +35,14 @@ interface BackendInsightProps
 
     innerRef: Ref<HTMLElement>
     resizing?: boolean
+    alternate?: ReactElement
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
+    const { telemetryService, insight, innerRef, resizing, alternate, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
@@ -202,6 +201,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                                 />
                             }
                             onDatumLinkClick={trackDatumClicks}
+                            alternate={alternate}
                         />
                     </LineChartSettingsContext.Provider>
                 )
