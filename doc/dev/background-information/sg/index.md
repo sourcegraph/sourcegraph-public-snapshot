@@ -102,12 +102,21 @@ Then make sure that `~/my/path` is in your `$PATH`.
 
 ## Updates
 
-Once set up, `sg` will automatically check for updates and let you know when there are changes.
-To update `sg`, run:
+Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
+
+To force a manual update of `sg`, run:
 
 ```sh
 sg update
 ```
+
+In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag: 
+
+```sh
+sg -skip-auto-update [cmds ...]
+```
+
+On the next command run, if a new version is detected, `sg` will auto update before running.
 
 > NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
 
@@ -315,6 +324,13 @@ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 sg db add-user -name=foo
+```
+
+### `sg update` - Update sg itself
+
+```bash 
+# Manually update sg
+sg update
 ```
 
 ## Configuration
