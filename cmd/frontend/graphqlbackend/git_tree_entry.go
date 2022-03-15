@@ -148,11 +148,11 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 		}
 		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
 	}
-	return r.urlPath(r.commit.repoRevURL())
+	return r.urlPath(r.commit.repoRevURL(ctx))
 }
 
-func (r *GitTreeEntryResolver) CanonicalURL() string {
-	url := r.commit.canonicalRepoRevURL()
+func (r *GitTreeEntryResolver) CanonicalURL(ctx context.Context) string {
+	url := r.commit.canonicalRepoRevURL(ctx)
 	return r.urlPath(url).String()
 }
 
@@ -179,7 +179,7 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, repo, r.commit.preferredCommitish(), r.Path(), r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.db, repo, r.commit.preferredCommitish(ctx), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {

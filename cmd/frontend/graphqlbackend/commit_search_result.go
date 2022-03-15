@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -78,12 +79,12 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 	return Markdown(r.CommitMatch.Detail())
 }
 
-func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
+func (r *CommitSearchResultResolver) Matches(ctx context.Context) []*searchResultMatchResolver {
 	hls := r.CommitMatch.Body().ToHighlightedString()
 	match := &searchResultMatchResolver{
 		body:       hls.Value,
 		highlights: hls.Highlights,
-		url:        r.Commit().URL(),
+		url:        r.Commit().URL(ctx),
 	}
 	matches := []*searchResultMatchResolver{match}
 	return matches

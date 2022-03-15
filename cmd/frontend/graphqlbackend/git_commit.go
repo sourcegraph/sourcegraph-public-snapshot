@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"sort"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -80,7 +82,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 			return
 		}
 
-		opts := git.ResolveRevisionOptions{}
+		opts := git.ResolveRevisionOptions{IncludeTags: true}
 		r.commit, r.commitErr = git.GetCommit(ctx, r.db, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
@@ -110,6 +112,13 @@ func (r *GitCommitResolver) ID() graphql.ID {
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
+
+func (r *GitCommitResolver) PreferredCanonicalCommitish(ctx context.Context) string {
+	if tag := r.currentTag(ctx); tag != "" {
+		return tag
+	}
+	return string(r.oid)
+}
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
@@ -182,15 +191,15 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *GitCommitResolver) URL() string {
+func (r *GitCommitResolver) URL(ctx context.Context) string {
 	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + r.preferredCommitish()
+	url.Path += "/-/commit/" + r.preferredCommitish(ctx)
 	return url.String()
 }
 
-func (r *GitCommitResolver) CanonicalURL() string {
+func (r *GitCommitResolver) CanonicalURL(ctx context.Context) string {
 	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + string(r.oid)
+	url.Path += "/-/commit/" + r.PreferredCanonicalCommitish(ctx)
 	return url.String()
 }
 
@@ -326,13 +335,29 @@ type behindAheadCountsResolver struct{ behind, ahead int32 }
 func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
 func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
+// currentTag returns the tag corresponding the current commit for a package repo.
+func (r *GitCommitResolver) currentTag(ctx context.Context) string {
+	if !r.repoResolver.IsPackageRepo() {
+		return ""
+	}
+	tags, err := r.resolveTags(ctx)
+	if err != nil || len(tags) == 0 {
+		return ""
+	}
+	sort.Slice(tags, func(i, j int) bool {
+		// tags for package repos are formatted as 'v<version>'
+		return reposource.VersionGreaterThan(tags[i], tags[j])
+	})
+	return tags[0]
+}
+
 // preferredCommitish returns the preferred commit-ish suitable for use in
 // (not necessarily canonical) user-facing URLs, such as for navigation.
-func (r *GitCommitResolver) preferredCommitish() string {
+func (r *GitCommitResolver) preferredCommitish(ctx context.Context) string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return *r.inputRev
 	}
-	return string(r.oid)
+	return r.PreferredCanonicalCommitish(ctx)
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
@@ -340,14 +365,14 @@ func (r *GitCommitResolver) preferredCommitish() string {
 // given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
-func (r *GitCommitResolver) repoRevURL() *url.URL {
+func (r *GitCommitResolver) repoRevURL(ctx context.Context) *url.URL {
 	// Dereference to copy to avoid mutation
 	url := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
 	} else {
-		rev = string(r.oid)
+		rev = r.PreferredCanonicalCommitish(ctx)
 	}
 	if rev != "" {
 		url.Path += "@" + rev
@@ -355,9 +380,17 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 	return &url
 }
 
-func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
+func (r *GitCommitResolver) canonicalRepoRevURL(ctx context.Context) *url.URL {
 	// Dereference to copy the URL to avoid mutation
 	url := *r.repoResolver.RepoMatch.URL()
-	url.Path += "@" + string(r.oid)
+	url.Path += "@" + r.PreferredCanonicalCommitish(ctx)
 	return &url
+}
+
+func (r *GitCommitResolver) resolveTags(ctx context.Context) ([]string, error) {
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return commit.Tags, nil
 }

@@ -116,6 +116,7 @@ func getCommit(ctx context.Context, db database.DB, repo api.RepoName, id api.Co
 		Range:            string(id),
 		N:                1,
 		NoEnsureRevision: opt.NoEnsureRevision,
+		IncludeTags:      opt.IncludeTags,
 	}
 	commitOptions = addNameOnly(commitOptions, checker)
 

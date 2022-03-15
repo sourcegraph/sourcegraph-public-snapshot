@@ -12,7 +12,7 @@ type LocationResolver interface {
 	Resource() *GitTreeEntryResolver
 	Range() *rangeResolver
 	URL(ctx context.Context) (string, error)
-	CanonicalURL() string
+	CanonicalURL(ctx context.Context) string
 }
 
 type locationResolver struct {
@@ -46,8 +46,8 @@ func (r *locationResolver) URL(ctx context.Context) (string, error) {
 	return r.urlPath(url), nil
 }
 
-func (r *locationResolver) CanonicalURL() string {
-	url := r.resource.CanonicalURL()
+func (r *locationResolver) CanonicalURL(ctx context.Context) string {
+	url := r.resource.CanonicalURL(ctx)
 	return r.urlPath(url)
 }
 
