@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+
 import { gql, useLazyQuery, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -33,13 +34,14 @@ import { eventLogger } from '../../tracking/eventLogger'
 import styles from './NewOrganization.module.scss'
 
 export const OPEN_BETA_ID_KEY = 'sgopenBetaId'
+export const INVALID_BETA_ID_KEY = 'invalidBetaID'
 interface Props extends RouteComponentProps<{ openBetaId: string }> {
     authenticatedUser: AuthenticatedUser
 }
 
 const CREATE_ORG_MUTATION = gql`
-    mutation CreateOrganizationForOpenBeta($name: String!, $displayName: String) {
-        createOrganization(name: $name, displayName: $displayName) {
+    mutation CreateOrganizationForOpenBeta($name: String!, $displayName: String, $statsID: ID) {
+        createOrganization(name: $name, displayName: $displayName, statsID: $statsID) {
             id
             name
             settingsURL
@@ -57,9 +59,14 @@ const TRY_GET_ORG_ID_BY_NAME = gql`
 
 const isValidOpenBetaId = (openBetaId: string): boolean => {
     try {
+        if (!openBetaId || openBetaId === INVALID_BETA_ID_KEY) {
+            return false
+        }
+
         if (openBetaId === 'testdev') {
             return true
         }
+
         const waitingOpenBetaId = localStorage.getItem(OPEN_BETA_ID_KEY)
         const isValid = openBetaId === waitingOpenBetaId
         eventLogger.log('OpenBetaIdCheck', { valid: isValid }, { valid: isValid })
@@ -157,7 +164,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
                 return
             }
             try {
-                const result = await createOpenBetaOrg({ variables: { name: orgId, displayName } })
+                const result = await createOpenBetaOrg({ variables: { name: orgId, displayName, statsID: openBetaId } })
                 eventLogger.log('CreateNewOrgBetaOK')
                 if (result?.data?.createOrganization) {
                     localStorage.removeItem(OPEN_BETA_ID_KEY)
@@ -167,7 +174,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({ match, hist
                 eventLogger.log('CreateNewOrgBetaFailed')
             }
         },
-        [orgId, displayName, history, createOpenBetaOrg, hasValidId]
+        [orgId, displayName, history, createOpenBetaOrg, hasValidId, openBetaId]
     )
 
     return (

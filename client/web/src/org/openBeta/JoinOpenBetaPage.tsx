@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -21,16 +22,12 @@ import {
     RadioButton,
 } from '@sourcegraph/wildcard'
 
-import {
-    CreateOrganizationForOpenBetaResult,
-    CreateOrganizationForOpenBetaVariables,
-    TryGetOrganizationIDByNameResult,
-    TryGetOrganizationIDByNameVariables,
-} from '../../graphql-operations'
+import { SendJoinBetaStatsResult, SendJoinBetaStatsVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { INVALID_BETA_ID_KEY, OPEN_BETA_ID_KEY } from './NewOrganizationPage'
+
 import styles from './JoinOpenBeta.module.scss'
-import { OPEN_BETA_ID_KEY } from './NewOrganizationPage'
 interface Props extends RouteComponentProps {
     authenticatedUser: AuthenticatedUser
 }
@@ -61,13 +58,21 @@ const SgUsagePlan: string[] = [
     'Other',
 ]
 
+const SEND_STATS_MUTATION = gql`
+    mutation SendJoinBetaStats($stats: JSONCString!) {
+        addOrgsOpenBetaStats(stats: $stats)
+    }
+`
+
 export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticatedUser, history }) => {
+    const [sendJoinBetaStats, { loading, error }] = useMutation<SendJoinBetaStatsResult, SendJoinBetaStatsVariables>(
+        SEND_STATS_MUTATION
+    )
     const [companySize, setCompanySize] = useState('')
     const [companyReposSelected, setCompanyReposSelected] = useState<string[]>([])
     const [sgUsagePlanSelected, setSgUsagePlanSelected] = useState<string[]>([])
     const [otherPlan, setOtherPlan] = useState<string | undefined>()
     const [otherRepo, setOtherRepo] = useState<string | undefined>()
-    const [loading, setLoading] = useState(false)
     const showOtherRepo = companyReposSelected.includes('Other')
     const showOtherPlan = sgUsagePlanSelected.includes('Other')
     const otherRepoValid = !!(!showOtherRepo || otherRepo)
@@ -126,14 +131,24 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
     }
 
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
-        event => {
+        async event => {
             event.preventDefault()
             eventLogger.log('JoinOpenBetaAnswers')
             if (!event.currentTarget.checkValidity() || !isValidForm) {
                 return
             }
             try {
-                const openBetaId = 'generateSomeGuidHere'
+                const stats = JSON.stringify({
+                    companySize,
+                    companyReposSelected,
+                    sgUsagePlanSelected,
+                    otherPlan: otherPlan || undefined,
+                    otherRepo: otherRepo || undefined,
+                })
+                const result = await sendJoinBetaStats({ variables: { stats } })
+                const openBetaId = result.data
+                    ? (result.data as { addOrgsOpenBetaStats: string }).addOrgsOpenBetaStats
+                    : INVALID_BETA_ID_KEY
                 localStorage.setItem(OPEN_BETA_ID_KEY, openBetaId)
                 eventLogger.log('JoinOpenBetaAnswersOK')
                 history.push(`/organizations/joinopenbeta/neworg/${openBetaId}`)
@@ -141,7 +156,16 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
                 eventLogger.log('JoinOpenBetaAnswersFailed')
             }
         },
-        [history, isValidForm]
+        [
+            history,
+            isValidForm,
+            sendJoinBetaStats,
+            companySize,
+            companyReposSelected,
+            sgUsagePlanSelected,
+            otherPlan,
+            otherRepo,
+        ]
     )
 
     return (
@@ -168,6 +192,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
             <h3 className="mt-4 mb-4">To get started, please tell us about your organization:</h3>
             <Form className="mb-5" onSubmit={onSubmit}>
                 <Container className={styles.formContainer}>
+                    {error && <ErrorAlert className="mb-3" error={error} />}
                     <div className={classNames('form-group', styles.formItem)}>
                         <label htmlFor="company_employees_band">About how many developers work for your company?</label>
 
