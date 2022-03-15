@@ -18,17 +18,10 @@ export const fetchBlob = memoizeObservable(
         commitID: string
         filePath: string
         disableTimeout: boolean
-        treeSitterEnabled: boolean
     }): Observable<BlobFileFields | null> =>
-        requestGraphQL<BlobResult, BlobVariables & { treeSitterEnabled: boolean }>(
+        requestGraphQL<BlobResult, BlobVariables>(
             gql`
-                query Blob(
-                    $repoName: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $disableTimeout: Boolean!
-                    $treeSitterEnabled: Boolean!
-                ) {
+                query Blob($repoName: String!, $commitID: String!, $filePath: String!, $disableTimeout: Boolean!) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
@@ -41,7 +34,7 @@ export const fetchBlob = memoizeObservable(
                 fragment BlobFileFields on File2 {
                     content
                     richHTML
-                    highlight(disableTimeout: $disableTimeout, treeSitterEnabled: $treeSitterEnabled) {
+                    highlight(disableTimeout: $disableTimeout) {
                         aborted
                         html
                         lsif
