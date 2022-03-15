@@ -1,7 +1,8 @@
+import React, { useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useMemo, useState } from 'react'
 import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
@@ -10,6 +11,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
+
 import styles from '../SearchSidebarView.module.scss'
 
 const savedSearchQuery = gql`

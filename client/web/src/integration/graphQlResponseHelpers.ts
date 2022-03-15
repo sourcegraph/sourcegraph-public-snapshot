@@ -1,7 +1,7 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
+import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
-    TreeEntriesResult,
     BlobResult,
     FileExternalLinksResult,
     RepositoryRedirectResult,

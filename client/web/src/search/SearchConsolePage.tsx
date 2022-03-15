@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
@@ -24,13 +25,13 @@ import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
-import styles from './SearchConsolePage.module.scss'
-
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+
+import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController'>,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'executedQuery'>,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean

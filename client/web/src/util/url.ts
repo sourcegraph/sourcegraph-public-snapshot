@@ -2,6 +2,7 @@ import { LineOrPositionOrRange, lprToRange, toPositionHashComponent } from '@sou
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import {
     encodeRepoRevision,
+    ParsedRepoRevision,
     ParsedRepoURI,
     parseQueryAndHash,
     parseRepoRevision,

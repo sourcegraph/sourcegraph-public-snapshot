@@ -51,7 +51,7 @@ export interface NotebookComponentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]

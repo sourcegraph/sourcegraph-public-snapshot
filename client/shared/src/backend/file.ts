@@ -1,13 +1,12 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 
 import { FetchFileParameters } from '../components/CodeExcerpt'
 import { HighlightedFileResult, HighlightedFileVariables } from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
-import { memoizeObservable } from '../util/memoizeObservable'
 import { makeRepoURI } from '../util/url'
 
 /**
