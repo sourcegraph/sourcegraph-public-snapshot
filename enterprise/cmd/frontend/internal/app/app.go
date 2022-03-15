@@ -214,6 +214,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 			newConfig, err := jsonc.Edit(svc.Config, true, "pending")
 			if err != nil {
 				responseServerError("Failed to edit config", err)
+				return
 			}
 			svc.Config = newConfig
 		} else if setupAction == "install" {
