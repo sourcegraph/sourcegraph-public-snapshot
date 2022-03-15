@@ -189,3 +189,79 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
         }
     }
 `
+
+const searchResultsFragment = gql`
+    fragment SearchResults on Search {
+        __typename
+        results {
+            __typename
+            results {
+                ... on FileMatch {
+                    __typename
+                    file {
+                        url
+                        path
+                        commit {
+                            oid
+                        }
+                        content
+                    }
+                    repository {
+                        name
+                    }
+                    symbols {
+                        name
+                        kind
+                        location {
+                            url
+                            resource {
+                                path
+                            }
+                            range {
+                                start {
+                                    line
+                                    character
+                                }
+                                end {
+                                    line
+                                    character
+                                }
+                            }
+                        }
+                    }
+                    lineMatches {
+                        lineNumber
+                        offsetAndLengths
+                    }
+                }
+            }
+        }
+    }
+`
+
+const fileLocalFragment = gql`
+    fragment FileLocal on Search {
+        __typename
+        results {
+            __typename
+            results {
+                ... on FileMatch {
+                    symbols {
+                        fileLocal
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY = gql`
+    query CodeIntelSearch($query: String!) {
+        search(query: $query) {
+            ...SearchResults
+            ...FileLocal
+        }
+    }
+    ${searchResultsFragment}
+    ${fileLocalFragment}
+`
