@@ -117,11 +117,20 @@ init json =
                 _ ->
                     placeholderQuery
       , dataFilter =
-            { dataPoints = 30
-            , sortByCount = True
-            , reverse = False
-            , excludeStopWords = False
-            }
+            case Maybe.andThen .experimentalOptions flags.computeInput of
+                Just { dataPoints, sortByCount, reverse, excludeStopWords } ->
+                    { dataPoints = Maybe.withDefault 30 dataPoints
+                    , sortByCount = Maybe.withDefault True sortByCount
+                    , reverse = Maybe.withDefault False reverse
+                    , excludeStopWords = Maybe.withDefault False excludeStopWords
+                    }
+
+                Nothing ->
+                    { dataPoints = 30
+                    , sortByCount = True
+                    , reverse = False
+                    , excludeStopWords = False
+                    }
       , selectedTab = Chart
       , debounce = 0
       , resultsMap = Dict.empty
