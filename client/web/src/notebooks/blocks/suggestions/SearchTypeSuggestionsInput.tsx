@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useEffect, useMemo } from 'react'
+import React, { ReactElement, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -25,7 +25,7 @@ import styles from './SearchTypeSuggestionsInput.module.scss'
 
 interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
     extends ThemeProps,
-        Pick<BlockProps, 'onRunBlock' | 'onSelectBlock'> {
+        Pick<BlockProps, 'onRunBlock'> {
     id: string
     label: string
     sourcegraphSearchLanguageId: string
@@ -35,7 +35,6 @@ interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
     setEditor: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     setQueryInput: (value: string) => void
     debouncedSetQueryInput: (value: string) => void
-    setIsInputFocused: (isFocused: boolean) => void
     fetchSuggestions: (query: string) => Observable<S[]>
     countSuggestions: (suggestions: S[]) => number
     renderSuggestions: (suggestions: S[]) => ReactElement
@@ -55,24 +54,18 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
     setEditor,
     setQueryInput,
     debouncedSetQueryInput,
-    setIsInputFocused,
     fetchSuggestions,
     countSuggestions,
     renderSuggestions,
     ...props
 }: SearchTypeSuggestionsInputProps<S>): ReactElement => {
-    const { isInputFocused } = useMonacoBlockInput({
+    useMonacoBlockInput({
         editor,
         id,
         onInputChange: debouncedSetQueryInput,
         preventNewLine: true,
         ...props,
     })
-
-    useEffect(() => {
-        setIsInputFocused(isInputFocused)
-        return () => setIsInputFocused(false)
-    }, [isInputFocused, setIsInputFocused])
 
     const addExampleFilter = useCallback(
         (filterType: FilterType) => {
@@ -124,11 +117,7 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
             <label htmlFor={`${id}-search-type-query-input`}>{label}</label>
             <div
                 id={`${id}-search-type-query-input`}
-                className={classNames(
-                    blockStyles.monacoWrapper,
-                    isInputFocused && blockStyles.selected,
-                    styles.queryInputMonacoWrapper
-                )}
+                className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}
             >
                 <div className="d-flex">
                     <SyntaxHighlightedSearchQuery className={styles.searchTypeQueryPart} query={queryPrefix} />
