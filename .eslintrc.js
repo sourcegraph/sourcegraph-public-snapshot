@@ -55,6 +55,11 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
+            name: 'reactstrap',
+            importNames: ['Form'],
+            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
+          },
+          {
             name: '@sourcegraph/wildcard',
             importNames: ['Tooltip'],
             message:

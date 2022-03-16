@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 
 import * as H from 'history'
-import { Form } from 'reactstrap'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
 
 import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
