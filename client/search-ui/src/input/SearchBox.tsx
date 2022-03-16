@@ -6,10 +6,11 @@ import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourceg
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { LazyMonacoQueryInput, LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
+import { IEditor, LazyMonacoQueryInput, LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles'
@@ -33,6 +34,7 @@ export interface SearchBoxProps
     submitSearchOnSearchContextChange?: SubmitSearchProps['submitSearch']
     submitSearchOnToggle?: SubmitSearchProps['submitSearch']
     onFocus?: () => void
+    fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
@@ -55,25 +57,17 @@ export interface SearchBoxProps
     isExternalServicesUserModeAll?: boolean
 
     /** Called with the underlying editor instance on creation. */
-    onEditorCreated?: (editor: SearchEditor) => void
-}
-
-/**
- * Interface to the search box editor.
- * The underlying editor can be either Monaco or Codemirror.
- */
-interface SearchEditor {
-    focus: () => void
+    onEditorCreated?: (editor: IEditor) => void
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback } = props
 
-    const [editor, setEditor] = useState<SearchEditor>()
+    const [editor, setEditor] = useState<IEditor>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
 
     const onEditorCreated = useCallback(
-        (editor: SearchEditor) => {
+        (editor: IEditor) => {
             setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
