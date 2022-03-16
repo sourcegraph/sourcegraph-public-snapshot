@@ -4,13 +4,17 @@ import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
+import GraphOutlineIcon from 'mdi-react/GraphOutlineIcon'
 
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
 import {
     CommitMatch,
     getCommitMatchUrl,
@@ -22,6 +26,7 @@ import {
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Icon } from '@sourcegraph/wildcard'
+import { repoFilterForRepoRevision } from '@sourcegraph/web/src/search'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
@@ -30,6 +35,7 @@ import styles from './SearchResult.module.scss'
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch | RepositoryMatch
     repoName: string
+    revision: string
     icon: React.ComponentType<{ className?: string }>
     onSelect: () => void
     openInNewTab?: boolean
@@ -39,6 +45,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     result,
     icon,
     repoName,
+    revision,
     platformContext,
     onSelect,
     openInNewTab,
@@ -79,6 +86,12 @@ export const SearchResult: React.FunctionComponent<Props> = ({
             </div>
         )
     }
+
+    const repoDepsSearchQueryURL = buildSearchURLQuery(
+        `repo:deps(${repoFilterForRepoRevision(repoName, false, revision)})`,
+        SearchPatternType.literal,
+        false
+    )
 
     const renderBody = (): JSX.Element => {
         if (result.type === 'repo') {
@@ -132,6 +145,16 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                     </div>
                                 </>
                             )}
+                            <>
+                                <div className={styles.divider} />
+                                <div>
+                                    <Link to={`/search?${repoDepsSearchQueryURL}`}>
+                                        <GraphOutlineIcon
+                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        />
+                                    </Link>
+                                </div>
+                            </>
                         </div>
                         {result.description && (
                             <>

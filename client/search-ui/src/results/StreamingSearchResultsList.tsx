@@ -29,6 +29,7 @@ import {
     PathMatch,
     SearchMatch,
     getMatchUrl,
+    getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -126,6 +127,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             icon={SourceCommitIcon}
                             result={result}
                             repoName={result.repository}
+                            revision={result.oid}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'commit')}
                             openInNewTab={openMatchesInNewTab}
@@ -137,6 +139,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             icon={SourceRepositoryIcon}
                             result={result}
                             repoName={result.repository}
+                            revision={getRevision(result.branches, 'HEAD')}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
                         />
