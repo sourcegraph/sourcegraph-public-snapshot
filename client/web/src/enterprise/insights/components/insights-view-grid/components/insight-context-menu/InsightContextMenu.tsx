@@ -35,8 +35,8 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
         onToggleZeroYAxisMin = noop,
     } = props
 
-    const features = useUiFeatures({ currentDashboard: undefined })
-    const menu = features.dashboards.insights.menu
+    const { insight: insightPermissions } = useUiFeatures()
+    const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
 
     const insightID = insight.id
     const editUrl = dashboard?.id
@@ -70,7 +70,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             Edit
                         </MenuLink>
 
-                        {menu.showYAxis(insight) && (
+                        {menuPermissions.showYAxis && (
                             <MenuItem
                                 role="menuitemcheckbox"
                                 data-testid="InsightContextMenuEditLink"

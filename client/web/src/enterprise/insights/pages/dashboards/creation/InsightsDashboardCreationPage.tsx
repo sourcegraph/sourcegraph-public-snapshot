@@ -29,8 +29,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     const history = useHistory()
     const { createDashboard, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
-    const features = useUiFeatures({ currentDashboard: undefined })
-    const { addDashboardButton } = features.dashboards.create
+    const { dashboard } = useUiFeatures()
 
     const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
 
@@ -89,7 +88,8 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 loading={formAPI.submitting}
                                 label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
                                 type="submit"
-                                disabled={addDashboardButton.disabled || formAPI.submitting}
+                                disabled={dashboard.createPermissions.submit.disabled || formAPI.submitting}
+                                data-tooltip={dashboard.createPermissions.submit.tooltip}
                                 className="ml-2 mb-2"
                                 variant="primary"
                             />

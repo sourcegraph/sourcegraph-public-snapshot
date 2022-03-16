@@ -21,21 +21,23 @@ type DashboardMenuItemKey = 'configure' | 'copy' | 'delete'
 export interface UseUiFeatures {
     licensed: boolean
     dashboard: {
+        createPermissions: {
+            submit: {
+                disabled: boolean
+                tooltip?: string
+            }
+        }
+        getContextActionsPermissions: (dashboard?: InsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
         getAddRemoveInsightsPermission: (
             dashboard?: InsightDashboard
         ) => {
             disabled: boolean
             tooltip: string | undefined
         }
-        getActionPermissions: (dashboard?: InsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
     }
-    insights: {
-        menu: {
-            showYAxis: (insight: Insight) => boolean
-        }
-    },
     insight: {
-        isCreationAvailable: () => Observable<{ available: true } | { available: false; reason: string }>
+        getContextActionsPermissions: (insight: Insight) => { showYAxis: boolean }
+        getCreationPermissions: () => Observable<{ available: true } | { available: false; reason: string }>
     }
 }
 
@@ -47,6 +49,7 @@ export function useUiFeatures(): UseUiFeatures {
     return {
         licensed,
         dashboard: {
+            createPermissions: { submit: { disabled: !licensed } },
             getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
                 const permissions = getDashboardPermissions(dashboard, true)
 
@@ -55,13 +58,8 @@ export function useUiFeatures(): UseUiFeatures {
                     tooltip: getTooltipMessage(dashboard, permissions),
                 }
             },
-            create: {
-                addDashboardButton: {
-                    disabled: !licensed,
-                },
-            },
             // Available menu items
-            getActionPermissions: (dashboard?: InsightDashboard) => {
+            getContextActionsPermissions: (dashboard?: InsightDashboard) => {
                 const permissions = getDashboardPermissions(dashboard, true)
 
                 return {
@@ -82,13 +80,11 @@ export function useUiFeatures(): UseUiFeatures {
                 }
             },
         },
-        insights: {
-            menu: {
-                showYAxis: insight => isSearchBasedInsight(insight) && !insight.isFrozen,
-            },
-        },
         insight: {
-            isCreationAvailable: () =>
+            getContextActionsPermissions: (insight: Insight) => ({
+                showYAxis: isSearchBasedInsight(insight) && !insight.locked,
+            }),
+            getCreationPermissions: () =>
                 insightsLimit !== null
                     ? hasInsights(insightsLimit).pipe(
                           map(reachedLimit =>

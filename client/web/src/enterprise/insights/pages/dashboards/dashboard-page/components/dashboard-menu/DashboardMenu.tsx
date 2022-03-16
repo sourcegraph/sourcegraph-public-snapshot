@@ -32,7 +32,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
     const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
 
     const { dashboard: dashboardPermission } = useUiFeatures()
-    const menuPermissions = dashboardPermission.getActionPermissions(dashboard)
+    const menuPermissions = dashboardPermission.getContextActionsPermissions(dashboard)
 
     return (
         <Menu>
