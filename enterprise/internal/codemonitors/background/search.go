@@ -25,13 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/structural"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -155,32 +151,22 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 }
 
 func addCodeMonitorHook(in job.Job, monitorID int64) (_ job.Job, err error) {
-	addErr := func(j interface{}) {
-		err = errors.Append(err, errors.Errorf("found invalid leaf job %T", j))
-	}
-
-	mapper := job.Mapper{
-		// Error on any leaf nodes that aren't commit/diff searches
-		MapZoektRepoSubsetSearchJob:    func(j *zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch { addErr(j); return nil },
-		MapZoektSymbolSearchJob:        func(j *zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch { addErr(j); return nil },
-		MapSearcherJob:                 func(j *searcher.Searcher) *searcher.Searcher { addErr(j); return nil },
-		MapSymbolSearcherJob:           func(j *searcher.SymbolSearcher) *searcher.SymbolSearcher { addErr(j); return nil },
-		MapRepoSearchJob:               func(j *run.RepoSearch) *run.RepoSearch { addErr(j); return nil },
-		MapRepoUniverseTextSearchJob:   func(j *zoekt.GlobalSearch) *zoekt.GlobalSearch { addErr(j); return nil },
-		MapStructuralSearchJob:         func(j *structural.StructuralSearch) *structural.StructuralSearch { addErr(j); return nil },
-		MapRepoUniverseSymbolSearchJob: func(j *symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch { addErr(j); return nil },
-
-		// Add hook to any commit search jobs
-		MapCommitSearchJob: func(c *commit.CommitSearch) *commit.CommitSearch {
-			jobCopy := *c
+	return job.MapAtom(in, func(atom job.Job) job.Job {
+		switch typedAtom := atom.(type) {
+		case *commit.CommitSearch:
+			jobCopy := *typedAtom
 			jobCopy.CodeMonitorSearchWrapper = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
 				return hookWithID(ctx, db, gs, args, doSearch, monitorID)
 			}
 			return &jobCopy
-		},
-	}
-
-	return mapper.Map(in), err
+		case *repos.ComputeExcludedRepos:
+			// ComputeExcludedRepos is fine for code monitor jobs
+			return atom
+		default:
+			err = errors.Append(err, errors.Errorf("found invalid atom job type %T for code monitor search", atom))
+			return atom
+		}
+	}), err
 }
 
 func hookWithID(
