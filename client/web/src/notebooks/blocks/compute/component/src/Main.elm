@@ -117,11 +117,20 @@ init json =
                 _ ->
                     placeholderQuery
       , dataFilter =
-            { dataPoints = 30
-            , sortByCount = True
-            , reverse = False
-            , excludeStopWords = False
-            }
+            case Maybe.andThen .experimentalOptions flags.computeInput of
+                Just { dataPoints, sortByCount, reverse, excludeStopWords } ->
+                    { dataPoints = Maybe.withDefault 30 dataPoints
+                    , sortByCount = Maybe.withDefault True sortByCount
+                    , reverse = Maybe.withDefault False reverse
+                    , excludeStopWords = Maybe.withDefault False excludeStopWords
+                    }
+
+                Nothing ->
+                    { dataPoints = 30
+                    , sortByCount = True
+                    , reverse = False
+                    , excludeStopWords = False
+                    }
       , selectedTab = Chart
       , debounce = 0
       , resultsMap = Dict.empty
@@ -143,7 +152,11 @@ type alias RawEvent =
 
 
 type alias ExperimentalOptions =
-    {}
+    { dataPoints : Maybe Int
+    , sortByCount : Maybe Bool
+    , reverse : Maybe Bool
+    , excludeStopWords : Maybe Bool
+    }
 
 
 type alias ComputeInput =
@@ -233,7 +246,22 @@ update msg model =
                 ( { model | debounce = model.debounce - 1 }, Cmd.none )
 
         OnDataFilter dataFilterMsg ->
-            ( { model | dataFilter = updateDataFilter dataFilterMsg model.dataFilter }, Cmd.none )
+            let
+                newDataFilter =
+                    updateDataFilter dataFilterMsg model.dataFilter
+            in
+            ( { model | dataFilter = newDataFilter }
+            , emitInput
+                { computeQueries = [ model.query ]
+                , experimentalOptions =
+                    Just
+                        { dataPoints = Just newDataFilter.dataPoints
+                        , sortByCount = Just newDataFilter.sortByCount
+                        , reverse = Just newDataFilter.reverse
+                        , excludeStopWords = Just newDataFilter.excludeStopWords
+                        }
+                }
+            )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
@@ -247,7 +275,13 @@ update msg model =
                 , Cmd.batch
                     [ emitInput
                         { computeQueries = [ model.query ]
-                        , experimentalOptions = Just {}
+                        , experimentalOptions =
+                            Just
+                                { dataPoints = Just model.dataFilter.dataPoints
+                                , sortByCount = Just model.dataFilter.sortByCount
+                                , reverse = Just model.dataFilter.reverse
+                                , excludeStopWords = Just model.dataFilter.excludeStopWords
+                                }
                         }
                     , openStream
                         ( Url.Builder.crossOrigin
@@ -652,7 +686,16 @@ computeInputDecoder : Decoder ComputeInput
 computeInputDecoder =
     Decode.succeed ComputeInput
         |> Json.Decode.Pipeline.required "computeQueries" (Decode.list Decode.string)
-        |> Json.Decode.Pipeline.optional "experimentalOptions" (Decode.maybe (Decode.succeed ExperimentalOptions)) Nothing
+        |> Json.Decode.Pipeline.optional "experimentalOptions" (Decode.maybe experimentalOptionsDecoder) Nothing
+
+
+experimentalOptionsDecoder : Decoder ExperimentalOptions
+experimentalOptionsDecoder =
+    Decode.succeed ExperimentalOptions
+        |> Json.Decode.Pipeline.optional "dataPoints" (Decode.maybe Decode.int) Nothing
+        |> Json.Decode.Pipeline.optional "sortByCount" (Decode.maybe Decode.bool) Nothing
+        |> Json.Decode.Pipeline.optional "reverse" (Decode.maybe Decode.bool) Nothing
+        |> Json.Decode.Pipeline.optional "excludeStopWords" (Decode.maybe Decode.bool) Nothing
 
 
 resultDecoder : Decoder Result
