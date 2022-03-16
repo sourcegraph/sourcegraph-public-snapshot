@@ -588,7 +588,7 @@ fragment RepositoryFields on Repository {
 func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
-	return NewV3Client(c.apiURL, c.auth, c.httpClient, nil).Fork(ctx, owner, repo, org)
+	return NewV3Client(c.apiURL, c.auth, c.httpClient, c.newCache).Fork(ctx, owner, repo, org)
 }
 
 type RecentCommittersParams struct {
