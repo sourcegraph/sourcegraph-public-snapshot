@@ -24,7 +24,7 @@ export const CodeInsightsLimitAccessBanner: React.FunctionComponent<CodeInsights
                     reach out to us
                 </Link>{' '}
                 to upgrade your Sourcegraph license to unlock Code Insights for unlimited insights and dashboards.{' '}
-                <Link to="/help/code_insights" rel="noopener noreferrer" target="_blank">
+                <Link to="/help/code_insights/references/license" rel="noopener noreferrer" target="_blank">
                     Learn more
                 </Link>
             </p>
