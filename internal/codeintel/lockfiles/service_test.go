@@ -19,6 +19,20 @@ import (
 func TestListDependencies(t *testing.T) {
 	ctx := context.Background()
 
+	t.Run("empty ls-files return", func(t *testing.T) {
+		gitSvc := NewMockGitService()
+		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]io.Reader{}))
+
+		got, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(got) != 0 {
+			t.Fatalf("expected no dependencies")
+		}
+	})
+
 	t.Run("npm", func(t *testing.T) {
 		gitSvc := NewMockGitService()
 
