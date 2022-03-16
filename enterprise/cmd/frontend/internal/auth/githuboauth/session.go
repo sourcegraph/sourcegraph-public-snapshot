@@ -23,6 +23,7 @@ import (
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -246,7 +247,8 @@ func derefInt64(i *int64) int64 {
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewV3Client(apiURL, &esauth.OAuthBearerToken{Token: token}, nil, nil)
+	newCache := func(key string, ttl int) githubsvc.Cache { return rcache.NewWithTTL(key, ttl) }
+	return githubsvc.NewV3Client(apiURL, &esauth.OAuthBearerToken{Token: token}, nil, newCache)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
