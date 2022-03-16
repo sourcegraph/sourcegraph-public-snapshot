@@ -90,10 +90,9 @@ type QueueSizeGroupOptions struct {
 // of a queue of work within the given container, as well as the age of the oldest unprocessed entry
 // in the queue.
 //
-// Requires a:
+// Requires any of the following:
 //   - gauge of the format `src_{options.MetricNameRoot}_total`
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
-// Optionally a:
 // 	 - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
 //
 // The queue size metric should be created via a Prometheus gauge function in the Go backend. For
