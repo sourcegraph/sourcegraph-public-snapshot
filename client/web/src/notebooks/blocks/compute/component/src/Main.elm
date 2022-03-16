@@ -34,11 +34,22 @@ debounceQueryInputMillis =
     400
 
 
+placeholderQuery : String
+placeholderQuery =
+    "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
+
+
+type alias Flags =
+    { sourcegraphURL : String
+    , computeInput : Maybe ComputeInput
+    }
+
+
 
 -- MAIN
 
 
-main : Program String Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
@@ -83,10 +94,16 @@ type alias Model =
     }
 
 
-init : String -> ( Model, Cmd Msg )
-init sourcegraphURL =
-    ( { sourcegraphURL = sourcegraphURL
-      , query = "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( { sourcegraphURL = flags.sourcegraphURL
+      , query =
+            case Maybe.map .computeQueries flags.computeInput of
+                Just (query :: _) ->
+                    query
+
+                _ ->
+                    placeholderQuery
       , dataPoints = 30
       , sortByCount = True
       , reverse = False
@@ -111,10 +128,23 @@ type alias RawEvent =
     }
 
 
+type alias ExperimentalOptions =
+    {}
+
+
+type alias ComputeInput =
+    { computeQueries : List String
+    , experimentalOptions : ExperimentalOptions
+    }
+
+
 port receiveEvent : (RawEvent -> msg) -> Sub msg
 
 
 port openStream : ( String, Maybe String ) -> Cmd msg
+
+
+port emitInput : ComputeInput -> Cmd msg
 
 
 
@@ -214,13 +244,19 @@ update msg model =
 
             else
                 ( { model | resultsMap = Dict.empty }
-                , openStream
-                    ( Url.Builder.crossOrigin
-                        model.sourcegraphURL
-                        [ ".api", "compute", "stream" ]
-                        [ Url.Builder.string "q" model.query ]
-                    , Nothing
-                    )
+                , Cmd.batch
+                    [ emitInput
+                        { computeQueries = [ model.query ]
+                        , experimentalOptions = {}
+                        }
+                    , openStream
+                        ( Url.Builder.crossOrigin
+                            model.sourcegraphURL
+                            [ ".api", "compute", "stream" ]
+                            [ Url.Builder.string "q" model.query ]
+                        , Nothing
+                        )
+                    ]
                 )
 
         OnResults r ->

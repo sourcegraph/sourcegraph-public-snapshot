@@ -95,7 +95,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
                         onClick={() =>
                             onAddBlock(index, {
                                 type: 'compute',
-                                input: 'placeholder',
+                                input: '',
                             })
                         }
                         data-testid="add-compute-button"
