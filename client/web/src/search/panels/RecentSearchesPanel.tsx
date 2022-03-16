@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client'
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,8 +17,9 @@ import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { HomePanelsFetchMore, RECENT_SEARCHES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import styles from './RecentSearchesPanel.module.scss'
 import { ShowMoreButton } from './ShowMoreButton'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface RecentSearch {
     count: number

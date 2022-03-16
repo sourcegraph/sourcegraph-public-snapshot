@@ -1,7 +1,8 @@
+import React from 'react'
+
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
-import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'

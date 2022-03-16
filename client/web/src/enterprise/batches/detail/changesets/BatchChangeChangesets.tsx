@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
+
+import * as H from 'history'
 import { Subject } from 'rxjs'
 import { withLatestFrom, map, filter } from 'rxjs/operators'
 
@@ -35,6 +36,7 @@ import {
     Scalars,
     BatchChangeChangesetsResult,
     BatchChangeChangesetsVariables,
+    BatchChangeState,
 } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
@@ -44,7 +46,6 @@ import {
     CHANGESETS,
 } from '../backend'
 
-import styles from './BatchChangeChangesets.module.scss'
 import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { ChangesetNode } from './ChangesetNode'
@@ -52,6 +53,9 @@ import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
+import { EmptyDraftChangesetListElement } from './EmptyDraftChangesetListElement'
+
+import styles from './BatchChangeChangesets.module.scss'
 
 interface Props
     extends ThemeProps,
@@ -60,6 +64,8 @@ interface Props
         ExtensionsControllerProps,
         SettingsCascadeProps {
     batchChangeID: Scalars['ID']
+    batchChangeState: BatchChangeState
+    isExecutionEnabled: boolean
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -103,6 +109,8 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     onlyArchived,
     refetchBatchChange,
     settingsCascade,
+    batchChangeState,
+    isExecutionEnabled,
 }) => {
     // You might look at this destructuring statement and wonder why this isn't
     // just a single context consumer object. The reason is because making it a
@@ -233,6 +241,22 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
 
     const showSelectRow = viewerCanAdminister && (selected === 'all' || selected.size > 0)
 
+    const emptyElement = useMemo(() => {
+        if (filtersSelected(changesetFilters)) {
+            return <EmptyChangesetSearchElement />
+        }
+
+        if (onlyArchived) {
+            return <EmptyArchivedChangesetListElement />
+        }
+
+        if (batchChangeState === BatchChangeState.DRAFT && isExecutionEnabled) {
+            return <EmptyDraftChangesetListElement />
+        }
+
+        return <EmptyChangesetListElement />
+    }, [changesetFilters, onlyArchived, batchChangeState, isExecutionEnabled])
+
     return (
         <Container>
             {!hideFilters && !showSelectRow && (
@@ -290,15 +314,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                                 noun="changeset"
                                 pluralNoun="changesets"
                                 hasNextPage={hasNextPage}
-                                emptyElement={
-                                    filtersSelected(changesetFilters) ? (
-                                        <EmptyChangesetSearchElement />
-                                    ) : onlyArchived ? (
-                                        <EmptyArchivedChangesetListElement />
-                                    ) : (
-                                        <EmptyChangesetListElement />
-                                    )
-                                }
+                                emptyElement={emptyElement}
                             />
                             {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                         </SummaryContainer>

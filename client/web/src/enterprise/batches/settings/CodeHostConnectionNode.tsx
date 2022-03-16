@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
@@ -9,9 +10,10 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
-import styles from './CodeHostConnectionNode.module.scss'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
+
+import styles from './CodeHostConnectionNode.module.scss'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields

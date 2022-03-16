@@ -1,10 +1,12 @@
-import classNames from 'classnames'
-import { upperFirst } from 'lodash'
 import React, { useRef } from 'react'
 
+import classNames from 'classnames'
+import { upperFirst } from 'lodash'
+
 import { PANEL_POSITIONS } from './constants'
-import styles from './Panel.module.scss'
 import { useResizablePanel } from './useResizablePanel'
+
+import styles from './Panel.module.scss'
 
 export interface PanelProps {
     className?: string

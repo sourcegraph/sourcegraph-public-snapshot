@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import VisibilitySensor from 'react-visibility-sensor'
 
 interface Props<TItem, TExtraItemProps> {

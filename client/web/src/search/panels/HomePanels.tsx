@@ -1,7 +1,8 @@
-import { ApolloQueryResult, FetchMoreQueryOptions, gql, useQuery } from '@apollo/client'
-import classNames from 'classnames'
+import { ApolloQueryResult, gql, useQuery } from '@apollo/client'
 import * as React from 'react'
 import { useEffect, useCallback } from 'react'
+
+import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,11 +15,12 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { CollaboratorsPanel } from './CollaboratorsPanel'
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
-import styles from './HomePanels.module.scss'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { recentSearchesPanelFragment, RecentSearchesPanel } from './RecentSearchesPanel'
 import { recentlySearchedRepositoriesFragment, RepositoriesPanel } from './RepositoriesPanel'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
+
+import styles from './HomePanels.module.scss'
 
 interface Props extends TelemetryProps, HomePanelsProps {
     authenticatedUser: AuthenticatedUser | null

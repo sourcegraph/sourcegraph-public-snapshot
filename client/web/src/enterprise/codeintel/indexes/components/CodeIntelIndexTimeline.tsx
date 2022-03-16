@@ -1,8 +1,9 @@
+import React, { FunctionComponent, useMemo } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { FunctionComponent, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'

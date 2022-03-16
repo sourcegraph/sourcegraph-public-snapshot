@@ -1,11 +1,13 @@
+import React, { ReactElement, useContext } from 'react'
+
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
-import React, { ReactElement, useContext } from 'react'
 
 import { getLineStroke, LineChart as LineChartContent, LineChartContentProps } from './components/LineChartContent'
 import { ScrollBox } from './components/scroll-box/ScrollBox'
 import { MINIMAL_HORIZONTAL_LAYOUT_WIDTH, MINIMAL_SERIES_FOR_ASIDE_LEGEND } from './constants'
 import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-chart-settings-provider'
+
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {

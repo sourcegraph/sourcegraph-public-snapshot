@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
@@ -22,16 +23,17 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
 
-import styles from './Panel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
+
+import styles from './Panel.module.scss'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -325,7 +327,7 @@ export const Panel = React.memo<Props>(props => {
                             data-tooltip="Close panel"
                             data-placement="left"
                         >
-                            <CloseIcon className="icon-inline" />
+                            <Icon as={CloseIcon} />
                         </Button>
                     </div>
                 }

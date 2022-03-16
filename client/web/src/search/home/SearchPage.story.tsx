@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 

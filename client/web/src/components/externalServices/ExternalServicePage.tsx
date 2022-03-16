@@ -1,6 +1,7 @@
+import React, { useEffect, useState, useCallback } from 'react'
+
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import * as H from 'history'
-import React, { useEffect, useState, useCallback } from 'react'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
