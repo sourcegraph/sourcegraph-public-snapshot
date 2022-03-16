@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/google/zoekt/query"
@@ -113,11 +114,25 @@ const (
 	Batch
 )
 
+// ToPatternString returns the simple string pattern of a basic query. It
+// assumes there is only on pattern atom.
+func ToPatternString(q query.Basic) string {
+	if p, ok := q.Pattern.(query.Pattern); ok {
+		if q.IsLiteral() {
+			// Escape regexp meta characters if this pattern should be treated literally.
+			return regexp.QuoteMeta(p.Value)
+		} else {
+			return p.Value
+		}
+	}
+	return ""
+}
+
 // ToTextPatternInfo converts a an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
+func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
 	// Handle lang: and -lang: filters.
@@ -132,16 +147,6 @@ func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 	// TextPatternInfo must be set true. The logic assumes that a literal
 	// pattern is an escaped regular expression.
 	isRegexp := q.IsLiteral() || q.IsRegexp()
-
-	var pattern string
-	if p, ok := q.Pattern.(query.Pattern); ok {
-		if q.IsLiteral() {
-			// Escape regexp meta characters if this pattern should be treated literally.
-			pattern = regexp.QuoteMeta(p.Value)
-		} else {
-			pattern = p.Value
-		}
-	}
 
 	if q.Pattern == nil {
 		// For compatibility: A nil pattern implies isRegexp is set to
@@ -160,7 +165,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 		IsStructuralPat: q.IsStructural(),
 		IsCaseSensitive: q.IsCaseSensitive(),
 		FileMatchLimit:  int32(count),
-		Pattern:         pattern,
+		Pattern:         ToPatternString(q),
 		IsNegated:       negated,
 
 		// Values dependent on parameters.
@@ -168,6 +173,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
+		PatternMatchesPath:           resultTypes.Has(result.TypePath),
+		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    q.FindValue(query.FieldCombyRule),
@@ -374,4 +381,22 @@ func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ Inde
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
+}
+
+// ComputeResultTypes returns result types based three inputs: `type:...` in the query,
+// the `pattern`, and top-level `searchType` (coming from a GQL value).
+func ComputeResultTypes(types []string, pattern string, searchType query.SearchType) result.Types {
+	var rts result.Types
+	if searchType == query.SearchTypeStructural && pattern != "" {
+		rts = result.TypeStructural
+	} else {
+		if len(types) == 0 {
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				rts = rts.With(result.TypeFromString[t])
+			}
+		}
+	}
+	return rts
 }
