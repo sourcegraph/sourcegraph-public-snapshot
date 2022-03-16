@@ -2,6 +2,6 @@
 #           ^^^^^^^^^^^^^ definition duplicate.repro/readFileSync.
 #           documentation signature of readFileSync.
  definition readFileSync.
-#           ^^^^^^^^^^^^^ definition local ERROR_DUPLICATE_DEFINITION
+#           ^^^^^^^^^^^^^ definition duplicate.repro/readFileSync.
 #           documentation signature of readFileSync.
  

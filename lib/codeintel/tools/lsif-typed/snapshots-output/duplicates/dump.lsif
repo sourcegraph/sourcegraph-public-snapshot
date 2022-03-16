@@ -11,17 +11,10 @@
 {"id":11,"name":"duplicates","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
 {"id":12,"type":"edge","label":"packageInformation","inV":11,"outV":9}
 {"id":13,"type":"vertex","label":"document","uri":"file:/root/duplicate.repro"}
-{"id":14,"type":"vertex","label":"definitionResult"}
-{"id":15,"type":"vertex","label":"resultSet"}
-{"id":16,"type":"vertex","label":"referenceResult"}
-{"id":17,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown","value":"signature of readFileSync."}}}
-{"id":18,"type":"edge","label":"textDocument/definition","inV":14,"outV":15}
-{"id":19,"type":"edge","label":"textDocument/references","inV":16,"outV":15}
-{"id":20,"type":"edge","label":"textDocument/hover","inV":17,"outV":15}
-{"id":21,"type":"vertex","label":"range","start":{"line":0,"character":11},"end":{"line":0,"character":24}}
-{"id":22,"type":"edge","label":"next","inV":3,"outV":21}
-{"id":23,"type":"edge","label":"item","inVs":[21],"outV":2,"document":13}
-{"id":24,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":24}}
-{"id":25,"type":"edge","label":"next","inV":15,"outV":24}
-{"id":26,"type":"edge","label":"item","inVs":[24],"outV":14,"document":13}
-{"id":27,"type":"edge","label":"contains","inVs":[21,24],"outV":13}
+{"id":14,"type":"vertex","label":"range","start":{"line":0,"character":11},"end":{"line":0,"character":24}}
+{"id":15,"type":"edge","label":"next","inV":3,"outV":14}
+{"id":16,"type":"edge","label":"item","inVs":[14],"outV":2,"document":13}
+{"id":17,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":24}}
+{"id":18,"type":"edge","label":"next","inV":3,"outV":17}
+{"id":19,"type":"edge","label":"item","inVs":[17],"outV":2,"document":13}
+{"id":20,"type":"edge","label":"contains","inVs":[14,17],"outV":13}
