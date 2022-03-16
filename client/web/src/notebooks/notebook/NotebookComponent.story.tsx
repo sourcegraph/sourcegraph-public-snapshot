@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -44,7 +45,6 @@ add('default', () => (
         {props => (
             <NotebookComponent
                 {...props}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}
@@ -73,7 +73,6 @@ add('default read-only', () => (
             <NotebookComponent
                 {...props}
                 isReadOnly={true}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}

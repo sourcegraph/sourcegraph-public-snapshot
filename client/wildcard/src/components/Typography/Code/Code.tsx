@@ -1,10 +1,11 @@
-import classNames from 'classnames'
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { ForwardReferenceComponent } from '../../../types'
-import typographyStyles from '../Typography.module.scss'
 import { getFontWeightStyle } from '../utils'
 
+import typographyStyles from '../Typography.module.scss'
 import styles from './Code.module.scss'
 
 interface CodeProps extends React.HTMLAttributes<HTMLElement> {

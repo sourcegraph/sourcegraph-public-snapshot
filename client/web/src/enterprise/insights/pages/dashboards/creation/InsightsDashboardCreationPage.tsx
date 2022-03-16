@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
@@ -7,9 +8,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 
@@ -17,6 +18,7 @@ import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from './components/InsightsDashboardCreationContent'
+
 import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}
@@ -52,7 +54,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     }
 
     return (
-        <Page className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title="Add new dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
@@ -92,6 +94,6 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                     )}
                 </InsightsDashboardCreationContent>
             </Container>
-        </Page>
+        </CodeInsightsPage>
     )
 }

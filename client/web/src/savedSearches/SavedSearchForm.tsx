@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'

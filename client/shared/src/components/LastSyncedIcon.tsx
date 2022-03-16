@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import format from 'date-fns/format'
 import WeatherCloudyClockIcon from 'mdi-react/WeatherCloudyClockIcon'
-import React from 'react'
 
 import styles from './LastSyncedIcon.module.scss'
 

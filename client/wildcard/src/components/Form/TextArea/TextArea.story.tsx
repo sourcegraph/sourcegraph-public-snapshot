@@ -1,6 +1,7 @@
+import React, { useCallback, useState } from 'react'
+
 import { Meta } from '@storybook/react'
 import { StoryFnReactReturnType } from '@storybook/react/dist/ts3.9/client/preview/types'
-import React, { useCallback, useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'

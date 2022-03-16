@@ -1,5 +1,6 @@
-import copy from 'copy-to-clipboard'
 import { useCallback } from 'react'
+
+import copy from 'copy-to-clipboard'
 import { merge, Observable, of } from 'rxjs'
 import { delay, startWith, switchMapTo, tap } from 'rxjs/operators'
 

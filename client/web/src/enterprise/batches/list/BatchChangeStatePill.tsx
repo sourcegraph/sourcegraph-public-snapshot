@@ -1,6 +1,7 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import HistoryIcon from 'mdi-react/HistoryIcon'
-import React, { useMemo } from 'react'
 
 import { Badge } from '@sourcegraph/wildcard'
 

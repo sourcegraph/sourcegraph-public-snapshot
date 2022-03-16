@@ -152,7 +152,7 @@ export interface CodeInsightsBackend {
     getFirstExampleRepository: () => Observable<string>
 
     /**
-     * Returns a feaures object used to show/hide and enable/disable UI elements
+     * Returns a features object used to show/hide and enable/disable UI elements
      */
-    getUiFeatures: () => Observable<UiFeatures>
+    getUiFeatures: () => UiFeatures
 }

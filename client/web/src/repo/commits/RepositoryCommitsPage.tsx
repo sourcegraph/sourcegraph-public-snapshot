@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useEffect, useCallback, useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -18,6 +19,7 @@ import { externalLinkFieldsFragment } from '../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
+
 import styles from './RepositoryCommitsPage.module.scss'
 
 export const gitCommitFragment = gql`

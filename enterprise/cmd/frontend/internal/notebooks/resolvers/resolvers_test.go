@@ -59,6 +59,24 @@ const notebookFields = `
 				}
 			}
 		}
+		... on SymbolBlock {
+			__typename
+			id
+			symbolInput {
+				repositoryName
+				filePath
+				revision
+				lineContext
+				symbolName
+				symbolContainerName
+				symbolKind
+			}
+		}
+		... on ComputeBlock {
+			__typename
+			id
+			computeInput
+		}
 	}
 `
 
@@ -122,6 +140,18 @@ func notebookFixture(creatorID int32, namespaceUserID int32, namespaceOrgID int3
 			Revision:       &revision,
 			LineRange:      &notebooks.LineRange{StartLine: 10, EndLine: 12},
 		}},
+		{ID: "4", Type: notebooks.NotebookSymbolBlockType, SymbolInput: &notebooks.NotebookSymbolBlockInput{
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			FilePath:            "client/web/file.tsx",
+			Revision:            &revision,
+			LineContext:         1,
+			SymbolName:          "function",
+			SymbolContainerName: "container",
+			SymbolKind:          "FUNCTION",
+		}},
+		{ID: "5", Type: notebooks.NotebookComputeBlockType, ComputeInput: &notebooks.NotebookComputeBlockInput{
+			Value: "github.com/sourcegraph/sourcegraph"},
+		},
 	}
 	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: creatorID, UpdaterUserID: creatorID, NamespaceUserID: namespaceUserID, NamespaceOrgID: namespaceOrgID}
 }

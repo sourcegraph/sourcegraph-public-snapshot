@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -17,9 +18,10 @@ import { CopyableText } from '../../components/CopyableText'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
-import styles from './CollaboratorsPanel.module.scss'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
+
+import styles from './CollaboratorsPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -43,6 +45,8 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
     const [loadingInvites, setLoadingInvites] = useState<Set<string>>(new Set<string>())
     const [successfulInvites, setSuccessfulInvites] = useState<Set<string>>(new Set<string>())
+
+    const isSiteAdmin = authenticatedUser?.siteAdmin ?? false
 
     useEffect(() => {
         if (!Array.isArray(collaborators)) {
@@ -88,12 +92,12 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
 
     const contentDisplay =
         filteredCollaborators?.length === 0 || !emailEnabled ? (
-            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} />
+            <CollaboratorsPanelNullState username={authenticatedUser?.username || ''} isSiteAdmin={isSiteAdmin} />
         ) : (
             <div className={classNames('row', 'pt-1')}>
                 {isErrorLike(inviteError) && <ErrorAlert error={inviteError} />}
 
-                <CollaboratorsPanelInfo isSiteAdmin={authenticatedUser?.siteAdmin ?? false} />
+                <CollaboratorsPanelInfo isSiteAdmin={isSiteAdmin} />
 
                 {filteredCollaborators?.map((person: InvitableCollaborator) => (
                     <div
@@ -152,7 +156,10 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     )
 }
 
-const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }> = ({ username }) => {
+const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string; isSiteAdmin: boolean }> = ({
+    username,
+    isSiteAdmin,
+}) => {
     const inviteURL = `${window.context.externalURL}/sign-up?invitedBy=${username}`
 
     useEffect(() => {
@@ -174,7 +181,13 @@ const CollaboratorsPanelNullState: React.FunctionComponent<{ username: string }>
                 'h-100'
             )}
         >
-            {emailEnabled ? <div className="text-center">No collaborators found in sampled repositories.</div> : null}
+            {emailEnabled ? (
+                <div className="text-muted text-center">No collaborators found in sampled repositories.</div>
+            ) : isSiteAdmin ? (
+                <div className="text-muted text-center">
+                    This server is not configured to send emails. <Link to="/help/admin/config/email">Learn more</Link>
+                </div>
+            ) : null}
             <div className="text-muted mt-3 text-center">
                 You can invite people to Sourcegraph with this direct link:
             </div>
@@ -220,8 +233,8 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                                     but no special permissions are granted.
                                 </p>
                                 <p className={classNames(styles.infoBox, 'mb-0')}>
-                                    {/* TODO(#32253): Update the documentation link */}
-                                    If you wish to disable this feature, see <Link to="#">this documentation</Link>.
+                                    If you wish to disable this feature, see{' '}
+                                    <Link to="/help/admin/config/user_invitations">this documentation</Link>.
                                 </p>
                             </>
                         ) : (

@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
@@ -7,7 +9,6 @@ import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -23,7 +24,6 @@ import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
 import { SearchPatternType } from '../../graphql-operations'
-import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import { renderBrandedToString } from '../render-branded-to-string'
 import {
@@ -36,6 +36,8 @@ import {
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
 import { CreateSearchContextButton } from './components/CreateSearchContextButton'
+
+import featureTourStyles from '../FeatureTour.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {

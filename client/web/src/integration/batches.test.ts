@@ -36,7 +36,8 @@ import { percySnapshotWithVariants } from './utils'
 
 const now = new Date()
 
-const batchChangeListNode: ListBatchChange = {
+const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
+    __typename: 'BatchChange',
     id: 'batch123',
     url: '/users/alice/batch-changes/test-batch-change',
     name: 'test-batch-change',
@@ -317,6 +318,7 @@ function mockCommonGraphQLResponses(
                     unpublished: 3,
                     draft: 2,
                 },
+                state: BatchChangeState.OPEN,
                 closedAt: null,
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
@@ -359,14 +361,12 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'User',
                           batchChanges: {
+                              __typename: 'BatchChangeConnection',
                               nodes: [batchChangeListNode],
                               pageInfo: {
                                   endCursor: null,
                                   hasNextPage: false,
                               },
-                              totalCount: 1,
-                          },
-                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -375,6 +375,7 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'Org',
                           batchChanges: {
+                              __typename: 'BatchChangeConnection',
                               nodes: [
                                   {
                                       ...batchChangeListNode,
@@ -389,9 +390,6 @@ function mockCommonGraphQLResponses(
                                   endCursor: null,
                                   hasNextPage: false,
                               },
-                              totalCount: 1,
-                          },
-                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -417,22 +415,23 @@ describe('Batches', () => {
     afterEach(() => testContext?.dispose())
 
     const batchChangeLicenseGraphQlResults = {
-        AreBatchChangesLicensed: () => ({
+        GetLicenseAndUsageInfo: () => ({
             campaigns: true,
             batchChanges: true,
+            allBatchChanges: {
+                totalCount: 1,
+            },
         }),
     }
     const batchChangesListResults = {
         BatchChanges: () => ({
             batchChanges: {
+                __typename: 'BatchChangeConnection' as const,
                 nodes: [batchChangeListNode],
                 pageInfo: {
                     endCursor: null,
                     hasNextPage: false,
                 },
-                totalCount: 1,
-            },
-            allBatchChanges: {
                 totalCount: 1,
             },
         }),

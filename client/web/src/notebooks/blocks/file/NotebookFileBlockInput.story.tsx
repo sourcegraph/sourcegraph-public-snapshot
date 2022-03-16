@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -21,7 +22,6 @@ add('default', () => (
                 onChange={noop}
                 onFocus={noop}
                 onBlur={noop}
-                isMacPlatform={false}
             />
         )}
     </WebStory>
@@ -36,7 +36,6 @@ add('default with suggestions', () => (
                 onChange={noop}
                 onFocus={noop}
                 onBlur={noop}
-                isMacPlatform={false}
                 suggestions={['client/web/file1.tsx', 'client/web/file2.tsx', 'client/web/file3.tsx']}
                 focusInput={true}
             />
@@ -54,7 +53,6 @@ add('valid', () => (
                 onFocus={noop}
                 onBlur={noop}
                 isValid={true}
-                isMacPlatform={false}
             />
         )}
     </WebStory>
@@ -70,7 +68,6 @@ add('invalid', () => (
                 onFocus={noop}
                 onBlur={noop}
                 isValid={false}
-                isMacPlatform={false}
             />
         )}
     </WebStory>

@@ -256,7 +256,7 @@ func TestServer_RepoLookup(t *testing.T) {
 	}
 
 	npmSource := types.ExternalService{
-		Kind:   extsvc.KindNPMPackages,
+		Kind:   extsvc.KindNpmPackages,
 		Config: `{}`,
 	}
 
@@ -355,8 +355,8 @@ func TestServer_RepoLookup(t *testing.T) {
 		URI:  "npm/package",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "npm/package",
-			ServiceType: extsvc.TypeNPMPackages,
-			ServiceID:   extsvc.TypeNPMPackages,
+			ServiceType: extsvc.TypeNpmPackages,
+			ServiceID:   extsvc.TypeNpmPackages,
 		},
 		Sources: map[string]*types.SourceInfo{
 			npmSource.URN(): {
@@ -364,8 +364,8 @@ func TestServer_RepoLookup(t *testing.T) {
 				CloneURL: "npm/package",
 			},
 		},
-		Metadata: &npmpackages.Metadata{Package: func() *reposource.NPMPackage {
-			p, _ := reposource.NewNPMPackage("", "package")
+		Metadata: &npmpackages.Metadata{Package: func() *reposource.NpmPackage {
+			p, _ := reposource.NewNpmPackage("", "package")
 			return p
 		}()},
 	}

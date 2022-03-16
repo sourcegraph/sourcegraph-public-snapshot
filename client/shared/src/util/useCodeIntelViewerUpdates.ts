@@ -1,4 +1,5 @@
 import { useMemo, useEffect } from 'react'
+
 import { ReplaySubject } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'

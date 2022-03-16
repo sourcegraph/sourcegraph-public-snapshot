@@ -4661,7 +4661,7 @@ Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand
 
 <br />
 
-### Git Server: Codeintel: NPM invocation stats
+### Git Server: Codeintel: npm invocation stats
 
 #### gitserver: codeintel_npm_total
 
@@ -11444,7 +11444,7 @@ Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand
 
 <br />
 
-### Repo Updater: Codeintel: NPM invocation stats
+### Repo Updater: Codeintel: npm invocation stats
 
 #### repo-updater: codeintel_npm_total
 

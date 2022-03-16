@@ -1,30 +1,32 @@
+import React, { useMemo } from 'react'
+
 import ArrowDownIcon from 'mdi-react/ArrowDownIcon'
 import ArrowUpIcon from 'mdi-react/ArrowUpIcon'
 import ContentDuplicateIcon from 'mdi-react/ContentDuplicateIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { useMemo } from 'react'
+
+import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 
 import { BlockProps } from '../..'
+import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { BlockMenuAction } from './NotebookBlockMenu'
 
 interface UseCommonBlockMenuActionsOptions
     extends Pick<BlockProps, 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock'> {
-    modifierKeyLabel: string
     isInputFocused: boolean
-    isMacPlatform: boolean
 }
 
 export const useCommonBlockMenuActions = ({
     isInputFocused,
     isReadOnly,
-    modifierKeyLabel,
-    isMacPlatform,
     onMoveBlock,
     onDeleteBlock,
     onDuplicateBlock,
-}: UseCommonBlockMenuActionsOptions): BlockMenuAction[] =>
-    useMemo(() => {
+}: UseCommonBlockMenuActionsOptions): BlockMenuAction[] => {
+    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    const modifierKeyLabel = useModifierKeyLabel()
+    return useMemo(() => {
         if (isReadOnly) {
             return []
         }
@@ -59,3 +61,4 @@ export const useCommonBlockMenuActions = ({
             },
         ]
     }, [isReadOnly, isMacPlatform, isInputFocused, modifierKeyLabel, onMoveBlock, onDeleteBlock, onDuplicateBlock])
+}

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
@@ -12,8 +13,9 @@ import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
 
 import { DrillDownRegExpInput, LabelWithReset } from './components/drill-down-reg-exp-input/DrillDownRegExpInput'
-import styles from './DrillDownFiltersForm.module.scss'
 import { validRegexp } from './validators'
+
+import styles from './DrillDownFiltersForm.module.scss'
 
 export interface DrillDownFiltersFormValues {
     includeRepoRegexp: string
@@ -40,7 +42,7 @@ interface DrillDownFiltersFormProps {
     originalFiltersValue: DrillDownFiltersFormValues
 
     /**
-     * Live filters that lives only in runtime memory and can be different
+     * Live filters that live only in runtime memory and can be different
      * from originalFiltersValue of insight until the user syncs them by
      * save/update default filters.
      */

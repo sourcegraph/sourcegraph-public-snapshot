@@ -1,9 +1,10 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -55,12 +56,13 @@ import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
-import styles from './GlobalNavbar.module.scss'
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
+
+import styles from './GlobalNavbar.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -189,14 +191,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
-    const codeInsights =
-        // This is temporal gate check since the cloud landing page hasn't been released yet and
-        // cloud doesn't support code insights yet. Remove this line when code insights cloud
-        // landing page will be released
-        !isSourcegraphDotCom &&
-        props.authenticatedUser &&
-        codeInsightsEnabled &&
-        isCodeInsightsEnabled(props.settingsCascade)
+    const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
     const [hasInsightPageBeenViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
 
     const searchNavBar = (

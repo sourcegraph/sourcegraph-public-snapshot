@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 import { Redirect, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,9 +17,10 @@ import { eventLogger } from '../tracking/eventLogger'
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 import { VsCodeSignUpPage } from './VsCodeSignUpPage'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 export interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
@@ -37,10 +39,19 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
+    const invitedBy = query.get('invitedBy')
 
     useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
-    }, [])
+
+        if (invitedBy !== null) {
+            const parameters = {
+                isAuthenticated: !!authenticatedUser,
+                allowSignup: context.allowSignup,
+            }
+            eventLogger.log('SignUpInvitedByUser', parameters, parameters)
+        }
+    }, [invitedBy, authenticatedUser, context.allowSignup])
 
     if (authenticatedUser) {
         const returnTo = getReturnTo(location)

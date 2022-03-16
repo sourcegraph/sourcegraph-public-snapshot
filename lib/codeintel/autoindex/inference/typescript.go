@@ -22,7 +22,7 @@ func TypeScriptPatterns() []*regexp.Regexp {
 	}
 }
 
-const lsifTscImage = "sourcegraph/lsif-node:autoindex"
+const lsifTypescriptImage = "sourcegraph/lsif-typescript:autoindex"
 const nMuslCommand = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 
 var tscSegmentBlockList = append([]string{"node_modules"}, segmentBlockList...)
@@ -53,7 +53,7 @@ func inferSingleTypeScriptIndexJob(
 
 		dockerSteps = append(dockerSteps, config.DockerStep{
 			Root:     dir,
-			Image:    lsifTscImage,
+			Image:    lsifTypescriptImage,
 			Commands: commands,
 		})
 	}
@@ -73,7 +73,7 @@ func inferSingleTypeScriptIndexJob(
 		dockerSteps[i], dockerSteps[n-i-1] = dockerSteps[n-i-1], dockerSteps[i]
 	}
 
-	indexerArgs := []string{"lsif-tsc", "-p", "."}
+	indexerArgs := []string{"lsif-typescript-autoindex", "index"}
 	if shouldInferConfig {
 		indexerArgs = append(indexerArgs, "--inferTSConfig")
 	}
@@ -82,7 +82,7 @@ func inferSingleTypeScriptIndexJob(
 		Steps:       dockerSteps,
 		LocalSteps:  localSteps,
 		Root:        dirWithoutDot(tsConfigPath),
-		Indexer:     lsifTscImage,
+		Indexer:     lsifTypescriptImage,
 		IndexerArgs: indexerArgs,
 		Outfile:     "",
 	}
@@ -112,14 +112,14 @@ func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []co
 
 func checkLernaFile(gitclient GitClient, path string, pathMap pathMap) (isYarn bool) {
 	lernaConfig := struct {
-		NPMClient string `json:"npmClient"`
+		NpmClient string `json:"npmClient"`
 	}{}
 
 	for _, dir := range ancestorDirs(path) {
 		if pathMap.contains(dir, "lerna.json") {
 			lernaPath := filepath.Join(dir, "lerna.json")
 			if b, err := gitclient.RawContents(context.TODO(), lernaPath); err == nil {
-				if err := json.Unmarshal(b, &lernaConfig); err == nil && lernaConfig.NPMClient == "yarn" {
+				if err := json.Unmarshal(b, &lernaConfig); err == nil && lernaConfig.NpmClient == "yarn" {
 					return true
 				}
 			}

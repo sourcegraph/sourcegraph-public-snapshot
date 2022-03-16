@@ -354,7 +354,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 }
 
 func makeServerOptions() (options []httpserver.ServerOptions) {
-	if deploy.Type() == deploy.Kubernetes {
+	if deploy.IsDeployTypeKubernetes(deploy.Type()) {
 		// On kubernetes, we want to wait an additional 5 seconds after we receive a
 		// shutdown request to give some additional time for the endpoint changes
 		// to propagate to services talking to this server like the LB or ingress

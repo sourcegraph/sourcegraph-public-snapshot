@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Tooltip } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -22,9 +23,11 @@ import {
     Position,
     AnchorLink,
     Select,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { FlagSet } from '../featureFlags/featureFlags'
 import { ThemePreference } from '../stores/themeState'
 import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
@@ -42,6 +45,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
+    featureFlags?: FlagSet
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -103,6 +107,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         position = Position.bottomEnd,
+        featureFlags,
     } = props
 
     const supportsSystemTheme = useMemo(
@@ -123,6 +128,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
+    const openBetaEnabled = featureFlags?.get('open-beta-enabled')
 
     return (
         <Menu>
@@ -182,6 +188,14 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                             Saved searches
                         </MenuLink>
+                        {openBetaEnabled && (
+                            <MenuLink
+                                as={Link}
+                                to={`/users/${props.authenticatedUser.username}/settings/organizations`}
+                            >
+                                Your organizations <Badge variant="info">NEW</Badge>
+                            </MenuLink>
+                        )}
                         <MenuDivider />
                         <div className="px-2 py-1">
                             <div className="d-flex align-items-center">
@@ -218,7 +232,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                             ))}
                         </div>
-                        {props.authenticatedUser.organizations.nodes.length > 0 && (
+                        {!openBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                             <>
                                 <MenuDivider />
                                 <MenuHeader>Your organizations</MenuHeader>

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { range, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subject, Subscription, BehaviorSubject, NEVER } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
@@ -46,7 +47,7 @@ interface Props extends Repo {
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
-interface HighlightRange {
+export interface HighlightRange {
     /**
      * The 0-based line number that this highlight appears in
      */

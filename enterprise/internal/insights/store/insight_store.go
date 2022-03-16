@@ -126,6 +126,10 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	if err != nil {
 		return nil, err
 	}
+	if len(insightIds) == 0 {
+		return []types.InsightViewSeries{}, nil
+	}
+
 	insightIdElems := make([]*sqlf.Query, 0, len(insightIds))
 	for _, id := range insightIds {
 		insightIdElems = append(insightIdElems, sqlf.Sprintf("%s", id))
@@ -222,6 +226,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			},
 			OtherThreshold:   seriesSet[0].OtherThreshold,
 			PresentationType: seriesSet[0].PresentationType,
+			IsFrozen:         seriesSet[0].IsFrozen,
 		})
 	}
 
@@ -440,6 +445,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.GeneratedFromCaptureGroups,
 			&temp.JustInTime,
 			&temp.GenerationMethod,
+			&temp.IsFrozen,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -775,7 +781,7 @@ func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFron
 }
 
 func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCount, id)))
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCountSql, id)))
 	if err != nil {
 		return 0, nil
 	}
@@ -788,6 +794,27 @@ func (s *InsightStore) GetSoftDeletedSeries(ctx context.Context, deletedBefore t
 
 func (s *InsightStore) HardDeleteSeries(ctx context.Context, seriesId string) error {
 	return s.Exec(ctx, sqlf.Sprintf(hardDeleteSeries, seriesId))
+}
+
+func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globalCount int, totalCount int, err error) {
+	rows := s.QueryRow(ctx, sqlf.Sprintf(getUnfrozenInsightCountSql))
+	err = rows.Scan(
+		&globalCount,
+		&totalCount,
+	)
+	return
+}
+
+func (s *InsightStore) FreezeAllInsights(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(freezeAllInsightsSql))
+}
+
+func (s *InsightStore) UnfreezeAllInsights(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(unfreezeAllInsightsSql))
+}
+
+func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) error {
+	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
 }
 
 const setSeriesStatusSql = `
@@ -870,7 +897,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -883,7 +910,7 @@ SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.descri
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -924,7 +951,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -946,7 +973,7 @@ SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_va
 WHERE series_id = %s
 `
 
-const getReferenceCount = `
+const getReferenceCountSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
 SELECT COUNT(*) from dashboard_insight_view
 WHERE insight_view_id = %s
@@ -965,4 +992,42 @@ WHERE i.deleted_at IS NOT NULL
 const hardDeleteSeries = `
 -- source: enterprise/internal/insights/store/insight_store.go:HardDeleteSeries
 DELETE FROM insight_series WHERE series_id = %s;
+`
+
+const freezeAllInsightsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:FreezeAllInsights
+UPDATE insight_view SET is_frozen = TRUE
+`
+
+const unfreezeAllInsightsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UnfreezeAllInsights
+UPDATE insight_view SET is_frozen = FALSE
+`
+
+const getUnfrozenInsightCountSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetFrozenInsightCounts
+SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenTotal.total as unfrozenTotal FROM (
+	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
+	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE iv.is_frozen = FALSE AND dg.global = TRUE
+) as unfrozenGlobal
+CROSS JOIN
+(
+	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
+	WHERE iv.is_frozen = FALSE
+) as unfrozenTotal;
+`
+
+const unfreezeGlobalInsightsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
+UPDATE insight_view SET is_frozen = FALSE
+WHERE id IN (
+	SELECT DISTINCT(iv.id) from insight_view as iv
+	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
+	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
+	WHERE dg.global = TRUE
+	ORDER BY iv.id ASC
+	LIMIT %s
+)
 `

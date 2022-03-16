@@ -1,5 +1,6 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
@@ -24,6 +25,7 @@ import {
     Button,
     Alert,
     Link,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -48,6 +50,7 @@ import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+
 import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props
@@ -364,7 +367,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 variant="primary"
                                 as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Add repositories
+                                <Icon as={AddIcon} /> Add repositories
                             </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
                             <Button
@@ -373,7 +376,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 variant="primary"
                                 as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Add repositories
+                                <Icon as={AddIcon} /> Add repositories
                             </Button>
                         ) : (
                             <Button
@@ -382,7 +385,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 variant="primary"
                                 as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Connect code hosts
+                                <Icon as={AddIcon} /> Connect code hosts
                             </Button>
                         )}
                     </span>

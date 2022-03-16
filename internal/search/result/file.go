@@ -65,6 +65,13 @@ func (fm *FileMatch) ResultCount() int {
 	return rc
 }
 
+// IsPathMatch returns true if a `FileMatch` has no line or symbol matches. In
+// the absence of a true `PathMatch` type, we use this function as a proxy
+// signal to drive `select:file` logic that deduplicates path results.
+func (fm *FileMatch) IsPathMatch() bool {
+	return fm.LineMatches == nil && fm.Symbols == nil
+}
+
 func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 	switch selectPath.Root() {
 	case filter.Repository:
