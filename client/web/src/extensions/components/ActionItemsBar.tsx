@@ -21,7 +21,7 @@ import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, LoadingSpinner, useObservable, Link, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -227,7 +227,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                         tabIndex={-1}
                         variant="link"
                     >
-                        <MenuUpIcon className="icon-inline" />
+                        <Icon as={MenuUpIcon} />
                     </Button>
                 )}
                 <ActionsContainer
@@ -287,7 +287,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                         tabIndex={-1}
                         variant="link"
                     >
-                        <MenuDownIcon className="icon-inline" />
+                        <Icon as={MenuDownIcon} />
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
@@ -299,7 +299,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                             data-tooltip="Add extensions"
                             aria-label="Add extensions"
                         >
-                            <PlusIcon className="icon-inline" />
+                            <Icon as={PlusIcon} />
                         </Link>
                     </li>
                 </ul>
@@ -333,9 +333,9 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                         {!haveExtensionsLoaded ? (
                             <LoadingSpinner />
                         ) : isOpen ? (
-                            <ChevronDoubleUpIcon data-testid="action-items-toggle-open" className="icon-inline" />
+                            <Icon data-testid="action-items-toggle-open" as={ChevronDoubleUpIcon} />
                         ) : (
-                            <PuzzleOutlineIcon className="icon-inline" />
+                            <Icon as={PuzzleOutlineIcon} />
                         )}
                     </ButtonLink>
                 </div>
