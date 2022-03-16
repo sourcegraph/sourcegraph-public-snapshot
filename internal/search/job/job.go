@@ -371,13 +371,10 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 		return search.TextParameters{}, err
 	}
 
-	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
-
 	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       q,
-		Features:    toFeatures(jargs.SearchInputs.Features),
-		Timeout:     search.TimeoutDuration(b),
+		Query:    q,
+		Features: toFeatures(jargs.SearchInputs.Features),
+		Timeout:  search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
@@ -386,12 +383,16 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 		SearcherURLs: jargs.SearcherURLs,
 	}
 
-	args.ResultTypes = computeResultTypes(args, p.Pattern, jargs.SearchInputs.PatternType)
-	if p.Pattern == "" {
+	types, _ := q.StringValues(query.FieldType)
+	resultTypes := search.ComputeResultTypes(types, search.ToPatternString(b), jargs.SearchInputs.PatternType)
+	args.ResultTypes = resultTypes
+	args.PatternInfo = search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
+
+	if args.PatternInfo.Pattern == "" {
 		// Fallback to basic search for searching repos and files if
 		// the structural search pattern is empty.
 		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-		p.IsStructuralPat = false
+		args.PatternInfo.IsStructuralPat = false
 	}
 
 	return args, nil
@@ -508,33 +509,6 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	return search.Features{
 		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
 	}
-}
-
-// withResultTypes populates the ResultTypes field of args, which drives the kind
-// of search to run (e.g., text search, symbol search).
-func computeResultTypes(args search.TextParameters, pattern string, searchType query.SearchType) result.Types {
-	var rts result.Types
-	if searchType == query.SearchTypeStructural && pattern != "" {
-		rts = result.TypeStructural
-	} else {
-		stringTypes, _ := args.Query.StringValues(query.FieldType)
-		if len(stringTypes) == 0 {
-			rts = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, stringType := range stringTypes {
-				rts = rts.With(result.TypeFromString[stringType])
-			}
-		}
-	}
-
-	if rts.Has(result.TypeFile) {
-		args.PatternInfo.PatternMatchesContent = true
-	}
-
-	if rts.Has(result.TypePath) {
-		args.PatternInfo.PatternMatchesPath = true
-	}
-	return rts
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
