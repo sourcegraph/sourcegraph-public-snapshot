@@ -37,20 +37,17 @@ func Expand(ctx context.Context, db database.DB, jobArgs *job.Args, oldPlan quer
 		q := q
 		g.Go(func() error {
 			predicatePlan, err := Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				children := make([]job.Job, 0, len(plan))
-				for _, basicQuery := range plan {
-					child, err := job.ToEvaluateJob(jobArgs, basicQuery)
-					if err != nil {
-						return nil, err
-					}
-					children = append(children, child)
-				}
-
-				agg := streaming.NewAggregatingStream()
-				_, err = job.NewOrJob(children...).Run(ctx, db, agg)
+				predicateJob, err := job.FromExpandedPlan(jobArgs, plan)
 				if err != nil {
 					return nil, err
 				}
+
+				agg := streaming.NewAggregatingStream()
+				_, err = predicateJob.Run(ctx, db, agg)
+				if err != nil {
+					return nil, err
+				}
+
 				return agg.Results, nil
 			})
 			if errors.Is(err, ErrNoResults) {

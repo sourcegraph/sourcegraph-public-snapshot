@@ -601,7 +601,7 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 		job = NewSelectJob(sp, job)
 	}
 
-	return NewAlertJob(args.SearchInputs, NewTimeoutJob(timeout, NewLimitJob(maxResults, job))), err
+	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), nil
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
@@ -615,7 +615,7 @@ func FromExpandedPlan(args *Args, plan query.Plan) (Job, error) {
 		}
 		children = append(children, child)
 	}
-	return NewOrJob(children...), nil
+	return NewAlertJob(args.SearchInputs, NewOrJob(children...)), nil
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{

@@ -162,18 +162,17 @@ func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender
 	}
 
 	err = g.Wait()
-	if err = errors.Ignore(err, errors.IsContextCanceled); err != nil {
-		return maxAlerter.Alert, err
-	}
 
-	// Send results that were only seen by some of the sources
+	// Send results that were only seen by some of the sources, regardless of
+	// whether we got an error from any of our children.
 	unsentTracked := merger.UnsentTracked()
 	if len(unsentTracked) > 0 {
 		stream.Send(streaming.SearchEvent{
 			Results: unsentTracked,
 		})
 	}
-	return maxAlerter.Alert, nil
+
+	return maxAlerter.Alert, errors.Ignore(err, errors.IsContextCanceled)
 }
 
 func (j *OrJob) Name() string {
