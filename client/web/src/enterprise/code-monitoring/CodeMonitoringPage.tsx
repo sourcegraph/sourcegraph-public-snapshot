@@ -102,10 +102,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     },
                 ]}
                 actions={
+                    userHasCodeMonitors &&
+                    userHasCodeMonitors !== 'loading' &&
+                    !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon as={PlusIcon} />
-                            Create code monitor
+                            Create
                         </Button>
                     )
                 }

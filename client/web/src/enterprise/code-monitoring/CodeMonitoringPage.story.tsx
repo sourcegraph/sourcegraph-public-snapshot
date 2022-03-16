@@ -18,7 +18,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', m
     chromatic: {
         // Delay screenshot taking, so <CodeMonitoringPage /> is ready to show content.
         delay: 600,
-        disableSnapshot: false,
+        chromatic: { disableSnapshot: false },
     },
 })
 

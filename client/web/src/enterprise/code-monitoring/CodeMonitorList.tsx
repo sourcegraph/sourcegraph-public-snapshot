@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link } from '@sourcegraph/wildcard'
+import { Button, Container, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -28,12 +28,13 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
 }) => (
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
-        {!authenticatedUser && (
-            <CodeMonitorSignUpLink
-                className="my-3"
-                eventName="SignUpPLGMonitor_EmptyList"
-                text="Get started with code monitors"
-            />
+        {authenticatedUser ? (
+            <Button to="/code-monitoring/new" variant="primary" as={Link}>
+                <Icon as={PlusIcon} />
+                Create a code monitor
+            </Button>
+        ) : (
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
         )}
     </div>
 )
