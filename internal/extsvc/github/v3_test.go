@@ -722,9 +722,12 @@ func TestV3Client_WithAuthenticator(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	newCache := func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
+
 	old := &V3Client{
-		apiURL: uri,
-		auth:   &auth.OAuthBearerToken{Token: "old_token"},
+		apiURL:          uri,
+		auth:            &auth.OAuthBearerToken{Token: "old_token"},
+		NewCacheFactory: newCache,
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
