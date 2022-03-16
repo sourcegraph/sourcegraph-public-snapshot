@@ -169,7 +169,7 @@ describe('Code intelligence regression test suite', () => {
         //     )
         // })
 
-        // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/
+        // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/32684
         // test('Definitions, references, and hovers', () =>
         //     testCodeNavigation(driver, config, {
         //         page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
