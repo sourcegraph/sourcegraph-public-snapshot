@@ -534,6 +534,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("dev/ci/integration/e2e/run.sh"),
+			bk.Parallelism(30),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -554,6 +555,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("dev/ci/integration/qa/run.sh"),
+			bk.Parallelism(30),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
