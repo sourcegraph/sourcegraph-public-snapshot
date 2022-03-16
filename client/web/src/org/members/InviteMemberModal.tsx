@@ -7,7 +7,7 @@ import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Modal } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -119,7 +119,7 @@ export const InvitedNotification: React.FunctionComponent<InvitedNotificationPro
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <CloseIcon className="icon-inline" />
+            <Icon as={CloseIcon} />
         </Button>
     </Alert>
 )
