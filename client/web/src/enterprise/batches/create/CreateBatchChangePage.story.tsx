@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 
 import {
     EMPTY_SETTINGS_CASCADE,
@@ -11,9 +12,13 @@ import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
-const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const { add } = storiesOf('web/batches/CreateBatchChangePage', module)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
+    .addParameters({
+        chromatic: {
+            disableSnapshot: false,
+        },
+    })
 
 add('experimental execution disabled', () => (
     <WebStory>

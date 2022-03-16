@@ -83,14 +83,20 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	}
 
 	want := &types.CodeInsightsUsageStatistics{
-		WeeklyUsageStatisticsByInsight: weeklyUsageStatisticsByInsight,
-		WeeklyInsightsPageViews:        &twoInt,
-		WeeklyInsightsUniquePageViews:  &oneInt,
-		WeeklyInsightConfigureClick:    &zeroInt,
-		WeeklyInsightAddMoreClick:      &zeroInt,
-		WeekStart:                      weekStart,
-		WeeklyInsightCreators:          &twoInt,
-		WeeklyFirstTimeInsightCreators: &oneInt,
+		WeeklyUsageStatisticsByInsight:          weeklyUsageStatisticsByInsight,
+		WeeklyInsightsPageViews:                 &twoInt,
+		WeeklyInsightsGetStartedPageViews:       &zeroInt,
+		WeeklyInsightsUniquePageViews:           &oneInt,
+		WeeklyInsightsGetStartedUniquePageViews: &zeroInt,
+		WeeklyInsightConfigureClick:             &zeroInt,
+		WeeklyInsightAddMoreClick:               &zeroInt,
+		WeekStart:                               weekStart,
+		WeeklyInsightCreators:                   &twoInt,
+		WeeklyFirstTimeInsightCreators:          &oneInt,
+		WeeklyGetStartedTabClickByTab:           []types.InsightGetStartedTabClickPing{},
+		WeeklyGetStartedTabMoreClickByTab:       []types.InsightGetStartedTabClickPing{},
+		TotalDashboardCount:                     &zeroInt,
+		TotalOrgsWithDashboard:                  &zeroInt,
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{

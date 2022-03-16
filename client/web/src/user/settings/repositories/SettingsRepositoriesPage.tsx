@@ -1,15 +1,13 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
 import {
     FilteredConnectionFilter,
@@ -18,7 +16,17 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    ProductStatusBadge,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Alert,
+    Link,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -42,6 +50,7 @@ import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+
 import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props
@@ -283,7 +292,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }
 
     const getSearchContextBanner = (orgName: string): JSX.Element => (
-        <div className="alert alert-success my-3" role="alert" key="add-repos">
+        <Alert className="my-3" role="alert" key="add-repos" variant="success">
             <h4 className="align-middle mb-1">Added repositories</h4>
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
@@ -295,7 +304,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </code>
                 .
             </p>
-        </div>
+        </Alert>
     )
 
     return (
@@ -306,10 +315,10 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 page="settings/repositories"
             />
             {status === 'scheduled' && (
-                <div className="alert alert-info">
+                <Alert variant="info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories may not be
                     up-to-date and will refresh once sync is finished.
-                </div>
+                </Alert>
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
@@ -343,37 +352,41 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 actions={
                     <span>
                         {hasRepos ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
                                 Manage repositories
-                            </Link>
+                            </Button>
                         ) : isUserOwner ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                                <Icon as={AddIcon} /> Add repositories
+                            </Button>
                         ) : externalServices && externalServices.length !== 0 ? (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                                <Icon as={AddIcon} /> Add repositories
+                            </Button>
                         ) : (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${routingPrefix}/code-hosts`}
                                 onClick={logManageRepositoriesClick}
+                                variant="primary"
+                                as={Link}
                             >
-                                <AddIcon className="icon-inline" /> Connect code hosts
-                            </Link>
+                                <Icon as={AddIcon} /> Connect code hosts
+                            </Button>
                         )}
                     </span>
                 }

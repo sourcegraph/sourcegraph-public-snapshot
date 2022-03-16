@@ -1,18 +1,21 @@
 package search
 
 import (
-	"regexp"
-	"regexp/syntax"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/google/zoekt/query"
 )
@@ -92,14 +95,14 @@ func count(q query.Basic, p Protocol) int {
 	}
 
 	if q.IsStructural() {
-		return DefaultMaxSearchResults
+		return limits.DefaultMaxSearchResults
 	}
 
 	switch p {
 	case Batch:
-		return DefaultMaxSearchResults
+		return limits.DefaultMaxSearchResults
 	case Streaming:
-		return DefaultMaxSearchResultsStreaming
+		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
 }
@@ -111,12 +114,25 @@ const (
 	Batch
 )
 
+// ToPatternString returns the simple string pattern of a basic query. It
+// assumes there is only on pattern atom.
+func ToPatternString(q query.Basic) string {
+	if p, ok := q.Pattern.(query.Pattern); ok {
+		if q.IsLiteral() {
+			// Escape regexp meta characters if this pattern should be treated literally.
+			return regexp.QuoteMeta(p.Value)
+		} else {
+			return p.Value
+		}
+	}
+	return ""
+}
+
 // ToTextPatternInfo converts a an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *TextPatternInfo {
-	q = transform(q)
+func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
 	// Handle lang: and -lang: filters.
@@ -131,16 +147,6 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 	// TextPatternInfo must be set true. The logic assumes that a literal
 	// pattern is an escaped regular expression.
 	isRegexp := q.IsLiteral() || q.IsRegexp()
-
-	var pattern string
-	if p, ok := q.Pattern.(query.Pattern); ok {
-		if q.IsLiteral() {
-			// Escape regexp meta characters if this pattern should be treated literally.
-			pattern = regexp.QuoteMeta(p.Value)
-		} else {
-			pattern = p.Value
-		}
-	}
 
 	if q.Pattern == nil {
 		// For compatibility: A nil pattern implies isRegexp is set to
@@ -159,7 +165,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 		IsStructuralPat: q.IsStructural(),
 		IsCaseSensitive: q.IsCaseSensitive(),
 		FileMatchLimit:  int32(count),
-		Pattern:         pattern,
+		Pattern:         ToPatternString(q),
 		IsNegated:       negated,
 
 		// Values dependent on parameters.
@@ -167,6 +173,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
+		PatternMatchesPath:           resultTypes.Has(result.TypePath),
+		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    q.FindValue(query.FieldCombyRule),
@@ -176,8 +184,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 }
 
 func TimeoutDuration(b query.Basic) time.Duration {
-	d := DefaultTimeout
-	maxTimeout := time.Duration(SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
+	d := limits.DefaultTimeout
+	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
 	timeout := b.GetTimeout()
 	if timeout != nil {
 		d = *timeout
@@ -229,32 +237,83 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
+func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
+	var fold func(node query.Node) (zoekt.Q, error)
+	fold = func(node query.Node) (zoekt.Q, error) {
+		switch n := node.(type) {
+		case query.Operator:
+			children := make([]zoekt.Q, 0, len(n.Operands))
+			for _, op := range n.Operands {
+				child, err := fold(op)
+				if err != nil {
+					return nil, err
+				}
+				children = append(children, child)
+			}
+			switch n.Kind {
+			case query.Or:
+				return &zoekt.Or{Children: children}, nil
+			case query.And:
+				return &zoekt.And{Children: children}, nil
+			default:
+				// unreachable
+				return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+			}
+		case query.Pattern:
+			var q zoekt.Q
+			var err error
+			if n.Annotation.Labels.IsSet(query.Regexp) {
+				fileNameOnly := patternMatchesPath && !patternMatchesContent
+				contentOnly := !patternMatchesPath && patternMatchesContent
+				q, err = parseRe(n.Value, fileNameOnly, contentOnly, isCaseSensitive)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				q = &zoekt.Substring{
+					Pattern:       n.Value,
+					CaseSensitive: isCaseSensitive,
+
+					FileName: true,
+					Content:  true,
+				}
+			}
+
+			if n.Negated {
+				q = &zoekt.Not{Child: q}
+			}
+			return q, nil
+		}
+		// unreachable
+		return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+	}
+
+	q, err := fold(expression)
+	if err != nil {
+		return nil, err
+	}
+
+	return q, nil
+}
+
 func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
-	var and []zoekt.Q
-
-	var q zoekt.Q
-	var err error
+	labels := query.Literal
 	if p.IsRegExp {
-		fileNameOnly := p.PatternMatchesPath && !p.PatternMatchesContent
-		contentOnly := !p.PatternMatchesPath && p.PatternMatchesContent
-		q, err = parseRe(p.Pattern, fileNameOnly, contentOnly, p.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoekt.Substring{
-			Pattern:       p.Pattern,
-			CaseSensitive: p.IsCaseSensitive,
-
-			FileName: true,
-			Content:  true,
-		}
+		labels = query.Regexp
 	}
-
-	if p.IsNegated {
-		q = &zoekt.Not{Child: q}
+	pattern := query.Pattern{
+		Value:      p.Pattern,
+		Negated:    p.IsNegated,
+		Annotation: query.Annotation{Labels: labels},
 	}
+	q, err := toZoektPattern(pattern, p.IsCaseSensitive, p.PatternMatchesContent, p.PatternMatchesPath)
+	if err != nil {
+		return nil, err
+	}
+	return WithZoektParameters(q, p, feat, typ)
+}
 
+func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
 	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
@@ -262,6 +321,7 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 		}
 	}
 
+	var and []zoekt.Q
 	and = append(and, q)
 
 	// zoekt also uses regular expressions for file paths
@@ -321,4 +381,22 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
+}
+
+// ComputeResultTypes returns result types based three inputs: `type:...` in the query,
+// the `pattern`, and top-level `searchType` (coming from a GQL value).
+func ComputeResultTypes(types []string, pattern string, searchType query.SearchType) result.Types {
+	var rts result.Types
+	if searchType == query.SearchTypeStructural && pattern != "" {
+		rts = result.TypeStructural
+	} else {
+		if len(types) == 0 {
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				rts = rts.With(result.TypeFromString[t])
+			}
+		}
+	}
+	return rts
 }

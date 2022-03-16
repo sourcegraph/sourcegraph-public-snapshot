@@ -1,23 +1,26 @@
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback } from 'react'
+
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { parseSearchURLQuery, SearchContextProps } from '../../search'
+import { parseSearchURLQuery } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -25,13 +28,14 @@ export interface CreateSearchContextPageProps
     extends RouteComponentProps,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
 export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
-    const { authenticatedUser, createSearchContext } = props
+    const { authenticatedUser, createSearchContext, platformContext } = props
 
     const query = parseSearchURLQuery(props.location.search)
 
@@ -40,8 +44,8 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }),
-        [createSearchContext]
+        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }, platformContext),
+        [createSearchContext, platformContext]
     )
 
     if (!authenticatedUser) {
@@ -69,13 +73,13 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                             <span className="text-muted">
                                 A search context represents a group of repositories at specified branches or revisions
                                 that will be targeted by search queries.{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                <Link
+                                    to="/help/code_search/explanations/features#search-contexts"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
                                     Learn more
-                                </a>
+                                </Link>
                             </span>
                         }
                         className="mb-3"

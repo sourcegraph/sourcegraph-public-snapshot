@@ -1,12 +1,14 @@
-import { subDays, startOfDay } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 
+import { subDays, startOfDay } from 'date-fns'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { useQuery } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -16,12 +18,11 @@ import {
     BatchChangeByNamespaceVariables,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 import { Description } from '../Description'
 
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
-import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
+import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
@@ -36,6 +37,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
     namespaceID: Scalars['ID']
     /** The batch change name. */
     batchChangeName: BatchChangeFields['name']
+    /** The name of the tab that should be initially open */
+    initialTab?: TabName
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
 }
@@ -70,7 +73,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             // For subsequent requests while this page is open, make additional network
             // requests; this is necessary for `refetch` to actually use the network. (see
             // https://github.com/apollographql/apollo-client/issues/5515)
-            nextFetchPolicy: 'network-only',
+            nextFetchPolicy: 'cache-and-network',
         }
     )
 
@@ -99,9 +102,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             {/* If we received an error after we already had data, we keep the
                 data on the page but also surface the error with an alert. */}
             {error && (
-                <div className="alert alert-danger">
+                <Alert variant="danger">
                     <ErrorMessage error={error.message} />
-                </div>
+                </Alert>
             )}
             <PageHeader
                 path={[
@@ -126,6 +129,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         batchChangeClosed={!!batchChange.closedAt}
                         deleteBatchChange={deleteBatchChange}
                         batchChangeNamespaceURL={batchChange.namespace.url}
+                        batchChangeURL={batchChange.url}
                         history={history}
                         settingsCascade={props.settingsCascade}
                     />

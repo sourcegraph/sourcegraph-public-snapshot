@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/github"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // PageInfo contains the paging information based on the Redux conventions.
@@ -1480,6 +1480,7 @@ var (
 		return url
 	}()
 
+	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
 )
 
@@ -1496,7 +1497,25 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (headers http.Header, err error) {
+type httpResponseState struct {
+	statusCode int
+	headers    http.Header
+}
+
+func newHttpResponseState(statusCode int, headers http.Header) *httpResponseState {
+	return &httpResponseState{
+		statusCode: statusCode,
+		headers:    headers,
+	}
+}
+
+// These headers are used for conditional requests.
+var (
+	headerIfNoneMatch     = "If-None-Match"
+	headerIfModifiedSince = "If-Modified-Since"
+)
+
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1542,10 +1561,21 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		}
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode
-		return resp.Header, &err
+		return newHttpResponseState(resp.StatusCode, resp.Header), &err
 	}
+
+	// If this is a conditional request (If-None-Match or If-Modified-Since header in the request)
+	// and the response is a 304 (resource not modified), the body is empty. Return early. It is now
+	// the caller's responsibility to read from a cache.
+	//
+	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
+	if (req.Header.Get(headerIfNoneMatch) != "" || req.Header.Get(headerIfModifiedSince) != "") &&
+		resp.StatusCode == 304 {
+		return newHttpResponseState(resp.StatusCode, resp.Header), nil
+	}
+
 	err = json.NewDecoder(resp.Body).Decode(result)
-	return resp.Header, err
+	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {
@@ -1570,7 +1600,7 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
-// RepoNotFoundError is when the requested GitHub organization is not found.
+// OrgNotFoundError is when the requested GitHub organization is not found.
 type OrgNotFoundError struct{}
 
 func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }
@@ -1720,7 +1750,7 @@ var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
 func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
-	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+	if cached := c.getRepositoryFromCache(key); cached != nil {
 		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
 		if cached.NotFound {
 			return nil, ErrRepoNotFound
@@ -1788,7 +1818,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
 	// http://[sourcegraph-hostname]/github.com/foo/bar.
 	var result restRepository
-	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
+	if _, err := c.get(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		if HTTPErrorCode(err) == http.StatusNotFound {
 			return nil, ErrRepoNotFound
 		}

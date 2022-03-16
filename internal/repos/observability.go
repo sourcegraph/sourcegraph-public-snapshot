@@ -4,15 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ObservedSource returns a decorator that wraps a Source
@@ -106,16 +103,16 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 		close(uncounted)
 	}()
 
-	var errs *multierror.Error
+	var errs error
 	for res := range uncounted {
 		results <- res
 		if res.Err != nil {
-			errs = multierror.Append(errs, res.Err)
+			errs = errors.Append(errs, res.Err)
 		}
 		count++
 	}
 	if errs != nil {
-		err = errs.ErrorOrNil()
+		err = errs
 	}
 }
 
@@ -129,7 +126,6 @@ func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *typ
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.GetRepo.Observe(secs, 1, &err)
-		log15.Info("source.get-repo", "name", path)
 		logging.Log(o.log, "source.get-repo", &err)
 	}(time.Now())
 

@@ -1,34 +1,38 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
+import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
+import { SupportedInsightSubject } from '../../../core/types/subjects'
 import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
 
-import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
+import { InsightsDashboardCreationPage as InsightsDashboardCreationPageComponent } from './InsightsDashboardCreationPage'
 
-const { add } = storiesOf('web/insights/InsightsDashboardCreationPage', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
-    .addParameters({
+const defaultStory: Meta = {
+    title: 'web/insights/InsightsDashboardCreationPage',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+    parameters: {
         chromatic: {
             viewports: [576, 1440],
+            disableSnapshot: false,
         },
-    })
-
-const PLATFORM_CONTEXT = {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    updateSettings: async (...args: any[]) => {
-        console.log('PLATFORM CONTEXT update settings with', { ...args })
     },
 }
 
-const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE_MOCK, PLATFORM_CONTEXT)
+export default defaultStory
 
-add('Page', () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendContext.Provider>
-))
+const subjects = SETTINGS_CASCADE_MOCK.subjects.map(({ subject }) => subject) as SupportedInsightSubject[]
+
+const codeInsightsBackend = {
+    getDashboardSubjects: () => of(subjects),
+}
+
+export const InsightsDashboardCreationPage: Story = () => (
+    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+        <InsightsDashboardCreationPageComponent telemetryService={NOOP_TELEMETRY_SERVICE} />
+    </CodeInsightsBackendStoryMock>
+)

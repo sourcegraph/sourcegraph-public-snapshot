@@ -1,19 +1,18 @@
+import React, { useContext, useMemo } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
-import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
@@ -22,7 +21,7 @@ import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/su
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
-} from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+} from '../creation/components/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
 
@@ -85,7 +84,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
         try {
             const updatedDashboard = await updateDashboard({
-                previousDashboard: dashboard,
+                id: dashboard.id,
                 nextDashboardInput: {
                     name,
                     visibility,
@@ -103,20 +102,16 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const handleCancel = (): void => history.goBack()
 
     return (
-        <Page className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title="Configure dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="/help/code_insights/explanations/viewing_code_insights" target="_blank" rel="noopener">
                     Learn more.
-                </a>
+                </Link>
             </span>
 
             <Container className="mt-4">
@@ -144,13 +139,14 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 label={formAPI.submitting ? 'Saving' : 'Save changes'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}
                 </InsightsDashboardCreationContent>
             </Container>
-        </Page>
+        </CodeInsightsPage>
     )
 }
 

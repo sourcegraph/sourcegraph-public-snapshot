@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
@@ -22,6 +23,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({
     className,
     match,
     showOrgCode,
+    newMembersInviteEnabled,
 }) => {
     if (!org) {
         return null
@@ -46,9 +48,11 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({
                 <SidebarNavItem to={`${match.url}/profile`} exact={true}>
                     Profile
                 </SidebarNavItem>
-                <SidebarNavItem to={`${match.url}/members`} exact={true}>
-                    Members
-                </SidebarNavItem>
+                {!newMembersInviteEnabled && (
+                    <SidebarNavItem to={`${match.url}/members`} exact={true}>
+                        Members
+                    </SidebarNavItem>
+                )}
                 {showOrgCode && (
                     <>
                         <SidebarNavItem to={`${match.url}/code-hosts`} exact={true}>

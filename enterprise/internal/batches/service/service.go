@@ -7,9 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"gopkg.in/yaml.v2"
 
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ErrNameNotUnique is returned by CreateEmptyBatchChange if the combination of name and
@@ -67,6 +66,7 @@ type operations struct {
 	executeBatchSpec                     *observation.Operation
 	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
+	upsertBatchSpecInput                 *observation.Operation
 	retryBatchSpecWorkspaces             *observation.Operation
 	retryBatchSpecExecution              *observation.Operation
 	createChangesetSpec                  *observation.Operation
@@ -117,6 +117,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
 			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
+			upsertBatchSpecInput:                 op("UpsertBatchSpecInput"),
 			retryBatchSpecWorkspaces:             op("RetryBatchSpecWorkspaces"),
 			retryBatchSpecExecution:              op("RetryBatchSpecExecution"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
@@ -242,7 +243,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, true)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +332,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -544,7 +545,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	defer endObservation(1, observation.Args{})
 
 	// Before we hit the database, validate the new spec.
-	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
+	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -568,21 +569,9 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Delete the previous batch spec, which should delete
-	// - batch_spec_resolution_jobs
-	// - batch_spec_workspaces
-	// - changeset_specs
-	// associated with it
-	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
+	if err = replaceBatchSpec(ctx, tx, batchSpec, newSpec); err != nil {
 		return nil, err
 	}
-
-	// We keep the RandID so the user-visible GraphQL ID is stable
-	newSpec.RandID = batchSpec.RandID
-
-	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
-	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
-	newSpec.UserID = batchSpec.UserID
 
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
@@ -590,6 +579,88 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		allowIgnored:     opts.AllowIgnored,
 		noCache:          opts.NoCache,
 	})
+}
+
+type UpsertBatchSpecInputOpts = CreateBatchSpecFromRawOpts
+
+func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpecInputOpts) (spec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.upsertBatchSpecInput.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Bool("allowIgnored", opts.AllowIgnored),
+		log.Bool("allowUnsupported", opts.AllowUnsupported),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing batch spec")
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, errors.Wrap(err, "checking namespace access")
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	actor := actor.FromContext(ctx)
+	spec.UserID = actor.UID
+
+	// Start transaction.
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Figure out if there's a pre-existing batch spec to replace.
+	old, err := s.store.GetNewestBatchSpec(ctx, store.GetNewestBatchSpecOpts{
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+		Name:            spec.Spec.Name,
+	})
+	if err != nil && err != store.ErrNoResults {
+		return nil, errors.Wrap(err, "checking for a previous batch spec")
+	}
+
+	if err == nil {
+		// We're replacing an old batch spec.
+		if err = replaceBatchSpec(ctx, tx, old, spec); err != nil {
+			return nil, errors.Wrap(err, "replacing the previous batch spec")
+		}
+	}
+
+	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+		spec:             spec,
+		allowIgnored:     opts.AllowIgnored,
+		allowUnsupported: opts.AllowUnsupported,
+		noCache:          opts.NoCache,
+	})
+}
+
+// replaceBatchSpec removes a previous batch spec and copies its random ID,
+// namespace, and user IDs to the new spec.
+//
+// Callers are otherwise responsible for newSpec containing expected values,
+// such as the name.
+func replaceBatchSpec(ctx context.Context, tx *store.Store, oldSpec, newSpec *btypes.BatchSpec) error {
+	// Delete the previous batch spec, which should delete
+	// - batch_spec_resolution_jobs
+	// - batch_spec_workspaces
+	// - changeset_specs
+	// associated with it
+	if err := tx.DeleteBatchSpec(ctx, oldSpec.ID); err != nil {
+		return err
+	}
+
+	// We keep the RandID so the user-visible GraphQL ID is stable
+	newSpec.RandID = oldSpec.RandID
+
+	newSpec.NamespaceOrgID = oldSpec.NamespaceOrgID
+	newSpec.NamespaceUserID = oldSpec.NamespaceUserID
+	newSpec.UserID = oldSpec.UserID
+
+	return nil
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
@@ -1114,7 +1185,7 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		return nonValidationErr
 	}
 
-	errs := &multierror.Error{ErrorFormat: formatChangesetSpecHeadRefConflicts}
+	var errs changesetSpecHeadRefConflictErrs
 	for _, c := range conflicts {
 		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
 
@@ -1122,10 +1193,9 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		if repo, ok := accessibleReposByID[c.RepoID]; ok {
 			conflictErr.repo = repo
 		}
-		errs = multierror.Append(errs, conflictErr)
+		errs = append(errs, conflictErr)
 	}
-
-	return errs.ErrorOrNil()
+	return errs
 }
 
 type changesetSpecHeadRefConflict struct {
@@ -1141,7 +1211,11 @@ func (c changesetSpecHeadRefConflict) Error() string {
 	return fmt.Sprintf("%d changeset specs in the same repository use the same branch: %s", c.count, c.headRef)
 }
 
-func formatChangesetSpecHeadRefConflicts(es []error) string {
+// changesetSpecHeadRefConflictErrs represents a set of changesetSpecHeadRefConflict and
+// implements `Error` to render the errors nicely.
+type changesetSpecHeadRefConflictErrs []*changesetSpecHeadRefConflict
+
+func (es changesetSpecHeadRefConflictErrs) Error() string {
 	if len(es) == 1 {
 		return fmt.Sprintf("Validating changeset specs resulted in an error:\n* %s\n", es[0])
 	}
@@ -1248,17 +1322,17 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		return errors.Wrap(err, "loading batch spec workspace execution jobs")
 	}
 
-	var errs *multierror.Error
+	var errs error
 	jobIDs := make([]int64, len(jobs))
 
 	for i, j := range jobs {
 		if !j.State.Retryable() {
-			errs = multierror.Append(errs, errors.Newf("job %d not retryable", j.ID))
+			errs = errors.Append(errs, errors.Newf("job %d not retryable", j.ID))
 		}
 		jobIDs[i] = j.ID
 	}
 
-	if err := errs.ErrorOrNil(); err != nil {
+	if err := errs; err != nil {
 		return err
 	}
 

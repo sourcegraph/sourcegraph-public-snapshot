@@ -62,7 +62,7 @@ async function graphQlSchema() {
         postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
       }
     )
-  await writeFile(__dirname + '/src/graphql/schema.ts', typings)
+  await writeFile(__dirname + '/src/schema.ts', typings)
 }
 
 /**
@@ -158,7 +158,7 @@ const draftV7resolver = {
  * @returns {Promise<void>}
  */
 async function schema() {
-  const outputDirectory = path.join(__dirname, '..', 'web', 'src', 'schema')
+  const outputDirectory = path.join(__dirname, 'src', 'schema')
   await mkdir(outputDirectory, { recursive: true })
   const schemaDirectory = path.join(__dirname, '..', '..', 'schema')
   await Promise.all(

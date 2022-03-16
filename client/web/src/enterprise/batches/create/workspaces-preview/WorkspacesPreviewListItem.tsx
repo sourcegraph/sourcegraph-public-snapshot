@@ -1,12 +1,12 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 
@@ -48,17 +48,14 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />
             </div>
             <div className="flex-1">
-                <Link
-                    className={classNames(styles.link, styles.overflow, (toBeExcluded || isStale) && styles.linkStale)}
-                    to={item.branch.url}
-                >
+                <h4 className={classNames(styles.overflow, (toBeExcluded || isStale) && styles.stale)}>
                     {item.repository.name}
-                </Link>
+                </h4>
                 {item.path !== '' && item.path !== '/' ? (
                     <span className={classNames(styles.overflow, 'd-block text-muted')}>{item.path}</span>
                 ) : null}
                 <div className="d-flex align-items-center text-muted text-monospace mt-1">
-                    <SourceBranchIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={SourceBranchIcon} />
                     <small>{item.branch.displayName}</small>
                 </div>
             </div>
@@ -68,7 +65,7 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                 data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
                 onClick={handleExclude}
             >
-                <CloseIcon className="icon-inline" />
+                <Icon as={CloseIcon} />
             </Button>
         </li>
     )
@@ -81,14 +78,12 @@ const StatusIcon: React.FunctionComponent<{ status: StatusIconStatus }> = ({ sta
         case 'none':
             return null
         case 'cached':
-            return (
-                <ContentSaveIcon className="icon-inline" data-tooltip="A cached result was found for this workspace." />
-            )
+            return <Icon data-tooltip="A cached result was found for this workspace." as={ContentSaveIcon} />
         case 'to-exclude':
             return (
-                <DeleteIcon
-                    className="icon-inline"
+                <Icon
                     data-tooltip="Your batch spec was modified to exclude this workspace. Preview again to update."
+                    as={DeleteIcon}
                 />
             )
     }

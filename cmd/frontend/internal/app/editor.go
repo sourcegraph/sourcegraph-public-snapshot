@@ -7,24 +7,24 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
+func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev string, beExplicit bool) string {
 	if beExplicit {
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	if rev == "HEAD" {
-		return "", nil // Detached head state
+		return ""
 	}
 	repos := backend.NewRepos(db.Repos())
 	repo, err := repos.GetByName(ctx, repoName)
@@ -34,23 +34,23 @@ func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev s
 		// this case, the best user experience is to send them to the branch
 		// they asked for. The front-end will inform them if the branch does
 		// not exist.
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
 	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
-		return "@" + rev, nil
+		return "@" + rev
 	}
 	if defaultBranchCommitID == branchCommitID {
-		return "", nil // default branch, so make a clean URL without a branch.
+		return ""
 	}
-	return "@" + rev, nil
+	return "@" + rev
 }
 
 // editorRequest represents the parameters to a Sourcegraph "open file", "search", etc. editor request.
@@ -189,20 +189,18 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	if inputRev == "" {
 		inputRev, beExplicit = of.branch, false
 	}
-	rev, err := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
-	if err != nil {
-		return "", err
-	}
+
+	rev := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
 
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()
+	if of.startRow == of.endRow && of.startCol == of.endCol {
+		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")
+	} else {
+		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
+	}
 	r.addTracking(q)
 	u.RawQuery = q.Encode()
-	if of.startRow == of.endRow && of.startCol == of.endCol {
-		u.Fragment = fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1)
-	} else {
-		u.Fragment = fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1)
-	}
 	return u.String(), nil
 }
 

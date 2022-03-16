@@ -31,7 +31,7 @@ body.theme-dark .markdown-body ul li:before {
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart with <code>sg</code></a>
-<a class="btn" href="#how-tos">How-tos</a>
+<a class="btn" href="../how-to">How-tos</a>
 <a class="btn" href="#troubleshooting">Troubleshooting</a>
 </div>
 
@@ -41,7 +41,6 @@ body.theme-dark .markdown-body ul li:before {
 In order to run the Sourcegraph locally, the following pages will guide you from zero to having a local environment up and running, ready for contributions for the the most common use cases.
 
 - [**Quickstart with `sg`**](quickstart.md)
-- (optional) [Workarounds for local development on M1 macs](how-to/m1_mac_local_dev.md)
 
 The quick start guide above provides a standard approach, focused on simplicity and accessiblility. But it's not the only way, the dependencies page below documents more exhaustively various approaches to set them up.
 

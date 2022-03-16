@@ -1,13 +1,13 @@
+import React, { useCallback, useState, useMemo } from 'react'
+
 import * as H from 'history'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
-import React, { useCallback, useState, useMemo } from 'react'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -56,7 +56,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
         <div className="search-stats-page container mt-4">
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="d-flex align-items-center mb-0">
-                    <ChartLineIcon className="icon-inline mr-2" /> Code statistics{' '}
+                    <Icon className="mr-2" as={ChartLineIcon} /> Code statistics{' '}
                     <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>
@@ -87,12 +87,12 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             {stats === undefined ? (
                 <LoadingSpinner />
             ) : isErrorLike(stats) ? (
-                <div className="alert alert-danger">{stats.message}</div>
+                <Alert variant="danger">{stats.message}</Alert>
             ) : stats.limitHit ? (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     Limit hit. Add <code>count:{DEFAULT_COUNT * 5}</code> (or an even larger number) to your query to
                     retry with a higher limit.
-                </div>
+                </Alert>
             ) : (
                 <SearchStatsLanguages query={query} stats={stats} />
             )}

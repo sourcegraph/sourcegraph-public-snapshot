@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, TextareaHTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
@@ -54,6 +55,7 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
             <label className={classNames(styles.label, className)}>
                 {label && <div className="mb-2">{size === 'small' ? <small>{label}</small> : label}</div>}
 
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <textarea
                     disabled={disabled}
                     className={classNames(

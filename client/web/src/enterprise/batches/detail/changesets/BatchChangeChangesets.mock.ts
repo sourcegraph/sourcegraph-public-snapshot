@@ -53,6 +53,7 @@ export const BATCH_CHANGE_CHANGESETS: (ExternalChangesetFields | HiddenExternalC
                     baseRef: 'my-branch',
                     headRef: 'my-branch',
                 },
+                forkTarget: null,
             },
         })
     ),
@@ -74,6 +75,16 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
         __typename: 'ChangesetConnection',
         totalCount: BATCH_CHANGE_CHANGESETS.length,
         nodes: BATCH_CHANGE_CHANGESETS,
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
+
+export const EMPTY_BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node'] = {
+    ...MOCK_BATCH_CHANGE,
+    changesets: {
+        __typename: 'ChangesetConnection',
+        totalCount: 0,
+        nodes: [],
         pageInfo: { endCursor: null, hasNextPage: false },
     },
 }

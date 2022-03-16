@@ -1,6 +1,8 @@
-import classNames from 'classnames'
 import React, { HTMLAttributes } from 'react'
-import { Link, LinkProps } from 'react-router-dom'
+
+import classNames from 'classnames'
+
+import { Link, LinkProps } from '@sourcegraph/wildcard'
 
 import styles from './TreeRowLabel.module.scss'
 
@@ -12,7 +14,7 @@ export const TreeRowLabel: React.FunctionComponent<TreeRowLabelProps> = ({ class
     </span>
 )
 
-type TreeRowLabelLinkProps = LinkProps<any>
+type TreeRowLabelLinkProps = LinkProps
 
 export const TreeRowLabelLink: React.FunctionComponent<TreeRowLabelLinkProps> = ({ className, children, ...rest }) => (
     <Link className={classNames(className, styles.rowLabel)} data-testid="tree-row-label" {...rest}>

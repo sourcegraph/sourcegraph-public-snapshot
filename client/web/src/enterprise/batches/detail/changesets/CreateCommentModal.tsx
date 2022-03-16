@@ -1,11 +1,10 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, TextArea } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, TextArea, Modal } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
 import { createChangesetComments as _createChangesetComments } from '../backend'
 
@@ -48,11 +47,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
             <h3 id={LABEL_ID}>Post a bulk comment on changesets</h3>
             <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
@@ -86,7 +81,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                     </Button>
                 </div>
             </Form>
-        </Dialog>
+        </Modal>
     )
 }
 

@@ -1,11 +1,12 @@
+import React from 'react'
+
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { EMPTY, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BrandedStory } from '../BrandedStory'

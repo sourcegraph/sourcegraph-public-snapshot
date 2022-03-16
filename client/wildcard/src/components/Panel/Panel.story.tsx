@@ -1,15 +1,17 @@
+import React from 'react'
+
 import { useState } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { panels } from '@sourcegraph/branded/src/components/panel/Panel.fixtures'
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid } from '..'
+import { Button } from '../Button'
+import { Grid } from '../Grid'
 import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../Tabs'
 
 import { PANEL_POSITIONS } from './constants'
@@ -19,16 +21,28 @@ const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => 
 
 const config: Meta = {
     title: 'wildcard/Panel',
+    component: Panel,
 
     decorators: [decorator],
 
     parameters: {
         component: Panel,
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3008%3A502',
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
         },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3008%3A501',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3008%3A3223',
+            },
+        ],
     },
 }
 
@@ -100,16 +114,16 @@ export const WithChildren: Story = props => {
                         ))}
                     </TabList>
                     <div className="align-items-center d-flex mr-2">
-                        <button
-                            type="button"
+                        <Button
                             onClick={closePanel}
-                            className={classNames('btn btn-icon ml-2')}
+                            className={classNames('ml-2')}
                             title="Close panel"
                             data-tooltip="Close panel"
                             data-placement="left"
+                            variant="icon"
                         >
                             <CloseIcon className="icon-inline" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
                 <TabPanels>

@@ -1,10 +1,9 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { Button } from '@sourcegraph/wildcard'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'
@@ -52,8 +51,7 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
+        <Modal
             aria-labelledby={`heading--disconnect-${name}`}
             aria-describedby={`description--disconnect-${name}`}
             onDismiss={onDidCancel}
@@ -81,6 +79,6 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
                     </Button>
                 </div>
             </Form>
-        </Dialog>
+        </Modal>
     )
 }

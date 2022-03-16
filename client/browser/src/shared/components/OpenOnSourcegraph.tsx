@@ -1,6 +1,8 @@
-import classNames from 'classnames'
 import * as React from 'react'
 
+import classNames from 'classnames'
+
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { OpenInSourcegraphProps } from '../repo'
@@ -17,8 +19,10 @@ export const OpenOnSourcegraph: React.FunctionComponent<Props> = ({
     className,
     ...props
 }) => {
-    const url = new URL(toPrettyBlobURL({ repoName, revision, filePath }), sourcegraphURL)
-    url.searchParams.set('utm_source', getPlatformName())
+    const url = createURLWithUTM(new URL(toPrettyBlobURL({ repoName, revision, filePath }), sourcegraphURL), {
+        utm_source: getPlatformName(),
+        utm_campaign: 'open-on-sourcegraph',
+    })
     return (
         <SourcegraphIconButton
             {...props}

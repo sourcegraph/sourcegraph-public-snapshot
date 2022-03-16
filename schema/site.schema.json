@@ -95,6 +95,12 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "dependenciesSearch": {
+          "description": "Enables support for repo:dependencies predicate queries.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "andOrQuery": {
           "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
@@ -155,7 +161,7 @@
           }
         },
         "npmPackages": {
-          "description": "Allow adding NPM packages code host connections",
+          "description": "Allow adding npm packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -358,10 +364,11 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
-              "default": 0,
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "default": 24,
               "type": "integer",
-              "group": "Search"
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
@@ -369,6 +376,11 @@
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
           "default": false
+        },
+        "enableGitServerCommandExecFilter": {
+          "description": "Enable filtering of all exec commands on gitserver based on a pre-defined allowlist",
+          "type": "boolean",
+          "default": true
         }
       },
       "examples": [
@@ -383,6 +395,12 @@
               "fetch": "customgitbinary someflag anotherflag"
             }
           ]
+        },
+        {
+          "tls.external": {
+            "certificates": ["-----BEGIN CERTIFICATE-----\n..."],
+            "insecureSkipVerify": true
+          }
         }
       ],
       "group": "Experimental"
@@ -605,6 +623,63 @@
       "default": -1,
       "group": "External services"
     },
+    "syntaxHighlighting": {
+      "title": "SyntaxHighlighting",
+      "description": "Syntax highlighting configuration",
+      "type": "object",
+      "required": ["engine", "languages"],
+      "properties": {
+        "engine": {
+          "title": "SyntaxHighlightingEngine",
+          "type": "object",
+          "required": ["default"],
+          "properties": {
+            "default": {
+              "description": "The default syntax highlighting engine to use",
+              "type": "string",
+              "enum": ["tree-sitter", "syntect"]
+            },
+            "overrides": {
+              "description": "Manually specify overrides for syntax highlighting engine per language",
+              "type": "object",
+              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect"] }
+            }
+          }
+        },
+        "languages": {
+          "title": "SyntaxHighlightingLanguage",
+          "type": "object",
+          "required": ["extensions", "patterns"],
+          "properties": {
+            "extensions": {
+              "description": "Map of extension to language",
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "patterns": {
+              "description": "Map of patterns to language. Will return after first match, if any.",
+              "type": "array",
+              "items": {
+                "title": "SyntaxHighlightingLanguagePatterns",
+                "type": "object",
+                "required": ["pattern", "language"],
+                "properties": {
+                  "pattern": {
+                    "description": "Regular expression which matches the filepath",
+                    "type": "string",
+                    "format": "regex"
+                  },
+                  "language": {
+                    "description": "Name of the language if pattern matches",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
@@ -694,6 +769,11 @@
       "type": "boolean",
       "default": false
     },
+    "authz.refreshInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
+    },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
@@ -723,6 +803,21 @@
       },
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
       "group": "Security"
+    },
+    "permissions.syncScheduleInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 15
+    },
+    "permissions.syncOldestUsers": {
+      "description": "Number of user permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
+    },
+    "permissions.syncOldestRepos": {
+      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
@@ -768,7 +863,7 @@
     },
     "email.smtp": {
       "title": "SMTPServerConfig",
-      "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "description": "The SMTP server used to send transactional emails.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port", "authentication"],
@@ -816,7 +911,7 @@
       "group": "Email"
     },
     "email.address": {
-      "description": "The \"from\" address for emails sent by this server.",
+      "description": "The \"from\" address for emails sent by this server.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "string",
       "format": "email",
       "group": "Email",
@@ -911,15 +1006,16 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "useJaeger": {
-      "description": "DEPRECATED. Use `\"observability.tracing\": { \"sampling\": \"all\" }`, instead. Enables Jaeger tracing.",
-      "type": "boolean",
-      "group": "Misc."
-    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
       "properties": {
+        "type": {
+          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
+          "type": "string",
+          "enum": ["datadog", "opentracing"],
+          "default": "opentracing"
+        },
         "sampling": {
           "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever `?trace=1` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
           "type": "string",
@@ -1086,6 +1182,32 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
+        },
+        "githubApp.cloud": {
+          "description": "The config options for Sourcegraph Cloud GitHub App.",
+          "type": "object",
+          "properties": {
+            "slug": {
+              "description": "The slug of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "appID": {
+              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "privateKey": {
+              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "clientID": {
+              "type": "string",
+              "description": "The Client ID of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+            },
+            "clientSecret": {
+              "type": "string",
+              "description": "The Client Secret of the GitHub App for Sourcegraph Cloud, accessible from https://github.com/settings/apps ."
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"
@@ -1263,6 +1385,22 @@
           "default": "72h"
         }
       }
+    },
+    "organizationInvitations": {
+      "description": "Configuration for organization invitations.",
+      "type": "object",
+      "required": ["signingKey"],
+      "properties": {
+        "expiryTime": {
+          "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
+          "type": "integer",
+          "default": 48
+        },
+        "signingKey": {
+          "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
+          "type": "string"
+        }
+      }
     }
   },
   "definitions": {
@@ -1333,6 +1471,11 @@
           "description": "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
           "type": "string",
           "pattern": "^[^<@]"
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },
@@ -1483,6 +1626,11 @@
         },
         "allowGroupsPermissionsSync": {
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "default": false,
+          "type": "boolean"
+        },
+        "hidden": {
+          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
           "default": false,
           "type": "boolean"
         }

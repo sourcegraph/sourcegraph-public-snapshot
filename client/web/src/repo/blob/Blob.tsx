@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -27,7 +28,18 @@ import {
     findPositionsFromEvents,
     createHoverifier,
 } from '@sourcegraph/codeintellify'
-import { asError, isErrorLike, isDefined } from '@sourcegraph/common'
+import {
+    asError,
+    isErrorLike,
+    isDefined,
+    property,
+    observeResize,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+} from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -44,12 +56,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
-    LineOrPositionOrRange,
-    lprToSelectionsZeroIndexed,
     ModeSpec,
     UIPositionSpec,
     RepoSpec,
@@ -57,27 +66,24 @@ import {
     RevisionSpec,
     toURIWithPath,
     parseQueryAndHash,
-    toPositionOrRangeQueryParameter,
-    addLineRangeQueryParameter,
-    formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import styles from './Blob.module.scss'
 import { LineDecorator } from './LineDecorator'
+
+import styles from './Blob.module.scss'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-interface BlobProps
+export interface BlobProps
     extends SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
@@ -90,6 +96,12 @@ interface BlobProps
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
+
+    // Experimental reference panel
+    disableStatusBar: boolean
+    // If set, nav is called when a user clicks on a token highlighted by
+    // WebHoverOverlay
+    nav?: (url: string) => void
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -606,7 +618,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
-                        nav={url => props.history.push(url)}
+                        nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}
@@ -630,20 +642,22 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         })
                         .toArray()}
             </div>
-            <StatusBar
-                getStatusBarItems={getStatusBarItems}
-                extensionsController={extensionsController}
-                uri={toURIWithPath(blobInfo)}
-                location={location}
-                className={styles.blobStatusBarBody}
-                statusBarRef={nextStatusBarElement}
-                hideWhileInitializing={true}
-            />
+            {!props.disableStatusBar && (
+                <StatusBar
+                    getStatusBarItems={getStatusBarItems}
+                    extensionsController={extensionsController}
+                    uri={toURIWithPath(blobInfo)}
+                    location={location}
+                    className={styles.blobStatusBarBody}
+                    statusBarRef={nextStatusBarElement}
+                    hideWhileInitializing={true}
+                />
+            )}
         </>
     )
 }
 
-function getLSPTextDocumentPositionParameters(
+export function getLSPTextDocumentPositionParameters(
     position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
     mode: string
 ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {

@@ -1,11 +1,13 @@
+import React from 'react'
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
-import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { NEVER, of } from 'rxjs'
+import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -17,7 +19,7 @@ import {
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
     RESULT,
-} from '@sourcegraph/shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
@@ -33,8 +35,6 @@ describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
-        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-
         extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
@@ -46,14 +46,13 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
         featureFlags: EMPTY_FEATURE_FLAGS,
-        extensionViews: () => null,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
     }
@@ -63,7 +62,11 @@ describe('StreamingSearchResults', () => {
     function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
         return render(
             <BrowserRouter>
-                <MockedTestProvider mocks={revisionsMockResponses}>{component}</MockedTestProvider>
+                <MockedTestProvider mocks={revisionsMockResponses}>
+                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                        {component}
+                    </SearchQueryStateStoreProvider>
+                </MockedTestProvider>
             </BrowserRouter>
         )
     }
@@ -77,7 +80,10 @@ describe('StreamingSearchResults', () => {
     } as AuthenticatedUser
 
     beforeEach(() => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useNavbarQueryState.setState({
+            searchCaseSensitivity: false,
+            searchQueryFromURL: 'r:golang/oauth2 test f:travis',
+        })
         useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
     })
 
@@ -85,13 +91,7 @@ describe('StreamingSearchResults', () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: true, searchPatternType: SearchPatternType.regexp })
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
-        renderWrapper(
-            <StreamingSearchResults
-                {...defaultProps}
-                parsedSearchQuery="r:golang/oauth2 test f:travis"
-                streamSearch={searchSpy}
-            />
-        )
+        renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={searchSpy} />)
 
         sinon.assert.calledOnce(searchSpy)
         const call = searchSpy.getCall(0)
@@ -265,13 +265,9 @@ describe('StreamingSearchResults', () => {
                 },
             }
 
-            renderWrapper(
-                <StreamingSearchResults
-                    {...defaultProps}
-                    parsedSearchQuery={test.parsedSearchQuery}
-                    streamSearch={() => of(results)}
-                />
-            )
+            useNavbarQueryState.setState({ searchQueryFromURL: test.parsedSearchQuery })
+
+            renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
 
             userEvent.click(await screen.findByText(/some results excluded/i))
             const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')

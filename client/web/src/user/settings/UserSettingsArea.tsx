@@ -1,9 +1,10 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
@@ -12,6 +13,7 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -24,8 +26,9 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
-import styles from './UserSettingsArea.module.scss'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
+
+import styles from './UserSettingsArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -33,6 +36,7 @@ export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaR
 
 export interface UserSettingsAreaProps
     extends UserAreaRouteContext,
+        FeatureFlagProps,
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,

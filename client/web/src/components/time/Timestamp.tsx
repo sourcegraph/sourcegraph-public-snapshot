@@ -1,7 +1,8 @@
-import { parseISO } from 'date-fns'
+import React, { useEffect, useMemo, useState } from 'react'
+
+import { parseISO, format } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import React, { useEffect, useState } from 'react'
 
 interface Props {
     /** The date (if string, in ISO 8601 format). */
@@ -15,6 +16,9 @@ interface Props {
 
     /** Whether to use exact timestamps (i.e. omit "less than", "about", etc.) */
     strict?: boolean
+
+    /** Whether to show absolute timestamp and show relative one in tooltip */
+    preferAbsolute?: boolean
 }
 
 const RERENDER_INTERVAL_MSEC = 7000
@@ -28,6 +32,7 @@ export const Timestamp: React.FunctionComponent<Props> = ({
     noAbout = false,
     strict = false,
     now = Date.now,
+    preferAbsolute = false,
 }) => {
     const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout))
     useEffect(() => {
@@ -40,9 +45,15 @@ export const Timestamp: React.FunctionComponent<Props> = ({
         }
     }, [date, noAbout, now, strict])
 
+    const tooltip = useMemo(() => {
+        const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
+        const dateHasTime = date.toString().includes('T')
+        return format(parsedDate, `yyyy-MM-dd${dateHasTime ? ' pp' : ''}`)
+    }, [date])
+
     return (
-        <span className="timestamp" data-tooltip={date}>
-            {label}
+        <span className="timestamp" data-tooltip={preferAbsolute ? label : tooltip}>
+            {preferAbsolute ? tooltip : label}
         </span>
     )
 }

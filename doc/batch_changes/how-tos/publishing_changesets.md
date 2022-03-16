@@ -119,7 +119,7 @@ Then run the `src batch preview` command again, or `src batch apply` to immediat
 Publishing a changeset will:
 
 - Create a commit with the changes from the patches for that repository.
-- Push a branch using the branch name you defined in the batch spec with [`changesetTemplate.branch`](../references/batch_spec_yaml_reference.md#changesettemplate-branch).
+- Push a branch using the branch name you defined in the batch spec with [`changesetTemplate.branch`](../references/batch_spec_yaml_reference.md#changesettemplate-branch). If [forks are enabled](../../admin/config/batch_changes.md#forks), then the branch will be pushed to a fork of the repository.
 - Create a changeset (e.g., GitHub pull request) on the code host for review and merging.
 
 > NOTE: When pushing the branch Sourcegraph will use a **force push**. Make sure that the branch names are unused, otherwise previous commits will be overwritten.

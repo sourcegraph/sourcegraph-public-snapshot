@@ -9,11 +9,13 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -48,6 +50,8 @@ type Resolver interface {
 	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
 	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
+	SupportedByCtags(ctx context.Context, filepath string, repo api.RepoName) (bool, string, error)
+	RetentionPolicyOverview(ctx context.Context, upload store.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []RetentionPolicyMatchCandidate, totalCount int, err error)
 
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
@@ -65,6 +69,7 @@ type resolver struct {
 	hunkCache        HunkCache
 	operations       *operations
 	executorResolver executor.Resolver
+	symbolsClient    *symbols.Client
 }
 
 // NewResolver creates a new resolver with the given services.
@@ -75,10 +80,11 @@ func NewResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
+	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 	dbConn dbutil.DB,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, observationContext, dbConn)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, observationContext, dbConn)
 }
 
 func newResolver(
@@ -88,6 +94,7 @@ func newResolver(
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
+	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 	dbConn dbutil.DB,
 ) *resolver {
@@ -98,6 +105,7 @@ func newResolver(
 		policyMatcher:    policyMatcher,
 		indexEnqueuer:    indexEnqueuer,
 		hunkCache:        hunkCache,
+		symbolsClient:    symbolsClient,
 		operations:       newOperations(observationContext),
 		executorResolver: executor.New(dbConn),
 	}
@@ -166,7 +174,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 			log.String("commit", string(args.Commit)),
 			log.String("path", args.Path),
 			log.Bool("exactPath", args.ExactPath),
-			log.String("toolName", args.ToolName),
+			log.String("indexer", args.ToolName),
 		},
 	})
 	defer endObservation()
@@ -284,4 +292,21 @@ func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int,
 	}
 
 	return namesByCommit, nil
+}
+
+func (r *resolver) SupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
+	mappings, err := r.symbolsClient.ListLanguageMappings(ctx, repoName)
+	if err != nil {
+		return false, "", err
+	}
+
+	for language, globs := range mappings {
+		for _, glob := range globs {
+			if glob.Match(filepath) {
+				return true, language, nil
+			}
+		}
+	}
+
+	return false, "", nil
 }

@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -147,4 +148,8 @@ RepositoryPage.args = {
     repo: { id: 'sourcegraph' },
     queryLsifIndexListByRepository: () => of(makeResponse(testIndexes)),
     queryLsifIndexList: () => of(makeResponse(testIndexes)),
+}
+RepositoryPage.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
 }

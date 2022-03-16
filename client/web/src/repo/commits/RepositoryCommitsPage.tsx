@@ -1,11 +1,12 @@
-import * as H from 'history'
 import React, { useEffect, useCallback, useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -18,6 +19,7 @@ import { externalLinkFieldsFragment } from '../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
+
 import styles from './RepositoryCommitsPage.module.scss'
 
 export const gitCommitFragment = gql`

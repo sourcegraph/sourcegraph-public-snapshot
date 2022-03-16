@@ -10,9 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
+
+	repos "github.com/sourcegraph/sourcegraph/internal/repos"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -69,8 +71,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
 			return
 		}
-
-		extraScopes, err := getExtraScopes(req.Context(), db, serviceType)
+		op := LoginStateOp(req.URL.Query().Get("op"))
+		extraScopes, err := getExtraScopes(req.Context(), db, serviceType, op)
 		if err != nil {
 			log15.Error("Getting extra OAuth scopes", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
@@ -94,6 +96,18 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
+	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		dotcomConfig := conf.SiteConfig().Dotcom
+		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
+		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+			http.NotFound(w, req)
+			return
+		}
+		state := req.URL.Query().Get("state")
+		appInstallURL := "https://github.com/apps/" + dotcomConfig.GithubAppCloud.Slug + "/installations/new?state=" + state
+
+		http.Redirect(w, req, appInstallURL, http.StatusFound)
+	}))
 	return mux
 }
 
@@ -105,17 +119,22 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitLab: {"api"},
 }
 
-func getExtraScopes(ctx context.Context, db database.DB, serviceType string) ([]string, error) {
+func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op LoginStateOp) ([]string, error) {
 	// Extra scopes are only needed on Sourcegraph.com
 	if !envvar.SourcegraphDotComMode() {
 		return nil, nil
 	}
+	// Extra scopes are only needed when creating a code host connection, not for account creation
+	if op == LoginStateOpCreateAccount {
+		return nil, nil
+	}
+
 	scopes, ok := extraScopes[serviceType]
 	if !ok {
 		return nil, nil
 	}
 
-	mode, err := database.Users(db).CurrentUserAllowedExternalServices(ctx)
+	mode, err := db.Users().CurrentUserAllowedExternalServices(ctx)
 	if err != nil {
 		return nil, err
 	}

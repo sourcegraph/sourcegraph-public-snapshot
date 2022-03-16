@@ -9,7 +9,7 @@ func Executor() *monitoring.Container {
 	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"
 
 	// frontend is sometimes called sourcegraph-frontend in various contexts
-	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker)"
+	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
 
 	return &monitoring.Container{
 		Name:        "executor",
@@ -17,14 +17,20 @@ func Executor() *monitoring.Container {
 		Description: `Executes jobs in an isolated environment.`,
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:   "Queue name",
-				Name:    "queue",
-				Options: []string{"batches", "codeintel"},
+				Label: "Queue name",
+				Name:  "queue",
+				Options: monitoring.ContainerVariableOptions{
+					Options: []string{"batches", "codeintel"},
+				},
 			},
 			{
-				Label: "Compute instance",
-				Name:  "instance",
-				Query: "label_values(node_exporter_build_info{job=\"sourcegraph-code-intel-indexer-nodes\"}, instance)",
+				Label:        "Compute instance",
+				Name:         "instance",
+				OptionsQuery: "label_values(node_exporter_build_info{job=\"sourcegraph-executor-nodes\"}, instance)",
+
+				// The options query can generate a massive result set that can cause issues.
+				// shared.NewNodeExporterGroup filters by job as well so this is safe to use
+				WildcardAllValue: true,
 			},
 		},
 		Groups: []monitoring.Group{

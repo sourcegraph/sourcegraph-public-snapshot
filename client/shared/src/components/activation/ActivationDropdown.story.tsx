@@ -1,12 +1,13 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
-import React from 'react'
 
+import { subtypeOf } from '@sourcegraph/common'
 import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-
-import { subtypeOf } from '../../util/types'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Activation } from './Activation'
 import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
@@ -23,7 +24,7 @@ const baseActivation = (): Activation => ({
             title: 'Search your code',
             detail: (
                 <span>
-                    Head to the <a href="/search">homepage</a> and perform a search query on your code.{' '}
+                    Head to the <Link to="/search">homepage</Link> and perform a search query on your code.{' '}
                     <strong>Example:</strong> type 'lang:' and select a language
                 </span>
             ),
@@ -79,7 +80,7 @@ export const _04Completed: Story = () => (
     />
 )
 
-_04Completed.storyName = '0/4 completed'
+_04Completed.storyName = 'Progress 0/4 completed'
 
 export const _14Completed: Story = () => (
     <ActivationDropdown
@@ -96,4 +97,10 @@ export const _14Completed: Story = () => (
     />
 )
 
-_14Completed.storyName = '1/4 completed'
+_14Completed.storyName = 'Progress 1/4 completed'
+_14Completed.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

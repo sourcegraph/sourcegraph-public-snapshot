@@ -6,9 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -17,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPreviewConnectionResolver{}
@@ -414,22 +412,22 @@ type publicationStateMap map[string]batches.PublishedValue
 func newPublicationStateMap(in *[]graphqlbackend.ChangesetSpecPublicationStateInput) (publicationStateMap, error) {
 	out := publicationStateMap{}
 	if in != nil {
-		var errs *multierror.Error
+		var errs error
 		for _, ps := range *in {
 			id, err := unmarshalChangesetSpecID(ps.ChangesetSpec)
 			if err != nil {
-				errs = multierror.Append(errs, errors.Wrapf(err, "malformed changeset spec ID %q", string(ps.ChangesetSpec)))
+				errs = errors.Append(errs, errors.Wrapf(err, "malformed changeset spec ID %q", string(ps.ChangesetSpec)))
 				continue
 			}
 
 			if _, ok := out[id]; ok {
-				errs = multierror.Append(errs, errors.Newf("duplicate changeset spec ID %q", string(ps.ChangesetSpec)))
+				errs = errors.Append(errs, errors.Newf("duplicate changeset spec ID %q", string(ps.ChangesetSpec)))
 				continue
 			}
 			out[id] = ps.PublicationState
 		}
-		if err := errs.ErrorOrNil(); err != nil {
-			return nil, err
+		if errs != nil {
+			return nil, errs
 		}
 	}
 

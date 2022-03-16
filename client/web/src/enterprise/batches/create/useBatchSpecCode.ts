@@ -1,13 +1,14 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
-import { BatchSpec } from '../../../schema/batch_spec.schema'
 
 import { excludeRepo as excludeRepoFromYaml, hasOnOrImportChangesetsStatement } from './yaml-util'
 
@@ -168,7 +169,7 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
                 setCode(result.spec)
             } else {
                 setUpdateError(
-                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again.' +
+                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again. ' +
                         result.error
                 )
             }

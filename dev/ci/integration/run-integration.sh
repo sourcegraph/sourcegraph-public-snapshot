@@ -15,6 +15,11 @@ fi
 
 URL="http://localhost:7080"
 
+# In CI, provide a directory and container name unique to this job
+IDENT=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
+export DATA="/tmp/sourcegraph-data-${IDENT}"
+export CONTAINER="sourcegraph-${IDENT}"
+
 function docker_cleanup() {
   echo "--- docker cleanup"
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
@@ -26,6 +31,9 @@ function docker_cleanup() {
     docker rmi -f $(docker images -q)
   fi
   docker volume prune -f
+
+  echo "--- Deleting $DATA"
+  rm -rf "$DATA"
 }
 
 # Do a pre-run cleanup
@@ -57,8 +65,7 @@ function cleanup() {
 trap cleanup EXIT
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="sourcegraph"
-CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name $CONTAINER
+CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name "$CONTAINER"
 
 echo "--- Waiting for $URL to be up"
 set +e

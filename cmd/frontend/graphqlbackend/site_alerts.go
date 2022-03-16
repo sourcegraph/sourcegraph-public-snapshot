@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -63,7 +63,7 @@ type AlertFuncArgs struct {
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
-	settings, err := decodedViewerFinalSettings(ctx, r.db)
+	settings, err := DecodedViewerFinalSettings(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +96,9 @@ func init() {
 
 		return problems
 	})
+
+	// Warn if email sending is not configured.
+	AlertFuncs = append(AlertFuncs, emailSendingNotConfiguredAlert)
 
 	if !disableSecurity {
 		// Warn about Sourcegraph being out of date.
@@ -208,6 +211,24 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 		return true
 	}
 	return cv.Major() != uv.Major() || cv.Minor() != uv.Minor()
+}
+
+func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
+	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
+		return []*Alert{{
+			TypeValue:                 AlertTypeWarning,
+			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.smtp`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
+			IsDismissibleWithKeyValue: "email-sending",
+		}}
+	}
+	if conf.Get().EmailAddress == "" {
+		return []*Alert{{
+			TypeValue:                 AlertTypeWarning,
+			MessageValue:              "Warning: Sourcegraph cannot send emails! [Configure `email.address`](/help/admin/config/email) so that features such as Code Monitors, password resets, and invitations work. [documentation](/help/admin/config/email)",
+			IsDismissibleWithKeyValue: "email-sending",
+		}}
+	}
+	return nil
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {

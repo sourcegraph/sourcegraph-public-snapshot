@@ -13,7 +13,27 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox v22.3.11.1145, Safari v1.12
+
+- Fix client-side routing support on GitHub repository browse file tree pages: [#pull/32199](https://github.com/sourcegraph/sourcegraph/pull/32199), [#issues/31716](https://github.com/sourcegraph/sourcegraph/issues/31716)
+- Fix code intel popup buttons overflow issue on GitHub: [#pull/31698](https://github.com/sourcegraph/sourcegraph/pull/31698), [#issues/31359](https://github.com/sourcegraph/sourcegraph/issues/31359)
+- Make 'Configure on Sourcegraph' button navigate to manage repositories page when on default Sourcegraph URL: [#pull/31690](https://github.com/sourcegraph/sourcegraph/pull/31690), [#issues/3066](https://github.com/sourcegraph/sourcegraph/issues/3066)
+- Add installs/uninstall events tracking: [#pull/31785](https://github.com/sourcegraph/sourcegraph/pull/31785), [issues/31486](https://github.com/sourcegraph/sourcegraph/issues/31486)
+
+## Chrome & Firefox v22.2.11.1553, Safari v1.11
+
+- Make "single click to definition" an opt-in through advanced settings: [#pull/30540](https://github.com/sourcegraph/sourcegraph/pull/30540), [#issues/#30437](https://github.com/sourcegraph/sourcegraph/issues/30437)
+- Add "https://" URL input placeholder [#pull/30282](https://github.com/sourcegraph/sourcegraph/pull/30282), [#issues/14723](https://github.com/sourcegraph/sourcegraph/issues/14723)
+- Add filtering of browser extension dropdown duplicated URLs [#pull/30674](https://github.com/sourcegraph/sourcegraph/pull/30674), [#issues/30673](https://github.com/sourcegraph/sourcegraph/issues/30673)
+- Add code intel support to GitHub pull request commit view [#pull/30618](https://github.com/sourcegraph/sourcegraph/pull/30618), [#issues/30623](https://github.com/sourcegraph/sourcegraph/issues/30623)
+- Add tracking of inbound traffic from browser extension/code host integration [#pull/30170](https://github.com/sourcegraph/sourcegraph/pull/30170), [#issues/27082](https://github.com/sourcegraph/sourcegraph/issues/27082)
+- Add "Search on Sourcegraph" buttons to GitHub search pages [pull/#30399](https://github.com/sourcegraph/sourcegraph/pull/30399), [#issues/10410](https://github.com/sourcegraph/sourcegraph/issues/10410), [#issues/30968](https://github.com/sourcegraph/sourcegraph/issues/30968)
+
+## Chrome & Firefox v22.1.25.1535, Safari v1.10
+
 - Add extra field to log browser extension version [#issues/27845](https://github.com/sourcegraph/sourcegraph/issues/27845), [pull/27902](https://github.com/sourcegraph/sourcegraph/pull/27902)
+- Implement Sourcegraph URL dropdown for ease of URL switching [#issues/29030](https://github.com/sourcegraph/sourcegraph/issues/29030), [#pull/29471](https://github.com/sourcegraph/sourcegraph/pull/29471)
+  - Fix incorrect event log URL detection. Allow event logs for non-private repositories. [#issues/25778](https://github.com/sourcegraph/sourcegraph/issues/25778)
 
 ## Chrome v21.12.10.1012, Firefox v21.12.10.1048, Safari v1.9
 

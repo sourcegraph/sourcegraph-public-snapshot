@@ -1,10 +1,10 @@
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
 
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+
+import { pluralize } from '@sourcegraph/common'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
@@ -145,8 +145,6 @@ export interface ChangesetSelectRowProps {
 
     /** For testing only. */
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
-    /** For testing only. */
-    dropDownInitiallyOpen?: boolean
 }
 
 /**
@@ -158,7 +156,6 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     onSubmit,
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
-    dropDownInitiallyOpen = false,
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -196,7 +193,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         <>
             <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
-                    <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (
@@ -215,12 +212,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton
-                                actions={actions}
-                                dropdownMenuPosition="right"
-                                initiallyOpen={dropDownInitiallyOpen}
-                                placeholder="Select action"
-                            />
+                            <DropdownButton actions={actions} placeholder="Select action" />
                         </div>
                     </div>
                 </div>

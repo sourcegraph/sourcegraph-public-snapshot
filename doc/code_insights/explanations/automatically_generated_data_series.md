@@ -26,11 +26,7 @@ For the above example, this means that if `<java.version>1.9</java.version>` was
 
 ## Current limitations 
 
-Code Insights is in Beta and this feature has some yet-released limitations. In rough order, with limitations listed first likely to be removed soonest, they are: 
-
-### Must specify repository list 
-
-Code Insights using capture groups only run over an explicit list of repositories (max 50-70) rather than running over all connected repositories. 
+This feature has some yet-released limitations. In rough order, with limitations listed first likely to be removed soonest, they are: 
 
 ### Limited to 20 matches
 
@@ -39,6 +35,10 @@ Capture groups will only display 20 returned match values to prevent extremely l
 ### No capture groups in filter strings 
 
 This type of Code Insight only supports capture groups in the main query string. You cannot use a capture group in a filter keywork, like a `repo:` or `file:` filter. 
+
+### No multiline matches
+
+You can only use a single-line regular expression. This means that `^` and `$` characters are still valid but needing to match on a `\n` is not. As a potential workaround to get more granularity, you can still use `file:contains()` and other [search predicates](https://docs.sourcegraph.com/code_search/reference/language#built-in-file-predicate). 
 
 ### No combinations of capture groups 
 

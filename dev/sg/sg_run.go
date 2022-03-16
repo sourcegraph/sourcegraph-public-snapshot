@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	runFlagSet = flag.NewFlagSet("sg run", flag.ExitOnError)
-	runCommand = &ffcli.Command{
+	runFlagSet              = flag.NewFlagSet("sg run", flag.ExitOnError)
+	runFlagAddToMacFirewall = runFlagSet.Bool("add-to-macos-firewall", true, "OSX only; Add required exceptions to the firewall")
+	runCommand              = &ffcli.Command{
 		Name:       "run",
 		ShortUsage: "sg run <command>...",
 		ShortHelp:  "Run the given commands.",
@@ -49,7 +50,7 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, *verboseFlag, cmds...)
+	return run.Commands(ctx, globalConf.Env, *runFlagAddToMacFirewall, *verboseFlag, cmds...)
 }
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
@@ -58,14 +59,14 @@ func constructRunCmdLongHelp() string {
 
 	// Attempt to parse config to list available commands, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+	cfg := parseConfAndReset()
 
-	if globalConf != nil {
+	if cfg != nil {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
 		var names []string
-		for name := range globalConf.Commands {
+		for name := range cfg.Commands {
 			names = append(names, name)
 		}
 		sort.Strings(names)

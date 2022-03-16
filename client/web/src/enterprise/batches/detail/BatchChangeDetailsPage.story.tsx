@@ -1,12 +1,13 @@
+import React from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -34,6 +35,7 @@ const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
         },
     })
 
@@ -143,6 +145,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                     ...MOCK_BATCH_CHANGE.currentSpec,
                     supersedingBatchSpec: supersedingBatchSpec
                         ? {
+                              __typename: 'BatchSpec',
                               createdAt: subDays(new Date(), 1).toISOString(),
                               applyURL: '/users/alice/batch-changes/apply/newspecid',
                           }

@@ -2,11 +2,11 @@ package query
 
 import (
 	"encoding/json"
-	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 )
 
@@ -275,17 +275,17 @@ func TestSubstituteConcat(t *testing.T) {
 		{
 			input:  `foo\d "bar*"`,
 			concat: fuzzyRegexp,
-			want:   `"(foo\\d).*?(bar\\*)"`,
+			want:   `"(?:foo\\d).*?(?:bar\\*)"`,
 		},
 		{
 			input:  `"bar*" foo\d "bar*" foo\d`,
 			concat: fuzzyRegexp,
-			want:   `"(bar\\*).*?(foo\\d).*?(bar\\*).*?(foo\\d)"`,
+			want:   `"(?:bar\\*).*?(?:foo\\d).*?(?:bar\\*).*?(?:foo\\d)"`,
 		},
 		{
 			input:  "a b (c and d) e f (g or h) (i j k)",
 			concat: fuzzyRegexp,
-			want:   `"(a).*?(b)" (and "c" "d") "(e).*?(f)" (or "g" "h") "(i j k)"`,
+			want:   `"(?:a).*?(?:b)" (and "c" "d") "(?:e).*?(?:f)" (or "g" "h") "(i j k)"`,
 		},
 		{
 			input:  "(a not b not c d)",
@@ -692,29 +692,6 @@ func TestReporevToRegex(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Fatalf("reporevToRegex() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFuzzifyRegexPatterns(t *testing.T) {
-	tests := []struct {
-		in   string
-		want string
-	}{
-		{in: "repo:foo$", want: `"repo:foo"`},
-		{in: "file:foo$", want: `"file:foo"`},
-		{in: "repohasfile:foo$", want: `"repohasfile:foo"`},
-		{in: "repo:foo$ file:bar$ author:foo", want: `(and "repo:foo" "file:bar" "author:foo")`},
-		{in: "repo:foo$ ^bar$", want: `(and "repo:foo" "^bar$")`},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.in, func(t *testing.T) {
-			query, _ := Parse(tt.in, SearchTypeRegex)
-			got := toString(FuzzifyRegexPatterns(query))
-			if got != tt.want {
-				t.Fatalf("got = %v, want %v", got, tt.want)
 			}
 		})
 	}

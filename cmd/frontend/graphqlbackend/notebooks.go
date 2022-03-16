@@ -13,6 +13,7 @@ type NotebooksOrderBy string
 const (
 	NotebookOrderByUpdatedAt NotebooksOrderBy = "NOTEBOOK_UPDATED_AT"
 	NotebookOrderByCreatedAt NotebooksOrderBy = "NOTEBOOK_CREATED_AT"
+	NotebookOrderByStarCount NotebooksOrderBy = "NOTEBOOK_STAR_COUNT"
 )
 
 type NotebooksResolver interface {
@@ -21,6 +22,9 @@ type NotebooksResolver interface {
 	UpdateNotebook(ctx context.Context, args UpdateNotebookInputArgs) (NotebookResolver, error)
 	DeleteNotebook(ctx context.Context, args DeleteNotebookArgs) (*EmptyResponse, error)
 	Notebooks(ctx context.Context, args ListNotebooksArgs) (NotebookConnectionResolver, error)
+
+	CreateNotebookStar(ctx context.Context, args CreateNotebookStarInputArgs) (NotebookStarResolver, error)
+	DeleteNotebookStar(ctx context.Context, args DeleteNotebookStarInputArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -31,21 +35,38 @@ type NotebookConnectionResolver interface {
 	PageInfo(ctx context.Context) *graphqlutil.PageInfo
 }
 
+type NotebookStarResolver interface {
+	User(context.Context) (*UserResolver, error)
+	CreatedAt() DateTime
+}
+
+type NotebookStarConnectionResolver interface {
+	Nodes() []NotebookStarResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
+}
+
 type NotebookResolver interface {
 	ID() graphql.ID
 	Title(ctx context.Context) string
 	Blocks(ctx context.Context) []NotebookBlockResolver
 	Creator(ctx context.Context) (*UserResolver, error)
+	Updater(ctx context.Context) (*UserResolver, error)
+	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	Public(ctx context.Context) bool
 	UpdatedAt(ctx context.Context) DateTime
 	CreatedAt(ctx context.Context) DateTime
-	ViewerCanManage(ctx context.Context) bool
+	ViewerCanManage(ctx context.Context) (bool, error)
+	ViewerHasStarred(ctx context.Context) (bool, error)
+	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
 }
 
 type NotebookBlockResolver interface {
 	ToMarkdownBlock() (MarkdownBlockResolver, bool)
 	ToQueryBlock() (QueryBlockResolver, bool)
 	ToFileBlock() (FileBlockResolver, bool)
+	ToSymbolBlock() (SymbolBlockResolver, bool)
+	ToComputeBlock() (ComputeBlockResolver, bool)
 }
 
 type MarkdownBlockResolver interface {
@@ -70,6 +91,26 @@ type FileBlockInputResolver interface {
 	LineRange() FileBlockLineRangeResolver
 }
 
+type SymbolBlockResolver interface {
+	ID() string
+	SymbolInput() SymbolBlockInputResolver
+}
+
+type SymbolBlockInputResolver interface {
+	RepositoryName() string
+	FilePath() string
+	Revision() *string
+	LineContext() int32
+	SymbolName() string
+	SymbolContainerName() string
+	SymbolKind() string
+}
+
+type ComputeBlockResolver interface {
+	ID() string
+	ComputeInput() string
+}
+
 type FileBlockLineRangeResolver interface {
 	StartLine() int32
 	EndLine() int32
@@ -81,6 +122,8 @@ const (
 	NotebookMarkdownBlockType NotebookBlockType = "MARKDOWN"
 	NotebookQueryBlockType    NotebookBlockType = "QUERY"
 	NotebookFileBlockType     NotebookBlockType = "FILE"
+	NotebookSymbolBlockType   NotebookBlockType = "SYMBOL"
+	NotebookComputeBlockType  NotebookBlockType = "COMPUTE"
 )
 
 type CreateNotebookInputArgs struct {
@@ -97,17 +140,20 @@ type DeleteNotebookArgs struct {
 }
 
 type NotebookInputArgs struct {
-	Title  string                         `json:"title"`
-	Blocks []CreateNotebookBlockInputArgs `json:"blocks"`
-	Public bool                           `json:"public"`
+	Title     string                         `json:"title"`
+	Blocks    []CreateNotebookBlockInputArgs `json:"blocks"`
+	Public    bool                           `json:"public"`
+	Namespace graphql.ID                     `json:"namespace"`
 }
 
 type CreateNotebookBlockInputArgs struct {
-	ID            string                `json:"id"`
-	Type          NotebookBlockType     `json:"type"`
-	MarkdownInput *string               `json:"markdownInput"`
-	QueryInput    *string               `json:"queryInput"`
-	FileInput     *CreateFileBlockInput `json:"fileInput"`
+	ID            string                  `json:"id"`
+	Type          NotebookBlockType       `json:"type"`
+	MarkdownInput *string                 `json:"markdownInput"`
+	QueryInput    *string                 `json:"queryInput"`
+	FileInput     *CreateFileBlockInput   `json:"fileInput"`
+	SymbolInput   *CreateSymbolBlockInput `json:"symbolInput"`
+	ComputeInput  *string                 `json:"computeInput"`
 }
 
 type CreateFileBlockInput struct {
@@ -117,16 +163,41 @@ type CreateFileBlockInput struct {
 	LineRange      *CreateFileBlockLineRangeInput `json:"lineRange"`
 }
 
+type CreateSymbolBlockInput struct {
+	RepositoryName      string  `json:"repositoryName"`
+	FilePath            string  `json:"filePath"`
+	Revision            *string `json:"revision"`
+	LineContext         int32   `json:"lineContext"`
+	SymbolName          string  `json:"symbolName"`
+	SymbolContainerName string  `json:"symbolContainerName"`
+	SymbolKind          string  `json:"symbolKind"`
+}
+
 type CreateFileBlockLineRangeInput struct {
 	StartLine int32 `json:"startLine"`
 	EndLine   int32 `json:"endLine"`
 }
 
 type ListNotebooksArgs struct {
-	First         int32            `json:"first"`
-	After         *string          `json:"after"`
-	Query         *string          `json:"query"`
-	CreatorUserID *graphql.ID      `json:"creatorUserID"`
-	OrderBy       NotebooksOrderBy `json:"orderBy"`
-	Descending    bool             `json:"descending"`
+	First           int32            `json:"first"`
+	After           *string          `json:"after"`
+	Query           *string          `json:"query"`
+	CreatorUserID   *graphql.ID      `json:"creatorUserID"`
+	StarredByUserID *graphql.ID      `json:"starredByUserID"`
+	Namespace       *graphql.ID      `json:"namespace"`
+	OrderBy         NotebooksOrderBy `json:"orderBy"`
+	Descending      bool             `json:"descending"`
+}
+
+type ListNotebookStarsArgs struct {
+	First int32   `json:"first"`
+	After *string `json:"after"`
+}
+
+type CreateNotebookStarInputArgs struct {
+	NotebookID graphql.ID
+}
+
+type DeleteNotebookStarInputArgs struct {
+	NotebookID graphql.ID
 }

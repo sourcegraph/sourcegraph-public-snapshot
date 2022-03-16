@@ -1,19 +1,27 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
+import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    useObservable,
+    Link,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
 
-import { ActionButtonGroup } from './ActionButtonGroup'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { FooterPanel } from './FooterPanel'
 import { LoadingPanelView } from './LoadingPanelView'
@@ -23,6 +31,7 @@ interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
+    insideTabPanel?: boolean
 }
 
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
@@ -30,6 +39,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     fetchSavedSearches,
     className,
     telemetryService,
+    insideTabPanel,
 }) => {
     const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
     const [showAllSearches, setShowAllSearches] = useState(true)
@@ -55,14 +65,16 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <Link
+                <Button
                     to={`/users/${authenticatedUser.username}/searches/add`}
                     onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
-                    className="btn btn-secondary mt-2 align-self-center"
+                    className="mt-2 align-self-center"
+                    variant="secondary"
+                    as={Link}
                 >
-                    <PlusIcon className="icon-inline" />
+                    <Icon as={PlusIcon} />
                     Create a saved search
-                </Link>
+                </Button>
             )}
         </EmptyPanelContainer>
     )
@@ -95,14 +107,14 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ) : (
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>
@@ -126,46 +138,50 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     )
 
     const actionButtons = (
-        <ActionButtonGroup>
-            <div className="btn-group btn-group-sm">
-                {authenticatedUser && (
-                    <Link
-                        to={`/users/${authenticatedUser.username}/searches/add`}
-                        className="btn btn-outline-secondary mr-2"
-                        onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
-                    >
-                        +
-                    </Link>
-                )}
-            </div>
-            <div className="btn-group btn-group-sm">
+        <>
+            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
                 <Button
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames('test-saved-search-panel-my-searches', {
-                        active: !showAllSearches,
-                    })}
-                    outline={true}
+                    className="test-saved-search-panel-my-searches"
+                    outline={showAllSearches}
                     variant="secondary"
+                    size="sm"
                 >
                     My searches
                 </Button>
                 <Button
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames('test-saved-search-panel-all-searches', {
-                        active: showAllSearches,
-                    })}
-                    outline={true}
+                    className="test-saved-search-panel-all-searches"
+                    outline={!showAllSearches}
                     variant="secondary"
+                    size="sm"
                 >
                     All searches
                 </Button>
-            </div>
-        </ActionButtonGroup>
+            </ButtonGroup>
+            <Menu>
+                <MenuButton
+                    variant="icon"
+                    outline={true}
+                    className="d-block d-sm-none d-lg-block d-xl-none p-0"
+                    size="lg"
+                    aria-label="Filter saved searches"
+                >
+                    ...
+                </MenuButton>
+
+                <MenuList>
+                    <MenuItem onSelect={() => setShowAllSearches(false)}>My searches</MenuItem>
+                    <MenuItem onSelect={() => setShowAllSearches(true)}>All searches</MenuItem>
+                </MenuList>
+            </Menu>
+        </>
     )
     return (
         <PanelContainer
-            className={classNames(className, 'saved-searches-panel')}
+            insideTabPanel={insideTabPanel}
             title="Saved searches"
+            className={classNames(className, { 'h-100': insideTabPanel })}
             state={savedSearches ? (savedSearches.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}

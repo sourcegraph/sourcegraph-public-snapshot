@@ -538,13 +538,13 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 	}
 }
 
-func setupInitialQueue(s *updateScheduler, initialQueue []*repoUpdate) {
+func setupInitialQueue(s *UpdateScheduler, initialQueue []*repoUpdate) {
 	for _, update := range initialQueue {
 		heap.Push(s.updateQueue, update)
 	}
 }
 
-func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
+func verifyQueue(t *testing.T, s *UpdateScheduler, expected []*repoUpdate) {
 	t.Helper()
 
 	var actualQueue []*repoUpdate
@@ -831,7 +831,12 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	// Reset the time to now and do prioritiseUncloned. We then verify that notcloned
 	// is now at the front of the queue.
 	mockTime(defaultTime)
-	s.schedule.prioritiseUncloned([]string{"notcloned"})
+	s.schedule.prioritiseUncloned([]types.MinimalRepo{
+		{
+			ID:   3,
+			Name: "notcloned",
+		},
+	})
 
 	assertFront(notcloned.Name)
 }
@@ -862,6 +867,12 @@ func TestScheduleInsertNew(t *testing.T) {
 	mockTime(defaultTime)
 	s.schedule.insertNew([]types.MinimalRepo{repo1, repo2})
 	assertFront(repo2.Name)
+}
+
+type mockRandomGenerator struct{}
+
+func (m *mockRandomGenerator) Int63n(n int64) int64 {
+	return n / 2
 }
 
 func TestSchedule_updateInterval(t *testing.T) {
@@ -1030,6 +1041,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 
 			s := NewUpdateScheduler()
 			setupInitialSchedule(s, test.initialSchedule)
+			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			for _, call := range test.updateCalls {
 				mockTime(call.time)
@@ -1140,13 +1152,13 @@ func TestSchedule_remove(t *testing.T) {
 	}
 }
 
-func setupInitialSchedule(s *updateScheduler, initialSchedule []*scheduledRepoUpdate) {
+func setupInitialSchedule(s *UpdateScheduler, initialSchedule []*scheduledRepoUpdate) {
 	for _, update := range initialSchedule {
 		heap.Push(s.schedule, update)
 	}
 }
 
-func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoUpdate) {
+func verifySchedule(t *testing.T, s *UpdateScheduler, expected []*scheduledRepoUpdate) {
 	t.Helper()
 
 	var actualSchedule []*scheduledRepoUpdate
@@ -1161,7 +1173,7 @@ func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoU
 	}
 }
 
-func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDelays []time.Duration, wakeupNotifications int, r *recording) {
+func verifyScheduleRecording(t *testing.T, s *UpdateScheduler, timeAfterFuncDelays []time.Duration, wakeupNotifications int, r *recording) {
 	t.Helper()
 
 	if !reflect.DeepEqual(timeAfterFuncDelays, r.timeAfterFuncDelays) {
@@ -1192,7 +1204,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 		finalSchedule         []*scheduledRepoUpdate
 		finalQueue            []*repoUpdate
 		timeAfterFuncDelays   []time.Duration
-		expectedNotifications func(s *updateScheduler) []chan struct{}
+		expectedNotifications func(s *UpdateScheduler) []chan struct{}
 	}{
 		{
 			name: "empty schedule",
@@ -1206,7 +1218,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.schedule.wakeup}
 			},
 		},
@@ -1224,7 +1236,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{11 * time.Second},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.updateQueue.notifyEnqueue, s.schedule.wakeup}
 			},
 		},
@@ -1242,7 +1254,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.updateQueue.notifyEnqueue, s.schedule.wakeup}
 			},
 		},
@@ -1270,7 +1282,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 				{Repo: b, Priority: priorityLow, Seq: 5},
 			},
 			timeAfterFuncDelays: []time.Duration{1 * time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{
 					s.updateQueue.notifyEnqueue,
 					s.updateQueue.notifyEnqueue,
@@ -1321,7 +1333,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 		finalSchedule          []*scheduledRepoUpdate
 		finalQueue             []*repoUpdate
 		timeAfterFuncDelays    []time.Duration
-		expectedNotifications  func(s *updateScheduler) []chan struct{}
+		expectedNotifications  func(s *UpdateScheduler) []chan struct{}
 	}{
 		{
 			name: "empty queue",
@@ -1379,7 +1391,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 				{Repo: a, Interval: time.Minute, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
-			expectedNotifications: func(s *updateScheduler) []chan struct{} {
+			expectedNotifications: func(s *UpdateScheduler) []chan struct{} {
 				return []chan struct{}{s.schedule.wakeup}
 			},
 		},
@@ -1420,6 +1432,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			defer func() { requestRepoUpdate = nil }()
 
 			s := NewUpdateScheduler()
+			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel
 			s.updateQueue.notifyEnqueue = make(chan struct{})
@@ -1460,13 +1473,13 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 	}
 }
 
-func verifyRecording(t *testing.T, s *updateScheduler, timeAfterFuncDelays []time.Duration, expectedNotifications func(s *updateScheduler) []chan struct{}, r *recording) {
+func verifyRecording(t *testing.T, s *UpdateScheduler, timeAfterFuncDelays []time.Duration, expectedNotifications func(s *UpdateScheduler) []chan struct{}, r *recording) {
 	if !reflect.DeepEqual(timeAfterFuncDelays, r.timeAfterFuncDelays) {
 		t.Fatalf("\nexpected timeAfterFuncDelays\n%s\ngot\n%s", spew.Sdump(timeAfterFuncDelays), spew.Sdump(r.timeAfterFuncDelays))
 	}
 
 	if expectedNotifications == nil {
-		expectedNotifications = func(s *updateScheduler) []chan struct{} {
+		expectedNotifications = func(s *UpdateScheduler) []chan struct{} {
 			return nil
 		}
 	}

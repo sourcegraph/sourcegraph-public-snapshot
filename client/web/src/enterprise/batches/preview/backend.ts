@@ -1,19 +1,15 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { diffStatFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    Scalars,
     CreateBatchChangeVariables,
     CreateBatchChangeResult,
     ApplyBatchChangeResult,
     ApplyBatchChangeVariables,
-    BatchSpecByIDResult,
-    BatchSpecByIDVariables,
-    BatchSpecFields,
     QueryApplyPreviewStatsVariables,
     QueryApplyPreviewStatsResult,
     ApplyPreviewStatsFields,
@@ -84,32 +80,17 @@ export const batchSpecFragment = gql`
     ${supersedingBatchSpecFragment}
 `
 
-export const fetchBatchSpecById = (batchSpec: Scalars['ID']): Observable<BatchSpecFields | null> =>
-    requestGraphQL<BatchSpecByIDResult, BatchSpecByIDVariables>(
-        gql`
-            query BatchSpecByID($batchSpec: ID!) {
-                node(id: $batchSpec) {
-                    __typename
-                    ... on BatchSpec {
-                        ...BatchSpecFields
-                    }
-                }
+export const BATCH_SPEC_BY_ID = gql`
+    query BatchSpecByID($batchSpec: ID!) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                ...BatchSpecFields
             }
-            ${batchSpecFragment}
-        `,
-        { batchSpec }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                return null
-            }
-            if (node.__typename !== 'BatchSpec') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
-            }
-            return node
-        })
-    )
+        }
+    }
+    ${batchSpecFragment}
+`
 
 export const queryApplyPreviewStats = ({
     batchSpec,

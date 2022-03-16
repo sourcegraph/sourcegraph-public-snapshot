@@ -28,5 +28,6 @@ export function ThemeWrapper({
         const Children = children
         return <Children isLightTheme={isLightTheme} />
     }
+
     return children
 }

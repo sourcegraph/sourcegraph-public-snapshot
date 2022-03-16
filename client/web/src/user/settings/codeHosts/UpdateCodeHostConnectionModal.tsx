@@ -1,9 +1,7 @@
-import Dialog from '@reach/dialog'
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Alert } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -76,18 +74,14 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`heading--update-${serviceName}-code-host`}
-            onDismiss={onDidCancel}
-        >
+        <Modal aria-labelledby={`heading--update-${serviceName}-code-host`} onDismiss={onDidCancel}>
             <div className="web-content">
                 <h3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
                     Update {serviceName} connection
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
-                        <div className="alert alert-info" role="alert">
+                        <Alert variant="info" role="alert">
                             Updating the access token may affect which repositories can be synced with Sourcegraph.{' '}
                             <Link
                                 to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
@@ -98,7 +92,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 Learn more
                             </Link>
                             .
-                        </div>
+                        </Alert>
                         {didAckMachineUserHint ? (
                             <>
                                 {' '}
@@ -129,11 +123,11 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                         {didAckMachineUserHint ? (
                             <LoaderButton
                                 type="submit"
-                                className="btn btn-primary"
                                 loading={isLoading}
                                 disabled={!token || isLoading}
                                 label="Update code host connection"
                                 alwaysShowLabel={true}
+                                variant="primary"
                             />
                         ) : (
                             <Button
@@ -146,6 +140,6 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                     </div>
                 </Form>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

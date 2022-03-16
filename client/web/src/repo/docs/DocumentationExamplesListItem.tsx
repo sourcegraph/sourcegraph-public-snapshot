@@ -1,24 +1,25 @@
+import React, { useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 
-import styles from './DocumentationExamplesListItem.module.scss'
 import { fetchDocumentationBlame } from './graphql'
+
+import styles from './DocumentationExamplesListItem.module.scss'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location

@@ -1,0 +1,4 @@
+ reference localExample
+#          ^^^^^^^^^^^^ reference local ERROR_UNRESOLVED_SYMBOL
+ 
+ 

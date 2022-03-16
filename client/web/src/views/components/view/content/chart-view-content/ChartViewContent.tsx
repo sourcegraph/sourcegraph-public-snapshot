@@ -1,13 +1,15 @@
+import React, { FunctionComponent, useCallback } from 'react'
+
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
+
 import styles from './ChartViewContent.module.scss'
 
 export enum ChartViewContentLayout {
@@ -45,8 +47,8 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const { content, className = '', layout = ChartViewContentLayout.ByParentSize, onDatumLinkClick = noop } = props
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
-    // link which we've got from nearest datum point to user cursor position. This allows user
-    // not to aim on small point on the chart and just click somewhere around the point.
+    // link which we've got from the nearest datum point to user cursor position. This allows user
+    // not to aim at small point on the chart and just click somewhere around the point.
     const linkHandler = useCallback(
         (event: DatumZoneClickEvent): void => {
             if (!event.link) {

@@ -2,8 +2,8 @@ import { EMPTY, Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {

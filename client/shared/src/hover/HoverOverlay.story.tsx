@@ -1,13 +1,15 @@
+import React from 'react'
+
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
-import React from 'react'
+import { BrowserRouter } from 'react-router-dom'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
 import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'
+import { registerHighlightContributions } from '@sourcegraph/common'
 
 import { NotificationType } from '../api/extension/extensionHostApi'
-import { registerHighlightContributions } from '../highlight/contributions'
 
 import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
 import { commonProps, FIXTURE_ACTIONS, FIXTURE_CONTENT, FIXTURE_SEMANTIC_BADGE } from './HoverOverlay.fixtures'
@@ -23,6 +25,12 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'shared/HoverOverlay',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default config
@@ -44,16 +52,18 @@ const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
 }
 
 export const BitbucketStyles: Story = props => (
-    <HoverOverlay
-        {...commonProps()}
-        {...BITBUCKET_CLASS_PROPS}
-        {...props}
-        hoverOrError={{
-            contents: [FIXTURE_CONTENT],
-            aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
-        }}
-        actionsOrError={FIXTURE_ACTIONS}
-    />
+    <BrowserRouter>
+        <HoverOverlay
+            {...commonProps()}
+            {...BITBUCKET_CLASS_PROPS}
+            {...props}
+            hoverOrError={{
+                contents: [FIXTURE_CONTENT],
+                aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
+            }}
+            actionsOrError={FIXTURE_ACTIONS}
+        />
+    </BrowserRouter>
 )
 BitbucketStyles.storyName = 'Bitbucket styles'
 

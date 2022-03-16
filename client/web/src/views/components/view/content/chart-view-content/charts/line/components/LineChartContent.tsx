@@ -1,15 +1,25 @@
+import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
+
 import { curveLinear } from '@visx/curve'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { Axis, DataProvider, GlyphSeries, LineSeries, Tooltip, TooltipProvider, XYChart } from '@visx/xychart'
+import {
+    Axis,
+    DataProvider,
+    GlyphSeries,
+    LineSeries,
+    Tooltip,
+    TooltipProvider,
+    XYChart,
+    EventEmitterProvider,
+} from '@visx/xychart'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
 import classNames from 'classnames'
-import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
 import { noop } from 'rxjs'
-import { LineChartContent as LineChartContentType } from 'sourcegraph'
+import { LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
@@ -21,10 +31,11 @@ import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-sca
 import { onDatumZoneClick, Point } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
-import styles from './LineChartContent.module.scss'
 import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './tooltip-content/TooltipContent'
+
+import styles from './LineChartContent.module.scss'
 
 // Chart configuration
 const WIDTH_PER_TICK = 70
@@ -43,9 +54,8 @@ const SCALES_CONFIG = {
 }
 
 // Line color accessor
-export const getLineStroke = <Datum extends object>(
-    line: LineChartContentType<Datum, keyof Datum>['series'][number]
-): string => line?.stroke ?? DEFAULT_LINE_STROKE
+export const getLineStroke = <Datum extends object>(line: LineChartSeries<Datum>): string =>
+    line?.stroke ?? DEFAULT_LINE_STROKE
 
 const stopPropagation = (event: React.MouseEvent): void => event.stopPropagation()
 
@@ -68,6 +78,14 @@ export interface LineChartContentProps<Datum extends object>
      * on the chart was clicked.
      */
     onDatumLinkClick?: (event: React.MouseEvent) => void
+}
+
+export function LineChart<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
+    return (
+        <EventEmitterProvider>
+            <LineChartContent {...props} />
+        </EventEmitterProvider>
+    )
 }
 
 /**
@@ -151,13 +169,13 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
             const activeDatumIndex = hoveredDatum?.index
             const line = series.find(line => line.dataKey === info.key)
 
-            if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
+            if (!info.event || !line || !hoveredDatum?.datum || !isValidNumber(activeDatumIndex)) {
                 return
             }
 
             onDatumZoneClick({
                 originEvent: info.event as MouseEvent<unknown>,
-                link: line?.linkURLs?.[activeDatumIndex],
+                link: line?.linkURLs?.[+hoveredDatum.datum.x] ?? line?.linkURLs?.[activeDatumIndex],
             })
         },
         [series, onDatumZoneClick, hoveredDatum]
@@ -216,8 +234,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ...otherHandlers,
     }
 
-    const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
-    const rootClasses = classNames(styles.content, { [styles.contentWithCursor]: !!hoveredDatumLink })
+    const hoveredDatumLinks = hoveredDatum?.line?.linkURLs ?? {}
+    const hoveredDatumLink = hoveredDatum
+        ? hoveredDatumLinks[+hoveredDatum.datum.x] ?? hoveredDatumLinks[hoveredDatum.index]
+        : null
+    const rootClasses = classNames({ [styles.contentWithCursor]: !!hoveredDatumLink })
 
     return (
         <div className={classNames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">

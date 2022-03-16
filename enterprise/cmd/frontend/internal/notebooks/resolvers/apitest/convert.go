@@ -20,11 +20,23 @@ func BlockToAPIResponse(block notebooks.NotebookBlock) NotebookBlock {
 			Revision:       block.FileInput.Revision,
 			LineRange:      &LineRange{StartLine: block.FileInput.LineRange.StartLine, EndLine: block.FileInput.LineRange.EndLine},
 		}}
+	case notebooks.NotebookSymbolBlockType:
+		return NotebookBlock{Typename: "SymbolBlock", ID: block.ID, SymbolInput: SymbolInput{
+			RepositoryName:      block.SymbolInput.RepositoryName,
+			FilePath:            block.SymbolInput.FilePath,
+			Revision:            block.SymbolInput.Revision,
+			LineContext:         block.SymbolInput.LineContext,
+			SymbolName:          block.SymbolInput.SymbolName,
+			SymbolContainerName: block.SymbolInput.SymbolContainerName,
+			SymbolKind:          block.SymbolInput.SymbolKind,
+		}}
+	case notebooks.NotebookComputeBlockType:
+		return NotebookBlock{Typename: "ComputeBlock", ID: block.ID, ComputeInput: block.ComputeInput.Value}
 	}
 	panic("unknown block type")
 }
 
-func NotebookToAPIResponse(notebook *notebooks.Notebook, id graphql.ID, username string, viewerCanManage bool) Notebook {
+func NotebookToAPIResponse(notebook *notebooks.Notebook, id graphql.ID, creatorUsername string, updaterUsername string, viewerCanManage bool) Notebook {
 	blocks := make([]NotebookBlock, 0, len(notebook.Blocks))
 	for _, block := range notebook.Blocks {
 		blocks = append(blocks, BlockToAPIResponse(block))
@@ -32,7 +44,8 @@ func NotebookToAPIResponse(notebook *notebooks.Notebook, id graphql.ID, username
 	return Notebook{
 		ID:              string(id),
 		Title:           notebook.Title,
-		Creator:         NotebookCreator{Username: username},
+		Creator:         NotebookUser{Username: creatorUsername},
+		Updater:         NotebookUser{Username: updaterUsername},
 		CreatedAt:       notebook.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:       notebook.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 		Public:          notebook.Public,
@@ -54,8 +67,28 @@ func BlockToAPIInput(block notebooks.NotebookBlock) graphqlbackend.CreateNoteboo
 			Revision:       block.FileInput.Revision,
 			LineRange:      &graphqlbackend.CreateFileBlockLineRangeInput{StartLine: block.FileInput.LineRange.StartLine, EndLine: block.FileInput.LineRange.EndLine},
 		}}
+	case notebooks.NotebookSymbolBlockType:
+		return graphqlbackend.CreateNotebookBlockInputArgs{ID: block.ID, Type: graphqlbackend.NotebookSymbolBlockType, SymbolInput: &graphqlbackend.CreateSymbolBlockInput{
+			RepositoryName:      block.SymbolInput.RepositoryName,
+			FilePath:            block.SymbolInput.FilePath,
+			Revision:            block.SymbolInput.Revision,
+			LineContext:         block.SymbolInput.LineContext,
+			SymbolName:          block.SymbolInput.SymbolName,
+			SymbolContainerName: block.SymbolInput.SymbolContainerName,
+			SymbolKind:          block.SymbolInput.SymbolKind,
+		}}
+	case notebooks.NotebookComputeBlockType:
+		return graphqlbackend.CreateNotebookBlockInputArgs{ID: block.ID, Type: graphqlbackend.NotebookComputeBlockType, ComputeInput: &block.ComputeInput.Value}
 	}
 	panic("unknown block type")
+}
+
+func marshalNamespaceID(notebook *notebooks.Notebook) graphql.ID {
+	if notebook.NamespaceUserID != 0 {
+		return graphqlbackend.MarshalUserID(notebook.NamespaceUserID)
+	} else {
+		return graphqlbackend.MarshalOrgID(notebook.NamespaceOrgID)
+	}
 }
 
 func NotebookToAPIInput(notebook *notebooks.Notebook) graphqlbackend.NotebookInputArgs {
@@ -64,8 +97,9 @@ func NotebookToAPIInput(notebook *notebooks.Notebook) graphqlbackend.NotebookInp
 		blocks = append(blocks, BlockToAPIInput(block))
 	}
 	return graphqlbackend.NotebookInputArgs{
-		Title:  notebook.Title,
-		Public: notebook.Public,
-		Blocks: blocks,
+		Title:     notebook.Title,
+		Public:    notebook.Public,
+		Blocks:    blocks,
+		Namespace: marshalNamespaceID(notebook),
 	}
 }

@@ -1,15 +1,17 @@
+import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
+
 import { GlyphDot as Glyph } from '@visx/glyph'
 import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types'
 import classNames from 'classnames'
-import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
 import { LineChartSeries } from 'sourcegraph'
 
 import { MaybeLink } from '../../MaybeLink'
 import { Point } from '../types'
 
-import styles from './GlyphContent.module.scss'
 import { getLineStroke } from './LineChartContent'
 import { dateLabelFormatter } from './TickComponent'
+
+import styles from './GlyphContent.module.scss'
 
 /**
  * Type for active datum state in LineChartContent component. In order to render active state
@@ -74,7 +76,7 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
     const hovered = hoveredDatum?.index === currentDatumIndex && hoveredDatum.key === line.dataKey
     const focused = focusedDatum?.index === currentDatumIndex && focusedDatum.key === line.dataKey
 
-    const linkURL = line.linkURLs?.[currentDatumIndex]
+    const linkURL = line.linkURLs?.[+datum.x] ?? line.linkURLs?.[currentDatumIndex]
 
     const currentDatum = {
         key: line.dataKey.toString(),

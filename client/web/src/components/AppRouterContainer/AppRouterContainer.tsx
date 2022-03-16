@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { HTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 import { ElementScroller } from 'react-scroll-manager'
 
 import styles from './AppRouterContainer.module.scss'
@@ -12,7 +13,11 @@ export const AppRouterContainer: React.FunctionComponent<AppRouterContainerProps
     ...rest
 }) => (
     <ElementScroller scrollKey="app-router-container">
-        <div className={classNames(styles.appRouterContainer, className)} {...rest}>
+        {/*
+            Data Layout data attribute is used to get access to the main layout scroll element (the div element below).
+            from child levels in order to handle or react on this container scroll or other important events.
+         */}
+        <div data-layout={true} className={classNames(styles.appRouterContainer, className)} {...rest}>
             {children}
         </div>
     </ElementScroller>

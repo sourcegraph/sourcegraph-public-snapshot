@@ -1,8 +1,8 @@
-import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import * as H from 'history'
+
+import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -42,23 +42,23 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
                 description={
                     <>
                         Learn more about{' '}
-                        <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                        <Link to="/help/admin/repo/permissions#background-permissions-syncing">
                             background permissions syncing
-                        </a>
+                        </Link>
                         .
                     </>
                 }
             />
             <Container className="repo-settings-permissions-page">
                 {!repo.isPrivate ? (
-                    <div className="alert alert-info mb-0">
+                    <Alert className="mb-0" variant="info">
                         Access to this repository is not restricted, all Sourcegraph users have access.
-                    </div>
+                    </Alert>
                 ) : !permissionsInfo ? (
-                    <div className="alert alert-info mb-0">
+                    <Alert className="mb-0" variant="info">
                         This repository is queued to sync permissions, only site admins will have access to it until
                         syncing is finished.
-                    </div>
+                    </Alert>
                 ) : (
                     <div>
                         <table className="table">

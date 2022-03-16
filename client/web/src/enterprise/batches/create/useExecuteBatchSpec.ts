@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react'
+
 import { useHistory } from 'react-router'
 
+import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../graphql-operations'
 
@@ -38,7 +39,9 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatc
         submitBatchSpec({ variables: { batchSpec: batchSpecID } })
             .then(({ data }) => {
                 if (data?.executeBatchSpec) {
-                    history.push(`/batch-changes/executions/${data.executeBatchSpec.id}`)
+                    history.push(
+                        `${data.executeBatchSpec.namespace.url}/batch-changes/${data.executeBatchSpec.description.name}/executions/${data.executeBatchSpec.id}`
+                    )
                 }
             })
             .catch(setExecutionError)

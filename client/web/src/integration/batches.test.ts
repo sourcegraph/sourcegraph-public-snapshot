@@ -27,6 +27,7 @@ import {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
     BatchChangeState,
+    BatchSpecState,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
@@ -35,7 +36,8 @@ import { percySnapshotWithVariants } from './utils'
 
 const now = new Date()
 
-const batchChangeListNode: ListBatchChange = {
+const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
+    __typename: 'BatchChange',
     id: 'batch123',
     url: '/users/alice/batch-changes/test-batch-change',
     name: 'test-batch-change',
@@ -47,6 +49,19 @@ const batchChangeListNode: ListBatchChange = {
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
+    },
+    currentSpec: {
+        id: 'test-spec',
+    },
+    batchSpecs: {
+        nodes: [
+            {
+                __typename: 'BatchSpec',
+                id: 'test-spec',
+                state: BatchSpecState.COMPLETED,
+                applyURL: '/fake-apply-url',
+            },
+        ],
     },
 }
 
@@ -226,6 +241,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                             baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        forkTarget: null,
                     },
                 },
             ],
@@ -302,6 +318,7 @@ function mockCommonGraphQLResponses(
                     unpublished: 3,
                     draft: 2,
                 },
+                state: BatchChangeState.OPEN,
                 closedAt: null,
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
@@ -324,6 +341,7 @@ function mockCommonGraphQLResponses(
                     username: 'bob',
                 },
                 currentSpec: {
+                    id: 'specID1',
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                     codeHostsWithoutWebhooks: {
@@ -343,14 +361,12 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'User',
                           batchChanges: {
+                              __typename: 'BatchChangeConnection',
                               nodes: [batchChangeListNode],
                               pageInfo: {
                                   endCursor: null,
                                   hasNextPage: false,
                               },
-                              totalCount: 1,
-                          },
-                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -359,6 +375,7 @@ function mockCommonGraphQLResponses(
                       node: {
                           __typename: 'Org',
                           batchChanges: {
+                              __typename: 'BatchChangeConnection',
                               nodes: [
                                   {
                                       ...batchChangeListNode,
@@ -373,9 +390,6 @@ function mockCommonGraphQLResponses(
                                   endCursor: null,
                                   hasNextPage: false,
                               },
-                              totalCount: 1,
-                          },
-                          allBatchChanges: {
                               totalCount: 1,
                           },
                       },
@@ -401,22 +415,23 @@ describe('Batches', () => {
     afterEach(() => testContext?.dispose())
 
     const batchChangeLicenseGraphQlResults = {
-        AreBatchChangesLicensed: () => ({
+        GetLicenseAndUsageInfo: () => ({
             campaigns: true,
             batchChanges: true,
+            allBatchChanges: {
+                totalCount: 1,
+            },
         }),
     }
     const batchChangesListResults = {
         BatchChanges: () => ({
             batchChanges: {
+                __typename: 'BatchChangeConnection' as const,
                 nodes: [batchChangeListNode],
                 pageInfo: {
                     endCursor: null,
                     hasNextPage: false,
                 },
-                totalCount: 1,
-            },
-            allBatchChanges: {
                 totalCount: 1,
             },
         }),
@@ -541,11 +556,11 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Switch to view burndown chart.
-                await driver.page.click('[data-reach-tab-list] button:nth-child(2)')
+                await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(2)')
                 await driver.page.waitForSelector('.test-batches-chart')
 
                 // Switch to view spec file.
-                await driver.page.click('[data-reach-tab-list] button:nth-child(3)')
+                await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(3)')
                 await driver.page.waitForSelector('.test-batches-spec')
 
                 // Go to close page via button.
@@ -647,12 +662,14 @@ describe('Batches', () => {
                             viewerCanAdminister: true,
                             originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
+                                __typename: 'ChangesetApplyPreviewConnection',
                                 stats: {
                                     archive: 10,
                                 },
                                 totalCount: 10,
                             },
                             viewerBatchChangesCodeHosts: {
+                                __typename: 'BatchChangesCodeHostConnection',
                                 totalCount: 0,
                                 nodes: [],
                             },
@@ -662,11 +679,13 @@ describe('Batches', () => {
                         node: {
                             __typename: 'BatchSpec',
                             applyPreview: {
+                                __typename: 'ChangesetApplyPreviewConnection',
                                 nodes: [
                                     {
                                         __typename: 'VisibleChangesetApplyPreview',
                                         operations: [ChangesetSpecOperation.PUSH, ChangesetSpecOperation.PUBLISH],
                                         delta: {
+                                            __typename: 'ChangesetSpecDelta',
                                             titleChanged: false,
                                             baseRefChanged: false,
                                             diffChanged: false,
@@ -692,13 +711,16 @@ describe('Batches', () => {
                                                     body: 'Body',
                                                     commits: [
                                                         {
+                                                            __typename: 'GitCommitDescription',
                                                             subject: 'Commit message',
                                                             body: 'And the more explanatory body.',
                                                             author: {
+                                                                __typename: 'Person',
                                                                 avatarURL: null,
                                                                 displayName: 'john',
                                                                 email: 'john@test.not',
                                                                 user: {
+                                                                    __typename: 'User',
                                                                     displayName: 'lejohn',
                                                                     url: '/users/lejohn',
                                                                     username: 'john',
@@ -717,6 +739,7 @@ describe('Batches', () => {
                                                 expiresAt: addDays(now, 3).toISOString(),
                                                 id: 'changesetspec123',
                                                 type: ChangesetSpecType.BRANCH,
+                                                forkTarget: null,
                                             },
                                         },
                                     },
@@ -740,6 +763,7 @@ describe('Batches', () => {
                     }),
                     CreateBatchChange: () => ({
                         createBatchChange: {
+                            __typename: 'BatchChange',
                             id: 'change123',
                             url: namespaceURL + '/batch-changes/test-batch-change',
                         },

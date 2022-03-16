@@ -1,10 +1,9 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
 import { reenqueueChangesets as _reenqueueChangesets } from '../backend'
 
@@ -38,11 +37,7 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
     }, [changesetIDs, reenqueueChangesets, batchChangeID, afterCreate])
 
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onCancel}
-            aria-labelledby={LABEL_ID}
-        >
+        <Modal onDismiss={onCancel} aria-labelledby={LABEL_ID}>
             <h3 id={LABEL_ID}>Re-enqueue changesets</h3>
             <p className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
@@ -61,7 +56,7 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
                     Re-enqueue
                 </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 

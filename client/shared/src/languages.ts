@@ -355,6 +355,8 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'rd':
         case 'rsx':
             return 'r'
+        case 'repro':
+            return 'repro'
 
         // Ruby
         case 'rb':

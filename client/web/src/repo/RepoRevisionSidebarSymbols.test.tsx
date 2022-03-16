@@ -1,12 +1,13 @@
+import React from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
 import { cleanup, fireEvent } from '@testing-library/react'
 import { escapeRegExp } from 'lodash'
-import React from 'react'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { SymbolsResult } from '../graphql-operations'
 
@@ -36,7 +37,7 @@ const symbolsMock: MockedResponse<SymbolsResult> = {
             first: 100,
             repo: sidebarProps.repoID,
             revision: sidebarProps.revision,
-            includePatterns: [escapeRegExp(sidebarProps.activePath)],
+            includePatterns: ['^' + escapeRegExp(sidebarProps.activePath)],
         },
     },
     result: {
@@ -73,11 +74,11 @@ const symbolsMock: MockedResponse<SymbolsResult> = {
 }
 
 describe('RepoRevisionSidebarSymbols', () => {
-    let renderResult: RenderWithRouterResult
+    let renderResult: RenderWithBrandedContextResult
     afterEach(cleanup)
 
     beforeEach(async () => {
-        renderResult = renderWithRouter(
+        renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={[symbolsMock]} addTypename={true}>
                 <RepoRevisionSidebarSymbols {...sidebarProps} />
             </MockedTestProvider>,

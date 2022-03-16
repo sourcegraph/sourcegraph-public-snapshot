@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -39,6 +40,7 @@ type Upload struct {
 	RepositoryID      int        `json:"repositoryId"`
 	RepositoryName    string     `json:"repositoryName"`
 	Indexer           string     `json:"indexer"`
+	IndexerVersion    string     `json:"indexer_version"`
 	NumParts          int        `json:"numParts"`
 	UploadedParts     []int      `json:"uploadedParts"`
 	UploadSize        *int64     `json:"uploadSize"`
@@ -77,6 +79,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.RepositoryID,
 			&upload.RepositoryName,
 			&upload.Indexer,
+			&dbutil.NullString{S: &upload.IndexerVersion},
 			&upload.NumParts,
 			pq.Array(&rawUploadedParts),
 			&upload.UploadSize,
@@ -174,6 +177,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.num_parts,
 	u.uploaded_parts,
 	u.upload_size,
@@ -231,6 +235,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.num_parts,
 	u.uploaded_parts,
 	u.upload_size,
@@ -294,6 +299,11 @@ type GetUploadsOptions struct {
 	OldestFirst             bool
 	Limit                   int
 	Offset                  int
+
+	// InCommitGraph ensures that the repository commit graph was updated strictly
+	// after this upload was processed. This condition helps us filter out new uploads
+	// that we might later mistake for unreachable.
+	InCommitGraph bool
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -308,6 +318,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
 		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
+		log.Bool("inCommitGraph", opts.InCommitGraph),
 		log.Bool("allowExpired", opts.AllowExpired),
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
@@ -321,7 +332,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	conds := make([]*sqlf.Query, 0, 11)
+	conds := make([]*sqlf.Query, 0, 12)
 	cteDefinitions := make([]cteDefinition, 0, 2)
 
 	if opts.RepositoryID != 0 {
@@ -371,6 +382,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.UploadedAfter != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
+	}
+	if opts.InCommitGraph {
+		conds = append(conds, sqlf.Sprintf("u.finished_at < (SELECT updated_at FROM lsif_dirty_repositories ldr WHERE ldr.repository_id = u.repository_id)"))
 	}
 	if opts.LastRetentionScanBefore != nil {
 		conds = append(conds, sqlf.Sprintf("(u.last_retention_scan_at IS NULL OR u.last_retention_scan_at < %s)", *opts.LastRetentionScanBefore))
@@ -468,6 +482,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.num_parts,
 	u.uploaded_parts,
 	u.upload_size,
@@ -511,6 +526,7 @@ func makeSearchCondition(term string) *sqlf.Query {
 		"u.failure_message",
 		`u.repository_name`,
 		"u.indexer",
+		"u.indexer_version",
 	}
 
 	var termConds []*sqlf.Query
@@ -560,6 +576,7 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (id int, err er
 			upload.Root,
 			upload.RepositoryID,
 			upload.Indexer,
+			upload.IndexerVersion,
 			upload.State,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
@@ -578,12 +595,13 @@ INSERT INTO lsif_uploads (
 	root,
 	repository_id,
 	indexer,
+	indexer_version,
 	state,
 	num_parts,
 	uploaded_parts,
 	upload_size,
 	associated_index_id
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -658,6 +676,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.repository_id"),
 	sqlf.Sprintf(`u.repository_name`),
 	sqlf.Sprintf("u.indexer"),
+	sqlf.Sprintf("u.indexer_version"),
 	sqlf.Sprintf("u.num_parts"),
 	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("u.upload_size"),

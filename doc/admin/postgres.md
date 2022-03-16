@@ -67,7 +67,7 @@ Generally, no additional steps are required to upgrade the databases shipped alo
 
 #### Sourcegraph with Kubernetes
 
-**The upgrade process is different for [Sourcegraph Kubernetes deployments](./install/kubernetes/index.md)** because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12.6/build.sh#L10), it uses `sourcegraph/postgres-12.6:21-03-26_5d7084279` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
+**The upgrade process is different for [Sourcegraph Kubernetes deployments](./install/kubernetes/index.md)** because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12/build.sh#L10), it uses `sourcegraph/postgres-12` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
 
 If you have changed `PGUSER`, `PGDATABASE` or `PGDATA`, then the `PG*OLD` and `PG*NEW` environment variables are
 required. Below are the defaults and documentation on what each variable is used for:

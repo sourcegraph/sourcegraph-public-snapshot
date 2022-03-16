@@ -1,8 +1,7 @@
-import { Dialog } from '@reach/dialog'
 import React from 'react'
 
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 /**
  * A modal confirmation prompt to the user confirming whether to add an extension.
@@ -16,11 +15,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
     const labelId = `label--permission-${extensionID}`
 
     return (
-        <Dialog
-            className="modal-body modal-body--centered p-4 rounded border"
-            onDismiss={denyPermission}
-            aria-labelledby={labelId}
-        >
+        <Modal position="center" onDismiss={denyPermission} aria-labelledby={labelId}>
             <h3 id={labelId}>Add {name || extensionID} Sourcegraph extension?</h3>
             <p className="mb-0 mt-3">It will be able to:</p>
             <ul className="list-dashed">
@@ -35,6 +30,6 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
                     Yes, add {name || extensionID}!
                 </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

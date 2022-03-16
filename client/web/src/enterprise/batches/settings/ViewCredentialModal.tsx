@@ -1,7 +1,6 @@
-import Dialog from '@reach/dialog'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
@@ -22,11 +21,7 @@ export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalPro
 }) => {
     const labelId = 'viewCredential'
     return (
-        <Dialog
-            className="modal-body modal-body--top-third p-4 rounded border"
-            onDismiss={onClose}
-            aria-labelledby={labelId}
-        >
+        <Modal onDismiss={onClose} aria-labelledby={labelId}>
             <ModalHeader
                 id={labelId}
                 externalServiceKind={codeHost.externalServiceKind}
@@ -55,6 +50,6 @@ export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalPro
                     Close
                 </Button>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

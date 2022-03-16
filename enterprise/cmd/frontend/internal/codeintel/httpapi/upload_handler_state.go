@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type uploadState struct {
@@ -24,6 +24,7 @@ type uploadState struct {
 	commit            string
 	root              string
 	indexer           string
+	indexerVersion    string
 	associatedIndexID int
 	numParts          int
 	uploadedParts     []int
@@ -45,6 +46,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		commit:            getQuery(r, "commit"),
 		root:              sanitizeRoot(getQuery(r, "root")),
 		indexer:           getQuery(r, "indexerName"),
+		indexerVersion:    getQuery(r, "indexerVersion"),
 		associatedIndexID: getQueryInt(r, "associatedIndexId"),
 		numParts:          getQueryInt(r, "numParts"),
 		multipart:         hasQuery(r, "multiPart"),

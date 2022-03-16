@@ -1,0 +1,11 @@
+:root {
+    --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+    --code-font-size: #{(12/14)}em;
+}
+
+.code {
+    font-family: var(--code-font-family);
+    font-size: var(--code-font-size);
+    line-height: 1rem;
+    white-space: pre;
+}

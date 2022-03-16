@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
 import { requestGraphQL } from '../../../../backend/graphql'
@@ -40,6 +40,10 @@ const changesetSpecFieldsFragment = gql`
             ...ExistingChangesetReferenceFields
             ...GitBranchChangesetDescriptionFields
         }
+        forkTarget {
+            pushUser
+            namespace
+        }
     }
 
     fragment ExistingChangesetReferenceFields on ExistingChangesetReference {
@@ -74,7 +78,6 @@ const changesetSpecFieldsFragment = gql`
         }
         baseRef
         headRef
-        fork
         diffStat {
             ...DiffStatFields
         }

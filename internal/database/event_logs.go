@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -1237,6 +1237,7 @@ WHERE key IN
 	'count_repo_contains_file',
 	'count_repo_contains_content',
 	'count_repo_contains_commit_after',
+	'count_repo_dependencies',
 	'count_count_all',
 	'count_non_global_context',
 	'count_only_patterns',

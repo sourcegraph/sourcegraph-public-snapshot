@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CaptureGroupInsight } from '../../../../core/types'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
+import { useCaptureInsightInitialValues } from './hooks/use-capture-insight-initial-values'
 import { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
@@ -21,10 +23,7 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
 export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
-    const [initialFormValues, setInitialFormValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
-        'insights.capture-group-creation-ui',
-        undefined
-    )
+    const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCaptureGroupCreationPage')
@@ -39,8 +38,8 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
         telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')
         telemetryService.log(
             'InsightAddition',
-            { insightType: 'captureGroupInsights' },
-            { insightType: 'captureGroupInsights' }
+            { insightType: CodeInsightTrackType.CaptureGroupInsight },
+            { insightType: CodeInsightTrackType.CaptureGroupInsight }
         )
 
         onSuccessfulCreation(insight)
@@ -59,7 +58,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
     }
 
     return (
-        <Page>
+        <CodeInsightsPage>
             <PageTitle title="Create new capture group code insight" />
 
             <header className="mb-5">
@@ -67,9 +66,9 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
 
                 <p className="text-muted">
                     Search-based code insights analyze your code based on any search query.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights" target="_blank" rel="noopener">
                         Learn more.
-                    </a>
+                    </Link>
                 </p>
             </header>
 
@@ -81,6 +80,6 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
                 onCancel={handleCancel}
                 onChange={handleChange}
             />
-        </Page>
+        </CodeInsightsPage>
     )
 }

@@ -1,9 +1,11 @@
 import React from 'react'
+
 import { RouteComponentProps } from 'react-router'
+
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { lazyComponent } from '../../util/lazyComponent'
 
 import { showPasswordsPage, showAccountSecurityPage, userExternalServicesEnabled } from './cloud-ga'
 import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
@@ -35,6 +37,11 @@ const UserSettingsSecurityPage = lazyComponent(
     'UserSettingsSecurityPage'
 )
 
+// const UserSettingsPrivacyPage = lazyComponent(
+//     () => import('./privacy/UserSettingsPrivacyPage'),
+//     'UserSettingsPrivacyPage'
+// )
+
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
@@ -42,7 +49,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => {
             if (props.isSourcegraphDotCom && props.authenticatedUser && props.user.id !== props.authenticatedUser.id) {
                 return (
-                    <SiteAdminAlert className="sidebar__alert alert-danger">
+                    <SiteAdminAlert className="sidebar__alert" variant="danger">
                         Only the user may access their individual settings.
                     </SiteAdminAlert>
                 )
@@ -95,6 +102,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         condition: showAccountSecurityPage,
     },
     {
+        path: '/privacy',
+        exact: true,
+        render: lazyComponent(() => import('./privacy/UserSettingsPrivacyPage'), 'UserSettingsPrivacyPage'),
+    },
+    {
         path: '/repositories',
         render: props => (
             <SettingsRepositoriesPage
@@ -105,6 +117,12 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         ),
         exact: true,
         condition: userExternalServicesEnabled,
+    },
+    {
+        path: '/organizations',
+        render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
+        exact: true,
+        condition: context => !!context.featureFlags.get('open-beta-enabled'),
     },
     {
         path: '/repositories/manage',

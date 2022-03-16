@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+
 import { useApolloClient } from '@apollo/client'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
@@ -13,7 +14,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -80,17 +81,17 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                 <h3>Setting up executors</h3>
                 <p className="mb-0">
                     Executors enable{' '}
-                    <a href="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
+                    <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
-                    </a>{' '}
+                    </Link>{' '}
                     and{' '}
-                    <a href="https://docs.sourcegraph.com/batch_changes/explanations/server_side" rel="noopener">
+                    <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
                         server-side Batch Changes
-                    </a>
+                    </Link>
                     . In order to use those features,{' '}
-                    <a href="https://docs.sourcegraph.com/admin/deploy_executors" rel="noopener">
+                    <Link to="/help/admin/deploy_executors" rel="noopener">
                         set them up
-                    </a>
+                    </Link>
                     .
                 </p>
             </Container>
@@ -130,11 +131,12 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                     <div>
                         <h4 className="mb-0">
                             {node.active ? (
-                                <CheckboxBlankCircleIcon className="icon-inline text-success mr-2" />
+                                <Icon className="text-success mr-2" as={CheckboxBlankCircleIcon} />
                             ) : (
-                                <CheckboxBlankCircleIcon
-                                    className="icon-inline text-warning mr-2"
+                                <Icon
+                                    className="text-warning mr-2"
                                     data-tooltip="This executor missed at least three heartbeats."
+                                    as={CheckboxBlankCircleIcon}
                                 />
                             )}
                             {node.hostname}{' '}

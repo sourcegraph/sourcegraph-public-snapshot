@@ -1,11 +1,12 @@
-import classNames from 'classnames'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+
+import classNames from 'classnames'
 import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
@@ -88,9 +89,9 @@ export const Line: React.FunctionComponent<Line> = ({
                     data-hunk-num=" "
                 >
                     {persistLines && (
-                        <Link className={diffHunkStyles.numLine} to={{ hash: anchor }}>
+                        <RouterLink className={diffHunkStyles.numLine} to={{ hash: anchor }}>
                             {lineNumber}
-                        </Link>
+                        </RouterLink>
                     )}
                 </td>
             )}
@@ -102,7 +103,7 @@ export const Line: React.FunctionComponent<Line> = ({
             >
                 <div className={classNames('d-inline', styles.lineCode)}>
                     <div
-                        className="d-inline-block"
+                        className={classNames('d-inline-block', styles.lineForceWrap)}
                         dangerouslySetInnerHTML={{ __html: html }}
                         data-diff-marker={diffHunkTypeIndicators[kind]}
                     />

@@ -1,20 +1,28 @@
+import React, { useMemo, useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useMemo, useEffect, useState } from 'react'
 import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    PageHeader,
+    LoadingSpinner,
+    useObservable,
+    Button,
+    Link,
+    ProductStatusBadge,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { Settings } from '../../schema/settings.schema'
+import { useExperimentalFeatures } from '../../stores'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import {
@@ -22,6 +30,7 @@ import {
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
+import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
@@ -30,11 +39,10 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>,
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 
     // For testing purposes only
-    testForceTab?: 'list' | 'getting-started'
+    testForceTab?: 'list' | 'getting-started' | 'logs'
 }
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
-    settingsCascade,
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
@@ -63,7 +71,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         )
     )
 
-    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started'>('list')
+    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs'>('list')
 
     // If user has no code monitors, default to the getting started tab after loading
     useEffect(() => {
@@ -81,6 +89,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
 
     const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
+    const showLogsTab = useExperimentalFeatures(features => features.showCodeMonitoringLogs)
+
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
@@ -92,14 +102,11 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     },
                 ]}
                 actions={
-                    userHasCodeMonitors &&
-                    userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
-                        <Link to="/code-monitoring/new" className="btn btn-primary">
-                            <PlusIcon className="icon-inline" />
-                            Create
-                        </Link>
+                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
+                            <Icon as={PlusIcon} />
+                            Create code monitor
+                        </Button>
                     )
                 }
                 description={
@@ -123,8 +130,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <div className="nav nav-tabs">
                             <div className="nav-item">
                                 {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <a
-                                    href=""
+                                <Link
+                                    to=""
                                     onClick={event => {
                                         event.preventDefault()
                                         setCurrentTab('list')
@@ -135,12 +142,12 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <span className="text-content" data-tab-content="Code monitors">
                                         Code monitors
                                     </span>
-                                </a>
+                                </Link>
                             </div>
                             <div className="nav-item">
                                 {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <a
-                                    href=""
+                                <Link
+                                    to=""
                                     onClick={event => {
                                         event.preventDefault()
                                         setCurrentTab('getting-started')
@@ -151,8 +158,27 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     <span className="text-content" data-tab-content="Getting started">
                                         Getting started
                                     </span>
-                                </a>
+                                </Link>
                             </div>
+                            {showLogsTab && (
+                                <div className="nav-item">
+                                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                    <Link
+                                        to=""
+                                        onClick={event => {
+                                            event.preventDefault()
+                                            setCurrentTab('logs')
+                                        }}
+                                        className={classNames('nav-link flex-row', currentTab === 'logs' && 'active')}
+                                        role="button"
+                                    >
+                                        <span className="text-content" data-tab-content="Logs">
+                                            Logs
+                                        </span>
+                                        <ProductStatusBadge status="beta" className="ml-2" />
+                                    </Link>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -160,9 +186,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
                     )}
 
+                    {currentTab === 'logs' && <CodeMonitoringLogs />}
+
                     {showList && (
                         <CodeMonitorList
-                            settingsCascade={settingsCascade}
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}

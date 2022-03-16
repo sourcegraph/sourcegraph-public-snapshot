@@ -1,6 +1,6 @@
 import { Duration } from 'date-fns'
 
-import { InsightFilters } from '../../../../../schema/settings.schema'
+import { InsightFilters } from '@sourcegraph/shared/src/schema/settings.schema'
 
 import { InsightExecutionType, InsightType, SyntheticInsightFields } from './common'
 

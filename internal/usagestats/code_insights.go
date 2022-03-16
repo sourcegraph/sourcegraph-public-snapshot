@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
@@ -19,20 +19,24 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 
 	const platformQuery = `
 	SELECT
-		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS weekly_insights_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS weekly_insights_unique_page_views,
+		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       		AS weekly_insights_page_views,
+		COUNT(*) FILTER (WHERE name = 'ViewInsightsGetStartedPage')         		AS weekly_insights_get_started_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        		AS weekly_insights_unique_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsightsGetStartedPage')  AS weekly_insights_get_started_unique_page_views,
 		COUNT(distinct user_id)
-			FILTER (WHERE name = 'InsightAddition')							AS weekly_insight_creators,
-		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS weekly_insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS weekly_insight_add_more_click
+			FILTER (WHERE name = 'InsightAddition')									AS weekly_insight_creators,
+		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 						AS weekly_insight_configure_click,
+		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 						AS weekly_insight_add_more_click
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
+	WHERE name in ('ViewInsights', 'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
 	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
 		&stats.WeeklyInsightsPageViews,
+		&stats.WeeklyInsightsGetStartedPageViews,
 		&stats.WeeklyInsightsUniquePageViews,
+		&stats.WeeklyInsightsGetStartedUniquePageViews,
 		&stats.WeeklyInsightCreators,
 		&stats.WeeklyInsightConfigureClick,
 		&stats.WeeklyInsightAddMoreClick,
@@ -41,13 +45,13 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 
 	const metricsByInsightQuery = `
-	SELECT argument ->> 'insightType'::text 					AS insight_type,
-        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		AS additions,
-        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			AS edits,
-        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		AS removals,
-		COUNT(*) FILTER (WHERE name = 'InsightHover') 			AS hovers,
-		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') AS ui_customizations,
-		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 	AS data_point_clicks
+	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
+        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
+        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
+        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
+		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
+		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
+		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks
 	FROM event_logs
 	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp)
@@ -136,7 +140,59 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.InsightTotalCounts = totalCounts
 
+	weeklyGetStartedTabClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabClickSql)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetWeeklyTabClicks")
+	}
+	stats.WeeklyGetStartedTabClickByTab = weeklyGetStartedTabClickByTab
+
+	weeklyGetStartedTabMoreClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabMoreClickSql)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetWeeklyTabMoreClicks")
+	}
+	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
+
+	totalOrgsWithDashboard, err := GetIntCount(ctx, db, InsightsTotalOrgsWithDashboardPingName)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalOrgsWithDashboard")
+	}
+	stats.TotalOrgsWithDashboard = &totalOrgsWithDashboard
+
+	totalDashboards, err := GetIntCount(ctx, db, InsightsDashboardTotalCountPingName)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalDashboards")
+	}
+	stats.TotalDashboardCount = &totalDashboards
+
+	insightsPerDashboard, err := GetInsightsPerDashboard(ctx, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightsPerDashboard")
+	}
+	stats.InsightsPerDashboard = insightsPerDashboard
+
 	return &stats, nil
+}
+
+func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]types.InsightGetStartedTabClickPing, error) {
+	weeklyGetStartedTabClickByTab := []types.InsightGetStartedTabClickPing{}
+	rows, err := db.QueryContext(ctx, sql, timeNow())
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		weeklyGetStartedTabClick := types.InsightGetStartedTabClickPing{}
+		if err := rows.Scan(
+			&weeklyGetStartedTabClick.TotalCount,
+			&weeklyGetStartedTabClick.TabName,
+		); err != nil {
+			return nil, err
+		}
+		weeklyGetStartedTabClickByTab = append(weeklyGetStartedTabClickByTab, weeklyGetStartedTabClick)
+	}
+	return weeklyGetStartedTabClickByTab, nil
 }
 
 func GetTotalInsightCounts(ctx context.Context, db database.DB) (types.InsightTotalCounts, error) {
@@ -214,6 +270,28 @@ func GetOrgInsightCounts(ctx context.Context, db database.DB) ([]types.OrgVisibl
 	return orgVisibleInsightCounts, nil
 }
 
+func GetIntCount(ctx context.Context, db database.DB, pingName string) (int32, error) {
+	store := database.EventLogs(db)
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &pingName,
+	})
+	if err != nil || len(all) == 0 {
+		return 0, err
+	}
+
+	latest := all[0]
+	var count int
+	err = json.Unmarshal([]byte(latest.Argument), &count)
+	if err != nil {
+		return 0, errors.Wrap(err, "Unmarshal")
+	}
+	return int32(count), nil
+}
+
 func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
 	builder := creationPagesPingBuilder(timeSupplier)
 
@@ -223,6 +301,31 @@ func GetCreationViewUsage(ctx context.Context, db database.DB, timeSupplier func
 	}
 
 	return results, nil
+}
+
+func GetInsightsPerDashboard(ctx context.Context, db database.DB) (types.InsightsPerDashboardPing, error) {
+	store := database.EventLogs(db)
+	name := InsightsPerDashboardPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
+	if err != nil {
+		return types.InsightsPerDashboardPing{}, err
+	} else if len(all) == 0 {
+		return types.InsightsPerDashboardPing{}, nil
+	}
+
+	latest := all[0]
+	var insightsPerDashboardStats types.InsightsPerDashboardPing
+	err = json.Unmarshal([]byte(latest.Argument), &insightsPerDashboardStats)
+	if err != nil {
+		return types.InsightsPerDashboardPing{}, errors.Wrap(err, "Unmarshal")
+	}
+	return insightsPerDashboardStats, nil
 }
 
 // WithAll adds multiple pings by name to this builder
@@ -278,6 +381,14 @@ func creationPagesPingBuilder(timeSupplier func() time.Time) PingQueryBuilder {
 
 		"CodeInsightsCodeStatsCreationPageSubmitClick",
 		"CodeInsightsCodeStatsCreationPageCancelClick",
+
+		"InsightsGetStartedPageQueryModification",
+		"InsightsGetStartedPageRepositoriesModification",
+		"InsightsGetStartedPrimaryCTAClick",
+		"InsightsGetStartedBigTemplateClick",
+		"InsightGetStartedTemplateCopyClick",
+		"InsightGetStartedTemplateClick",
+		"InsightsGetStartedDocsClicks",
 	}
 
 	builder := NewPingBuilder(Week, timeSupplier)
@@ -315,6 +426,21 @@ AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
 `
 
+const getStartedTabClickSql = `
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
+WHERE name = 'InsightsGetStartedTabClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY argument;
+`
+
+const getStartedTabMoreClickSql = `
+SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
+WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY argument;
+`
+
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
 const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
 const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`
+const InsightsTotalOrgsWithDashboardPingName = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`
+const InsightsDashboardTotalCountPingName = `INSIGHT_DASHBOARD_TOTAL_COUNT`
+const InsightsPerDashboardPingName = `INSIGHTS_PER_DASHBORD_STATS`

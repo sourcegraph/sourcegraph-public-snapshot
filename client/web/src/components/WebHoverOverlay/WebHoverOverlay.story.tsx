@@ -1,9 +1,10 @@
-import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { action } from '@storybook/addon-actions'
+import { storiesOf } from '@storybook/react'
+
+import { registerHighlightContributions } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import {
     commonProps,
     FIXTURE_ACTIONS,
@@ -32,6 +33,10 @@ const { add } = storiesOf('web/WebHoverOverlay', module)
             type: 'figma',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
+        },
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
         },
     })
 

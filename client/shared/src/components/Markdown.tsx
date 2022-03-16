@@ -1,8 +1,9 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { createLinkClickHandler } from '../util/link-click-handler/linkClickHandler'
+import { createLinkClickHandler } from './utils/linkClickHandler'
 
 import styles from './Markdown.module.scss'
 

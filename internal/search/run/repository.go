@@ -3,85 +3,38 @@ package run
 import (
 	"context"
 	"math"
-	"regexp"
-	"strings"
 
-	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoSearch struct {
-	Args  *search.TextParameters
-	Limit int
-
-	IsRequired bool
+	Args *search.TextParameters
 }
 
-func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) (err error) {
+func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "RepoSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	fieldAllowlist := map[string]struct{}{
-		query.FieldRepo:               {},
-		query.FieldContext:            {},
-		query.FieldType:               {},
-		query.FieldDefault:            {},
-		query.FieldIndex:              {},
-		query.FieldCount:              {},
-		query.FieldTimeout:            {},
-		query.FieldFork:               {},
-		query.FieldArchived:           {},
-		query.FieldVisibility:         {},
-		query.FieldCase:               {},
-		query.FieldRepoHasFile:        {},
-		query.FieldRepoHasCommitAfter: {},
-		query.FieldPatternType:        {},
-		query.FieldSelect:             {},
-	}
-	// Don't return repo results if the search contains fields that aren't on the allowlist.
-	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
-	for field := range s.Args.Query.Fields() {
-		if _, ok := fieldAllowlist[field]; !ok {
-			tr.LazyPrintf("contains dissallowed field: %s", field)
-			return nil
-		}
-	}
+	tr.LogFields(otlog.String("pattern", s.Args.PatternInfo.Pattern))
 
-	tr.LogFields(
-		otlog.String("pattern", s.Args.PatternInfo.Pattern),
-		otlog.Int("limit", s.Limit))
-
-	opts := s.Args.RepoOptions // copy
-
-	if s.Args.PatternInfo.Pattern != "" {
-		opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
-		opts.CaseSensitiveRepoFilters = s.Args.Query.IsCaseSensitive()
-
-		p, ok := validRepoPattern(s.Args.PatternInfo.Pattern)
-		if !ok {
-			// skip running a repo search for this pattern
-			return nil
-		}
-		opts.RepoFilters = append(opts.RepoFilters, p)
-	}
-
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cleanup()
-
-	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
+	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
@@ -100,54 +53,15 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 		return nil
 	})
 
-	if errors.Is(err, searchrepos.ErrNoResolvedRepos) {
+	if errors.Is(err, searchrepos.ErrNoResolvedRepos) && len(s.Args.RepoOptions.Dependencies) == 0 {
 		err = nil
 	}
 
-	return err
+	return nil, err
 }
 
 func (*RepoSearch) Name() string {
 	return "Repo"
-}
-
-func (s *RepoSearch) Required() bool {
-	return s.IsRequired
-}
-
-// validRepoPattern returns true if the pattern part of a query can be used to
-// search repos. A problematic case we check for is when the pattern contains `@`,
-// which may confuse downstream logic to interpret it as part of `repo@rev` syntax.
-func validRepoPattern(pattern string) (string, bool) {
-	patternPrefix := strings.SplitN(pattern, "@", 2)
-	if len(patternPrefix) == 1 {
-		// No "@" in pattern? We're good.
-		return pattern, true
-	}
-
-	if patternPrefix[0] != "" {
-		// Extend the repo search using the pattern value, but
-		// since the pattern contains @, only search the part
-		// prefixed by the first @. This because downstream
-		// logic will get confused by the presence of @ and try
-		// to resolve repo revisions. See #27816.
-		if _, err := regexp.Compile(patternPrefix[0]); err != nil {
-			// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
-			// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
-			// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
-			// after possible modifications. By the time we reach this code, the pattern should already have been considered valid to continue with
-			// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
-			return "", false
-		}
-		return patternPrefix[0], true
-	}
-
-	// This pattern starts with @, of the form "@thing". We can't
-	// consistently handle search repos of this form, because
-	// downstream logic will attempt to interpret "thing" as a repo
-	// revision, may fail, and cause us to raise an alert for any
-	// non `type:repo` search. Better to not attempt a repo search.
-	return "", false
 }
 
 func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
@@ -168,7 +82,24 @@ func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisi
 	return matches
 }
 
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, errors.Errorf("expected only file match results")
+		}
+		fms = append(fms, fm)
+	}
+	return fms, nil
+}
+
+var MockReposContainingPath func() ([]*result.FileMatch, error)
+
 func reposContainingPath(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
+	if MockReposContainingPath != nil {
+		return MockReposContainingPath()
+	}
 	// Use a max FileMatchLimit to ensure we get all the repo matches we
 	// can. Setting it to len(repos) could mean we miss some repos since
 	// there could be for example len(repos) file matches in the first repo
@@ -191,21 +122,86 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	newArgs.Query = q
 	newArgs.UseFullDeadline = true
 
-	globalSearch := newArgs.Mode == search.ZoektGlobalSearch
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	indexed, unindexed, err := zoektutil.PartitionRepos(
+		ctx,
+		newArgs.Repos,
+		newArgs.Zoekt,
+		search.TextRequest,
+		newArgs.PatternInfo.Index,
+		query.ContainsRefGlobs(newArgs.Query),
+		func([]*search.RepositoryRevisions) {},
+	)
 	if err != nil {
 		return nil, err
 	}
+
 	searcherArgs := &search.SearcherParameters{
 		SearcherURLs:    newArgs.SearcherURLs,
 		PatternInfo:     newArgs.PatternInfo,
 		UseFullDeadline: newArgs.UseFullDeadline,
 	}
-	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
+
+	agg := streaming.NewAggregatingStream()
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	if newArgs.Mode != search.SearcherOnly {
+		typ := search.TextRequest
+		zoektQuery, err := search.QueryToZoektQuery(newArgs.PatternInfo, &newArgs.Features, typ)
+		if err != nil {
+			return nil, err
+		}
+
+		zoektArgs := search.ZoektParameters{
+			Query:          zoektQuery,
+			Typ:            typ,
+			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
+			Select:         newArgs.PatternInfo.Select,
+			Zoekt:          newArgs.Zoekt,
+		}
+
+		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+			Repos:          indexed,
+			Query:          zoektArgs.Query,
+			Typ:            search.TextRequest,
+			FileMatchLimit: zoektArgs.FileMatchLimit,
+			Select:         zoektArgs.Select,
+			Zoekt:          zoektArgs.Zoekt,
+			Since:          nil,
+		}
+
+		// Run literal and regexp searches on indexed repositories.
+		g.Go(func() error {
+			_, err := zoektJob.Run(ctx, nil, agg)
+			return err
+		})
+	}
+
+	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+	g.Go(func() error {
+		searcherJob := &searcher.Searcher{
+			PatternInfo:     searcherArgs.PatternInfo,
+			Repos:           unindexed,
+			Indexed:         false,
+			SearcherURLs:    searcherArgs.SearcherURLs,
+			UseFullDeadline: searcherArgs.UseFullDeadline,
+		}
+
+		_, err := searcherJob.Run(ctx, nil, agg)
+		return err
+	})
+
+	err = g.Wait()
+
+	matches, matchesErr := matchesToFileMatches(agg.Results)
+	if matchesErr != nil && err == nil {
+		err = errors.Wrap(matchesErr, "reposContainingPath failed to convert results")
+	}
+
 	if err != nil {
 		return nil, err
 	}
-	return matches, err
+	return matches, nil
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset

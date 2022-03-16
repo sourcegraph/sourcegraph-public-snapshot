@@ -9,12 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
-	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -34,6 +31,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -989,6 +988,8 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	var batchChangeID int64 = 1
 	var repoID api.RepoID = 123
 	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
+	onlyClosable := true
+	openChangsetState := "OPEN"
 
 	tcs := []struct {
 		args       *graphqlbackend.ListChangesetsArgs
@@ -1109,6 +1110,31 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			wantParsed: store.ListChangesetsOpts{
 				RepoID: repoID,
 			},
+		},
+		// onlyClosable changesets
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyClosable: &onlyClosable,
+			},
+			wantSafe: true,
+			wantParsed: store.ListChangesetsOpts{
+				PublicationState: &wantPublicationStates[0],
+				ExternalStates: []btypes.ChangesetExternalState{
+					btypes.ChangesetExternalStateDraft,
+					btypes.ChangesetExternalStateOpen,
+				},
+				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+			},
+		},
+		// error when state and onlyClosable are not null
+		{
+			args: &graphqlbackend.ListChangesetsArgs{
+				OnlyClosable: &onlyClosable,
+				State:        &openChangsetState,
+			},
+			wantSafe:   false,
+			wantParsed: store.ListChangesetsOpts{},
+			wantErr:    "invalid combination of state and onlyClosable",
 		},
 	}
 	for i, tc := range tcs {
@@ -1903,5 +1929,5 @@ mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
 func stringPtr(s string) *string { return &s }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }

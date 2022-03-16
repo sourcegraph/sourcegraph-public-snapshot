@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
@@ -23,8 +22,6 @@ type BatchSpecWorkspace struct {
 	Branch             string
 	Commit             string
 	Path               string
-	Steps              []batcheslib.Step
-	SkippedSteps       []int32
 	FileMatches        []string
 	OnlyFetchWorkspace bool
 
@@ -44,15 +41,6 @@ type BatchSpecWorkspace struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-func (w *BatchSpecWorkspace) StepSkipped(i int) bool {
-	for _, n := range w.SkippedSteps {
-		if i == int(n) {
-			return true
-		}
-	}
-	return false
 }
 
 func (w *BatchSpecWorkspace) StepCacheResult(index int) (StepCacheResult, bool) {

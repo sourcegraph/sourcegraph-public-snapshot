@@ -1,13 +1,15 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError } from '@sourcegraph/common'
 import {
@@ -15,8 +17,8 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
@@ -25,8 +27,10 @@ import { enterpriseTrial } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignupEmailField } from './SignupEmailField'
+
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+
 export interface SignUpArguments {
     email: string
     username: string
@@ -56,7 +60,6 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
  * The form for creating an account
  */
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
-    featureFlags,
     onSignUp,
     buttonLabel,
     className,
@@ -66,7 +69,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
-    const isSignupOptimised = featureFlags.get('signup-optimization')
 
     const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
         () => ({
@@ -131,7 +133,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLAnchorElement> => () => {
+        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })
@@ -155,15 +157,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 onSubmit={handleSubmit}
                 noValidate={true}
             >
-                {!isSignupOptimised && (
-                    <SignupEmailField
-                        label="Email"
-                        loading={loading}
-                        nextEmailFieldChange={nextEmailFieldChange}
-                        emailState={emailState}
-                        emailInputReference={emailInputReference}
-                    />
-                )}
+                <SignupEmailField
+                    label="Email"
+                    loading={loading}
+                    nextEmailFieldChange={nextEmailFieldChange}
+                    emailState={emailState}
+                    emailInputReference={emailInputReference}
+                />
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="username"
@@ -193,15 +193,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         </small>
                     )}
                 </div>
-                {isSignupOptimised && (
-                    <SignupEmailField
-                        label="Email address"
-                        loading={loading}
-                        nextEmailFieldChange={nextEmailFieldChange}
-                        emailState={emailState}
-                        emailInputReference={emailInputReference}
-                    />
-                )}
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="password"
@@ -248,10 +239,10 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                 />
                                 Try Sourcegraph Enterprise free for{' '}
                                 <span className="text-nowrap">
-                                    30 days {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                    <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                        <HelpCircleOutlineIcon className="icon-inline" />
-                                    </a>
+                                    30 days{' '}
+                                    <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
+                                        <Icon as={HelpCircleOutlineIcon} />
+                                    </Link>
                                 </span>
                             </label>
                         </div>
@@ -263,7 +254,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className={classNames('btn btn-primary btn-block', isSignupOptimised && 'mt-4')}
+                        className="btn-block"
+                        variant="primary"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
@@ -273,18 +265,20 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             // Use index as key because display name may not be unique. This is OK
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
-                                <a
+                                <Button
                                     href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn btn-secondary btn-block"
+                                    className="btn-block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
+                                    variant="secondary"
+                                    as="a"
                                 >
                                     {provider.serviceType === 'github' ? (
-                                        <GithubIcon className="icon-inline" />
+                                        <Icon as={GithubIcon} />
                                     ) : provider.serviceType === 'gitlab' ? (
-                                        <GitlabIcon className="icon-inline" />
+                                        <Icon as={GitlabIcon} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
-                                </a>
+                                </Button>
                             </div>
                         ))}
                     </>
@@ -293,14 +287,14 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 {!experimental && (
                     <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
-                            By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                            By signing up, you agree to our{' '}
+                            <Link to="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
                                 Terms of Service
-                            </a>{' '}
-                            and {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                            <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                            </Link>{' '}
+                            and{' '}
+                            <Link to="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
                                 Privacy Policy
-                            </a>
+                            </Link>
                             .
                         </small>
                     </p>

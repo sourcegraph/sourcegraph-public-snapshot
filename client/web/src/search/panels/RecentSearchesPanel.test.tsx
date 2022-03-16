@@ -1,9 +1,11 @@
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import React from 'react'
+
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 
@@ -43,7 +45,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(render(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('searches with no argument are skipped', () => {
@@ -80,7 +82,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(render(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button is shown if more pages are available', () => {
@@ -118,7 +120,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(render(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button loads more items', () => {
@@ -204,7 +206,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const { asFragment } = render(<RecentSearchesPanel {...props} />)
+        const { asFragment } = renderWithBrandedContext(<RecentSearchesPanel {...props} />)
         userEvent.click(screen.getByRole('button', { name: /Show more/ }))
         expect(asFragment()).toMatchSnapshot()
     })

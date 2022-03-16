@@ -3,7 +3,7 @@
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 URL=${URL:-"http://localhost:7080"}
-DATA=/tmp/sourcegraph
+DATA=${DATA:-"/tmp/sourcegraph-data"}
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
 if curl --output /dev/null --silent --head --fail "$URL"; then
@@ -28,15 +28,14 @@ esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
   echo "--- Deleting $DATA"
-  rm -rf $DATA
+  rm -rf "$DATA"
 fi
 
 echo "--- Starting server ${IMAGE}"
 docker run "$@" \
   --publish 7080:7080 \
-  --rm \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
-  --volume $DATA/config:/etc/sourcegraph \
-  --volume $DATA/data:/var/opt/sourcegraph \
+  --volume "$DATA/config:/etc/sourcegraph" \
+  --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"

@@ -1,15 +1,14 @@
-import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+
+import { Badge, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
 
 import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
-import styles from './BatchChangePreviewStatsBar.module.scss'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
     PreviewActionArchive,
@@ -20,6 +19,8 @@ import {
     PreviewActionUndraft,
     PreviewActionUpdate,
 } from './list/PreviewActions'
+
+import styles from './BatchChangePreviewStatsBar.module.scss'
 
 const actionClassNames = classNames(
     styles.batchChangePreviewStatsBarStat,

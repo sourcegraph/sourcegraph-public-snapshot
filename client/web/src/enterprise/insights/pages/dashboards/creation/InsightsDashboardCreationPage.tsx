@@ -1,23 +1,24 @@
-import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
-} from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
+} from './components/InsightsDashboardCreationContent'
+
 import styles from './InsightsDashboardCreationPage.module.scss'
 
 interface InsightsDashboardCreationPageProps extends TelemetryProps {}
@@ -53,20 +54,16 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     }
 
     return (
-        <Page className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title="Add new dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
 
             <span className="text-muted d-block mt-2">
                 Dashboards group your insights and let you share them with others.{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/explanations/viewing_code_insights"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="/help/code_insights/explanations/viewing_code_insights" target="_blank" rel="noopener">
                     Learn more.
-                </a>
+                </Link>
             </span>
 
             <Container className="mt-4">
@@ -87,15 +84,16 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 alwaysShowLabel={true}
                                 data-testid="insight-save-button"
                                 loading={formAPI.submitting}
-                                label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
+                                label={formAPI.submitting ? 'Adding' : 'Add dashboard'}
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="btn btn-primary ml-2 mb-2"
+                                className="ml-2 mb-2"
+                                variant="primary"
                             />
                         </>
                     )}
                 </InsightsDashboardCreationContent>
             </Container>
-        </Page>
+        </CodeInsightsPage>
     )
 }

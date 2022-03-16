@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { render } from '@testing-library/react'
 
 import { Alert } from './Alert'
 import { ALERT_VARIANTS } from './constants'
@@ -9,7 +10,7 @@ describe('Alert', () => {
         const { container } = render(<Alert>Simple Alert</Alert>)
         expect(container.firstChild).toMatchInlineSnapshot(`
             <div
-              class="alert"
+              class=""
             >
               Simple Alert
             </div>

@@ -1,11 +1,11 @@
+import React, { useState } from 'react'
+
 import * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React, { useState } from 'react'
 import { useLocation } from 'react-router'
 
-import { createAggregateError } from '@sourcegraph/common'
+import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { escapeRevspecForURL } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'

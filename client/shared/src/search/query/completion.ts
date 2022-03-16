@@ -18,6 +18,9 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
+export const REPO_DEPS_PREDICATE_REGEX = /^(deps|dependencies)\((.*?)\)?$/
+export const PREDICATE_REGEX = /^([.A-Za-z]+)\((.*?)\)?$/
+
 /**
  * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
  * This allows us to be notified and run custom code when a user selects a suggestion.
@@ -67,10 +70,17 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
 
 const repositoryToCompletion = (
     { repository }: RepositoryMatch,
-    options: { isFilterValue: boolean; globbing: boolean }
+    options: { isFilterValue: boolean; globbing: boolean; filterValue?: string }
 ): PartialCompletionItem => {
     let insertText = options.globbing ? repository : `^${escapeRegExp(repository)}$`
     insertText = escapeSpaces(insertText)
+
+    const depsPredicateMatches = options.filterValue ? options.filterValue.match(REPO_DEPS_PREDICATE_REGEX) : null
+    if (depsPredicateMatches) {
+        // depsPredicateMatches[1] contains either `deps` or `dependencies` predicate based on the matched value.
+        insertText = `${depsPredicateMatches[1]}(${insertText})`
+    }
+
     insertText = (options.isFilterValue ? insertText : `${FilterType.repo}:${insertText}`) + ' '
     return {
         label: repository,
@@ -144,7 +154,7 @@ const symbolToCompletion = (
 
 const suggestionToCompletionItems = (
     suggestion: SearchMatch,
-    options: { isFilterValue: boolean; globbing: boolean }
+    options: { isFilterValue: boolean; globbing: boolean; filterValue?: string }
 ): PartialCompletionItem[] => {
     switch (suggestion.type) {
         case 'path':
@@ -248,8 +258,15 @@ async function completeFilter(
     if (!resolvedFilter) {
         return null
     }
+
+    // FIXME(tsenart): We need to refactor completions to work with
+    // complex predicates like repo:dependencies()
+    // For now we just disable all static suggestions for a predicate's filter
+    // if we are inside that predicate.
+    const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
+
     let staticSuggestions: Monaco.languages.CompletionItem[] = []
-    if (resolvedFilter.definition.discreteValues) {
+    if (resolvedFilter.definition.discreteValues && !insidePredicate) {
         staticSuggestions = resolvedFilter.definition.discreteValues(token.value, isSourcegraphDotCom).map(
             ({ label, insertText, asSnippet }, index): Monaco.languages.CompletionItem => ({
                 label,
@@ -274,7 +291,9 @@ async function completeFilter(
         const suggestions = await serverSuggestions.toPromise()
         dynamicSuggestions = suggestions
             .filter(({ type }) => type === resolvedFilter.definition.suggestions)
-            .flatMap(suggestion => suggestionToCompletionItems(suggestion, { isFilterValue: true, globbing }))
+            .flatMap(suggestion =>
+                suggestionToCompletionItems(suggestion, { isFilterValue: true, globbing, filterValue: value?.value })
+            )
             .filter(isDefined)
             .map((partialCompletionItem, index) => ({
                 ...partialCompletionItem,

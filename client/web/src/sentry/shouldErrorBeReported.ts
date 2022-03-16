@@ -1,5 +1,5 @@
 import { isErrorLike } from '@sourcegraph/common'
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
+import { HTTPStatusError } from '@sourcegraph/http-client'
 
 export function shouldErrorBeReported(error: unknown): boolean {
     if (error instanceof HTTPStatusError) {

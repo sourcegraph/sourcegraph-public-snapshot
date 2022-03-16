@@ -1,12 +1,13 @@
-import AddIcon from 'mdi-react/AddIcon'
 import React, { useEffect } from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
@@ -37,10 +38,10 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<Props> =
             <PageTitle title="Product subscriptions" />
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Product subscriptions</h2>
-                <Link to="/site-admin/dotcom/product/subscriptions/new" className="btn btn-primary">
-                    <AddIcon className="icon-inline" />
+                <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
+                    <Icon as={AddIcon} />
                     Create product subscription
-                </Link>
+                </Button>
             </div>
             <FilteredSiteAdminProductSubscriptionConnection
                 className="mt-3"

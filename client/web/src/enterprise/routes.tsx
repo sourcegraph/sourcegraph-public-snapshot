@@ -1,13 +1,14 @@
 import React from 'react'
+
 import { Redirect } from 'react-router'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
-import { lazyComponent } from '../util/lazyComponent'
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) &&
@@ -52,7 +53,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: EnterprisePageRoutes.Insights,
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
+        render: lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter'),
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {

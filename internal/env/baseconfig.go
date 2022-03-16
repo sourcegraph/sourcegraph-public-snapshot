@@ -4,8 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Config interface {
@@ -66,7 +65,7 @@ func (c *BaseConfig) Validate() error {
 
 	err := c.errs[0]
 	for i := 1; i < len(c.errs); i++ {
-		err = multierror.Append(err, c.errs[i])
+		err = errors.Append(err, c.errs[i])
 	}
 
 	return err

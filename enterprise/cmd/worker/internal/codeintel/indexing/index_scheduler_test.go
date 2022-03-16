@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func init() {
@@ -20,9 +19,8 @@ func init() {
 }
 
 func TestIndexScheduler(t *testing.T) {
-	now := timeutil.Now()
 	dbStore := testIndexSchedulerMockDBStore()
-	policyMatcher := testIndexSchedulerMockPolicyMatcher(now)
+	policyMatcher := testIndexSchedulerMockPolicyMatcher()
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	scheduler := &IndexScheduler{
@@ -84,7 +82,6 @@ func TestIndexScheduler(t *testing.T) {
 	if len(enqueueCalls) != 8 {
 		t.Fatalf("unexpected number of calls to QueueIndexes. want=%d have=%d", 8, len(indexEnqueuer.QueueIndexesFunc.History()))
 	}
-
 }
 
 func testIndexSchedulerMockDBStore() *MockDBStore {
@@ -129,7 +126,7 @@ func testIndexSchedulerMockDBStore() *MockDBStore {
 	return dbStore
 }
 
-func testIndexSchedulerMockPolicyMatcher(now time.Time) *MockPolicyMatcher {
+func testIndexSchedulerMockPolicyMatcher() *MockPolicyMatcher {
 	policyMatches := map[int]map[string][]policies.PolicyMatch{
 		50: {
 			"deadbeef01": {},
@@ -161,7 +158,7 @@ func testIndexSchedulerMockPolicyMatcher(now time.Time) *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]policies.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

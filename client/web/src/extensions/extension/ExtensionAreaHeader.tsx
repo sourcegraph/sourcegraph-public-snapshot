@@ -1,20 +1,22 @@
+import React, { useState, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useState, useCallback, useMemo } from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
-import { PageHeader, AlertLink } from '@sourcegraph/wildcard'
+import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
+import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import styles from './ExtensionAreaHeader.module.scss'
 import { ExtensionStatusBadge } from './ExtensionStatusBadge'
+
+import styles from './ExtensionAreaHeader.module.scss'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -103,20 +105,18 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                             actions={
                                 <div className={classNames('position-relative', styles.actions)}>
                                     {change && (
-                                        <div
-                                            className={classNames(classNames('alert px-2 py-1 mb-0', styles.alert), {
-                                                'alert-secondary': change === 'disabled',
-                                                'alert-success': change === 'enabled',
-                                            })}
+                                        <Alert
+                                            variant={change === 'enabled' ? 'success' : 'secondary'}
+                                            className={classNames('px-2 py-1 mb-0', styles.alert)}
                                         >
                                             <span className="font-weight-medium">{name}</span> is {change}
-                                        </div>
+                                        </Alert>
                                     )}
                                     {showCta && (
-                                        <div className={classNames('alert alert-info mb-0 py-1', styles.alert)}>
+                                        <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
                                             An account is required to create and configure extensions.{' '}
-                                            <AlertLink to="/sign-up">Register now!</AlertLink>
-                                        </div>
+                                            <AlertLink to={buildGetStartedURL('extension')}>Get started!</AlertLink>
+                                        </Alert>
                                     )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}
                                     {props.authenticatedUser?.siteAdmin && siteSubject?.subject ? (
@@ -202,7 +202,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         <div className="mt-4">
                             <ul className="nav nav-tabs">
                                 {props.navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
                                         condition(props) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
@@ -211,9 +211,11 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     activeClassName="active"
                                                     exact={exact}
                                                 >
-                                                    {Icon && <Icon className="icon-inline" />}{' '}
-                                                    <span className="text-content" data-tab-content={label}>
-                                                        {label}
+                                                    <span>
+                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
+                                                        <span className="text-content" data-tab-content={label}>
+                                                            {label}
+                                                        </span>
                                                     </span>
                                                 </NavLink>
                                             </li>

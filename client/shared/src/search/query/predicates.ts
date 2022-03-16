@@ -26,6 +26,12 @@ export const PREDICATES: Access[] = [
                     },
                 ],
             },
+            {
+                name: 'dependencies',
+            },
+            {
+                name: 'deps',
+            },
         ],
     },
     {
@@ -162,6 +168,16 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'contains.commit.after(...)',
                 insertText: 'contains.commit.after(${1:1 month ago})',
+                asSnippet: true,
+            },
+            {
+                label: 'deps(...) Includes npm dependencies only (beta)',
+                insertText: 'deps(${1})',
+                asSnippet: true,
+            },
+            {
+                label: 'dependencies(...) Includes npm dependencies only (beta)',
+                insertText: 'dependencies(${1})',
                 asSnippet: true,
             },
         ]

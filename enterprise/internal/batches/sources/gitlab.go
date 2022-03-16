@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -34,10 +33,10 @@ func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSo
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(&c, cf, nil)
+	return newGitLabSource(&c, cf)
 }
 
-func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitLabSource, error) {
+func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -60,15 +59,13 @@ func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Au
 
 	// Don't modify passed-in parameter.
 	var authr auth.Authenticator
-	if au == nil && c.Token != "" {
+	if c.Token != "" {
 		switch c.TokenType {
 		case "oauth":
 			authr = &auth.OAuthBearerToken{Token: c.Token}
 		default:
 			authr = &gitlab.SudoableToken{Token: c.Token}
 		}
-	} else {
-		authr = au
 	}
 
 	provider := gitlab.NewClientProvider(baseURL, cli)

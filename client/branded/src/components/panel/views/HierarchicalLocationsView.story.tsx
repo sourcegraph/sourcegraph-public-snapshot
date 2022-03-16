@@ -1,11 +1,12 @@
+import React from 'react'
+
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { Location } from '@sourcegraph/extension-api-types'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BrandedStory } from '../../BrandedStory'

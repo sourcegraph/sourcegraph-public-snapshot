@@ -1,12 +1,14 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
 
 import { DurationSelect } from './DurationSelect'
+
 // This uses the same styles as the RetentionSettings component to style radio buttons
 import styles from './RetentionSettings.module.scss'
 
@@ -65,10 +67,10 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
                     repo === undefined &&
                     (policy.repositoryPatterns || []).length === 0 &&
                     policy.indexingEnabled && (
-                        <div className="alert alert-danger">
+                        <Alert variant="danger">
                             This Sourcegraph instance has disabled global policies for auto-indexing. Create a more
                             constrained policy targeting an explicit set of repositories to enable this policy.
-                        </div>
+                        </Alert>
                     )}
 
                 <label className="ml-4" htmlFor="index-commit-max-age">

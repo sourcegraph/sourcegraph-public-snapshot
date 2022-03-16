@@ -6,6 +6,12 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../"
 set -eu
 
+MIGRATION_STAGING=$(mktemp -d -t sgdockerbuild_XXXXXXX)
+cleanup() {
+  rm -rf "$MIGRATION_STAGING"
+}
+trap cleanup EXIT
+
 # `disable_test ${path} ${prefix}` rewrites `func ${prefix}` to `func _${prefix}`
 # in the given Go test file. This will return 1 if there was a matching test and
 # return 0 otherwise.
@@ -83,21 +89,28 @@ echo "Sourcegraph instances deployed at the previous release."
 echo ""
 
 PROTECTED_FILES=(
-  ./migrations
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
+  ./.buildkite/hooks
 )
 
+# Rewrite the current migrations into a temporary folder that we can force
+# apply over old code.
+go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
+
 # Check out the previous code then immediately restore whatever
-# the current version of the protected files are. Between these
-# two commands, we want to ensure that any renames or deletions
-# of migration files (which happens on reverts with migrations)
-# do not stick around after our checkout. We ensure this is the
-# case by removing all migration state from the checkout we're
-# only using for unit tests.
+# the current version of the protected files are.
 git checkout "${latest_minor_release_tag}"
-rm -rf ./migrations
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
+
+# Remove the languages submodules, because they mess these tests up
+rm -rf ./docker-images/syntax-highlighter/crates/sg-syntax/languages/
+
+for schema in frontend codeintel codeinsights; do
+  # Force apply newer schema definitions
+  rm -rf "./migrations/${schema}"
+  mv "${MIGRATION_STAGING}/${schema}" "./migrations/${schema}"
+done
 
 # If migration files have been renamed or deleted between these commits
 # (which historically we've done in response to reverted migrations), we
@@ -122,16 +135,23 @@ fi
 ./.buildkite/hooks/pre-command
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  echo ""
-  echo "!!! This commit contains database schema definitions that caused an"
-  echo "unexpected failure of one or more unit tests at tagged commit ${latest_minor_release_tag}."
-  echo ""
-  echo "If this backwards incompatibility is intentional or of the test is flaky,"
-  echo "an exception for this text can be added to the following flakefile:"
-  echo ""
-  echo "'${flakefile}'"
-  echo ""
-  echo "Rewrite these schema changes to be backwards compatible. For help,"
-  echo "see docs.sourcegraph.com/dev/background-information/sql/migrations."
+  annotation=$(
+    cat <<EOF
+This commit contains database schema definitions that caused an unexpected
+failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
+Rewrite these schema changes to be backwards compatible. For help,
+see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
+
+If this backwards incompatibility is intentional or if the test is flaky,
+an exception for this test can be added to the following flakefile:
+
+\`\`\`
+${flakefile}
+\`\`\`
+
+EOF
+  )
+  mkdir -p ./annotations/
+  echo "$annotation" | tee './annotations/go-backcompat.md'
   exit 1
 fi

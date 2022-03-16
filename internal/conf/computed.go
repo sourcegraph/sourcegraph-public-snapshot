@@ -19,7 +19,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -37,14 +37,6 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	default:
 		panic("deploy type did not register default configuration")
 	}
-}
-
-func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
-	var config []*schema.AWSCodeCommitConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindAWSCodeCommit, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
 }
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
@@ -260,8 +252,8 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
-func AndOrQueryEnabled() bool {
-	val := ExperimentalFeatures().AndOrQuery
+func DependeciesSearchEnabled() bool {
+	val := ExperimentalFeatures().DependenciesSearch
 	if val == "" {
 		return true
 	}

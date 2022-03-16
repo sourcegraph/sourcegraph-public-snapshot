@@ -18,8 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -30,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed sg_maintenance.sh
@@ -50,12 +49,12 @@ const (
 // EnableGCAuto is a temporary flag that allows us to control whether or not
 // `git gc --auto` is invoked during janitorial activities. This flag will
 // likely evolve into some form of site config value in the future.
-var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
+var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 // SRC_ENABLE_SG_MAINTENANCE.
-var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
+var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -222,12 +221,12 @@ func (s *Server) cleanupRepos() {
 
 		// config.lock should be held for a very short amount of time.
 		if err := removeFileOlderThan(filepath.Join(gitDir, "config.lock"), time.Minute); err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
 		if err := removeFileOlderThan(filepath.Join(gitDir, "packed-refs.lock"), time.Hour); err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
 		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi fs.FileInfo) error {
@@ -241,7 +240,7 @@ func (s *Server) cleanupRepos() {
 
 			return removeFileOlderThan(path, time.Hour)
 		}); err != nil {
-			multi = multierror.Append(multi, err)
+			multi = errors.Append(multi, err)
 		}
 
 		return false, multi

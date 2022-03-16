@@ -3,15 +3,16 @@ package store
 import (
 	"context"
 	"database/sql"
-	"regexp/syntax"
+	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
+	"github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err error) {
@@ -26,12 +27,12 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 			&symbol.Name,
 			&symbol.Path,
 			&symbol.Line,
+			&symbol.Character,
 			&symbol.Kind,
 			&symbol.Language,
 			&symbol.Parent,
 			&symbol.ParentKind,
 			&symbol.Signature,
-			&symbol.Pattern,
 			&symbol.FileLimited,
 		); err != nil {
 			return nil, err
@@ -50,12 +51,12 @@ func (s *store) Search(ctx context.Context, args types.SearchArgs) ([]result.Sym
 				name,
 				path,
 				line,
+				character,
 				kind,
 				language,
 				parent,
 				parentkind,
 				signature,
-				pattern,
 				filelimited
 			FROM symbols
 			WHERE %s
@@ -94,6 +95,7 @@ func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sql
 		return nil
 	}
 
+	// Exact match
 	if symbolName, isExact, err := isLiteralEquality(regex); err == nil && isExact {
 		if isCaseSensitive {
 			return sqlf.Sprintf(column+" = %s", symbolName)
@@ -102,6 +104,16 @@ func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sql
 		}
 	}
 
+	// Prefix match
+	if symbolName, isExact, err := isLiteralPrefix(regex); err == nil && isExact {
+		if isCaseSensitive {
+			return sqlf.Sprintf(column+" GLOB %s", globEscape(symbolName)+"*")
+		} else {
+			return sqlf.Sprintf(column+"lowercase GLOB %s", strings.ToLower(globEscape(symbolName))+"*")
+		}
+	}
+
+	// Regex match
 	if !isCaseSensitive {
 		regex = "(?i:" + regex + ")"
 	}
@@ -134,10 +146,49 @@ func isLiteralEquality(expr string) (string, bool, error) {
 	return "", false, nil
 }
 
+// isLiteralPrefix returns true if the given regex matches literal strings by prefix.
+// If so, this function returns true along with the literal search query. If not, this
+// function returns false.
+func isLiteralPrefix(expr string) (string, bool, error) {
+	regexp, err := syntax.Parse(expr, syntax.Perl)
+	if err != nil {
+		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+	}
+
+	// want a concat of size 2 which is [begin, literal]
+	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 2 {
+		// starts with ^
+		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+			// is a literal
+			if regexp.Sub[1].Op == syntax.OpLiteral {
+				return string(regexp.Sub[1].Rune), true, nil
+			}
+		}
+	}
+
+	return "", false, nil
+}
+
 func negate(query *sqlf.Query) *sqlf.Query {
 	if query == nil {
 		return nil
 	}
 
 	return sqlf.Sprintf("NOT %s", query)
+}
+
+func globEscape(str string) string {
+	var result strings.Builder
+
+	specials := `[]*?`
+
+	for _, c := range str {
+		if strings.ContainsRune(specials, c) {
+			fmt.Fprintf(&result, "[%c]", c)
+		} else {
+			fmt.Fprintf(&result, "%c", c)
+		}
+	}
+
+	return result.String()
 }

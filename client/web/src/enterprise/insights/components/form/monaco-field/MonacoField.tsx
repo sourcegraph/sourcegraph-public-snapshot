@@ -1,17 +1,48 @@
+import React, { createContext, forwardRef, InputHTMLAttributes, useContext, useImperativeHandle, useMemo } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { forwardRef, InputHTMLAttributes, useImperativeHandle, useMemo } from 'react'
 
+import { QueryChangeSource } from '@sourcegraph/search'
+import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
+import { DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { QueryChangeSource } from '../../../../../search/helpers'
-import { LazyMonacoQueryInput } from '../../../../../search/input/LazyMonacoQueryInput'
-import { DEFAULT_MONACO_OPTIONS } from '../../../../../search/input/MonacoQueryInput'
 import { ThemePreference } from '../../../../../stores/themeState'
 import { useTheme } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'
+
+interface Context {
+    renderedWithinFocusContainer: boolean
+}
+
+const MonacoFieldContext = createContext<Context>({ renderedWithinFocusContainer: false })
+
+const MONACO_CONTAINER_MARK = { renderedWithinFocusContainer: true }
+
+export const MonacoFocusContainer = forwardRef((props, reference) => {
+    const { as: Component = 'div', className, children, ...otherProps } = props
+
+    return (
+        <MonacoFieldContext.Provider value={MONACO_CONTAINER_MARK}>
+            <Component
+                {...otherProps}
+                className={classNames(
+                    'form-control',
+                    'with-invalid-icon',
+                    styles.container,
+                    styles.focusContainer,
+                    className
+                )}
+            >
+                {children}
+            </Component>
+        </MonacoFieldContext.Provider>
+    )
+}) as ForwardReferenceComponent<'div'>
 
 const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     ...DEFAULT_MONACO_OPTIONS,
@@ -25,23 +56,25 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
-    patternType?: SearchPatternType
     value: string
-    onBlur: () => void
-    onChange: (value: string) => void
+    patternType?: SearchPatternType
+    onBlur?: () => void
+    onChange?: (value: string) => void
 }
 
 export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
         value,
         className,
-        onChange,
+        onChange = noop,
         onBlur = noop,
         disabled,
         autoFocus,
         placeholder,
         patternType = SearchPatternType.regexp,
     } = props
+
+    const { renderedWithinFocusContainer } = useContext(MonacoFieldContext)
 
     // Monaco doesn't have any native input elements, so we mock
     // ref here to avoid React warnings in console about zero usage of
@@ -66,8 +99,12 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             height="auto"
             placeholder={placeholder}
             onSubmit={noop}
-            className={classNames(className, styles.field, { [styles.fieldWithPlaceholder]: !value })}
+            className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
+                [styles.focusContainer]: !renderedWithinFocusContainer,
+                [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,
+            })}
             editorOptions={monacoOptions}
+            editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !value })}
             autoFocus={autoFocus}
             onBlur={onBlur}
         />

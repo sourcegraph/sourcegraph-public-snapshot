@@ -4,8 +4,8 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { checkOk } from '@sourcegraph/http-client'
 
-import { checkOk } from '../../backend/fetch'
 import {
     ConfiguredExtension,
     ConfiguredExtensionManifestDefaultFields,

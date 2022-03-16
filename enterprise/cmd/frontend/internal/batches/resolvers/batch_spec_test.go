@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
 	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
@@ -51,7 +50,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, orgname)
 
-	spec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, true)
+	spec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +84,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +165,7 @@ func TestBatchSpecResolver(t *testing.T) {
 
 	// Now create an updated changeset spec and check that we get a superseding
 	// batch spec.
-	sup, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, true)
+	sup, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +287,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +338,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	// Complete the workspace resolution
 	var workspaces []*btypes.BatchSpecWorkspace
 	for _, repo := range rs {
-		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 		if err := bstore.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 			t.Fatal(err)
 		}

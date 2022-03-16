@@ -68,7 +68,9 @@ type JSContext struct {
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
+	SourcegraphDotComMode  bool   `json:"sourcegraphDotComMode"`
+	GitHubAppCloudSlug     string `json:"githubAppCloudSlug"`
+	GitHubAppCloudClientID string `json:"githubAppCloudClientID"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -124,6 +126,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// Auth providers
 	var authProviders []authProviderInfo
 	for _, p := range providers.Providers() {
+		if p.Config().Github != nil && p.Config().Github.Hidden {
+			continue
+		}
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
@@ -139,6 +144,13 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteConfig := conf.Get().SiteConfiguration
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
+	}
+
+	var githubAppCloudSlug string
+	var githubAppCloudClientID string
+	if envvar.SourcegraphDotComMode() && siteConfig.Dotcom != nil && siteConfig.Dotcom.GithubAppCloud != nil {
+		githubAppCloudSlug = siteConfig.Dotcom.GithubAppCloud.Slug
+		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -166,7 +178,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		SourcegraphDotComMode:  envvar.SourcegraphDotComMode(),
+		GitHubAppCloudSlug:     githubAppCloudSlug,
+		GitHubAppCloudClientID: githubAppCloudClientID,
 
 		BillingPublishableKey: BillingPublishableKey,
 

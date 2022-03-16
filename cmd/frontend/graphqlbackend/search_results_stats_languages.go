@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -13,18 +12,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	srr, err := srs.getResults(ctx)
+	matches, err := srs.getResults(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, srr.Matches)
+	langs, err := searchResultsStatsLanguages(ctx, srs.sr.db, matches)
 	if err != nil {
 		return nil, err
 	}
@@ -36,21 +38,23 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	return wrapped, nil
 }
 
-func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
+func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
+	args := srs.sr.JobArgs()
 	srs.once.Do(func() {
-		args, jobs, err := srs.sr.toSearchInputs(srs.sr.Query)
+		j, err := job.ToSearchJob(args, srs.sr.SearchInputs.Query)
 		if err != nil {
-			srs.srsErr = err
+			srs.err = err
 			return
 		}
-		results, err := srs.sr.doResults(ctx, args, jobs)
+		agg := streaming.NewAggregatingStream()
+		_, err = j.Run(ctx, srs.sr.db, agg)
 		if err != nil {
-			srs.srsErr = err
+			srs.err = err
 			return
 		}
-		srs.srs = srs.sr.resultsToResolver(results)
+		srs.results = agg.Results
 	})
-	return srs.srs, srs.srsErr
+	return srs.results, srs.err
 }
 
 func searchResultsStatsLanguages(ctx context.Context, db database.DB, matches []result.Match) ([]inventory.Lang, error) {

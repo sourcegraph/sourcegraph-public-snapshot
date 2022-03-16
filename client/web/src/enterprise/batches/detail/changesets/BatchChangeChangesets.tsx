@@ -1,21 +1,21 @@
-import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect, useContext } from 'react'
+
+import * as H from 'history'
 import { Subject } from 'rxjs'
 import { withLatestFrom, map, filter } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, property } from '@sourcegraph/common'
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
@@ -26,7 +26,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { WebHoverOverlay } from '../../../../components/shared'
@@ -36,6 +36,7 @@ import {
     Scalars,
     BatchChangeChangesetsResult,
     BatchChangeChangesetsVariables,
+    BatchChangeState,
 } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
@@ -45,7 +46,6 @@ import {
     CHANGESETS,
 } from '../backend'
 
-import styles from './BatchChangeChangesets.module.scss'
 import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { ChangesetNode } from './ChangesetNode'
@@ -53,9 +53,19 @@ import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
+import { EmptyDraftChangesetListElement } from './EmptyDraftChangesetListElement'
 
-interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+import styles from './BatchChangeChangesets.module.scss'
+
+interface Props
+    extends ThemeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        SettingsCascadeProps {
     batchChangeID: Scalars['ID']
+    batchChangeState: BatchChangeState
+    isExecutionEnabled: boolean
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -98,6 +108,9 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     expandByDefault,
     onlyArchived,
     refetchBatchChange,
+    settingsCascade,
+    batchChangeState,
+    isExecutionEnabled,
 }) => {
     // You might look at this destructuring statement and wonder why this isn't
     // just a single context consumer object. The reason is because making it a
@@ -159,6 +172,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             ...queryArguments,
             first: BATCH_COUNT,
             after: null,
+            onlyClosable: null,
         },
         options: {
             useURL: true,
@@ -227,6 +241,22 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
 
     const showSelectRow = viewerCanAdminister && (selected === 'all' || selected.size > 0)
 
+    const emptyElement = useMemo(() => {
+        if (filtersSelected(changesetFilters)) {
+            return <EmptyChangesetSearchElement />
+        }
+
+        if (onlyArchived) {
+            return <EmptyArchivedChangesetListElement />
+        }
+
+        if (batchChangeState === BatchChangeState.DRAFT && isExecutionEnabled) {
+            return <EmptyDraftChangesetListElement />
+        }
+
+        return <EmptyChangesetListElement />
+    }, [changesetFilters, onlyArchived, batchChangeState, isExecutionEnabled])
+
     return (
         <Container>
             {!hideFilters && !showSelectRow && (
@@ -284,15 +314,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                                 noun="changeset"
                                 pluralNoun="changesets"
                                 hasNextPage={hasNextPage}
-                                emptyElement={
-                                    filtersSelected(changesetFilters) ? (
-                                        <EmptyChangesetSearchElement />
-                                    ) : onlyArchived ? (
-                                        <EmptyArchivedChangesetListElement />
-                                    ) : (
-                                        <EmptyChangesetListElement />
-                                    )
-                                }
+                                emptyElement={emptyElement}
                             />
                             {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                         </SummaryContainer>
@@ -309,6 +331,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
+                        settingsCascade={settingsCascade}
                     />
                 )}
             </div>

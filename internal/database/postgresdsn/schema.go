@@ -5,34 +5,36 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func DSNsBySchema() (map[string]string, error) {
-	dsns := RawDSNsBySchema()
+func DSNsBySchema(schemaNames []string) (map[string]string, error) {
+	dsns := RawDSNsBySchema(schemaNames, os.Getenv)
 
 	// We set this envvar in development to disable the following check
 	if os.Getenv("CODEINTEL_PG_ALLOW_SINGLE_DB") == "" {
-		// Ensure that the code intelligence database is not pointing at the frontend database
-		if err := comparePostgresDSNs("frontend", "codeintel", dsns["frontend"], dsns["codeintel"]); err != nil {
-			return nil, err
+		if codeintelDSN, ok := dsns["codeintel"]; ok {
+			if frontendDSN, ok := dsns["frontend"]; ok {
+				// Ensure that the code intelligence database is not pointing at the frontend database
+				if err := comparePostgresDSNs("frontend", "codeintel", frontendDSN, codeintelDSN); err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 
 	return dsns, nil
 }
 
-func RawDSNsBySchema() map[string]string {
+func RawDSNsBySchema(schemaNames []string, getenv func(string) string) map[string]string {
 	username := ""
 	if user, err := user.Current(); err == nil {
 		username = user.Username
 	}
 
-	dsns := make(map[string]string, len(schemas.SchemaNames))
-	for _, schemaName := range schemas.SchemaNames {
-		dsns[schemaName] = New(schemaName, username, os.Getenv)
+	dsns := make(map[string]string, len(schemaNames))
+	for _, schemaName := range schemaNames {
+		dsns[schemaName] = New(schemaName, username, getenv)
 	}
 
 	return dsns

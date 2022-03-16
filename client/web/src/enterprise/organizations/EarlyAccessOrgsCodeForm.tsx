@@ -1,9 +1,9 @@
 import React, { FunctionComponent, useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { gql, useLazyQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
-import { IFeatureFlagOverride } from '@sourcegraph/shared/src/graphql/schema'
-import { Input } from '@sourcegraph/wildcard'
+import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
+import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
+import { Input, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
 import { Maybe, OrganizationVariables } from '../../graphql-operations'
@@ -114,18 +114,25 @@ export const EarlyAccessOrgsCodeForm: FunctionComponent<any> = () => {
             <div className="d-flex justify-content-start align-items-end">
                 <Input label="Name" value={name} onChange={onChange} className="mb-0" />
                 <LoaderButton
-                    className="btn btn-primary ml-3"
+                    className="ml-3"
                     type="submit"
                     loading={loading}
                     disabled={loading || name.trim().length < 3}
                     alwaysShowLabel={true}
                     label="Enable"
+                    variant="primary"
                 />
             </div>
 
-            {error && <div className="mt-3 alert alert-danger">{error.message}</div>}
+            {error && (
+                <Alert className="mt-3" variant="danger">
+                    {error.message}
+                </Alert>
+            )}
             {data?.createFeatureFlagOverride && (
-                <div className="mt-3 mb-0 alert alert-success">Feature flag override created.</div>
+                <Alert className="mt-3 mb-0" variant="success">
+                    Feature flag override created.
+                </Alert>
             )}
         </Form>
     )

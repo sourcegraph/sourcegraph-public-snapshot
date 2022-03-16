@@ -1,10 +1,11 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -17,6 +18,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
@@ -75,6 +77,7 @@ interface UserAreaProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
+        FeatureFlagProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -104,6 +107,7 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
+        FeatureFlagProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string
@@ -186,7 +190,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
             <React.Suspense
                 fallback={
                     <div className="w-100 text-center">
-                        <LoadingSpinner className="icon-inline m-2" />
+                        <LoadingSpinner className="m-2" />
                     </div>
                 }
             >

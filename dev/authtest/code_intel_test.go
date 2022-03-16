@@ -3,6 +3,8 @@ package authtest
 import (
 	"bytes"
 	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -113,15 +115,67 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 	})
 
-	t.Run("executor endpoints", func(t *testing.T) {
+	t.Run("executor endpoints (access token not configured)", func(t *testing.T) {
+		// Update site configuration to remove any executor access token.
+		cleanup := setExecutorAccessToken(t, "")
+		defer cleanup()
+
 		resp, err := userClient.Get(*baseURL + "/.executors/")
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if resp.StatusCode/100 != 4 {
-			t.Fatalf(`Want status code 4xx error but got %d`, resp.StatusCode)
+		if resp.StatusCode != http.StatusInternalServerError {
+			t.Fatalf(`Want status code 500 error but got %d`, resp.StatusCode)
+		}
+
+		response, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedText := "Executors are not configured on this instance"
+		if !strings.Contains(string(response), expectedText) {
+			t.Fatalf(`Expected different failure. want=%q got=%q`, expectedText, string(response))
 		}
 	})
+
+	t.Run("executor endpoints (access token configured but not supplied)", func(t *testing.T) {
+		// Update site configuration to set the executor access token.
+		cleanup := setExecutorAccessToken(t, "hunter2hunter2hunter2")
+		defer cleanup()
+
+		// sleep 5s to wait for site configuration to be restored from gqltest
+		time.Sleep(5 * time.Second)
+
+		resp, err := userClient.Get(*baseURL + "/.executors/")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf(`Want status code 401 error but got %d`, resp.StatusCode)
+		}
+	})
+}
+
+func setExecutorAccessToken(t *testing.T, token string) func() {
+	siteConfig, err := client.SiteConfiguration()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	oldSiteConfig := new(schema.SiteConfiguration)
+	*oldSiteConfig = *siteConfig
+	siteConfig.ExecutorsAccessToken = token
+
+	if err := client.UpdateSiteConfiguration(siteConfig); err != nil {
+		t.Fatal(err)
+	}
+	return func() {
+		if err := client.UpdateSiteConfiguration(oldSiteConfig); err != nil {
+			t.Fatal(err)
+		}
+	}
 }

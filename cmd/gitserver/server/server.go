@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -53,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -352,7 +352,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -806,13 +805,13 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// succeed.
 		resp.CloneInProgress = true
 
-		// We do not need to check if req.MigrateFrom is non-zero here since that has no effect on
+		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
 		// the code path at this point. Since the repo is already not cloned at this point, either
 		// this request was received for a repo migration or a regular clone - for both of which we
 		// want to go ahead and clone the repo. The responsibility of figuring out where to clone
 		// the repo from (upstream URL of the external service or the gitserver instance) lies with
 		// the implementation details of cloneRepo.
-		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, MigrateFrom: req.MigrateFrom})
+		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -925,6 +924,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		otlog.Bool("include_diff", args.IncludeDiff),
 		otlog.String("query", args.Query.String()),
 		otlog.Int("limit", args.Limit),
+		otlog.Bool("include_modified_files", args.IncludeModifiedFiles),
 	)
 
 	searchStart := time.Now()
@@ -965,6 +965,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
+		ev.AddField("include_modified_files", args.IncludeModifiedFiles)
 		ev.AddField("actor", act.UIDString())
 		ev.AddField("query", args.Query.String())
 		ev.AddField("limit", args.Limit)
@@ -1054,10 +1055,11 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 
 		searcher := &search.CommitSearcher{
-			RepoDir:     dir.Path(),
-			Revisions:   args.Revisions,
-			Query:       mt,
-			IncludeDiff: args.IncludeDiff,
+			RepoDir:              dir.Path(),
+			Revisions:            args.Revisions,
+			Query:                mt,
+			IncludeDiff:          args.IncludeDiff,
+			IncludeModifiedFiles: args.IncludeModifiedFiles,
 		}
 
 		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
@@ -1122,6 +1124,13 @@ func matchCount(cm *protocol.CommitMatch) int {
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
+	// 🚨 SECURITY: Only allow POST requests.
+	// See https://github.com/sourcegraph/security-issues/issues/213.
+	if strings.ToUpper(r.Method) != "POST" {
+		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var req protocol.ExecRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1129,6 +1138,11 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 	s.exec(w, r, &req)
 }
+
+var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_exec_blocked_command_received",
+	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
+})
 
 func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
 	// Flush writes more aggressively than standard net/http so that clients
@@ -1138,8 +1152,28 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		defer fw.Close()
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), shortGitCommandTimeout(req.Args))
-	defer cancel()
+	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
+	// See https://github.com/sourcegraph/security-issues/issues/213.
+	if !gitdomain.IsAllowedGitCmd(req.Args) {
+		blockedCommandExecutedCounter.Inc()
+
+		log15.Warn("exec: bad command", "RemoteAddr", r.RemoteAddr, "req.Args", req.Args)
+
+		// Temporary feature flag to disable this feature in case their are any regressions.
+		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("invalid command"))
+			return
+		}
+	}
+
+	ctx := r.Context()
+
+	if !req.NoTimeout {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, shortGitCommandTimeout(req.Args))
+		defer cancel()
+	}
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
@@ -1554,6 +1588,15 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 	}
 }
 
+// setRepoSize calculates the size of the repo and stores it in the database.
+func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
+	if s.DB == nil {
+		return nil
+	}
+
+	return database.GitserverRepos(s.DB).SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
+}
+
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
@@ -1591,13 +1634,10 @@ type cloneOptions struct {
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
 
-	// MigrateFrom is the name of the gitserver instance which is the current owner of the
+	// CloneFromShard is the hostname of the gitserver instance which is the current owner of the
 	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
-	// the current gitserver instance instead of the upstream repo URL of the external service.
-	//
-	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
-	// and it should be removed.
-	MigrateFrom string
+	// that gitserver instance instead of the upstream repo URL of the external service.
+	CloneFromShard string
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -1620,8 +1660,18 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	// We may be attempting to clone a private repo so we need an internal actor.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	var remoteURL *vcs.URL
+	if opts != nil && opts.CloneFromShard != "" {
+		// are we cloning from the same gitserver instance?
+		if s.hostnameMatch(strings.TrimPrefix(opts.CloneFromShard, "http://")) {
+			return "", errors.Errorf("cannot clone from the same gitserver instance")
+		}
+
+		remoteURL, err = vcs.ParseURL(filepath.Join(opts.CloneFromShard, "git", string(repo)))
+	} else {
+		// We may be attempting to clone a private repo so we need an internal actor.
+		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -1694,9 +1744,13 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	return "", nil
 }
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) error {
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
 	defer lock.Release()
-
+	defer func() {
+		if err != nil {
+			repoCloneFailedCounter.Inc()
+		}
+	}()
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
@@ -1800,6 +1854,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
+	}
+
+	// Successfully updated, best-effort calculation of the repo size.
+	if err := s.setRepoSize(ctx, repo); err != nil {
+		log15.Warn("failed setting repo size", "repo", repo, "error", err)
 	}
 
 	log15.Info("repo cloned", "repo", repo)
@@ -1956,6 +2015,10 @@ var (
 	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
 		Help: "number of successful git clones run",
+	})
+	repoCloneFailedCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_repo_cloned_failed",
+		Help: "number of failed git clones",
 	})
 )
 
@@ -2126,6 +2189,11 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
 		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
+	}
+
+	// Successfully updated, best-effort calculation of the repo size.
+	if err := s.setRepoSize(ctx, repo); err != nil {
+		log15.Warn("failed setting repo size", "repo", repo, "error", err)
 	}
 
 	return nil

@@ -1,9 +1,10 @@
-import { kebabCase } from 'lodash'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { kebabCase } from 'lodash'
+import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
+
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -61,14 +62,14 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
 export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLinkProps> = React.memo(
     function BatchSpecDownloadLink({ children, className, name, originalInput }) {
         return (
-            <a
+            <Link
                 download={getFileName(name)}
-                href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+                to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
                 className={className}
                 data-tooltip={`Download ${getFileName(name)}`}
             >
                 {children}
-            </a>
+            </Link>
         )
     }
 )
@@ -77,9 +78,15 @@ export const BatchSpecDownloadButton: React.FunctionComponent<
     BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <BatchSpecDownloadLink className="text-right btn btn-outline-secondary text-nowrap" {...props}>
-            <FileDownloadIcon className="icon-inline" /> Download YAML
-        </BatchSpecDownloadLink>
+        <Button
+            className="text-right text-nowrap"
+            {...props}
+            variant="secondary"
+            outline={true}
+            as={BatchSpecDownloadLink}
+        >
+            <Icon as={FileDownloadIcon} /> Download YAML
+        </Button>
     )
 })
 

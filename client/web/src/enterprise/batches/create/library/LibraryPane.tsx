@@ -1,9 +1,10 @@
+import React, { useState, useCallback } from 'react'
+
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import React, { useState, useCallback } from 'react'
-import { Collapse } from 'reactstrap'
+import { animated, useSpring } from 'react-spring'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../yaml-util'
@@ -11,9 +12,10 @@ import { insertNameIntoLibraryItem } from '../yaml-util'
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
-import styles from './LibraryPane.module.scss'
 import minimalSample from './minimal.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
+
+import styles from './LibraryPane.module.scss'
 
 interface LibraryItem {
     name: string
@@ -27,6 +29,12 @@ const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
     { name: 'update go imports', code: goImportsSample },
 ]
 
+const LIBRARY_PANE_DEFAULT_COLLAPSED = 'batch-changes.ssbc-library-pane-default-collapsed'
+// Match to `.collapse-button` class width
+const BUTTON_WIDTH = '1.25rem'
+// Match to `.list-container` class width
+const CONTENT_WIDTH = '14rem'
+
 interface LibraryPaneProps {
     /**
      * The name of the batch change, used for automatically filling in the name for any
@@ -37,8 +45,48 @@ interface LibraryPaneProps {
 }
 
 export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, onReplaceItem }) => {
-    const [collapsed, setCollapsed] = useState(false)
+    // Remember the last collapsed state of the pane
+    const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
+    const [collapsed, setCollapsed] = useState(defaultCollapsed)
     const [selectedItem, setSelectedItem] = useState<LibraryItem>()
+
+    const [containerStyle, animateContainer] = useSpring(() => ({
+        width: collapsed ? BUTTON_WIDTH : CONTENT_WIDTH,
+    }))
+
+    const [headerStyle, animateHeader] = useSpring(() => ({
+        opacity: collapsed ? 0 : 1,
+        width: collapsed ? '0rem' : CONTENT_WIDTH,
+    }))
+
+    const [contentStyle, animateContent] = useSpring(() => ({
+        display: collapsed ? 'none' : 'block',
+        opacity: collapsed ? 0 : 1,
+    }))
+
+    const toggleCollapse = useCallback(
+        (collapsed: boolean) => {
+            setCollapsed(collapsed)
+            setDefaultCollapsed(collapsed)
+            animateContainer.start({ width: collapsed ? BUTTON_WIDTH : CONTENT_WIDTH })
+            animateContent.start({
+                /* eslint-disable callback-return */
+                // We need the display: none property change to happen in sequence *after*
+                // the opacity property change or else the content will disappear
+                // immediately. This use of the API is following the suggestion from
+                // https://react-spring.io/hooks/use-spring#this-is-how-you-create-a-script
+                to: async next => {
+                    await next({ display: 'block', opacity: collapsed ? 0 : 1 })
+                    if (collapsed) {
+                        await next({ display: 'none' })
+                    }
+                },
+                /* eslint-enable callback-return */
+            })
+            animateHeader.start({ opacity: collapsed ? 0 : 1, width: collapsed ? '0rem' : CONTENT_WIDTH })
+        },
+        [animateContainer, animateContent, animateHeader, setDefaultCollapsed]
+    )
 
     const onConfirm = useCallback(() => {
         if (selectedItem) {
@@ -57,25 +105,24 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                     onConfirm={onConfirm}
                 />
             ) : null}
-            <div className="d-flex flex-column">
-                <div className="d-flex align-items-center justify-space-between flex-0">
-                    <h5 className="flex-grow-1">Library</h5>
-                    <Button
-                        className="flex-0"
-                        onClick={() => setCollapsed(!collapsed)}
-                        aria-label={collapsed ? 'Expand' : 'Collapse'}
-                    >
-                        {collapsed ? (
-                            <ChevronDoubleRightIcon className="icon-inline mr-1" />
-                        ) : (
-                            <ChevronDoubleLeftIcon className="icon-inline mr-1" />
-                        )}
-                    </Button>
+            <animated.div style={containerStyle} className="d-flex flex-column mr-3">
+                <div className={styles.header}>
+                    <animated.h4 className="m-0" style={headerStyle}>
+                        Library
+                    </animated.h4>
+                    <div className={styles.collapseButton}>
+                        <Button
+                            className="p-0"
+                            onClick={() => toggleCollapse(!collapsed)}
+                            aria-label={collapsed ? 'Expand' : 'Collapse'}
+                        >
+                            <Icon as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon} />
+                        </Button>
+                    </div>
                 </div>
 
-                {/* TODO: This should slide vertically but not on our version of reactstrap. */}
-                <Collapse className={styles.collapseContainer} isOpen={!collapsed}>
-                    <ul className="m-0 p-0">
+                <animated.div style={contentStyle}>
+                    <ul className={styles.listContainer}>
                         {LIBRARY.map(item => (
                             <li className={styles.libraryItem} key={item.name}>
                                 <button
@@ -88,8 +135,8 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                             </li>
                         ))}
                     </ul>
-                </Collapse>
-            </div>
+                </animated.div>
+            </animated.div>
         </>
     )
 }

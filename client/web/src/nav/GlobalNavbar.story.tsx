@@ -1,7 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
-import { SuiteFunction } from 'mocha'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -9,8 +9,8 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
@@ -21,7 +21,7 @@ import { ThemePreference } from '../stores/themeState'
 import { GlobalNavbar } from './GlobalNavbar'
 
 if (!window.context) {
-    window.context = {} as SourcegraphContext & SuiteFunction
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
 const history = createMemoryHistory()
@@ -44,7 +44,6 @@ const defaultProps = (
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     keyboardShortcuts: [],
     selectedSearchContextSpec: '',
@@ -63,7 +62,6 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {

@@ -40,7 +40,7 @@
         // Enlarge `<hr>` width on the right to span across extra left and right padding.
         margin-left: calc(var(--hover-overlay-horizontal-padding) * -1);
         margin-right: calc(var(--hover-overlay-contents-right-padding) * -1);
-        // stylelint-disable-next-line declaration-property-unit-whitelist
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
         height: 1px;
         overflow: visible;
         border: none;

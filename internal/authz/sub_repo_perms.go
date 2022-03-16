@@ -2,11 +2,10 @@ package authz
 
 import (
 	"context"
-	"path"
+	"io/fs"
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RepoContent specifies data existing in a repo. It currently only supports
@@ -39,6 +39,9 @@ type SubRepoPermissionChecker interface {
 
 	// Enabled indicates whether sub-repo permissions are enabled.
 	Enabled() bool
+
+	// EnabledForRepoId indicates whether sub-repo permissions are enabled for the given repoID
+	EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error)
 }
 
 // DefaultSubRepoPermsChecker allows us to use a single instance with a shared
@@ -57,6 +60,10 @@ func (*noopPermsChecker) Enabled() bool {
 	return false
 }
 
+func (*noopPermsChecker) EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error) {
+	return false, nil
+}
+
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
@@ -65,6 +72,9 @@ var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
+
+	// RepoIdSupported returns true if repo with the given ID has sub-repo permissions
+	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
 }
 
 // SubRepoPermsClient is a concrete implementation of SubRepoPermissionChecker.
@@ -164,17 +174,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
 	}()
 
-	// Always default to not providing any permissions
-	perms = None
-
 	if s.permissionsGetter == nil {
-		err = errors.New("PermissionsGetter is nil")
-		return
+		return None, errors.New("PermissionsGetter is nil")
 	}
 
 	if userID == 0 {
-		err = &ErrUnauthenticated{}
-		return
+		return None, &ErrUnauthenticated{}
 	}
 
 	// An empty path is equivalent to repo permissions so we can assume it has
@@ -197,18 +202,15 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
-	// Rules are created including the repo name
-	toMatch := path.Join(string(content.Repo), content.Path)
-
 	// The current path needs to either be included or NOT excluded and we'll give
 	// preference to exclusion.
 	for _, rule := range rules.excludes {
-		if rule.Match(toMatch) {
-			return
+		if rule.Match(content.Path) {
+			return None, nil
 		}
 	}
 	for _, rule := range rules.includes {
-		if rule.Match(toMatch) {
+		if rule.Match(content.Path) {
 			return Read, nil
 		}
 	}
@@ -287,6 +289,10 @@ func (s *SubRepoPermsClient) Enabled() bool {
 	return false
 }
 
+func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID) (bool, error) {
+	return s.permissionsGetter.RepoIdSupported(ctx, id)
+}
+
 // ActorPermissions returns the level of access the given actor has for the requested
 // content.
 //
@@ -295,10 +301,9 @@ func (s *SubRepoPermsClient) Enabled() bool {
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
-	if !s.Enabled() {
+	if !SubRepoEnabled(s) {
 		return Read, nil
 	}
-
 	if a.IsInternal() {
 		return Read, nil
 	}
@@ -311,6 +316,51 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// SubRepoEnabled takes a SubRepoPermissionChecker and returns true if the checker is not nil and is enabled
+func SubRepoEnabled(checker SubRepoPermissionChecker) bool {
+	return checker != nil && checker.Enabled()
+}
+
+// SubRepoEnabledForRepoID takes a SubRepoPermissionChecker and repoID and returns true if sub-repo
+// permissions are enabled for a repo with given repoID
+func SubRepoEnabledForRepoID(ctx context.Context, checker SubRepoPermissionChecker, repoID api.RepoID) (bool, error) {
+	if !SubRepoEnabled(checker) {
+		return false, nil
+	}
+	return checker.EnabledForRepoId(ctx, repoID)
+}
+
+// CanReadAllPaths returns true if the actor can read all paths.
+func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
+	if !SubRepoEnabled(checker) {
+		return true, nil
+	}
+	a := actor.FromContext(ctx)
+	if a.IsInternal() {
+		return true, nil
+	}
+	if !a.IsAuthenticated() {
+		return false, &ErrUnauthenticated{}
+	}
+
+	c := RepoContent{
+		Repo: repo,
+	}
+
+	for _, p := range paths {
+		c.Path = p
+		perms, err := checker.Permissions(ctx, a.UID, c)
+		if err != nil {
+			return false, err
+		}
+		if !perms.Include(Read) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // FilterActorPaths will filter the given list of paths for the given actor
@@ -332,12 +382,37 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 // FilterActorPath will filter the given path for the given actor
 // returning true if the path is allowed to read.
 func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, path string) (bool, error) {
-	if checker == nil || !checker.Enabled() {
+	if !SubRepoEnabled(checker) {
 		return true, nil
 	}
 	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
 		Repo: repo,
 		Path: path,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "checking sub-repo permissions")
+	}
+	return perms.Include(Read), nil
+}
+
+func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) ([]fs.FileInfo, error) {
+	filtered := make([]fs.FileInfo, 0, len(fis))
+	for _, fi := range fis {
+		include, err := FilterActorFileInfo(ctx, checker, a, repo, fi)
+		if err != nil {
+			return nil, err
+		}
+		if include {
+			filtered = append(filtered, fi)
+		}
+	}
+	return filtered, nil
+}
+
+func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
+	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
+		Repo: repo,
+		Path: fi.Name(),
 	})
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")

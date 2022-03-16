@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
@@ -53,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -99,16 +99,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
-	}
+	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
@@ -263,6 +254,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
+		enterprise.ComputeResolver,
 	)
 	if err != nil {
 		return err
@@ -307,7 +299,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	}
 
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(
+	externalHandler := newExternalHTTPHandler(
 		db,
 		schema,
 		enterprise.GitHubWebhook,
@@ -315,11 +307,10 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		enterprise.BitbucketServerWebhook,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewExecutorProxyHandler,
+		enterprise.NewGitHubAppCloudSetupHandler,
+		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)
-	if err != nil {
-		return nil, err
-	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
@@ -363,7 +354,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 }
 
 func makeServerOptions() (options []httpserver.ServerOptions) {
-	if deploy.Type() == deploy.Kubernetes {
+	if deploy.IsDeployTypeKubernetes(deploy.Type()) {
 		// On kubernetes, we want to wait an additional 5 seconds after we receive a
 		// shutdown request to give some additional time for the endpoint changes
 		// to propagate to services talking to this server like the LB or ingress

@@ -1,15 +1,15 @@
+import React, { useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import prettyBytes from 'pretty-bytes'
-import React, { useState, useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -18,6 +18,7 @@ import { dirname } from '../../util/path'
 import { DiffStat, DiffStatSquares } from './DiffStat'
 import { ExtensionInfo } from './FileDiffConnection'
 import { FileDiffHunks } from './FileDiffHunks'
+
 import styles from './FileDiffNode.module.scss'
 
 export interface FileDiffNodeProps extends ThemeProps {
@@ -96,16 +97,11 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
     return (
         <>
             {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
-            {/* eslint-disable-next-line jsx-a11y/anchor-has-content, jsx-a11y/anchor-is-valid */}
-            <a id={anchor} aria-hidden={true} />
+            <Link to="" id={anchor} aria-hidden={true} />
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <Button className="btn-icon mr-2" onClick={toggleExpand} size="sm">
-                        {expanded ? (
-                            <ChevronDownIcon className="icon-inline" />
-                        ) : (
-                            <ChevronRightIcon className="icon-inline" />
-                        )}
+                    <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
+                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
@@ -131,13 +127,15 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                     <div className={styles.headerActions}>
                         {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
                         {node.mostRelevantFile.__typename === 'GitBlob' && (
-                            <Link
+                            <Button
                                 to={node.mostRelevantFile.url}
-                                className="btn btn-sm btn-link"
                                 data-tooltip="View file at revision"
+                                variant="link"
+                                size="sm"
+                                as={Link}
                             >
                                 View
-                            </Link>
+                            </Button>
                         )}
                     </div>
                 </div>

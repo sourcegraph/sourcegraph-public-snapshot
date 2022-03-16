@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
@@ -6,23 +8,20 @@ import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
 import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
-import React from 'react'
-import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike, repeatUntil } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { Link } from '../../../shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
-import { ErrorAlert } from '../components/alerts'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'
@@ -476,16 +475,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         return (
-            <ButtonDropdown
-                isOpen={this.state.isOpen}
-                toggle={this.toggleIsOpen}
-                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
-            >
-                <DropdownToggle caret={false} className="btn btn-link" nav={true}>
+            <Popover isOpen={this.state.isOpen} onOpenChange={event => this.setState({ isOpen: event.isOpen })}>
+                <PopoverTrigger className="nav-link py-0 px-0 percy-hide chromatic-ignore" as={Button} variant="link">
                     {this.renderIcon()}
-                </DropdownToggle>
+                </PopoverTrigger>
 
-                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
+                <PopoverContent position={Position.bottomEnd} className={classNames('p-0', styles.dropdownMenu)}>
                     <div className={styles.dropdownMenuContent}>
                         <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
                         {isErrorLike(this.state.messagesOrError) ? (
@@ -498,8 +493,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             this.renderMessage(this.state.messagesOrError, this.props.user.isSiteAdmin)
                         )}
                     </div>
-                </DropdownMenu>
-            </ButtonDropdown>
+                </PopoverContent>
+            </Popover>
         )
     }
 }

@@ -13,19 +13,19 @@ import {
 } from 'rxjs/operators'
 import type { HoverAlert } from 'sourcegraph'
 
-import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { isNot } from '@sourcegraph/shared/src/util/types'
 
 import { MutationRecordLike } from '../../util/dom'
 
 import { CodeHost } from './codeHost'
-import styles from './nativeTooltips.module.scss'
 import { trackViews } from './views'
+
+import styles from './nativeTooltips.module.scss'
 
 const NATIVE_TOOLTIP_HIDDEN = styles.nativeTooltipHidden
 const NATIVE_TOOLTIP_TYPE = 'nativeTooltips'

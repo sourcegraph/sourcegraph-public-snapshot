@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { number, select, text } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React from 'react'
 import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
@@ -11,11 +12,11 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { NotificationItem } from './NotificationItem'
 
 const notificationClassNames = {
-    [NotificationType.Log]: 'alert alert-secondary',
-    [NotificationType.Success]: 'alert alert-success',
-    [NotificationType.Info]: 'alert alert-info',
-    [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-danger',
+    [NotificationType.Log]: 'bg-secondary',
+    [NotificationType.Success]: 'bg-success',
+    [NotificationType.Info]: 'bg-info',
+    [NotificationType.Warning]: 'bg-warning',
+    [NotificationType.Error]: 'bg-danger',
 }
 
 const onDismiss = action('onDismiss')
@@ -43,7 +44,7 @@ export const WithoutProgress: Story = () => {
     return (
         <NotificationItem
             notification={{ message, type, source }}
-            notificationClassNames={notificationClassNames}
+            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
     )
@@ -70,10 +71,16 @@ export const WithProgress: Story = () => {
                     percentage: progressPercentage,
                 }),
             }}
-            notificationClassNames={notificationClassNames}
+            notificationItemStyleProps={{ notificationItemClassNames: notificationClassNames }}
             onDismiss={onDismiss}
         />
     )
 }
 
 WithProgress.storyName = 'With progress'
+WithProgress.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}

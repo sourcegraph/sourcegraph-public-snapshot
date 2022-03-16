@@ -89,28 +89,12 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
 	seriesID := r.series.SeriesID
 
-	totalPoints, err := r.insightsStore.CountData(ctx, store.CountDataOpts{
-		SeriesID: &seriesID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
 	if err != nil {
 		return nil, err
 	}
 
-	return insightStatusResolver{
-		totalPoints: int32(totalPoints),
-
-		// Include errored because they'll be retried before becoming failures
-		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
-
-		completedJobs:    int32(status.Completed),
-		failedJobs:       int32(status.Failed),
-		backfillQueuedAt: r.series.BackfillQueuedAt,
-	}, nil
+	return NewStatusResolver(status, r.series.BackfillQueuedAt), nil
 }
 
 func (r *insightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
@@ -146,4 +130,62 @@ func (i insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
 func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
 func (i insightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
 	return graphqlbackend.DateTimeOrNil(i.backfillQueuedAt)
+}
+
+func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {
+	return &insightStatusResolver{
+		totalPoints: 0,
+
+		// Include errored because they'll be retried before becoming failures
+		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
+
+		completedJobs:    int32(status.Completed),
+		failedJobs:       int32(status.Failed),
+		backfillQueuedAt: queuedAt,
+	}
+}
+
+type precalculatedInsightSeriesResolver struct {
+	insightsStore   store.Interface
+	workerBaseStore *basestore.Store
+	series          types.InsightViewSeries
+	metadataStore   store.InsightMetadataStore
+	statusResolver  graphqlbackend.InsightStatusResolver
+
+	seriesId string
+	points   []store.SeriesPoint
+	label    string
+	filters  types.InsightViewFilters
+}
+
+func (p *precalculatedInsightSeriesResolver) SeriesId() string {
+	return p.seriesId
+}
+
+func (p *precalculatedInsightSeriesResolver) Label() string {
+	return p.label
+}
+
+func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
+	for _, point := range p.points {
+		resolvers = append(resolvers, insightsDataPointResolver{point})
+	}
+	return resolvers, nil
+}
+
+func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
+	return p.statusResolver, nil
+}
+
+func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
+	data, err := p.metadataStore.GetDirtyQueriesAggregated(ctx, p.series.SeriesID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.InsightDirtyQueryResolver, 0, len(data))
+	for _, dqa := range data {
+		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
+	}
+	return resolvers, nil
 }

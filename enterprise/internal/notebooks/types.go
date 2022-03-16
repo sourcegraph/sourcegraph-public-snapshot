@@ -10,6 +10,8 @@ const (
 	NotebookQueryBlockType    NotebookBlockType = "query"
 	NotebookMarkdownBlockType NotebookBlockType = "md"
 	NotebookFileBlockType     NotebookBlockType = "file"
+	NotebookSymbolBlockType   NotebookBlockType = "symbol"
+	NotebookComputeBlockType  NotebookBlockType = "compute"
 )
 
 type NotebookQueryBlockInput struct {
@@ -35,22 +37,47 @@ type NotebookFileBlockInput struct {
 	LineRange      *LineRange `json:"lineRange,omitempty"`
 }
 
+type NotebookSymbolBlockInput struct {
+	RepositoryName      string  `json:"repositoryName"`
+	FilePath            string  `json:"filePath"`
+	Revision            *string `json:"revision,omitempty"`
+	LineContext         int32   `json:"lineContext"`
+	SymbolName          string  `json:"symbolName"`
+	SymbolContainerName string  `json:"symbolContainerName"`
+	SymbolKind          string  `json:"symbolKind"`
+}
+
+type NotebookComputeBlockInput struct {
+	Value string `json:"value"`
+}
+
 type NotebookBlock struct {
 	ID            string                      `json:"id"`
 	Type          NotebookBlockType           `json:"type"`
 	QueryInput    *NotebookQueryBlockInput    `json:"queryInput,omitempty"`
 	MarkdownInput *NotebookMarkdownBlockInput `json:"markdownInput,omitempty"`
 	FileInput     *NotebookFileBlockInput     `json:"fileInput,omitempty"`
+	SymbolInput   *NotebookSymbolBlockInput   `json:"symbolInput,omitempty"`
+	ComputeInput  *NotebookComputeBlockInput  `json:"computeInput,omitempty"`
 }
 
 type NotebookBlocks []NotebookBlock
 
 type Notebook struct {
-	ID            int64
-	Title         string
-	Blocks        NotebookBlocks
-	Public        bool
-	CreatorUserID int32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID              int64
+	Title           string
+	Blocks          NotebookBlocks
+	Public          bool
+	CreatorUserID   int32
+	UpdaterUserID   int32
+	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
+type NotebookStar struct {
+	NotebookID int64
+	UserID     int32
+	CreatedAt  time.Time
 }

@@ -1,10 +1,8 @@
-import Dialog from '@reach/dialog'
-import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Modal } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -12,9 +10,10 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import styles from './AddCodeHostConnectionModal.module.scss'
 import { EncryptedDataIcon } from './components/EncryptedDataIcon'
 import { getMachineUserFragment } from './modalHints'
+
+import styles from './AddCodeHostConnectionModal.module.scss'
 
 interface CodeHostConfig {
     url: string
@@ -79,8 +78,8 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
     )
 
     return (
-        <Dialog
-            className={classNames('modal-body modal-body--top-third p-4 rounded border', styles.modalPlain)}
+        <Modal
+            className={styles.modalPlain}
             aria-labelledby={`heading--connect-with-${serviceName}`}
             onDismiss={onDidCancel}
         >
@@ -120,11 +119,11 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                         {didAckMachineUserHint ? (
                             <LoaderButton
                                 type="submit"
-                                className="btn btn-primary"
                                 loading={isLoading}
                                 disabled={!token || isLoading}
                                 label="Add code host connection"
                                 alwaysShowLabel={true}
+                                variant="primary"
                             />
                         ) : (
                             <Button
@@ -137,6 +136,6 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                     </div>
                 </Form>
             </div>
-        </Dialog>
+        </Modal>
     )
 }

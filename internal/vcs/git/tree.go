@@ -8,15 +8,14 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
+	"github.com/grafana/regexp"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,10 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Stat returns a FileInfo describing the named file at commit.
-func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	if Mocks.Stat != nil {
 		return Mocks.Stat(commit, path)
 	}
@@ -44,32 +44,23 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 
 	path = util.Rel(path)
 
-	fi, err := lStat(ctx, repo, commit, path)
+	fi, err := lStat(ctx, checker, repo, commit, path)
 	if err != nil {
 		return nil, err
-	}
-
-	if fi.Mode()&os.ModeSymlink != 0 {
-		// Deref symlink.
-		b, err := readFileBytes(ctx, repo, commit, path, 0)
-		if err != nil {
-			return nil, err
-		}
-		// Resolve relative links from the directory path is in
-		symlink := filepath.Join(filepath.Dir(path), string(b))
-		fi2, err := lStat(ctx, repo, commit, symlink)
-		if err != nil {
-			return nil, err
-		}
-		fi2.(*util.FileInfo).Name_ = fi.Name()
-		return fi2, nil
 	}
 
 	return fi, nil
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func ReadDir(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	path string,
+	recurse bool,
+) ([]fs.FileInfo, error) {
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}
@@ -89,11 +80,23 @@ func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path s
 		// to list the dir's tree entry in its parent dir).
 		path = filepath.Clean(util.Rel(path)) + "/"
 	}
-	return lsTree(ctx, repo, commit, path, recurse)
+	files, err := lsTree(ctx, repo, commit, path, recurse)
+
+	if err != nil || !authz.SubRepoEnabled(checker) {
+		return files, err
+	}
+
+	a := actor.FromContext(ctx)
+	filtered, filteringErr := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
+	if filteringErr != nil {
+		return nil, errors.Wrap(err, "filtering paths")
+	} else {
+		return filtered, nil
+	}
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...string) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -103,6 +106,12 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 		"--with-tree",
 		string(commit),
 	}
+
+	if len(pathspecs) > 0 {
+		args = append(args, "--")
+		args = append(args, pathspecs...)
+	}
+
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
@@ -120,7 +129,7 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
-func lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -149,7 +158,22 @@ func lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path str
 		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 
-	return fis[0], nil
+	if !authz.SubRepoEnabled(checker) {
+		return fis[0], nil
+	}
+	// Applying sub-repo permissions
+	a := actor.FromContext(ctx)
+	include, filteringErr := authz.FilterActorFileInfo(ctx, checker, a, repo, fis[0])
+	if include && filteringErr == nil {
+		return fis[0], nil
+	} else {
+		if filteringErr != nil {
+			err = errors.Wrap(err, "filtering paths")
+		} else {
+			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+		}
+		return nil, err
+	}
 }
 
 // lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
@@ -163,7 +187,13 @@ var (
 )
 
 // lsTree returns ls of tree at path.
-func lsTree(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func lsTree(
+	ctx context.Context,
+	repo api.RepoName,
+	commit api.CommitID,
+	path string,
+	recurse bool,
+) (files []fs.FileInfo, err error) {
 	if path != "" || !recurse {
 		// Only cache the root recursive ls-tree.
 		return lsTreeUncached(ctx, repo, commit, path, recurse)
@@ -362,7 +392,7 @@ func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, patt
 // 🚨 SECURITY: All git methods that deal with file or path access need to have
 // sub-repo permissions applied
 func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, paths []string) ([]string, error) {
-	if !checker.Enabled() {
+	if !authz.SubRepoEnabled(checker) {
 		return paths, nil
 	}
 	a := actor.FromContext(ctx)
@@ -394,7 +424,7 @@ func ListDirectoryChildren(
 	}
 
 	paths := strings.Split(string(out), "\n")
-	if checker != nil && checker.Enabled() {
+	if authz.SubRepoEnabled(checker) {
 		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
 		if err != nil {
 			return nil, err

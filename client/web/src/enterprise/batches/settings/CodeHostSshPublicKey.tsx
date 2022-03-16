@@ -1,9 +1,10 @@
+import React, { useCallback, useState } from 'react'
+
 import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { useCallback, useState } from 'react'
 
-import { Button, TextArea } from '@sourcegraph/wildcard'
+import { Button, TextArea, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -50,7 +51,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                 <label htmlFor={LABEL_ID}>{label}</label>
                 {showCopyButton && (
                     <Button onClick={onCopy} variant="secondary">
-                        <ContentCopyIcon className="icon-inline" />
+                        <Icon as={ContentCopyIcon} />
                         {copied ? 'Copied!' : 'Copy'}
                     </Button>
                 )}
@@ -65,9 +66,9 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
             />
             {showInstructionsLink && (
                 <p>
-                    <a href={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
+                    <Link to={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">
                         Configuration instructions
-                    </a>
+                    </Link>
                 </p>
             )}
         </>

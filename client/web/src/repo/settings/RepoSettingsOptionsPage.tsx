@@ -1,13 +1,14 @@
 import * as React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../components/alerts'
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
 import { defaultExternalServices } from '../../components/externalServices/externalServices'
 import { PageTitle } from '../../components/PageTitle'

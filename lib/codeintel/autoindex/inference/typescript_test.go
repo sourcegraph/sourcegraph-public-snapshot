@@ -19,6 +19,31 @@ func TestTypeScriptPatterns(t *testing.T) {
 	})
 }
 
+func TestInferTypeScriptIndexJobsMissingTsConfig(t *testing.T) {
+	testCases := []struct {
+		paths   []string
+		command string
+	}{
+		{[]string{"package.json"}, "npm install --ignore-scripts"},
+		{[]string{"yarn.lock", "package.json"}, "yarn --ignore-engines --ignore-scripts"},
+	}
+
+	for _, testCase := range testCases {
+		expectedIndexJobs := []config.IndexJob{
+			{
+				Steps:       []config.DockerStep{{Image: "sourcegraph/lsif-typescript:autoindex", Commands: []string{testCase.command}}},
+				Root:        "",
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index", "--inferTSConfig"},
+				Outfile:     "",
+			},
+		}
+		if diff := cmp.Diff(expectedIndexJobs, InferTypeScriptIndexJobs(NewMockGitClient(), testCase.paths)); diff != "" {
+			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
+		}
+	}
+}
+
 func TestInferTypeScriptIndexJobsTsConfigRoot(t *testing.T) {
 	paths := []string{
 		"tsconfig.json",
@@ -28,8 +53,8 @@ func TestInferTypeScriptIndexJobsTsConfigRoot(t *testing.T) {
 		{
 			Steps:       nil,
 			Root:        "",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 	}
@@ -49,22 +74,22 @@ func TestInferTypeScriptIndexJobsTsConfigSubdirs(t *testing.T) {
 		{
 			Steps:       nil,
 			Root:        "a",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 		{
 			Steps:       nil,
 			Root:        "b",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 		{
 			Steps:       nil,
 			Root:        "c",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 	}
@@ -90,67 +115,67 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"npm install"},
 				},
 			},
 			Root:        "",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 		{
 			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"npm install"},
 				},
 			},
 			Root:        "foo/baz",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 		{
 			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"npm install"},
 				},
 				{
 					Root:     "foo/bar",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"yarn --ignore-engines"},
 				},
 			},
 			Root:        "foo/bar/baz",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 		{
 			Steps: []config.DockerStep{
 				{
 					Root:     "",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"npm install"},
 				},
 				{
 					Root:     "foo/bar",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"yarn --ignore-engines"},
 				},
 				{
 					Root:     "foo/bar/bonk",
-					Image:    lsifTscImage,
+					Image:    lsifTypescriptImage,
 					Commands: []string{"npm install"},
 				},
 			},
 			Root:        "foo/bar/bonk",
-			Indexer:     lsifTscImage,
-			IndexerArgs: []string{"lsif-tsc", "-p", "."},
+			Indexer:     lsifTypescriptImage,
+			IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 			Outfile:     "",
 		},
 	}
@@ -206,14 +231,14 @@ func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
 				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{"yarn --ignore-engines"},
 					},
 				},
 				LocalSteps:  nil,
 				Root:        "",
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 				Outfile:     "",
 			},
 		},
@@ -222,14 +247,14 @@ func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
 				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{"npm install"},
 					},
 				},
 				LocalSteps:  nil,
 				Root:        "",
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 				Outfile:     "",
 			},
 		},
@@ -238,14 +263,14 @@ func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
 				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{"npm install"},
 					},
 				},
 				LocalSteps:  nil,
 				Root:        "",
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 				Outfile:     "",
 			},
 		},
@@ -254,19 +279,19 @@ func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
 				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{"yarn --ignore-engines"},
 					},
 					{
 						Root:     "foo",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{"yarn --ignore-engines"},
 					},
 				},
 				LocalSteps:  nil,
 				Root:        "foo/bar",
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 				Outfile:     "",
 			},
 		},
@@ -304,16 +329,14 @@ func TestInferTypeScriptIndexJobsNodeVersionInferrence(t *testing.T) {
 				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{nMuslCommand, "npm install"},
 					},
 				},
-				LocalSteps: []string{
-					nMuslCommand,
-				},
+				LocalSteps:  []string{nMuslCommand},
 				Root:        "",
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 				Outfile:     "",
 			},
 		},
@@ -322,16 +345,14 @@ func TestInferTypeScriptIndexJobsNodeVersionInferrence(t *testing.T) {
 				Steps: []config.DockerStep{
 					{
 						Root:     "",
-						Image:    lsifTscImage,
+						Image:    lsifTypescriptImage,
 						Commands: []string{nMuslCommand, "npm install"},
 					},
 				},
-				LocalSteps: []string{
-					nMuslCommand,
-				},
+				LocalSteps:  []string{nMuslCommand},
 				Root:        "",
-				Indexer:     lsifTscImage,
-				IndexerArgs: []string{"lsif-tsc", "-p", "."},
+				Indexer:     lsifTypescriptImage,
+				IndexerArgs: []string{"lsif-typescript-autoindex", "index"},
 				Outfile:     "",
 			},
 		},

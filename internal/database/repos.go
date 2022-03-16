@@ -7,19 +7,16 @@ import (
 	"fmt"
 	"net"
 	"os"
-	regexpsyntax "regexp/syntax"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -35,11 +32,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoNotFoundErr struct {
@@ -494,7 +493,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
-	case extsvc.TypeNPMPackages:
+	case extsvc.TypeNpmPackages:
 		r.Metadata = new(npmpackages.Metadata)
 	default:
 		log15.Warn("scanRepo - unknown service type", "typ", typ)

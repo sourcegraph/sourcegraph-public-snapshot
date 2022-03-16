@@ -6,12 +6,13 @@ import {
     SearchBackendBasedInsight,
     SearchBasedExtensionInsightSettings,
     SearchBasedInsight,
+    SearchBasedInsightSeries,
     SearchBasedInsightConfiguration,
     SearchExtensionBasedInsight,
 } from './search-insight'
 
 export * from './common'
-export type { SearchBasedInsight, LangStatsInsight, CaptureGroupInsight }
+export type { SearchBasedInsight, SearchBasedInsightSeries, LangStatsInsight, CaptureGroupInsight }
 
 /**
  * Main insight model. Union of all different insights by execution type (backend, runtime)
@@ -58,10 +59,6 @@ export const INSIGHTS_ALL_REPOS_SETTINGS_KEY = 'insights.allrepos'
 export type InsightExtensionBasedConfiguration = LangStatsInsightConfiguration | SearchBasedExtensionInsightSettings
 
 export type InsightConfiguration = SearchBasedInsightConfiguration | LangStatsInsightConfiguration
-
-export function isInsightSettingKey(key: string): boolean {
-    return isSearchBasedInsightId(key) || isLangStatsdInsightId(key)
-}
 
 /**
  * This function returns insight type based on insight settings id naming convention.

@@ -6,21 +6,20 @@ import { catchError, map } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { asError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
-
+import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
     SiteConfiguration,
-} from '../../schema/site.schema'
+} from '@sourcegraph/shared/src/schema/site.schema'
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { Config } from '@sourcegraph/shared/src/testing/config'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import {
     deleteUser,

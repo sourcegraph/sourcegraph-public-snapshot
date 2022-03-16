@@ -1,11 +1,11 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import React from 'react'
-import { Link } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
@@ -20,6 +20,7 @@ import styles from './AddInsightModalContent.module.scss'
 interface AddInsightModalContentProps {
     insights: ReachableInsight[]
     initialValues: AddInsightFormValues
+    dashboardID: string
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
@@ -30,7 +31,7 @@ export interface AddInsightFormValues {
 }
 
 export const AddInsightModalContent: React.FunctionComponent<AddInsightModalContentProps> = props => {
-    const { initialValues, insights, onSubmit, onCancel } = props
+    const { initialValues, insights, dashboardID, onSubmit, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
         initialValues,
@@ -58,7 +59,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                 description={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
-                        <Link to="/insights/create">create a new insight</Link>
+                        <Link to={`/insights/create?dashboardId=${dashboardID}`}>create a new insight</Link>
                     </span>
                 }
                 placeholder="Search insights..."
@@ -103,7 +104,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     type="submit"
                     disabled={formAPI.submitting}
-                    className="btn btn-primary"
+                    variant="primary"
                 />
             </div>
         </form>

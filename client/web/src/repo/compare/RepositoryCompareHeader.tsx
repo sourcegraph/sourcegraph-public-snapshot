@@ -1,12 +1,14 @@
-import classNames from 'classnames'
-import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import React from 'react'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
+
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import styles from './RepositoryCompareHeader.module.scss'
 import { RepositoryComparePopover } from './RepositoryComparePopover'
+
+import styles from './RepositoryCompareHeader.module.scss'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
@@ -24,13 +26,13 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
             description={
                 <p>
                     Select a revision or provide a{' '}
-                    <a
-                        href="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
+                    <Link
+                        to="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
                         rel="noopener noreferrer"
                         target="_blank"
                     >
                         Git revspec
-                    </a>{' '}
+                    </Link>{' '}
                     for more fine-grained comparisons
                 </p>
             }

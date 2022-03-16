@@ -5,11 +5,11 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import { Settings } from '../schema/settings.schema'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -54,8 +54,10 @@ describe('Blob viewer', () => {
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
         FileNames: () => ({
             repository: {
+                id: 'repo-123',
                 __typename: 'Repository',
                 commit: {
+                    id: 'c0ff33',
                     __typename: 'GitCommit',
                     fileNames: ['README.md'],
                 },
@@ -131,6 +133,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
                                         '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Third line\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                 },
                             },
                         },
@@ -212,6 +215,7 @@ describe('Blob viewer', () => {
                                         'Hello world' +
                                         '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
                                         '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                 },
                             },
                         },
@@ -480,6 +484,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
                                         '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Third line\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                 },
                             },
                         },
@@ -727,6 +732,7 @@ describe('Blob viewer', () => {
                                           '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; First word line\n' +
                                           '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; Second line</span></td></tr>\n' +
                                           '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; Third word line</span></td></tr></tbody></table>',
+                                      lsif: '',
                                   },
                               }
                             : {
@@ -739,6 +745,7 @@ describe('Blob viewer', () => {
                                           '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; First line\n' +
                                           '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; Second word line</span></td></tr>\n' +
                                           '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; Third line</span></td></tr></tbody></table>',
+                                      lsif: '',
                                   },
                               }
 
@@ -852,7 +859,8 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it('properly displays reference panel for URIs with spaces', async () => {
+        // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/31806
+        it.skip('properly displays reference panel for URIs with spaces', async () => {
             const repositoryName = 'github.com/sourcegraph/test%20repo'
             const files = ['test.ts', 'test spaces.ts']
             const commitID = '1234'
@@ -933,6 +941,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
                                         '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>' +
                                         '\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                     lineRanges: [],
                                 },
                             },
@@ -1150,11 +1159,11 @@ describe('Blob viewer', () => {
 
                 // Alert should not show up now that the user has dismissed it once
                 await driver.page.waitForSelector('[data-testid="repo-header"]')
-                // `browserExtensionInstalled` emits false after 500ms, so
+                // `useIsBrowserExtensionActiveUser` emits false after 1000ms, so
                 // wait 500ms after [data-testid="repo-header"] is visible, at which point we know
-                // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
+                // that `RepoContainer` has subscribed to `useIsBrowserExtensionActiveUser`.
                 // After this point, we know whether or not the alert will be displayed for this page load.
-                await driver.page.waitFor(500)
+                await driver.page.waitFor(1000)
                 assert(
                     !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'

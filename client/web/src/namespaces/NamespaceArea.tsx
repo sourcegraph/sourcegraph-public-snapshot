@@ -1,5 +1,5 @@
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'

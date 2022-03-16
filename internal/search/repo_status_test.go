@@ -141,7 +141,7 @@ func TestRepoStatusMap_nil(t *testing.T) {
 }
 
 func TestRepoStatusSingleton(t *testing.T) {
-	x := RepoStatusSingleton(123, RepoStatusTimedout|RepoStatusLimitHit)
+	x := repoStatusSingleton(123, RepoStatusTimedout|RepoStatusLimitHit)
 	want := mkStatusMap(map[api.RepoID]RepoStatus{
 		123: RepoStatusTimedout | RepoStatusLimitHit,
 	})

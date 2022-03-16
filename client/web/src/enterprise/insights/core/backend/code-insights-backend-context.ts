@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { throwError } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
@@ -6,6 +7,9 @@ import { CodeInsightsBackend } from './code-insights-backend'
 import { RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
+const errorMockSyncMethod = (methodName: string) => () => {
+    throw new Error(`Implement ${methodName} method first`)
+}
 
 /**
  * Default context api class. Provides mock methods only.
@@ -15,6 +19,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
     public findInsightByName = errorMockMethod('findInsightByName')
+    public hasInsights = errorMockMethod('hasInsight')
     public getReachableInsights = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
@@ -24,6 +29,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
     public updateInsight = errorMockMethod('updateInsight')
     public deleteInsight = errorMockMethod('deleteInsight')
+    public removeInsightFromDashboard = errorMockMethod('removeInsightFromDashboard')
 
     // Dashboards
     public getDashboards = errorMockMethod('getDashboards')
@@ -49,6 +55,10 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
         errorMockMethod('getRepositorySuggestions')().toPromise()
     public getResolvedSearchRepositories = (): Promise<string[]> =>
         errorMockMethod('getResolvedSearchRepositories')().toPromise()
+    public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
+
+    // License check
+    public getUiFeatures = errorMockSyncMethod('getUiFeatures')
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

@@ -1,32 +1,29 @@
 import * as React from 'react'
+
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
-import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
+import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
+import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
+import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
-import { ParsedSearchQueryProps } from './search'
-import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
-import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
+import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
-import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
-const StreamingSearchResults = lazyComponent(
-    () => import('./search/results/StreamingSearchResults'),
-    'StreamingSearchResults'
-)
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
-const SearchNotebookPage = lazyComponent(() => import('./search/notebook/SearchNotebookPage'), 'SearchNotebookPage')
+const NotebookPage = lazyComponent(() => import('./notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
@@ -35,7 +32,6 @@ const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
-        ParsedSearchQueryProps,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -81,17 +77,20 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Search,
-        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
+        render: props => <SearchPageWrapper {...props} />,
         exact: true,
     },
     {
         path: PageRoutes.SearchConsole,
-        render: props =>
-            getExperimentalFeatures().showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} />
+        render: props => {
+            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+
+            return showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
@@ -102,28 +101,31 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.NotebookCreate,
         render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <CreateNotebookPage {...props} />
+            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
+                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
             ) : (
-                <Redirect to={PageRoutes.Search} />
+                <Redirect to={PageRoutes.Notebooks} />
             ),
         exact: true,
     },
     {
         path: PageRoutes.Notebook,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebookPage {...props} />
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
-            ),
+            )
+        },
         exact: true,
     },
     {
         path: PageRoutes.Notebooks,
         render: props =>
             useExperimentalFeatures.getState().showSearchNotebook ? (
-                <SearchNotebooksListPage {...props} />
+                <NotebooksListPage {...props} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
             ),
@@ -143,7 +145,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: PageRoutes.Welcome,
         render: props =>
             /**
-             * Welcome flow is allowed when:
+             * Welcome flow is allowed when auth'd and ?debug=1 is in the URL, OR:
              * 1. user is authenticated
              * 2. it's a DotComMode instance
              * AND
@@ -153,8 +155,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
              */
 
             !!props.authenticatedUser &&
-            window.context.sourcegraphDotComMode &&
-            (window.context.experimentalFeatures.enablePostSignupFlow ||
+            (!!new URLSearchParams(props.location.search).get('debug') ||
+                (window.context.sourcegraphDotComMode && window.context.experimentalFeatures.enablePostSignupFlow) ||
                 props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
                 <PostSignUpPage
                     authenticatedUser={props.authenticatedUser}
@@ -168,6 +170,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             ),
 
         exact: true,
+    },
+    {
+        path: PageRoutes.InstallGitHubAppSuccess,
+        render: () => <InstallGitHubAppSuccessPage />,
     },
     {
         path: PageRoutes.Settings,

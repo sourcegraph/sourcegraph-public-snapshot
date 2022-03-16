@@ -8,6 +8,10 @@ The **"Dependencies"** sections give a short, high-level overview of dependencie
 
 You can click on each component to jump to its respective code repository or subtree. <a href="./architecture.svg" target="_blank">Open in new tab</a>
 
+<!-- 
+Auto-generated from ./doc/dev/background-information/architecture/architecture.dot
+Run cd ./doc/dev/background-information/architecture && ./generate.sh to update the .svg
+-->
 <object data="./architecture/architecture.svg" type="image/svg+xml" width="1023" height="1113" style="width:100%; height: auto">
 </object>
 
@@ -54,6 +58,7 @@ If you want to learn more about search:
 
 - [Code search product documentation](../../../code_search/index.md)
 - [Life of a search query](life-of-a-search-query.md)
+- [Indexed ranking](indexed-ranking.md)
 
 ## Code intelligence
 
@@ -112,18 +117,15 @@ Sample use cases for this are for tracking migrations, usage of libraries across
 
 Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
 
-Code insights currently work through [**extensions**](#extension-api).
-A code insight extension can register a _view provider_ that contributes a graph to either the repository/directory page, the [search homepage](https://sourcegraph.com/search), or the [global "Insights" dashboard](https://sourcegraph.com/insights) reachable from the navbar.
-It is called on-demand on the client (the browser) to return the data needed for the chart.
-_How_ that extension produces the data is up to the extension - it can run search queries, query code intelligence data or analyze Git data using the Sourcegraph GraphQL API, or it can query an external service using its public API, e.g. Codecov.
+Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../code_insights/references/code_insights_graphql_api.md).
 
-To enable a code insight, install one of the [code insights extensions](https://sourcegraph.com/extensions?query=category%3A%22Insights%22).
-The extension can then be configured in your [user settings](https://sourcegraph.com/user/settings) according to the examples in the extension README.
-Just like other extensions, it's also possible to install and configure them organization-wide.
+Code Insights makes use of data from the `frontend` database for repository metadata, as well as repository permissions to filter time series data.
 
-Because of code insights currently being run on-demand in the client, the performance of code insights is bound to the performance of the underlying data source.
-For example, search queries are relatively fast as long as the scope doesn't include many repositories, but performance degrades when trying to include a lot of repositories.
-We're actively working on removing this limitation.
+Code Insights can either generate data in the background, or just-in-time when viewing charts. This decision is currently enforced in the product, depending on the type and scope of the insight.
+For code insights being run just-in-time in the client, the performance of code insights is bound to the performance of the underlying data source.
+These insights are relatively fast as long as the scope doesn't include many repositories (or large monorepos), but performance degrades when trying to include a lot of repositories. Insights
+that are processed in the background are rate limited and will perform approximately 28,000 queries per hour when fully saturated on default settings.
+
 
 If you want to learn more about code insights:
 

@@ -1,13 +1,15 @@
+import * as React from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -17,19 +19,29 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
+import {
+    OrganizationResult,
+    OrganizationVariables,
+    OrgAreaOrganizationFields,
+    OrgFeatureFlagValueResult,
+    OrgFeatureFlagValueVariables,
+} from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
+import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
-import { OrgInvitationPage } from './OrgInvitationPage'
+import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
-function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: {
+    name: string
+    // id: string
+    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
+}): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {
@@ -72,6 +84,20 @@ function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizati
     )
 }
 
+function queryMembersFFlag(args: { orgID: string; flagName: string }): Observable<boolean> {
+    return requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        gql`
+            query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
+                organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.organizationFeatureFlagValue)
+    )
+}
+
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
@@ -106,6 +132,7 @@ interface State extends BreadcrumbSetters {
      * The fetched org or an error if an error occurred; undefined while loading.
      */
     orgOrError?: OrgAreaOrganizationFields | ErrorLike
+    newMembersInviteEnabled: boolean
 }
 
 /**
@@ -131,6 +158,8 @@ export interface OrgAreaPageProps
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
+
+    newMembersInviteEnabled: boolean
 }
 
 /**
@@ -148,6 +177,7 @@ export class OrgArea extends React.Component<Props> {
         this.state = {
             setBreadcrumb: props.setBreadcrumb,
             useBreadcrumb: props.useBreadcrumb,
+            newMembersInviteEnabled: false,
         }
     }
 
@@ -167,10 +197,28 @@ export class OrgArea extends React.Component<Props> {
                         return queryOrganization({ name }).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             map((orgOrError): PartialStateUpdate => ({ orgOrError })),
-
                             // Don't clear old org data while we reload, to avoid unmounting all components during
                             // loading.
                             startWith<PartialStateUpdate>(forceRefresh ? { orgOrError: undefined } : {})
+                        )
+                    })
+                )
+                .pipe(
+                    switchMap(state => {
+                        const flagObservable =
+                            state.orgOrError && !isErrorLike(state.orgOrError)
+                                ? queryMembersFFlag({
+                                      orgID: state.orgOrError.id,
+                                      flagName: ORG_CODE_FEATURE_FLAG_EMAIL_INVITE,
+                                  })
+                                : of(false)
+                        return flagObservable.pipe(
+                            catchError((): [boolean] => [false]), // set flag to false in case of error reading it
+                            map(newMembersInviteEnabled =>
+                                !state.orgOrError
+                                    ? { newMembersInviteEnabled }
+                                    : { orgOrError: state.orgOrError, newMembersInviteEnabled }
+                            )
                         )
                     })
                 )
@@ -186,6 +234,7 @@ export class OrgArea extends React.Component<Props> {
                                 useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
                                 setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
+                                newMembersInviteEnabled: stateUpdate.newMembersInviteEnabled,
                             })
                         } else {
                             this.setState(stateUpdate)
@@ -237,11 +286,12 @@ export class OrgArea extends React.Component<Props> {
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
+            newMembersInviteEnabled: this.state.newMembersInviteEnabled,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
-            // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
-            return <OrgInvitationPage {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+            // The OrgInvitationPageLegacy is displayed without the OrgHeader because it is modal-like.
+            return <OrgInvitationPageLegacy {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
         }
 
         return (

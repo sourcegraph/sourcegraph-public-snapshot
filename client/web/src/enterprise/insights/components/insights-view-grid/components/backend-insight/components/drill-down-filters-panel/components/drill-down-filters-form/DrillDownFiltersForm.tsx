@@ -1,11 +1,12 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
 import { useField } from '../../../../../../../form/hooks/useField'
@@ -13,6 +14,8 @@ import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../..
 
 import { DrillDownRegExpInput, LabelWithReset } from './components/drill-down-reg-exp-input/DrillDownRegExpInput'
 import { validRegexp } from './validators'
+
+import styles from './DrillDownFiltersForm.module.scss'
 
 export interface DrillDownFiltersFormValues {
     includeRepoRegexp: string
@@ -39,7 +42,7 @@ interface DrillDownFiltersFormProps {
     originalFiltersValue: DrillDownFiltersFormValues
 
     /**
-     * Live filters that lives only in runtime memory and can be different
+     * Live filters that live only in runtime memory and can be different
      * from originalFiltersValue of insight until the user syncs them by
      * save/update default filters.
      */
@@ -94,29 +97,30 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} className={classNames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
-            <header className="d-flex align-items-baseline px-3 py-2 mt-1">
+        <form ref={ref} className={classNames(className, 'd-flex flex-column px-3')} onSubmit={handleSubmit}>
+            <header className={styles.header}>
                 <h4 className="mb-0">Filter repositories</h4>
 
                 {hasAppliedFilters && (
-                    <small className="text-muted ml-auto mb-0">
-                        Default filters applied.{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_insights/explanations/code_insights_filters"
+                    <small className="ml-auto">
+                        <span className="text-muted">Default filters applied</span>{' '}
+                        <Link
+                            to="/help/code_insights/explanations/code_insights_filters"
                             target="_blank"
                             rel="noopener"
+                            className="small"
                         >
                             Learn more.
-                        </a>
+                        </Link>
                     </small>
                 )}
             </header>
 
-            <hr className="w-100 m-0 mt-1" />
+            <hr className={styles.separator} />
 
-            <fieldset className="px-3 mt-3">
-                <h4 className="mb-3">Regular expression</h4>
+            <small className={styles.description}>Use regular expression to change the scope of this insight.</small>
 
+            <fieldset>
                 <FormInput
                     as={DrillDownRegExpInput}
                     autoFocus={true}
@@ -127,9 +131,10 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                         </LabelWithReset>
                     }
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
-                    className="mb-4"
+                    className="mb-3"
                     valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
                     error={includeRegex.meta.dirty && includeRegex.meta.error}
+                    spellCheck={false}
                     {...includeRegex.input}
                 />
 
@@ -144,14 +149,13 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
                     valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
                     error={excludeRegex.meta.dirty && excludeRegex.meta.error}
-                    className="mb-4"
+                    spellCheck={false}
+                    className="mb-2"
                     {...excludeRegex.input}
                 />
             </fieldset>
 
-            <hr className="w-100 m-0" />
-
-            <footer className="px-3 d-flex flex-wrap py-3">
+            <footer className={styles.footer}>
                 {formAPI.submitErrors?.[FORM_ERROR] && (
                     <ErrorAlert className="w-100 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
                 )}
@@ -170,7 +174,9 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     }
                     type="submit"
                     disabled={formAPI.submitting || !hasFiltersChanged}
-                    className="btn btn-outline-secondary ml-auto mr-2"
+                    className="ml-auto mr-2"
+                    variant="secondary"
+                    outline={true}
                 />
 
                 <Button
@@ -179,7 +185,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     variant="secondary"
                     onClick={onCreateInsightRequest}
                 >
-                    <PlusIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={PlusIcon} />
                     Save as new view
                 </Button>
             </footer>

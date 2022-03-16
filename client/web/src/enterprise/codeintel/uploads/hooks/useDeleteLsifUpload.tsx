@@ -1,6 +1,6 @@
 import { ApolloError, MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
 
-import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
 import { DeleteLsifUploadResult, DeleteLsifUploadVariables, Exact } from '../../../../graphql-operations'
 

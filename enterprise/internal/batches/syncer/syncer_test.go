@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newTestStore() *MockSyncStore {
@@ -299,13 +298,6 @@ func TestLoadChangesetSource(t *testing.T) {
 	}
 
 	// Store mocks.
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{&externalService}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices.List = nil
-	})
-
 	hasCredential := false
 	syncStore := newTestStore()
 	syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
@@ -316,7 +308,11 @@ func TestLoadChangesetSource(t *testing.T) {
 		}
 		return nil, store.ErrNoResults
 	})
-	syncStore.ExternalServicesFunc.SetDefaultReturn(database.ExternalServices(nil))
+	ess := database.NewMockExternalServiceStore()
+	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{&externalService}, nil
+	})
+	syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
 
 	// If no site-credential exists, the token from the external service should be used.
 	src, err := loadChangesetSource(ctx, cf, syncStore, repo)

@@ -1,9 +1,8 @@
-import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
 
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+import classNames from 'classnames'
 
-import { observeResize } from '../../../../../../../../../util/dom'
+import { isFirefox, observeResize } from '@sourcegraph/common'
 
 import styles from './ScrollBox.module.scss'
 

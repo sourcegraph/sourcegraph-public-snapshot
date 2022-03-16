@@ -4,15 +4,16 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/cockroachdb/errors"
+	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DatabaseWriter interface {
@@ -23,21 +24,27 @@ type databaseWriter struct {
 	path            string
 	gitserverClient gitserver.GitserverClient
 	parser          parser.Parser
+	sem             *semaphore.Weighted
 }
 
 func NewDatabaseWriter(
 	path string,
 	gitserverClient gitserver.GitserverClient,
 	parser parser.Parser,
+	sem *semaphore.Weighted,
 ) DatabaseWriter {
 	return &databaseWriter{
 		path:            path,
 		gitserverClient: gitserverClient,
 		parser:          parser,
+		sem:             sem,
 	}
 }
 
 func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
+	w.sem.Acquire(ctx, 1)
+	defer w.sem.Release(1)
+
 	if newestDBFile, oldCommit, ok, err := w.getNewestCommit(ctx, args); err != nil {
 		return err
 	} else if ok {
@@ -50,7 +57,11 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 }
 
 func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchArgs) (dbFile string, commit string, ok bool, err error) {
-	newest, err := findNewestFile(filepath.Join(w.path, diskcache.EncodeKeyComponent(string(args.Repo))))
+	components := []string{}
+	components = append(components, w.path)
+	components = append(components, diskcache.EncodeKeyComponents(repoKey(args.Repo))...)
+
+	newest, err := findNewestFile(filepath.Join(components...))
 	if err != nil || newest == "" {
 		return "", "", false, err
 	}
@@ -90,17 +101,6 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
-// The maximum number of paths when doing incremental indexing. Diffs with more paths than this will
-// not be incrementally indexed, and instead we will process all symbols.
-const maxTotalPaths = 999
-
-// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
-// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
-// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
-// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that.
-// 100KB seems safe.
-const maxTotalPathsLength = 100000
-
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
@@ -114,20 +114,6 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 
 	// Paths to modify in the database
 	addedModifiedOrDeletedPaths := append(addedOrModifiedPaths, changes.Deleted...)
-
-	// Too many entries
-	if len(addedModifiedOrDeletedPaths) > maxTotalPaths {
-		return false, nil
-	}
-
-	totalPathsLength := 0
-	for _, path := range addedModifiedOrDeletedPaths {
-		totalPathsLength += len(path)
-	}
-	// Argument lists too long
-	if totalPathsLength > maxTotalPathsLength {
-		return false, nil
-	}
 
 	if err := copyFile(newestDBFile, dbFile); err != nil {
 		return false, err

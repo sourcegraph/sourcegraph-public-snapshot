@@ -1,43 +1,35 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
+
+import { CardBody, Card, Link } from '@sourcegraph/wildcard'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 
-import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
 import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
-    licensed: boolean | undefined
+    isLicensed: boolean | undefined
 }
 
-export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => {
-    if (licensed === undefined) {
+export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ isLicensed }) => {
+    if (isLicensed === undefined || isLicensed === true) {
         return null
     }
+
     return (
         <div className="row">
-            {licensed === true ? (
-                <div className="col-12">
-                    <BatchChangesChangelogAlert />
-                </div>
-            ) : (
-                <>
-                    <div className="col-12 col-md-6 mb-3">
-                        <BatchChangesUnlicensedAlert />
-                    </div>
-                    <div className="col-12 col-md-6 mb-3">
-                        <BatchChangesChangelogAlert />
-                    </div>
-                </>
-            )}
+            <div className="col-12 col-md-6 mb-3">
+                <BatchChangesUnlicensedAlert />
+            </div>
         </div>
     )
 }
 
 const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
     <div className={classNames(styles.batchChangesListIntroAlert, 'h-100')}>
-        <div className={classNames(styles.batchChangesListIntroCard, 'card p-2 h-100')}>
-            <div className="card-body d-flex align-items-start">
+        <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
+            <CardBody className="d-flex align-items-start">
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
                 <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
                 <div>
@@ -47,11 +39,11 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
                         up to five changesets without a license.
                     </p>
                     <p className="mb-0">
-                        <a href="https://about.sourcegraph.com/contact/sales/">Contact sales</a> to obtain a trial
+                        <Link to="https://about.sourcegraph.com/contact/sales/">Contact sales</Link> to obtain a trial
                         license.
                     </p>
                 </div>
-            </div>
-        </div>
+            </CardBody>
+        </Card>
     </div>
 )

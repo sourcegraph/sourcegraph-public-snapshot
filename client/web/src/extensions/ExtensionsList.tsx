@@ -1,22 +1,23 @@
-import classNames from 'classnames'
-import * as H from 'history'
 import React, { useMemo } from 'react'
 
+import classNames from 'classnames'
+import * as H from 'history'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
-
-import { ErrorAlert } from '../components/alerts'
 
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
+import { createRecord } from './utils/createRecord'
+
 import styles from './ExtensionsList.module.scss'
 
 interface Props

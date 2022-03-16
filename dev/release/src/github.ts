@@ -8,7 +8,7 @@ import commandExists from 'command-exists'
 import execa from 'execa'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder } from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
@@ -37,6 +37,7 @@ export enum IssueLabel {
     RELEASE = 'release',
     PATCH = 'patch',
     MANAGED = 'managed-instances',
+    DELIVERY_TEAM = 'team/delivery',
 }
 
 enum IssueTitleSuffix {
@@ -115,9 +116,13 @@ const getTemplates = () => {
         repo: 'handbook',
         path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DELIVERY_TEAM],
     }
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+}
+
+function dateMarkdown(date: Date, name: string): string {
+    return `[${formatDate(date)}](${timezoneLink(date, name)})`
 }
 
 async function execTemplate(
@@ -437,6 +442,11 @@ export interface CreatedChangeset {
 }
 
 export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
+    // Overwriting `process.env` may not be a good practice,
+    // but it's the easiest way to avoid making changes all over the place
+    const dockerHubCredential = await getContainerRegistryCredential('index.docker.io')
+    process.env.CR_USERNAME = dockerHubCredential.username
+    process.env.CR_PASSWORD = dockerHubCredential.password
     for (const command of options.requiredCommands) {
         try {
             await commandExists(command)
@@ -633,6 +643,45 @@ export async function createTag(
     await execa('bash', ['-c', `git tag -a ${tag} -m ${tag} && ${finalizeTag}`], { stdio: 'inherit', cwd: workdir })
 }
 
-function dateMarkdown(date: Date, name: string): string {
-    return `[${formatDate(date)}](${timezoneLink(date, name)})`
+// createLatestRelease generates a GitHub release iff this release is the latest and
+// greatest, otherwise it is a no-op.
+export async function createLatestRelease(
+    octokit: Octokit,
+    { owner, repo, release }: { owner: string; repo: string; release: semver.SemVer },
+    dryRun?: boolean
+): Promise<string> {
+    const latest = await octokit.repos.getLatestRelease({
+        owner,
+        repo,
+    })
+    const latestTag = latest.data.tag_name
+    if (semver.gt(latestTag.startsWith('v') ? latestTag.slice(1) : latestTag, release)) {
+        // if latest is greater than release, do not generate a release
+        console.log(`Latest release ${latestTag} is more recent than ${release.version}, skipping GitHub release`)
+        return ''
+    }
+
+    const updateURL = 'https://docs.sourcegraph.com/admin/updates'
+    const releasePostURL = `https://about.sourcegraph.com/blog/release/${release.major}.${release.minor}` // CI:URL_OK
+
+    const request: Octokit.RequestOptions & Octokit.ReposCreateReleaseParams = {
+        owner,
+        repo,
+        tag_name: `v${release.version}`,
+        name: `Sourcegraph ${release.version}`,
+        prerelease: false,
+        draft: false,
+        body: `Sourcegraph ${release.version} is now available!
+
+- [Changelog](${changelogURL(release.format())})
+- [Update](${updateURL})
+- [Release post](${releasePostURL}) (might not be available immediately upon release)
+`,
+    }
+    if (dryRun) {
+        console.log('Skipping GitHub release, parameters:', request)
+        return ''
+    }
+    const response = await octokit.repos.createRelease(request)
+    return response.data.html_url
 }

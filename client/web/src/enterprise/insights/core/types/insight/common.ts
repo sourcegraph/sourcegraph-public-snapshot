@@ -17,7 +17,7 @@ export enum InsightExecutionType {
     Runtime = 'runtime',
 
     /**
-     * This type of insights work via our backend and and gql API returns these insight with
+     * This type of insights work via our backend and gql API returns this insight with
      * pre-calculated data points.
      */
     Backend = 'backend',
@@ -30,17 +30,11 @@ export enum InsightType {
 }
 
 /**
- * These fields are needed only for the code insight FE runtime logic and they are not stored
+ * These fields are needed only for the code insight FE runtime logic, and they are not stored
  * in any settings (insight configurations or BE) fields.
  */
 export interface SyntheticInsightFields {
     id: string
     viewType: InsightType
-    visibility: InsightVisibility
+    dashboardReferenceCount: number
 }
-
-/**
- * Visibility setting which responsible for where insight will appear.
- * possible value '<user subject id>' | '<org id 1> ... | ... <org id N> | <global subject id>'
- */
-export type InsightVisibility = string

@@ -5,17 +5,14 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-
 	"github.com/inconshreveable/log15"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewInsightsPingEmitterJob will emit pings from Code Insights that involve enterprise features such as querying
@@ -50,6 +47,18 @@ func (e *InsightsPingEmitter) emit(ctx context.Context) error {
 	err = e.emitOrgVisibleInsightCounts(ctx)
 	if err != nil {
 		return errors.Wrap(err, "emitOrgVisibleInsightCounts")
+	}
+	err = e.emitTotalOrgsWithDashboard(ctx)
+	if err != nil {
+		return errors.Wrap(err, "emitTotalOrgsWithDashboard")
+	}
+	err = e.emitTotalDashboards(ctx)
+	if err != nil {
+		return errors.Wrap(err, "emitTotalDashboards")
+	}
+	err = e.emitInsightsPerDashboard(ctx)
+	if err != nil {
+		return errors.Wrap(err, "emitInsightsPerDashboard")
 	}
 	return nil
 }
@@ -116,6 +125,60 @@ func (e *InsightsPingEmitter) emitOrgVisibleInsightCounts(ctx context.Context) e
 	}
 
 	err = e.SaveEvent(ctx, usagestats.InsightsOrgVisibleInsightsPingName, marshal)
+	if err != nil {
+		return errors.Wrap(err, "SaveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitTotalOrgsWithDashboard(ctx context.Context) error {
+	counts, err := e.GetTotalOrgsWithDashboard(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetTotalOrgsWithDashboard")
+	}
+
+	marshal, err := json.Marshal(counts)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+
+	err = e.SaveEvent(ctx, usagestats.InsightsTotalOrgsWithDashboardPingName, marshal)
+	if err != nil {
+		return errors.Wrap(err, "SaveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitTotalDashboards(ctx context.Context) error {
+	counts, err := e.GetTotalDashboards(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetTotalDashboards")
+	}
+
+	marshal, err := json.Marshal(counts)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+
+	err = e.SaveEvent(ctx, usagestats.InsightsDashboardTotalCountPingName, marshal)
+	if err != nil {
+		return errors.Wrap(err, "SaveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitInsightsPerDashboard(ctx context.Context) error {
+	counts, err := e.GetInsightsPerDashboard(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetInsightsPerDashboard")
+	}
+
+	marshal, err := json.Marshal(counts)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+
+	err = e.SaveEvent(ctx, usagestats.InsightsPerDashboardPingName, marshal)
 	if err != nil {
 		return errors.Wrap(err, "SaveEvent")
 	}

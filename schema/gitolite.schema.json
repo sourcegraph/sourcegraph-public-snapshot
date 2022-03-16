@@ -34,7 +34,14 @@
         "type": "object",
         "title": "ExcludedGitoliteRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["pattern"] }],
+        "anyOf": [
+          {
+            "required": ["name"]
+          },
+          {
+            "required": ["pattern"]
+          }
+        ],
         "properties": {
           "name": {
             "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
@@ -48,14 +55,25 @@
           }
         }
       },
-      "examples": [[{ "name": "myrepo" }, { "pattern": ".*secret.*" }]]
+      "examples": [
+        [
+          {
+            "name": "myrepo"
+          },
+          {
+            "pattern": ".*secret.*"
+          }
+        ]
+      ]
     },
     "phabricatorMetadataCommand": {
-      "description": "This is DEPRECATED. Use the `phabricator` field instead.",
+      "description": "This is DEPRECATED",
+      "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
       "type": "string"
     },
     "phabricator": {
-      "description": "Phabricator instance that integrates with this Gitolite instance",
+      "description": "This is DEPRECATED",
+      "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
       "type": "object",
       "required": ["url", "callsignCommand"],
       "additionalProperties": false,

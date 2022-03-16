@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/wildcard'
 
 import { useThemeState } from './stores'
 import { ThemePreference } from './stores/themeState'

@@ -6,13 +6,14 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
@@ -40,9 +41,8 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 
 func TestGetActionJobMetadata(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	userName, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
@@ -50,10 +50,10 @@ func TestGetActionJobMetadata(t *testing.T) {
 	triggerJobID := triggerJobs[0].ID
 
 	var (
-		wantNumResults = 42
-		wantQuery      = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
+		wantResults = make([]*result.CommitMatch, 42)
+		wantQuery   = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 	)
-	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantNumResults)
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantResults)
 	require.NoError(t, err)
 
 	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobID)
@@ -66,17 +66,17 @@ func TestGetActionJobMetadata(t *testing.T) {
 	want := &ActionJobMetadata{
 		Description: testDescription,
 		Query:       wantQuery,
-		NumResults:  &wantNumResults,
+		Results:     wantResults,
 		MonitorID:   fixtures.monitor.ID,
+		OwnerName:   userName,
 	}
 	require.Equal(t, want, got)
 }
 
 func TestScanActionJobs(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t, db)
-	fixtures, err := s.insertTestMonitor(userCTX, t)
-	require.NoError(t, err)
+	_, _, userCTX := newTestUser(ctx, t, db)
+	fixtures := s.insertTestMonitor(userCTX, t)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)

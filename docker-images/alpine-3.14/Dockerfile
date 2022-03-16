@@ -1,7 +1,8 @@
 # This Dockerfile defines the sourcegraph/alpine Docker image, which is the
 # base image used by all Sourcegraph Docker images.
 
-FROM alpine:3.14@sha256:635f0aa53d99017b38d1a0aa5b2082f7812b03e3cdb299103fe77b5c8a07f1d2
+# alpine_base CHECK:ALPINE_OK
+FROM alpine:3.14@sha256:635f0aa53d99017b38d1a0aa5b2082f7812b03e3cdb299103fe77b5c8a07f1d2 AS alpine_base
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
@@ -24,11 +25,9 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
 RUN apk update && apk add --no-cache \
     bind-tools \
-    # Requires the use of the edge repo for CVE-2021-28831 until a patched version is brought into the 3.12 mirror.
-    'busybox>=1.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    busybox \
     ca-certificates \
     curl \
     mailcap \
     tini \
-    # Required due to ssl_clent upgrade with busybox
     wget

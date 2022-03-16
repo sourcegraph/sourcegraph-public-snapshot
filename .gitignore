@@ -1,8 +1,12 @@
+# Temporary directory for whatever you want
+.tmp/
+
 # Vim
 *.swp
 
 # JetBrains/IntelliJ
 .idea
+.graphqlconfig
 
 # Emacs
 *~
@@ -103,8 +107,8 @@ package-lock.json
 .nyc_output/
 coverage/
 out/
-client/shared/src/graphql/schema.ts
-client/web/src/schema/*
+client/shared/src/schema.ts
+client/shared/src/schema/*
 puppeteer/
 package-lock.json
 /dist
@@ -113,6 +117,7 @@ sourcegraph-webapp-*.tgz
 graphql-operations.ts
 *.module.scss.d.ts
 dll-bundle
+elm-stuff
 
 # Extensions
 /client/extension-api/dist
@@ -155,5 +160,10 @@ sitemap_query.db
 # Trivy security vulnerability reports
 *-security-report.html
 
-# CI annotations lock
+# CI annotations
+.annotate
 .annotate.lock
+annotations/
+
+# Buildkite analytics files
+test-reports/

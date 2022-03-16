@@ -1,11 +1,12 @@
+import * as React from 'react'
+import { useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
-import * as React from 'react'
-import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
@@ -135,7 +136,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             repo: repoID,
             revision,
             // `includePatterns` expects regexes, so first escape the path.
-            includePatterns: [escapeRegExp(activePath)],
+            includePatterns: ['^' + escapeRegExp(activePath)],
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)

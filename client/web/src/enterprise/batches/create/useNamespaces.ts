@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsOrgSubject,
     SettingsUserSubject,
@@ -9,7 +10,6 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 
 import { Scalars } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 
 export interface UseNamespacesResult {
     userNamespace: SettingsUserSubject

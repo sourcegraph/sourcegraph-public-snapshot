@@ -1,6 +1,5 @@
 import { InsightDataNode, InsightDataSeries } from '../../../../../../../graphql-operations'
-import { BackendInsight, InsightType } from '../../../../types'
-import { SearchBasedInsightSeries } from '../../../../types/insight/search-insight'
+import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../../../types'
 import { BackendInsightData } from '../../../code-insights-backend-types'
 import { createLineChartContentFromIndexedSeries } from '../../../utils/create-line-chart-content'
 
@@ -14,7 +13,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
         id: insight.id,
         view: {
             title: insight.title,
-            content: [createLineChartContentFromIndexedSeries(rawSeries, series)],
+            content: [createLineChartContentFromIndexedSeries(rawSeries, series, insight.filters)],
             isFetchingHistoricalData: response.dataSeries.some(
                 ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
             ),

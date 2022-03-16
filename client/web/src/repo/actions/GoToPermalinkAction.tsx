@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import LinkIcon from 'mdi-react/LinkIcon'
-import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -66,12 +67,7 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink
-                    className="btn"
-                    file={true}
-                    to={this.permalinkURL}
-                    onSelect={this.onClick.bind(this)}
-                >
+                <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
                     <LinkIcon className="icon-inline" />
                     <span>Permalink (with full Git commit SHA)</span>
                 </RepoHeaderActionButtonLink>
@@ -80,7 +76,7 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         return (
             <RepoHeaderActionButtonLink
-                className="btn btn-icon"
+                className="btn-icon"
                 file={false}
                 to={this.permalinkURL}
                 onSelect={this.onClick.bind(this)}

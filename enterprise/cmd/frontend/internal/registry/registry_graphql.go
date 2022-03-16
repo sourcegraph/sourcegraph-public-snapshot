@@ -3,8 +3,6 @@ package registry
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -31,9 +30,7 @@ func registryExtensionByIDInt32(ctx context.Context, db database.DB, id int32) (
 	if err != nil {
 		return nil, err
 	}
-	if err := prefixLocalExtensionID(x); err != nil {
-		return nil, err
-	}
+	prefixLocalExtensionID(x)
 	return &extensionDBResolver{db: db, v: x}, nil
 }
 

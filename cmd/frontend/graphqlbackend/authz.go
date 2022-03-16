@@ -11,6 +11,7 @@ type AuthzResolver interface {
 	SetRepositoryPermissionsForUsers(ctx context.Context, args *RepoPermsArgs) (*EmptyResponse, error)
 	ScheduleRepositoryPermissionsSync(ctx context.Context, args *RepositoryIDArgs) (*EmptyResponse, error)
 	ScheduleUserPermissionsSync(ctx context.Context, args *UserPermissionsSyncArgs) (*EmptyResponse, error)
+	SetSubRepositoryPermissionsForUsers(ctx context.Context, args *SubRepoPermsArgs) (*EmptyResponse, error)
 
 	// Queries
 	AuthorizedUserRepositories(ctx context.Context, args *AuthorizedRepoArgs) (RepositoryConnectionResolver, error)
@@ -38,6 +39,15 @@ type RepoPermsArgs struct {
 	UserPermissions []struct {
 		BindID     string
 		Permission string
+	}
+}
+
+type SubRepoPermsArgs struct {
+	Repository      graphql.ID
+	UserPermissions []struct {
+		BindID       string
+		PathIncludes []string
+		PathExcludes []string
 	}
 }
 

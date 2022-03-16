@@ -1,13 +1,13 @@
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React from 'react'
 
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { getExperimentalFeatures } from '../../../stores'
 
 interface CreateSearchContextButtonProps {
     /** Search query string. */
@@ -18,8 +18,7 @@ interface CreateSearchContextButtonProps {
 }
 
 export const CreateSearchContextButton: React.FunctionComponent<CreateSearchContextButtonProps> = props => {
-    const experimentalFeatures = getExperimentalFeatures()
-    if (!experimentalFeatures.searchContextsQuery || !props.query || !props.authenticatedUser) {
+    if (!props.query || !props.authenticatedUser) {
         return null
     }
 
@@ -35,8 +34,8 @@ export const CreateSearchContextButton: React.FunctionComponent<CreateSearchCont
 
     return (
         <li data-tooltip="Create search context based on this query" data-delay={10000} className="nav-item mr-2">
-            <ButtonLink to={toURL} className="btn btn-sm btn-outline-secondary text-decoration-none">
-                <MagnifyIcon className="icon-inline mr-1" />
+            <ButtonLink to={toURL} className="text-decoration-none" variant="secondary" outline={true} size="sm">
+                <Icon className="mr-1" as={MagnifyIcon} />
                 Create context
             </ButtonLink>
         </li>

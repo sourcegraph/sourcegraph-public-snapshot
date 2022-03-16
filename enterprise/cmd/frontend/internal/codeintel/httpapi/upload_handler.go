@@ -8,14 +8,14 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type UploadHandler struct {
@@ -96,6 +96,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			log.String("commit", uploadState.commit),
 			log.String("root", uploadState.root),
 			log.String("indexer", uploadState.indexer),
+			log.String("indexerVersion", uploadState.indexerVersion),
 			log.Int("associatedIndexID", uploadState.associatedIndexID),
 			log.Int("numParts", uploadState.numParts),
 			log.Int("numUploadedParts", len(uploadState.uploadedParts)),

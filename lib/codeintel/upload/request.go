@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type uploadRequestOptions struct {
@@ -156,6 +156,9 @@ func makeUploadURL(opts uploadRequestOptions) (*url.URL, error) {
 	}
 	if opts.UploadRecordOptions.Indexer != "" {
 		qs.Add("indexerName", opts.UploadRecordOptions.Indexer)
+	}
+	if opts.UploadRecordOptions.IndexerVersion != "" {
+		qs.Add("indexerVersion", opts.UploadRecordOptions.IndexerVersion)
 	}
 	if opts.UploadRecordOptions.AssociatedIndexID != nil {
 		qs.Add("associatedIndexId", formatInt(*opts.UploadRecordOptions.AssociatedIndexID))

@@ -1,13 +1,12 @@
-import { ApolloError } from '@apollo/client'
-import Dialog from '@reach/dialog'
-import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState, useEffect } from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { ApolloError } from '@apollo/client'
+import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
+
+import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -15,8 +14,9 @@ import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySe
 import { parseBrowserRepoURL } from '../../util/url'
 
 import { Indexing, FuzzyFSM } from './FuzzyFinder'
-import styles from './FuzzyModal.module.scss'
 import { HighlightedLink } from './HighlightedLink'
+
+import styles from './FuzzyModal.module.scss'
 
 // The default value of 80k filenames is picked from the following observations:
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
@@ -230,8 +230,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <Dialog
-            className={classNames(styles.modal, 'modal-body p-4 rounded border')}
+        <Modal
+            position="center"
+            className={styles.modal}
             onDismiss={() => props.onClose()}
             aria-labelledby={FUZZY_MODAL_TITLE}
         >
@@ -240,8 +241,8 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
                         Find file
                     </h3>
-                    <Button className="btn-icon" onClick={() => props.onClose()} aria-label="Close">
-                        <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
+                    <Button variant="icon" onClick={() => props.onClose()} aria-label="Close">
+                        <Icon className={styles.closeIcon} as={CloseIcon} />
                     </Button>
                 </div>
                 <input
@@ -284,7 +285,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     </Button>
                 )}
             </div>
-        </Dialog>
+        </Modal>
     )
 }
 

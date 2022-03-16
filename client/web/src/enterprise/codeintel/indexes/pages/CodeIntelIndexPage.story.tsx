@@ -1,8 +1,9 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
+import { LSIFUploadState } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'
 import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../../graphql-operations'
@@ -451,6 +452,11 @@ Completed.args = {
             finishedAt: '2020-06-15T18:00:10+00:00',
             steps: completedSteps,
         }),
+}
+
+Completed.parameters = {
+    // Keep snapshots for one variant
+    chromatic: { disableSnapshots: false },
 }
 
 export const Errored = Template.bind({})

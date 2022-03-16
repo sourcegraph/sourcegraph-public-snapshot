@@ -2,7 +2,7 @@ import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 
 import { refreshAuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'
@@ -125,3 +125,5 @@ export const GET_ORG_FEATURE_FLAG_VALUE = gql`
     }
 `
 export const ORG_CODE_FEATURE_FLAG_NAME = 'org-code'
+export const ORG_CODE_FEATURE_FLAG_EMAIL_INVITE = 'org-email-invites'
+export const GITHUB_APP_FEATURE_FLAG_NAME = 'github-app-cloud'

@@ -1,21 +1,23 @@
-import * as H from 'history'
 import React, { useEffect } from 'react'
+
+import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageHeader, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
-import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
+import { CodeMonitorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { convertActionsForUpdate } from './action-converters'
 import {
     fetchCodeMonitor as _fetchCodeMonitor,
     updateCodeMonitor as _updateCodeMonitor,
@@ -23,7 +25,7 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
+interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }>, ThemeProps {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -31,6 +33,8 @@ interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['
     fetchCodeMonitor?: typeof _fetchCodeMonitor
     updateCodeMonitor?: typeof _updateCodeMonitor
     deleteCodeMonitor?: typeof _deleteCodeMonitor
+
+    isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = ({
@@ -41,6 +45,8 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
     fetchCodeMonitor = _fetchCodeMonitor,
     updateCodeMonitor = _updateCodeMonitor,
     deleteCodeMonitor = _deleteCodeMonitor,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
 
@@ -51,7 +57,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
         description: '',
         enabled: true,
         trigger: { id: '', query: '' },
-        actions: { nodes: [{ id: '', enabled: true, recipients: { nodes: [{ id: authenticatedUser.id }] } }] },
+        actions: { nodes: [] },
     })
 
     const codeMonitorOrError = useObservable(
@@ -82,17 +88,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                     },
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
-                codeMonitor.actions.nodes.map(action => ({
-                    email: {
-                        id: action.id,
-                        update: {
-                            enabled: action.enabled,
-                            priority: MonitorEmailPriority.NORMAL,
-                            recipients: [authenticatedUser.id],
-                            header: '',
-                        },
-                    },
-                }))
+                convertActionsForUpdate(codeMonitor.actions.nodes, authenticatedUser.id)
             ),
         [authenticatedUser.id, match.params.id, updateCodeMonitor]
     )
@@ -105,9 +101,9 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                 description={
                     <>
                         Code monitors watch your code for specific triggers and run actions in response.{' '}
-                        <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                        <Link to="/help/code_monitoring" target="_blank" rel="noopener">
                             Learn more
-                        </a>
+                        </Link>
                     </>
                 }
             />
@@ -123,6 +119,8 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
                         showDeleteButton={true}
+                        isLightTheme={isLightTheme}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
                     />
                 </>
             )}

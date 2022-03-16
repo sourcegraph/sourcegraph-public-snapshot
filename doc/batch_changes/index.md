@@ -35,8 +35,6 @@ body.theme-dark .markdown-body ul li:before {
 
 <p class="subtitle">Make large-scale code changes across many repositories and code hosts</p>
 
-> WARNING: Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. [Read more](references/name-change.md)
-
 <p class="lead">
 Create a batch change by specifying a search query to get a list of repositories and a script to run in each. You can also <a href="how-tos/creating_changesets_per_project_in_monorepos">create a batch change on a monorepo</a> by specifying which projects to run the script on. The batch change then lets you create changesets (a generic term for pull requests or merge requests) on all affected repositories or projects. Batch Changes allows you to track their progress until they're all merged. You can preview the changes and update them at any time. A batch change can also be used to track and manage manually created changesets.
 </p>
@@ -76,7 +74,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch Changes design](explanations/batch_changes_design.md)
 - [How `src` executes a batch spec](explanations/how_src_executes_a_batch_spec.md)
 - [Re-executing batch specs multiple times](explanations/reexecuting_batch_specs_multiple_times.md)
-- [Running batch changes server-side](explanations/server_side.md)
+- <span class="badge badge-experimental">Experimental</span> [Running batch changes server-side](explanations/server_side.md)
 
 ## How-tos
 

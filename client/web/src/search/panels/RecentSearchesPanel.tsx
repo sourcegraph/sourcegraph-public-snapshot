@@ -1,14 +1,14 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SearchPatternType } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
@@ -16,8 +16,9 @@ import { EventLogResult } from '../backend'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import styles from './RecentSearchesPanel.module.scss'
 import { ShowMoreButton } from './ShowMoreButton'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface RecentSearch {
     count: number

@@ -1,7 +1,7 @@
 package markdown
 
 import (
-	"regexp"
+	"regexp" //nolint:depguard // bluemonday requires this pkg
 	"sync"
 
 	"github.com/microcosm-cc/bluemonday"

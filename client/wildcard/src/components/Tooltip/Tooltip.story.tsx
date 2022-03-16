@@ -1,5 +1,6 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import React, { useCallback, useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -21,11 +22,18 @@ const config: Meta = {
 
     parameters: {
         component: Tooltip,
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3131%3A38534',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3131%3A38534',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=3131%3A38727',
+            },
+        ],
     },
 }
 
@@ -97,7 +105,7 @@ Positions.parameters = {
     If you take a look at the handleEvent function in useTooltipState, you can see that the listeners are being added to the 'document',
     which means any 'mouseover/click' event will cause the tooltip to disappear.
 */
-const PinnedTooltip: React.FunctionComponent = () => {
+export const Pinned: Story = () => {
     const clickElement = useCallback((element: HTMLElement | null) => {
         if (element) {
             // The tooltip takes some time to set-up.
@@ -123,25 +131,29 @@ const PinnedTooltip: React.FunctionComponent = () => {
     )
 }
 
-export const Pinned: Story = () => <PinnedTooltip />
-
 Pinned.parameters = {
     chromatic: {
         // Chromatic pauses CSS animations by default and resets them to their initial state
         pauseAnimationAtEnd: true,
+        enableDarkMode: true,
+        disableSnapshot: false,
     },
 }
 
 const ForceUpdateTooltip = () => {
     const [copied, setCopied] = useState<boolean>(false)
 
-    const onClick = () => {
-        setCopied(true)
+    useEffect(() => {
         TooltipController.forceUpdate()
+    }, [copied])
+
+    const onClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+        event.preventDefault()
+
+        setCopied(true)
 
         setTimeout(() => {
             setCopied(false)
-            TooltipController.forceUpdate()
         }, 1500)
     }
 

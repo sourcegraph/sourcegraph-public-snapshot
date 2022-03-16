@@ -430,8 +430,63 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		for _, tc := range filterTests {
-			t.Run("ListBatchChanges State "+tc.name, func(t *testing.T) {
-				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{State: tc.state})
+			t.Run("ListBatchChanges Single State "+tc.name, func(t *testing.T) {
+				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{States: []btypes.BatchChangeState{tc.state}})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, tc.want); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+		}
+
+		draftAndClosed := []*btypes.BatchChange{}
+		draftAndClosed = append(draftAndClosed, reversedBatchChanges[:2]...)
+		draftAndClosed = append(draftAndClosed, reversedBatchChanges[len(reversedBatchChanges)-1:]...)
+
+		multiFilterTests := []struct {
+			name   string
+			states []btypes.BatchChangeState
+			want   []*btypes.BatchChange
+		}{
+			{
+				name:   "Any",
+				states: []btypes.BatchChangeState{},
+				want:   reversedBatchChanges,
+			},
+			{
+				name:   "All",
+				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateClosed, btypes.BatchChangeStateDraft},
+				want:   reversedBatchChanges,
+			},
+			{
+				name:   "Open + Draft",
+				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateDraft},
+				want:   reversedBatchChanges[len(reversedBatchChanges)-2:],
+			},
+			{
+				name:   "Open + Closed",
+				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateClosed},
+				want:   reversedBatchChanges[:len(reversedBatchChanges)-1],
+			},
+			{
+				name:   "Draft + Closed",
+				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateClosed},
+				want:   draftAndClosed,
+			},
+			// Multiple of the same state should behave as if it were only one
+			{
+				name:   "Draft, multiple times",
+				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft},
+				want:   cs[:1],
+			},
+		}
+
+		for _, tc := range multiFilterTests {
+			t.Run("ListBatchChanges Multiple States "+tc.name, func(t *testing.T) {
+
+				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{States: tc.states})
 				if err != nil {
 					t.Fatal(err)
 				}

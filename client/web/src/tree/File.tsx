@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
+
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import {
     TreeLayerCell,
@@ -97,7 +98,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                 )}
                 {props.index === maxEntries - 1 && (
                     <TreeRowAlert
-                        className="alert-warning"
+                        variant="warning"
                         style={treePadding(props.depth, true)}
                         error="Too many entries. Use search to find a specific file."
                     />

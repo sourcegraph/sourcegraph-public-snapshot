@@ -1,18 +1,16 @@
-import classNames from 'classnames'
-import React, { FormEventHandler, RefObject, useContext } from 'react'
+import React, { FormEventHandler, RefObject } from 'react'
 
+import classNames from 'classnames'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
-import { VisibilityPicker } from '../../../../../../components/creation-ui-kit'
+import { CodeInsightDashboardsVisibility } from '../../../../../../components/creation-ui-kit'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoryField } from '../../../../../../components/form/repositories-field/RepositoryField'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
@@ -25,12 +23,11 @@ export interface LangStatsInsightCreationFormProps {
     submitting: boolean
     className?: string
     isFormClearActive?: boolean
+    dashboardReferenceCount?: number
 
     title: useFieldAPI<LangStatsCreationFormFields['title']>
     repository: useFieldAPI<LangStatsCreationFormFields['repository']>
     threshold: useFieldAPI<LangStatsCreationFormFields['threshold']>
-    visibility: useFieldAPI<LangStatsCreationFormFields['visibility']>
-    subjects: SupportedInsightSubject[]
 
     onCancel: () => void
     onFormReset: () => void
@@ -47,23 +44,16 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         title,
         repository,
         threshold,
-        visibility,
-        subjects,
+        isFormClearActive,
+        dashboardReferenceCount,
         onCancel,
         onFormReset,
-        isFormClearActive,
     } = props
 
     const isEditMode = mode === 'edit'
-    const api = useContext(CodeInsightsBackendContext)
-
-    // We have to know about what exactly api we use to be able switch our UI properly.
-    // In the creation UI case we should hide visibility section since we don't use that
-    // concept anymore with new GQL backend.
-    // TODO [VK]: Remove this condition rendering when we deprecate setting-based api
-    const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form
             ref={innerRef}
             noValidate={true}
@@ -111,12 +101,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}
             />
 
-            {!isGqlBackend && (
-                <VisibilityPicker
-                    subjects={subjects}
-                    value={visibility.input.value}
-                    onChange={visibility.input.onChange}
-                />
+            {!!dashboardReferenceCount && dashboardReferenceCount > 1 && (
+                <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 
             <hr className={styles.formSeparator} />
@@ -131,7 +117,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
-                    className="btn btn-primary mr-2 mb-2"
+                    className="mr-2 mb-2"
+                    variant="primary"
                 />
 
                 <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>

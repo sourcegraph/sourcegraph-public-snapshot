@@ -3,15 +3,15 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewResolver(db database.DB) graphqlbackend.NotebooksResolver {
@@ -92,14 +92,36 @@ func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInpu
 			Revision:       inputBlock.FileInput.Revision,
 			LineRange:      convertLineRangeInput(inputBlock.FileInput.LineRange),
 		}
+	case graphqlbackend.NotebookSymbolBlockType:
+		if inputBlock.SymbolInput == nil {
+			return nil, errors.Errorf("symbol block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookSymbolBlockType
+		block.SymbolInput = &notebooks.NotebookSymbolBlockInput{
+			RepositoryName:      inputBlock.SymbolInput.RepositoryName,
+			FilePath:            inputBlock.SymbolInput.FilePath,
+			Revision:            inputBlock.SymbolInput.Revision,
+			LineContext:         inputBlock.SymbolInput.LineContext,
+			SymbolName:          inputBlock.SymbolInput.SymbolName,
+			SymbolContainerName: inputBlock.SymbolInput.SymbolContainerName,
+			SymbolKind:          inputBlock.SymbolInput.SymbolKind,
+		}
+	case graphqlbackend.NotebookComputeBlockType:
+		if inputBlock.ComputeInput == nil {
+			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookComputeBlockType
+		block.ComputeInput = &notebooks.NotebookComputeBlockInput{Value: *inputBlock.ComputeInput}
+	default:
+		return nil, errors.Newf("invalid block type: %s", inputBlock.Type)
 	}
 	return block, nil
 }
 
 func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.CreateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	notebookInput := args.Notebook
@@ -112,29 +134,33 @@ func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.Creat
 		blocks = append(blocks, *block)
 	}
 
-	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, &notebooks.Notebook{
+	notebook := &notebooks.Notebook{
 		Title:         notebookInput.Title,
 		Public:        notebookInput.Public,
-		CreatorUserID: actor.UID,
+		CreatorUserID: user.ID,
+		UpdaterUserID: user.ID,
 		Blocks:        blocks,
-	})
+	}
+	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &notebook.NamespaceUserID, &notebook.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, notebook)
 	if err != nil {
 		return nil, err
 	}
 	return &notebookResolver{createdNotebook, r.db}, nil
 }
 
-func validateNotebookWritePermissionsForUser(notebook *notebooks.Notebook, userID int32) error {
-	if notebook.CreatorUserID != userID {
-		return errors.New("user does not have permissions to update the notebook")
-	}
-	return nil
-}
-
 func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.UpdateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalNotebookID(args.ID)
@@ -148,7 +174,7 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -166,6 +192,19 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 	notebook.Title = notebookInput.Title
 	notebook.Public = notebookInput.Public
 	notebook.Blocks = blocks
+	notebook.UpdaterUserID = user.ID
+	var namespaceUserID, namespaceOrgID int32
+	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &namespaceUserID, &namespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	notebook.NamespaceUserID = namespaceUserID
+	notebook.NamespaceOrgID = namespaceOrgID
+	// Current user has to have write permissions for both the old and the new namespace.
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	updatedNotebook, err := store.UpdateNotebook(ctx, notebook)
 	if err != nil {
@@ -175,9 +214,9 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 }
 
 func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.DeleteNotebookArgs) (*graphqlbackend.EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("notebooks cannot be deleted by unauthenticated users")
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalNotebookID(args.ID)
@@ -191,7 +230,7 @@ func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.Delet
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +263,8 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	orderBy := notebooks.NotebooksOrderByUpdatedAt
 	if args.OrderBy == graphqlbackend.NotebookOrderByCreatedAt {
 		orderBy = notebooks.NotebooksOrderByCreatedAt
+	} else if args.OrderBy == graphqlbackend.NotebookOrderByStarCount {
+		orderBy = notebooks.NotebooksOrderByStarCount
 	}
 
 	// Request one extra to determine if there are more pages
@@ -235,9 +276,15 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 		return nil, err
 	}
 
-	var userID int32
+	var userID, starredByUserID int32
 	if args.CreatorUserID != nil {
 		userID, err = graphqlbackend.UnmarshalUserID(*args.CreatorUserID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if args.StarredByUserID != nil {
+		starredByUserID, err = graphqlbackend.UnmarshalUserID(*args.StarredByUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -250,10 +297,18 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	opts := notebooks.ListNotebooksOptions{
 		Query:             query,
 		CreatorUserID:     userID,
+		StarredByUserID:   starredByUserID,
 		OrderBy:           orderBy,
 		OrderByDescending: args.Descending,
 	}
 	pageOpts := notebooks.ListNotebooksPageOptions{First: newArgs.First, After: afterCursor}
+
+	if args.Namespace != nil {
+		err = graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	store := notebooks.Notebooks(r.db)
 	notebooks, err := store.ListNotebooks(ctx, pageOpts, opts)
@@ -339,6 +394,37 @@ func (r *notebookResolver) Creator(ctx context.Context) (*graphqlbackend.UserRes
 	return graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.CreatorUserID)
 }
 
+func (r *notebookResolver) Updater(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	if r.notebook.UpdaterUserID == 0 {
+		return nil, nil
+	}
+	return graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.UpdaterUserID)
+}
+
+func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	if r.notebook.NamespaceUserID != 0 {
+		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalUserID(r.notebook.NamespaceUserID))
+		if err != nil {
+			return nil, err
+		}
+		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+	}
+	if r.notebook.NamespaceOrgID != 0 {
+		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalOrgID(r.notebook.NamespaceOrgID))
+		if err != nil {
+			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
+			// that org, then he does not have access to further information about the org. Instead of returning an error
+			// (which would prevent the user from viewing the notebook) we return an empty namespace.
+			if envvar.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
+				return nil, nil
+			}
+			return nil, err
+		}
+		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+	}
+	return nil, nil
+}
+
 func (r *notebookResolver) Public(ctx context.Context) bool {
 	return r.notebook.Public
 }
@@ -351,9 +437,32 @@ func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTim
 	return graphqlbackend.DateTime{Time: r.notebook.CreatedAt}
 }
 
-func (r *notebookResolver) ViewerCanManage(ctx context.Context) bool {
-	actor := actor.FromContext(ctx)
-	return validateNotebookWritePermissionsForUser(r.notebook, actor.UID) == nil
+func (r *notebookResolver) ViewerCanManage(ctx context.Context) (bool, error) {
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if errors.Is(err, database.ErrNoCurrentUser) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return validateNotebookWritePermissionsForUser(ctx, r.db, r.notebook, user.ID) == nil, nil
+}
+
+func (r *notebookResolver) ViewerHasStarred(ctx context.Context) (bool, error) {
+	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	if errors.Is(err, database.ErrNoCurrentUser) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	star, err := notebooks.Notebooks(r.db).GetNotebookStar(ctx, r.notebook.ID, user.ID)
+	if errors.Is(err, notebooks.ErrNotebookStarNotFound) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+
+	return star != nil, nil
 }
 
 type notebookBlockResolver struct {
@@ -377,6 +486,20 @@ func (r *notebookBlockResolver) ToQueryBlock() (graphqlbackend.QueryBlockResolve
 func (r *notebookBlockResolver) ToFileBlock() (graphqlbackend.FileBlockResolver, bool) {
 	if r.block.Type == notebooks.NotebookFileBlockType {
 		return &fileBlockResolver{r.block}, true
+	}
+	return nil, false
+}
+
+func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResolver, bool) {
+	if r.block.Type == notebooks.NotebookSymbolBlockType {
+		return &symbolBlockResolver{r.block}, true
+	}
+	return nil, false
+}
+
+func (r *notebookBlockResolver) ToComputeBlock() (graphqlbackend.ComputeBlockResolver, bool) {
+	if r.block.Type == notebooks.NotebookComputeBlockType {
+		return &computeBlockResolver{r.block}, true
 	}
 	return nil, false
 }
@@ -453,4 +576,62 @@ func (r *fileBlockLineRangeResolver) StartLine() int32 {
 
 func (r *fileBlockLineRangeResolver) EndLine() int32 {
 	return r.lineRange.EndLine
+}
+
+type symbolBlockResolver struct {
+	// block.type == NotebookSymbolBlockType
+	block notebooks.NotebookBlock
+}
+
+func (r *symbolBlockResolver) ID() string {
+	return r.block.ID
+}
+
+func (r *symbolBlockResolver) SymbolInput() graphqlbackend.SymbolBlockInputResolver {
+	return &symbolBlockInputResolver{*r.block.SymbolInput}
+}
+
+type symbolBlockInputResolver struct {
+	input notebooks.NotebookSymbolBlockInput
+}
+
+func (r *symbolBlockInputResolver) RepositoryName() string {
+	return r.input.RepositoryName
+}
+
+func (r *symbolBlockInputResolver) FilePath() string {
+	return r.input.FilePath
+}
+
+func (r *symbolBlockInputResolver) Revision() *string {
+	return r.input.Revision
+}
+
+func (r *symbolBlockInputResolver) LineContext() int32 {
+	return r.input.LineContext
+}
+
+func (r *symbolBlockInputResolver) SymbolName() string {
+	return r.input.SymbolName
+}
+
+func (r *symbolBlockInputResolver) SymbolContainerName() string {
+	return r.input.SymbolContainerName
+}
+
+func (r *symbolBlockInputResolver) SymbolKind() string {
+	return r.input.SymbolKind
+}
+
+type computeBlockResolver struct {
+	// block.type == NotebookComputeBlockType
+	block notebooks.NotebookBlock
+}
+
+func (r *computeBlockResolver) ID() string {
+	return r.block.ID
+}
+
+func (r *computeBlockResolver) ComputeInput() string {
+	return r.block.ComputeInput.Value
 }

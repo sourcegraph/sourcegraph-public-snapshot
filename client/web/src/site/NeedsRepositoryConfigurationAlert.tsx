@@ -1,7 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import classNames from 'classnames'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
@@ -17,7 +18,8 @@ const onClickCTA = (): void => {
 export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <DismissibleAlert
         partialStorageKey="needsRepositoryConfiguration"
-        className={classNames('alert-success d-flex align-items-center', className)}
+        variant="success"
+        className={classNames('d-flex align-items-center', className)}
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <span className="underline">Connect a code host</span>

@@ -1,7 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+
+import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 import type { BaseProductStatusBadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
 import styles from './FeedbackBadge.module.scss'
@@ -27,8 +28,8 @@ export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = ({
 }) => (
     <div className={classNames(styles.feedbackBadge, className)}>
         <ProductStatusBadge tooltip={tooltip} status={status} className={styles.productStatusBadge} />
-        <a href={`mailto:${mailto}`} className={styles.anchor} target="_blank" rel="noopener noreferrer">
+        <Link to={`mailto:${mailto}`} className={styles.anchor} target="_blank" rel="noopener noreferrer">
             {text || 'Share feedback'}
-        </a>
+        </Link>
     </div>
 )

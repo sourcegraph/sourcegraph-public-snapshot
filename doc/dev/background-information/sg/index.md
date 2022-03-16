@@ -28,6 +28,8 @@
 [`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and how to use it in the [usage section](#usage).
 
+> NOTE: Have feedback or ideas? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
+
 ## Quickstart
 
 1. Run the following to download and install `sg`:
@@ -98,13 +100,38 @@ go build -o ~/my/path/sg ./dev/sg
 
 Then make sure that `~/my/path` is in your `$PATH`.
 
+## Updates
+
+Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
+
+To force a manual update of `sg`, run:
+
+```sh
+sg update
+```
+
+In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag: 
+
+```sh
+sg -skip-auto-update [cmds ...]
+```
+
+On the next command run, if a new version is detected, `sg` will auto update before running.
+
+> NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
+
 ## Usage
+
+See [configuration](#configuration) to learn more about configuring `sg` behaviour.
 
 ### `sg start` - Start dev environments
 
 ```bash
 # Run default environment, Sourcegraph enterprise:
 sg start
+
+# (macOs only) Automatically add exceptions to the system firewall 
+sg start -add-to-macos-firewall
 
 # List available environments (defined under `commandSets` in `sg.config.yaml`):
 sg start -help
@@ -173,25 +200,17 @@ sg live -help
 ### `sg migration` - Run or manipulate database migrations
 
 ```bash
-# Migrate local default database up
+# Migrate local default database up all the way
 sg migration up
 
 # Migrate specific database down one migration
-sg migration down --db codeintel -n 1
+sg migration down --db codeintel
 
 # Add new migration for specific database
 sg migration add --db codeintel 'add missing index'
 
 # Squash migrations for default database
 sg migration squash
-
-# Fixup your migrations comapred to main for databases
-sg migration fixup
-
-# To see what operations `sg migration fixup` will run, you can check with
-sg migration fixup -run=false
-
-# Or to run for only one database, you can use the -db flag, as in other operations.
 ```
 
 ### `sg rfc` - List or open Sourcegraph RFCs
@@ -209,7 +228,7 @@ sg rfc open 420
 
 ### `sg ci` - Interact with Sourcegraph's continuous integration
 
-Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/ci) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
 
 ```bash
 # Preview what a CI run for your current changes will look like
@@ -236,6 +255,13 @@ sg ci logs --build 123456
 sg ci build 
 # Manually trigger a build on the CI on the current branch, but with a specific commit
 sg ci build --commit my-commit
+# Manually trigger a main-dry-run build of the HEAD commit on the current branch
+sg ci build main-dry-run
+sg ci build --force main-dry-run
+# Manually trigger a main-dry-run build of a specified commit on the current ranch
+sg ci build --force --commit my-commit main-dry-run
+# View the available special build types
+sg ci build --help
 ```
 
 ### `sg teammate` - Get current time or open their handbook page
@@ -262,23 +288,23 @@ sg secret reset buildkite
 
 ```
 
-### `sg check` - Run checks against local code 
+### `sg lint` - Run linters against local code
 
 ```bash
 # Run all possible checks 
-sg check
+sg lint
 
 # Run only go related checks
-sg check go
+sg lint go
 
 # Run only shell related checks
-sg check shell
+sg lint shell
 
 # Run only client related checks
-sg check client 
+sg lint client
 
 # List all available check groups 
-sg check --help
+sg lint --help
 ```
 
 ### `sg db` - Interact with your local Sourcegraph database(s)
@@ -300,18 +326,25 @@ sg db reset-redis
 sg db add-user -name=foo
 ```
 
+### `sg update` - Update sg itself
+
+```bash 
+# Manually update sg
+sg update
+```
+
 ## Configuration
 
-`sg` is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
+Default `sg` behaviour is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
 
-To modify your configuration locally, you can overwrite chunks of configuration by creating a `sg.config.overwrite.yaml` file in the root of the repository. It's `.gitignore`d so you won't accidentally commit those changes.
+**To modify your configuration locally, you can overwrite chunks of configuration by creating a `sg.config.overwrite.yaml` file in the root of the repository.** It's `.gitignore`d so you won't accidentally commit those changes.
 
 If an `sg.config.overwrite.yaml` file exists, its contents will be merged with the content of `sg.config.yaml`, overwriting where there are conflicts. This is useful for running custom command sets or adding environment variables
 specific to your work.
 
 You can run `sg run debug-env` to see the environment variables passed `sg`'s child processes.
 
-### Examples
+### Configuration examples
 
 #### Changing database configuration
 
@@ -390,3 +423,21 @@ go run . -config ../../sg.config.yaml start
 ```
 
 The `-config` can be anything you want, of course.
+
+Have questions or need help? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
+
+> NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
+
+## Dockerized sg
+
+A `sourcegraph/sg` Docker image is available: 
+
+```
+# ... 
+COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
+# ...
+```
+
+### Development tips
+
+- Due to [#29222](https://github.com/sourcegraph/sourcegraph/issues/29222), you might need to set `CONFIGURATION_MODE: 'empty'` if you encounter errors where `sg` tries to connect to `frontend`.

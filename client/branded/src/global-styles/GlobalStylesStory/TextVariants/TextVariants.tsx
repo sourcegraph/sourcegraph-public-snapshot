@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { ElementType } from 'react'
+
+import classNames from 'classnames'
 
 import styles from './TextVariants.module.scss'
 

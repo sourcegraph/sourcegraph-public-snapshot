@@ -16,6 +16,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecWorkspaceIDKind = "BatchSpecWorkspace"
@@ -33,6 +34,7 @@ type batchSpecWorkspaceResolver struct {
 	store     *store.Store
 	workspace *btypes.BatchSpecWorkspace
 	execution *btypes.BatchSpecWorkspaceExecutionJob
+	batchSpec *batcheslib.BatchSpec
 
 	preloadedRepo *types.Repo
 
@@ -105,13 +107,23 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.workspace.Steps))
-	for idx, step := range r.workspace.Steps {
+	repo, err := r.computeRepoResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	skippedSteps, err := batcheslib.SkippedStepsForRepo(r.batchSpec, repo.Name(), r.workspace.FileMatches)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.batchSpec.Steps))
+	for idx, step := range r.batchSpec.Steps {
 		si, ok := stepInfo[idx+1]
 		if !ok {
 			// Step hasn't run yet.
 			si = &btypes.StepInfo{}
-			// But also will never run
+			// ..but also will never run.
 			if entryExitCode != nil {
 				si.Skipped = true
 			}
@@ -129,7 +141,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 
 		// If we have marked the step as to-be-skipped, we have to translate
 		// that here into the workspace step info.
-		if r.workspace.StepSkipped(idx) {
+		if _, ok := skippedSteps[int32(idx)]; ok {
 			si.Skipped = true
 		}
 
@@ -159,7 +171,7 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	// Check if step exists.
-	if int(args.Index) > len(r.workspace.Steps) {
+	if int(args.Index) > len(r.batchSpec.Steps) {
 		return nil, nil
 	}
 

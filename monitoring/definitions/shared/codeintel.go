@@ -2,6 +2,7 @@ package shared
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -649,6 +650,70 @@ func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitori
 	})
 }
 
+// src_codeintel_dependencies_total
+// src_codeintel_dependencies_duration_seconds_bucket
+// src_codeintel_dependencies_errors_total
+func (codeIntelligence) NewDependencyServiceGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "dependencies service stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_dependencies",
+				MetricDescriptionRoot: "service",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_codeintel_lockfiles_total
+// src_codeintel_lockfiles_duration_seconds_bucket
+// src_codeintel_lockfiles_errors_total
+func (codeIntelligence) NewLockfilesGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "lockfiles service stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_lockfiles",
+				MetricDescriptionRoot: "service",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_uploadstore_total
 // src_codeintel_uploadstore_duration_seconds_bucket
 // src_codeintel_uploadstore_errors_total
@@ -793,14 +858,14 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 	}
 }
 
-func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group {
+func newPackageManagerGroup(packageManager string, containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Coursier invocation stats",
+			DescriptionRoot: fmt.Sprintf("%s invocation stats", packageManager),
 			Hidden:          true,
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_coursier",
+				MetricNameRoot:        fmt.Sprintf("codeintel_%s", strings.ToLower(packageManager)),
 				MetricDescriptionRoot: "invocations",
 				Filters:               []string{`op!="RunCommand"`},
 				By:                    []string{"op"},
@@ -819,6 +884,14 @@ func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group 
 			ErrorRate: NoAlertsOption("none"),
 		},
 	})
+}
+
+func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group {
+	return newPackageManagerGroup("Coursier", containerName)
+}
+
+func (codeIntelligence) NewNpmGroup(containerName string) monitoring.Group {
+	return newPackageManagerGroup("npm", containerName)
 }
 
 func (codeIntelligence) NewDependencyReposStoreGroup(containerName string) monitoring.Group {

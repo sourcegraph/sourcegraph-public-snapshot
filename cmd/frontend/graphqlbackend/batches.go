@@ -32,6 +32,7 @@ type ListBatchChangesArgs struct {
 	First               int32
 	After               *string
 	State               *string
+	States              *[]string
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
@@ -94,6 +95,8 @@ type ReplaceBatchSpecInputArgs struct {
 	Execute          bool
 	NoCache          bool
 }
+
+type UpsertBatchSpecInputArgs = CreateBatchSpecFromRawArgs
 
 type DeleteBatchSpecArgs struct {
 	BatchSpec graphql.ID
@@ -244,6 +247,7 @@ type BatchChangesResolver interface {
 	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
 	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
+	UpsertBatchSpecInput(ctx context.Context, args *UpsertBatchSpecInputArgs) (BatchSpecResolver, error)
 	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)
 	ExecuteBatchSpec(ctx context.Context, args *ExecuteBatchSpecArgs) (BatchSpecResolver, error)
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
@@ -457,6 +461,8 @@ type VisibleChangesetSpecResolver interface {
 
 	Description(ctx context.Context) (ChangesetDescription, error)
 	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
+
+	ForkTarget() ForkTargetInterface
 }
 
 type ChangesetSpecDeltaResolver interface {
@@ -487,7 +493,6 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	HeadRepository() *RepositoryResolver
 	HeadRef() string
-	Fork() bool
 
 	Title() string
 	Body() string
@@ -506,6 +511,11 @@ type GitCommitDescriptionResolver interface {
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
+}
+
+type ForkTargetInterface interface {
+	PushUser() bool
+	Namespace() *string
 }
 
 type BatchChangesCodeHostConnectionResolver interface {
@@ -548,6 +558,8 @@ type ListChangesetsArgs struct {
 	ExternalState *string
 	// State is a value of type *btypes.ChangesetState.
 	State *string
+	// onlyClosable indicates the user only wants open and draft changesets to be returned
+	OnlyClosable *bool
 	// ReviewState is a value of type *btypes.ChangesetReviewState.
 	ReviewState *string
 	// CheckState is a value of type *btypes.ChangesetCheckState.
@@ -569,6 +581,7 @@ type ListWorkspacesArgs struct {
 	After   *string
 	OrderBy *string
 	Search  *string
+	State   *string
 }
 
 type ListRecentlyCompletedWorkspacesArgs struct {

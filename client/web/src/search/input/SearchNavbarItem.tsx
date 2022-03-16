@@ -1,26 +1,33 @@
+import React, { useCallback, useState, useEffect } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
-import React, { useCallback, useState, useEffect } from 'react'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
+import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import { SearchContextInputProps, parseSearchURLQuery } from '..'
+import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
-import { SubmitSearchParameters } from '../helpers'
 
-import { SearchBox } from './SearchBox'
-
-interface Props extends ActivationProps, SettingsCascadeProps, ThemeProps, SearchContextInputProps, TelemetryProps {
+interface Props
+    extends ActivationProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        SearchContextInputProps,
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -87,9 +94,12 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         }
     }, [isSearchPage, isFuzzyFinderVisible])
 
-    const { fuzzyFinder, fuzzyFinderCaseInsensitiveFileCountThreshold } = getExperimentalFeatures(
-        props.settingsCascade.final
-    )
+    let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
+    if (fuzzyFinder === undefined) {
+        // Happens even when `"default": true` is defined in
+        // settings.schema.json.
+        fuzzyFinder = true
+    }
 
     return (
         <Form
@@ -112,6 +122,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}
+                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
             <Shortcut
                 {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
@@ -125,7 +137,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             />
             {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
                 <FuzzyFinder
-                    caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
                     isVisible={isFuzzyFinderVisible}
                     telemetryService={props.telemetryService}

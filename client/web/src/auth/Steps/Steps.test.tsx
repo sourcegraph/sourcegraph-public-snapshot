@@ -1,5 +1,6 @@
-import { render, RenderResult, cleanup } from '@testing-library/react'
 import React from 'react'
+
+import { render, RenderResult, cleanup } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { Steps, Step, StepsProps, StepList, StepPanel, StepPanels } from '.'
@@ -8,7 +9,11 @@ describe('Steps', () => {
     let queries: RenderResult
 
     const renderWithProps = (props: StepsProps): RenderResult =>
-        render(<Steps initialStep={props.initialStep}>{props.children}</Steps>)
+        render(
+            <Steps initialStep={props.initialStep} totalSteps={props.totalSteps}>
+                {props.children}
+            </Steps>
+        )
     const onChangeMock = sinon.spy()
 
     beforeEach(() => {
@@ -22,6 +27,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: -1,
+                    totalSteps: 1,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
@@ -38,6 +44,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: 10,
+                    totalSteps: 1,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
@@ -54,6 +61,7 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: 2,
+                    totalSteps: 1,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
@@ -70,11 +78,48 @@ describe('Steps', () => {
             expect(() =>
                 renderWithProps({
                     initialStep: 1,
+                    totalSteps: 3,
                     children: [
                         <StepList key={1} numeric={true}>
                             <Step borderColor="blue">Panel 1 title</Step>
                         </StepList>,
                         <StepPanels key={2} />,
+                    ],
+                })
+            ).toThrowErrorMatchingSnapshot()
+        })
+
+        it('will error when there is a StepList children mismatch', () => {
+            expect(() =>
+                renderWithProps({
+                    initialStep: 1,
+                    totalSteps: 2,
+                    children: [
+                        <StepList key={1} numeric={true}>
+                            <Step borderColor="blue">Panel 1</Step>
+                        </StepList>,
+                        <StepPanels key={2}>
+                            <StepPanel>Panel 1</StepPanel>
+                            <StepPanel>Panel 2</StepPanel>
+                        </StepPanels>,
+                    ],
+                })
+            ).toThrowErrorMatchingSnapshot()
+        })
+
+        it('will error when there is a StepPanels children mismatch', () => {
+            expect(() =>
+                renderWithProps({
+                    initialStep: 1,
+                    totalSteps: 2,
+                    children: [
+                        <StepList key={1} numeric={true}>
+                            <Step borderColor="blue">Panel 1</Step>
+                            <Step borderColor="blue">Panel 2</Step>
+                        </StepList>,
+                        <StepPanels key={2}>
+                            <StepPanel>Panel 1</StepPanel>
+                        </StepPanels>,
                     ],
                 })
             ).toThrowErrorMatchingSnapshot()
@@ -86,25 +131,24 @@ describe('Steps', () => {
         beforeEach(() => {
             queries = renderWithProps({
                 initialStep,
+                totalSteps: 3,
                 children: [
-                    <>
-                        <StepList key={1} numeric={true}>
-                            <Step key={1} borderColor="blue">
-                                Panel 1 title
-                            </Step>
-                            <Step key={2} borderColor="orange">
-                                Panel 2 title
-                            </Step>
-                            <Step key={3} borderColor="orange">
-                                Panel 3 title
-                            </Step>
-                        </StepList>
-                        <StepPanels key={2}>
-                            <StepPanel key={2}>Panel 1</StepPanel>
-                            <StepPanel key={1}>Panel 2</StepPanel>
-                            <StepPanel key={3}>Panel 3</StepPanel>
-                        </StepPanels>
-                    </>,
+                    <StepList key={1} numeric={true}>
+                        <Step key={1} borderColor="blue">
+                            Panel 1 title
+                        </Step>
+                        <Step key={2} borderColor="orange">
+                            Panel 2 title
+                        </Step>
+                        <Step key={3} borderColor="orange">
+                            Panel 3 title
+                        </Step>
+                    </StepList>,
+                    <StepPanels key={2}>
+                        <StepPanel key={2}>Panel 1</StepPanel>
+                        <StepPanel key={1}>Panel 2</StepPanel>
+                        <StepPanel key={3}>Panel 3</StepPanel>
+                    </StepPanels>,
                 ],
             })
         })

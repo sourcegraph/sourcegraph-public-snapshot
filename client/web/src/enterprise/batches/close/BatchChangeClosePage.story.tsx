@@ -1,9 +1,12 @@
+import React from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo, useCallback } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
+
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../components/WebStory'
 import {
@@ -12,6 +15,7 @@ import {
     ChangesetSpecType,
     ChangesetState,
     BatchChangeFields,
+    BatchChangeState,
 } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
@@ -26,6 +30,7 @@ const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
+            disableSnapshot: false,
         },
     })
 
@@ -67,6 +72,7 @@ const batchChangeDefaults: BatchChangeFields = {
         username: 'bob',
     },
     currentSpec: {
+        id: 'specID1',
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
         codeHostsWithoutWebhooks: {
@@ -84,6 +90,7 @@ const batchChangeDefaults: BatchChangeFields = {
         totalCount: 0,
         nodes: [],
     },
+    state: BatchChangeState.OPEN,
 }
 
 const queryChangesets: typeof _queryChangesets = () =>
@@ -172,6 +179,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
             {
@@ -210,6 +218,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                         baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
+                    forkTarget: null,
                 },
             },
         ],
@@ -252,6 +261,7 @@ add('Overview', () => {
                     fetchBatchChangeByNamespace={fetchBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>
@@ -286,6 +296,7 @@ add('No open changesets', () => {
                     fetchBatchChangeByNamespace={fetchBatchChange}
                     extensionsController={{} as any}
                     platformContext={{} as any}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
                 />
             )}
         </WebStory>

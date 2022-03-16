@@ -3,8 +3,9 @@ package authz
 import (
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestErrUnimplementedIs(t *testing.T) {

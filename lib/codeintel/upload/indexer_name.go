@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MaxBufferSize is the maximum size of the metaData line in the dump. This should be large enough
@@ -28,29 +28,38 @@ type metaDataVertex struct {
 }
 
 type toolInfo struct {
-	Name string `json:"name"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 // ReadIndexerName returns the name of the tool that generated the given index contents.
 // This function reads only the first line of the file, where the metadata vertex is
 // assumed to be in all valid dumps.
 func ReadIndexerName(r io.Reader) (string, error) {
+	name, _, err := ReadIndexerNameAndVersion(r)
+	return name, err
+}
+
+// ReadIndexerNameAndVersion returns the name and version of the tool that generated the given
+// index contents. This function reads only the first line of the file, where the metadata vertex
+// is assumed to be in all valid dumps.
+func ReadIndexerNameAndVersion(r io.Reader) (name string, verison string, _ error) {
 	line, isPrefix, err := bufio.NewReaderSize(r, MaxBufferSize).ReadLine()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if isPrefix {
-		return "", ErrMetadataExceedsBuffer
+		return "", "", ErrMetadataExceedsBuffer
 	}
 
 	meta := metaDataVertex{}
 	if err := json.Unmarshal(line, &meta); err != nil {
-		return "", ErrInvalidMetaDataVertex
+		return "", "", ErrInvalidMetaDataVertex
 	}
 
 	if meta.Label != "metaData" || meta.ToolInfo.Name == "" {
-		return "", ErrInvalidMetaDataVertex
+		return "", "", ErrInvalidMetaDataVertex
 	}
 
-	return meta.ToolInfo.Name, nil
+	return meta.ToolInfo.Name, meta.ToolInfo.Version, nil
 }

@@ -6,7 +6,6 @@ import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
 import {
     NODE_MODULES_PATH,
@@ -21,6 +20,7 @@ import {
     getTerserPlugin,
     getBabelLoader,
     getBasicCSSLoader,
+    getStatoscopePlugin,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
@@ -44,7 +44,7 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
+    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
@@ -181,6 +181,19 @@ const config = {
             type: 'asset/source',
         })
 
+        config.module.rules.push({
+            test: /\.elm$/,
+            exclude: /elm-stuff/,
+            use: {
+                loader: 'elm-webpack-loader',
+                options: {
+                    cwd: path.resolve(ROOT_PATH, 'client/web/src/notebooks/blocks/compute/component'),
+                    report: 'json',
+                    pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
+                },
+            },
+        })
+
         // Disable `CaseSensitivePathsPlugin` by default to speed up development build.
         // Similar discussion: https://github.com/vercel/next.js/issues/6927#issuecomment-480579191
         remove(config.plugins, plugin => plugin instanceof CaseSensitivePathsPlugin)
@@ -204,7 +217,7 @@ const config = {
         }
 
         if (environment.isBundleAnalyzerEnabled) {
-            config.plugins.push(new BundleAnalyzerPlugin())
+            config.plugins.push(getStatoscopePlugin())
         }
 
         if (environment.isSpeedAnalyzerEnabled) {

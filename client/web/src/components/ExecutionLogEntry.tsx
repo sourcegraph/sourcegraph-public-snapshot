@@ -1,9 +1,10 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+
+import { pluralize } from '@sourcegraph/common'
+import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -22,8 +23,8 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
 }
 
 export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
-    <div className="card mb-3">
-        <div className="card-body">
+    <Card className="mb-3">
+        <CardBody>
             {logEntry.command.length > 0 ? (
                 <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
             ) : (
@@ -53,7 +54,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 )}
             </div>
             {children}
-        </div>
+        </CardBody>
 
         <div className="p-2">
             {logEntry.out ? (
@@ -66,7 +67,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 </div>
             )}
         </div>
-    </div>
+    </Card>
 )
 
 const timeOrders: [number, string][] = [

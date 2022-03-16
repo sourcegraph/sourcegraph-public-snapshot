@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
@@ -7,7 +9,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
@@ -16,7 +17,8 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { memoizeObservable } from '@sourcegraph/common'
+import { Button, ButtonProps, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -30,11 +32,11 @@ import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { memoizeObservable } from '../util/memoizeObservable'
 
-import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'
 import { EmptyCommandListContainer } from './EmptyCommandListContainer'
+
+import styles from './CommandList.module.scss'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -190,7 +192,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
-                        <PuzzleIcon className="icon-inline" />
+                        <Icon as={PuzzleIcon} />
                     </div>
                 </EmptyCommandListContainer>
             )
@@ -367,18 +369,20 @@ export function filterAndRankItems(
 export interface CommandListPopoverButtonProps
     extends CommandListProps,
         CommandListPopoverButtonClassProps,
-        CommandListClassProps {
+        CommandListClassProps,
+        Pick<ButtonProps, 'variant'> {
     keyboardShortcutForShow?: KeyboardShortcut
 }
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
-    buttonClassName = '',
-    buttonElement: ButtonElement = 'span',
-    buttonOpenClassName = '',
+    buttonClassName,
+    buttonElement = 'span',
+    buttonOpenClassName,
     showCaret = true,
     popoverClassName,
     popoverInnerClassName,
     keyboardShortcutForShow,
+    variant,
     ...props
 }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -387,19 +391,18 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
-    const MenuDropdownIcon = (): JSX.Element =>
-        isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
+    const MenuDropdownIcon = (): JSX.Element => (isOpen ? <Icon as={ChevronUpIcon} /> : <Icon as={ChevronDownIcon} />)
 
     return (
-        <ButtonElement
+        <Button
+            as={buttonElement}
             role="button"
-            className={classNames('test-command-list-button', styles.popoverButton, buttonClassName, {
-                [buttonOpenClassName]: isOpen,
-            })}
             id={id}
             onClick={toggleIsOpen}
+            className={classNames(styles.popoverButton, buttonClassName, isOpen && buttonOpenClassName)}
+            variant={variant}
         >
-            <ConsoleIcon className="icon-inline-md" />
+            <Icon as={ConsoleIcon} size="md" />
 
             {showCaret && <MenuDropdownIcon />}
 
@@ -421,6 +424,6 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
-        </ButtonElement>
+        </Button>
     )
 }

@@ -1,4 +1,4 @@
-import { InsightStep } from '../search-insight/types'
+import { InsightStep } from '../search-insight'
 
 export interface CaptureGroupFormFields {
     /**
@@ -25,4 +25,15 @@ export interface CaptureGroupFormFields {
      * Value for insight step setting
      */
     stepValue: string
+
+    /**
+     * This setting stands for turn on/off all repos mode that means this insight
+     * will be run over all repos on BE (BE insight)
+     */
+    allRepos: boolean
+
+    /**
+     * The total number of dashboards on which this insight is referenced.
+     */
+    dashboardReferenceCount: number
 }

@@ -1,9 +1,10 @@
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
+
 import { ApolloError, useQuery } from '@apollo/client'
 import * as H from 'history'
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, getDocumentNode } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
@@ -131,7 +132,9 @@ export interface Failed {
 const FILE_NAMES = gql`
     query FileNames($repository: String!, $commit: String!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 fileNames
             }
         }

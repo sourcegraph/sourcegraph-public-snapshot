@@ -1,19 +1,18 @@
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
-import React, { RefObject, useEffect, useMemo, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
+import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { AnchorLink, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
@@ -21,9 +20,10 @@ import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/u
 
 import { DocumentationExamples } from './DocumentationExamples'
 import { DocumentationIcons } from './DocumentationIcons'
-import styles from './DocumentationNode.module.scss'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 import { hasDescendent } from './RepositoryDocumentationSidebar'
+
+import styles from './DocumentationNode.module.scss'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters, SettingsCascadeProps {
     repo: RepositoryFields
@@ -158,14 +158,13 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                         <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
                                         API docs
                                         <span className={classNames('mx-2', styles.pillDivider)} />
-                                        <a
-                                            // eslint-disable-next-line react/jsx-no-target-blank
+                                        <Link
                                             target="_blank"
                                             rel="noopener"
-                                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                            to="https://docs.sourcegraph.com/code_intelligence/apidocs"
                                         >
                                             Learn more
-                                        </a>
+                                        </Link>
                                     </span>
                                     {/*
                             TODO(apidocs): add support for indicating time the API docs were updated

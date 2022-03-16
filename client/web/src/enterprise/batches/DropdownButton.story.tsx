@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -24,6 +25,7 @@ const action: Action = {
 const disabledAction: Action = {
     type: 'disabled-action-type',
     buttonLabel: 'Disabled action',
+    disabled: true,
     dropdownTitle: 'Disabled action',
     dropdownDescription: 'Perform an action, if only this were enabled',
     onTrigger,
@@ -66,7 +68,7 @@ add('Multiple actions with default', () => (
         {() => (
             <DropdownButton
                 actions={[action, disabledAction, experimentalAction]}
-                defaultAction={1}
+                defaultAction={0}
                 {...commonKnobs()}
             />
         )}

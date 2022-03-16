@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
@@ -5,38 +7,44 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import {
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
     isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
+import {
+    Button,
+    ButtonGroup,
+    useLocalStorage,
+    useObservable,
+    Link,
+    Popover,
+    PopoverContent,
+    Position,
+    PopoverTrigger,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -44,19 +52,15 @@ import { ActionItemsBarProps, useWebActionItems } from '../extensions/components
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { IS_CHROME } from '../marketing/util'
-import { Settings } from '../schema/settings.schema'
-import { SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
-import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
-import { browserExtensionInstalled } from '../tracking/analyticsUtils'
+import { useIsBrowserExtensionActiveUser } from '../tracking/BrowserExtensionTracker'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
+import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
-import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -66,6 +70,8 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import { redirectToExternalHost } from '.'
+
+import styles from './RepoContainer.module.scss'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -87,6 +93,7 @@ export interface RepoContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
+        ExtensionAlertProps,
         FeatureFlagProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
@@ -143,8 +150,6 @@ interface RepoContainerProps
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
-const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
-const HAS_DISMISSED_FIREFOX_ALERT_KEY = 'has-dismissed-firefox-addon-alert'
 
 export const HOVER_THRESHOLD = 5
 
@@ -153,10 +158,6 @@ export interface HoverThresholdProps {
      * Called when a hover with content is shown.
      */
     onHoverShown?: () => void
-}
-
-export interface ExtensionAlertProps {
-    onExtensionAlertDismissed: () => void
 }
 
 /**
@@ -232,20 +233,24 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             return {
                 key: 'repository',
                 element: (
-                    <>
-                        <div className="d-inline-flex btn-group">
-                            <Link
+                    <Popover>
+                        <ButtonGroup className="d-inline-flex">
+                            <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
+                                className="text-nowrap test-repo-header-repo-link"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                as={Link}
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                            </Link>
-                            <Button
-                                id="repo-popover"
+                            </Button>
+                            <PopoverTrigger
+                                as={Button}
                                 className={styles.repoChange}
                                 aria-label="Change repository"
                                 outline={true}
@@ -253,22 +258,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </Button>
-                        </div>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            fade={false}
-                            popperClassName="border-0"
-                        >
+                            </PopoverTrigger>
+                        </ButtonGroup>
+                        <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                             <RepositoriesPopover
                                 currentRepo={repoOrError.id}
                                 telemetryService={props.telemetryService}
                             />
-                        </UncontrolledPopover>
-                    </>
+                        </PopoverContent>
+                    </Popover>
                 ),
             }
         }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
@@ -324,36 +322,25 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
     const codeHostIntegrationMessaging =
         (!isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
         'browser-extension'
-
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
-    const [hasDismissedExtensionAlert, setHasDismissedExtensionAlert] = useLocalStorage(HAS_DISMISSED_ALERT_KEY, false)
     const [hasDismissedPopover, setHasDismissedPopover] = useState(false)
     const [hoverCount, setHoverCount] = useLocalStorage(HOVER_COUNT_KEY, 0)
     const canShowPopover =
         !hasDismissedPopover &&
-        isBrowserExtensionInstalled === false &&
+        isBrowserExtensionActiveUser === false &&
         codeHostIntegrationMessaging === 'browser-extension' &&
         hoverCount >= HOVER_THRESHOLD
-    const showExtensionAlert = useMemo(
-        () => isBrowserExtensionInstalled === false && !hasDismissedExtensionAlert && hoverCount >= HOVER_THRESHOLD,
-        // Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
-        // to not cause an annoying layout shift from displaying the alert.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [hasDismissedExtensionAlert, isBrowserExtensionInstalled]
-    )
-
-    const { onExtensionAlertDismissed } = props
 
     // Increment hovers that the user has seen. Enable browser extension discoverability
     // features after hover count threshold is reached (e.g. alerts, popovers)
     // Store hover count in ref to avoid circular dependency
     // hoverCount -> onHoverShown -> WebHoverOverlay (onHoverShown in useEffect deps) -> onHoverShown()
-    const hoverCountReference = useRef(hoverCount)
+    const hoverCountReference = useRef<number>(hoverCount)
     hoverCountReference.current = hoverCount
     const onHoverShown = useCallback(() => {
         const count = hoverCountReference.current + 1
@@ -367,19 +354,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     const onPopoverDismissed = useCallback(() => {
         setHasDismissedPopover(true)
     }, [])
-
-    const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
-        HAS_DISMISSED_FIREFOX_ALERT_KEY,
-        false
-    )
-    const showFirefoxAddonAlert = isFirefox() && !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
-
-    const onAlertDismissed = useCallback(() => {
-        onExtensionAlertDismissed()
-        setHasDismissedExtensionAlert(true)
-        // TEMPORARY
-        setHasDismissedFirefoxAlert(true)
-    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert, setHasDismissedFirefoxAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -408,18 +382,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         onDidUpdateExternalLinks: setExternalLinks,
         useActionItemsBar,
     }
-
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
-            {(showExtensionAlert || showFirefoxAddonAlert) && (
-                <InstallBrowserExtensionAlert
-                    isChrome={IS_CHROME}
-                    onAlertDismissed={onAlertDismissed}
-                    externalURLs={repoOrError.externalURLs}
-                    codeHostIntegrationMessaging={codeHostIntegrationMessaging}
-                    showFirefoxAddonAlert={showFirefoxAddonAlert}
-                />
-            )}
             <RepoHeader
                 actionButtons={props.repoHeaderActionButtons}
                 useActionItemsToggle={useActionItemsToggle}
@@ -428,7 +392,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 repo={repoOrError}
                 resolvedRev={resolvedRevisionOrError}
                 onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                isAlertDisplayed={showExtensionAlert}
                 location={props.location}
                 history={props.history}
                 settingsCascade={props.settingsCascade}

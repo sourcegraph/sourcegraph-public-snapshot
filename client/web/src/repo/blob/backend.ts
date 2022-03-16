@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { memoizeObservable } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -37,6 +37,7 @@ export const fetchBlob = memoizeObservable(
                     highlight(disableTimeout: $disableTimeout) {
                         aborted
                         html
+                        lsif
                     }
                 }
             `,

@@ -1,5 +1,6 @@
-import { uniqueId } from 'lodash'
 import * as React from 'react'
+
+import { uniqueId } from 'lodash'
 import { from, merge, Subscription } from 'rxjs'
 import { delay, map, mergeMap, switchMap, takeWhile } from 'rxjs/operators'
 
@@ -10,12 +11,15 @@ import { NotificationType } from '../api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
-import { NotificationItem, NotificationClassNameProps } from './NotificationItem'
+import { NotificationItem, NotificationItemProps } from './NotificationItem'
+
 import styles from './Notifications.module.scss'
 
-interface Props extends ExtensionsControllerProps, NotificationClassNameProps {}
+export interface NotificationsProps
+    extends ExtensionsControllerProps,
+        Pick<NotificationItemProps, 'notificationItemStyleProps'> {}
 
-interface State {
+interface NotificationsState {
     // TODO(tj): use remote progress observable type
     notifications: (Notification & { id: string })[]
 }
@@ -23,14 +27,14 @@ interface State {
 /**
  * A notifications center that displays global, non-modal messages.
  */
-export class Notifications extends React.PureComponent<Props, State> {
+export class Notifications extends React.PureComponent<NotificationsProps, NotificationsState> {
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.
      */
     private static MAX_RETAIN = 7
 
-    public state: State = {
+    public state: NotificationsState = {
         notifications: [],
     }
 
@@ -138,7 +142,7 @@ export class Notifications extends React.PureComponent<Props, State> {
                         notification={notification}
                         onDismiss={this.onDismiss}
                         className="sourcegraph-notifications__notification m-2"
-                        notificationClassNames={this.props.notificationClassNames}
+                        notificationItemStyleProps={this.props.notificationItemStyleProps}
                     />
                 ))}
             </div>

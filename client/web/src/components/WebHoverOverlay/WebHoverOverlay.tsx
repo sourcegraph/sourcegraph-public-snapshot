@@ -1,5 +1,5 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
+
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
@@ -7,24 +7,27 @@ import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
 
-const iconKindToAlertKind = {
+const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
     [NotificationType.Info]: 'secondary',
     [NotificationType.Error]: 'danger',
     [NotificationType.Warning]: 'warning',
 }
 
-const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>
-    `alert alert-${iconKindToAlertKind[iconKind]}`
+const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-export const WebHoverOverlay: React.FunctionComponent<
-    HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
-> = props => {
+interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeProps {
+    hoveredTokenElement?: HTMLElement
+    nav?: (url: string) => void
+}
+
+export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -55,7 +58,13 @@ export const WebHoverOverlay: React.FunctionComponent<
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
+    const clickToGoToDefinition = getClickToGoToDefinition(props.settingsCascade)
+
     useEffect(() => {
+        if (!clickToGoToDefinition) {
+            return
+        }
+
         const token = props.hoveredTokenElement
 
         const definitionAction =
@@ -98,18 +107,37 @@ export const WebHoverOverlay: React.FunctionComponent<
             .subscribe()
 
         return () => subscription.unsubscribe()
-    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav, props.telemetryService])
+    }, [
+        props.actionsOrError,
+        props.hoveredTokenElement,
+        props.location.hash,
+        props.nav,
+        props.telemetryService,
+        clickToGoToDefinition,
+        hoveredToken,
+    ])
 
     return (
         <HoverOverlay
             {...propsToUse}
-            useBrandedBadge={true}
-            className={classNames('card', styles.webHoverOverlay)}
-            actionItemClassName="btn btn-sm btn-secondary border-0"
+            className={styles.webHoverOverlay}
+            actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
-            getAlertClassName={getAlertClassName}
+            getAlertVariant={getAlertVariant}
+            actionItemStyleProps={{
+                actionItemSize: 'sm',
+                actionItemVariant: 'secondary',
+            }}
         />
     )
 }
 
 WebHoverOverlay.displayName = 'WebHoverOverlay'
+
+const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        const value = settingsCascade.final['codeIntelligence.clickToGoToDefinition'] as boolean
+        return value ?? true
+    }
+    return true
+}

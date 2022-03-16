@@ -35,13 +35,11 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     repositories,
                     query,
                     step,
-                    // In gql api we don't have this concept as visibility on FE.
-                    // Insights have special system about visibility on BE only.
-                    visibility: '',
                     filters: {
                         includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
                     },
+                    dashboardReferenceCount: insight.dashboardReferenceCount,
                 }
             }
 
@@ -67,14 +65,11 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     title: insight.presentation.title,
                     series,
                     step,
-
-                    // In gql api we don't have this concept as visibility on FE.
-                    // Insights have special system about visibility on BE only.
-                    visibility: '',
                     filters: {
                         includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
                     },
+                    dashboardReferenceCount: insight.dashboardReferenceCount,
                 }
             }
 
@@ -86,15 +81,12 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 step,
                 repositories,
                 series,
-
-                // In gql api we don't have this concept as visibility on FE.
-                // Insights have special system about visibility on BE only.
-                visibility: '',
+                dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
 
         case 'PieChartInsightViewPresentation': {
-            // At the moment we BE doesn't have special fragment type for Lang Stats repositories.
+            // At the moment BE doesn't have a special fragment type for Lang Stats repositories.
             // We use search based definition (first repo of first definition). For lang-stats
             // it always should be exactly one series with repository scope info.
             const repository = insight.dataSeriesDefinitions[0].repositoryScope.repositories[0] ?? ''
@@ -106,10 +98,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 title: insight.presentation.title,
                 otherThreshold: insight.presentation.otherThreshold,
                 repository,
-
-                // In gql api we don't have this concept as visibility on FE.
-                // Insights have special system about visibility on BE only.
-                visibility: '',
+                dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
     }

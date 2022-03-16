@@ -1,13 +1,16 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { HoverAlert } from 'sourcegraph'
 
-import { NotificationType } from '../../api/extension/extensionHostApi'
-import { renderMarkdown } from '../../util/markdown'
-import hoverOverlayStyle from '../HoverOverlay.module.scss'
-import { GetAlertClassName } from '../HoverOverlay.types'
-import contentStyles from '../HoverOverlayContents/HoverOverlayContent/HoverOverlayContent.module.scss'
+import { renderMarkdown } from '@sourcegraph/common'
+import { Link, Alert } from '@sourcegraph/wildcard'
 
+import { NotificationType } from '../../api/extension/extensionHostApi'
+import { GetAlertClassName, GetAlertVariant } from '../HoverOverlay.types'
+
+import hoverOverlayStyle from '../HoverOverlay.module.scss'
+import contentStyles from '../HoverOverlayContents/HoverOverlayContent/HoverOverlayContent.module.scss'
 import styles from './HoverOverlayAlerts.module.scss'
 
 export interface HoverOverlayAlertsProps {
@@ -16,6 +19,7 @@ export interface HoverOverlayAlertsProps {
     /** Called when an alert is dismissed, with the type of the dismissed alert. */
     onAlertDismissed?: (alertType: string) => void
     getAlertClassName?: GetAlertClassName
+    getAlertVariant?: GetAlertVariant
     className?: string
 }
 
@@ -26,7 +30,7 @@ const iconKindToNotificationType: Record<Required<HoverAlert>['iconKind'], Param
 }
 
 export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
-    const { hoverAlerts, onAlertDismissed, getAlertClassName = () => undefined } = props
+    const { hoverAlerts, onAlertDismissed, getAlertClassName, getAlertVariant } = props
 
     const createAlertDismissedHandler = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault()
@@ -39,11 +43,12 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
     return (
         <div className={classNames(styles.hoverOverlayAlerts, props.className)}>
             {hoverAlerts.map(({ summary, iconKind, type }, index) => (
-                <div
+                <Alert
                     key={index}
+                    variant={getAlertVariant?.(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)}
                     className={classNames(
                         hoverOverlayStyle.alert,
-                        getAlertClassName(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
+                        getAlertClassName?.(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
                     )}
                 >
                     {summary.kind === 'plaintext' ? (
@@ -73,12 +78,12 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                         <div className={classNames(hoverOverlayStyle.alertDismiss)}>
                             {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a href="" onClick={createAlertDismissedHandler(type)} role="button">
+                            <Link to="" onClick={createAlertDismissedHandler(type)} role="button">
                                 <small>Dismiss</small>
-                            </a>
+                            </Link>
                         </div>
                     )}
-                </div>
+                </Alert>
             ))}
         </div>
     )

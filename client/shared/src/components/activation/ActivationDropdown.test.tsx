@@ -1,7 +1,10 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import sinon from 'sinon'
+
+import { Link } from '@sourcegraph/wildcard'
 
 import { Activation } from './Activation'
 import { ActivationDropdown } from './ActivationDropdown'
@@ -18,7 +21,7 @@ const baseActivation: Activation = {
             title: 'Search your code',
             detail: (
                 <span>
-                    Head to the <a href="/search">homepage</a> and perform a search query on your code.{' '}
+                    Head to the <Link to="/search">homepage</Link> and perform a search query on your code.{' '}
                     <strong>Example:</strong> type 'lang:' and select a language
                 </span>
             ),

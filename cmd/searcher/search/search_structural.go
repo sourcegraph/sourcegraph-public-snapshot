@@ -279,7 +279,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return nil
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (deadlineHit bool, err error) {
+func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -304,22 +304,22 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 	useFullDeadline := false
 	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if len(zoektMatches) == 0 {
-		return false, nil
+		return nil
 	}
 
 	zipFile, err := os.CreateTemp("", "*.zip")
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer zipFile.Close()
 	defer os.Remove(zipFile.Name())
 
 	if err = writeZip(ctx, zipFile, zoektMatches); err != nil {
-		return false, err
+		return err
 	}
 
 	var extensionHint string
@@ -328,7 +328,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		extensionHint = filepath.Ext(filename)
 	}
 
-	return false, structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
+	return structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
 }
 
 var requestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

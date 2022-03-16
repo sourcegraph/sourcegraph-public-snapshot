@@ -1,5 +1,5 @@
-import create from 'zustand'
-import { persist } from 'zustand/middleware'
+import create, { GetState, SetState } from 'zustand'
+import { persist, StoreApiWithPersist } from 'zustand/middleware'
 
 /**
  * The user preference for the theme.
@@ -34,15 +34,14 @@ export interface ThemeState {
 }
 
 export const useThemeState = create<ThemeState>(
-    persist<ThemeState>(
-        set => ({
+    persist<ThemeState, SetState<ThemeState>, GetState<ThemeState>, StoreApiWithPersist<ThemeState>>(
+        (set): ThemeState => ({
             theme: readStoredThemePreference(),
             setTheme: theme => set({ theme }),
         }),
         {
             name: LIGHT_THEME_LOCAL_STORAGE_KEY,
-            whitelist: ['theme'],
-            serialize: state => state.state.theme,
+            serialize: state => state.state.theme ?? ThemePreference.System,
             deserialize: string => ({ state: { theme: readStoredThemePreference(string) } }),
         }
     )

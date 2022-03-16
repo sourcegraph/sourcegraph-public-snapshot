@@ -1,8 +1,15 @@
-# Pull request reviews
+# Pull request reviews <span class="badge badge-note">SOC2/GN-98</span> <span class="badge badge-note">SOC2/GN-104</span>
+
+Sourcegraph has a formal software development life cycle methodology and supporting procedures to help manage application and infrastructure changes.
 
 All contributions to Sourcegraph must be reviewed and approved before being merged into the `main` branch. This includes code changes, documentation changes, and more.
 
-Our goal is to have a pull request review process and culture that everyone would opt-in to even if reviews weren't required.
+GitHub repositories are configured to prevent merging without a review (including administrators), but in the eventuality of a pull request being merged without review, 
+[`pr-auditor`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/pr-auditor) will open an exception in the [audit trail](https://github.com/sourcegraph/sec-pr-audit-trail/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) where the teammate who merged the pull request can document the exception.
+
+Our goal is to have a pull request review process and culture that everyone would opt-in to even if reviews weren't required. 
+
+In addition to being peer-reviewed, all contributions must pass our [continuous integration](./ci/index.md).
 
 ## Why do we require peer reviews?
 
@@ -11,7 +18,7 @@ Reviews are an investment. As an author, it takes extra time and effort to creat
 For authors:
 
 - Requesting a review from one of your peers is motivation to ensure that the quality of your contribution is high.
-- Writing a good PR description (and commit messages) develops your technical communication skills.
+- Writing a good PR description (and [commit messages](commit_messages.md)) develops your technical communication skills.
 - Receiving review feedback can give you valuable insight into aspects of your change that you hadn't considered (architectural, performance, etc).
 - Receiving feedback about how your code could be improved helps you learn how to write better code in the future.
 

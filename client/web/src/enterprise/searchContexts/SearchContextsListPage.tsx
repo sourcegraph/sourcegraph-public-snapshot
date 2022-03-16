@@ -1,23 +1,25 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SearchContextProps } from '@sourcegraph/search'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
     extends Pick<
-        SearchContextProps,
-        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-    > {
+            SearchContextProps,
+            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+        >,
+        PlatformContextProps<'requestGraphQL'> {
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
@@ -76,21 +78,21 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         },
                     ]}
                     actions={
-                        <Link to="/contexts/new" className="btn btn-primary">
-                            <PlusIcon className="icon-inline" />
+                        <Button to="/contexts/new" variant="primary" as={Link}>
+                            <Icon as={PlusIcon} />
                             Create search context
-                        </Link>
+                        </Button>
                     }
                     description={
                         <span className="text-muted">
                             Search code you care about with search contexts.{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                            <Link
+                                to="/help/code_search/explanations/features#search-contexts"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 Learn more
-                            </a>
+                            </Link>
                         </span>
                     }
                     className="mb-3"
@@ -99,8 +101,8 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     <div className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a
-                                href=""
+                            <Link
+                                to=""
                                 role="button"
                                 onClick={onSelectSearchContextsList}
                                 className={classNames('nav-link', selectedTab === 'list' && 'active')}
@@ -108,7 +110,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 <span className="text-content" data-tab-content="Your search contexts">
                                     Your search contexts
                                 </span>
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>

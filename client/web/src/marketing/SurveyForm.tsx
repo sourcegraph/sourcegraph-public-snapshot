@@ -1,17 +1,18 @@
 import React, { useState } from 'react'
+
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useMutation } from '@sourcegraph/shared/src/graphql/apollo'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useMutation, gql } from '@sourcegraph/http-client'
 import { Button, LoadingSpinner, TextArea } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-import styles from './SurveyPage.module.scss'
 import { SurveyRatingRadio } from './SurveyRatingRadio'
+
+import styles from './SurveyPage.module.scss'
 
 interface SurveyFormProps {
     authenticatedUser: AuthenticatedUser | null
@@ -129,7 +130,7 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
                 />
             </div>
             <div className="form-group">
-                <Button className="btn-block" variant="primary" type="submit" disabled={response.loading}>
+                <Button display="block" variant="primary" type="submit" disabled={response.loading}>
                     Submit
                 </Button>
             </div>

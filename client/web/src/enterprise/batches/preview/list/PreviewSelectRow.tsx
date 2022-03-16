@@ -1,10 +1,10 @@
-import { noop } from 'lodash'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button } from '@sourcegraph/wildcard'
+import { noop } from 'lodash'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+
+import { pluralize } from '@sourcegraph/common'
+import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'
@@ -54,8 +54,6 @@ const getPublicationStateFromAction = (action: Action): Scalars['PublishedValue'
 export interface PreviewSelectRowProps {
     queryArguments: BatchSpecApplyPreviewVariables
     /** For testing only. */
-    dropDownInitiallyOpen?: boolean
-    /** For testing only. */
     queryPublishableChangesetSpecIDs?: typeof _queryPublishableChangesetSpecIDs
 }
 
@@ -64,7 +62,6 @@ export interface PreviewSelectRowProps {
  * the X selected label. Provides select ALL functionality.
  */
 export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = ({
-    dropDownInitiallyOpen = false,
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
@@ -104,7 +101,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
         <>
             <div className="row align-items-center no-gutters mb-3">
                 <div className="ml-2 col d-flex align-items-center">
-                    <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                    <Icon className="text-muted mr-2" as={InfoCircleOutlineIcon} />
                     {selected === 'all' || allChangesetSpecIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetSpecIDs?.length} />
                     ) : (
@@ -123,12 +120,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton
-                                actions={actions}
-                                dropdownMenuPosition="right"
-                                initiallyOpen={dropDownInitiallyOpen}
-                                placeholder="Select action on apply"
-                            />
+                            <DropdownButton actions={actions} placeholder="Select action on apply" />
                         </div>
                     </div>
                 </div>

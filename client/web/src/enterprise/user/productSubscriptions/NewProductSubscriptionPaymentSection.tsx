@@ -1,18 +1,17 @@
+import React, { useEffect, useMemo } from 'react'
+
 import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import * as GQL from '@sourcegraph/shared/src/schema'
+import { LoadingSpinner, useObservable, Alert, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -108,7 +107,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
-                        <AlertCircleIcon className="icon-inline" data-tooltip={previewInvoice.message} /> Error
+                        <Icon data-tooltip={previewInvoice.message} as={AlertCircleIcon} /> Error
                     </span>
                 ) : previewInvoice.beforeInvoiceItem ? (
                     <>
@@ -118,17 +117,17 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                             className="mb-2"
                         />
                         {previewInvoice.isDowngradeRequiringManualIntervention ? (
-                            <div className="alert alert-danger mb-2">
+                            <Alert className="mb-2" variant="danger">
                                 Self-service downgrades are not yet supported.{' '}
-                                <a
-                                    href={mailtoSales({
+                                <Link
+                                    to={mailtoSales({
                                         subject: `Downgrade subscription ${subscriptionID!}`,
                                     })}
                                 >
                                     Contact sales
-                                </a>{' '}
+                                </Link>{' '}
                                 for help.
-                            </div>
+                            </Alert>
                         ) : (
                             !isEqual(previewInvoice.beforeInvoiceItem, previewInvoice.afterInvoiceItem) && (
                                 <div className="mb-2">Amount due: ${numberWithCommas(previewInvoice.price / 100)}</div>

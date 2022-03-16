@@ -27,10 +27,10 @@ import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
 
 import { isDefined } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 
 import { ExternalServiceKind } from '../graphql-operations'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../schema'
 import { Settings } from '../settings/settings'
 
 import { getConfig } from './config'
@@ -252,14 +252,38 @@ export class Driver {
     }
 
     /**
+     * Navigates to the Sourcegraph browser extension page.
+     */
+    public async openBrowserExtensionPage(page: 'options' | 'after_install'): Promise<void> {
+        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/${page}.html`)
+    }
+
+    /**
      * Navigates to the Sourcegraph browser extension options page and sets the sourcegraph URL.
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
-        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        await this.openBrowserExtensionPage('options')
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
         await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
+    }
+
+    /**
+     * Sets 'Enable click to go to definition' option flag value.
+     */
+    public async setClickGoToDefOptionFlag(isEnabled: boolean): Promise<void> {
+        await this.openBrowserExtensionPage('options')
+        const toggleAdvancedSettingsButton = await this.page.waitForSelector('.test-toggle-advanced-settings-button')
+        await toggleAdvancedSettingsButton?.click()
+        const checkbox = await this.findElementWithText('Enable click to go to definition')
+        if (!checkbox) {
+            throw new Error("'Enable click to go to definition' checkbox not found.")
+        }
+        const isChecked = await checkbox.$eval('input', input => (input as HTMLInputElement).checked)
+        if (isEnabled !== isChecked) {
+            await checkbox.click()
+        }
     }
 
     public async close(): Promise<void> {
@@ -739,7 +763,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     return path.join(configPath, 'puppeteer.cfg')
 }
 
-interface DriverOptions extends LaunchOptions, BrowserConnectOptions {
+interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLaunchArgumentOptions {
     browser?: 'chrome' | 'firefox'
 
     /** If true, load the Sourcegraph browser extension. */

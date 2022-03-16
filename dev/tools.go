@@ -22,5 +22,8 @@ import (
 
 	// used for protoc generation
 	_ "github.com/bufbuild/buf/cmd/buf"
+	_ "github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc"
 	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+
+	_ "github.com/sourcegraph/sourcegraph/lib/codeintel/reprolang/bindings/golang"
 )

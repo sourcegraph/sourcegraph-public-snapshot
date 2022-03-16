@@ -2,7 +2,7 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
 import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../../core/types'
 import { CaptureGroupFormFields } from '../types'
 
@@ -10,12 +10,12 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
     return {
         title: values.title.trim(),
         query: getSanitizedCaptureQuery(values.groupSearchQuery.trim()),
-        repositories: getSanitizedRepositories(values.repositories),
         viewType: InsightType.CaptureGroup,
         type: InsightExecutionType.Backend,
         id: '',
-        visibility: '',
         step: { [values.step]: +values.stepValue },
+        repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
+        dashboardReferenceCount: values.dashboardReferenceCount,
     }
 }
 

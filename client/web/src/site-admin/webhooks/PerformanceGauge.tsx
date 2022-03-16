@@ -1,7 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import classNames from 'classnames'
+
+import { pluralize } from '@sourcegraph/common'
 
 import styles from './PerformanceGauge.module.scss'
 

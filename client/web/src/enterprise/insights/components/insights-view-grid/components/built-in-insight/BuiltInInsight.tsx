@@ -1,5 +1,5 @@
-import classNames from 'classnames'
 import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
+
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -13,7 +13,9 @@ import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
+import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { useCodeInsightViewPings, getTrackingTypeByInsightType } from '../../../../pings'
 import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
@@ -56,14 +58,18 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
+    const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
+
+    const { trackDatumClicks, trackMouseLeave, trackMouseEnter } = useCodeInsightViewPings({
+        telemetryService,
+        insightType: getTrackingTypeByInsightType(insight.viewType),
+    })
 
     return (
         <View.Root
             {...otherProps}
             innerRef={mergedInsightCardReference}
-            data-testid={`insight-card.${insight.id}`}
             title={insight.title}
-            className={classNames('extension-insight-card', otherProps.className)}
             actions={
                 isVisible && (
                     <InsightContextMenu
@@ -72,26 +78,27 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                         menuButtonClassName="ml-1 d-inline-flex"
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        onRemoveFromDashboard={dashboard => handleRemove({ insight, dashboard })}
                         onDelete={() => handleDelete(insight)}
                     />
                 )
             }
+            data-testid={`insight-card.${insight.id}`}
+            onMouseEnter={trackMouseEnter}
+            onMouseLeave={trackMouseLeave}
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
             ) : !data || loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
+            ) : isRemoving ? (
+                <View.LoadingContent text="Removing insight from the dashboard" />
             ) : isErrorLike(data.view) ? (
                 <View.ErrorContent error={data.view} title={insight.id} />
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <View.Content
-                            telemetryService={telemetryService}
-                            content={data.view.content}
-                            viewTrackingType={insight.viewType}
-                            containerClassName="extension-insight-card"
-                        />
+                        <View.Content content={data.view.content} onDatumLinkClick={trackDatumClicks} />
                     </LineChartSettingsContext.Provider>
                 )
             )}

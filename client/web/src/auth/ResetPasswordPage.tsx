@@ -1,21 +1,23 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ErrorAlert } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
-import styles from './ResetPasswordPage.module.scss'
 import { PasswordInput } from './SignInSignUpCommon'
+
+import styles from './ResetPasswordPage.module.scss'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface ResetPasswordInitFormState {
@@ -170,9 +172,9 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
     public render(): JSX.Element | null {
         if (this.state.submitOrError === null) {
             return (
-                <div className="alert alert-success">
+                <Alert variant="success">
                     Your password was reset. <Link to="/sign-in">Sign in with your new password</Link> to continue.
-                </div>
+                </Alert>
             )
         }
 
@@ -265,7 +267,7 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
     public render(): JSX.Element | null {
         let body: JSX.Element
         if (this.props.authenticatedUser) {
-            body = <div className="alert alert-danger">Authenticated users may not perform password reset.</div>
+            body = <Alert variant="danger">Authenticated users may not perform password reset.</Alert>
         } else if (window.context.resetPasswordEnabled) {
             const searchParameters = new URLSearchParams(this.props.location.search)
             if (searchParameters.has('code') || searchParameters.has('userID')) {
@@ -274,16 +276,16 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
                 if (code && !isNaN(userID)) {
                     body = <ResetPasswordCodeForm code={code} userID={userID} history={this.props.history} />
                 } else {
-                    body = <div className="alert alert-danger">The password reset link you followed is invalid.</div>
+                    body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
                 }
             } else {
                 body = <ResetPasswordInitForm history={this.props.history} />
             }
         } else {
             body = (
-                <div className="alert alert-warning">
+                <Alert variant="warning">
                     Password reset is disabled. Ask a site administrator to manually reset your password.
-                </div>
+                </Alert>
             )
         }
 

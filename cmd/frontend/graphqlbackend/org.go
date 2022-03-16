@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
@@ -72,11 +73,26 @@ func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, 
 }
 
 func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
+	return orgByIDInt32WithForcedAccess(ctx, db, orgID, false)
+}
+
+func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
 	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if envvar.SourcegraphDotComMode() {
+	//              And all invited users by email
+	if !forceAccess && envvar.SourcegraphDotComMode() {
 		err := backend.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
-			return nil, errors.Newf("org not found: %d", orgID)
+			hasAccess := false
+			// allow invited user to view org details
+			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
+				if err == nil {
+					hasAccess = true
+				}
+			}
+			if !hasAccess {
+				return nil, &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgID)}
+			}
 		}
 	}
 	org, err := db.Orgs().GetByID(ctx, orgID)
@@ -181,6 +197,11 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 			return nil, nil
 		}
 		if err != nil {
+			// ignore expired invitations, otherwise error is returned
+			// for all users who have an expired invitation on record
+			if _, ok := err.(database.OrgInvitationExpiredErr); ok {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &organizationInvitationResolver{o.db, orgInvitation}, nil
@@ -222,6 +243,7 @@ func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesAr
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
+	StatsID     *string
 }) (*OrgResolver, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
@@ -231,13 +253,22 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := database.Orgs(r.db).Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := r.db.Orgs().Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
 
+	// Write the org_id into orgs open beta stats table on Cloud
+	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
+		// we do not throw errors here as this is best effort
+		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
+		if err != nil {
+			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
+		}
+	}
+
 	// Add the current user as the first member of the new org.
-	_, err = database.OrgMembers(r.db).Create(ctx, newOrg.ID, a.UID)
+	_, err = r.db.OrgMembers().Create(ctx, newOrg.ID, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +321,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err != nil {
 		return nil, err
 	}
-	if memberCount == 1 {
+	if memberCount == 1 && !r.siteAdminSelfRemoving(ctx, userID) {
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
@@ -306,6 +337,16 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		)
 	}
 	return nil, nil
+}
+
+func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return false
+	}
+	if err := backend.CheckSameUser(ctx, userID); err != nil {
+		return false
+	}
+	return true
 }
 
 func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
@@ -347,6 +388,26 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		)
 	}
 	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
+	Stats JSONCString
+}) (*graphql.ID, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("no current user")
+	}
+	if args == nil || !json.Valid([]byte(args.Stats)) {
+		return nil, errors.New("must supply valid json")
+	}
+
+	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
+	if err != nil {
+		return nil, err
+	}
+
+	graphqlID := graphql.ID(id)
+	return &graphqlID, nil
 }
 
 type ListOrgRepositoriesArgs struct {

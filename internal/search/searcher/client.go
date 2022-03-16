@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -81,13 +81,6 @@ func Search(
 		IndexerEndpoints: indexerEndpoints,
 	}
 
-	if deadline, ok := ctx.Deadline(); ok {
-		t, err := deadline.MarshalText()
-		if err != nil {
-			return false, err
-		}
-		r.Deadline = string(t)
-	}
 	body, err := json.Marshal(r)
 	if err != nil {
 		return false, err
@@ -182,9 +175,6 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 	}
 	if ed.Error != "" {
 		return false, errors.New(ed.Error)
-	}
-	if ed.DeadlineHit {
-		err = context.DeadlineExceeded
 	}
 	return ed.LimitHit, err
 }

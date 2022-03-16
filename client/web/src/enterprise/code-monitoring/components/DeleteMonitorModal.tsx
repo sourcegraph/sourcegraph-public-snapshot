@@ -1,11 +1,10 @@
-import Dialog from '@reach/dialog'
 import React, { useCallback } from 'react'
+
 import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useEventObservable, Modal, Alert } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -49,9 +48,9 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
     )
 
     return (
-        <Dialog
+        <Modal
+            position="center"
             isOpen={isOpen}
-            className="modal-body modal-body--centered p-4 rounded border"
             onDismiss={toggleDeleteModal}
             aria-labelledby={deleteLabelId}
             data-testid="delete-modal"
@@ -73,11 +72,11 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                         Yes, delete code monitor
                     </Button>
                     {isErrorLike(deleteCompletedOrError) && (
-                        <div className="alert-danger">Error deleting monitor: {deleteCompletedOrError.message}</div>
+                        <Alert variant="danger">Error deleting monitor: {deleteCompletedOrError.message}</Alert>
                     )}
                 </div>
             )}
             {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
-        </Dialog>
+        </Modal>
     )
 }

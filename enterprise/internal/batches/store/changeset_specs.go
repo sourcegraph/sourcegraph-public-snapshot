@@ -2,11 +2,9 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // changesetSpecInsertColumns is the list of changeset_specs columns that are
@@ -34,6 +33,7 @@ var changesetSpecInsertColumns = []string{
 	"diff_stat_deleted",
 	"created_at",
 	"updated_at",
+	"fork_namespace",
 
 	// `external_id`, `head_ref`, `title` are (for now) write-only columns that
 	// contain normalized data from `spec` and are used for JOINs and WHERE
@@ -57,6 +57,7 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.diff_stat_deleted",
 	"changeset_specs.created_at",
 	"changeset_specs.updated_at",
+	"changeset_specs.fork_namespace",
 }
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
@@ -112,6 +113,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				c.DiffStatDeleted,
 				c.CreatedAt,
 				c.UpdatedAt,
+				c.ForkNamespace,
 				&dbutil.NullString{S: externalID},
 				&dbutil.NullString{S: headRef},
 				&dbutil.NullString{S: title},
@@ -131,7 +133,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		changesetSpecInsertColumns,
 		"",
 		changesetSpecColumns,
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			i++
 			return scanChangesetSpec(cs[i], rows)
 		},
@@ -521,6 +523,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
+		&c.ForkNamespace,
 	)
 
 	if err != nil {

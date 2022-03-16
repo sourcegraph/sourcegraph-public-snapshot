@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -9,13 +10,21 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
-import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
+import {
+    _fetchRecentFileViews,
+    _fetchRecentSearches,
+    _fetchSavedSearches,
+    _fetchCollaborators,
+    authUser,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -34,7 +43,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,
@@ -45,15 +53,21 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
+    fetchCollaborators: _fetchCollaborators,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
-    extensionViews: () => null,
+    featureFlags: new Map<FeatureFlagName, boolean>(),
 })
+
+if (!window.context) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
+window.context.allowSignup = true
 
 const { add } = storiesOf('web/search/home/SearchPage', module)
     .addParameters({
@@ -61,7 +75,7 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
             type: 'figma',
             url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
         },
-        chromatic: { viewports: [544, 577, 769, 993, 1200] },
+        chromatic: { viewports: [544, 577, 769, 993], disableSnapshot: false },
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
@@ -77,26 +91,21 @@ add('Cloud with panels', () => (
     </WebStory>
 ))
 
-add('Cloud with community search contexts', () => (
+add('Cloud with panels and collaborators', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            useExperimentalFeatures.setState({ homepageUserInvitation: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
+    </WebStory>
+))
+
+add('Cloud marketing home', () => (
     <WebStory>
         {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
     </WebStory>
 ))
-
-add('Cloud with notebook onboarding', () => (
-    <WebStory>
-        {webProps => (
-            <SearchPage
-                {...defaultProps(webProps)}
-                isSourcegraphDotCom={true}
-                authenticatedUser={null}
-                featureFlags={new Map([['search-notebook-onboarding', true]])}
-            />
-        )}
-    </WebStory>
-))
-
-add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
 add('Server with panels', () => (
     <WebStory>

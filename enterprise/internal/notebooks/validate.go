@@ -1,9 +1,13 @@
 package notebooks
 
-import "github.com/cockroachdb/errors"
+import "github.com/sourcegraph/sourcegraph/lib/errors"
 
 func validateNotebookBlock(block NotebookBlock) error {
-	if block.Type != NotebookQueryBlockType && block.Type != NotebookMarkdownBlockType && block.Type != NotebookFileBlockType {
+	if block.Type != NotebookQueryBlockType &&
+		block.Type != NotebookMarkdownBlockType &&
+		block.Type != NotebookFileBlockType &&
+		block.Type != NotebookSymbolBlockType &&
+		block.Type != NotebookComputeBlockType {
 		return errors.Errorf("invalid block type: %s", string(block.Type))
 	}
 
@@ -13,6 +17,14 @@ func validateNotebookBlock(block NotebookBlock) error {
 		return errors.Errorf("invalid markdown block with id: %s", block.ID)
 	} else if block.Type == NotebookFileBlockType && block.FileInput == nil {
 		return errors.Errorf("invalid file block with id: %s", block.ID)
+	} else if block.Type == NotebookSymbolBlockType && block.SymbolInput == nil {
+		return errors.Errorf("invalid symbol block with id: %s", block.ID)
+	} else if block.Type == NotebookComputeBlockType && block.ComputeInput == nil {
+		return errors.Errorf("invalid compute block with id: %s", block.ID)
+	}
+
+	if block.Type == NotebookSymbolBlockType && block.SymbolInput != nil && block.SymbolInput.LineContext < 0 {
+		return errors.Errorf("symbol block line context cannot be negative, block id: %s", block.ID)
 	}
 
 	return nil

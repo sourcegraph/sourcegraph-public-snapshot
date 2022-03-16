@@ -115,12 +115,12 @@ func evalPipe(ctx *StepContext, p *parse.PipeNode) (finalVal reflect.Value, ok b
 		return noValue, false
 	}
 
-	// TODO: Support finalVal
+	// TODO: Support finalVal and pass it in to evalCmd
 	// finalVal is the value of the previous Cmd in a pipe (i.e. `${{ 3 + 3 | eq 6 }}`)
 	// It needs to be the final (fixed) argument of a call if it's set.
 
 	for _, c := range p.Cmds {
-		finalVal, ok = evalCmd(ctx, c, finalVal)
+		finalVal, ok = evalCmd(ctx, c)
 		if !ok {
 			return noValue, false
 		}
@@ -129,7 +129,7 @@ func evalPipe(ctx *StepContext, p *parse.PipeNode) (finalVal reflect.Value, ok b
 	return finalVal, ok
 }
 
-func evalCmd(ctx *StepContext, c *parse.CommandNode, previousValue reflect.Value) (reflect.Value, bool) {
+func evalCmd(ctx *StepContext, c *parse.CommandNode) (reflect.Value, bool) {
 	switch first := c.Args[0].(type) {
 	case *parse.BoolNode, *parse.NumberNode, *parse.StringNode, *parse.ChainNode:
 		if len(c.Args) == 1 {
@@ -139,7 +139,7 @@ func evalCmd(ctx *StepContext, c *parse.CommandNode, previousValue reflect.Value
 
 	case *parse.IdentifierNode:
 		// A function call always starts with an identifier
-		return evalFunction(ctx, first, first.Ident, c.Args, previousValue)
+		return evalFunction(ctx, first.Ident, c.Args)
 
 	default:
 		// Node type that we don't care about, so we don't even try to evaluate it
@@ -226,7 +226,7 @@ func isHexInt(s string) bool {
 	return len(s) > 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') && !strings.ContainsAny(s, "pP")
 }
 
-func evalFunction(ctx *StepContext, fn *parse.IdentifierNode, name string, args []parse.Node, previousValue reflect.Value) (val reflect.Value, success bool) {
+func evalFunction(ctx *StepContext, name string, args []parse.Node) (val reflect.Value, success bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			val = noValue

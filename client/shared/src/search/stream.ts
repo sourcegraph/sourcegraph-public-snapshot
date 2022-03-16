@@ -5,9 +5,11 @@ import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../graphql/schema'
+import { SymbolKind } from '../schema'
+
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
@@ -99,10 +101,12 @@ type MarkdownText = string
  */
 export interface CommitMatch {
     type: 'commit'
-    label: MarkdownText
     url: string
-    detail: MarkdownText
     repository: string
+    oid: string
+    message: string
+    authorName: string
+    authorDate: string
     repoStars?: number
     repoLastFetched?: string
 
@@ -510,6 +514,10 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
     return '/' + encodeURI(label)
 }
 
+export function getCommitMatchUrl(commitMatch: CommitMatch): string {
+    return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
+}
+
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
@@ -517,16 +525,8 @@ export function getMatchUrl(match: SearchMatch): string {
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':
-            return match.url
+            return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
     }
-}
-
-export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
-    if (match.type === 'commit') {
-        return match.label
-    }
-
-    return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
 }

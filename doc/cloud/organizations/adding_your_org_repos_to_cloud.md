@@ -1,5 +1,5 @@
 # Adding your organization’s repositories to Sourcegraph Cloud
-Note: Team access for Sourcegraph Cloud is in Private Beta. If you are interested in getting early-access, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku)!
+Note: Team access for Sourcegraph Cloud is in Private Beta. If you are interested in getting early-access, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=docs&utm_content=cloud-product-beta-teams)!
 
 Search across your code with your team on Sourcegraph Cloud by adding your organization’s repositories to Sourcegraph from GitHub.com or GitLab.com.
 
@@ -64,7 +64,7 @@ Please see [who can see your code on Sourcegraph Cloud](./code_visibility_teams_
 
 If you’ve added your organization’s repositories to Sourcegraph Cloud, and those repositories are missing or not showing up in search results for you or members of your organization, there are two possible causes that must both be resolved.
 
-**GitHub.com organization has not granted access to the Sourcegraph.com OAuth app** If you’ve added a code host connection for GitHub.com and repositories you expect to find are missing or not showing up in search results or in the list of repositories in Organization settings > Repositories, your organization may need to [grant access to the Sourcegraph OAuth app via GitHub.com](https://docs.github.com/en/organizations/restricting-access-to-your-organizations-data/approving-oauth-apps-for-your-organization).
+**GitHub.com organization has not granted access to the Sourcegraph.com OAuth app** If you’ve added a code host connection for GitHub.com and repositories you expect to find are missing or not showing up in search results or in the list of repositories in Organization settings > Repositories, your organization may need to [grant access to the Sourcegraph OAuth app via GitHub.com](https://docs.github.com/en/organizations/restricting-access-to-your-organizations-data/approving-oauth-apps-for-your-organization). You can re-request access to a particular organization using from [your GitHub Settings](https://github.com/settings/connections/applications/e917b2b7fa9040e1edd4). If you do not see your organization listed, you may need to ask your organization admin. 
 
 ### Personal code host connection is missing or outdated
 If a specific member of your organization finds that private repositories are missing or not showing up in search results, that member may need to add or update their [personal code host connection](../../code_search/how-to/adding_repositories_to_cloud.md).

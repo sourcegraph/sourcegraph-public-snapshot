@@ -1,9 +1,10 @@
+import React from 'react'
+
 import { ApolloLink } from '@apollo/client'
 import { MockedProvider, MockedProviderProps, MockedResponse, MockLink } from '@apollo/client/testing'
 import { getOperationName } from '@apollo/client/utilities'
-import React from 'react'
 
-import { cache } from '@sourcegraph/shared/src/graphql/apollo/cache'
+import { cache } from '@sourcegraph/http-client'
 
 /**
  * Intercept each mocked Apollo request and ensure that any request variables match the specified mock.

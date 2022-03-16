@@ -6,14 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // adjustedUpload pairs an upload visible from the current target commit with the
@@ -161,7 +160,7 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []store.Du
 func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
 
-	checkerEnabled := r.checker != nil && r.checker.Enabled()
+	checkerEnabled := authz.SubRepoEnabled(r.checker)
 	var a *actor.Actor
 	if checkerEnabled {
 		a = actor.FromContext(ctx)

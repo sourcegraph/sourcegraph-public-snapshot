@@ -1,11 +1,13 @@
-import { isEqual } from 'lodash'
 import React, { memo, useCallback, useEffect, useState } from 'react'
+
+import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core/types'
+import { getTrackingTypeByInsightType } from '../../pings'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
@@ -40,11 +42,9 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                 const insight = insights.find(insight => item.i === insight.id)
 
                 if (insight) {
-                    telemetryService.log(
-                        'InsightUICustomization',
-                        { insightType: insight.viewType },
-                        { insightType: insight.viewType }
-                    )
+                    const insightType = getTrackingTypeByInsightType(insight.viewType)
+
+                    telemetryService.log('InsightUICustomization', { insightType }, { insightType })
                 }
             } catch {
                 // noop

@@ -1,40 +1,31 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useLocalStorage, Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
 } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
-import styles from './LangStatsInsightCreationPage.module.scss'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
+
+import styles from './LangStatsInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
     insight: LangStatsInsight
 }
 
 export interface LangStatsInsightCreationPageProps extends TelemetryProps {
-    /**
-     * Set initial value for insight visibility setting.
-     */
-    visibility: string
-
-    /**
-     * List of all supported by code insights subjects that can store insight entities
-     * it's used for visibility setting section.
-     */
-    subjects: SupportedInsightSubject[]
-
     /**
      * Whenever the user submit form and clicks on save/submit button
      *
@@ -55,15 +46,12 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const { visibility, subjects, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+    const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined
     )
-
-    // Set the top-level scope value as initial value for the insight visibility
-    const mergedInitialValues = { ...(initialFormValues ?? {}), visibility }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
@@ -81,8 +69,8 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 telemetryService.log(
                     'InsightAddition',
-                    { insightType: 'codeStatsInsights' },
-                    { insightType: 'codeStatsInsights' }
+                    { insightType: CodeInsightTrackType.LangStatsInsight },
+                    { insightType: CodeInsightTrackType.LangStatsInsight }
                 )
 
                 onSuccessfulCreation(insight)
@@ -108,7 +96,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className={classNames(styles.creationPage, 'col-10')}>
+        <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -116,20 +104,19 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 <p className="text-muted">
                     Shows language usage in your repository based on number of lines of code.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights" target="_blank" rel="noopener">
                         Learn more.
-                    </a>
+                    </Link>
                 </p>
             </div>
 
             <LangStatsInsightCreationContent
                 className="pb-5"
-                initialValues={mergedInitialValues}
-                subjects={subjects}
+                initialValues={initialFormValues}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onChange={handleChange}
             />
-        </Page>
+        </CodeInsightsPage>
     )
 }

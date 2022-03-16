@@ -11,20 +11,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
-var testSchemas = []*schemas.Schema{
-	makeTestSchema("well-formed"),
-	makeTestSchema("query-error"),
+func makeTestSchemas(t *testing.T) []*schemas.Schema {
+	return []*schemas.Schema{
+		makeTestSchema(t, "well-formed"),
+		makeTestSchema(t, "query-error"),
+		makeTestSchema(t, "concurrent-index"),
+	}
 }
 
-func makeTestSchema(name string) *schemas.Schema {
+func makeTestSchema(t *testing.T, name string) *schemas.Schema {
 	fs, err := fs.Sub(testdata.Content, name)
 	if err != nil {
-		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
-	definitions, err := definition.ReadDefinitions(fs)
+	definitions, err := definition.ReadDefinitions(fs, name)
 	if err != nil {
-		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
 	return &schemas.Schema{
@@ -37,7 +40,7 @@ func makeTestSchema(name string) *schemas.Schema {
 
 func overrideSchemas(t *testing.T) {
 	liveSchemas := schemas.Schemas
-	schemas.Schemas = testSchemas
+	schemas.Schemas = makeTestSchemas(t)
 	t.Cleanup(func() { schemas.Schemas = liveSchemas })
 }
 
@@ -48,18 +51,34 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 	}
 
 	store := NewMockStore()
-	store.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
+	store.TransactFunc.SetDefaultReturn(store, nil)
+	store.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	store.TryLockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.UpFunc.SetDefaultHook(migrationHook)
 	store.DownFunc.SetDefaultHook(migrationHook)
-	store.VersionFunc.SetDefaultHook(func(ctx context.Context) (int, bool, bool, error) {
-		return version, dirty, true, nil
+	store.WithMigrationLogFunc.SetDefaultHook(func(_ context.Context, _ definition.Definition, _ bool, f func() error) error { return f() })
+	store.VersionsFunc.SetDefaultHook(func(ctx context.Context) ([]int, []int, []int, error) {
+		if dirty {
+			return nil, nil, []int{version}, nil
+		}
+		if version == 0 {
+			return nil, nil, nil, nil
+		}
+
+		base := 10001
+		ids := make([]int, 0, 4)
+		for v := base; v <= version; v++ {
+			ids = append(ids, v)
+		}
+
+		return ids, nil, nil, nil
 	})
 
 	return store
 }
 
-func testRunner(store Store) *Runner {
+func makeTestRunner(t *testing.T, store Store) *Runner {
+	testSchemas := makeTestSchemas(t)
 	storeFactories := make(map[string]StoreFactory, len(testSchemas))
 
 	for _, testSchema := range testSchemas {

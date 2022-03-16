@@ -212,9 +212,13 @@ interface Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -282,9 +286,13 @@ type HiddenExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -363,9 +371,13 @@ type ExternalChangeset implements Node & Changeset {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -841,6 +853,11 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     expiresAt: DateTime
 
     """
+    The fork the changeset will be pushed to, if any.
+    """
+    forkTarget: ForkTarget
+
+    """
     The workspace this resulted from. Null, if not run server-side.
     """
     workspace: BatchSpecWorkspace
@@ -904,7 +921,7 @@ type GitBranchChangesetDescription {
     """
     headRepository: Repository!
         @deprecated(
-            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use fork or ExternalChangeset.forkNamespace instead."
+            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use VisibleChangesetSpec.fork or ExternalChangeset.forkNamespace instead."
         )
 
     """
@@ -913,11 +930,6 @@ type GitBranchChangesetDescription {
     the Git branch "fix-foo").
     """
     headRef: String!
-
-    """
-    Whether the changeset will be published to a fork.
-    """
-    fork: Boolean!
 
     """
     The title of the changeset on the code host.
@@ -1247,6 +1259,23 @@ type ChangesetApplyPreviewConnection {
     stats: ChangesetApplyPreviewConnectionStats!
 }
 
+"""
+The target repository that a changeset will be pushed to, if it's not the origin
+repository.
+"""
+type ForkTarget {
+    """
+    True if the remote target is a fork in the user namespace associated with
+    the credential used to push the changeset.
+    """
+    pushUser: Boolean!
+
+    """
+    The specific named fork that the changeset will be pushed to.
+    """
+    namespace: String
+}
+
 extend type Mutation {
     """
     Upload a changeset spec that will be used in a future update to a batch change. The changeset spec
@@ -1451,6 +1480,54 @@ extend type Mutation {
         TODO: Not implemented yet.
         """
         noCache: Boolean = false
+    ): BatchSpec!
+
+    """
+    Creates or updates a batch spec based on the given namespace and name, then
+    triggers a job to evaluate the workspaces.
+
+    This is essentially a wrapper for `createBatchSpecFromRaw` and
+    `replaceBatchSpecInput` to facilitate src-cli, and should not be used
+    otherwise.
+    """
+    upsertBatchSpecInput(
+        """
+        The raw batch spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/batch_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        batchSpec: String!
+
+        """
+        If true, repos with a .batchignore file will still be included.
+        """
+        allowIgnored: Boolean = false
+
+        """
+        If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
+        be published.
+        """
+        allowUnsupported: Boolean = false
+
+        """
+        Right away set the execute flag.
+
+        TODO: Not implemented yet.
+        """
+        execute: Boolean = false
+
+        """
+        Don't use cache entries.
+
+        TODO: Not implemented yet.
+        """
+        noCache: Boolean = false
+
+        """
+        The namespace (either a user or organization). A batch spec can only be applied to (or
+        used to create) batch changes in this namespace.
+        """
+        namespace: ID!
     ): BatchSpec!
 
     """
@@ -1688,9 +1765,13 @@ extend type Query {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -1814,8 +1895,20 @@ type BatchSpecWorkspaceResolution {
     workspaces(
         first: Int = 50
         after: String
+        """
+        Not implemented.
+        """
         orderBy: WorkspacesSortOrder
+        """
+        Search for workspaces matching this query. Queries may include quoted substrings
+        to match phrases, and words may be preceded by - to negate them.
+        Currently, this supports searching repository names only.
+        """
         search: String
+        """
+        Filter workspaces by given state.
+        """
+        state: BatchSpecWorkspaceState
     ): BatchSpecWorkspaceConnection!
 
     """
@@ -2314,6 +2407,11 @@ type BatchChange implements Node {
         Only include changesets with the given state.
         """
         state: ChangesetState
+        """
+        Query only changesets that are either open or draft. This is used on the close page to list changesets that remain open.
+        When set, passing state is not allowed.
+        """
+        onlyClosable: Boolean
         """
         Only include changesets with the given review state.
         """
@@ -2865,9 +2963,13 @@ extend type Org {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -2889,9 +2991,13 @@ extend type User {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """
@@ -2935,9 +3041,13 @@ extend type Repository {
         """
         after: String
         """
-        Only return batch changes in this state.
+        Only return batch changes in this state. If `states` is also specified, it will take precedence over `state`.
         """
         state: BatchChangeState
+        """
+        Only return batch changes in any of these states. If `state` is also specified, `states` will take precedence over it.
+        """
+        states: [BatchChangeState!]
         """
         Only include batch changes that the viewer can administer.
         """

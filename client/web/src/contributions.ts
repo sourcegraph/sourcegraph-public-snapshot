@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -21,7 +22,7 @@ export class GlobalContributions extends React.Component<Props> {
 
     public componentDidMount(): void {
         // Lazy-load `highlight/contributions.ts` to make main application bundle ~25kb Gzip smaller.
-        import('@sourcegraph/shared/src/highlight/contributions')
+        import('@sourcegraph/common/src/util/markdown/contributions')
             .then(({ registerHighlightContributions }) => registerHighlightContributions()) // no way to unregister these
             .catch(error => {
                 throw error // Throw error to the <ErrorBoundary />

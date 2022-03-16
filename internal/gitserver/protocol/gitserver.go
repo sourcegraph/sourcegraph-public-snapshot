@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SearchRequest struct {
-	Repo        api.RepoName
-	Revisions   []RevisionSpecifier
-	Query       Node
-	IncludeDiff bool
-	Limit       int
+	Repo                 api.RepoName
+	Revisions            []RevisionSpecifier
+	Query                Node
+	IncludeDiff          bool
+	Limit                int
+	IncludeModifiedFiles bool
 }
 
 type RevisionSpecifier struct {
@@ -73,8 +73,9 @@ type CommitMatch struct {
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message result.MatchedString `json:",omitempty"`
-	Diff    result.MatchedString `json:",omitempty"`
+	Message       result.MatchedString `json:",omitempty"`
+	Diff          result.MatchedString `json:",omitempty"`
+	ModifiedFiles []string             `json:",omitempty"`
 }
 
 type Signature struct {
@@ -94,6 +95,7 @@ type ExecRequest struct {
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
 	Opt            *RemoteOpts `json:"opt"`
+	NoTimeout      bool        `json:"noTimeout"`
 }
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.
@@ -132,14 +134,10 @@ type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
 
-	// MigrateFrom is the name of the gitserver instance that is the current owner of the
-	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from the
-	// current gitserver instance to the new home of the repo based on the rendezvous hashing
-	// scheme.
-	//
-	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
-	// and it should be removed.
-	MigrateFrom string `json:"migrateFrom"`
+	// CloneFromShard is the hostname of the gitserver instance that is the current owner of the
+	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
+	// that gitserver instance to the new home of the repo.
+	CloneFromShard string `json:"cloneFromShard"`
 }
 
 // RepoUpdateResponse returns meta information of the repo enqueued for
@@ -206,6 +204,8 @@ type RepoInfo struct {
 	Cloned          bool       // whether the repository has been cloned successfully
 	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
 	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
+	LastError       string     // the most recent error seen while fetching or cloning the repo
+	ShardID         string     // the ID of the shard owning this repo
 
 	// CloneTime is the time the clone occurred. Note: Repositories may be
 	// re-cloned automatically, so this time is likely to move forward

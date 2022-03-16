@@ -4,13 +4,12 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -55,7 +54,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	}
 }
 
-func (p *OAuthProvider) Validate() (problems []string) {
+func (p *OAuthProvider) ValidateConnection(context.Context) (problems []string) {
 	return nil
 }
 

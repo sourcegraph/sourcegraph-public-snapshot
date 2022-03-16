@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store is an abstract Postgres-backed data access layer. Instances of this struct
@@ -54,7 +54,7 @@ type ShareableStore interface {
 
 var _ ShareableStore = &Store{}
 
-// NewHandleWithDB returns a new base store connected to the given connection.
+// NewWithDB returns a new base store connected to the given connection.
 func NewWithDB(db dbutil.DB, txOptions sql.TxOptions) *Store {
 	return NewWithHandle(NewHandleWithDB(db, txOptions))
 }

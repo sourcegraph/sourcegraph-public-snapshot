@@ -28,6 +28,7 @@ func newTest() *httptestutil.Client {
 		enterpriseServices.GitLabWebhook,
 		enterpriseServices.BitbucketServerWebhook,
 		enterpriseServices.NewCodeIntelUploadHandler,
+		enterpriseServices.NewComputeStreamHandler,
 		rateLimiter,
 	))
 }

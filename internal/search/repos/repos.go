@@ -3,32 +3,38 @@ package repos
 import (
 	"context"
 	"fmt"
-	"regexp"
-	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
+	"github.com/grafana/regexp"
+	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
+	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Resolved struct {
@@ -59,7 +65,7 @@ type Resolver struct {
 }
 
 func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Paginate", "")
+	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -76,12 +82,12 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Limit = 500
 	}
 
-	errs := new(multierror.Error)
+	var errs error
 
 	for {
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
 				break
 			}
@@ -89,7 +95,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
 
 		if err = handle(&page); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 			break
 		}
 
@@ -100,19 +106,19 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		opts.Cursors = page.Next
 	}
 
-	return errs.ErrorOrNil()
+	return errs
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Resolve", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	includePatterns := op.RepoFilters
-	if includePatterns != nil {
+	if len(includePatterns) > 0 {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
@@ -121,7 +127,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
@@ -131,6 +137,22 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
+	var (
+		depNames []string
+		depRevs  map[api.RepoName][]search.RevisionSpecifier
+	)
+
+	if len(op.Dependencies) > 0 {
+		depNames, depRevs, err = r.dependencies(ctx, &op)
+		if err != nil {
+			return Resolved{}, err
+		}
+
+		if len(depNames) == 0 {
+			return Resolved{}, ErrNoResolvedRepos
+		}
+	}
+
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
@@ -138,6 +160,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
+		Names:                 depNames,
 		ExcludePattern:        search.UnionRegExps(excludePatterns),
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
@@ -225,7 +248,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	var res struct {
 		sync.Mutex
 		Resolved
-		multierror.Error
+		errors.MultiError
 	}
 
 	res.Resolved = Resolved{
@@ -251,11 +274,17 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				revs    []search.RevisionSpecifier
 			)
 
-			if len(searchContextRepositoryRevisions) > 0 {
+			if len(depRevs) > 0 {
+				revs = depRevs[repo.Name]
+			}
+
+			if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
 				if scRepoRev := searchContextRepositoryRevisions[repo.ID]; scRepoRev != nil {
 					revs = scRepoRev.Revs
 				}
-			} else {
+			}
+
+			if len(revs) == 0 {
 				var clashingRevs []search.RevisionSpecifier
 				revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
 
@@ -330,22 +359,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				}
 
 				if op.CommitAfter != "" {
-					n, err := git.CommitCount(ctx, repoRev.Repo.Name, git.CommitsOptions{
-						N:     1,
-						After: op.CommitAfter,
-						Range: string(commitID),
-					})
 
-					if err != nil {
+					if hasCommitAfter, err := git.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
-							multierror.Append(&res.Error, err)
+							res.MultiError = errors.Append(res.MultiError, err)
 							res.Unlock()
 						}
 						continue
-					}
-
-					if n == 0 {
+					} else if !hasCommitAfter {
 						continue
 					}
 				}
@@ -378,9 +400,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
-	err = res.ErrorOrNil()
+	err = res.MultiError
 	if len(res.MissingRepoRevs) > 0 {
-		err = multierror.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
+		err = errors.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
 	}
 
 	return res.Resolved, err
@@ -389,7 +411,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 // Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
 func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex ExcludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Excluded", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
 	defer func() {
 		tr.LazyPrintf("excluded repos: %+v", ex)
 		tr.SetError(err)
@@ -410,7 +432,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = search.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// note that this mutates the strings in includePatterns, stripping their
@@ -490,6 +512,91 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 	}
 
 	return excluded.ExcludedRepos, g.Wait()
+}
+
+// dependencies resolves `repo:dependencies` predicates to a specific list of
+// dependency repositories for the given repos and revision(s). It does so by:
+//
+// 1. Expanding each `repo:dependencies(regex@revA:revB:...)` filter regex to a list of repositories that exist in the DB.
+// 2. For each of those (repo, rev) tuple, asking the code intelligence dependency API for their (transitive) dependencies.
+//    Calling this API also has the effect of triggering a sync of all discovered dependency repos.
+// 3. Return those dependencies to the caller to be included in repository resolution.
+func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ []string, _ map[api.RepoName][]search.RevisionSpecifier, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.dependencies", "")
+	defer func() {
+		tr.LazyPrintf("deps: %v", op.Dependencies)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if !conf.DependeciesSearchEnabled() {
+		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
+	}
+
+	repoStore := r.DB.Repos()
+	repoRevs := make(map[api.RepoName]codeintelTypes.RevSpecSet, len(op.Dependencies))
+	for _, depParams := range op.Dependencies {
+		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
+		if len(revs) == 0 {
+			revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
+		}
+
+		rs, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
+			IncludePatterns:       []string{repoPattern},
+			CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+
+		for _, repo := range rs {
+			for _, rev := range revs {
+				if rev == (search.RevisionSpecifier{}) {
+					rev.RevSpec = "HEAD"
+				} else if rev.RevSpec == "" {
+					return nil, nil, errors.New("unsupported glob rev in dependencies filter")
+				}
+
+				if _, ok := repoRevs[repo.Name]; !ok {
+					repoRevs[repo.Name] = codeintelTypes.RevSpecSet{}
+				}
+
+				repoRevs[repo.Name][api.RevSpec(rev.RevSpec)] = struct{}{}
+			}
+		}
+	}
+
+	depsSvc := codeintel.GetDependenciesService(
+		r.DB,
+		lockfiles.GetService(lockfiles.NewDefaultGitService(nil)),
+		&packageRepoSyncer{cli: repoupdater.DefaultClient},
+	)
+
+	dependencyRepoRevs, err := depsSvc.Dependencies(ctx, repoRevs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	depRevs := make(map[api.RepoName][]search.RevisionSpecifier, len(dependencyRepoRevs))
+	depNames := make([]string, 0, len(dependencyRepoRevs))
+
+	for repoName, revs := range dependencyRepoRevs {
+		depNames = append(depNames, string(repoName))
+		revSpecs := make([]search.RevisionSpecifier, 0, len(revs))
+		for rev := range revs {
+			revSpecs = append(revSpecs, search.RevisionSpecifier{RevSpec: string(rev)})
+		}
+		depRevs[repoName] = revSpecs
+	}
+
+	return depNames, depRevs, nil
+}
+
+type packageRepoSyncer struct{ cli *repoupdater.Client }
+
+func (s *packageRepoSyncer) Sync(ctx context.Context, repo api.RepoName) error {
+	_, err := s.cli.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo, Update: true})
+	return err
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
@@ -595,10 +702,10 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
-			log15.Info("Error is here", "for", repoPattern)
 			return nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
 		}
 		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
+
 		includePatterns[i] = repoPattern
 		if len(revs) > 0 {
 			p, err := regexp.Compile("(?i:" + includePatterns[i] + ")")
@@ -646,56 +753,31 @@ type MissingRepoRevsError struct {
 
 func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 
-// HandleRepoSearchResult handles the limitHit and searchErr returned by a search function,
-// returning common as to reflect that new information. If searchErr is a fatal error,
-// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
-// nil error.
-func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
-	var status search.RepoStatus
-	if limitHit {
-		status |= search.RepoStatusLimitHit
-	}
-
-	if gitdomain.IsRepoNotExist(searchErr) {
-		if gitdomain.IsCloneInProgress(searchErr) {
-			status |= search.RepoStatusCloning
-		} else {
-			status |= search.RepoStatusMissing
-		}
-	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
-		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
-		} else {
-			fatalErr = searchErr
-		}
-	} else if errcode.IsNotFound(searchErr) {
-		status |= search.RepoStatusMissing
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= search.RepoStatusTimedout
-	} else if searchErr != nil {
-		fatalErr = searchErr
-	}
-	return streaming.Stats{
-		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
-		IsLimitHit: limitHit,
-	}, fatalErr
-}
-
-func PrivateReposForUser(ctx context.Context, db database.DB, userID int32, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "privateReposForUser", strconv.Itoa(int(userID)))
+// Get all private repos for the the current actor. On sourcegraph.com, those are
+// only the repos directly added by the user. Otherwise it's all repos the user has
+// access to on all connected code hosts / external services.
+func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
-	// Get all private repos for the the current actor. On sourcegraph.com, those are
-	// only the repos directly added by the user. Otherwise it's all repos the user has
-	// access to on all connected code hosts / external services.
-	//
+	userID := int32(0)
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			userID = a.UID
+		} else {
+			tr.LazyPrintf("skipping private repo resolution for unauthed user")
+			return nil
+		}
+	}
+	tr.LogFields(otlog.Int32("userID", userID))
+
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how
 	// best to address that first.
 	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		UserID:         userID, // Zero valued when not in sourcegraph.com mode
 		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,

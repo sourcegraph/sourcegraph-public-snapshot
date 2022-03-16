@@ -1,16 +1,19 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button, Grid } from '..'
+import { Button } from '../Button'
+import { Grid } from '../Grid'
 
-import { Card, CardBody, CardHeader, CardSubtitle, CardText, CardTitle } from '.'
+import { Card, CardBody, CardFooter, CardHeader, CardSubtitle, CardText, CardTitle } from '.'
 
 const config: Meta = {
     title: 'wildcard/Card',
+    component: Card,
 
     decorators: [
         story => (
@@ -20,11 +23,22 @@ const config: Meta = {
 
     parameters: {
         component: Card,
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1172%3A285',
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
         },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1172%3A285',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1172%3A558',
+            },
+        ],
     },
 }
 
@@ -54,6 +68,7 @@ export const Simple: Story = () => (
                     </CardText>
                     <Button variant="primary">Do something</Button>
                 </CardBody>
+                <CardFooter>Card footer</CardFooter>
             </Card>
 
             <Card>
@@ -63,20 +78,27 @@ export const Simple: Story = () => (
                     <CardText>With supporting text below as a natural lead-in to additional content.</CardText>
                     <Button variant="primary">Do something</Button>
                 </CardBody>
+                <CardFooter>Card footer</CardFooter>
             </Card>
         </Grid>
     </>
 )
 
 const cardItem = (
-    <Card variant="interactive" className="mb-1 p-0 w-100">
+    <Card as="button" className="mb-1 p-0 w-100">
         <CardBody className="w-100 d-flex justify-content-between align-items-center">
             <div className="d-flex flex-column">
                 <CardTitle className="mb-0 text-left">Watch for secrets in new commits</CardTitle>
                 <CardSubtitle>New search result → Sends email notifications, delivers webhook</CardSubtitle>
             </div>
             <div className="d-flex align-items-center">
-                <Toggle onClick={() => {}} value={true} className="mr-3" disabled={false} />
+                <Toggle
+                    display="inline"
+                    onClick={() => {}}
+                    value={true}
+                    className="mr-3 align-item-baseline"
+                    disabled={false}
+                />
                 <Button variant="link">Edit</Button>
             </div>
         </CardBody>

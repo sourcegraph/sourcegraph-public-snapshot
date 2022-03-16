@@ -1,21 +1,31 @@
-import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import classNames from 'classnames'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 
-import styles from './CommunitySearchContextPanel.module.scss'
 import { PanelContainer } from './PanelContainer'
+
+import styles from './CommunitySearchContextPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
+    insideTabPanel?: boolean
 }
 
-export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ className, telemetryService }) => {
+export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({
+    className,
+    telemetryService,
+    insideTabPanel,
+}) => {
+    useEffect(() => {
+        telemetryService.log('HomepageContextsPanelViewed')
+    }, [telemetryService])
     const logContextClicked = useCallback(
         () => telemetryService.log('CommunitySearchContextsPanelCommunitySearchContextClicked'),
         [telemetryService]
@@ -41,6 +51,7 @@ export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ c
 
     return (
         <PanelContainer
+            insideTabPanel={insideTabPanel}
             className={classNames(className, 'community-search-context-panel')}
             title="Community search contexts"
             state="populated"

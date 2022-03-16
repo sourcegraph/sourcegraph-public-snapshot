@@ -1,13 +1,13 @@
+import React, { useState, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import React, { useState, useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Button, TooltipController } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import { Button, ButtonGroup, TooltipController, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -15,8 +15,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
 
-import styles from './GitCommitNode.module.scss'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
+
+import styles from './GitCommitNode.module.scss'
 
 export interface GitCommitNodeProps {
     node: GitCommitFields
@@ -35,6 +36,9 @@ export interface GitCommitNodeProps {
 
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
+
+    /** Show the absolute timestamp and move relative time to tooltip. */
+    preferAbsoluteTimestamps?: boolean
 
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
@@ -59,6 +63,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     hideExpandCommitMessageBody,
     messageSubjectClassName,
     showSHAAndParentsRow,
+    preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
 }) => {
@@ -70,14 +75,17 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
+    useEffect(() => {
+        TooltipController.forceUpdate()
+    }, [flashCopiedToClipboardMessage])
+
     const copyToClipboard = useCallback((oid): void => {
         eventLogger.log('CommitSHACopiedToClipboard')
         copy(oid)
         setFlashCopiedToClipboardMessage(true)
-        TooltipController.forceUpdate()
+
         setTimeout(() => {
             setFlashCopiedToClipboardMessage(false)
-            TooltipController.forceUpdate()
         }, 1500)
     }, [])
 
@@ -106,7 +114,11 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             )}
             {compact && (
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
-                    <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
+                    <Timestamp
+                        noAbout={true}
+                        preferAbsolute={preferAbsoluteTimestamps}
+                        date={node.committer ? node.committer.date : node.author.date}
+                    />
                 </small>
             )}
         </div>
@@ -129,6 +141,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             compact={Boolean(compact)}
             messageElement={messageElement}
             commitMessageBody={commitMessageBody}
+            preferAbsoluteTimestamps={preferAbsoluteTimestamps}
         />
     )
 
@@ -139,7 +152,8 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
                     <Button
-                        className={classNames('btn-icon', styles.shaAndParentsCopy)}
+                        variant="icon"
+                        className={styles.shaAndParentsCopy}
                         onClick={() => copyToClipboard(node.oid)}
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                     >
@@ -162,7 +176,8 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                     <code>{parent.oid}</code>
                                 </Link>
                                 <Button
-                                    className={classNames('btn-icon', styles.shaAndParentsCopy)}
+                                    variant="icon"
+                                    className={styles.shaAndParentsCopy}
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                 >
@@ -188,14 +203,18 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
-            <Link
-                className="btn btn-sm btn-outline-secondary align-center d-inline-flex"
+            <Button
+                className="align-center d-inline-flex"
                 to={node.tree.canonicalURL}
                 data-tooltip="Browse files in the repository at this point in history"
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={Link}
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
                 Browse files at @{node.abbreviatedOID}
-            </Link>
+            </Button>
             {diffModeSelector()}
         </div>
     )
@@ -218,32 +237,37 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                             <div className={styles.actions}>
                                 {!showSHAAndParentsRow && (
                                     <div>
-                                        <div className="btn-group btn-group-sm mr-2" role="group">
-                                            <Link
-                                                className="btn btn-secondary"
+                                        <ButtonGroup className="mr-2">
+                                            <Button
                                                 to={node.canonicalURL}
                                                 data-tooltip="View this commit"
+                                                variant="secondary"
+                                                as={Link}
+                                                size="sm"
                                             >
                                                 <strong>{oidElement}</strong>
-                                            </Link>
+                                            </Button>
                                             <Button
                                                 onClick={() => copyToClipboard(node.oid)}
                                                 data-tooltip={
                                                     flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                                 }
                                                 variant="secondary"
+                                                size="sm"
                                             >
                                                 <ContentCopyIcon className="icon-inline small" />
                                             </Button>
-                                        </div>
+                                        </ButtonGroup>
                                         {node.tree && (
-                                            <Link
-                                                className="btn btn-sm btn-secondary"
+                                            <Button
                                                 to={node.tree.canonicalURL}
                                                 data-tooltip="View files at this commit"
+                                                variant="secondary"
+                                                size="sm"
+                                                as={Link}
                                             >
                                                 <FileDocumentIcon className="icon-inline mr-1" />
-                                            </Link>
+                                            </Button>
                                         )}
                                     </div>
                                 )}

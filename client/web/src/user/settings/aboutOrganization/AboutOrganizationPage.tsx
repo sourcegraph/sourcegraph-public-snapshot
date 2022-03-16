@@ -1,10 +1,11 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect } from 'react'
+
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import styles from './AboutOrganizationPage.module.scss'
 interface AboutOrganizationPageProps extends TelemetryProps {}
@@ -29,14 +30,14 @@ export const AboutOrganizationPage: React.FunctionComponent<AboutOrganizationPag
                     Get instant access to code navigation and intelligence across your team’s private code and 2M open
                     source repositories. Sourcegraph Cloud for teams brings enterprise advantages to small teams.
                 </p>
-                <a
-                    href="https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku/"
-                    className="btn btn-primary"
+                <ButtonLink
+                    to="https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=in-product&utm_term=in-product-settings&utm_content=cloud-product-beta-teams"
                     target="_blank"
                     rel="noopener noreferrer"
+                    variant="primary"
                 >
-                    Sign up for private beta access <OpenInNewIcon className="icon-inline" />
-                </a>
+                    Sign up for private beta access <Icon as={OpenInNewIcon} />
+                </ButtonLink>
             </Container>
             <SelfHostedCta
                 contentClassName={styles.selfHostedCtaContent}

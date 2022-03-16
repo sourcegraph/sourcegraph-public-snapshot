@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
+
+import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
@@ -72,8 +73,8 @@ const FormInput = forwardRef((props, reference) => {
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
-                    autoFocus={autoFocus}
                     ref={mergedReference}
+                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}

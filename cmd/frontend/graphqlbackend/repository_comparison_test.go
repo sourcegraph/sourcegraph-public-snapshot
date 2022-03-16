@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepositoryComparison(t *testing.T) {
@@ -718,14 +718,16 @@ func TestFileDiffHighlighter(t *testing.T) {
 </span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">new2
 </span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
 
-	highlight.Mocks.Code = func(p highlight.Params) (template.HTML, bool, error) {
+	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
 		switch p.Filepath {
 		case file1.path:
-			return template.HTML(highlightedOld), false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedOld))
+			return &response, false, nil
 		case file2.path:
-			return template.HTML(highlightedNew), false, nil
+			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedNew))
+			return &response, false, nil
 		default:
-			return "", false, errors.Errorf("unknown file: %s", p.Filepath)
+			return nil, false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
 	}
 	t.Cleanup(highlight.ResetMocks)

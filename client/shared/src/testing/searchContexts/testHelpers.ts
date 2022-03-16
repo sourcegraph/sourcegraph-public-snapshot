@@ -2,7 +2,7 @@ import { subDays } from 'date-fns'
 import { range } from 'lodash'
 import { Observable, of } from 'rxjs'
 
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 
 import { Maybe, Scalars } from '../../graphql-operations'
 

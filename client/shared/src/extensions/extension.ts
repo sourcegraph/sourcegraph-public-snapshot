@@ -1,6 +1,6 @@
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import * as GQL from '../graphql/schema'
+import * as GQL from '../schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 
 import { ExtensionManifest, parseExtensionManifestOrError } from './extensionManifest'

@@ -3,14 +3,14 @@
 exports[`LicenseExpirationAlert expired 1`] = `
 <DocumentFragment>
   <div
-    class="alert container alert-warning align-items-center"
+    class="alert alertWarning container align-items-center"
   >
     <div
       class="content"
     >
       Your Sourcegraph license expired 3 months ago. 
       <a
-        class="site-alert__link"
+        class="anchorLink site-alert__link"
         href="/site-admin/license"
       >
         <span
@@ -21,7 +21,7 @@ exports[`LicenseExpirationAlert expired 1`] = `
       </a>
        or 
       <a
-        class="site-alert__link"
+        class="anchorLink site-alert__link"
         href="https://about.sourcegraph.com/contact"
       >
         <span
@@ -33,11 +33,11 @@ exports[`LicenseExpirationAlert expired 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      class="btn btn-icon closeButton"
+      class="btn btnIcon closeButton"
       type="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -55,14 +55,14 @@ exports[`LicenseExpirationAlert expired 1`] = `
 exports[`LicenseExpirationAlert expiring soon 1`] = `
 <DocumentFragment>
   <div
-    class="alert container alert-warning align-items-center"
+    class="alert alertWarning container align-items-center"
   >
     <div
       class="content"
     >
       Your Sourcegraph license will expire in 3 days. 
       <a
-        class="site-alert__link"
+        class="anchorLink site-alert__link"
         href="/site-admin/license"
       >
         <span
@@ -73,7 +73,7 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
       </a>
        or 
       <a
-        class="site-alert__link"
+        class="anchorLink site-alert__link"
         href="https://about.sourcegraph.com/contact"
       >
         <span
@@ -85,11 +85,11 @@ exports[`LicenseExpirationAlert expiring soon 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      class="btn btn-icon closeButton"
+      class="btn btnIcon closeButton"
       type="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"

@@ -5,11 +5,9 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -29,14 +27,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const addr = ":3188"
@@ -53,6 +55,10 @@ func main() {
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("Failed to start profiler: %v", err)
+	}
+
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load config: %s", err)
 	}
@@ -62,6 +68,9 @@ func main() {
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+		HoneyDataset: &honey.Dataset{
+			Name: "codeintel-worker",
+		},
 	}
 
 	// Start debug server
@@ -83,11 +92,11 @@ func main() {
 
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
-	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
+	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
-	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to create upload store: %s", err)
 	}
@@ -132,16 +141,7 @@ func mustInitializeDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB(dsn, "precise-code-intel-worker", false, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
-	}
+	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
@@ -151,7 +151,7 @@ func mustInitializeDB() *sql.DB {
 
 	ctx := context.Background()
 	go func() {
-		for range time.NewTicker(5 * time.Second).C {
+		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
@@ -167,16 +167,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	var (
-		db  *sql.DB
-		err error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		db, err = connections.NewCodeIntelDB(dsn, "precise-code-intel-worker", true, &observation.TestContext)
-	} else {
-		db, err = connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
-	}
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
@@ -196,6 +187,15 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 
 		return float64(count)
 	}))
+}
+
+func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {
+	if withHoney {
+		return observationContext
+	}
+	ctx := *observationContext
+	ctx.HoneyDataset = nil
+	return &ctx
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {

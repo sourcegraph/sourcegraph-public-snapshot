@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -33,9 +33,8 @@ var (
 	dbAddUserPasswordFlag = dbAddUserFlagSet.String("password", "sourcegraphsourcegraph", "User password")
 
 	dbCommand = &ffcli.Command{
-		Name:       "db",
-		ShortUsage: "",
-		LongHelp:   "",
+		Name:      "db",
+		ShortHelp: "Interact with Sourcegraph databases for development.",
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
@@ -76,7 +75,7 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.NewFrontendDB(postgresdsn.New("", "", globalConf.GetEnv), "frontend", true, &observation.TestContext)
+	conn, err := connections.EnsureNewFrontendDB(postgresdsn.New("", "", globalConf.GetEnv), "frontend", &observation.TestContext)
 	if err != nil {
 		return err
 	}
@@ -196,14 +195,22 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
+	}
+	r, err := connections.RunnerFromDSNs(dsnMap, "sg", storeFactory)
+	if err != nil {
+		return err
 	}
 
-	options := runner.Options{
-		Up:            true,
-		NumMigrations: 0,
-		SchemaNames:   schemaNames,
+	operations := make([]runner.MigrationOperation, 0, len(schemaNames))
+	for _, schemaName := range schemaNames {
+		operations = append(operations, runner.MigrationOperation{
+			SchemaName: schemaName,
+			Type:       runner.MigrationOperationTypeUpgrade,
+		})
 	}
 
-	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)
+	return r.Run(ctx, runner.Options{
+		Operations: operations,
+	})
 }

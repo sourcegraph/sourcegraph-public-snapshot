@@ -1,10 +1,12 @@
-import { render, waitFor } from '@testing-library/react'
-import * as H from 'history'
 import React from 'react'
+
+import { waitFor } from '@testing-library/react'
+import * as H from 'history'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISiteUsagePeriod } from '@sourcegraph/shared/src/graphql/schema'
+import { ISiteUsagePeriod } from '@sourcegraph/shared/src/schema'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { PageTitle } from '../../components/PageTitle'
 
@@ -22,7 +24,7 @@ describe('SiteAdminOverviewPage', () => {
     }
 
     test('activation in progress', async () => {
-        const component = render(
+        const component = renderWithBrandedContext(
             <SiteAdminOverviewPage
                 {...baseProps}
                 activation={{
@@ -69,7 +71,7 @@ describe('SiteAdminOverviewPage', () => {
     })
 
     test('< 2 users', async () => {
-        const component = render(
+        const component = renderWithBrandedContext(
             <SiteAdminOverviewPage
                 {...baseProps}
                 _fetchOverview={() =>
@@ -117,7 +119,7 @@ describe('SiteAdminOverviewPage', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         ;(window.SVGElement as any).prototype.getComputedTextLength = () => 500
 
-        const component = render(
+        const component = renderWithBrandedContext(
             <SiteAdminOverviewPage
                 {...baseProps}
                 _fetchOverview={() =>

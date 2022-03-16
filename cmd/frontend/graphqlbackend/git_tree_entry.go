@@ -4,14 +4,12 @@ import (
 	"context"
 	"io/fs"
 	"net/url"
-	neturl "net/url"
 	"os"
 	"path"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -26,13 +24,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var metricLabels = []string{"origin"}
-var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_lsif_requests",
-	Help: "Counts LSIF requests.",
-}, metricLabels)
+var (
+	metricLabels      = []string{"origin"}
+	codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_lsif_requests",
+		Help: "Counts LSIF requests.",
+	}, metricLabels)
+)
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
@@ -178,7 +179,7 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
-	return globals.ExternalURL().ResolveReference(&neturl.URL{
+	return globals.ExternalURL().ResolveReference(&url.URL{
 		Path:     path.Join(r.Repository().URL(), "-/raw/", r.Path()),
 		RawQuery: "format=zip",
 	}).String()
@@ -218,6 +219,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
+		authz.DefaultSubRepoPermsChecker,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),
@@ -248,6 +250,18 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		Path:      r.Path(),
 		ExactPath: !r.stat.IsDir(),
 		ToolName:  toolName,
+	})
+}
+
+func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (CodeIntelSupportResolver, error) {
+	repo, err := r.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.GitBlobCodeIntelInfo(ctx, &GitBlobCodeIntelInfoArgs{
+		Repo: repo.Name,
+		Path: r.Path(),
 	})
 }
 

@@ -4,7 +4,7 @@ import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import { ElementHandle } from 'puppeteer'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -338,7 +338,7 @@ async function getPanelTabTitles(driver: Driver): Promise<string[]> {
 function collectVisibleLinks(driver: Driver): Promise<string[]> {
     return driver.page.evaluate(() =>
         [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
-            a => a.querySelector('.test-file-match-children-item')?.getAttribute('href') || ''
+            a => a.querySelector('.test-file-match-children-item')?.getAttribute('data-href') || ''
         )
     )
 }

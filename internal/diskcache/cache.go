@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/ext"
 	otelog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store is an on-disk cache, with items cached via calls to Open.
@@ -199,17 +199,18 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 
 // path returns the path for key.
 func (s *store) path(key []string) string {
-	encoded := []string{s.dir}
-	for _, k := range key {
-		encoded = append(encoded, EncodeKeyComponent(k))
-	}
+	encoded := append([]string{s.dir}, EncodeKeyComponents(key)...)
 	return filepath.Join(encoded...) + ".zip"
 }
 
-// EncodeKeyComponent uses a sha256 hash of the key since we want to use it for the disk name.
-func EncodeKeyComponent(component string) string {
-	h := sha256.Sum256([]byte(component))
-	return hex.EncodeToString(h[:])
+// EncodeKeyComponents uses a sha256 hash of the key since we want to use it for the disk name.
+func EncodeKeyComponents(components []string) []string {
+	encoded := []string{}
+	for _, component := range components {
+		h := sha256.Sum256([]byte(component))
+		encoded = append(encoded, hex.EncodeToString(h[:]))
+	}
+	return encoded
 }
 
 func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace observation.TraceLogger) (file *File, err error) {
@@ -304,13 +305,17 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		return strings.HasSuffix(fi.Name(), ".zip")
 	}
 
-	list := []fs.FileInfo{}
+	type absFileInfo struct {
+		absPath string
+		info    fs.FileInfo
+	}
+	entries := []absFileInfo{}
 	err = filepath.Walk(s.dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			list = append(list, info)
+			entries = append(entries, absFileInfo{absPath: path, info: info})
 			return nil
 		})
 	if err != nil {
@@ -322,9 +327,9 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 
 	// Sum up the total size of all zips
 	var size int64
-	for _, fi := range list {
-		if isZip(fi) {
-			size += fi.Size()
+	for _, entry := range entries {
+		if isZip(entry.info) {
+			size += entry.info.Size()
 		}
 	}
 	stats.CacheSize = size
@@ -336,17 +341,17 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 
 	// Keep removing files until we are under the cache size. Remove the
 	// oldest first.
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].ModTime().Before(list[j].ModTime())
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].info.ModTime().Before(entries[j].info.ModTime())
 	})
-	for _, fi := range list {
+	for _, entry := range entries {
 		if size <= maxCacheSizeBytes {
 			break
 		}
-		if !isZip(fi) {
+		if !isZip(entry.info) {
 			continue
 		}
-		path := filepath.Join(s.dir, fi.Name())
+		path := entry.absPath
 		if s.beforeEvict != nil {
 			s.beforeEvict(path, trace)
 		}
@@ -357,7 +362,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 			continue
 		}
 		stats.Evicted++
-		size -= fi.Size()
+		size -= entry.info.Size()
 	}
 
 	trace.Tag(

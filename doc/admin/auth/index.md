@@ -6,6 +6,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
+- [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
 - [HTTP authentication proxies](#http-authentication-proxies)
@@ -33,7 +34,7 @@ order:
   identity provider (e.g., SAML, OpenID Connect, LDAP, etc.). Sourcegraph will redirect to your code
   host on sign-in and the code host will perform the required sign-in flow before redirecting to
   Sourcegraph on success.
-- If you are using an identity provider that supports SAML, use the [SAML auth provider](#saml).
+- If you are using an identity provider that supports SAML, use the [SAML auth provider](saml/index.md).
 - If you are using an identity provider that supports OpenID Connect (including Google accounts),
   use the [OpenID Connect provider](#openid-connect).
 - If you wish to use LDAP and cannot use the GitHub/GitLab OAuth provider as described above, or if
@@ -45,6 +46,8 @@ Most users will use only one auth provider, but you can use multiple auth provid
 enable sign-in via multiple services. Identities from different providers will be mapped to a
 Sourcegraph user by comparing the user's verified email address to the email address from the
 external identity provider.
+
+> _NOTE: If OAuth is the only sign-in method available on sign-out, a new OAuth sign-in will be attempted immediately upon a redirect to the sign-in page. If it is necessary to sign-out and have persistent access to the sign-in page, enable `builtin` sign-in in addition to your OAuth sign-in._
 
 ## Builtin password authentication
 

@@ -1,13 +1,17 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { SearchContextProps } from '@sourcegraph/search'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -15,19 +19,18 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchContextProps, SearchStreamingProps } from '../../search'
-import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
+import { render as renderLsifHtml } from '../../lsif/html'
+import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
+import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
+import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -39,11 +42,12 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
-import styles from './BlobPage.module.scss'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
+import { RenderedNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedNotebookMarkdown'
+
+import styles from './BlobPage.module.scss'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -74,6 +78,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
         props.location.hash,
@@ -94,7 +99,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 // Need to subtract 1 because IHighlightLineRange is 0-based but
                 // line information in the URL is 1-based.
                 lineRange: lineOrRange.line
-                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line + 1) - 1 }
+                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line) - 1 }
                     : null,
             }),
             [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
@@ -151,6 +156,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         if (blob === null) {
                             return blob
                         }
+
+                        // Replace html with lsif generated HTML, if available
+                        if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
+                            blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
+                        }
+
                         const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
                             content: blob.content,
                             html: blob.highlight.html,
@@ -165,10 +176,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         }
                         return blobInfo
                     }),
-                    catchError((error): [ErrorLike] => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
+                    catchError((error): [ErrorLike] => [asError(error)])
                 ),
             [repoName, revision, commitID, filePath, mode]
         )
@@ -199,6 +207,15 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         !isErrorLike(blobInfoOrError) &&
         blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
         showSearchNotebook
+
+    const onCopyNotebook = useCallback(
+        (props: Omit<CopyNotebookProps, 'title'>) => {
+            const title =
+                blobInfoOrError && !isErrorLike(blobInfoOrError) ? basename(blobInfoOrError.filePath) : 'Notebook'
+            return copyNotebook({ title: `Copy of ${title}`, ...props })
+        },
+        [blobInfoOrError]
+    )
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
@@ -320,11 +337,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown
+                <RenderedNotebookMarkdown
                     {...props}
                     markdown={blobInfoOrError.content}
-                    resolveRevision={resolveRevision}
-                    fetchRepository={fetchRepository}
+                    onCopyNotebook={onCopyNotebook}
+                    showSearchContext={showSearchContext}
+                    exportedFileName={basename(blobInfoOrError.filePath)}
                 />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
@@ -332,12 +350,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
-                    <div className="alert alert-info">
+                    <Alert variant="info">
                         Syntax-highlighting this file took too long. &nbsp;
                         <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
                         </Button>
-                    </div>
+                    </Alert>
                 </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
@@ -354,6 +372,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     isLightTheme={isLightTheme}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    disableStatusBar={false}
                 />
             )}
         </>

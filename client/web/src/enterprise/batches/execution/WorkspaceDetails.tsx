@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -9,17 +11,28 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { delay, repeatWhen } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Button } from '@sourcegraph/wildcard'
+import {
+    useObservable,
+    Badge,
+    LoadingSpinner,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Button,
+    Link,
+    CardBody,
+    Card,
+    Icon,
+} from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { Collapsible } from '../../../components/Collapsible'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../components/diff/FileDiffConnection'
@@ -39,8 +52,9 @@ import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFi
 
 import { fetchBatchSpecWorkspace, queryBatchSpecWorkspaceStepFileDiffs, retryWorkspaceExecution } from './backend'
 import { TimelineModal } from './TimelineModal'
-import styles from './WorkspaceDetails.module.scss'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
+
+import styles from './WorkspaceDetails.module.scss'
 
 export interface WorkspaceDetailsProps extends ThemeProps {
     id: Scalars['ID']
@@ -96,16 +110,16 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                     <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                     {workspace.repository.name}{' '}
                     <Link to={workspace.repository.url}>
-                        <ExternalLinkIcon className="icon-inline" />
+                        <Icon as={ExternalLinkIcon} />
                     </Link>
                 </h3>
                 <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
-                    <CloseIcon className="icon-inline" />
+                    <Icon as={CloseIcon} />
                 </Button>
             </div>
             <div className="text-muted">
                 {workspace.path && <>{workspace.path} | </>}
-                <SourceBranchIcon className="icon-inline" /> base: <strong>{workspace.branch.abbrevName}</strong>
+                <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.abbrevName}</strong>
                 {workspace.startedAt && (
                     <>
                         {' '}
@@ -118,7 +132,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                 {typeof workspace.placeInQueue === 'number' && (
                     <>
                         {' '}
-                        | <SyncIcon className="icon-inline" />{' '}
+                        | <Icon as={SyncIcon} />{' '}
                         <strong>
                             <NumberInQueue number={workspace.placeInQueue} />
                         </strong>{' '}
@@ -147,7 +161,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                             outline={true}
                             variant="danger"
                         >
-                            <SyncIcon className="icon-inline" /> Retry
+                            <Icon as={SyncIcon} /> Retry
                         </Button>
                     </div>
                     {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
@@ -156,7 +170,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
             {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored && (
                 <p className="text-muted text-center py-3 mb-0">
                     <strong>
-                        <LinkVariantRemoveIcon className="icon-inline" /> This workspace has been skipped because a{' '}
+                        <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because a{' '}
                         <code>.batchignore</code> file was found.
                     </strong>
                 </p>
@@ -164,8 +178,8 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
             {workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.unsupported && (
                 <p className="text-muted text-center py-3 mb-0">
                     <strong>
-                        <LinkVariantRemoveIcon className="icon-inline" /> This workspace has been skipped because it is
-                        on an unsupported code host.
+                        <Icon as={LinkVariantRemoveIcon} /> This workspace has been skipped because it is on an
+                        unsupported code host.
                     </strong>
                 </p>
             )}
@@ -175,15 +189,10 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
                     )}
                     {workspace.changesetSpecs.map((changesetSpec, index) => (
-                        <>
-                            <ChangesetSpecNode
-                                key={changesetSpec.id}
-                                node={changesetSpec}
-                                index={index}
-                                isLightTheme={isLightTheme}
-                            />
+                        <React.Fragment key={changesetSpec.id}>
+                            <ChangesetSpecNode node={changesetSpec} index={index} isLightTheme={isLightTheme} />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
             )}
@@ -236,11 +245,11 @@ const ChangesetSpecNode: React.FunctionComponent<
     // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
-            <div className="card">
-                <div className="card-body">
+            <Card>
+                <CardBody>
                     <h4>Changeset in a hidden repo</h4>
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         )
     }
 
@@ -265,7 +274,7 @@ const ChangesetSpecNode: React.FunctionComponent<
                             )}{' '}
                         </h4>
                         <span className="text-muted">
-                            <SourceBranchIcon className="icon-inline" />
+                            <Icon as={SourceBranchIcon} />
                             changeset branch: <strong>{node.description.headRef}</strong>
                         </span>
                     </div>
@@ -275,8 +284,8 @@ const ChangesetSpecNode: React.FunctionComponent<
             titleClassName="flex-grow-1"
             defaultExpanded={1 === 1}
         >
-            <div className={classNames('card mt-2', styles.resultCard)}>
-                <div className="card-body">
+            <Card className={classNames('mt-2', styles.resultCard)}>
+                <CardBody>
                     <h3>Changeset template</h3>
                     <h4>{node.description.title}</h4>
                     <p className="mb-0">{node.description.body}</p>
@@ -296,8 +305,8 @@ const ChangesetSpecNode: React.FunctionComponent<
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         />
                     </Collapsible>
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </Collapsible>
     )
 }
@@ -373,8 +382,8 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                 </div>
             }
         >
-            <div className={classNames('card mt-2', styles.stepCard)}>
-                <div className="card-body">
+            <Card className={classNames('mt-2', styles.stepCard)}>
+                <CardBody>
                     {!step.skipped && (
                         <Tabs size="small" behavior="forceRender">
                             <TabList>
@@ -457,8 +466,8 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                             </strong>
                         </p>
                     )}
-                </div>
-            </div>
+                </CardBody>
+            </Card>
         </Collapsible>
     )
 }
@@ -469,28 +478,30 @@ interface StepStateIconProps {
 const StepStateIcon: React.FunctionComponent<StepStateIconProps> = ({ step }) => {
     if (step.cachedResultFound) {
         return (
-            <ContentSaveIcon
-                className="icon-inline text-success"
+            <Icon
+                className="text-success"
                 data-tooltip="A cached result for this step has been found"
+                as={ContentSaveIcon}
             />
         )
     }
     if (step.skipped) {
-        return <LinkVariantRemoveIcon className="icon-inline text-muted" data-tooltip="The step has been skipped" />
+        return <Icon className="text-muted" data-tooltip="The step has been skipped" as={LinkVariantRemoveIcon} />
     }
     if (!step.startedAt) {
-        return <TimerSandIcon className="icon-inline text-muted" data-tooltip="Waiting to be processed" />
+        return <Icon className="text-muted" data-tooltip="Waiting to be processed" as={TimerSandIcon} />
     }
     if (!step.finishedAt) {
-        return <LoadingSpinner className="icon-inline text-muted" data-tooltip="Currently running" />
+        return <Icon className="text-muted" data-tooltip="Currently running" as={LoadingSpinner} />
     }
     if (step.exitCode === 0) {
-        return <CheckCircleIcon className="icon-inline text-success" data-tooltip="Ran successfully" />
+        return <Icon className="text-success" data-tooltip="Ran successfully" as={CheckCircleIcon} />
     }
     return (
-        <AlertCircleIcon
-            className="icon-inline text-danger"
+        <Icon
+            className="text-danger"
             data-tooltip={`Step failed with exit code ${String(step.exitCode)}`}
+            as={AlertCircleIcon}
         />
     )
 }

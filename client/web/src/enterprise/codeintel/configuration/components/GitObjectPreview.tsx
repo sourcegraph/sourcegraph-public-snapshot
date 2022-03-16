@@ -1,8 +1,9 @@
-import { ApolloError } from '@apollo/client'
-import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { ApolloError } from '@apollo/client'
+import classNames from 'classnames'
+
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'

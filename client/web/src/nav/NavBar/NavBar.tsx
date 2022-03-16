@@ -1,13 +1,14 @@
+import React, { useEffect, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -128,9 +129,9 @@ export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, chi
 
     if (external) {
         return (
-            <a href={to as string} rel="noreferrer noopener" target="_blank" className={navItemStyles.link}>
+            <Link to={to as string} rel="noreferrer noopener" target="_blank" className={navItemStyles.link}>
                 {content}
-            </a>
+            </Link>
         )
     }
 

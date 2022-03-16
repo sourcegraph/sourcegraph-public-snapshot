@@ -1,8 +1,9 @@
-import { render } from '@testing-library/react'
-import { noop } from 'lodash'
 import * as React from 'react'
 
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
+import { render } from '@testing-library/react'
+import { noop } from 'lodash'
+
+import { HTTPStatusError } from '@sourcegraph/http-client'
 
 import { ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 

@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import * as React from 'react'
 import { FileDecoration } from 'sourcegraph'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
@@ -90,7 +91,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
             </TreeLayerRowContents>
             {props.index === props.maxEntries - 1 && (
                 <TreeRowAlert
-                    className="alert-warning"
+                    variant="warning"
                     style={treePadding(props.depth, true, true)}
                     error="Too many entries. Use search to find a specific file."
                 />

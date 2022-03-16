@@ -1,24 +1,21 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import classNames from 'classnames'
 import React from 'react'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { GitRefType } from '@sourcegraph/shared/src/graphql/schema'
+import classNames from 'classnames'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { FilterLink, RevisionsProps, SyntaxHighlightedSearchQuery, TabIndex } from '@sourcegraph/search-ui'
+import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSection.module.scss'
+import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
-import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 import {
     SearchSidebarGitRefsResult,
     SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
-import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { QueryUpdate } from '../../../stores/navbarSearchQueryState'
-
-import { FilterLink } from './FilterLink'
-import styles from './SearchSidebarSection.module.scss'
 
 const DEFAULT_FIRST = 10
 export const GIT_REVS_QUERY = gql`
@@ -142,32 +139,17 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
     )
 }
 
-export enum TabIndex {
-    BRANCHES,
-    TAGS,
-}
-
-export interface RevisionsProps {
-    repoName: string
-    onFilterClick: (updates: QueryUpdate[]) => void
-    query: string
-    /**
-     * This property is only exposed for storybook tests.
-     */
-    _initialTab?: TabIndex
-}
-
 export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
     ({ repoName, onFilterClick, query, _initialTab }) => {
-        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
+        const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting('search.sidebar.revisions.tab')
         const onRevisionFilterClick = (value: string): void =>
             onFilterClick([
                 { type: 'updateOrAppendFilter', field: FilterType.rev, value },
                 { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
             ])
         return (
-            <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
-                <TabList className={styles.sidebarSectionTabsHeader}>
+            <Tabs defaultIndex={_initialTab ?? persistedTabIndex ?? 0} onChange={setPersistedTabIndex}>
+                <TabList>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>
                 </TabList>

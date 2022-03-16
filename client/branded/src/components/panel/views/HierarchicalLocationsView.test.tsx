@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { render } from '@testing-library/react'
 import * as H from 'history'
 import { noop } from 'lodash'
-import React from 'react'
 import { concat, EMPTY, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
 
@@ -12,6 +13,7 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
@@ -87,7 +89,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations,
         }
-        expect(render(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('displays partial locations before complete', () => {
@@ -95,7 +97,7 @@ describe('<HierarchicalLocationsView />', () => {
             ...getProps().props,
             locations: concat(of({ isLoading: false, result: [SAMPLE_LOCATION] }), NEVER),
         }
-        expect(render(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('displays multiple locations grouped by file', () => {
@@ -176,6 +178,6 @@ describe('<HierarchicalLocationsView />', () => {
             },
             locations: of({ isLoading: false, result: locations }),
         }
-        expect(render(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithBrandedContext(<HierarchicalLocationsView {...props} />).asFragment()).toMatchSnapshot()
     })
 })

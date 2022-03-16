@@ -1,10 +1,11 @@
+import React from 'react'
+
 import { render, act } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { SearchStatsPage } from './SearchStatsPage'
 

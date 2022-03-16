@@ -1,6 +1,9 @@
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import React from 'react'
+
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
@@ -10,7 +13,7 @@ jest.mock('../../../components/CopyableText', () => ({ CopyableText: 'CopyableTe
 
 describe('UserProductSubscriptionStatus', () => {
     test('toggle', () => {
-        const { asFragment } = render(
+        const { asFragment } = renderWithBrandedContext(
             <UserProductSubscriptionStatus
                 subscriptionName="L-123"
                 productNameWithBrand="P"

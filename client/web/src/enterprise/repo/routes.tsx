@@ -1,9 +1,10 @@
 import React from 'react'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { RepoContainerRoute } from '../../repo/RepoContainer'
 import { RepoRevisionContainerRoute } from '../../repo/RepoRevisionContainer'
 import { repoContainerRoutes, repoRevisionContainerRoutes } from '../../repo/routes'
-import { lazyComponent } from '../../util/lazyComponent'
 
 const RepositoryGitDataContainer = lazyComponent(
     () => import('../../repo/RepositoryGitDataContainer'),

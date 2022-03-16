@@ -1,14 +1,3 @@
-# Table "public.codeintel_schema_migrations"
-```
- Column  |  Type   | Collation | Nullable | Default 
----------+---------+-----------+----------+---------
- version | bigint  |           | not null | 
- dirty   | boolean |           | not null | 
-Indexes:
-    "codeintel_schema_migrations_pkey" PRIMARY KEY, btree (version)
-
-```
-
 # Table "public.lsif_data_apidocs_num_dumps"
 ```
  Column |  Type  | Collation | Nullable | Default 
@@ -735,3 +724,69 @@ Associates result set identifiers with the (document path, range identifier) pai
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
 **idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.rockskip_ancestry"
+```
+  Column   |         Type          | Collation | Nullable |                    Default                    
+-----------+-----------------------+-----------+----------+-----------------------------------------------
+ id        | integer               |           | not null | nextval('rockskip_ancestry_id_seq'::regclass)
+ repo_id   | integer               |           | not null | 
+ commit_id | character varying(40) |           | not null | 
+ height    | integer               |           | not null | 
+ ancestor  | integer               |           | not null | 
+Indexes:
+    "rockskip_ancestry_pkey" PRIMARY KEY, btree (id)
+    "rockskip_ancestry_repo_id_commit_id_key" UNIQUE CONSTRAINT, btree (repo_id, commit_id)
+    "rockskip_ancestry_repo_commit_id" btree (repo_id, commit_id)
+
+```
+
+# Table "public.rockskip_repos"
+```
+      Column      |           Type           | Collation | Nullable |                  Default                   
+------------------+--------------------------+-----------+----------+--------------------------------------------
+ id               | integer                  |           | not null | nextval('rockskip_repos_id_seq'::regclass)
+ repo             | text                     |           | not null | 
+ last_accessed_at | timestamp with time zone |           | not null | 
+Indexes:
+    "rockskip_repos_pkey" PRIMARY KEY, btree (id)
+    "rockskip_repos_repo_key" UNIQUE CONSTRAINT, btree (repo)
+    "rockskip_repos_last_accessed_at" btree (last_accessed_at)
+    "rockskip_repos_repo" btree (repo)
+
+```
+
+# Table "public.rockskip_symbols"
+```
+ Column  |   Type    | Collation | Nullable |                   Default                    
+---------+-----------+-----------+----------+----------------------------------------------
+ id      | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
+ added   | integer[] |           | not null | 
+ deleted | integer[] |           | not null | 
+ repo_id | integer   |           | not null | 
+ path    | text      |           | not null | 
+ name    | text      |           | not null | 
+Indexes:
+    "rockskip_symbols_pkey" PRIMARY KEY, btree (id)
+    "rockskip_symbols_gin" gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))))
+    "rockskip_symbols_repo_id_path_name" btree (repo_id, path, name)
+
+```

@@ -53,6 +53,9 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 		if upload.Indexer == "" {
 			upload.Indexer = "lsif-go"
 		}
+		if upload.IndexerVersion == "" {
+			upload.IndexerVersion = "latest"
+		}
 		if upload.UploadedParts == nil {
 			upload.UploadedParts = []int{}
 		}
@@ -75,11 +78,12 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 				num_failures,
 				repository_id,
 				indexer,
+				indexer_version,
 				num_parts,
 				uploaded_parts,
 				upload_size,
 				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -94,6 +98,7 @@ func insertUploads(t testing.TB, db *sql.DB, uploads ...Upload) {
 			upload.NumFailures,
 			upload.RepositoryID,
 			upload.Indexer,
+			upload.IndexerVersion,
 			upload.NumParts,
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
@@ -302,6 +307,7 @@ func insertNearestUploads(t testing.TB, db *sql.DB, repositoryID int, uploads ma
 	}
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func insertLinks(t testing.TB, db *sql.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
 	if len(links) == 0 {
 		return
@@ -336,6 +342,7 @@ func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
 	return commitGraphView
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
@@ -357,6 +364,7 @@ func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []str
 	return idsByCommit
 }
 
+//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,
@@ -458,6 +466,7 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryID:      expected.RepositoryID,
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
+		IndexerVersion:    expected.IndexerVersion,
 		AssociatedIndexID: expected.AssociatedIndexID,
 	}
 }

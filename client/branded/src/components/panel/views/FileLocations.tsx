@@ -1,13 +1,14 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isDefined, property } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
@@ -15,25 +16,26 @@ import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="alert alert-danger m-2">Error getting locations: {upperFirst(error.message)}</div>
+    <Alert className="m-2" variant="danger">
+        Error getting locations: {upperFirst(error.message)}
+    </Alert>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <MapSearchIcon className="icon-inline" /> No locations found
+        <Icon as={MapSearchIcon} /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
     <div className="m-2">
-        <MapSearchIcon className="icon-inline" /> No locations found in the current repository
+        <Icon as={MapSearchIcon} /> No locations found in the current repository
     </div>
 )
 
@@ -152,7 +154,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
                     items={orderedURIs}
-                    renderItem={this.renderFileMatch}
+                    renderItem={(
+                        item: OrderedURI,
+                        index: number,
+                        additionalProps: { locationsByURI: Map<string, Location[]> }
+                    ) => this.renderFileMatch(item, additionalProps)}
                     itemProps={{ locationsByURI }}
                     itemKey={this.itemKey}
                 />

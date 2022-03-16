@@ -1,11 +1,11 @@
+import React from 'react'
+
 import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React from 'react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
@@ -15,7 +15,7 @@ import * as View from '../view'
 import { ViewGrid } from './ViewGrid'
 
 export default {
-    title: 'web/views/view-grid',
+    title: 'web/views',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 
@@ -24,7 +24,7 @@ export const SimpleViewGrid: Story = () => (
         <View.Root key="1" title="Empty view" />
 
         <View.Root key="2" title="View with chart">
-            <View.Content content={[LINE_CHART_CONTENT_MOCK]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <View.Content content={[LINE_CHART_CONTENT_MOCK]} />
         </View.Root>
 
         <View.Root
@@ -33,14 +33,14 @@ export const SimpleViewGrid: Story = () => (
             subtitle="Subtitle chart description"
             actions={
                 <>
-                    <Button className="btn-icon p-1">
+                    <Button variant="icon" className="p-1">
                         <FilterOutlineIcon size="1rem" />
                     </Button>
                     <ContextMenu />
                 </>
             }
         >
-            <View.Content content={[LINE_CHART_CONTENT_MOCK]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+            <View.Content content={[LINE_CHART_CONTENT_MOCK]} />
         </View.Root>
     </ViewGrid>
 )
@@ -48,7 +48,7 @@ export const SimpleViewGrid: Story = () => (
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton className="btn btn-icon p-1">
+            <MenuButton as={Button} variant="icon" className="p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover>

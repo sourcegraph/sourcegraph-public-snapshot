@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
-import { GitObjectType } from '@sourcegraph/shared/src/graphql/schema'
+import { GitObjectType } from '@sourcegraph/shared/src/schema'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 

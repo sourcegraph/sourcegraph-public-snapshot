@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Environment represents an environment used for a batch step, which may

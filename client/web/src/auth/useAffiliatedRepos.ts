@@ -1,6 +1,6 @@
 import { ApolloError, ApolloQueryResult } from '@apollo/client'
 
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, useQuery } from '@sourcegraph/http-client'
 
 import { Maybe, AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables, Exact } from '../graphql-operations'
 

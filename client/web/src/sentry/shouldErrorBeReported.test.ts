@@ -1,5 +1,5 @@
+import { HTTPStatusError } from '@sourcegraph/http-client'
 import { AbortError } from '@sourcegraph/shared/src/api/util'
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 
 import { shouldErrorBeReported } from './shouldErrorBeReported'
 

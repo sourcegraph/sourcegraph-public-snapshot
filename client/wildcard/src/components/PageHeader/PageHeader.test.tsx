@@ -1,6 +1,9 @@
-import { render, RenderResult } from '@testing-library/react'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React from 'react'
+
+import { RenderResult } from '@testing-library/react'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+
+import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { PageHeader } from './PageHeader'
 
@@ -25,7 +28,7 @@ describe('PageHeader', () => {
     ]
 
     beforeEach(() => {
-        queries = render(<PageHeader path={breadcrumbs} />)
+        queries = renderWithBrandedContext(<PageHeader path={breadcrumbs} />)
     })
 
     it('renders correctly', () => {
