@@ -30,4 +30,5 @@ RUN apk update && apk add --no-cache \
     curl \
     mailcap \
     tini \
-    wget
+    wget && \
+apk upgrade
