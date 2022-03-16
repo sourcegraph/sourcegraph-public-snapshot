@@ -43,57 +43,59 @@ export interface UseUiFeatures {
 
 export function useUiFeatures(): UseUiFeatures {
     const { getUiFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
-
     const { licensed, insightsLimit } = useMemo(() => getUiFeatures(), [getUiFeatures])
 
-    return {
-        licensed,
-        dashboard: {
-            createPermissions: { submit: { disabled: !licensed } },
-            getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
-                const permissions = getDashboardPermissions(dashboard, true)
+    return useMemo(
+        () => ({
+            licensed,
+            dashboard: {
+                createPermissions: { submit: { disabled: !licensed } },
+                getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
+                    const permissions = getDashboardPermissions(dashboard, true)
 
-                return {
-                    disabled: !permissions.isConfigurable,
-                    tooltip: getTooltipMessage(dashboard, permissions),
-                }
-            },
-            // Available menu items
-            getContextActionsPermissions: (dashboard?: InsightDashboard) => {
-                const permissions = getDashboardPermissions(dashboard, true)
-
-                return {
-                    configure: {
-                        display: licensed,
+                    return {
                         disabled: !permissions.isConfigurable,
                         tooltip: getTooltipMessage(dashboard, permissions),
-                    },
-                    copy: {
-                        display: licensed,
-                        disabled: !dashboard,
-                    },
-                    delete: {
-                        display: true,
-                        disabled: !permissions.isConfigurable,
-                        tooltip: getTooltipMessage(dashboard, permissions),
-                    },
-                }
+                    }
+                },
+                // Available menu items
+                getContextActionsPermissions: (dashboard?: InsightDashboard) => {
+                    const permissions = getDashboardPermissions(dashboard, true)
+
+                    return {
+                        configure: {
+                            display: licensed,
+                            disabled: !permissions.isConfigurable,
+                            tooltip: getTooltipMessage(dashboard, permissions),
+                        },
+                        copy: {
+                            display: licensed,
+                            disabled: !dashboard,
+                        },
+                        delete: {
+                            display: true,
+                            disabled: !permissions.isConfigurable,
+                            tooltip: getTooltipMessage(dashboard, permissions),
+                        },
+                    }
+                },
             },
-        },
-        insight: {
-            getContextActionsPermissions: (insight: Insight) => ({
-                showYAxis: isSearchBasedInsight(insight) && !insight.locked,
-            }),
-            getCreationPermissions: () =>
-                insightsLimit !== null
-                    ? hasInsights(insightsLimit).pipe(
-                          map(reachedLimit =>
-                              reachedLimit
-                                  ? { available: false, reason: 'You already have enough insights buddy' }
-                                  : { available: true }
+            insight: {
+                getContextActionsPermissions: (insight: Insight) => ({
+                    showYAxis: isSearchBasedInsight(insight),
+                }),
+                getCreationPermissions: () =>
+                    insightsLimit !== null
+                        ? hasInsights(insightsLimit).pipe(
+                              map(reachedLimit =>
+                                  reachedLimit
+                                      ? { available: false, reason: 'You already have enough insights buddy' }
+                                      : { available: true }
+                              )
                           )
-                      )
-                    : of({ available: true }),
-        },
-    }
+                        : of({ available: true }),
+            },
+        }),
+        [licensed, insightsLimit, hasInsights]
+    )
 }

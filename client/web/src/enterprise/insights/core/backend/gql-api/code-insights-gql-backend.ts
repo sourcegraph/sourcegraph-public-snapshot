@@ -112,8 +112,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
 
     public hasInsights = (insightsCount: number): Observable<boolean> =>
-        from(
-            this.apolloClient.query<HasAvailableCodeInsightResult>({
+        fromObservableQuery(
+            this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
                 query: gql`
                     query HasAvailableCodeInsight($count: Int!) {
                         insightViews(first: $count) {
@@ -124,6 +124,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: { count: insightsCount },
+                nextFetchPolicy: 'cache-only',
             })
         ).pipe(map(({ data }) => data.insightViews.nodes.length === insightsCount))
 
