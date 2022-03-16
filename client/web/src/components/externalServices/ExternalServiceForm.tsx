@@ -1,6 +1,7 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback } from 'react'
 
 import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'

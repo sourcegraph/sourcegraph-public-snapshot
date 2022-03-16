@@ -1,3 +1,5 @@
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
@@ -5,14 +7,12 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import GraphOutlineIcon from 'mdi-react/GraphOutlineIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -41,7 +41,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { toURIWithPath, toPrettyBlobURL, buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
@@ -52,8 +52,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchPatternType, GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { repoFilterForRepoRevision } from '../../search'
+import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -62,6 +61,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+
 import styles from './TreePage.module.scss'
 
 const fetchTreeCommits = memoizeObservable(
@@ -324,13 +324,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
-    const repoDepsSearchQueryURL = buildSearchURLQuery(
-        `repo:deps(${repoFilterForRepoRevision(repo.name, false, revision)})`,
-        SearchPatternType.literal,
-        false
-    )
-
     return (
         <div className={styles.treePage}>
             <Container className={styles.container}>
@@ -422,16 +415,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 as={Link}
                                             >
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
-                                            </Button>
-                                        )}
-                                        {dependenciesSearchEnabled && (
-                                            <Button
-                                                to={`/search?${repoDepsSearchQueryURL}`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <GraphOutlineIcon className="icon-inline" /> Dependencies{' '}
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}

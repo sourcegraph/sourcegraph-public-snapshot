@@ -17,6 +17,24 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
+func TestTgzFallback(t *testing.T) {
+	tar := makeTar(t, &fileInfo{path: "foo", contents: "bar", mode: 0655})
+
+	t.Run("with-io-read-seeker", func(t *testing.T) {
+		err := Tgz(bytes.NewReader(tar), t.TempDir(), Opts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("without-io-read-seeker", func(t *testing.T) {
+		err := Tgz(bytes.NewBuffer(tar), t.TempDir(), Opts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 // TestUnpack tests general properties of all unpack functions.
 func TestUnpack(t *testing.T) {
 	type packer struct {
@@ -118,6 +136,24 @@ func TestUnpack(t *testing.T) {
 				out: []*fileInfo{
 					{path: "bar", contents: "bar", mode: 0655, size: 3},
 					{path: "foo", link: "bar", mode: fs.ModeSymlink},
+				},
+			},
+			{
+				packer: p,
+				name:   "dir-permissions",
+				in: []*fileInfo{
+					{path: "dir", mode: fs.ModeDir},
+					{path: "dir/file1", contents: "x", mode: 0000},
+					{path: "dir/file2", contents: "x", mode: 0200},
+					{path: "dir/file3", contents: "x", mode: 0400},
+					{path: "dir/file4", contents: "x", mode: 0600},
+				},
+				out: []*fileInfo{
+					{path: "dir", mode: fs.ModeDir | 0700},
+					{path: "dir/file1", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file2", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file3", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
 				},
 			},
 		}...)

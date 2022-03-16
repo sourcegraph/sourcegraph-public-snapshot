@@ -1,8 +1,9 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { BatchSpec } from '@sourcegraph/shared/src/schema/batch_spec.schema'
 import { useDebounce } from '@sourcegraph/wildcard'

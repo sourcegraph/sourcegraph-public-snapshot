@@ -201,92 +201,52 @@ func TestPrettyJSON(t *testing.T) {
 {
   "PARALLEL": [
     {
-      "RepoSubsetText": {
-        "ZoektArgs": {
-          "Query": {
-            "Pattern": "bar",
-            "CaseSensitive": false,
-            "FileName": false,
-            "Content": false
-          },
-          "Typ": "text",
-          "FileMatchLimit": 500,
-          "Select": [],
-          "Zoekt": null
-        },
-        "SearcherArgs": {
-          "SearcherURLs": null,
-          "PatternInfo": {
-            "Pattern": "bar",
-            "IsNegated": false,
-            "IsRegExp": true,
-            "IsStructuralPat": false,
-            "CombyRule": "",
-            "IsWordMatch": false,
-            "IsCaseSensitive": false,
-            "FileMatchLimit": 500,
-            "Index": "yes",
-            "Select": [],
-            "IncludePatterns": null,
-            "ExcludePattern": "",
-            "FilePatternsReposMustInclude": null,
-            "FilePatternsReposMustExclude": null,
-            "PathPatternsAreCaseSensitive": false,
-            "PatternMatchesContent": true,
-            "PatternMatchesPath": true,
-            "Languages": null
-          },
-          "UseFullDeadline": true
-        },
-        "NotSearcherOnly": true,
-        "UseIndex": "yes",
-        "ContainsRefGlobs": false,
-        "RepoOpts": {
-          "RepoFilters": [
-            "foo"
-          ],
-          "MinusRepoFilters": null,
-          "Dependencies": null,
-          "CaseSensitiveRepoFilters": false,
-          "SearchContextSpec": "",
-          "NoForks": true,
-          "OnlyForks": false,
-          "NoArchived": true,
-          "OnlyArchived": false,
-          "CommitAfter": "",
-          "Visibility": "Any",
-          "Limit": 0,
-          "Cursors": null,
-          "Query": [
-            {
-              "Kind": 1,
-              "Operands": [
-                {
-                  "field": "repo",
-                  "value": "foo",
-                  "negated": false
-                },
-                {
-                  "value": "bar",
-                  "negated": false
-                }
-              ],
-              "Annotation": {
-                "labels": 0,
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "column": 0
-                  },
-                  "end": {
-                    "line": 0,
-                    "column": 0
-                  }
-                }
-              }
+      "REPOPAGER": {
+        "PARALLEL": [
+          {
+            "ZoektRepoSubset": {
+              "Repos": null,
+              "Query": {
+                "Pattern": "bar",
+                "CaseSensitive": false,
+                "FileName": false,
+                "Content": false
+              },
+              "Typ": "text",
+              "FileMatchLimit": 500,
+              "Select": [],
+              "Zoekt": null
             }
-          ]
-        }
+          },
+          {
+            "Searcher": {
+              "PatternInfo": {
+                "Pattern": "bar",
+                "IsNegated": false,
+                "IsRegExp": true,
+                "IsStructuralPat": false,
+                "CombyRule": "",
+                "IsWordMatch": false,
+                "IsCaseSensitive": false,
+                "FileMatchLimit": 500,
+                "Index": "yes",
+                "Select": [],
+                "IncludePatterns": null,
+                "ExcludePattern": "",
+                "FilePatternsReposMustInclude": null,
+                "FilePatternsReposMustExclude": null,
+                "PathPatternsAreCaseSensitive": false,
+                "PatternMatchesContent": true,
+                "PatternMatchesPath": true,
+                "Languages": null
+              },
+              "Repos": null,
+              "Indexed": false,
+              "SearcherURLs": null,
+              "UseFullDeadline": true
+            }
+          }
+        ]
       }
     },
     {

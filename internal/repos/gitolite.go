@@ -4,14 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -109,109 +103,4 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *types.Repo {
 		},
 		Metadata: repo,
 	}
-}
-
-// GitolitePhabricatorMetadataSyncer creates Phabricator repos (in the phabricator_repo table) for each Gitolite
-// repo provided in it's Sync method. This is to satisfy the contract established by the "phabricator" setting in the
-// Gitolite external service configuration.
-//
-// TODO(tsenart): This is a HUGE hack, but it lives to see another day. Erradicating this technical debt
-// involves lifting the Phabricator integration to a first class citizen, so that it can be treated as source of
-// truth for repos to be mirrored. This would allow using a Phabricator integration that observes another code host,
-// like Gitolite, and provides URIs to those external code hosts that git-server can use as clone URLs, while
-// repo links can still be the built-in Phabricator ones, as is usually expected by customers that rely on code
-// intelligence. With a Phabricator integration similar to all other code hosts, we could remove all of the special code
-// paths for Phabricator everywhere as well as the `phabricator_repo` table.
-type GitolitePhabricatorMetadataSyncer struct {
-	sem     *semaphore.Weighted // Only one sync at a time, like it was done before.
-	counter int64               // Only sync every 10th time, like it was done before.
-	store   *Store              // Use to load the external services that yielded a given repo.
-}
-
-// NewGitolitePhabricatorMetadataSyncer returns a GitolitePhabricatorMetadataSyncer with
-// the given parameters.
-func NewGitolitePhabricatorMetadataSyncer(s *Store) *GitolitePhabricatorMetadataSyncer {
-	return &GitolitePhabricatorMetadataSyncer{
-		sem:     semaphore.NewWeighted(1),
-		counter: -1,
-		store:   s,
-	}
-}
-
-// Sync creates Phabricator repos for each of the given Gitolite repos.
-// If this is confusing to you, that's because it is. Read the comment on
-// the GitolitePhabricatorMetadataSyncer type.
-func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*types.Repo) error {
-	if !s.sem.TryAcquire(1) {
-		log15.Info("existing gitolite/phabricator repo task still running, skipping")
-		return nil
-	}
-	defer s.sem.Release(1)
-
-	if s.counter++; s.counter%10 != 0 { // Only run every ten times.
-		log15.Debug("phabricator metadata sync only runs every 10th gitolite sync. skipping", "counter", s.counter)
-		return nil
-	}
-
-	// Group repos by external service so that we look-up external services from the DB
-	// only once.
-	var ids []int64
-	grouped := make(map[int64]types.Repos)
-	for _, r := range repos {
-		if r.ExternalRepo.ServiceType != extsvc.TypeGitolite || r.IsDeleted() {
-			continue
-		}
-
-		for _, id := range r.ExternalServiceIDs() {
-			ids = append(ids, id)
-			grouped[id] = append(grouped[id], r)
-		}
-	}
-
-	if len(ids) == 0 {
-		log15.Debug("phabricator metadata: nothing to sync")
-		return nil
-	}
-
-	es, err := s.store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{IDs: ids})
-	if err != nil {
-		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
-	}
-
-	for _, e := range es {
-		urn := e.URN()
-
-		c, err := e.Configuration()
-		if err != nil {
-			return errors.Wrapf(err, "gitolite-phabricator-metadata-syncer.external-service-config: %s", urn)
-		}
-
-		conf := c.(*schema.GitoliteConnection)
-		if conf.Phabricator == nil {
-			log15.Warn("missing phabricator setting. skipping", "external-service", urn)
-			continue
-		}
-
-		for _, r := range grouped[e.ID] {
-			name := r.Name
-
-			metadata, err := gitserver.DefaultClient.GetGitolitePhabricatorMetadata(ctx, conf.Host, name)
-			if err != nil {
-				log15.Warn("could not fetch valid Phabricator metadata for Gitolite repository. skipping.", "repo", name, "error", err)
-				continue
-			}
-
-			if metadata.Callsign == "" {
-				log15.Warn("empty Phabricator callsign for Gitolite repository. skipping.", "repo", name, "error", err)
-				continue
-			}
-
-			if err := internalapi.Client.PhabricatorRepoCreate(ctx, name, metadata.Callsign, conf.Phabricator.Url); err != nil {
-				log15.Warn("could not ensure Gitolite Phabricator mapping", "repo", name, "error", err)
-			}
-		}
-	}
-
-	log15.Info("updated gitolite/phabricator metadata for repos", "repos", len(repos))
-	return nil
 }

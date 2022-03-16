@@ -52,6 +52,10 @@ func Main(setup SetupFunc) {
 			SampleRate: 5,
 		},
 	}
+
+	// Conf package must be initialized prior to Rockskip init
+	conf.Init()
+
 	// Run setup
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, types.LoadRepositoryFetcherConfig(env.BaseConfig{}).MaxTotalPathsLength, observationContext)
@@ -63,7 +67,6 @@ func Main(setup SetupFunc) {
 
 	// Initialization
 	env.HandleHelpFlag()
-	conf.Init()
 	logging.Init()
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())

@@ -1,9 +1,10 @@
+import React from 'react'
+
 import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React from 'react'
 import { LineChartContent } from 'sourcegraph'
 
 import { Button } from '@sourcegraph/wildcard'

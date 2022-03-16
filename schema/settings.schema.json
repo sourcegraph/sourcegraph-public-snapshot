@@ -207,7 +207,7 @@
           }
         },
         "treeSitterEnabled": {
-          "description": "Enables tree sitter for enabled filetypes",
+          "description": "DEPRECATED: Enables tree sitter for enabled filetypes.",
           "type": "boolean",
           "default": false,
           "!go": {

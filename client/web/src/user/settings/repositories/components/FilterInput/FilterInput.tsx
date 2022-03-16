@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { InputHTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 
 import styles from './FilterInput.module.scss'
 

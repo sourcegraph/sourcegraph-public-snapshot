@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
@@ -5,7 +7,6 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -53,14 +54,13 @@ import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
-import { browserExtensionInstalled } from '../tracking/analyticsUtils'
+import { useIsBrowserExtensionActiveUser } from '../tracking/BrowserExtensionTracker'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
-import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -70,6 +70,8 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import { redirectToExternalHost } from '.'
+
+import styles from './RepoContainer.module.scss'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -324,13 +326,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         (!isErrorLike(props.settingsCascade.final) &&
             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
         'browser-extension'
-    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
     const [hasDismissedPopover, setHasDismissedPopover] = useState(false)
     const [hoverCount, setHoverCount] = useLocalStorage(HOVER_COUNT_KEY, 0)
     const canShowPopover =
         !hasDismissedPopover &&
-        isBrowserExtensionInstalled === false &&
+        isBrowserExtensionActiveUser === false &&
         codeHostIntegrationMessaging === 'browser-extension' &&
         hoverCount >= HOVER_THRESHOLD
 

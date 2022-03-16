@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { DecoratorFn, Meta } from '@storybook/react'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
-import React from 'react'
 
 import { Link, Icon } from '@sourcegraph/wildcard'
 

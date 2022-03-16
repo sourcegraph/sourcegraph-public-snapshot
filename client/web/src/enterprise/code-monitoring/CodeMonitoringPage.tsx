@@ -1,6 +1,7 @@
+import React, { useMemo, useEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useMemo, useEffect, useState } from 'react'
 import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -101,13 +102,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     },
                 ]}
                 actions={
-                    userHasCodeMonitors &&
-                    userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon as={PlusIcon} />
-                            Create
+                            Create code monitor
                         </Button>
                     )
                 }

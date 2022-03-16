@@ -1,9 +1,11 @@
+import React, { useEffect, useMemo, useReducer } from 'react'
+
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import React, { useEffect, useMemo, useReducer } from 'react'
 
 import { StepsContext, useStepsContext, StepListContext, useStepListContext, Steps as StepsInterface } from './context'
 import { initialState, reducer } from './reducer'
+
 import stepsStyles from './Steps.module.scss'
 
 type Color = 'orange' | 'blue' | 'purple' | 'green'

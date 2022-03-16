@@ -24,6 +24,7 @@ type uploadState struct {
 	commit            string
 	root              string
 	indexer           string
+	indexerVersion    string
 	associatedIndexID int
 	numParts          int
 	uploadedParts     []int
@@ -45,6 +46,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		commit:            getQuery(r, "commit"),
 		root:              sanitizeRoot(getQuery(r, "root")),
 		indexer:           getQuery(r, "indexerName"),
+		indexerVersion:    getQuery(r, "indexerVersion"),
 		associatedIndexID: getQueryInt(r, "associatedIndexId"),
 		numParts:          getQueryInt(r, "numParts"),
 		multipart:         hasQuery(r, "multiPart"),

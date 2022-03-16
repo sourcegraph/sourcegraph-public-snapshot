@@ -32,6 +32,8 @@ type SearchClient interface {
 		stream streaming.Sender,
 		inputs *run.SearchInputs,
 	) (_ *search.Alert, err error)
+
+	JobArgs(*run.SearchInputs) *job.Args
 }
 
 func NewSearchClient(db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
@@ -65,10 +67,13 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
-	jobArgs := &job.Args{
+	return execute.Execute(ctx, s.db, stream, s.JobArgs(inputs))
+}
+
+func (s *searchClient) JobArgs(inputs *run.SearchInputs) *job.Args {
+	return &job.Args{
 		SearchInputs: inputs,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
 	}
-	return execute.Execute(ctx, s.db, stream, jobArgs)
 }

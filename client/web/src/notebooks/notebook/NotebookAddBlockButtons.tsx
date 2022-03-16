@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { SymbolKind } from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'
@@ -94,7 +95,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockBu
                         onClick={() =>
                             onAddBlock(index, {
                                 type: 'compute',
-                                input: 'placeholder',
+                                input: '',
                             })
                         }
                         data-testid="add-compute-button"

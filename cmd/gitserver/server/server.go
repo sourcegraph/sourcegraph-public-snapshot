@@ -352,7 +352,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
-	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -1661,8 +1660,18 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	// We may be attempting to clone a private repo so we need an internal actor.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	var remoteURL *vcs.URL
+	if opts != nil && opts.CloneFromShard != "" {
+		// are we cloning from the same gitserver instance?
+		if s.hostnameMatch(strings.TrimPrefix(opts.CloneFromShard, "http://")) {
+			return "", errors.Errorf("cannot clone from the same gitserver instance")
+		}
+
+		remoteURL, err = vcs.ParseURL(filepath.Join(opts.CloneFromShard, "git", string(repo)))
+	} else {
+		// We may be attempting to clone a private repo so we need an internal actor.
+		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	}
 	if err != nil {
 		return "", err
 	}

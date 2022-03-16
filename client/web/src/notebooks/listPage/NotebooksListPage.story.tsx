@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { Observable, of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

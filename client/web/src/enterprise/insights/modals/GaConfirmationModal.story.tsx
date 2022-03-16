@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
-import React from 'react'
 
 import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import {

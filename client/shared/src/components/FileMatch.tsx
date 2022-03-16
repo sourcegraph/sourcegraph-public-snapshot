@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useMemo } from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
@@ -94,7 +95,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
-            <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
+            <RepoIcon repoName={result.repository} className="text-muted" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}

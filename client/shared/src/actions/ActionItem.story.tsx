@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
-import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
