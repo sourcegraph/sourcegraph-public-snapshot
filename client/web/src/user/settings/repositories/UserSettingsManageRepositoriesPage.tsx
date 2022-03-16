@@ -271,6 +271,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             if (host.lastSyncError) {
                 hostHasProblems = true
+                console.log('has probs - sync')
                 codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
             }
 
@@ -316,10 +317,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             fetchSelectedRepositories(),
         ])
 
-        if (affiliatedRepos.codeHostErrors !== '') {
-            // Fetch errors from affiliated repositories
-            codeHostProblems.push(asError(`${affiliatedRepos.codeHostErrors}`))
-        }
+        // if (affiliatedRepos.codeHostErrors !== '') {
+        //     // Fetch errors from affiliated repositories
+        //     codeHostProblems.push(asError(`${affiliatedRepos.codeHostErrors}`))
+        // }
 
         if (codeHostProblems.length > 0) {
             setAffiliateRepoProblems(codeHostProblems)
@@ -580,10 +581,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const hasProblems = affiliateRepoProblems !== undefined
     // code hosts were loaded and some were configured
+    console.log(codeHosts.hosts.length, codeHosts.hosts)
     const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
     const noCodeHostsOrErrors = !hasCodeHosts || hasProblems
-    const hasCodeHostsNoErrors = hasCodeHosts
-    // const hasCodeHostsNoErrors = hasCodeHosts && !hasProblems
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
@@ -839,14 +839,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
                             {/* display radio buttons shimmer only when user has code hosts */}
-                            {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
+                            {hasCodeHosts && !selectionState.loaded && modeSelectShimmer}
 
                             {/* display type of repo sync radio buttons */}
-                            {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
+                            {hasCodeHosts && selectionState.loaded && modeSelect}
 
                             {
                                 // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                                hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
+                                hasCodeHosts && selectionState.radio === 'selected' && (
                                     <div className="ml-4">
                                         {filterControls}
                                         <table role="grid" className="table">

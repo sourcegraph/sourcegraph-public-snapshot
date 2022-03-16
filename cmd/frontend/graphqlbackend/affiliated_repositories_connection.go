@@ -120,6 +120,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 
 		var fetchErrors []error
 		var listOfErrors []string
+		var errMessage string
 
 		a.nodes = []*codeHostRepositoryResolver{}
 		for i := 0; i < pending; i++ {
@@ -130,8 +131,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 					fetchErrors = append(fetchErrors, result.err)
 
-					errMessage := "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
-					fmt.Println("error message here...")
+					errMessage = "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
 					listOfErrors = append(listOfErrors, errMessage)
 
 					continue
