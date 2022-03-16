@@ -122,8 +122,7 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
                     ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
                     flags={{
                         sourcegraphURL: platformContext.sourcegraphURL,
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                        computeInput: input === '' ? null : JSON.parse(input),
+                        computeInput: input === '' ? null : (JSON.parse(input) as ComputeInput),
                     }}
                 />
             </div>
