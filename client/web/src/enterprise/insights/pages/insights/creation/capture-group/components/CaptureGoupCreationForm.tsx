@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
@@ -12,6 +12,8 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
+import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
@@ -59,6 +61,10 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         handleSubmit,
         formAPI: { submitErrors, submitting },
     } = form
+
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
+
     const isEditMode = mode === 'edit'
 
     return (
@@ -140,10 +146,14 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
                     <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
+                    {!licensed && (
+                        <LimitedAccessLabel message="Unlock Code Insights for unlimited data series" className="my-3" />
+                    )}
+
                     <CaptureGroupSeriesInfoBadge>
                         <b className="font-weight-medium">Name</b> and <b className="font-weight-medium">color</b> of
                         each data series will be generated automatically. Chart will display{' '}
-                        <b className="font-weight-medium">up to 20</b> data series.
+                        <b className="font-weight-medium">up to {licensed ? '20' : '10'}</b> data series.
                     </CaptureGroupSeriesInfoBadge>
 
                     <small className="mt-3">
@@ -198,6 +208,13 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
             <hr className="my-4 w-100" />
 
+            {!licensed && (
+                <LimitedAccessLabel
+                    message="Unlock Code Insights to create unlimited insights"
+                    className="my-3 mt-n2"
+                />
+            )}
+
             <footer className="d-flex flex-wrap align-items-center">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
 
@@ -206,7 +223,10 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     alwaysShowLabel={true}
                     loading={submitting}
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
-                    disabled={submitting}
+                    disabled={submitting || !creationPermission?.available}
+                    data-tooltip={
+                        creationPermission && !creationPermission.available ? creationPermission.reason : undefined
+                    }
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"
                     variant="primary"
