@@ -864,7 +864,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		treeish   = q.Get("treeish")
 		repo      = q.Get("repo")
 		format    = q.Get("format")
-		pathspecs = q["pathspec"]
+		pathspecs = q["path"]
 	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {

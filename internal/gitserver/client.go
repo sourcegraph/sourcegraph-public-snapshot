@@ -308,7 +308,7 @@ func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *u
 	}
 
 	for _, pathspec := range opt.Pathspecs {
-		q.Add("pathspec", string(pathspec))
+		q.Add("path", string(pathspec))
 	}
 
 	return &url.URL{
