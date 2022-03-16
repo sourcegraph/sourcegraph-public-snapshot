@@ -51,7 +51,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 
 	pathSpecs := []gitserver.Pathspec{}
 	for _, path := range paths {
-		pathSpecs = append(pathSpecs, gitserver.Literal(path))
+		pathSpecs = append(pathSpecs, gitserver.PathspecLiteral(path))
 	}
 
 	opts := gitserver.ArchiveOptions{

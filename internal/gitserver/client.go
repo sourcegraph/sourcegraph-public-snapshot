@@ -267,11 +267,13 @@ type ArchiveOptions struct {
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
 type Pathspec string
 
-// Literal matches a path without interpreting "*" or "?" as special characters.
-func Literal(s string) Pathspec { return Pathspec(":(literal)" + s) }
+// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
+// characters.
+func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
 
-// Suffix matches paths ending with the given suffix (useful for matching paths by basename).
-func Suffix(s string) Pathspec { return Pathspec("*" + s) }
+// PathspecSuffix constructs a pathspec that matches paths ending with the given suffix (useful for
+// matching paths by basename).
+func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
 // Cmd.StdoutReader with one that knows how to report a repository-not-found

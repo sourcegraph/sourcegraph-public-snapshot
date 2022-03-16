@@ -20,7 +20,7 @@ var parsers = map[string]parser{
 var lockfilePathspecs = func() []gitserver.Pathspec {
 	pathspecs := make([]gitserver.Pathspec, 0, len(parsers))
 	for filename := range parsers {
-		pathspecs = append(pathspecs, gitserver.Suffix(filename))
+		pathspecs = append(pathspecs, gitserver.PathspecSuffix(filename))
 	}
 	return pathspecs
 }()
