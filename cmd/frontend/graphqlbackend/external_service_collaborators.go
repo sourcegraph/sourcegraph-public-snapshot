@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -57,7 +58,8 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	githubUrl, _ := github.APIRoot(baseURL)
-	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
+	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil, newCache)
 
 	possibleRepos := githubCfg.Repos
 	if len(possibleRepos) == 0 {
