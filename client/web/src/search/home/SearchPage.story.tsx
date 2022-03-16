@@ -3,10 +3,10 @@ import React from 'react'
 import { storiesOf } from '@storybook/react'
 import { parseISO } from 'date-fns'
 import { createMemoryHistory } from 'history'
-import { getDocumentNode } from '@sourcegraph/http-client'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -14,16 +14,17 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    HOME_PANELS_QUERY,
-    RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
-    RECENT_SEARCHES_TO_LOAD,
-} from '../../search/panels/HomePanels'
+
 import { WebStory } from '../../components/WebStory'
 import { FeatureFlagName } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
+import {
+    HOME_PANELS_QUERY,
+    RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+    RECENT_SEARCHES_TO_LOAD,
+} from '../panels/HomePanels'
 import {
     _fetchRecentFileViews,
     _fetchSavedSearches,

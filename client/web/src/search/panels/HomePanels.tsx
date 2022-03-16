@@ -1,7 +1,7 @@
-import { ApolloQueryResult, gql, useQuery } from '@apollo/client'
 import * as React from 'react'
 import { useEffect, useCallback } from 'react'
 
+import { ApolloQueryResult, gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -18,7 +18,7 @@ import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { recentSearchesPanelFragment, RecentSearchesPanel } from './RecentSearchesPanel'
 import { recentlySearchedRepositoriesFragment, RepositoriesPanel } from './RepositoriesPanel'
-import { SavedSearchesPanel } from './SavedSearchesPanel'
+import { SavedSearchesPanel, savedSearchesPanelFragment } from './SavedSearchesPanel'
 
 import styles from './HomePanels.module.scss'
 
@@ -40,19 +40,29 @@ export type HomePanelsFetchMore = (
 ) => Promise<ApolloQueryResult<HomePanelsQueryResult>>
 
 export const HOME_PANELS_QUERY = gql`
-    query HomePanelsQuery($userId: ID!, $firstRecentlySearchedRepositories: Int, $firstRecentSearches: Int) {
+    query HomePanelsQuery(
+        $userId: ID!
+        $firstRecentlySearchedRepositories: Int
+        $firstRecentSearches: Int
+        $enableSavedSearches: Boolean!
+    ) {
         node(id: $userId) {
             __typename
             ...RecentlySearchedRepositoriesFragment
             ...RecentSearchesPanelFragment
         }
+        ...SavedSearchesPanelFragment
     }
     ${recentlySearchedRepositoriesFragment}
     ${recentSearchesPanelFragment}
+    ${savedSearchesPanelFragment}
 `
 
 export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
     const userId = props.authenticatedUser?.id || ''
+    const showCollaborators = props.showCollaborators
+    const showSavedSearches = !props.isSourcegraphDotCom
+
     const { data, fetchMore: rawFetchMore } = useQuery<HomePanelsQueryResult, HomePanelsQueryVariables>(
         HOME_PANELS_QUERY,
         {
@@ -60,24 +70,23 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
                 userId,
                 firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
                 firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
+                enableSavedSearches: showSavedSearches,
             },
         }
     )
 
-    console.log({ data })
-
     const fetchMore: HomePanelsFetchMore = useCallback(
-        (variables: Partial<HomePanelsQueryVariables>) => {
-            return rawFetchMore({
+        (variables: Partial<HomePanelsQueryVariables>) =>
+            rawFetchMore({
                 variables: {
                     userId,
                     firstRecentlySearchedRepositories: 0,
                     firstRecentSearches: 0,
+                    enableSavedSearches: false,
                     ...variables,
                 },
-            })
-        },
-        [rawFetchMore]
+            }),
+        [rawFetchMore, userId]
     )
 
     useEffect(() => {
@@ -118,19 +127,26 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
             <div className="row">
                 <RecentFilesPanel {...props} className={classNames('col-lg-7', styles.panel)} />
 
-                {props.showCollaborators ? (
-                    <CollaboratorsTabPanel {...props} />
-                ) : props.isSourcegraphDotCom ? (
-                    <CommunitySearchContextsPanel {...props} className={classNames('col-lg-5', styles.panel)} />
+                {showCollaborators ? (
+                    <CollaboratorsTabPanel {...props} data={data} />
+                ) : showSavedSearches ? (
+                    <SavedSearchesPanel
+                        {...props}
+                        className={classNames('col-lg-5', styles.panel)}
+                        savedSearchesFragment={data}
+                    />
                 ) : (
-                    <SavedSearchesPanel {...props} className={classNames('col-lg-5', styles.panel)} />
+                    <CommunitySearchContextsPanel {...props} className={classNames('col-lg-5', styles.panel)} />
                 )}
             </div>
         </div>
     )
 }
 
-const CollaboratorsTabPanel: React.FunctionComponent<Props> = (props: Props) => {
+const CollaboratorsTabPanel: React.FunctionComponent<Props & { data: HomePanelsQueryResult }> = ({
+    data,
+    ...props
+}: Props & { data: HomePanelsQueryResult }) => {
     const [persistedTabIndex, setPersistedTabIndex] = useTemporarySetting(INVITES_TAB_KEY, 1)
 
     if (persistedTabIndex === undefined) {
@@ -149,7 +165,7 @@ const CollaboratorsTabPanel: React.FunctionComponent<Props> = (props: Props) => 
                         {props.isSourcegraphDotCom ? (
                             <CommunitySearchContextsPanel {...props} insideTabPanel={true} />
                         ) : (
-                            <SavedSearchesPanel {...props} insideTabPanel={true} />
+                            <SavedSearchesPanel {...props} insideTabPanel={true} savedSearchesFragment={data} />
                         )}
                     </TabPanel>
                     <TabPanel className="h-100">

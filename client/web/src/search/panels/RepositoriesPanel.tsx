@@ -1,6 +1,6 @@
+import React, { useCallback, useEffect, useState } from 'react'
 import { gql } from '@apollo/client'
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
