@@ -182,7 +182,7 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-action-form-email')
         })
 
-        // TODO: Disabled because it's flaky:
+        // TODO: Disabled because it's flaky: https://github.com/sourcegraph/sourcegraph/issues/32643
         it.skip('disables submitting the code monitor area until trigger and action are complete', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
