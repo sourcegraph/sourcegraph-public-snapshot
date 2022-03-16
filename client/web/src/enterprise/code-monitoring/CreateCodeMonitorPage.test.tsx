@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { screen } from '@testing-library/react'
+import { getByRole, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { act } from 'react-dom/test-utils'
@@ -36,6 +36,8 @@ describe('CreateCodeMonitorPage', () => {
         createCodeMonitor: sinon.spy((monitor: CreateCodeMonitorVariables) =>
             of({ description: mockCodeMonitor.node.description })
         ),
+        isLightTheme: true,
+        isSourcegraphDotCom: false,
     }
     let clock: sinon.SinonFakeTimers
 
@@ -64,7 +66,8 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
 
-        userEvent.type(triggerInput, 'test type:diff repo:test')
+        const textbox = getByRole(triggerInput, 'textbox')
+        userEvent.type(textbox, 'test type:diff repo:test')
         act(() => {
             clock.tick(600)
         })
@@ -104,7 +107,9 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
 
-        userEvent.type(triggerInput, 'test type:diff repo:test')
+        const textbox = getByRole(triggerInput, 'textbox')
+
+        userEvent.type(textbox, 'test type:diff repo:test')
         act(() => {
             clock.tick(600)
         })

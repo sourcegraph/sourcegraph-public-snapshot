@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
@@ -17,6 +17,8 @@ const PROPS: CodeMonitorFormProps = {
     onSubmit: () => NEVER,
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
+    isLightTheme: true,
+    isSourcegraphDotCom: false,
 }
 
 describe('CodeMonitorForm', () => {
@@ -26,7 +28,9 @@ describe('CodeMonitorForm', () => {
                 <CodeMonitorForm {...PROPS} triggerQuery="foo" />
             </MockedTestProvider>
         )
-        expect(screen.getByTestId('trigger-query-edit')).toHaveValue('foo')
+
+        const triggerEdit = screen.getByTestId('trigger-query-edit')
+        expect(getByRole(triggerEdit, 'textbox')).toHaveValue('foo')
     })
 
     test('Submit button disabled if no actions are present', () => {

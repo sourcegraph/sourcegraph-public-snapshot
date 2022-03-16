@@ -326,7 +326,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch ?? false
+    const dependenciesSearchEnabled = window.context?.experimentalFeatures?.dependenciesSearch !== 'disabled'
     const repoDepsSearchQueryURL = buildSearchURLQuery(
         `repo:deps(${repoFilterForRepoRevision(repo.name, false, revision)})`,
         SearchPatternType.literal,

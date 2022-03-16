@@ -28,7 +28,7 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
     return createNotebook({
         notebook: {
             title,
-            blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])),
+            blocks: blocks.map(blockToGQLInput),
             namespace,
             public: false,
         },
@@ -209,6 +209,8 @@ export class Notebook {
                 this.blocks.set(block.id, { ...block, output })
                 break
             }
+            case 'compute':
+                this.blocks.set(block.id, { ...block, output: null })
         }
     }
 
@@ -231,6 +233,8 @@ export class Notebook {
                 observables.push(block.output.pipe(mapTo(DONE)))
             } else if (block.type === 'symbol') {
                 observables.push(block.output.pipe(mapTo(DONE)))
+            } else if (block.type === 'compute') {
+                // Noop: Compute block does not currently emit an output observable.
             }
         }
         // We store output observables and join them into a single observable,

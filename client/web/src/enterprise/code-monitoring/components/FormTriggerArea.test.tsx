@@ -20,24 +20,6 @@ describe('FormTriggerArea', () => {
         clock.restore()
     })
 
-    test('Correct checkboxes shown when query does not fulfill requirements', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <FormTriggerArea
-                query="test repo:test"
-                triggerCompleted={false}
-                onQueryChange={sinon.spy()}
-                setTriggerCompleted={sinon.spy()}
-                startExpanded={false}
-            />
-        )
-        userEvent.click(screen.getByTestId('trigger-button'))
-        act(() => {
-            clock.tick(600)
-        })
-
-        expect(asFragment()).toMatchSnapshot()
-    })
-
     const testCases = [
         { query: '', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: false },
         { query: 'test', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: true },
@@ -108,6 +90,8 @@ describe('FormTriggerArea', () => {
                     onQueryChange={sinon.spy()}
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
+                    isLightTheme={true}
+                    isSourcegraphDotCom={false}
                 />
             )
             userEvent.click(screen.getByTestId('trigger-button'))
@@ -154,11 +138,13 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
+                isLightTheme={true}
+                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
 
-        const triggerInput = screen.getByTestId('trigger-query-edit')
+        const triggerInput = screen.getByRole('textbox')
         userEvent.type(triggerInput, 'test type:diff repo:test')
         act(() => {
             clock.tick(600)
@@ -177,11 +163,13 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
+                isLightTheme={true}
+                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
 
-        const triggerInput = screen.getByTestId('trigger-query-edit')
+        const triggerInput = screen.getByRole('textbox')
         userEvent.type(triggerInput, 'test patternType:regexp type:diff repo:test')
         act(() => {
             clock.tick(600)

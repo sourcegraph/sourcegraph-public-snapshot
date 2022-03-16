@@ -58,6 +58,12 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
                             type: 'symbol',
                             input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
                         }
+                    case 'ComputeBlock':
+                        return {
+                            id: block.id,
+                            type: 'compute',
+                            input: block.computeInput,
+                        }
                 }
             }),
         [blocks]
