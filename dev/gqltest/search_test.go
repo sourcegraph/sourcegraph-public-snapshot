@@ -1101,7 +1101,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 			name   string
 			query  string
 			counts counts
-			err    string
 		}{
 			{
 				name:   `repo contains file`,
@@ -1157,7 +1156,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo contains with non-matching repo filter`,
 				query:  `repo:nonexist repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 0},
-				err:    `request GraphQL: no resolved repositories`,
 			},
 			{
 				name:   `repo contains respects parameters that affect repo search (fork)`,
@@ -1199,14 +1197,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				results, err := client.SearchAll(test.query)
-
-				if test.err == "" {
-					test.err = "<nil>"
-				}
-
-				if test.err != fmt.Sprint(err) {
-					t.Fatalf("error mismatch, have %q, want %q", fmt.Sprint(err), test.err)
-				}
+        if err != nil {
+          t.Fatal(err)
+        }
 
 				count := countResults(results)
 				if diff := cmp.Diff(test.counts, count); diff != "" {
