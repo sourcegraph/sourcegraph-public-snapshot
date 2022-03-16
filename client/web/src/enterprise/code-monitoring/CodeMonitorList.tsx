@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react'
 
-import PlusIcon from 'mdi-react/PlusIcon'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
