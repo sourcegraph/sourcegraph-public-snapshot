@@ -5466,7 +5466,7 @@ Query: `sum by(app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*git
 
 ## Postgres
 
-<p class="subtitle">Postgres metrics, exported from postgres_exporter (only available on Kubernetes).</p>
+<p class="subtitle">Postgres metrics, exported from postgres_exporter (not available on server).</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/postgres/postgres` on your Sourcegraph instance.
 
