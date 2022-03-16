@@ -14,7 +14,9 @@
 {"id":14,"type":"vertex","label":"range","start":{"line":0,"character":11},"end":{"line":0,"character":24}}
 {"id":15,"type":"edge","label":"next","inV":3,"outV":14}
 {"id":16,"type":"edge","label":"item","inVs":[14],"outV":2,"document":13}
-{"id":17,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":24}}
-{"id":18,"type":"edge","label":"next","inV":3,"outV":17}
-{"id":19,"type":"edge","label":"item","inVs":[17],"outV":2,"document":13}
-{"id":20,"type":"edge","label":"contains","inVs":[14,17],"outV":13}
+{"id":17,"type":"edge","label":"item","inVs":[14],"outV":4,"document":13}
+{"id":18,"type":"vertex","label":"range","start":{"line":1,"character":11},"end":{"line":1,"character":24}}
+{"id":19,"type":"edge","label":"next","inV":3,"outV":18}
+{"id":20,"type":"edge","label":"item","inVs":[18],"outV":2,"document":13}
+{"id":21,"type":"edge","label":"item","inVs":[18],"outV":4,"document":13}
+{"id":22,"type":"edge","label":"contains","inVs":[14,18],"outV":13}

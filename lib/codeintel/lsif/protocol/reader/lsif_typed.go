@@ -198,9 +198,9 @@ func (g *graph) emitDocument(index *lsiftyped.Index, doc *lsiftyped.Document) {
 			if ok {
 				g.emitRelationships(rangeID, documentID, resultIDs, localSymbolInformationTable, symbolInfo)
 			}
-		} else { // reference
-			g.emitEdge("item", Edge{OutV: resultIDs.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 		}
+		// reference
+		g.emitEdge("item", Edge{OutV: resultIDs.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 	}
 	g.emitEdge("contains", Edge{OutV: documentID, InVs: rangeIDs})
 }

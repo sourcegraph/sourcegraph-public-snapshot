@@ -29,7 +29,8 @@
 {"id":29,"type":"vertex","label":"implementationResult"}
 {"id":30,"type":"edge","label":"textDocument/implementation","inV":29,"outV":14}
 {"id":31,"type":"edge","label":"item","inVs":[26],"outV":29,"document":13}
-{"id":32,"type":"vertex","label":"range","start":{"line":1,"character":28},"end":{"line":1,"character":70}}
-{"id":33,"type":"edge","label":"next","inV":14,"outV":32}
-{"id":34,"type":"edge","label":"item","inVs":[32],"outV":15,"document":13}
-{"id":35,"type":"edge","label":"contains","inVs":[26,32],"outV":13}
+{"id":32,"type":"edge","label":"item","inVs":[26],"outV":4,"document":13}
+{"id":33,"type":"vertex","label":"range","start":{"line":1,"character":28},"end":{"line":1,"character":70}}
+{"id":34,"type":"edge","label":"next","inV":14,"outV":33}
+{"id":35,"type":"edge","label":"item","inVs":[33],"outV":15,"document":13}
+{"id":36,"type":"edge","label":"contains","inVs":[26,33],"outV":13}
