@@ -85,6 +85,12 @@
           "id": "sourcegraph.files",
           "name": "Files",
           "visibility": "visible"
+        },
+        {
+          "type": "webview",
+          "id": "sourcegraph.helpSidebar",
+          "name": "Help and feedback",
+          "visibility": "visible"
         }
       ]
     },
@@ -200,9 +206,5 @@
     "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
-  },
-  "dependencies": {
-    "https-browserify": "^1.0.0",
-    "stream-http": "^3.2.0"
   }
 }

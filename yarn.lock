@@ -6069,6 +6069,11 @@
     mitt "^2.1.0"
     prop-types "^15.6.2"
 
+"@vscode/codicons@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.npmjs.org/@vscode/codicons/-/codicons-0.0.29.tgz#587e6ce4be8de55d9d11e5297ea55a3dbab08ccf"
+  integrity sha512-AXhTv1nl3r4W5DqAfXXKiawQNW+tLBNlXn/GcsnFCL0j17sQ2AY+az9oB9K6wjkibq1fndNJvmT8RYN712Fdww==
+
 "@vscode/webview-ui-toolkit@^0.9.0":
   version "0.9.0"
   resolved "https://registry.npmjs.org/@vscode/webview-ui-toolkit/-/webview-ui-toolkit-0.9.0.tgz#a3472f62bc17d4076d9540070aeb3db83080b4f6"

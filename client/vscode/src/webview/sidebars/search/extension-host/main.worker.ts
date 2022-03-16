@@ -2,7 +2,7 @@ import '../../platform/polyfills'
 
 import { startExtensionHost } from '@sourcegraph/shared/src/api/extension/extensionHost'
 
-import { createEndpointsForWebToWeb } from '../../comlink/webviewEndpoint'
+import { createEndpointsForWebToWeb } from '../../../comlink/webviewEndpoint'
 
 async function extensionHostMain(): Promise<void> {
     try {

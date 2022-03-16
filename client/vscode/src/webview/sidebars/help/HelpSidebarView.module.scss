@@ -1,0 +1,22 @@
+.sidebar-container {
+    padding: 0.125rem 0 0 0 !important;
+    color: var(--vscode-foreground);
+    font-size: var(--vscode-editor-font-size) !important;
+}
+
+.item-container {
+    display: flex;
+    flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    flex-wrap: nowrap;
+    margin: 0;
+
+    button,
+    span {
+        color: var(--vscode-foreground);
+        padding: 0;
+        font-weight: var(--vscode-editor-font-weight) !important;
+        font-size: var(--vscode-editor-font-size) !important;
+    }
+}

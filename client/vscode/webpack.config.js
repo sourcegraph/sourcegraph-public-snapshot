@@ -101,7 +101,8 @@ const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
 const webviewSourcePath = path.resolve(vscodeSourcePath, 'webview')
 
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
-const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'search-sidebar')
+const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'search')
+const helpSidebarWebviewPath = path.resolve(webviewSourcePath, 'sidebars', 'help')
 
 const extensionHostWorker = /main\.worker\.ts$/
 
@@ -117,6 +118,7 @@ const webviewConfig = {
   entry: {
     searchPanel: [path.resolve(searchPanelWebviewPath, 'index.tsx')],
     searchSidebar: [path.resolve(searchSidebarWebviewPath, 'index.tsx')],
+    helpSidebar: [path.resolve(helpSidebarWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
   devtool: 'source-map',

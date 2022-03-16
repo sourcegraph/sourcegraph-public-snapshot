@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { ExtensionCoreAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
+import { ExtensionCoreAPI, HelpSidebarAPI, SearchPanelAPI, SearchSidebarAPI } from '../contract'
 import { endpointSetting } from '../settings/endpointSetting'
 
 import { createEndpointsForWebview } from './comlink/extensionEndpoint'
@@ -74,9 +74,9 @@ export async function initializeSearchPanelWebview({
         </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             panel.webview.cspSource
-        }; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
+        }; img-src data: vscode-resource: https:; script-src 'nonce-${nonce}'; style-src data: ${
         panel.webview.cspSource
-    } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src ${
+    } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:; frame-src https:; font-src ${
         panel.webview.cspSource
     };">
         <title>Sourcegraph Search</title>
@@ -144,7 +144,7 @@ export function initializeSearchSidebarWebview({
             webviewView.webview.cspSource
         }; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
         webviewView.webview.cspSource
-    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
+    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
@@ -157,6 +157,57 @@ export function initializeSearchSidebarWebview({
 
     return {
         searchSidebarAPI,
+    }
+}
+
+export function initializeHelpSidebarWebview({
+    extensionUri,
+    extensionCoreAPI,
+    webviewView,
+}: SourcegraphWebviewConfig & {
+    webviewView: vscode.WebviewView
+}): {
+    helpSidebarAPI: Comlink.Remote<HelpSidebarAPI>
+} {
+    webviewView.webview.options = {
+        enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
+    }
+
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
+
+    const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.js'))
+    const cssModuleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'helpSidebar.css'))
+    const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'style.css'))
+
+    const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
+
+    // Get a proxy for the Sourcegraph Webview API to communicate with the Webview.
+    const helpSidebarAPI = Comlink.wrap<HelpSidebarAPI>(proxy)
+
+    // Expose the Sourcegraph VS Code Extension API to the Webview.
+    Comlink.expose(extensionCoreAPI, expose)
+
+    // Apply Content-Security-Policy
+    webviewView.webview.html = `<!DOCTYPE html>
+    <html lang="en" data-panel-id="${panelId}" >
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${
+            webviewView.webview.cspSource
+        }; style-src ${webviewView.webview.cspSource}; script-src ${webviewView.webview.cspSource};">
+        <title>Help and Feedback</title>
+        <link rel="stylesheet" href="${styleSource.toString()}" />
+        <link rel="stylesheet" href="${cssModuleSource.toString()}" />
+    </head>
+        <div id="root" />
+        <script src="${scriptSource.toString()}"></script>
+    </body>
+    </html>`
+
+    return {
+        helpSidebarAPI,
     }
 }
 

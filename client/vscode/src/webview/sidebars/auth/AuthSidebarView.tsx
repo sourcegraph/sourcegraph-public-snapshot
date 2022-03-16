@@ -8,15 +8,17 @@ import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert } from '@sourcegraph/wildcard'
 
-import { WebviewPageProps } from '../platform/context'
+import { WebviewPageProps } from '../../platform/context'
 
 import styles from './AuthSidebarView.module.scss'
 
 const SIDEBAR_UTM_PARAMS = 'utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
 
-interface AuthSidebarViewProps extends WebviewPageProps {
+interface AuthSidebarViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL'> {
     stateStatus: string
 }
+
+interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> {}
 
 /**
  * Rendered by sidebar in search-home state when user doesn't have a valid access token.
@@ -28,7 +30,7 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     stateStatus,
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [hasAccount, setHasAccount] = useState(false)
+    const [hasAccount, setHasAccount] = useState(!stateStatus)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
     const signUpURL = `https://sourcegraph.com/sign-up?editor=vscode&${SIDEBAR_UTM_PARAMS}`
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
@@ -79,9 +81,6 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
         await extensionCoreAPI.openLink(signUpURL)
     }
 
-    const onLinkClick = (type: 'Sourcegraph' | 'Extension'): void =>
-        platformContext.telemetryService.log(`VSCESidebarLearn${type}Click`)
-
     if (state === 'success') {
         // This form should no longer be rendered as the extension context
         // will be invalidated. We should show a notification that the accessToken
@@ -90,47 +89,16 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     }
 
     const renderCommon = (content: JSX.Element): JSX.Element => (
-        <div className={classNames(styles.ctaContainer)}>
-            {stateStatus === 'search-home' && (
-                <div>
+        <>
+            <div className={classNames(styles.ctaContainer)}>
+                <Form onSubmit={validateAccessToken}>
                     <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                        <h5 className="flex-grow-1">Welcome</h5>
+                        <h5 className="flex-grow-1">Search your private code</h5>
                     </button>
-                    <p className={classNames(styles.ctaParagraph)}>
-                        The Sourcegraph extension allows you to search millions of open source repositories without
-                        cloning them to your local machine.
-                    </p>
-                    <p className={classNames(styles.ctaParagraph)}>
-                        Developers use Sourcegraph every day to onboard to new code bases, find code to reuse, resolve
-                        incidents, fix security vulnerabilities, and more.
-                    </p>
-                    <div className={classNames(styles.ctaParagraph)}>
-                        <p className="mb-0">Learn more:</p>
-                        <a
-                            href={'https://sourcegraph.com/?' + SIDEBAR_UTM_PARAMS}
-                            className="my-0"
-                            onClick={() => onLinkClick('Sourcegraph')}
-                        >
-                            Sourcegraph.com
-                        </a>
-                        <br />
-                        <a
-                            href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
-                            className="my-0"
-                            onClick={() => onLinkClick('Extension')}
-                        >
-                            Sourcegraph VS Code extension
-                        </a>
-                    </div>
-                </div>
-            )}
-            <Form onSubmit={validateAccessToken}>
-                <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
-                    <h5 className="flex-grow-1">Search your private code</h5>
-                </button>
-                {content}
-            </Form>
-        </div>
+                    {content}
+                </Form>
+            </div>
+        </>
     )
 
     if (!hasAccount) {
@@ -244,5 +212,44 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
                 </button>
             </div>
         </>
+    )
+}
+
+export const AuthSidebarCta: React.FunctionComponent<AuthSidebarCtaProps> = ({ platformContext }) => {
+    const onLinkClick = (type: 'Sourcegraph' | 'Extension'): void =>
+        platformContext.telemetryService.log(`VSCESidebarLearn${type}Click`)
+
+    return (
+        <div>
+            <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+                <h5 className="flex-grow-1">Welcome</h5>
+            </button>
+            <p className={classNames(styles.ctaParagraph)}>
+                The Sourcegraph extension allows you to search millions of open source repositories without cloning them
+                to your local machine.
+            </p>
+            <p className={classNames(styles.ctaParagraph)}>
+                Developers use Sourcegraph every day to onboard to new code bases, find code to reuse, resolve
+                incidents, fix security vulnerabilities, and more.
+            </p>
+            <div className={classNames(styles.ctaParagraph)}>
+                <p className="mb-0">Learn more:</p>
+                <a
+                    href={'https://sourcegraph.com/?' + SIDEBAR_UTM_PARAMS}
+                    className="my-0"
+                    onClick={() => onLinkClick('Sourcegraph')}
+                >
+                    Sourcegraph.com
+                </a>
+                <br />
+                <a
+                    href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph"
+                    className="my-0"
+                    onClick={() => onLinkClick('Extension')}
+                >
+                    Sourcegraph VS Code extension
+                </a>
+            </div>
+        </div>
     )
 }
