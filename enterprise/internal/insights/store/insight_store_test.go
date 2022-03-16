@@ -2131,3 +2131,166 @@ func TestGetSoftDeletedSeries(t *testing.T) {
 	}
 	autogold.Want("get_soft_deleted_series", []string{"soft_deleted"}).Equal(t, got)
 }
+
+func TestGetUnfrozenInsightCount(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	store := NewInsightStore(timescale)
+	ctx := context.Background()
+
+	t.Run("returns 0 if there are no insights", func(t *testing.T) {
+		globalCount, totalCount, err := store.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
+		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+	})
+	t.Run("returns count for unfrozen insights not attached to dashboards", func(t *testing.T) {
+		_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+										VALUES (1, 'unattached insight', 'test description', 'unique-1', false)`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		globalCount, totalCount, err := store.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
+		autogold.Want("TotalCount", totalCount).Equal(t, 1)
+	})
+	t.Run("returns correct counts for unfrozen insights", func(t *testing.T) {
+		_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+										VALUES (2, 'private insight 2', 'test description', 'unique-2', true),
+											   (3, 'org insight 1', 'test description', 'unique-3', false),
+											   (4, 'global insight 1', 'test description', 'unique-4', false),
+											   (5, 'global insight 2', 'test description', 'unique-5', false),
+											   (6, 'global insight 3', 'test description', 'unique-6', true)`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard (id, title)
+										VALUES (1, 'private dashboard 1'),
+											   (2, 'org dashboard 1'),
+										 	   (3, 'global dashboard 1'),
+										 	   (4, 'global dashboard 2');`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+										VALUES  (1, 2),
+												(2, 3),
+												(3, 4),
+												(4, 5),
+												(4, 6);`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
+										VALUES  (1, 1, 1, NULL, NULL),
+												(2, 2, NULL, 1, NULL),
+												(3, 3, NULL, NULL, TRUE),
+												(4, 4, NULL, NULL, TRUE);`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		globalCount, totalCount, err := store.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("GlobalCount", globalCount).Equal(t, 2)
+		autogold.Want("TotalCount", totalCount).Equal(t, 4)
+	})
+}
+
+func TestUnfreezeGlobalInsights(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	store := NewInsightStore(timescale)
+	ctx := context.Background()
+
+	t.Run("does nothing if there are no insights", func(t *testing.T) {
+		err := store.UnfreezeGlobalInsights(ctx, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		globalCount, totalCount, err := store.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
+		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+	})
+	t.Run("does not unfreeze anything if there are no global insights", func(t *testing.T) {
+		_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+										VALUES (1, 'private insight 1', 'test description', 'unique-1', true),
+											   (2, 'org insight 1', 'test description', 'unique-2', true),
+											   (3, 'unattached insight', 'test description', 'unique-3', true);`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard (id, title)
+										VALUES (1, 'private dashboard 1'),
+											   (2, 'org dashboard 1'),
+										 	   (3, 'global dashboard 1'),
+										 	   (4, 'global dashboard 2');`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+										VALUES  (1, 1),
+												(2, 2);`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
+										VALUES  (1, 1, 1, NULL, NULL),
+												(2, 2, NULL, 1, NULL),
+												(3, 3, NULL, NULL, TRUE),
+												(4, 4, NULL, NULL, TRUE);`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = store.UnfreezeGlobalInsights(ctx, 3)
+		if err != nil {
+			t.Fatal(err)
+		}
+		globalCount, totalCount, err := store.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Want("GlobalCount", globalCount).Equal(t, 0)
+		autogold.Want("TotalCount", totalCount).Equal(t, 0)
+	})
+	t.Run("unfreezes 2 global insights", func(t *testing.T) {
+		_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+										VALUES (4, 'global insight 1', 'test description', 'unique-4', true),
+											   (5, 'global insight 2', 'test description', 'unique-5', true),
+											   (6, 'global insight 3', 'test description', 'unique-6', true)`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+										VALUES  (3, 4),
+												(3, 5),
+												(4, 6);`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = store.UnfreezeGlobalInsights(ctx, 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		globalCount, totalCount, err := store.GetUnfrozenInsightCount(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("GlobalCount", globalCount).Equal(t, 2)
+		autogold.Want("TotalCount", totalCount).Equal(t, 2)
+	})
+}

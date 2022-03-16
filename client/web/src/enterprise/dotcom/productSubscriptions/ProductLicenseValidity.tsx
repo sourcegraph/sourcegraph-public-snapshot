@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
-import React from 'react'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Alert } from '@sourcegraph/wildcard'

@@ -1,7 +1,8 @@
+import React, { useEffect, useMemo, useState } from 'react'
+
 import { parseISO, format } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import React, { useEffect, useMemo, useState } from 'react'
 
 interface Props {
     /** The date (if string, in ISO 8601 format). */

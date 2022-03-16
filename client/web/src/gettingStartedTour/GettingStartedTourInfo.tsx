@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 export const GETTING_STARTED_TOUR_MARKER = 'getting-started-tour-info-marker'
 

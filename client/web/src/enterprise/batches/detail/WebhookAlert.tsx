@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'

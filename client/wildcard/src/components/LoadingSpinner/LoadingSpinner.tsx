@@ -1,7 +1,7 @@
-import classNames from 'classnames'
 import React from 'react'
 
 import { Icon } from '../Icon'
+import classNames from 'classnames'
 
 import styles from './LoadingSpinner.module.scss'
 

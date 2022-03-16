@@ -1,7 +1,8 @@
+import React from 'react'
+
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
-import React from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'

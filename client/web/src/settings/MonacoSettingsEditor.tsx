@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import * as jsonc from '@sqs/jsonc-parser'
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 

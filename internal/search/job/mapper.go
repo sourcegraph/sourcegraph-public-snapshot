@@ -19,12 +19,13 @@ type Mapper struct {
 
 	// Search Jobs (leaf nodes)
 	MapZoektRepoSubsetSearchJob    func(*zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch
+	MapZoektSymbolSearchJob        func(*zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch
 	MapSearcherJob                 func(*searcher.Searcher) *searcher.Searcher
+	MapSymbolSearcherJob           func(*searcher.SymbolSearcher) *searcher.SymbolSearcher
 	MapRepoSearchJob               func(*run.RepoSearch) *run.RepoSearch
 	MapRepoUniverseTextSearchJob   func(*zoekt.GlobalSearch) *zoekt.GlobalSearch
 	MapStructuralSearchJob         func(*structural.StructuralSearch) *structural.StructuralSearch
 	MapCommitSearchJob             func(*commit.CommitSearch) *commit.CommitSearch
-	MapRepoSubsetSymbolSearchJob   func(*symbol.RepoSubsetSymbolSearch) *symbol.RepoSubsetSymbolSearch
 	MapRepoUniverseSymbolSearchJob func(*symbol.RepoUniverseSymbolSearch) *symbol.RepoUniverseSymbolSearch
 	MapComputeExcludedReposJob     func(*repos.ComputeExcludedRepos) *repos.ComputeExcludedRepos
 
@@ -63,9 +64,21 @@ func (m *Mapper) Map(job Job) Job {
 		}
 		return j
 
+	case *zoekt.ZoektSymbolSearch:
+		if m.MapZoektSymbolSearchJob != nil {
+			j = m.MapZoektSymbolSearchJob(j)
+		}
+		return j
+
 	case *searcher.Searcher:
 		if m.MapSearcherJob != nil {
 			j = m.MapSearcherJob(j)
+		}
+		return j
+
+	case *searcher.SymbolSearcher:
+		if m.MapSymbolSearcherJob != nil {
+			j = m.MapSymbolSearcherJob(j)
 		}
 		return j
 
@@ -90,12 +103,6 @@ func (m *Mapper) Map(job Job) Job {
 	case *commit.CommitSearch:
 		if m.MapCommitSearchJob != nil {
 			j = m.MapCommitSearchJob(j)
-		}
-		return j
-
-	case *symbol.RepoSubsetSymbolSearch:
-		if m.MapRepoSubsetSymbolSearchJob != nil {
-			j = m.MapRepoSubsetSymbolSearchJob(j)
 		}
 		return j
 

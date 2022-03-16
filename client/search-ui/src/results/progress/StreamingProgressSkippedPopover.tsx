@@ -1,12 +1,14 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React, { useCallback, useState } from 'react'
-import { Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Collapse, FormGroup, Input, Label } from 'reactstrap'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -14,6 +16,7 @@ import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { Button } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
+
 import styles from './StreamingProgressSkippedPopover.module.scss'
 
 const severityToNumber = (severity: Skipped['severity']): number => {

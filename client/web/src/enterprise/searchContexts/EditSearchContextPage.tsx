@@ -1,5 +1,6 @@
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useMemo } from 'react'
+
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'

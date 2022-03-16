@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'

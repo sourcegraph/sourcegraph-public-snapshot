@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import * as React from 'react'
 import { render } from 'react-dom'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
