@@ -169,21 +169,22 @@ describe('Code intelligence regression test suite', () => {
         //     )
         // })
 
-        test('Definitions, references, and hovers', () =>
-            testCodeNavigation(driver, config, {
-                page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
-                line: 225,
-                token: 'SamplePair',
-                expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                // TODO(efritz) - determine why reference panel shows up during this test,
-                // but only when automated - doing the same flow manually works correctly.
-                // expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
-                expectedReferences: [
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L97:10&subtree=true`,
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L225:11&subtree=true`,
-                    `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?L7:6&subtree=true`,
-                ],
-            }))
+        // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/
+        // test('Definitions, references, and hovers', () =>
+        //     testCodeNavigation(driver, config, {
+        //         page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
+        //         line: 225,
+        //         token: 'SamplePair',
+        //         expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
+        //         // TODO(efritz) - determine why reference panel shows up during this test,
+        //         // but only when automated - doing the same flow manually works correctly.
+        //         // expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
+        //         expectedReferences: [
+        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L97:10&subtree=true`,
+        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L225:11&subtree=true`,
+        //             `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?L7:6&subtree=true`,
+        //         ],
+        //     }))
     })
 })
 
