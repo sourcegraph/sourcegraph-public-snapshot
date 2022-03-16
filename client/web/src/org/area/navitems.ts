@@ -6,18 +6,21 @@ import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 import { showGetStartPage } from '../openBeta/GettingStarted'
 
-import { OrgGetStartedInfo } from './OrgArea'
-import { OrgAreaHeaderNavItem } from './OrgHeader'
+import { OrgAreaHeaderNavItem, OrgSummary } from './OrgHeader'
 
-const calculateLeftGetStartedSteps = (info: OrgGetStartedInfo): number => {
+const calculateLeftGetStartedSteps = (info: OrgSummary | undefined): number => {
+    if(!info) {
+        return 4
+    }
+
     let leftSteps = 1
-    if (info.invitesCount === 0 && info.membersCount < 2) {
+    if (info.membersSummary.invitesCount === 0 && info.membersSummary.membersCount < 2) {
         leftSteps += 1
     }
-    if (info.reposCount === 0) {
+    if (info.repoCount.total.totalCount === 0) {
         leftSteps += 1
     }
-    if (info.servicesCount === 0) {
+    if (info.extServices.totalCount === 0) {
         leftSteps += 1
     }
 
@@ -31,7 +34,7 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         dynamicLabel: ({ getStartedInfo: info }) => `Get started ${calculateLeftGetStartedSteps(info)}`,
         icon: PlayCircleOutlineIcon,
         isActive: (_match, location) => location.pathname.includes('getstarted'),
-        condition: showGetStartPage,
+        condition: ({ getStartedInfo, org, featureFlags }) =>  showGetStartPage(getStartedInfo, org.name, !!featureFlags.get('open-beta-enabled')),
     },
     {
         to: '/settings/members',

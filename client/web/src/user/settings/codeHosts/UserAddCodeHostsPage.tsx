@@ -36,7 +36,7 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
-    onRefreshOrg?: () => void
+    onOrgGetStartedRefresh?: () => void
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -78,7 +78,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
-    onRefreshOrg,
+    onOrgGetStartedRefresh,
 }) => {
     if (window.opener) {
         const parentWindow: ParentWindow = window.opener as ParentWindow
@@ -187,8 +187,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             setStatusOrError(asError(error))
         })
 
-        if (onRefreshOrg) {
-            onRefreshOrg()
+        if (onOrgGetStartedRefresh) {
+            onOrgGetStartedRefresh()
         }
     }
 
@@ -335,12 +335,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         (service: ListExternalServiceFields): void => {
             if (isServicesByKind(statusOrError)) {
                 setStatusOrError({ ...statusOrError, [service.kind]: service })
-                if (onRefreshOrg) {
-                    onRefreshOrg()
+                if (onOrgGetStartedRefresh) {
+                    onOrgGetStartedRefresh()
                 }
             }
         },
-        [statusOrError, onRefreshOrg]
+        [statusOrError, onOrgGetStartedRefresh]
     )
 
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])

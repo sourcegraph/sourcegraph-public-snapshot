@@ -5205,7 +5205,7 @@ type AutocompleteMemberSearchItem {
 }
 
 """
-Result user returned by invite members autocomplete search.
+Result organization members count and pending invitations count.
 """
 type OrgMembersSummary {
     """

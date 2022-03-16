@@ -7,7 +7,7 @@ import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Modal } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Link, Modal } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -15,6 +15,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
 import { AutocompleteSearchUsers } from './SearchUserAutocomplete'
+import { useQueryStringParameters } from './utils'
 
 import styles from './InviteMemberModal.module.scss'
 
@@ -27,10 +28,11 @@ export interface InviteMemberModalProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     onDismiss: () => void
+    showBetaBanner?: boolean
 }
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
-    const { orgName, orgId, onInviteSent, onDismiss } = props
+    const { orgName, orgId, onInviteSent, onDismiss, showBetaBanner } = props
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite a teammate to ${orgName}`
@@ -88,6 +90,17 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             <div className="d-flex flex-row position-relative mt-2">
                 <AutocompleteSearchUsers onValueChanged={onValueChanged} disabled={isInviting} orgId={orgId} />
             </div>
+            {showBetaBanner && (
+                <div className="d-flex flex-row position-relative mt-2">
+                    <small>
+                        <span className="text-muted">
+                            During open beta for Sourcegraph Cloud for small teams, all members invited to your
+                            organization will be admins for your organization.{' '}
+                        </span>
+                        <Link to="#">Learn more.</Link>
+                    </small>
+                </div>
+            )}
             <div className="d-flex justify-content-end mt-4">
                 <Button type="button" variant="primary" onClick={debounceInviteUser} disabled={isInviting}>
                     Send invite
@@ -130,12 +143,15 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
     as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
+    initiallyOpened?: boolean
 }
 export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModalButtonProps> = (
     props: InviteMemberModalButtonProps
 ) => {
-    const { orgName, orgId, onInviteSent, triggerLabel, as, ...rest } = props
-    const [modalOpened, setModalOpened] = React.useState<boolean>()
+    const query = useQueryStringParameters()
+    const showBetaBanner = !!query.get('openBetaBanner')
+    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, ...rest } = props
+    const [modalOpened, setModalOpened] = React.useState<boolean>(!!initiallyOpened)
 
     const onInviteClick = useCallback(() => {
         setModalOpened(true)
@@ -157,6 +173,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModal
                     orgName={orgName}
                     onInviteSent={onInviteSent}
                     onDismiss={onCloseIviteModal}
+                    showBetaBanner={showBetaBanner}
                 />
             )}
         </>

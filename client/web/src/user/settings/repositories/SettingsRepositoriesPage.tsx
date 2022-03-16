@@ -59,7 +59,7 @@ interface Props
     owner: Owner
     routingPrefix: string
     authenticatedUser: AuthenticatedUser
-    onRefreshOrg?: () => void
+    onOrgGetStartedRefresh?: () => void
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -73,7 +73,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
     authenticatedUser,
-    onRefreshOrg,
+    onOrgGetStartedRefresh,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -257,8 +257,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             if (value as Connection<SiteAdminRepositoryFields>) {
                 const conn = value as Connection<SiteAdminRepositoryFields>
 
-                if (onRefreshOrg) {
-                    onRefreshOrg()
+                if (onOrgGetStartedRefresh) {
+                    onOrgGetStartedRefresh()
                 }
                 // hasRepos is only useful when query is not set since user may
                 // still have repos that don't match given query
@@ -271,7 +271,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 }
             }
         },
-        [onRefreshOrg]
+        [onOrgGetStartedRefresh]
     )
 
     const logManageRepositoriesClick = useCallback(() => {

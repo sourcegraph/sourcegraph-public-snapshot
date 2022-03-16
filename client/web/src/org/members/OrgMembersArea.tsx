@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
+import { useEventBus } from '../emitter'
 
 import { OrgMembersListPage } from './OrgMembersListPage'
 import { OrgMembersSidebar } from './OrgMembersSidebar'
@@ -34,8 +35,13 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgMembersArea: React.FunctionComponent<Props> = props => {
+    const emitter = useEventBus()
     if (!props.authenticatedUser) {
         return null
+    }
+
+    const onOrgGetStartedRefresh = (): void => {
+        emitter.emit('refreshOrgHeader', 'refreshing due to changes on members section')
     }
     return (
         <div className="d-flex">
@@ -50,9 +56,10 @@ export const OrgMembersArea: React.FunctionComponent<Props> = props => {
                                 exact={true}
                                 render={routeComponentProps => (
                                     <OrgMembersListPage
+                                        key={props.org.name}
                                         {...routeComponentProps}
                                         {...props}
-                                        onRefreshOrg={props.onOrganizationUpdate}
+                                        onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                     />
                                 )}
                             />
@@ -62,9 +69,10 @@ export const OrgMembersArea: React.FunctionComponent<Props> = props => {
                                 exact={true}
                                 render={routeComponentProps => (
                                     <OrgPendingInvitesPage
+                                        key={props.org.name}
                                         {...routeComponentProps}
                                         {...props}
-                                        onRefreshOrg={props.onOrganizationUpdate}
+                                        onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                     />
                                 )}
                             />
