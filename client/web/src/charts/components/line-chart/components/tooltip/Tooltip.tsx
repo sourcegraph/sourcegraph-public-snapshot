@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { PopoverContent, Position, Point as PopoverPoint, createRectangle } from '@sourcegraph/wildcard'
 
-import { getListWindow } from './utils/get-list-window'
+import { LineChartSeries } from '../../types'
 
 import styles from './Tooltip.module.scss'
 
