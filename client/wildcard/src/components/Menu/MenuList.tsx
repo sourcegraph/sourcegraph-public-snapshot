@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { MenuPopover as ReachMenuPopover, MenuItems } from '@reach/menu-button'
-import { Position as ReachPopoverPosition } from '@reach/popover'
 import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../types'
@@ -9,7 +8,7 @@ import { createRectangle, PopoverContent, PopoverContentProps, Position } from '
 
 const DEFAULT_MENU_LIST_PADDING = createRectangle(0, 0, 2, 2)
 
-export interface MenuListProps extends PopoverProps {
+export interface MenuListProps extends Omit<PopoverProps, 'popoverPosition'> {
     position?: Position
 }
 
@@ -23,22 +22,28 @@ export const MenuList = React.forwardRef((props, reference) => {
             ref={reference}
             portal={false}
             targetPadding={targetPadding}
-            // Since both ReachMenuPopover and Popover components have position prop
-            // we have to cast one to other in order to avoid type collision problem
-            position={(position as unknown) as ReachPopoverPosition}
+            popoverPosition={position}
         >
             {children}
         </ReachMenuPopover>
     )
 }) as ForwardReferenceComponent<'div', MenuListProps>
 
-export interface PopoverProps extends PopoverContentProps {}
+export interface PopoverProps extends PopoverContentProps {
+    /**
+     * Since ReachMenuPopover also has a prop that's named 'position' in order to
+     * pass it prop properly to the as={Component} Component we have to
+     * have unique prop to avoid prop name conflicts.
+     */
+    popoverPosition: Position
+}
 
-const Popover = React.forwardRef(({ ...props }, reference) => (
+const Popover = React.forwardRef(({ popoverPosition, ...props }, reference) => (
     <PopoverContent
         {...props}
         as={MenuItems}
         ref={reference}
+        position={popoverPosition}
         focusLocked={false}
         className={classNames('py-1', props.className)}
     />
