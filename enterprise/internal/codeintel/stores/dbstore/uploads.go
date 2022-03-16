@@ -634,7 +634,12 @@ func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 
 const markQueuedQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkQueued
-UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s
+UPDATE lsif_uploads
+SET
+	state = 'queued',
+	queued_at = clock_timestamp(),
+	upload_size = %s
+WHERE id = %s
 `
 
 // MarkFailed updates the state of the upload to failed, increments the num_failures column and sets the finished_at time

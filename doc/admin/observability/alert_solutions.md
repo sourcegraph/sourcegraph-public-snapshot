@@ -1880,6 +1880,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## precise-code-intel-worker: codeintel_upload_queued_max_age
+
+<p class="subtitle">unprocessed upload record queue longest time in queue</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> precise-code-intel-worker: 18000s+ unprocessed upload record queue longest time in queue
+
+**Possible solutions**
+
+- An alert here could be indicative of a few things: an upload surfacing a pathological performance characteristic,
+precise-code-intel-worker being underprovisioned for the required upload processing throughput, or a higher replica
+count being required for the volume of uploads.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-codeintel-upload-queued-max-age).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_precise-code-intel-worker_codeintel_upload_queued_max_age"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<br />
+
 ## precise-code-intel-worker: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
@@ -2530,6 +2556,31 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 "observability.silenceAlerts": [
   "warning_worker_worker_job_codeintel-auto-indexing_count",
   "critical_worker_worker_job_codeintel-auto-indexing_count"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_queued_max_age
+
+<p class="subtitle">repository queue longest time in queue</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 3600s+ repository queue longest time in queue
+
+**Possible solutions**
+
+- An alert here is generally indicative of either underprovisioned worker instance(s) and/or
+an underprovisioned main postgres instance.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-codeintel-commit-graph-queued-max-age).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_codeintel_commit_graph_queued_max_age"
 ]
 ```
 

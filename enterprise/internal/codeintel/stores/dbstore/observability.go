@@ -55,6 +55,7 @@ type operations struct {
 	markIndexErrored                            *observation.Operation
 	markQueued                                  *observation.Operation
 	markRepositoryAsDirty                       *observation.Operation
+	maxStaleAge                                 *observation.Operation
 	queueSize                                   *observation.Operation
 	referenceIDsAndFilters                      *observation.Operation
 	referencesForUpload                         *observation.Operation
@@ -153,6 +154,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		markIndexErrored:                    op("MarkIndexErrored"),
 		markQueued:                          op("MarkQueued"),
 		markRepositoryAsDirty:               op("MarkRepositoryAsDirty"),
+		maxStaleAge:                         op("MaxStaleAge"),
 		queueSize:                           op("QueueSize"),
 		referenceIDsAndFilters:              op("ReferenceIDsAndFilters"),
 		referencesForUpload:                 op("ReferencesForUpload"),
@@ -161,6 +163,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		repoName:                            op("RepoName"),
 		requeue:                             op("Requeue"),
 		requeueIndex:                        op("RequeueIndex"),
+
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
 		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),

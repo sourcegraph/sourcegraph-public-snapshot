@@ -39,6 +39,9 @@ type MockWorkerStore struct {
 	// MarkFailedFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkFailed.
 	MarkFailedFunc *WorkerStoreMarkFailedFunc
+	// MaxDurationInQueueFunc is an instance of a mock function object
+	// controlling the behavior of the method MaxDurationInQueue.
+	MaxDurationInQueueFunc *WorkerStoreMaxDurationInQueueFunc
 	// QueuedCountFunc is an instance of a mock function object controlling
 	// the behavior of the method QueuedCount.
 	QueuedCountFunc *WorkerStoreQueuedCountFunc
@@ -93,6 +96,11 @@ func NewMockWorkerStore() *MockWorkerStore {
 		MarkFailedFunc: &WorkerStoreMarkFailedFunc{
 			defaultHook: func(context.Context, int, string, store.MarkFinalOptions) (bool, error) {
 				return false, nil
+			},
+		},
+		MaxDurationInQueueFunc: &WorkerStoreMaxDurationInQueueFunc{
+			defaultHook: func(context.Context) (time.Duration, error) {
+				return 0, nil
 			},
 		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
@@ -162,6 +170,11 @@ func NewStrictMockWorkerStore() *MockWorkerStore {
 				panic("unexpected invocation of MockWorkerStore.MarkFailed")
 			},
 		},
+		MaxDurationInQueueFunc: &WorkerStoreMaxDurationInQueueFunc{
+			defaultHook: func(context.Context) (time.Duration, error) {
+				panic("unexpected invocation of MockWorkerStore.MaxDurationInQueue")
+			},
+		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
 			defaultHook: func(context.Context, bool, []*sqlf.Query) (int, error) {
 				panic("unexpected invocation of MockWorkerStore.QueuedCount")
@@ -215,6 +228,9 @@ func NewMockWorkerStoreFrom(i store.Store) *MockWorkerStore {
 		},
 		MarkFailedFunc: &WorkerStoreMarkFailedFunc{
 			defaultHook: i.MarkFailed,
+		},
+		MaxDurationInQueueFunc: &WorkerStoreMaxDurationInQueueFunc{
+			defaultHook: i.MaxDurationInQueue,
 		},
 		QueuedCountFunc: &WorkerStoreQueuedCountFunc{
 			defaultHook: i.QueuedCount,
@@ -1010,6 +1026,113 @@ func (c WorkerStoreMarkFailedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c WorkerStoreMarkFailedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// WorkerStoreMaxDurationInQueueFunc describes the behavior when the
+// MaxDurationInQueue method of the parent MockWorkerStore instance is
+// invoked.
+type WorkerStoreMaxDurationInQueueFunc struct {
+	defaultHook func(context.Context) (time.Duration, error)
+	hooks       []func(context.Context) (time.Duration, error)
+	history     []WorkerStoreMaxDurationInQueueFuncCall
+	mutex       sync.Mutex
+}
+
+// MaxDurationInQueue delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockWorkerStore) MaxDurationInQueue(v0 context.Context) (time.Duration, error) {
+	r0, r1 := m.MaxDurationInQueueFunc.nextHook()(v0)
+	m.MaxDurationInQueueFunc.appendCall(WorkerStoreMaxDurationInQueueFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MaxDurationInQueue
+// method of the parent MockWorkerStore instance is invoked and the hook
+// queue is empty.
+func (f *WorkerStoreMaxDurationInQueueFunc) SetDefaultHook(hook func(context.Context) (time.Duration, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MaxDurationInQueue method of the parent MockWorkerStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *WorkerStoreMaxDurationInQueueFunc) PushHook(hook func(context.Context) (time.Duration, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkerStoreMaxDurationInQueueFunc) SetDefaultReturn(r0 time.Duration, r1 error) {
+	f.SetDefaultHook(func(context.Context) (time.Duration, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkerStoreMaxDurationInQueueFunc) PushReturn(r0 time.Duration, r1 error) {
+	f.PushHook(func(context.Context) (time.Duration, error) {
+		return r0, r1
+	})
+}
+
+func (f *WorkerStoreMaxDurationInQueueFunc) nextHook() func(context.Context) (time.Duration, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkerStoreMaxDurationInQueueFunc) appendCall(r0 WorkerStoreMaxDurationInQueueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkerStoreMaxDurationInQueueFuncCall
+// objects describing the invocations of this function.
+func (f *WorkerStoreMaxDurationInQueueFunc) History() []WorkerStoreMaxDurationInQueueFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkerStoreMaxDurationInQueueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkerStoreMaxDurationInQueueFuncCall is an object that describes an
+// invocation of method MaxDurationInQueue on an instance of
+// MockWorkerStore.
+type WorkerStoreMaxDurationInQueueFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 time.Duration
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkerStoreMaxDurationInQueueFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkerStoreMaxDurationInQueueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
