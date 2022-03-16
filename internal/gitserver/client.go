@@ -1170,12 +1170,7 @@ func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
 	}
 
-	trimmed := strings.TrimSpace(string(stdout))
-	if len(trimmed) == 0 {
-		return nil, nil
-	}
-	split := strings.Split(trimmed, "\n")
-	return split, nil
+	return strings.Fields(string(stdout)), nil
 }
 
 func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
