@@ -1,9 +1,10 @@
+import React, { useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import prettyBytes from 'pretty-bytes'
-import React, { useState, useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -17,6 +18,7 @@ import { dirname } from '../../util/path'
 import { DiffStat, DiffStatSquares } from './DiffStat'
 import { ExtensionInfo } from './FileDiffConnection'
 import { FileDiffHunks } from './FileDiffHunks'
+
 import styles from './FileDiffNode.module.scss'
 
 export interface FileDiffNodeProps extends ThemeProps {

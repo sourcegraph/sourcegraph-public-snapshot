@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -17,9 +18,10 @@ import { CopyableText } from '../../components/CopyableText'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
-import styles from './CollaboratorsPanel.module.scss'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
+
+import styles from './CollaboratorsPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string

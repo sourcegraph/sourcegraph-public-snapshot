@@ -1,9 +1,10 @@
-import * as H from 'history'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { Form } from 'reactstrap'
+
+import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,

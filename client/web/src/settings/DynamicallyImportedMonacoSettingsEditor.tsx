@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
-import * as React from 'react'
 import { Subscription } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,9 +10,10 @@ import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 import { EditorAction } from '../site-admin/configHelpers'
-import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
+
+import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription

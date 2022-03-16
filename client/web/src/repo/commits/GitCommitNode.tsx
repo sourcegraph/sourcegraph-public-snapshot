@@ -1,9 +1,10 @@
+import React, { useState, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import React, { useState, useCallback, useEffect } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, TooltipController, Link } from '@sourcegraph/wildcard'
@@ -14,8 +15,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
 
-import styles from './GitCommitNode.module.scss'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
+
+import styles from './GitCommitNode.module.scss'
 
 export interface GitCommitNodeProps {
     node: GitCommitFields

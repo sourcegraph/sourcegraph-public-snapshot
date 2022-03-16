@@ -1,6 +1,7 @@
+import React, { useCallback, useState } from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
-import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'

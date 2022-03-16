@@ -59,6 +59,7 @@ const config = {
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
+    path.join(__dirname, 'client/shared/dev/mockMatchMedia.ts'),
   ],
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),

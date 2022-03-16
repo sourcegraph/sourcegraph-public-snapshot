@@ -1,11 +1,13 @@
-import { gql, useMutation } from '@apollo/client'
 import React, { useCallback, useState } from 'react'
+
+import { gql, useMutation } from '@apollo/client'
 
 import { Link, Alert, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 
 import { SourcegraphIcon } from './icons'
+
 import styles from './TosConsentModal.module.scss'
 
 export const SET_TOS_ACCEPTED_MUTATION = gql`

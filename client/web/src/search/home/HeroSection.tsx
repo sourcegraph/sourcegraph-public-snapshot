@@ -1,5 +1,6 @@
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 import React from 'react'
+
+import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

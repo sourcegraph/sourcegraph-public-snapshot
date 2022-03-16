@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -17,9 +18,10 @@ import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
-import styles from './HierarchicalLocationsView.module.scss'
 import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
 import { groupLocations } from './locations'
+
+import styles from './HierarchicalLocationsView.module.scss'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500

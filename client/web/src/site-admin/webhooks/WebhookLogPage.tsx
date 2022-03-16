@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -9,8 +10,9 @@ import { PageTitle } from '../../components/PageTitle'
 
 import { queryWebhookLogs as _queryWebhookLogs, SelectedExternalService } from './backend'
 import { WebhookLogNode } from './WebhookLogNode'
-import styles from './WebhookLogPage.module.scss'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
+
+import styles from './WebhookLogPage.module.scss'
 
 export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     queryWebhookLogs?: typeof _queryWebhookLogs
