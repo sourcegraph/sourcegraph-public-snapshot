@@ -12,7 +12,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
-import { fetchRepository, resolveRevision } from '../../repo/backend'
 import { SearchStreamingProps } from '../../search'
 import { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
@@ -31,16 +30,12 @@ export interface NotebookContentProps
     isEmbedded?: boolean
     onUpdateBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
-    fetchRepository: typeof fetchRepository
-    resolveRevision: typeof resolveRevision
 }
 
 export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
     viewerCanManage,
     blocks,
     onUpdateBlocks,
-    resolveRevision,
-    fetchRepository,
     ...props
 }) => {
     const initializerBlocks: BlockInit[] = useMemo(
@@ -80,8 +75,6 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
             isReadOnly={!viewerCanManage}
             blocks={initializerBlocks}
             onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
-            resolveRevision={resolveRevision}
-            fetchRepository={fetchRepository}
         />
     )
 }

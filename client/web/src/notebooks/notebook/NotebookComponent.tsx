@@ -37,13 +37,12 @@ import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
-import { FileBlockValidationFunctions } from '../blocks/file/useFileBlockInputValidation'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
-import { isMonacoEditorDescendant } from '../blocks/useBlockSelection'
 
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
+import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
 
@@ -53,8 +52,7 @@ export interface NotebookComponentProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
-        FileBlockValidationFunctions {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
     globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
@@ -237,6 +235,9 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
             notebook.deleteBlockById(id)
             setSelectedBlockId(blockToFocusAfterDelete)
+            if (blockToFocusAfterDelete) {
+                focusBlock(blockToFocusAfterDelete)
+            }
             updateBlocks()
 
             props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
@@ -251,6 +252,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             }
 
             notebook.moveBlockById(id, direction)
+            focusBlock(id)
             updateBlocks()
 
             props.telemetryService.log(
@@ -271,6 +273,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             const duplicateBlock = notebook.duplicateBlockById(id)
             if (duplicateBlock) {
                 setSelectedBlockId(duplicateBlock.id)
+                focusBlock(duplicateBlock.id)
             }
             if (duplicateBlock?.type === 'md') {
                 notebook.runBlockById(duplicateBlock.id)
@@ -286,59 +289,31 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
-    const onSelectBlock = useCallback(
-        (id: string) => {
-            setSelectedBlockId(id)
-        },
-        [setSelectedBlockId]
+    const notebookEventHandlersProps = useMemo(
+        () => ({
+            notebook,
+            selectedBlockId,
+            setSelectedBlockId,
+            onMoveBlock,
+            onRunBlock,
+            onDeleteBlock,
+            onDuplicateBlock,
+        }),
+        [notebook, onDeleteBlock, onDuplicateBlock, onMoveBlock, onRunBlock, selectedBlockId]
     )
-
-    const onMoveBlockSelection = useCallback(
-        (id: string, direction: BlockDirection) => {
-            const blockId = direction === 'up' ? notebook.getPreviousBlockId(id) : notebook.getNextBlockId(id)
-            if (blockId) {
-                setSelectedBlockId(blockId)
-            }
-        },
-        [notebook, setSelectedBlockId]
-    )
-
-    useEffect(() => {
-        const handleEventOutsideBlockWrapper = (event: MouseEvent | FocusEvent): void => {
-            const target = event.target as HTMLElement | null
-            if (!target?.closest('.block-wrapper') && !target?.closest('[data-reach-combobox-list]')) {
-                setSelectedBlockId(null)
-            }
-        }
-        const handleKeyDown = (event: KeyboardEvent): void => {
-            const target = event.target as HTMLElement
-            if (!selectedBlockId && event.key === 'ArrowDown') {
-                setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (
-                event.key === 'Escape' &&
-                !isMonacoEditorDescendant(target) &&
-                target.tagName.toLowerCase() !== 'input'
-            ) {
-                setSelectedBlockId(null)
-            }
-        }
-
-        document.addEventListener('keydown', handleKeyDown)
-        // Check all clicks on the document and deselect the currently selected block if it was triggered outside of a block.
-        document.addEventListener('mousedown', handleEventOutsideBlockWrapper)
-        // We're using the `focusin` event instead of the `focus` event, since the latter does not bubble up.
-        document.addEventListener('focusin', handleEventOutsideBlockWrapper)
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown)
-            document.removeEventListener('mousedown', handleEventOutsideBlockWrapper)
-            document.removeEventListener('focusin', handleEventOutsideBlockWrapper)
-        }
-    }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
+    useNotebookEventHandlers(notebookEventHandlersProps)
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType: SearchPatternType.literal,
         globbing: props.globbing,
         interpretComments: true,
+    })
+
+    const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
+        patternType: SearchPatternType.literal,
+        globbing: props.globbing,
+        interpretComments: true,
+        disablePatternSuggestions: true,
     })
 
     // Register dummy onCompletionSelected handler to prevent console errors
@@ -414,10 +389,8 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         (block: Block) => {
             const blockProps = {
                 ...props,
-                onSelectBlock,
                 onRunBlock,
                 onBlockInputChange,
-                onMoveBlockSelection,
                 onDeleteBlock,
                 onMoveBlock,
                 onDuplicateBlock,
@@ -435,6 +408,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
+                            sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                             extensionsController={extensionsController}
                         />
                     )
@@ -457,7 +431,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
-                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                             extensionsController={extensionsController}
                         />
                     )
@@ -469,12 +443,11 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             onDeleteBlock,
             onDuplicateBlock,
             onMoveBlock,
-            onMoveBlockSelection,
             onRunBlock,
-            onSelectBlock,
             props,
             selectedBlockId,
             sourcegraphSearchLanguageId,
+            sourcegraphSuggestionsSearchLanguageId,
             extensionsController,
             hoverifier,
             authenticatedUser,

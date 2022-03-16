@@ -1,21 +1,23 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
+import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+
 import { BlockProps } from '..'
+import { isModifierKeyPressed } from '../notebook/useNotebookEventHandlers'
 
 import { NotebookBlockMenu, NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
-import { useBlockSelection } from './useBlockSelection'
-import { useBlockShortcuts } from './useBlockShortcuts'
+import { useIsBlockInputFocused } from './useIsBlockInputFocused'
 
 import blockStyles from './NotebookBlock.module.scss'
 
-interface NotebookBlockProps extends Omit<BlockProps, 'input' | 'output'>, NotebookBlockMenuProps {
+interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlockSelected'>, NotebookBlockMenuProps {
     className?: string
-    isInputFocused: boolean
     'aria-label': string
     onDoubleClick?: () => void
     onEnterBlock: () => void
+    onHideInput?: () => void
 }
 
 export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
@@ -23,30 +25,32 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
     id,
     className,
     isSelected,
-    isInputFocused,
     isOtherBlockSelected,
     mainAction,
     actions,
     'aria-label': ariaLabel,
-    onEnterBlock,
     onDoubleClick,
-    ...props
+    onEnterBlock,
+    onHideInput,
 }) => {
-    const blockElement = useRef(null)
+    const isInputFocused = useIsBlockInputFocused(id)
+    const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent): void => {
+            if (isSelected && event.key === 'Enter') {
+                if (isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)) {
+                    onHideInput?.()
+                } else {
+                    onEnterBlock()
+                }
+            }
+        }
 
-    const { onSelect } = useBlockSelection({
-        id,
-        blockElement: blockElement.current,
-        isSelected,
-        isInputFocused,
-        ...props,
-    })
-
-    const { onKeyDown } = useBlockShortcuts({
-        id,
-        onEnterBlock,
-        ...props,
-    })
+        document.addEventListener('keydown', handleKeyDown)
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [isMacPlatform, isSelected, onEnterBlock, onHideInput])
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
@@ -54,23 +58,19 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
             or semantic elements that would accurately describe its functionality. To provide the necessary functionality we have
             to rely on plain div elements and custom click/focus/keyDown handlers. We still preserve the ability to navigate through blocks
             with the keyboard using the up and down arrows, and TAB. */}
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div
                 className={classNames(
+                    'block',
                     blockStyles.block,
                     className,
                     isSelected && !isInputFocused && blockStyles.selected,
                     isSelected && isInputFocused && blockStyles.selectedNotFocused
                 )}
-                onClick={onSelect}
                 onDoubleClick={onDoubleClick}
-                onKeyDown={onKeyDown}
-                onFocus={onSelect}
                 // A tabIndex is necessary to make the block focusable.
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                 tabIndex={0}
                 aria-label={ariaLabel}
-                ref={blockElement}
             >
                 {children}
             </div>

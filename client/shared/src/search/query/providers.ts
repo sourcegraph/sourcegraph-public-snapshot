@@ -42,7 +42,7 @@ const MAX_SUGGESTION_COUNT = 50
 const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
 const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
-export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
+export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, disablePatternSuggestions?: boolean): string {
     const hasAndOrOperators = tokens.some(
         token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
     )
@@ -66,7 +66,7 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): strin
         const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
         return `${relevantFilters} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
-    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value) {
+    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value && !disablePatternSuggestions) {
         const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
         return `${relevantFilters} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`.trimStart()
     }
@@ -87,6 +87,7 @@ export function getProviders(
     options: {
         patternType: SearchPatternType
         globbing: boolean
+        disablePatternSuggestions?: boolean
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean
     }
@@ -134,7 +135,7 @@ export function getProviders(
                     return null
                 }
 
-                return of(getSuggestionQuery(scanned.term, tokenAtColumn))
+                return of(getSuggestionQuery(scanned.term, tokenAtColumn, options.disablePatternSuggestions))
                     .pipe(
                         // We use a delay here to implement a custom debounce. In the next step we check if the current
                         // completion request was cancelled in the meantime (`token.isCancellationRequested`).
