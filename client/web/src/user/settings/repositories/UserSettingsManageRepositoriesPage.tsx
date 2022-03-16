@@ -271,7 +271,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             if (host.lastSyncError) {
                 hostHasProblems = true
-                console.log('has probs - sync')
                 codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
             }
 
@@ -281,7 +280,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (hostHasProblems) {
-                console.log('skiping why?')
                 // skip this code host
                 continue
             }
@@ -317,12 +315,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             fetchSelectedRepositories(),
         ])
 
-        // if (affiliatedRepos.codeHostErrors !== '') {
-        //     // Fetch errors from affiliated repositories
-        //     codeHostProblems.push(asError(`${affiliatedRepos.codeHostErrors}`))
-        // }
+        if (codeHostProblems.length > 0 || affiliatedRepos.codeHostErrors !== '') {
+            codeHostProblems.push(asError(affiliatedRepos.codeHostErrors))
 
-        if (codeHostProblems.length > 0) {
             setAffiliateRepoProblems(codeHostProblems)
         }
 
@@ -581,9 +576,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const hasProblems = affiliateRepoProblems !== undefined
     // code hosts were loaded and some were configured
-    console.log(codeHosts.hosts.length, codeHosts.hosts)
     const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
-    const noCodeHostsOrErrors = !hasCodeHosts || hasProblems
+    const noCodeHostsOrErrors = !hasCodeHosts
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">

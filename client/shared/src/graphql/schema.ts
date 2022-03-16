@@ -16322,7 +16322,7 @@ export interface ICodeHostRepositoryConnection {
     /**
      * Errors returned from the code host.
      */
-    codeHostErrors: string
+    codeHostErrors: string | null
 
     /**
      * A list of repositories affiliated with a code host.

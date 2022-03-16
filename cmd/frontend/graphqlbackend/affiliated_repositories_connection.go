@@ -131,7 +131,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 					fetchErrors = append(fetchErrors, result.err)
 
-					errMessage = "Error fetching repos from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
+					errMessage = "Error from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
 					listOfErrors = append(listOfErrors, errMessage)
 
 					continue

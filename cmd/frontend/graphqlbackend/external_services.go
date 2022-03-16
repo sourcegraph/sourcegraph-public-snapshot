@@ -343,11 +343,6 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
 	}
 
-	fmt.Println("ext svcssss nodes", externalServices[0])
-	fmt.Println("resolvers nodes", resolvers[0])
-	fmt.Println("resolvers warning", resolvers[0].warning)
-	fmt.Println("resolvers errors", resolvers[0].webhookErr)
-
 	return resolvers, nil
 }
 
