@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize } from 'lodash'
+import { capitalize, find } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -18,7 +18,6 @@ import {
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
-import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -45,16 +44,13 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import {
-    LocationFields,
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
-} from '../graphql-operations'
+import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
 
@@ -141,55 +137,6 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     return <FilterableReferencesList {...props} token={token} />
 }
 
-export interface Location {
-    resource: {
-        path: string
-        content: string
-        repository: {
-            name: string
-        }
-        commit: {
-            oid: string
-        }
-    }
-    range?: Range
-    url: string
-    lines: string[]
-
-    precise: boolean
-}
-
-export const buildLocation = (node: LocationFields): Location => {
-    const location: Location = {
-        resource: {
-            repository: { name: node.resource.repository.name },
-            content: node.resource.content,
-            path: node.resource.path,
-            commit: node.resource.commit,
-        },
-        url: '',
-        lines: [],
-        precise: true,
-    }
-    if (node.range !== null) {
-        location.range = node.range
-    }
-    location.url = node.url
-    location.lines = location.resource.content.split(/\r?\n/)
-    return location
-}
-
-interface RepoLocationGroup {
-    repoName: string
-    referenceGroups: LocationGroup[]
-}
-
-interface LocationGroup {
-    repoName: string
-    path: string
-    locations: Location[]
-}
-
 const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = props => {
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
@@ -225,7 +172,7 @@ export const ReferencesList: React.FunctionComponent<
     }
 > = props => {
     const {
-        lsifData,
+        results,
         error,
         loading,
         referencesHasNextPage,
@@ -261,9 +208,9 @@ export const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
-    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
-    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
+    const references = useMemo(() => results?.references.nodes ?? [], [results])
+    const definitions = useMemo(() => results?.definitions.nodes ?? [], [results])
+    const implementations = useMemo(() => results?.implementations.nodes ?? [], [results])
 
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
@@ -328,7 +275,7 @@ export const ReferencesList: React.FunctionComponent<
         panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
-    if (loading && !lsifData) {
+    if (loading && !results) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
@@ -340,7 +287,7 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     // If we received an error before we had received any data
-    if (error && !lsifData) {
+    if (error && !results) {
         return (
             <div>
                 <p className="text-danger">Loading precise code intel failed:</p>
@@ -350,7 +297,7 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!lsifData) {
+    if (!results) {
         return <>Nothing found</>
     }
 
@@ -663,7 +610,7 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     return (
         <>
             {repoLocationGroups.map(repoReferenceGroup => (
-                <RepoLocationGroup
+                <CollapsibleRepoLocationGroup
                     key={repoReferenceGroup.repoName}
                     repoLocationGroup={repoReferenceGroup}
                     activeLocation={activeLocation}
@@ -676,7 +623,7 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     )
 }
 
-const RepoLocationGroup: React.FunctionComponent<{
+const CollapsibleRepoLocationGroup: React.FunctionComponent<{
     repoLocationGroup: RepoLocationGroup
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
@@ -685,6 +632,15 @@ const RepoLocationGroup: React.FunctionComponent<{
 }> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
+
+    const allSearchBased = useMemo(
+        () =>
+            find(
+                repoLocationGroup.referenceGroups.flatMap(reference => reference.locations),
+                location => !location.precise
+            ) !== undefined,
+        [repoLocationGroup]
+    )
 
     return (
         <>
@@ -702,6 +658,10 @@ const RepoLocationGroup: React.FunctionComponent<{
                     )}
 
                     <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
+
+                    <Badge pill={true} variant="secondary" className="ml-2">
+                        {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
+                    </Badge>
                 </span>
             </Button>
 

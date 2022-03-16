@@ -14,7 +14,6 @@ import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import {
     UsePreciseCodeIntelForPositionVariables,
     UsePreciseCodeIntelForPositionResult,
-    PreciseCodeIntelForLocationFields,
     LoadAdditionalReferencesResult,
     LoadAdditionalReferencesVariables,
     LoadAdditionalImplementationsResult,
@@ -24,6 +23,7 @@ import {
     LocationFields,
 } from '../graphql-operations'
 
+import { Location, buildPreciseLocation, buildSearchBasedLocation } from './location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
@@ -32,8 +32,23 @@ import {
 } from './ReferencesPanelQueries'
 import { definitionQuery, referencesQuery } from './searchBased'
 
+interface CodeIntelResults {
+    references: {
+        endCursor: string | null
+        nodes: Location[]
+    }
+    implementations: {
+        endCursor: string | null
+        nodes: Location[]
+    }
+    definitions: {
+        endCursor: string | null
+        nodes: Location[]
+    }
+}
+
 export interface UsePreciseCodeIntelResult {
-    lsifData?: PreciseCodeIntelForLocationFields
+    results?: CodeIntelResults
     error?: ApolloError
     loading: boolean
 
@@ -51,7 +66,7 @@ interface UsePreciseCodeIntelParameters {
 }
 
 export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
-    const [referenceData, setReferenceData] = useState<PreciseCodeIntelForLocationFields>()
+    const [codeIntelResults, setCodeIntelResults] = useState<CodeIntelResults>()
 
     const fellBackToSearchBased = useRef(false)
     const shouldFetchPrecise = useRef(true)
@@ -75,30 +90,30 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     >(LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
-            const newReferences = searchResultsToLocations(result)
+            const newReferences = searchResultsToLocations(result).map(buildSearchBasedLocation)
 
-            const previousData = referenceData
+            const previousData = codeIntelResults
             if (!previousData) {
-                setReferenceData({
+                setCodeIntelResults({
                     implementations: {
-                        pageInfo: { endCursor: null },
+                        endCursor: null,
                         nodes: [],
                     },
                     definitions: {
-                        pageInfo: { endCursor: null },
+                        endCursor: null,
                         nodes: [],
                     },
                     references: {
-                        pageInfo: { endCursor: null },
+                        endCursor: null,
                         nodes: newReferences,
                     },
                 })
             } else {
-                setReferenceData({
+                setCodeIntelResults({
                     implementations: previousData.implementations,
                     definitions: previousData.definitions,
                     references: {
-                        pageInfo: { endCursor: null },
+                        endCursor: null,
                         nodes: [...previousData.references.nodes, ...newReferences],
                     },
                 })
@@ -112,24 +127,24 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     >(LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
-            const newDefinitions = searchResultsToLocations(result)
+            const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)
 
-            const previousData = referenceData
+            const previousData = codeIntelResults
             if (!previousData) {
-                setReferenceData({
-                    implementations: { pageInfo: { endCursor: null }, nodes: [] },
-                    references: { pageInfo: { endCursor: null }, nodes: [] },
+                setCodeIntelResults({
+                    implementations: { endCursor: null, nodes: [] },
+                    references: { endCursor: null, nodes: [] },
                     definitions: {
-                        pageInfo: { endCursor: null },
+                        endCursor: null,
                         nodes: newDefinitions,
                     },
                 })
             } else {
-                setReferenceData({
+                setCodeIntelResults({
                     implementations: previousData.implementations,
                     references: previousData.references,
                     definitions: {
-                        pageInfo: { endCursor: null },
+                        endCursor: null,
                         nodes: [...previousData.definitions.nodes, ...newDefinitions],
                     },
                 })
@@ -162,7 +177,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
 
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 if (lsifData) {
-                    setReferenceData(lsifData)
+                    setCodeIntelResults(lsifData)
                 } else {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
@@ -180,7 +195,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             console.log('fetch additional references')
-            const previousData = referenceData
+            const previousData = codeIntelResults
 
             const newReferenceData = result.repository?.commit?.blob?.lsif?.references
 
@@ -188,12 +203,12 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
                 return
             }
 
-            setReferenceData({
+            setCodeIntelResults({
                 implementations: previousData.implementations,
                 definitions: previousData.definitions,
                 references: {
-                    ...newReferenceData,
-                    nodes: [...previousData.references.nodes, ...newReferenceData.nodes],
+                    endCursor: newReferenceData.pageInfo.endCursor,
+                    nodes: [...previousData.references.nodes, ...newReferenceData.nodes.map(buildPreciseLocation)],
                 },
             })
         },
@@ -205,7 +220,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     >(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
-            const previousData = referenceData
+            const previousData = codeIntelResults
 
             const newImplementationsData = result.repository?.commit?.blob?.lsif?.implementations
 
@@ -213,12 +228,15 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
                 return
             }
 
-            setReferenceData({
+            setCodeIntelResults({
                 references: previousData.references,
                 definitions: previousData.definitions,
                 implementations: {
-                    ...newImplementationsData,
-                    nodes: [...previousData.implementations.nodes, ...newImplementationsData.nodes],
+                    endCursor: newImplementationsData.pageInfo.endCursor,
+                    nodes: [
+                        ...previousData.implementations.nodes,
+                        ...newImplementationsData.nodes.map(buildPreciseLocation),
+                    ],
                 },
             })
         },
@@ -226,7 +244,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
 
     const fetchMoreReferences = (): void => {
         console.log('fetchMoreReferences')
-        const cursor = referenceData?.references.pageInfo?.endCursor || null
+        const cursor = codeIntelResults?.references.endCursor || null
 
         if (cursor === null && attemptedSearchReferences === false) {
             setAttemptedSearchReferences(true)
@@ -249,7 +267,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     }
 
     const fetchMoreImplementations = (): void => {
-        const cursor = referenceData?.implementations.pageInfo?.endCursor || null
+        const cursor = codeIntelResults?.implementations.endCursor || null
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         fetchAdditionalImplementations({
@@ -269,17 +287,17 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     const combinedError = error || fetchSearchBasedReferencesResult.error || fetchSearchBasedDefinitionsResult.error
 
     return {
-        lsifData: referenceData,
+        results: codeIntelResults,
         loading: combinedLoading,
 
         error: combinedError,
 
         fetchMoreReferences,
         fetchMoreReferencesLoading: additionalReferencesResult.loading,
-        referencesHasNextPage: referenceData ? referenceData.references.pageInfo.endCursor !== null : false,
+        referencesHasNextPage: codeIntelResults ? codeIntelResults.references.endCursor !== null : false,
 
         fetchMoreImplementations,
-        implementationsHasNextPage: referenceData ? referenceData.implementations.pageInfo.endCursor !== null : false,
+        implementationsHasNextPage: codeIntelResults ? codeIntelResults.implementations.endCursor !== null : false,
         fetchMoreImplementationsLoading: additionalImplementationsResult.loading,
     }
 }
@@ -287,9 +305,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
 const getLsifData = ({
     data,
     error,
-}: Pick<QueryResult<UsePreciseCodeIntelForPositionResult>, 'data' | 'error'>):
-    | PreciseCodeIntelForLocationFields
-    | undefined => {
+}: Pick<QueryResult<UsePreciseCodeIntelForPositionResult>, 'data' | 'error'>): CodeIntelResults | undefined => {
     const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
 
     const extractedData = dataOrThrowErrors(result)
@@ -301,7 +317,20 @@ const getLsifData = ({
 
     const lsif = extractedData.repository?.commit?.blob?.lsif
 
-    return lsif
+    return {
+        implementations: {
+            endCursor: lsif.implementations.pageInfo.endCursor,
+            nodes: lsif.implementations.nodes.map(buildPreciseLocation),
+        },
+        references: {
+            endCursor: lsif.references.pageInfo.endCursor,
+            nodes: lsif.references.nodes.map(buildPreciseLocation),
+        },
+        definitions: {
+            endCursor: lsif.definitions.pageInfo.endCursor,
+            nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+        },
+    }
 }
 
 function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields[] {
