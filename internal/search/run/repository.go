@@ -53,9 +53,9 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		return nil
 	})
 
-	if errors.Is(err, searchrepos.ErrNoResolvedRepos) && s.Args.PatternInfo.Pattern != "" {
-		err = nil
-	}
+if s.Args.PatternInfo.Pattern != "" {
+    err = errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos))
+}
 
 	return nil, err
 }
