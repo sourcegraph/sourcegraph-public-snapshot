@@ -1,7 +1,6 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import { ListGroup, ListGroupItem } from 'reactstrap'
 
 import { Link } from '@sourcegraph/wildcard'
 
@@ -29,12 +28,12 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
  */
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups, ...props }) => (
     <SidebarGroup className={classNames('site-admin-sidebar', className)}>
-        <ListGroup>
+        <ul className="list-group">
             {groups.map(
                 ({ header, items, condition = () => true }, index) =>
                     condition(props) &&
                     (items.length > 1 ? (
-                        <ListGroupItem className="p-0" key={index}>
+                        <li className="p-0 list-group-item" key={index}>
                             <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
                                 {items.map(
                                     ({ label, to, source = 'client', condition = () => true }) =>
@@ -45,18 +44,18 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                                         )
                                 )}
                             </SidebarCollapseItems>
-                        </ListGroupItem>
+                        </li>
                     ) : (
-                        <ListGroupItem className="p-0" key={items[0].label}>
+                        <li className="p-0 list-group-item" key={items[0].label}>
                             <Link to={items[0].to} className="bg-2 border-0 d-flex list-group-item-action p-2 w-100">
                                 <span>
                                     {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
                                     {items[0].label}
                                 </span>
                             </Link>
-                        </ListGroupItem>
+                        </li>
                     ))
             )}
-        </ListGroup>
+        </ul>
     </SidebarGroup>
 )
