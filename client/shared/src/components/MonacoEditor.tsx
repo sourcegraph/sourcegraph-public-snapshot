@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
-import * as React from 'react'
 import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 

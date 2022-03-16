@@ -1,5 +1,6 @@
-import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
+
+import LinkIcon from 'mdi-react/LinkIcon'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'

@@ -1,9 +1,10 @@
+import React, { useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React, { useMemo, useEffect } from 'react'
 
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
@@ -16,9 +17,10 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExten
 
 import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import styles from './RegistryExtensionOverviewPage.module.scss'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
+
+import styles from './RegistryExtensionOverviewPage.module.scss'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 

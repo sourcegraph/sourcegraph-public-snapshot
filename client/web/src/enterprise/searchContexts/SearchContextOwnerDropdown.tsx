@@ -1,5 +1,6 @@
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useMemo } from 'react'
+
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 
 import { Namespace } from '@sourcegraph/shared/src/schema'
 import { Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon } from '@sourcegraph/wildcard'

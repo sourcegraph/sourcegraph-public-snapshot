@@ -127,18 +127,3 @@
         font-weight: bold;
     }
 }
-
-.code-view-toolbar {
-    display: flex;
-
-    // Same style as for Gitlab's svg icons
-    img {
-        vertical-align: baseline;
-    }
-    :global(.btn) img {
-        height: 15px;
-        width: 15px;
-        position: relative;
-        top: 2px;
-    }
-}

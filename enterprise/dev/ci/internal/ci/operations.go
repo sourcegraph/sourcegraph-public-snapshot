@@ -461,7 +461,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn --cwd client/browser release:firefox"))
 
 	// Release to npm
-	pipeline.AddStep(":rocket::npm: NPM Release",
+	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),

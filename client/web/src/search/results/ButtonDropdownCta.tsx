@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
+
+import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'

@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
@@ -20,7 +21,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -42,7 +43,7 @@ import {
     useSearchStack,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
-import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
 
@@ -51,6 +52,7 @@ import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { getRevisions } from './sidebar/Revisions'
+
 import styles from './StreamingSearchResults.module.scss'
 
 export interface StreamingSearchResultsProps
@@ -102,7 +104,7 @@ function useCtaAlert(
         'cta.ideExtensionAlertDismissed',
         false
     )
-    const isBrowserExtensionInstalled = useObservable<boolean>(browserExtensionInstalled)
+    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
     const isUsingIdeIntegration = useIsActiveIdeIntegrationUser()
 
     const displaySignupAndBrowserExtensionCTAsBasedOnCadence = usePersistentCadence(
@@ -127,7 +129,7 @@ function useCtaAlert(
         if (
             hasDismissedBrowserExtensionAlert === false &&
             isAuthenticated &&
-            isBrowserExtensionInstalled === false &&
+            isBrowserExtensionActiveUser === false &&
             displaySignupAndBrowserExtensionCTAsBasedOnCadence
         ) {
             return 'browser'
@@ -148,7 +150,7 @@ function useCtaAlert(
         isAuthenticated,
         displaySignupAndBrowserExtensionCTAsBasedOnCadence,
         hasDismissedBrowserExtensionAlert,
-        isBrowserExtensionInstalled,
+        isBrowserExtensionActiveUser,
         isUsingIdeIntegration,
         hasDismissedIDEExtensionAlert,
         displayIDEExtensionCTABasedOnCadence,
@@ -422,15 +424,23 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             onClick: onSignUpClick,
                         }}
                         icon={<SearchBetaIcon />}
-                        className="mr-3"
+                        className="mr-3 percy-display-none"
                         onClose={onCtaAlertDismissed}
                     />
                 )}
                 {ctaToDisplay === 'browser' && (
-                    <BrowserExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
+                    <BrowserExtensionAlert
+                        className="mr-3 percy-display-none"
+                        onAlertDismissed={onCtaAlertDismissed}
+                        page="search"
+                    />
                 )}
                 {ctaToDisplay === 'ide' && (
-                    <IDEExtensionAlert className="mr-3" onAlertDismissed={onCtaAlertDismissed} page="search" />
+                    <IDEExtensionAlert
+                        className="mr-3 percy-display-none"
+                        onAlertDismissed={onCtaAlertDismissed}
+                        page="search"
+                    />
                 )}
                 <StreamingSearchResultsList
                     {...props}

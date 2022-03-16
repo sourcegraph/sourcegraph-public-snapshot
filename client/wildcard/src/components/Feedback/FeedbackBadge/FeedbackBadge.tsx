@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 import type { BaseProductStatusBadgeProps } from '@sourcegraph/wildcard/src/components/Badge'

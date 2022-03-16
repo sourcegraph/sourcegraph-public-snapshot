@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { MockedProviderProps } from '@apollo/client/testing'
 import { Meta } from '@storybook/react'
-import React from 'react'
 
 import { RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
 import sidebarStyles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebar.module.scss'

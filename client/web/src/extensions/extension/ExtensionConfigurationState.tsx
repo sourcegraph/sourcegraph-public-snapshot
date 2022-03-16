@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
-import * as React from 'react'
 
 import { Icon } from '@sourcegraph/wildcard'
 

@@ -1,9 +1,10 @@
+import React, { RefObject, useEffect, useMemo, useRef } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
-import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -19,9 +20,10 @@ import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/u
 
 import { DocumentationExamples } from './DocumentationExamples'
 import { DocumentationIcons } from './DocumentationIcons'
-import styles from './DocumentationNode.module.scss'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 import { hasDescendent } from './RepositoryDocumentationSidebar'
+
+import styles from './DocumentationNode.module.scss'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters, SettingsCascadeProps {
     repo: RepositoryFields

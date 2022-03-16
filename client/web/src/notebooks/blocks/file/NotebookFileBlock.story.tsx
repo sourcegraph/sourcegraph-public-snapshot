@@ -1,13 +1,13 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { FileBlockInput } from '../..'
 import { WebStory } from '../../../components/WebStory'
-import { RepositoryFields } from '../../../graphql-operations'
 
 import { NotebookFileBlock } from './NotebookFileBlock'
 
@@ -32,9 +32,6 @@ const fileBlockInput: FileBlockInput = {
     lineRange: null,
 }
 
-const resolveRevision = () => of({ commitID: 'commit1', defaultBranch: 'main', rootTreeURL: '' })
-const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
-
 add('default', () => (
     <WebStory>
         {props => (
@@ -48,10 +45,8 @@ add('default', () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={false}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
-                resolveRevision={resolveRevision}
-                fetchRepository={fetchRepository}
                 extensionsController={extensionsController}
+                sourcegraphSearchLanguageId="sourcegraph"
             />
         )}
     </WebStory>
@@ -70,10 +65,8 @@ add('edit mode', () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={false}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
-                resolveRevision={resolveRevision}
-                fetchRepository={fetchRepository}
                 extensionsController={extensionsController}
+                sourcegraphSearchLanguageId="sourcegraph"
             />
         )}
     </WebStory>
@@ -92,10 +85,8 @@ add('error fetching file', () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isSourcegraphDotCom={false}
-                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
-                resolveRevision={resolveRevision}
-                fetchRepository={fetchRepository}
                 extensionsController={extensionsController}
+                sourcegraphSearchLanguageId="sourcegraph"
             />
         )}
     </WebStory>
