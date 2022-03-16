@@ -19,6 +19,11 @@ export interface UseUiFeatures {
             disabled: boolean
             tooltip: string | undefined
         }
+        create: {
+            addDashboardButton: {
+                disabled: boolean
+            }
+        }
         menu: Record<DashboardMenuItemKey, DashboardMenuItem>
         insights: {
             menu: {
@@ -43,6 +48,11 @@ export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFe
             addRemoveInsightsButton: {
                 disabled: !permissions.isConfigurable,
                 tooltip: getTooltipMessage(currentDashboard, permissions),
+            },
+            create: {
+                addDashboardButton: {
+                    disabled: !licensed,
+                },
             },
             // Available menu items
             menu: {
