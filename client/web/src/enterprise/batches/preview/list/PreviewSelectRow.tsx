@@ -1,6 +1,7 @@
+import React, { useMemo, useContext } from 'react'
+
 import { noop } from 'lodash'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import React, { useMemo, useContext } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { Button, useObservable, Icon } from '@sourcegraph/wildcard'

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { Meta } from '@storybook/react'
 import RegexIcon from 'mdi-react/RegexIcon'
-import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 

@@ -1,5 +1,6 @@
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useMemo, useContext } from 'react'
+
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'

@@ -1,13 +1,15 @@
-import classNames from 'classnames'
 import React, { forwardRef } from 'react'
+
+import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import type { MonacoFieldProps } from '../monaco-field'
 import * as Monaco from '../monaco-field'
 
-import styles from './InsightQueryInput.module.scss'
 import { generateRepoFiltersQuery } from './utils/generate-repo-filters-query'
+
+import styles from './InsightQueryInput.module.scss'
 
 export interface InsightQueryInputProps extends MonacoFieldProps {
     patternType: SearchPatternType

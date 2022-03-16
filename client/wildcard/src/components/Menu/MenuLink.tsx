@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { MenuLink as ReachMenuLink, MenuLinkProps as ReachMenuLinkProps } from '@reach/menu-button'
 import classNames from 'classnames'
-import React from 'react'
 
 import { ForwardReferenceComponent } from '../../types'
 

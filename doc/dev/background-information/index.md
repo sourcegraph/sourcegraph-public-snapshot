@@ -19,7 +19,7 @@
   - [Working with GraphQL](web/graphql.md)
   - [Wildcard Component Library](web/wildcard.md)
   - [Styling UI](web/styling.md)
-  - [Accessibility](web/accessibility.md)
+  - [Accessibility](web/accessibility/index.md)
   - [Temporary settings](web/temporary_settings.md)
   - [Build process](web/build.md)
 - [Developing the GraphQL API](graphql_api.md)

@@ -1,9 +1,9 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -13,6 +13,7 @@ import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+
 import styles from './CodeMonitorList.module.scss'
 
 type CodeMonitorFilter = 'all' | 'user'
@@ -27,13 +28,12 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
 }) => (
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
-        {authenticatedUser ? (
-            <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                <Icon as={PlusIcon} />
-                Create a code monitor
-            </Button>
-        ) : (
-            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Get started with code monitors" />
+        {!authenticatedUser && (
+            <CodeMonitorSignUpLink
+                className="my-3"
+                eventName="SignUpPLGMonitor_EmptyList"
+                text="Get started with code monitors"
+            />
         )}
     </div>
 )

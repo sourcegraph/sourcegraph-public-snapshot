@@ -18,37 +18,46 @@
     opacity: 0;
     user-select: none;
     z-index: 1;
+    transition: opacity 150ms;
+    flex-shrink: 0;
 
     &--right,
     &--left {
         height: 100%;
         width: var(--handle-size);
-        cursor: ew-resize;
+        cursor: col-resize;
         top: 0;
         bottom: 0;
     }
 
     &--left {
         margin-left: calc(-1 * var(--handle-size));
-        right: 0;
+        right: calc(-1 / 2 * var(--handle-size));
     }
 
     &--right {
         margin-right: calc(-1 * var(--handle-size));
-        left: 0;
+        left: calc(-1 / 2 * var(--handle-size));
     }
 
     &--top {
         width: 100%;
         height: var(--handle-size);
         margin-bottom: calc(-1 * var(--handle-size));
-        cursor: ns-resize;
+        cursor: row-resize;
         top: 0;
         left: 0;
         right: 0;
     }
 
-    &--resizing {
+    &:hover {
+        opacity: 0.5;
+        background-color: var(--border-color-2);
+    }
+
+    &--resizing,
+    &--resizing:hover {
         opacity: 1;
+        background-color: var(--border-color-2);
     }
 }

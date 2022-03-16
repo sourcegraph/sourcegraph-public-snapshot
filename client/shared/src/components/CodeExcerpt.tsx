@@ -1,7 +1,8 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { range, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subject, Subscription, BehaviorSubject, NEVER } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
@@ -9,6 +10,7 @@ import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/o
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNode } from '@sourcegraph/common'
 import { Repo } from '@sourcegraph/shared/src/util/url'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
@@ -209,7 +211,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
                         <div className={styles.codeExcerptAlert}>
-                            <AlertCircleIcon className="icon-inline mr-2" />
+                            <Icon className="mr-2" as={AlertCircleIcon} />
                             {this.state.blobLinesOrError.message}
                         </div>
                     )}

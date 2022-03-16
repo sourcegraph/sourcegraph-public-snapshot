@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+
 import { useLocation } from 'react-router'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -28,7 +29,7 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
         }
 
         // We only want to capture the IDE UTM parameters on the first page load. In order to avoid
-        // rerunning the effect whenever location change, we skip it from the dependecy array.
+        // rerunning the effect whenever location change, we skip it from the dependency array.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setLastJetBrainsDetection, setLastVSCodeDetection])
 

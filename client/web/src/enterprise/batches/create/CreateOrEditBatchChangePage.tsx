@@ -1,15 +1,17 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import { compact, noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
@@ -44,7 +46,6 @@ import {
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
-import styles from './CreateOrEditBatchChangePage.module.scss'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
@@ -58,6 +59,8 @@ import { useWorkspacesPreview } from './useWorkspacesPreview'
 import { useImportingChangesets } from './workspaces-preview/useImportingChangesets'
 import { useWorkspaces, WorkspacePreviewFilters } from './workspaces-preview/useWorkspaces'
 import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+
+import styles from './CreateOrEditBatchChangePage.module.scss'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -248,6 +251,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 }
 
 const INVALID_BATCH_SPEC_TOOLTIP = "There's a problem with your batch spec."
+const WORKSPACES_PREVIEW_SIZE = 'batch-changes.ssbc-workspaces-preview-size'
 
 interface EditPageProps extends ThemeProps {
     batchChange: EditBatchChangeFields
@@ -404,23 +408,32 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                         errors={compact([codeErrors.update, codeErrors.validation, previewError, executeError])}
                     />
                 </div>
-                <div className={styles.workspacesPreviewContainer}>
-                    <WorkspacesPreview
-                        previewDisabled={previewDisabled}
-                        preview={() => previewBatchSpec(debouncedCode)}
-                        batchSpecStale={
-                            isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
-                        }
-                        hasPreviewed={hasPreviewed}
-                        excludeRepo={excludeRepo}
-                        cancel={cancel}
-                        isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
-                        resolutionState={resolutionState}
-                        workspacesConnection={workspacesConnection}
-                        importingChangesetsConnection={importingChangesetsConnection}
-                        setFilters={setFilters}
-                    />
-                </div>
+                <Resizable
+                    defaultSize={500}
+                    minSize={405}
+                    maxSize={1400}
+                    handlePosition="left"
+                    storageKey={WORKSPACES_PREVIEW_SIZE}
+                    element={
+                        <div className={styles.workspacesPreviewContainer}>
+                            <WorkspacesPreview
+                                previewDisabled={previewDisabled}
+                                preview={() => previewBatchSpec(debouncedCode)}
+                                batchSpecStale={
+                                    isBatchSpecStale || isWorkspacesPreviewInProgress || resolutionState === 'CANCELED'
+                                }
+                                hasPreviewed={hasPreviewed}
+                                excludeRepo={excludeRepo}
+                                cancel={cancel}
+                                isWorkspacesPreviewInProgress={isWorkspacesPreviewInProgress}
+                                resolutionState={resolutionState}
+                                workspacesConnection={workspacesConnection}
+                                importingChangesetsConnection={importingChangesetsConnection}
+                                setFilters={setFilters}
+                            />
+                        </div>
+                    }
+                />
             </div>
         </BatchChangePage>
     )

@@ -1,8 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
-import React from 'react'
 
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -20,9 +21,10 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
+
 import styles from './SearchResult.module.scss'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -92,8 +94,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <SourceForkIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={SourceForkIcon}
                                         />
                                     </div>
                                     <div>
@@ -105,8 +108,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <ArchiveIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={ArchiveIcon}
                                         />
                                     </div>
                                     <div>
@@ -118,8 +122,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 <>
                                     <div className={styles.divider} />
                                     <div>
-                                        <LockIcon
-                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={LockIcon}
                                         />
                                     </div>
                                     <div>

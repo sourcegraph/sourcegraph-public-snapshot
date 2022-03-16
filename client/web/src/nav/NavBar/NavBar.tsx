@@ -1,9 +1,10 @@
+import React, { useEffect, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
