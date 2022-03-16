@@ -18,6 +18,7 @@ import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { ContributableMenu } from '@sourcegraph/client-api'
 import {
     asError,
     ErrorLike,
@@ -31,7 +32,6 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
