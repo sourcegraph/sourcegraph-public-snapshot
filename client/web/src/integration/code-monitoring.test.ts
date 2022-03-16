@@ -145,7 +145,8 @@ describe('Code monitoring', () => {
             ).toBeGreaterThan(0)
         })
 
-        it('disables the actions area until trigger is complete', async () => {
+        // TODO: Disabled because it's flaky: https://github.com/sourcegraph/sourcegraph/issues/32643
+        it.skip('disables the actions area until trigger is complete', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
             await driver.page.type('.test-name-input', 'test monitor')
