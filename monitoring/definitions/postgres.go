@@ -18,7 +18,7 @@ func Postgres() *monitoring.Container {
 	return &monitoring.Container{
 		Name:                     "postgres",
 		Title:                    "Postgres",
-		Description:              "Postgres metrics, exported from postgres_exporter (only available on Kubernetes).",
+		Description:              "Postgres metrics, exported from postgres_exporter (not available on server).",
 		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
