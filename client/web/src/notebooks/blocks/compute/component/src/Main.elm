@@ -69,12 +69,11 @@ type alias DataValue =
     }
 
 
-type alias Filter a =
-    { a
-        | dataPoints : Int
-        , sortByCount : Bool
-        , reverse : Bool
-        , excludeStopWords : Bool
+type alias DataFilter =
+    { dataPoints : Int
+    , sortByCount : Bool
+    , reverse : Bool
+    , excludeStopWords : Bool
     }
 
 
@@ -82,10 +81,7 @@ type alias Model =
     { sourcegraphURL : String
     , query : String
     , debounce : Int
-    , dataPoints : Int
-    , sortByCount : Bool
-    , reverse : Bool
-    , excludeStopWords : Bool
+    , dataFilter : DataFilter
     , selectedTab : Tab
     , resultsMap : Dict String DataValue
 
@@ -120,10 +116,12 @@ init json =
 
                 _ ->
                     placeholderQuery
-      , dataPoints = 30
-      , sortByCount = True
-      , reverse = False
-      , excludeStopWords = False
+      , dataFilter =
+            { dataPoints = 30
+            , sortByCount = True
+            , reverse = False
+            , excludeStopWords = False
+            }
       , selectedTab = Chart
       , debounce = 0
       , resultsMap = Dict.empty
@@ -203,16 +201,20 @@ type Msg
     = -- User inputs
       OnQueryChanged String
     | OnDebounce
-    | OnDataPoints String
-    | OnSortByCheckbox Bool
-    | OnReverseCheckbox Bool
-    | OnExcludeStopWordsCheckbox Bool
+    | OnDataFilter DataFilterMsg
     | OnTabSelected Tab
       -- Data processing
     | RunCompute
     | OnResults (List Result)
     | ResultStreamDone
     | NoOp
+
+
+type DataFilterMsg
+    = OnDataPoints String
+    | OnSortByCheckbox Bool
+    | OnReverseCheckbox Bool
+    | OnExcludeStopWordsCheckbox Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -230,26 +232,8 @@ update msg model =
             else
                 ( { model | debounce = model.debounce - 1 }, Cmd.none )
 
-        OnSortByCheckbox sortByCount ->
-            ( { model | sortByCount = sortByCount }, Cmd.none )
-
-        OnReverseCheckbox reverse ->
-            ( { model | reverse = reverse }, Cmd.none )
-
-        OnExcludeStopWordsCheckbox excludeStopWords ->
-            ( { model | excludeStopWords = excludeStopWords }, Cmd.none )
-
-        OnDataPoints i ->
-            let
-                newDataPoints =
-                    case String.toInt i of
-                        Just n ->
-                            n
-
-                        Nothing ->
-                            0
-            in
-            ( { model | dataPoints = newDataPoints }, Cmd.none )
+        OnDataFilter dataFilterMsg ->
+            ( { model | dataFilter = updateDataFilter dataFilterMsg model.dataFilter }, Cmd.none )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
@@ -285,6 +269,31 @@ update msg model =
 
         NoOp ->
             ( model, Cmd.none )
+
+
+updateDataFilter : DataFilterMsg -> DataFilter -> DataFilter
+updateDataFilter msg dataFilter =
+    case msg of
+        OnSortByCheckbox sortByCount ->
+            { dataFilter | sortByCount = sortByCount }
+
+        OnReverseCheckbox reverse ->
+            { dataFilter | reverse = reverse }
+
+        OnExcludeStopWordsCheckbox excludeStopWords ->
+            { dataFilter | excludeStopWords = excludeStopWords }
+
+        OnDataPoints i ->
+            let
+                newDataPoints =
+                    case String.toInt i of
+                        Just n ->
+                            n
+
+                        Nothing ->
+                            0
+            in
+            { dataFilter | dataPoints = newDataPoints }
 
 
 
@@ -359,6 +368,42 @@ dataView data =
         ]
 
 
+viewDataFilter : DataFilter -> E.Element DataFilterMsg
+viewDataFilter dataFilter =
+    E.row [ E.paddingXY 0 10 ]
+        [ I.text [ E.width (E.fill |> E.maximum 65), F.center, Background.color darkModeTextInputColor ]
+            { onChange = OnDataPoints
+            , placeholder = Nothing
+            , text =
+                case dataFilter.dataPoints of
+                    0 ->
+                        ""
+
+                    n ->
+                        String.fromInt n
+            , label = I.labelHidden ""
+            }
+        , I.checkbox [ E.paddingXY 10 0 ]
+            { onChange = OnSortByCheckbox
+            , icon = I.defaultCheckbox
+            , checked = dataFilter.sortByCount
+            , label = I.labelRight [] (E.text "sort by count")
+            }
+        , I.checkbox [ E.paddingXY 10 0 ]
+            { onChange = OnReverseCheckbox
+            , icon = I.defaultCheckbox
+            , checked = dataFilter.reverse
+            , label = I.labelRight [] (E.text "reverse")
+            }
+        , I.checkbox [ E.paddingXY 10 0 ]
+            { onChange = OnExcludeStopWordsCheckbox
+            , icon = I.defaultCheckbox
+            , checked = dataFilter.excludeStopWords
+            , label = I.labelRight [] (E.text "exclude stop words")
+            }
+        ]
+
+
 inputRow : Model -> E.Element Msg
 inputRow model =
     E.el [ E.centerX, E.width E.fill ]
@@ -369,38 +414,7 @@ inputRow model =
                 , text = model.query
                 , label = I.labelHidden ""
                 }
-            , E.row [ E.paddingXY 0 10 ]
-                [ I.text [ E.width (E.fill |> E.maximum 65), F.center, Background.color darkModeTextInputColor ]
-                    { onChange = OnDataPoints
-                    , placeholder = Nothing
-                    , text =
-                        case model.dataPoints of
-                            0 ->
-                                ""
-
-                            n ->
-                                String.fromInt n
-                    , label = I.labelHidden ""
-                    }
-                , I.checkbox [ E.paddingXY 10 0 ]
-                    { onChange = OnSortByCheckbox
-                    , icon = I.defaultCheckbox
-                    , checked = model.sortByCount
-                    , label = I.labelRight [] (E.text "sort by count")
-                    }
-                , I.checkbox [ E.paddingXY 10 0 ]
-                    { onChange = OnReverseCheckbox
-                    , icon = I.defaultCheckbox
-                    , checked = model.reverse
-                    , label = I.labelRight [] (E.text "reverse")
-                    }
-                , I.checkbox [ E.paddingXY 10 0 ]
-                    { onChange = OnExcludeStopWordsCheckbox
-                    , icon = I.defaultCheckbox
-                    , checked = model.excludeStopWords
-                    , label = I.labelRight [] (E.text "exclude stop words")
-                    }
-                ]
+            , E.map OnDataFilter (viewDataFilter model.dataFilter)
             ]
         )
 
@@ -511,7 +525,7 @@ view model =
                     data =
                         Dict.toList model.resultsMap
                             |> List.map Tuple.second
-                            |> filterData model
+                            |> filterData model.dataFilter
                   in
                   case model.selectedTab of
                     Chart ->
@@ -562,7 +576,7 @@ updateResultsMap textResult =
         )
 
 
-filterData : Filter a -> List DataValue -> List DataValue
+filterData : DataFilter -> List DataValue -> List DataValue
 filterData { dataPoints, sortByCount, reverse, excludeStopWords } data =
     let
         pipeSort =
