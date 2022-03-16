@@ -37,6 +37,8 @@ export interface SearchBoxProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+    className?: string
+    containerClassName?: string
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
@@ -79,8 +81,20 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
     )
 
     return (
-        <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
-            <div className={classNames(styles.searchBoxBackgroundContainer, 'flex-shrink-past-contents')}>
+        <div
+            className={classNames(
+                styles.searchBox,
+                props.containerClassName,
+                props.hideHelpButton ? styles.searchBoxShadow : null
+            )}
+        >
+            <div
+                className={classNames(
+                    styles.searchBoxBackgroundContainer,
+                    props.className,
+                    'flex-shrink-past-contents'
+                )}
+            >
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
