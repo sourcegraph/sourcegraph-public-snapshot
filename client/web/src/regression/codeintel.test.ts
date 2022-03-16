@@ -6,7 +6,7 @@ import { ElementHandle } from 'puppeteer'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -43,8 +43,8 @@ describe('Code intelligence regression test suite', () => {
         'sourcegraph-testing/prometheus-redefinitions',
     ]
 
-    const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
-    const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
+    // const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
+    // const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -223,70 +223,70 @@ interface CodeNavigationTestCase {
     expectedReferences?: string[]
 }
 
-/**
- * Navigate to the given page and test the definitions, references, and hovers of the token
- * on the given line. Will ensure both hover and clicking the token produces the hover overlay.
- * Will check the precision indicator of the hoverlay and each file match in the definition
- * and reference panels. Will compare hover text. Will compare location of each file match or
- * the target of the page navigated to on jump-to-definition (in the case of a single definition).
- */
-async function testCodeNavigation(
-    driver: Driver,
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
-    { page, line, token, expectedHoverContains, expectedDefinition, expectedReferences }: CodeNavigationTestCase
-): Promise<void> {
-    await driver.page.goto(config.sourcegraphBaseUrl + page)
-    await driver.page.waitForSelector('.test-blob')
-    const tokenElement = await findTokenElement(driver, line, token)
-
-    // Check hover
-    await tokenElement.hover()
-    await waitForHover(driver, expectedHoverContains)
-
-    // Check click
-    await clickOnEmptyPartOfCodeView(driver)
-    await tokenElement.click()
-    await waitForHover(driver, expectedHoverContains)
-
-    // Find-references
-    if (expectedReferences && expectedReferences.length > 0) {
-        await clickOnEmptyPartOfCodeView(driver)
-        await tokenElement.hover()
-        await waitForHover(driver, expectedHoverContains)
-        await (await driver.findElementWithText('Find references')).click()
-
-        await driver.page.waitForSelector('.test-search-result')
-        const referenceLinks = await collectLinks(driver)
-        for (const expectedReference of expectedReferences) {
-            expect(referenceLinks).toContainEqual(expectedReference)
-        }
-        await clickOnEmptyPartOfCodeView(driver)
-    }
-
-    // Go-to-definition
-    await clickOnEmptyPartOfCodeView(driver)
-    await tokenElement.hover()
-    await waitForHover(driver, expectedHoverContains)
-    await (await driver.findElementWithText('Go to definition')).click()
-
-    if (Array.isArray(expectedDefinition)) {
-        await driver.page.waitForSelector('[data-test-id="hierarchical-locations-view"]')
-        const defLinks = await collectLinks(driver)
-        for (const definition of expectedDefinition) {
-            expect(defLinks).toContainEqual(definition)
-        }
-    } else if (expectedDefinition) {
-        await driver.page.waitForFunction(
-            (defURL: string) => document.location.href.endsWith(defURL),
-            { timeout: 2000 },
-            expectedDefinition
-        )
-
-        await driver.page.goBack()
-    }
-
-    await driver.page.keyboard.press('Escape')
-}
+// /**
+//  * Navigate to the given page and test the definitions, references, and hovers of the token
+//  * on the given line. Will ensure both hover and clicking the token produces the hover overlay.
+//  * Will check the precision indicator of the hoverlay and each file match in the definition
+//  * and reference panels. Will compare hover text. Will compare location of each file match or
+//  * the target of the page navigated to on jump-to-definition (in the case of a single definition).
+//  */
+// async function testCodeNavigation(
+//     driver: Driver,
+//     config: Pick<Config, 'sourcegraphBaseUrl'>,
+//     { page, line, token, expectedHoverContains, expectedDefinition, expectedReferences }: CodeNavigationTestCase
+// ): Promise<void> {
+//     await driver.page.goto(config.sourcegraphBaseUrl + page)
+//     await driver.page.waitForSelector('.test-blob')
+//     const tokenElement = await findTokenElement(driver, line, token)
+//
+//     // Check hover
+//     await tokenElement.hover()
+//     await waitForHover(driver, expectedHoverContains)
+//
+//     // Check click
+//     await clickOnEmptyPartOfCodeView(driver)
+//     await tokenElement.click()
+//     await waitForHover(driver, expectedHoverContains)
+//
+//     // Find-references
+//     if (expectedReferences && expectedReferences.length > 0) {
+//         await clickOnEmptyPartOfCodeView(driver)
+//         await tokenElement.hover()
+//         await waitForHover(driver, expectedHoverContains)
+//         await (await driver.findElementWithText('Find references')).click()
+//
+//         await driver.page.waitForSelector('.test-search-result')
+//         const referenceLinks = await collectLinks(driver)
+//         for (const expectedReference of expectedReferences) {
+//             expect(referenceLinks).toContainEqual(expectedReference)
+//         }
+//         await clickOnEmptyPartOfCodeView(driver)
+//     }
+//
+//     // Go-to-definition
+//     await clickOnEmptyPartOfCodeView(driver)
+//     await tokenElement.hover()
+//     await waitForHover(driver, expectedHoverContains)
+//     await (await driver.findElementWithText('Go to definition')).click()
+//
+//     if (Array.isArray(expectedDefinition)) {
+//         await driver.page.waitForSelector('[data-test-id="hierarchical-locations-view"]')
+//         const defLinks = await collectLinks(driver)
+//         for (const definition of expectedDefinition) {
+//             expect(defLinks).toContainEqual(definition)
+//         }
+//     } else if (expectedDefinition) {
+//         await driver.page.waitForFunction(
+//             (defURL: string) => document.location.href.endsWith(defURL),
+//             { timeout: 2000 },
+//             expectedDefinition
+//         )
+//
+//         await driver.page.goBack()
+//     }
+//
+//     await driver.page.keyboard.press('Escape')
+// }
 
 /**
  * Return a list of locations (and their precision) that exist in the file list
