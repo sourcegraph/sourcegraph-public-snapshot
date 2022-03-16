@@ -70,8 +70,6 @@ func NewGithubSource(externalServicesStore database.ExternalServiceStore, svc *t
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-
-	fmt.Println("=== 3 A")
 	return newGithubSource(externalServicesStore, svc, &c, cf)
 }
 
@@ -156,8 +154,6 @@ func newGithubSource(
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
 ) (*GithubSource, error) {
-	fmt.Println("===3 B")
-
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -223,8 +219,6 @@ func newGithubSource(
 	if envvar.SourcegraphDotComMode() &&
 		c.GithubAppInstallationID != "" &&
 		IsGitHubAppCloudEnabled(dotcomConfig) {
-		fmt.Println("3 C")
-
 		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode private key")
@@ -259,8 +253,6 @@ func newGithubSource(
 	}
 
 	if svc.IsSiteOwned() {
-		fmt.Println("3 D")
-
 		for resource, monitor := range map[string]*ratelimit.Monitor{
 			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),
@@ -279,8 +271,6 @@ func newGithubSource(
 			})
 		}
 	}
-
-	fmt.Println("3 E")
 
 	return &GithubSource{
 		svc:              svc,
