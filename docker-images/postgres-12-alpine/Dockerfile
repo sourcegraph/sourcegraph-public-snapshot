@@ -1,14 +1,11 @@
 FROM postgres:12.7-alpine@sha256:b815f145ef6311e24e4bc4d165dad61b2d8e4587c96cea2944297419c5c93054
 
-ARG PING_UID=99
-ARG POSTGRES_UID=999
-
 # We modify the postgres user/group to reconcile with our previous debian based images
 # and avoid issues with customers migrating.
 RUN apk add --no-cache nss su-exec shadow &&\
-    groupmod -g $PING_UID ping &&\
-    usermod -u $POSTGRES_UID postgres &&\
-    groupmod -g $POSTGRES_UID postgres &&\
+    groupmod -g 99 ping &&\
+    usermod -u 999 postgres &&\
+    groupmod -g 999 postgres &&\
     mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data &&\
     chown -R postgres:postgres /var/lib/postgresql &&\
     chown -R postgres:postgres /var/run/postgresql
