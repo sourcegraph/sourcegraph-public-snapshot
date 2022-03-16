@@ -3,7 +3,7 @@ import * as React from 'react'
 import classNames from 'classnames'
 import LockIcon from 'mdi-react/LockIcon'
 
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
+import { Alert, AlertProps, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SiteAdminAlert.module.scss'
 
@@ -22,7 +22,7 @@ export const SiteAdminAlert: React.FunctionComponent<SiteAdminAlertProps> = ({
 }) => (
     <Alert className={classNames(styles.siteAdminAlert, className)} variant={variant}>
         <h5>
-            <LockIcon className="icon-inline" /> Site admin
+            <Icon as={LockIcon} /> Site admin
         </h5>
         <div>{children}</div>
     </Alert>

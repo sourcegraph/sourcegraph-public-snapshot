@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../batches'
 import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
@@ -49,7 +49,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                         <li className="p-0 list-group-item" key={items[0].label}>
                             <Link to={items[0].to} className="bg-2 border-0 d-flex list-group-item-action p-2 w-100">
                                 <span>
-                                    {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
+                                    {header?.icon && <Icon className="sidebar__icon mr-1" as={header.icon} />}{' '}
                                     {items[0].label}
                                 </span>
                             </Link>

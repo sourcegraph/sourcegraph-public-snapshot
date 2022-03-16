@@ -12,7 +12,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../documentation/ModalVideo'
 
@@ -136,7 +136,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <Button variant="icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
-                    <CloseIcon className="icon-inline" />
+                    <Icon as={CloseIcon} />
                 </Button>
             )}
         </h3>
@@ -306,7 +306,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
-                                        Learn more <ExternalLinkIcon className="icon-inline" />
+                                        Learn more <Icon as={ExternalLinkIcon} />
                                     </Link>
                                 </small>
                             </p>
@@ -345,7 +345,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
-                                Sourcegraph Learn <ExternalLinkIcon className="icon-inline" />
+                                Sourcegraph Learn <Icon as={ExternalLinkIcon} />
                             </Link>
                             <br />
                             <Link
@@ -353,7 +353,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
-                                Sourcegraph cheat sheet <ExternalLinkIcon className="icon-inline" />
+                                Sourcegraph cheat sheet <Icon as={ExternalLinkIcon} />
                             </Link>
                         </p>
                     </Container>

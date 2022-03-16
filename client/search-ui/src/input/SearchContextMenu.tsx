@@ -20,7 +20,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Link, Icon } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
@@ -290,7 +290,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             <div className={styles.title}>
                 <small>Choose search context</small>
                 <Button onClick={() => closeMenu()} variant="icon" className={styles.titleClose} aria-label="Close">
-                    <CloseIcon className="icon-inline" />
+                    <Icon as={CloseIcon} />
                 </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>
