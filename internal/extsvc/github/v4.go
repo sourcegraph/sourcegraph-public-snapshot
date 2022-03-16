@@ -59,7 +59,7 @@ type V4Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V4Client.apiURL.
-func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
+func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, newCache NewCacheFactory) *V4Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -94,6 +94,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
+		newCache:         newCache,
 	}
 }
 
@@ -101,7 +102,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 // the current V4Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	return NewV4Client(c.apiURL, a, c.httpClient)
+	return NewV4Client(c.apiURL, a, c.httpClient, c.newCache)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.

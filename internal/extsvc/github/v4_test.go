@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -755,7 +756,9 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client(uri, vcrToken, doer), save
+	newCache := func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
+
+	return NewV4Client(uri, vcrToken, doer, newCache), save
 }
 
 func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
@@ -773,5 +776,7 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client(uri, gheToken, doer), save
+	newCache := func(key string, ttl int) Cache { return rcache.NewWithTTL(key, ttl) }
+
+	return NewV4Client(uri, gheToken, doer, newCache), save
 }
