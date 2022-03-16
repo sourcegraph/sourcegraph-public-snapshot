@@ -32,9 +32,8 @@ RUN apk update && apk add --no-cache \
     tini \
     wget
 
-
 # Patch CVE 2022-0778
 # Issue: https://github.com/sourcegraph/sourcegraph/issues/32679
 # PR: https://github.com/sourcegraph/sourcegraph/pull/32682
 # @TODO: Remove this with the next release of Alpine
-RUN apk add --no-cache libcrypto1.1=1.1.1n-r0 libssl1.1=1.1.1n-r0
+RUN apk add --no-cache libcrypto1.1>=1.1.1n-r0 libssl1.1>=1.1.1n-r0
