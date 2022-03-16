@@ -51,13 +51,32 @@ export interface SearchBoxProps
 
     /** Set in JSContext only available to the web app. */
     isExternalServicesUserModeAll?: boolean
+
+    /** Called with the underlying editor instance on creation. */
+    onEditorCreated?: (editor: SearchEditor) => void
+}
+
+/**
+ * Interface to the search box editor.
+ * The underlying editor can be either Monaco or Codemirror.
+ */
+interface SearchEditor {
+    focus: () => void
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
-    const { queryState } = props
+    const { queryState, onEditorCreated: onEditorCreatedCallback } = props
 
-    const [editor, setEditor] = useState<{ focus: () => void }>()
+    const [editor, setEditor] = useState<SearchEditor>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
+
+    const onEditorCreated = useCallback(
+        (editor: SearchEditor) => {
+            setEditor(editor)
+            onEditorCreatedCallback?.(editor)
+        },
+        [onEditorCreatedCallback]
+    )
 
     return (
         <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
@@ -79,7 +98,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
-                        onEditorCreated={setEditor}
+                        onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
                     />
                     <Toggles
