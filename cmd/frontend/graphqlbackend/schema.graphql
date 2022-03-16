@@ -6479,11 +6479,6 @@ type EventLogsConnection {
     pageInfo: PageInfo!
 }
 
-type SvcResult {
-    nodes: [CodeHostRepository!]!
-    err: String
-}
-
 """
 A list of code host repositories
 """
@@ -6497,7 +6492,6 @@ type CodeHostRepositoryConnection {
     A list of repositories affiliated with a code host.
     """
     nodes: [CodeHostRepository!]!
-    # svcResults: [SvcResult!]!
 }
 
 """

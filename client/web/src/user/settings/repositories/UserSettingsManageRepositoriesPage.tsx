@@ -320,8 +320,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         // If the external services call doen't return any errors, we can get them from the affiliated repos call.
         if (codeHostProblems.length === 0 && affiliatedRepos.codeHostErrors !== '') {
-                codeHostProblems.push(asError(affiliatedRepos.codeHostErrors))
-                setAffiliateRepoProblems(codeHostProblems)
+            codeHostProblems.push(asError(affiliatedRepos.codeHostErrors))
+            setAffiliateRepoProblems(codeHostProblems)
         }
 
         const selectedAffiliatedRepos = new Map<string, Repo>()

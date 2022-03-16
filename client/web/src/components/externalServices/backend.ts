@@ -152,18 +152,18 @@ export function listAffiliatedRepositories(
         gql`
             query AffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
                 affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
-                        nodes {
-                            name
-                            codeHost {
-                                kind
-                                id
-                                displayName
-                            }
-                            private
+                    nodes {
+                        name
+                        codeHost {
+                            kind
+                            id
+                            displayName
                         }
-                        codeHostErrors
+                        private
                     }
+                    codeHostErrors
                 }
+            }
         `,
         {
             namespace: args.namespace,
