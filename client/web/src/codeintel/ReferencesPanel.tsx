@@ -46,13 +46,17 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
+import { fetchBlob } from '../repo/blob/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { goSpec } from './language-specs/go'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
+import { findSearchToken } from './token'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
 
@@ -90,6 +94,7 @@ export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<References
 )
 
 const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => {
+    // TODO: We don't use the props.token that can be set from BlobPanel
     const location = useLocation()
 
     const { hash, pathname, search } = location
@@ -106,6 +111,7 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const token = { repoName, line, character, filePath }
 
+    console.log('commitID', commitID, 'revision', revision)
     if (commitID === undefined || revision === undefined) {
         return <RevisionResolvingReferencesList {...props} {...token} jumpToFirst={jumpToFirst} />
     }
@@ -122,6 +128,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         revision?: string
     }
 > = props => {
+    console.log('resolving the ref baby')
     const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
 
     if (!resolvedRevision) {
@@ -171,6 +178,28 @@ export const ReferencesList: React.FunctionComponent<
         filter?: string
     }
 > = props => {
+    const blobInfo = useObservable(
+        fetchBlob({
+            repoName: props.token.repoName,
+            commitID: props.token.commitID,
+            filePath: props.token.filePath,
+            disableTimeout: false,
+        })
+    )
+
+    const spec = goSpec
+    const tokenResult = findSearchToken({
+        text: blobInfo?.content ?? '',
+        position: {
+            line: props.token.line - 1,
+            character: props.token.character - 1,
+        },
+        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+        identCharPattern: spec.identCharPattern,
+    })
+    console.log('tokenResult', tokenResult)
+
     const {
         results,
         error,
@@ -196,6 +225,7 @@ export const ReferencesList: React.FunctionComponent<
             firstImplementations: 5,
             afterImplementations: null,
         },
+        searchToken: tokenResult?.searchToken,
     })
 
     // We only show the inline loading message if loading takes longer than
@@ -659,7 +689,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<{
 
                     <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
 
-                    <Badge pill={true} variant="secondary" className="ml-2">
+                    <Badge pill={true} small={true} variant="secondary" className="ml-2">
                         {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
                     </Badge>
                 </span>

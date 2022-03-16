@@ -63,9 +63,13 @@ export interface UsePreciseCodeIntelResult {
 
 interface UsePreciseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
+    searchToken?: string
 }
 
-export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
+export const usePreciseCodeIntel = ({
+    variables,
+    searchToken,
+}: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
     const [codeIntelResults, setCodeIntelResults] = useState<CodeIntelResults>()
 
     const fellBackToSearchBased = useRef(false)
@@ -152,16 +156,22 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
         },
     })
 
-    const fetchSearchBasedReferencesForToken = useCallback(() => {
-        const terms = referencesQuery({ searchToken: 'copyRouteConf', path: variables.path, fileExts: ['go'] })
-        const query = terms.join(' ')
-        return fetchSearchBasedReferences({ variables: { query } })
-    }, [fetchSearchBasedReferences, variables.path])
+    const fetchSearchBasedReferencesForToken = useCallback(
+        (searchToken: string) => {
+            const terms = referencesQuery({ searchToken, path: variables.path, fileExts: ['go'] })
+            const query = terms.join(' ')
+            return fetchSearchBasedReferences({ variables: { query } })
+        },
+        [fetchSearchBasedReferences, variables.path]
+    )
 
-    const fetchSearchBasedDefinitionsForToken = useCallback(() => {
-        const query = definitionQuery({ searchToken: 'GetRoute', path: variables.path, fileExts: ['go'] }).join(' ')
-        return fetchSearchBasedDefinitions({ variables: { query } })
-    }, [fetchSearchBasedDefinitions, variables.path])
+    const fetchSearchBasedDefinitionsForToken = useCallback(
+        (searchToken: string) => {
+            const query = definitionQuery({ searchToken, path: variables.path, fileExts: ['go'] }).join(' ')
+            return fetchSearchBasedDefinitions({ variables: { query } })
+        },
+        [fetchSearchBasedDefinitions, variables.path]
+    )
 
     const { error, loading } = useQuery<
         UsePreciseCodeIntelForPositionResult,
@@ -178,11 +188,13 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 if (lsifData) {
                     setCodeIntelResults(lsifData)
-                } else {
+                } else if (searchToken !== undefined) {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
-                    fetchSearchBasedDefinitionsForToken()
-                    fetchSearchBasedReferencesForToken()
+                    fetchSearchBasedDefinitionsForToken(searchToken)
+                    fetchSearchBasedReferencesForToken(searchToken)
+                } else {
+                    console.info('No LSIF data. No search token.')
                 }
             }
         },
