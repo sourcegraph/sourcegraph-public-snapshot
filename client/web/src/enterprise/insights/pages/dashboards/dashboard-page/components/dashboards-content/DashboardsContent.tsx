@@ -41,7 +41,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 
     const history = useHistory()
-    const features = useUiFeatures({ currentDashboard })
+    const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -58,8 +58,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
     }, [telemetryService, dashboardID])
-
-    const dashboardFeatures = features.dashboards
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -100,6 +98,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         setAddInsightsState(true)
     }
 
+    const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
+
     return (
         <main className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
@@ -124,8 +124,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <Button
                     outline={true}
                     variant="secondary"
-                    disabled={dashboardFeatures.addRemoveInsightsButton.disabled}
-                    data-tooltip={dashboardFeatures.addRemoveInsightsButton.tooltip}
+                    disabled={addRemovePermissions.disabled}
+                    data-tooltip={addRemovePermissions.tooltip}
                     data-placement="bottom"
                     onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
@@ -133,7 +133,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 </Button>
             </DashboardHeader>
 
-            {!features.licensed && (
+            {!licensed && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
                     message="Create up to two global insights"

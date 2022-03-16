@@ -54,19 +54,24 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
     const { onAddInsight, dashboard } = props
     const {
-        dashboards: { addRemoveInsightsButton },
-    } = useUiFeatures({ currentDashboard: undefined })
+        dashboard: { getAddRemoveInsightsPermission },
+    } = useUiFeatures()
+    const addRemoveInsightPermissions = getAddRemoveInsightsPermission()
 
     return (
         <section className={styles.emptySection}>
             <Button
                 type="button"
-                disabled={addRemoveInsightsButton.disabled}
+                disabled={addRemoveInsightPermissions.disabled}
                 onClick={onAddInsight}
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
-                <Card data-tooltip={addRemoveInsightsButton.tooltip} data-placement="right" className={styles.itemCard}>
+                <Card
+                    data-tooltip={addRemoveInsightPermissions.tooltip}
+                    data-placement="right"
+                    className={styles.itemCard}
+                >
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
                 </Card>

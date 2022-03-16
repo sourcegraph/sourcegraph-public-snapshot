@@ -123,7 +123,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         }
                     }
                 `,
-                variables: { count: insightsCount }
+                variables: { count: insightsCount },
             })
         ).pipe(map(({ data }) => data.insightViews.nodes.length === insightsCount))
 
@@ -479,7 +479,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getUiFeatures = (): UiFeaturesConfig => ({
         licensed: true,
-        insightsLimit: null
+        insightsLimit: null,
     })
 }
 

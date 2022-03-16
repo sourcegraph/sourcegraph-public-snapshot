@@ -1,13 +1,13 @@
 import { useContext, useMemo } from 'react'
 
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 import { Insight, InsightDashboard, isSearchBasedInsight } from '../core/types'
 import {
     getDashboardPermissions,
-    getTooltipMessage
+    getTooltipMessage,
 } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 interface DashboardMenuItem {
@@ -20,11 +20,13 @@ type DashboardMenuItemKey = 'configure' | 'copy' | 'delete'
 
 export interface UseUiFeatures {
     licensed: boolean
-    dashboards: {
-        getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => ({
+    dashboard: {
+        getAddRemoveInsightsPermission: (
+            dashboard?: InsightDashboard
+        ) => {
             disabled: boolean
             tooltip: string | undefined
-        })
+        }
         getActionPermissions: (dashboard?: InsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
     }
     insights: {
@@ -33,21 +35,18 @@ export interface UseUiFeatures {
         }
     },
     insight: {
-        isCreationAvailable: () => Observable<{ available: true } | { available: false, reason: string }>
+        isCreationAvailable: () => Observable<{ available: true } | { available: false; reason: string }>
     }
 }
 
 export function useUiFeatures(): UseUiFeatures {
     const { getUiFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
 
-    const {
-        licensed,
-        insightsLimit
-    } = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const { licensed, insightsLimit } = useMemo(() => getUiFeatures(), [getUiFeatures])
 
     return {
         licensed,
-        dashboards: {
+        dashboard: {
             getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
                 const permissions = getDashboardPermissions(dashboard, true)
 
@@ -73,6 +72,7 @@ export function useUiFeatures(): UseUiFeatures {
                     },
                     copy: {
                         display: licensed,
+                        disabled: !dashboard,
                     },
                     delete: {
                         display: true,
@@ -80,7 +80,7 @@ export function useUiFeatures(): UseUiFeatures {
                         tooltip: getTooltipMessage(dashboard, permissions),
                     },
                 }
-            }
+            },
         },
         insights: {
             menu: {
@@ -88,13 +88,16 @@ export function useUiFeatures(): UseUiFeatures {
             },
         },
         insight: {
-            isCreationAvailable: () => insightsLimit !== null
-                ? hasInsights(insightsLimit).pipe(
-                    map(reachedLimit => reachedLimit
-                            ? { available: false, reason: 'You already have enough insights buddy' }
-                            : { available: true })
-                )
-                : of({ available: true })
-        }
+            isCreationAvailable: () =>
+                insightsLimit !== null
+                    ? hasInsights(insightsLimit).pipe(
+                          map(reachedLimit =>
+                              reachedLimit
+                                  ? { available: false, reason: 'You already have enough insights buddy' }
+                                  : { available: true }
+                          )
+                      )
+                    : of({ available: true }),
+        },
     }
 }
