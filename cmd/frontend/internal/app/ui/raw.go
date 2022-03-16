@@ -183,7 +183,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
 			f, err := git.ArchiveReaderWithSubRepo(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Paths: []string{relativePath}})
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitserver.Pathspec{gitserver.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err
 			}

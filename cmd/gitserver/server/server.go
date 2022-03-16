@@ -860,11 +860,11 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
-		q       = r.URL.Query()
-		treeish = q.Get("treeish")
-		repo    = q.Get("repo")
-		format  = q.Get("format")
-		paths   = q["path"]
+		q         = r.URL.Query()
+		treeish   = q.Get("treeish")
+		repo      = q.Get("repo")
+		format    = q.Get("format")
+		pathspecs = q["path"]
 	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {
@@ -903,7 +903,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Args = append(req.Args, treeish, "--")
-	req.Args = append(req.Args, paths...)
+	req.Args = append(req.Args, pathspecs...)
 
 	s.exec(w, r, req)
 }

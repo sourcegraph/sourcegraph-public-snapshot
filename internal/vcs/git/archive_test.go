@@ -30,9 +30,9 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 	repo := &types.Repo{Name: repoName, ID: 1}
 
 	opts := gitserver.ArchiveOptions{
-		Format:  ArchiveFormatZip,
-		Treeish: commitID,
-		Paths:   []string{"."},
+		Format:    ArchiveFormatZip,
+		Treeish:   commitID,
+		Pathspecs: []gitserver.Pathspec{"."},
 	}
 	if _, err := ArchiveReaderWithSubRepo(context.Background(), checker, repo, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
@@ -59,9 +59,9 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 	repo := &types.Repo{Name: repoName, ID: 1}
 
 	opts := gitserver.ArchiveOptions{
-		Format:  ArchiveFormatZip,
-		Treeish: commitID,
-		Paths:   []string{"."},
+		Format:    ArchiveFormatZip,
+		Treeish:   commitID,
+		Pathspecs: []gitserver.Pathspec{"."},
 	}
 	readCloser, err := ArchiveReaderWithSubRepo(context.Background(), checker, repo, opts)
 	if err != nil {
