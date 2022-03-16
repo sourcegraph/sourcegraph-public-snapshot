@@ -735,12 +735,13 @@ func TestRepositoryQuery_Do(t *testing.T) {
 
 			apiURL, _ := url.Parse("https://api.github.com")
 			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
+			newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
 
 			q := repositoryQuery{
 				Query:    tc.query,
 				First:    tc.first,
 				Limit:    tc.limit,
-				Searcher: github.NewV4Client(apiURL, token, cli),
+				Searcher: github.NewV4Client(apiURL, token, cli, newCache),
 			}
 
 			results := make(chan *githubResult)

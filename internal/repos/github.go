@@ -164,6 +164,8 @@ func newGithubSource(
 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
+	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -210,9 +212,9 @@ func newGithubSource(
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
 	var (
-		v3Client     = github.NewV3Client(apiURL, token, cli, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
-		v4Client     = github.NewV4Client(apiURL, token, cli)
-		searchClient = github.NewV3SearchClient(apiURL, token, cli, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
+		v3Client     = github.NewV3Client(apiURL, token, cli, newCache)
+		v4Client     = github.NewV4Client(apiURL, token, cli, newCache)
+		searchClient = github.NewV3SearchClient(apiURL, token, cli, newCache)
 	)
 
 	useGitHubApp := false
@@ -246,9 +248,11 @@ func newGithubSource(
 			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 		}
 
+		newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+
 		auther = &auth.OAuthBearerToken{Token: token}
-		v3Client = github.NewV3Client(apiURL, auther, cli, func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) })
-		v4Client = github.NewV4Client(apiURL, auther, cli)
+		v3Client = github.NewV3Client(apiURL, auther, cli, newCache)
+		v4Client = github.NewV4Client(apiURL, auther, cli, newCache)
 
 		useGitHubApp = true
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -67,9 +68,11 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 		authr = &auth.OAuthBearerToken{Token: c.Token}
 	}
 
+	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+
 	return &GithubSource{
 		au:     authr,
-		client: github.NewV4Client(apiURL, authr, cli),
+		client: github.NewV4Client(apiURL, authr, cli, newCache),
 	}, nil
 }
 
