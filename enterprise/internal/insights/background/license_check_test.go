@@ -2,13 +2,14 @@ package background
 
 import (
 	"context"
-	"errors"
+
 	"testing"
 
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 )
