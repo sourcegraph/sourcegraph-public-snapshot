@@ -68,7 +68,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     onBlockInputChange,
     fetchHighlightedFileLineRanges,
     onRunBlock,
-    onSelectBlock,
     ...props
 }) => {
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
@@ -76,26 +75,15 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
-    const runBlock = useCallback(
-        (id: string) => {
-            if (!isSelected) {
-                onSelectBlock(id)
-            }
-            onRunBlock(id)
-        },
-        [isSelected, onRunBlock, onSelectBlock]
-    )
-
     const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
         id,
         onBlockInputChange,
     ])
 
-    const { isInputFocused } = useMonacoBlockInput({
+    useMonacoBlockInput({
         editor,
         id,
-        onRunBlock: runBlock,
-        onSelectBlock,
+        onRunBlock,
         onInputChange,
         ...props,
     })
@@ -113,10 +101,10 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
             icon: <PlayCircleOutlineIcon className="icon-inline" />,
-            onClick: runBlock,
+            onClick: onRunBlock,
             keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
         }
-    }, [runBlock, isSelected, modifierKeyLabel, searchResults])
+    }, [onRunBlock, isSelected, modifierKeyLabel, searchResults])
 
     const linkMenuActions: BlockMenuAction[] = useMemo(
         () => [
@@ -130,7 +118,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         [input]
     )
 
-    const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ isInputFocused, ...props }))
+    const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ id, ...props }))
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
@@ -147,26 +135,16 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         <NotebookBlock
             className={styles.block}
             id={id}
-            isInputFocused={isInputFocused}
             aria-label="Notebook query block"
             onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onRunBlock={onRunBlock}
-            onBlockInputChange={onBlockInputChange}
-            onSelectBlock={onSelectBlock}
             mainAction={mainMenuAction}
             actions={isSelected ? commonMenuActions : linkMenuActions}
             {...props}
         >
             <div className="mb-1 text-muted">Search query</div>
-            <div
-                className={classNames(
-                    blockStyles.monacoWrapper,
-                    isInputFocused && blockStyles.selected,
-                    styles.queryInputMonacoWrapper
-                )}
-            >
+            <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
                 <MonacoEditor
                     language={sourcegraphSearchLanguageId}
                     value={input}

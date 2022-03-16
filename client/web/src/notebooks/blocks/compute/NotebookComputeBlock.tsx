@@ -82,27 +82,17 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     platformContext,
     isReadOnly,
     onRunBlock,
-    onSelectBlock,
     ...props
 }) => {
-    const isInputFocused = false
-    const commonMenuActions = useCommonBlockMenuActions({
-        isInputFocused,
-        isReadOnly,
-        ...props,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
 
     return (
         <NotebookBlock
             className={styles.input}
             id={id}
-            isReadOnly={isReadOnly}
-            isInputFocused={isInputFocused}
             aria-label="Notebook compute block"
             onEnterBlock={noop}
             isSelected={isSelected}
-            onRunBlock={noop}
-            onSelectBlock={onSelectBlock}
             actions={isSelected ? commonMenuActions : []}
             {...props}
         >

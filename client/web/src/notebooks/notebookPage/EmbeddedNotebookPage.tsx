@@ -11,7 +11,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { createPlatformContext } from '../../platform/context'
-import { fetchHighlightedFileLineRanges, fetchRepository, resolveRevision } from '../../repo/backend'
+import { fetchHighlightedFileLineRanges } from '../../repo/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
@@ -71,9 +71,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     onUpdateBlocks={noop}
                     viewerCanManage={false}
                     globbing={true}
-                    fetchRepository={fetchRepository}
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                    resolveRevision={resolveRevision}
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}
                     platformContext={platformContext}
