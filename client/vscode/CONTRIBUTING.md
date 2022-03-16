@@ -32,7 +32,7 @@ Please refer to the [How to Contribute](https://github.com/microsoft/vscode/wiki
 
 ## Questions
 
-If you need guidances or have any questions regarding Sourcegraph or the extension in general, we invite you to connect with us on the [Sourcegraph Community Slack group](https://about.sourcegraph.com/community).
+If you need guidance or have any questions regarding Sourcegraph or the extension in general, we invite you to connect with us on the [Sourcegraph Community Slack group](https://about.sourcegraph.com/community).
 
 ## Resources
 
