@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { LineChartSeries } from '../../types'
-import { getLineColor } from '../../utils/colors'
+import { getLineColor } from '../../utils'
 
 import styles from './LegendList.module.scss'
 

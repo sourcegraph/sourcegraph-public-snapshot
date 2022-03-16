@@ -13,6 +13,19 @@ export default {
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 } as Meta
 
+export const LineChartsVitrina = () => (
+    <div className="d-flex flex-wrap">
+        <PlainChart />
+        <PlainStackedChart />
+        <WithLegendExample />
+        <WithHugeData />
+        <WithZeroOneData />
+        <WithDataSteps />
+        <WithDataMissingValues />
+        <StackedWithDataMissingValues />
+    </div>
+)
+
 interface StandardDatum {
     a: number | null
     b: number | null
@@ -20,7 +33,7 @@ interface StandardDatum {
     x: number | null
 }
 
-export const PlainChart = () => {
+const PlainChart = () => {
     const DATA: StandardDatum[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 26000 },
@@ -71,7 +84,7 @@ export const PlainChart = () => {
     return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" />
 }
 
-export const PlainStackedChart = () => {
+const PlainStackedChart = () => {
     const DATA: StandardDatum[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 26000 },
@@ -122,7 +135,7 @@ export const PlainStackedChart = () => {
     return <LineChart width={400} height={400} data={DATA} series={SERIES} xAxisKey="x" stacked={true} />
 }
 
-export const WithLegendExample = () => {
+const WithLegendExample = () => {
     const DATA: StandardDatum[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 15000 },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, c: 5000, a: 4000, b: 26000 },
@@ -188,7 +201,7 @@ interface HugeDataDatum {
     dateTime: number
 }
 
-export const WithHugeData = () => {
+const WithHugeData = () => {
     const DATA: HugeDataDatum[] = [
         { dateTime: 1606780800000, series0: 8394074, series1: 1001777 },
         {
@@ -255,7 +268,7 @@ interface ZeroOneDatum {
     x: number
 }
 
-export const WithZeroOneData = () => {
+const WithZeroOneData = () => {
     const DATA: ZeroOneDatum[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 0 },
         { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 1 },
@@ -285,7 +298,7 @@ interface StepDatum {
     dateTime: number
 }
 
-export const WithDataSteps = () => {
+const WithDataSteps = () => {
     const DATA_WITH_STEP: StepDatum[] = [
         { dateTime: 1604188800000, series0: 3725 },
         {
@@ -393,7 +406,7 @@ export const WithDataMissingValues = () => {
     )
 }
 
-export const StackedWithDataMissingValues = () => {
+const StackedWithDataMissingValues = () => {
     const DATA_WITH_STEP: DatumWithMissingData[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },

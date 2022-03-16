@@ -22,7 +22,15 @@ export * as Typography from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
-export { Popover, PopoverTrigger, PopoverContent, Position, PopoverOpenEventReason, EMPTY_RECTANGLE } from './Popover'
+export {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    Position,
+    PopoverOpenEventReason,
+    EMPTY_RECTANGLE,
+    createRectangle,
+} from './Popover'
 
 /**
  * Type Exports
@@ -37,3 +45,4 @@ export type { LinkProps } from './Link'
 export type { PopoverOpenEvent } from './Popover'
 export type { TabsProps } from './Tabs'
 export type { IconProps } from './Icon'
+export type { Point } from './Popover'

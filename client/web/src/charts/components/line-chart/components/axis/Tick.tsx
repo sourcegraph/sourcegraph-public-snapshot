@@ -7,7 +7,7 @@ import { Group } from '@visx/group'
 import { Text } from '@visx/text'
 import { TextProps } from '@visx/text/lib/Text'
 
-import { formatXLabel } from '../../utils/ticks'
+import { formatXLabel } from '../../utils'
 
 export const getTickYProps: TickLabelProps<number> = (value, index, values): Partial<TextProps> => ({
     ...leftTickLabelProps(),
