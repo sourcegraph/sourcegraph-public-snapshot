@@ -55,6 +55,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 		Paths:   paths,
 	}
 
+	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level
 	return git.ArchiveReader(ctx, nil, repo, opts)
 }
 
