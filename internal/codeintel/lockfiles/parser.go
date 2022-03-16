@@ -2,9 +2,9 @@ package lockfiles
 
 import (
 	"io"
+	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type parser func(io.Reader) ([]reposource.PackageDependency, error)
@@ -14,13 +14,12 @@ var parsers = map[string]parser{
 	"yarn.lock":         parseYarnLockFile,
 }
 
-// lockfilePathspecs is the list of git pathspecs that match lockfiles.
-//
-// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
-var lockfilePathspecs = func() []gitserver.Pathspec {
-	pathspecs := make([]gitserver.Pathspec, 0, len(parsers))
+var lockfilePaths = func() []string {
+	paths := make([]string, 0, len(parsers))
 	for filename := range parsers {
-		pathspecs = append(pathspecs, gitserver.PathspecSuffix(filename))
+		paths = append(paths, "*"+filename)
 	}
-	return pathspecs
+	sort.Strings(paths)
+
+	return paths
 }()
