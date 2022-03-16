@@ -3,7 +3,6 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { DashboardPermissions } from '../../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
@@ -29,6 +28,7 @@ import {
 
 export interface UiFeaturesConfig {
     licensed: boolean
+    insightsLimit: number | null
 }
 
 /**
@@ -87,7 +87,7 @@ export interface CodeInsightsBackend {
 
     findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
 
-    hasInsights: () => Observable<boolean>
+    hasInsights: (insightsCount: number) => Observable<boolean>
 
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
@@ -155,5 +155,5 @@ export interface CodeInsightsBackend {
     /**
      * Returns a features object used to show/hide and enable/disable UI elements
      */
-    getUiFeatures: (currentDashboard?: InsightDashboard) => UiFeaturesConfig
+    getUiFeatures: () => UiFeaturesConfig
 }

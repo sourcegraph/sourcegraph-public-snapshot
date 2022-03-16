@@ -23,7 +23,6 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { getDashboardPermissions } from '../../../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { SupportedInsightSubject } from '../../types/subjects'
@@ -112,20 +111,21 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public hasInsights = (): Observable<boolean> =>
+    public hasInsights = (insightsCount: number): Observable<boolean> =>
         from(
             this.apolloClient.query<HasAvailableCodeInsightResult>({
                 query: gql`
-                    query HasAvailableCodeInsight {
-                        insightViews(first: 1) {
+                    query HasAvailableCodeInsight($count: Int!) {
+                        insightViews(first: $count) {
                             nodes {
                                 id
                             }
                         }
                     }
                 `,
+                variables: { count: insightsCount }
             })
-        ).pipe(map(({ data }) => data.insightViews.nodes.length > 0))
+        ).pipe(map(({ data }) => data.insightViews.nodes.length === insightsCount))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for
@@ -477,9 +477,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    public getUiFeatures = (currentDashboard?: InsightDashboard): UiFeaturesConfig => ({
+    public getUiFeatures = (): UiFeaturesConfig => ({
         licensed: true,
-        permissions: getDashboardPermissions(currentDashboard),
+        insightsLimit: null
     })
 }
 

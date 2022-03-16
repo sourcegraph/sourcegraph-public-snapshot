@@ -1,8 +1,14 @@
 import { useContext, useMemo } from 'react'
 
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
+
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 import { Insight, InsightDashboard, isSearchBasedInsight } from '../core/types'
-import { getTooltipMessage } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
+import {
+    getDashboardPermissions,
+    getTooltipMessage
+} from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 interface DashboardMenuItem {
     disabled?: boolean
@@ -15,39 +21,40 @@ type DashboardMenuItemKey = 'configure' | 'copy' | 'delete'
 export interface UseUiFeatures {
     licensed: boolean
     dashboards: {
-        addRemoveInsightsButton: {
+        getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => ({
             disabled: boolean
             tooltip: string | undefined
+        })
+        getActionPermissions: (dashboard?: InsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
+    }
+    insights: {
+        menu: {
+            showYAxis: (insight: Insight) => boolean
         }
-        create: {
-            addDashboardButton: {
-                disabled: boolean
-            }
-        }
-        menu: Record<DashboardMenuItemKey, DashboardMenuItem>
-        insights: {
-            menu: {
-                showYAxis: (insight: Insight) => boolean
-            }
-        }
+    },
+    insight: {
+        isCreationAvailable: () => Observable<{ available: true } | { available: false, reason: string }>
     }
 }
 
-export interface UseUiFeaturesProps {
-    currentDashboard?: InsightDashboard
-}
+export function useUiFeatures(): UseUiFeatures {
+    const { getUiFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
 
-export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFeatures {
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-
-    const { licensed, permissions } = useMemo(() => getUiFeatures(currentDashboard), [getUiFeatures, currentDashboard])
+    const {
+        licensed,
+        insightsLimit
+    } = useMemo(() => getUiFeatures(), [getUiFeatures])
 
     return {
         licensed,
         dashboards: {
-            addRemoveInsightsButton: {
-                disabled: !licensed,
-                tooltip: 'Limited access: upgrade your license to add insights to dashboards',
+            getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
+                const permissions = getDashboardPermissions(dashboard, true)
+
+                return {
+                    disabled: !permissions.isConfigurable,
+                    tooltip: getTooltipMessage(dashboard, permissions),
+                }
             },
             create: {
                 addDashboardButton: {
@@ -55,26 +62,39 @@ export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFe
                 },
             },
             // Available menu items
+            getActionPermissions: (dashboard?: InsightDashboard) => {
+                const permissions = getDashboardPermissions(dashboard, true)
+
+                return {
+                    configure: {
+                        display: licensed,
+                        disabled: !permissions.isConfigurable,
+                        tooltip: getTooltipMessage(dashboard, permissions),
+                    },
+                    copy: {
+                        display: licensed,
+                    },
+                    delete: {
+                        display: true,
+                        disabled: !permissions.isConfigurable,
+                        tooltip: getTooltipMessage(dashboard, permissions),
+                    },
+                }
+            }
+        },
+        insights: {
             menu: {
-                configure: {
-                    display: licensed,
-                    disabled: !permissions.isConfigurable,
-                    tooltip: getTooltipMessage(currentDashboard, permissions),
-                },
-                copy: {
-                    display: licensed,
-                },
-                delete: {
-                    display: true,
-                    disabled: !permissions.isConfigurable,
-                    tooltip: getTooltipMessage(currentDashboard, permissions),
-                },
-            },
-            insights: {
-                menu: {
-                    showYAxis: insight => isSearchBasedInsight(insight) && !insight.isFrozen,
-                },
+                showYAxis: insight => isSearchBasedInsight(insight) && !insight.isFrozen,
             },
         },
+        insight: {
+            isCreationAvailable: () => insightsLimit !== null
+                ? hasInsights(insightsLimit).pipe(
+                    map(reachedLimit => reachedLimit
+                            ? { available: false, reason: 'You already have enough insights buddy' }
+                            : { available: true })
+                )
+                : of({ available: true })
+        }
     }
 }
