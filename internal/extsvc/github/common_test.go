@@ -61,8 +61,8 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
-	return newTestClientWithAuthenticator(t, nil, cli, nil)
+func newTestClient(t *testing.T, cli httpcli.Doer, newCache NewCacheFactory) *V3Client {
+	return newTestClientWithAuthenticator(t, nil, cli, newCache)
 }
 
 func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer, newCache NewCacheFactory) *V3Client {
