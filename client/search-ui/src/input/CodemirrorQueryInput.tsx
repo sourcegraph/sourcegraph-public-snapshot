@@ -11,15 +11,16 @@ import {
     Prec,
 } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
-import { EditorView, ViewUpdate, keymap, Decoration } from '@codemirror/view'
+import { EditorView, ViewUpdate, keymap, Decoration, placeholder as placeholderExtension } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
+import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity, languages } from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { delay, map, switchMap } from 'rxjs/operators'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { QueryChangeSource, SearchPatternType } from '@sourcegraph/search'
+import { QueryChangeSource, SearchPatternType, SearchPatternTypeProps } from '@sourcegraph/search'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getCompletionItems } from '@sourcegraph/shared/src/search/query/completion'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
@@ -32,15 +33,32 @@ import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import styles from './CodemirrorQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
-export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
+const replacePattern = /[\n\r↵]/g
+
+/**
+ * This component provides a drop-in replacement for MonacoQueryInput. It
+ * creates the approprate extensions and event handlers for the provided props.
+ *
+ * Deliberate differences compared to MonacoQueryInput:
+ * - Filters are "highlighted" when the cursor is at their position
+ * - Shift+Enter won't insert a new line if preventNewLine is true (default)
+ * - Not supplying onSubmit and setting preventNewLine to false will result in a
+ * new line being added when Enter is pressed
+ */
+export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputProps> = ({
     patternType,
     selectedSearchContextSpec,
     queryState,
     onChange,
+    /**
+     * If not provided and preventNewLine is false, Enter will insert a new
+     * line. This is different from MonacoQueryInput's behavior.
+     */
     onSubmit,
     autoFocus,
     onBlur,
@@ -50,21 +68,34 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
     onEditorCreated,
     interpretComments,
     isLightTheme,
+    className,
+    preventNewLine = true,
+    placeholder,
 }) => {
-    const container = useRef<HTMLDivElement | null>(null)
+    const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
+    const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
 
-    const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
-        [selectedSearchContextSpec]
+    const editorCreated = useCallback(
+        editor => {
+            setEditor(editor)
+            editorReference.current = editor
+            onEditorCreated?.(editor)
+        },
+        [editorReference, onEditorCreated]
+    )
+
+    const autocompletion = useMemo(
+        () =>
+            autocomplete(query => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)), {
+                globbing,
+                isSourcegraphDotCom,
+            }),
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom]
     )
 
     const extensions = useMemo(() => {
         const extensions: Extension[] = [
-            EditorView.darkTheme.of(isLightTheme === false),
-            // Prevent newline insertion
-            singleLine,
-            notifyOnEnter(onSubmit),
             EditorView.updateListener.of((update: ViewUpdate) => {
                 if (update.docChanged) {
                     onChange({
@@ -78,57 +109,53 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
                     onBlur()
                 }
             }),
-            queryParsingOptions,
-            parsedQueryFieldExtension,
-            tokenHighlight,
-            queryDiagnostic,
-            highlightFocusedFilter,
-            tokenInfo,
-            autocomplete(fetchSuggestionsWithContext, { globbing, isSourcegraphDotCom }),
+            autocompletion,
         ]
+
+        if (onSubmit) {
+            extensions.push(Prec.highest(notifyOnEnter(onSubmit)))
+        }
 
         if (onHandleFuzzyFinder) {
             extensions.push(keymap.of([{ key: 'Mod-k', run: () => (onHandleFuzzyFinder(true), true) }]))
         }
+
+        if (preventNewLine) {
+            extensions.push(singleLine)
+        } else {
+            // Automatically enable linewrapping in multi-line mode
+            extensions.push(EditorView.lineWrapping)
+        }
+
+        if (placeholder) {
+            extensions.push(placeholderExtension(placeholder))
+        }
         return extensions
     }, [
-        onChange,
-        onSubmit,
-        onBlur,
-        fetchSuggestionsWithContext,
-        isSourcegraphDotCom,
+        autocompletion,
         globbing,
-        onHandleFuzzyFinder,
         isLightTheme,
+        isSourcegraphDotCom,
+        onBlur,
+        onChange,
+        onHandleFuzzyFinder,
+        onSubmit,
+        placeholder,
+        preventNewLine,
     ])
-
-    const editor = useCodeMirror(container.current, queryState.query, extensions)
-    editorReference.current = editor
-
-    useEffect(() => {
-        if (editor) {
-            onEditorCreated?.(editor)
-        }
-    }, [editor, onEditorCreated])
-
-    // Update pattern type and/or interpretComments when the change
-    useEffect(() => {
-        editor?.dispatch({ effects: [setQueryOptions.of({ patternType, interpretComments })] })
-    }, [editor, patternType, interpretComments])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
         if (selectedSearchContextSpec) {
-            editor?.focus()
+            editorReference.current?.focus()
         }
-    }, [editor, selectedSearchContextSpec])
+    }, [selectedSearchContextSpec])
 
     // Focus the editor if the autoFocus prop is truthy
     useEffect(() => {
-        if (!editor || !autoFocus) {
-            return
+        if (editor && autoFocus) {
+            editor.focus()
         }
-        editor.focus()
     }, [editor, autoFocus])
 
     useEffect(() => {
@@ -166,7 +193,7 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
     }, [editor, queryState])
 
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
-    // are storing the editor in a ref so taht `globalFocus` is stable.
+    // are storing the editor in a ref so that `globalFocus` is stable.
     const globalFocus = useCallback(() => {
         if (
             editorReference.current &&
@@ -179,7 +206,15 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
 
     return (
         <>
-            <div ref={container} className={styles.root} />
+            <CodemirrorQueryInput
+                isLightTheme={isLightTheme}
+                onEditorCreated={editorCreated}
+                patternType={patternType}
+                interpretComments={interpretComments}
+                value={value}
+                className={className}
+                extensions={extensions}
+            />
             {KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
             ))}
@@ -187,6 +222,59 @@ export const CodemirrorQueryInput: React.FunctionComponent<MonacoQueryInputProps
     )
 }
 
+interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
+    value: string
+    onEditorCreated?: (editor: EditorView) => void
+    // Whether comments are parsed and highlighted
+    interpretComments?: boolean
+    className?: string
+    extensions: Extension[]
+}
+
+/**
+ * "Core" codemirror query input component. Provides the basic behavior such as
+ * theming, syntax highlighting and token info.
+ */
+const CodemirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
+    ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
+        const [container, setContainer] = useState<HTMLDivElement | null>(null)
+
+        const editor = useCodeMirror(
+            container,
+            value,
+            useMemo(
+                () => [
+                    EditorView.darkTheme.of(isLightTheme === false),
+                    queryParsingOptions,
+                    parsedQueryFieldExtension,
+                    tokenHighlight,
+                    queryDiagnostic,
+                    tokenInfo,
+                    highlightFocusedFilter,
+                    ...extensions,
+                ],
+                [isLightTheme, extensions]
+            )
+        )
+
+        useEffect(() => {
+            if (editor) {
+                onEditorCreated?.(editor)
+            }
+        }, [editor, onEditorCreated])
+
+        // Update pattern type and/or interpretComments when the change
+        useEffect(() => {
+            editor?.dispatch({ effects: [setQueryOptions.of({ patternType, interpretComments })] })
+        }, [editor, patternType, interpretComments])
+
+        return <div ref={setContainer} className={classNames(styles.root, className)} id="monaco-query-input" />
+    }
+)
+
+/**
+ * Hook for rendering and updating a Codemirror instance.
+ */
 function useCodeMirror(
     container: HTMLDivElement | null,
     value: string,
@@ -244,6 +332,7 @@ function useCodeMirror(
 // Enter from inserting a new line)
 const singleLine = EditorState.transactionFilter.of(transaction => (transaction.newDoc.lines > 1 ? [] : transaction))
 
+// Binds a function to the Enter key
 const notifyOnEnter = (notify: () => void): Extension =>
     keymap.of([
         {
@@ -263,7 +352,8 @@ const tokenDecorators: { [key: string]: Decoration } = Object.fromEntries(
 const emptyDecorator = Decoration.mark({})
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
 
-// Chooses the correct decorator for the decorated token
+// Chooses the correct decorator for the decorated token. Copied (and adapated)
+// from decoratedToMonaco (decoratedToken.ts).
 const decoratedToDecoration = (token: DecoratedToken): Decoration => {
     let cssClass = 'identifier'
     switch (token.type) {
@@ -314,9 +404,9 @@ interface ParsedQuery {
     patternType: SearchPatternType
     tokens: Token[]
 }
-// Facet which parses the query using our existing parser. It depends on the current input
-// (obviously) and the selected pattern type. It gets recomputed whenever one of
-// those values changes.
+// Facet which parses the query using our existing parser. It depends on the
+// current input (obviously) and the selected pattern type. It gets recomputed
+// whenever one of those values changes.
 // The parsed query is used for syntax highlighting and hover information.
 const parsedQueryField = Facet.define<ParsedQuery, ParsedQuery>({
     combine(input) {
@@ -337,7 +427,8 @@ const parsedQueryFieldExtension = parsedQueryField.compute(['doc', queryParsingO
 
 // This provides syntax highlighting. This is a custom solution so that we an
 // use our existing query parser (instead of using codemirrors language
-// support).
+// support). That's not to say that we couldn't properly intergate with
+// codemirror's language system with more effort.
 const tokenHighlight = EditorView.decorations.compute([parsedQueryField], state => {
     const query = state.facet(parsedQueryField)
     const builder = new RangeSetBuilder<Decoration>()
@@ -379,6 +470,8 @@ const tokenInfo = hoverTooltip(
         }
         const values: string[] = []
         let range: { start: number; end: number } | undefined
+
+        // Copied and adapated from getHoverResult (hover.ts)
         tokensAtCursor.map(token => {
             switch (token.type) {
                 case 'field': {
@@ -427,7 +520,9 @@ const tokenInfo = hoverTooltip(
     { hoverTime: 100 }
 )
 
-// Hooks query diagnostics into the editor
+// Hooks query diagnostics into the editor.
+// The facet stores the diagnostics data which is used by the text decoration
+// extension and the tooltip extensions respectively.
 const diagnostics = Facet.define<Monaco.IMarkerData[], Monaco.IMarkerData[]>({
     combine: markerData => markerData.flat(),
 })

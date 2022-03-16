@@ -1,19 +1,31 @@
 .root {
     flex: 1;
     min-width: 0;
+    box-sizing: border-box;
 
     :global(.cm-editor) {
         &:global(.cm-focused) {
+            // Codemirror shows a focus ring by default. Since we handle that
+            // differently, disable it here.
             outline: none;
+        }
+
+        :global(.cm-scroller) {
+            // Codemirror shows a vertical scroll bar by default (when
+            // overflowing). This disables it.
+            overflow-x: hidden;
         }
 
         :global(.cm-content) {
             caret-color: var(--search-query-text-color);
             font-family: var(--code-font-family);
             color: var(--search-query-text-color);
+            // Disable default padding
+            padding: 0;
         }
 
         :global(.cm-line) {
+            // Disable default padding
             padding: 0;
         }
 

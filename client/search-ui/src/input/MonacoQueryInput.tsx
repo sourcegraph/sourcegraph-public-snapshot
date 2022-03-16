@@ -66,7 +66,7 @@ export interface MonacoQueryInputProps
     isSourcegraphDotCom: boolean // Needed for query suggestions to give different options on dotcom; see SOURCEGRAPH_DOT_COM_REPO_COMPLETION
     queryState: QueryState
     onChange: (newState: QueryState) => void
-    onSubmit: () => void
+    onSubmit?: () => void
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
@@ -156,7 +156,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onFocus,
     onBlur,
     onChange,
-    onSubmit,
+    onSubmit = noop,
     onSuggestionsInitialized,
     onCompletionItemSelected,
     autoFocus,
@@ -172,8 +172,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     editorOptions,
     onHandleFuzzyFinder,
     editorClassName,
-    caseSensitive,
-    keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
 }) => {
