@@ -1205,10 +1205,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 				}
 
 				if test.err != fmt.Sprint(err) {
-					t.Fatalf("error mismatch, have %q, want %q", err, test.err)
+					t.Fatalf("error mismatch, have %q, want %q", fmt.Sprint(err), test.err)
 				}
 
-				count := countResults(results.Results)
+				count := countResults(results)
 				if diff := cmp.Diff(test.counts, count); diff != "" {
 					t.Fatalf("mismatch (-want +got):\n%s", diff)
 				}
