@@ -40,9 +40,10 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             viewType: InsightType.SearchBased,
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
-            visibility: '',
             step: { [rawInsight.step]: +rawInsight.stepValue },
             dashboardReferenceCount: rawInsight.dashboardReferenceCount,
+            repositories: rawInsight.repositories,
+            isFrozen: rawInsight.isFrozen,
         }
     }
 
@@ -57,5 +58,6 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
         dashboardReferenceCount: rawInsight.dashboardReferenceCount,
+        isFrozen: rawInsight.isFrozen,
     }
 }

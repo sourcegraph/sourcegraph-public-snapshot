@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import React, { useState } from 'react'
-
 import { storiesOf } from '@storybook/react'
+import React, { useState } from 'react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
@@ -102,6 +101,7 @@ const mockInsights: ReachableInsight[] = [
     type: InsightExecutionType.Backend,
     viewType: InsightType.SearchBased,
     visibility: 'global',
+    isFrozen: false,
 }))
 
 const codeInsightsBackend = {

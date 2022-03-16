@@ -40,6 +40,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
                     },
                     dashboardReferenceCount: insight.dashboardReferenceCount,
+                    isFrozen: insight.isFrozen,
                 }
             }
 
@@ -70,6 +71,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
                     },
                     dashboardReferenceCount: insight.dashboardReferenceCount,
+                    isFrozen: insight.isFrozen,
                 }
             }
 
@@ -82,6 +84,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 repositories,
                 series,
                 dashboardReferenceCount: insight.dashboardReferenceCount,
+                isFrozen: insight.isFrozen,
             }
         }
 
@@ -99,6 +102,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 otherThreshold: insight.presentation.otherThreshold,
                 repository,
                 dashboardReferenceCount: insight.dashboardReferenceCount,
+                isFrozen: insight.isFrozen,
             }
         }
     }

@@ -1,6 +1,5 @@
-import React from 'react'
-
 import classNames from 'classnames'
+import React from 'react'
 import { noop } from 'rxjs'
 
 import { styles } from '../../../../../../components/creation-ui-kit'
@@ -19,6 +18,7 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
     title: '',
     threshold: 3,
     dashboardReferenceCount: 0,
+    isFrozen: false,
 }
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 

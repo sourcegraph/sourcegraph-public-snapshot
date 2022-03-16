@@ -16,4 +16,5 @@ export const getSanitizedLangStatsInsight = (values: LangStatsCreationFormFields
     repository: values.repository.trim(),
     otherThreshold: values.threshold / 100,
     dashboardReferenceCount: values.dashboardReferenceCount,
+    isFrozen: values.isFrozen,
 })

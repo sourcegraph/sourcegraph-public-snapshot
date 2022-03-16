@@ -1,6 +1,5 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
+import React from 'react'
 import { of, throwError } from 'rxjs'
 import { delay } from 'rxjs/operators'
 
@@ -37,6 +36,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     step: { weeks: 2 },
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     dashboardReferenceCount: 0,
+    isFrozen: false,
 }
 
 const mockInsightAPI = ({

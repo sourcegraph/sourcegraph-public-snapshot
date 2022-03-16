@@ -72,7 +72,7 @@ export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFe
             },
             insights: {
                 menu: {
-                    showYAxis: insight => isSearchBasedInsight(insight) && !insight.locked,
+                    showYAxis: insight => isSearchBasedInsight(insight) && !insight.isFrozen,
                 },
             },
         },

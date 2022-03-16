@@ -16,6 +16,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         step: { [values.step]: +values.stepValue },
         repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
         dashboardReferenceCount: values.dashboardReferenceCount,
+        isFrozen: values.isFrozen,
     }
 }
 

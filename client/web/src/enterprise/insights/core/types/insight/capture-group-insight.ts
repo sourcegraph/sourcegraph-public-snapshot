@@ -22,4 +22,5 @@ export interface CaptureGroupInsight extends SyntheticInsightFields {
     repositories: string[]
     step: Duration
     filters?: InsightFilters
+    isFrozen: boolean
 }

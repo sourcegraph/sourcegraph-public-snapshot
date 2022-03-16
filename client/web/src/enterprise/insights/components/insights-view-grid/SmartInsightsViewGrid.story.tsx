@@ -1,6 +1,5 @@
-import React from 'react'
-
 import { Meta } from '@storybook/react'
+import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -40,6 +39,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -51,6 +51,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
     {
         id: 'searchInsights.insight.Backend_3',
@@ -69,6 +70,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
     {
         id: 'searchInsights.insight.Backend_4',
@@ -80,6 +82,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
     {
         id: 'searchInsights.insight.Backend_5',
@@ -112,6 +115,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
     {
         id: 'searchInsights.insight.Backend_6',
@@ -123,6 +127,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
     {
         id: 'searchInsights.insight.Backend_7',
@@ -134,6 +139,7 @@ const insightsWithManyLines: Insight[] = [
         step: { weeks: 2 },
         filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
         dashboardReferenceCount: 0,
+        isFrozen: false,
     },
 ]
 

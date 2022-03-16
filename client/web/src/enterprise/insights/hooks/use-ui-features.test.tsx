@@ -1,6 +1,5 @@
-import React from 'react'
-
 import { renderHook } from '@testing-library/react-hooks'
+import React from 'react'
 
 import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
@@ -23,12 +22,12 @@ const UiFeatureWrapper: React.FunctionComponent<UiFeatureWrapperProps> = ({ mock
 describe('useUiFeatures', () => {
     test.each([true, false])('should return licensed: %s', licensed => {
         const mockApi: Partial<CodeInsightsBackend> = {
-            getUiFeatures: () => ({ licensed }),
+            getUiFeatures: () => ({ licensed, permissions: { isConfigurable: true } }),
         }
         const wrapper: React.FunctionComponent = ({ children }) => (
             <UiFeatureWrapper mockApi={mockApi}>{children}</UiFeatureWrapper>
         )
-        const { result } = renderHook(() => useUiFeatures(), { wrapper })
+        const { result } = renderHook(() => useUiFeatures({ currentDashboard: undefined }), { wrapper })
         expect(result.current.licensed).toBe(licensed)
     })
 })

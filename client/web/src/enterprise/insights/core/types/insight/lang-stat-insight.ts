@@ -11,6 +11,7 @@ import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightF
 export interface LangStatsInsight extends LangStatsInsightConfiguration, SyntheticInsightFields {
     type: InsightExecutionType.Runtime
     viewType: InsightType.LangStats
+    isFrozen: boolean
 }
 
 /**
