@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
 import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../../../../../../core/types'

@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'

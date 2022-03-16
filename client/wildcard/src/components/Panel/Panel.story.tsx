@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { useState } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { panels } from '@sourcegraph/branded/src/components/panel/Panel.fixtures'

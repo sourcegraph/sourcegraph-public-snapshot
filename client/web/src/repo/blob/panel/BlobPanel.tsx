@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+
+import * as H from 'history'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
@@ -23,7 +24,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { ReferencesPanelWithMemoryRouter } from '../../../global/CoolCodeIntel'
+import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props
@@ -243,7 +244,7 @@ export function useBlobPanelViews({
                             locationProvider: undefined,
                             // The new reference panel contains definitoins, references, and implementations. We need it to
                             // match all these IDs so it shows up when one of the IDs is used as `#tab=<ID>` in the URL.
-                            matches: (id: string): boolean =>
+                            matchesTabID: (id: string): boolean =>
                                 id === 'def' || id === 'references' || id.startsWith('implementations_'),
                             // This panel doesn't need a wrapper
                             noWrapper: true,

@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 import { render as reactDOMRender, Renderer } from 'react-dom'
 import {
     asyncScheduler,
@@ -111,7 +112,6 @@ import { GithubCodeHost, githubCodeHost, isGithubCodeHost } from '../github/code
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
-import styles from './codeHost.module.scss'
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
@@ -131,6 +131,8 @@ import {
     ConfigureSourcegraphButton,
 } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
+
+import styles from './codeHost.module.scss'
 
 registerHighlightContributions()
 

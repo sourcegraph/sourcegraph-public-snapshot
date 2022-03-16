@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { render, act, RenderResult } from '@testing-library/react'
 import * as H from 'history'
-import React from 'react'
 import { of, NEVER } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '../api/contract'

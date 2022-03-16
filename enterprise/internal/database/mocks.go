@@ -107,6 +107,9 @@ type MockCodeMonitorStore struct {
 	// GetEmailActionFunc is an instance of a mock function object
 	// controlling the behavior of the method GetEmailAction.
 	GetEmailActionFunc *CodeMonitorStoreGetEmailActionFunc
+	// GetLastSearchedFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLastSearched.
+	GetLastSearchedFunc *CodeMonitorStoreGetLastSearchedFunc
 	// GetMonitorFunc is an instance of a mock function object controlling
 	// the behavior of the method GetMonitor.
 	GetMonitorFunc *CodeMonitorStoreGetMonitorFunc
@@ -182,6 +185,9 @@ type MockCodeMonitorStore struct {
 	// UpdateWebhookActionFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateWebhookAction.
 	UpdateWebhookActionFunc *CodeMonitorStoreUpdateWebhookActionFunc
+	// UpsertLastSearchedFunc is an instance of a mock function object
+	// controlling the behavior of the method UpsertLastSearched.
+	UpsertLastSearchedFunc *CodeMonitorStoreUpsertLastSearchedFunc
 }
 
 // NewMockCodeMonitorStore creates a new mock of the CodeMonitorStore
@@ -324,6 +330,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil, nil
 			},
 		},
+		GetLastSearchedFunc: &CodeMonitorStoreGetLastSearchedFunc{
+			defaultHook: func(context.Context, int64, int64) ([]string, error) {
+				return nil, nil
+			},
+		},
 		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
 			defaultHook: func(context.Context, int64) (*Monitor, error) {
 				return nil, nil
@@ -442,6 +453,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
 			defaultHook: func(context.Context, int64, bool, bool, string) (*WebhookAction, error) {
 				return nil, nil
+			},
+		},
+		UpsertLastSearchedFunc: &CodeMonitorStoreUpsertLastSearchedFunc{
+			defaultHook: func(context.Context, int64, int64, []string) error {
+				return nil
 			},
 		},
 	}
@@ -586,6 +602,11 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.GetEmailAction")
 			},
 		},
+		GetLastSearchedFunc: &CodeMonitorStoreGetLastSearchedFunc{
+			defaultHook: func(context.Context, int64, int64) ([]string, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetLastSearched")
+			},
+		},
 		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
 			defaultHook: func(context.Context, int64) (*Monitor, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.GetMonitor")
@@ -706,6 +727,11 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.UpdateWebhookAction")
 			},
 		},
+		UpsertLastSearchedFunc: &CodeMonitorStoreUpsertLastSearchedFunc{
+			defaultHook: func(context.Context, int64, int64, []string) error {
+				panic("unexpected invocation of MockCodeMonitorStore.UpsertLastSearched")
+			},
+		},
 	}
 }
 
@@ -795,6 +821,9 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
 			defaultHook: i.GetEmailAction,
 		},
+		GetLastSearchedFunc: &CodeMonitorStoreGetLastSearchedFunc{
+			defaultHook: i.GetLastSearched,
+		},
 		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
 			defaultHook: i.GetMonitor,
 		},
@@ -866,6 +895,9 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		},
 		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
 			defaultHook: i.UpdateWebhookAction,
+		},
+		UpsertLastSearchedFunc: &CodeMonitorStoreUpsertLastSearchedFunc{
+			defaultHook: i.UpsertLastSearched,
 		},
 	}
 }
@@ -3873,6 +3905,120 @@ func (c CodeMonitorStoreGetEmailActionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// CodeMonitorStoreGetLastSearchedFunc describes the behavior when the
+// GetLastSearched method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreGetLastSearchedFunc struct {
+	defaultHook func(context.Context, int64, int64) ([]string, error)
+	hooks       []func(context.Context, int64, int64) ([]string, error)
+	history     []CodeMonitorStoreGetLastSearchedFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLastSearched delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetLastSearched(v0 context.Context, v1 int64, v2 int64) ([]string, error) {
+	r0, r1 := m.GetLastSearchedFunc.nextHook()(v0, v1, v2)
+	m.GetLastSearchedFunc.appendCall(CodeMonitorStoreGetLastSearchedFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetLastSearched
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreGetLastSearchedFunc) SetDefaultHook(hook func(context.Context, int64, int64) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLastSearched method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreGetLastSearchedFunc) PushHook(hook func(context.Context, int64, int64) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeMonitorStoreGetLastSearchedFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, int64) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeMonitorStoreGetLastSearchedFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, int64, int64) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetLastSearchedFunc) nextHook() func(context.Context, int64, int64) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetLastSearchedFunc) appendCall(r0 CodeMonitorStoreGetLastSearchedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetLastSearchedFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreGetLastSearchedFunc) History() []CodeMonitorStoreGetLastSearchedFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetLastSearchedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetLastSearchedFuncCall is an object that describes an
+// invocation of method GetLastSearched on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetLastSearchedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetLastSearchedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetLastSearchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // CodeMonitorStoreGetMonitorFunc describes the behavior when the GetMonitor
 // method of the parent MockCodeMonitorStore instance is invoked.
 type CodeMonitorStoreGetMonitorFunc struct {
@@ -6537,6 +6683,120 @@ func (c CodeMonitorStoreUpdateWebhookActionFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeMonitorStoreUpdateWebhookActionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpsertLastSearchedFunc describes the behavior when the
+// UpsertLastSearched method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreUpsertLastSearchedFunc struct {
+	defaultHook func(context.Context, int64, int64, []string) error
+	hooks       []func(context.Context, int64, int64, []string) error
+	history     []CodeMonitorStoreUpsertLastSearchedFuncCall
+	mutex       sync.Mutex
+}
+
+// UpsertLastSearched delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpsertLastSearched(v0 context.Context, v1 int64, v2 int64, v3 []string) error {
+	r0 := m.UpsertLastSearchedFunc.nextHook()(v0, v1, v2, v3)
+	m.UpsertLastSearchedFunc.appendCall(CodeMonitorStoreUpsertLastSearchedFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpsertLastSearched
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) SetDefaultHook(hook func(context.Context, int64, int64, []string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpsertLastSearched method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) PushHook(hook func(context.Context, int64, int64, []string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, int64, []string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, int64, []string) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) nextHook() func(context.Context, int64, int64, []string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) appendCall(r0 CodeMonitorStoreUpsertLastSearchedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreUpsertLastSearchedFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreUpsertLastSearchedFunc) History() []CodeMonitorStoreUpsertLastSearchedFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpsertLastSearchedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpsertLastSearchedFuncCall is an object that describes an
+// invocation of method UpsertLastSearched on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreUpsertLastSearchedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpsertLastSearchedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpsertLastSearchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockEnterpriseDB is a mock implementation of the EnterpriseDB interface

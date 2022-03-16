@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { SymbolKind } from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'

@@ -97,8 +97,6 @@ export interface BlockProps<T extends Block = Block> {
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, blockInput: BlockInput): void
-    onSelectBlock(id: string | null): void
-    onMoveBlockSelection(id: string, direction: BlockDirection): void
     onMoveBlock(id: string, direction: BlockDirection): void
     onDuplicateBlock(id: string): void
 }

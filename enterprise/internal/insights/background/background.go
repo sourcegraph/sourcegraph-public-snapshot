@@ -75,6 +75,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		routines,
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
 	)
 
 	return routines

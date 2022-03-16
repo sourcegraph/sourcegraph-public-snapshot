@@ -3,3 +3,6 @@ src/graphql-operations.ts
 out/
 .eslintrc.js
 GH2SG.bookmarklet.js
+node_modules/
+dev/
+bookmarklet/

@@ -1,3 +1,5 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
@@ -5,7 +7,6 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { Hoverifier } from '@sourcegraph/codeintellify'
@@ -35,8 +36,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
-import styles from './StreamingSearchResultsList.module.scss'
 import { useItemsToShow } from './use-items-to-show'
+
+import styles from './StreamingSearchResultsList.module.scss'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,

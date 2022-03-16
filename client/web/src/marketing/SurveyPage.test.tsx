@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { MockedProviderProps } from '@apollo/client/testing'
 import { cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { Route } from 'react-router'
 
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
