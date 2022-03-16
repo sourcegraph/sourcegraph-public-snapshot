@@ -138,6 +138,24 @@ func TestUnpack(t *testing.T) {
 					{path: "foo", link: "bar", mode: fs.ModeSymlink},
 				},
 			},
+			{
+				packer: p,
+				name:   "dir-permissions",
+				in: []*fileInfo{
+					{path: "dir", mode: fs.ModeDir},
+					{path: "dir/file1", contents: "x", mode: 0000},
+					{path: "dir/file2", contents: "x", mode: 0200},
+					{path: "dir/file3", contents: "x", mode: 0400},
+					{path: "dir/file4", contents: "x", mode: 0600},
+				},
+				out: []*fileInfo{
+					{path: "dir", mode: fs.ModeDir | 0700},
+					{path: "dir/file1", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file2", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file3", contents: "x", mode: 0600, size: 1},
+					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
+				},
+			},
 		}...)
 	}
 

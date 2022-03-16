@@ -38,6 +38,8 @@ type Opts struct {
 }
 
 // Tgz unpacks the contents of the given gzip compressed tarball under dir.
+//
+// File permissions in the tarball are not respected; all files are marked read-write.
 func Tgz(r io.Reader, dir string, opt Opts) error {
 	// Since we fallback to untar the input reader if it isn't
 	// a gzipped tar, we need to seek back the bytes already read
@@ -70,6 +72,8 @@ func Tgz(r io.Reader, dir string, opt Opts) error {
 }
 
 // Tar unpacks the contents of the specified tarball under dir.
+//
+// File permissions in the tarball are not respected; all files are marked read-write.
 func Tar(r io.Reader, dir string, opt Opts) error {
 	tr := tar.NewReader(r)
 	for {
@@ -108,6 +112,13 @@ func Tar(r io.Reader, dir string, opt Opts) error {
 func extractFile(tr *tar.Reader, h *tar.Header, dir string) error {
 	path := filepath.Join(dir, h.Name)
 	mode := h.FileInfo().Mode()
+
+	// We need to be able to traverse directories and read/modify files.
+	if h.FileInfo().Mode().IsDir() {
+		mode = mode | 0700
+	} else if h.FileInfo().Mode().IsRegular() {
+		mode = mode | 0600
+	}
 
 	switch h.Typeflag {
 	case tar.TypeDir:
