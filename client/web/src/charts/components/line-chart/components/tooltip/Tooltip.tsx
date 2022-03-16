@@ -1,15 +1,12 @@
-import React, { ReactElement, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { isDefined } from '@sourcegraph/common'
+import { PopoverContent, Position, Point as PopoverPoint, createRectangle } from '@sourcegraph/wildcard'
 
-import { LineChartSeries, Point } from '../../types'
-import { isValidNumber } from '../../utils/data-guards'
-import { formatYTick } from '../../utils/ticks'
-import { FloatingPanel, Target } from '../floating-panel/FloatingPanel'
-
-import { getListWindow } from './utils/get-list-window'
+import { LineChartSeries } from '../../types'
 
 import styles from './Tooltip.module.scss'
+
+const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
 
 /**
  * Default value for line color in case if we didn't get color for line from content config.
@@ -21,137 +18,39 @@ export function getLineStroke<Datum>(line: LineChartSeries<Datum>): string {
 }
 
 interface TooltipProps {
-    reference?: Target
+    reference?: HTMLElement
 }
 
 export const Tooltip: React.FunctionComponent<TooltipProps> = props => {
-    const { reference } = props
-    const [virtualElement, setVirtualElement] = useState<Target>()
+    const [virtualElement, setVirtualElement] = useState<PopoverPoint | null>(null)
 
     useEffect(() => {
         function handleMove(event: PointerEvent): void {
             setVirtualElement({
-                getBoundingClientRect: () => ({
-                    width: 0,
-                    height: 0,
-                    x: event.clientX,
-                    y: event.clientY,
-                    top: event.clientY,
-                    left: event.clientX,
-                    right: event.clientX,
-                    bottom: event.clientY,
-                }),
+                x: event.clientX,
+                y: event.clientY,
             })
         }
 
         window.addEventListener('pointermove', handleMove)
+        window.addEventListener('pointerleave', () => setVirtualElement(null))
 
         return () => {
             window.removeEventListener('pointermove', handleMove)
         }
     }, [])
 
-    useEffect(() => {
-        if (!reference) {
-            return
-        }
-
-        setVirtualElement(reference)
-    }, [reference])
-
-    if (!virtualElement) {
-        return null
-    }
-
     return (
-        <FloatingPanel className={styles.tooltip} target={virtualElement} strategy="fixed" placement="right-start">
-            {props.children}
-        </FloatingPanel>
-    )
-}
-
-const MAX_ITEMS_IN_TOOLTIP = 10
-
-export interface TooltipContentProps<Datum> {
-    series: LineChartSeries<Datum>[]
-    activePoint: Point<Datum>
-    xAxisKey: keyof Datum
-}
-
-/**
- * Display tooltip content for XYChart.
- * It consists of title - datetime for current x point and list of all nearest y points.
- */
-export function TooltipContent<Datum>(props: TooltipContentProps<Datum>): ReactElement | null {
-    const { activePoint, series, xAxisKey } = props
-    const { datum, originalDatum } = activePoint
-
-    const lines = useMemo(() => {
-        if (!activePoint) {
-            return { window: [], leftRemaining: 0, rightRemaining: 0 }
-        }
-
-        const sortedSeries = [...series]
-            .map(line => {
-                const value = datum[line.dataKey]
-                const selfValue = originalDatum[line.dataKey]
-
-                if (!isValidNumber(value) || !isValidNumber(selfValue)) {
-                    return
-                }
-
-                return { ...line, value, selfValue }
-            })
-            .filter(isDefined)
-            .sort((lineA, lineB) => lineB.value - lineA.value)
-
-        // Find index of hovered point
-        const hoveredSeriesIndex = sortedSeries.findIndex(line => line.dataKey === activePoint.seriesKey)
-
-        // Normalize index of hovered point
-        const centerIndex = hoveredSeriesIndex !== -1 ? hoveredSeriesIndex : Math.floor(sortedSeries.length / 2)
-
-        return getListWindow(sortedSeries, centerIndex, MAX_ITEMS_IN_TOOLTIP)
-    }, [activePoint, series, datum, originalDatum])
-
-    const dateString = new Date(+datum[xAxisKey]).toDateString()
-
-    return (
-        <>
-            <h3>{dateString}</h3>
-
-            <ul className={styles.tooltipList}>
-                {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
-                {lines.window.map(line => {
-                    // In stacked mode each line and datum has its original selfValue
-                    // and stacked value which is sum of all data items of lines below
-                    const selfValue = formatYTick(line.selfValue)
-                    const stackedValue = formatYTick(line.value)
-                    const datumKey = activePoint.seriesKey
-                    const backgroundColor = datumKey === line.dataKey ? 'var(--secondary-2)' : ''
-
-                    /* eslint-disable react/forbid-dom-props */
-                    return (
-                        <li key={line.dataKey as string} className={styles.item} style={{ backgroundColor }}>
-                            <div style={{ backgroundColor: getLineStroke(line) }} className={styles.mark} />
-
-                            <span className={styles.legendText}>{line?.name ?? 'unknown series'}</span>
-
-                            <span className={styles.legendValue}>
-                                {selfValue !== stackedValue ? (
-                                    selfValue === null || Number.isNaN(selfValue) ? (
-                                        '–'
-                                    ) : (
-                                        <span className="font-weight-bold">{selfValue}</span>
-                                    )
-                                ) : null}{' '}
-                                {stackedValue === null || Number.isNaN(stackedValue) ? '–' : stackedValue}
-                            </span>
-                        </li>
-                    )
-                })}
-                {lines.rightRemaining > 0 && <li className={styles.item}>... and {lines.rightRemaining} more</li>}
-            </ul>
-        </>
+        virtualElement && (
+            <PopoverContent
+                isOpen={true}
+                pin={virtualElement}
+                targetPadding={TOOLTIP_PADDING}
+                position={Position.rightStart}
+                className={styles.tooltip}
+            >
+                {props.children}
+            </PopoverContent>
+        )
     )
 }
