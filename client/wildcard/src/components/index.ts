@@ -31,6 +31,7 @@ export {
     EMPTY_RECTANGLE,
     createRectangle,
 } from './Popover'
+export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 
 /**
  * Type Exports
