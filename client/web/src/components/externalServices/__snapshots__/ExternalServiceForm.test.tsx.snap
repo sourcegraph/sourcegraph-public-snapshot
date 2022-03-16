@@ -138,7 +138,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
       type="submit"
     >
       <div
-        class="loadingSpinner icon-inline"
+        class="iconInline loadingSpinner"
       />
       Add repositories
     </button>

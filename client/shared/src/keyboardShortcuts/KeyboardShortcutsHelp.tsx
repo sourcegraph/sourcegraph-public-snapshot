@@ -4,7 +4,7 @@ import { Shortcut, ModifierKey, Key } from '@slimsag/react-shortcuts'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
 
@@ -56,7 +56,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
                 <div className={styles.modalHeader}>
                     <h4 id={MODAL_LABEL_ID}>Keyboard shortcuts</h4>
                     <Button variant="icon" aria-label="Close" onClick={toggleIsOpen}>
-                        <CloseIcon className="icon-inline" />
+                        <Icon as={CloseIcon} />
                     </Button>
                 </div>
                 <div>

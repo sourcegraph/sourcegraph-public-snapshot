@@ -53,7 +53,7 @@ exports[`NewProductSubscriptionPaymentSection new subscription 1`] = `
     >
       Total: $123.45 for 14 years (123 users)
       <div
-        class="loadingSpinner icon-inline invisible"
+        class="iconInline loadingSpinner invisible"
       />
     </div>
   </div>
