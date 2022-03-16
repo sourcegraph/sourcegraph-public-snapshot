@@ -1,108 +1,87 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import * as Monaco from 'monaco-editor'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
-import { PathMatch, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { useObservable } from '@sourcegraph/wildcard'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
+import { PathMatch } from '@sourcegraph/shared/src/search/stream'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
-import { parseLineRange } from '../../serialize'
-import { fetchSuggestions } from '../suggestions'
-
-import { NotebookFileBlockInput } from './NotebookFileBlockInput'
-import { FileBlockInputValidationResult } from './useFileBlockInputValidation'
+import { parseLineRange, serializeLineRange } from '../../serialize'
+import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
+import { fetchSuggestions } from '../suggestions/suggestions'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
-interface NotebookFileBlockInputsProps
-    extends FileBlockInputValidationResult,
-        Omit<FileBlockInput, 'lineRange'>,
-        Pick<BlockProps, 'onSelectBlock'> {
+interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
-    lineRangeInput: string
-    showRevisionInput: boolean
-    showLineRangeInput: boolean
-    setIsInputFocused(value: boolean): void
-    setFileInput: (input: Partial<FileBlockInput>) => void
-    setLineRangeInput: (input: string) => void
+    sourcegraphSearchLanguageId: string
+    queryInput: string
+    lineRange: IHighlightLineRange | null
+    setQueryInput: (value: string) => void
+    debouncedSetQueryInput: (value: string) => void
+    onLineRangeChange: (lineRange: IHighlightLineRange | null) => void
+    onFileSelected: (file: FileBlockInput) => void
 }
 
-const MAX_SUGGESTIONS = 15
-
-function getRepositorySuggestionsQuery(repositoryName: string): string {
-    return `repo:${repositoryName} type:repo count:${MAX_SUGGESTIONS} fork:yes`
-}
-
-function getFilePathSuggestionsQuery(repositoryName: string, revision: string, filePath: string): string {
-    const repoFilter = repositoryName.trim() ? `repo:${repositoryName}` : ''
-    const revisionFilter = revision.trim() ? `rev:${revision}` : ''
-    return `${repoFilter} ${revisionFilter} ${filePath} type:path count:${MAX_SUGGESTIONS} fork:yes`
+function getFileSuggestionsQuery(queryInput: string): string {
+    return `${queryInput} fork:yes type:path count:50`
 }
 
 export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
     id,
-    repositoryName,
-    filePath,
-    revision,
-    lineRangeInput,
-    isRepositoryNameValid,
-    isFilePathValid,
-    isRevisionValid,
-    isLineRangeValid,
-    showRevisionInput,
-    showLineRangeInput,
-    setIsInputFocused,
-    onSelectBlock,
-    setFileInput,
-    setLineRangeInput,
+    lineRange,
+    onFileSelected,
+    onLineRangeChange,
+    ...props
 }) => {
-    const onInputFocus = (event: React.FocusEvent<HTMLInputElement>): void => {
-        onSelectBlock(id)
-        setIsInputFocused(true)
-        event.preventDefault()
-        event.stopPropagation()
-    }
+    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
+    const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
-    const debouncedSetFileInput = useMemo(() => debounce(setFileInput, 300), [setFileInput])
-
-    const onInputBlur = (event: React.FocusEvent<HTMLInputElement>): void => {
-        // relatedTarget contains the element that will receive focus after the blur.
-        const relatedTarget = event.relatedTarget && (event.relatedTarget as HTMLElement)
-        // If relatedTarget is another input from the same block or contained within the suggestions popover list, we
-        // want to keep the input focused. Otherwise this will result in quickly flashing focus between elements.
-        if (relatedTarget?.tagName.toLowerCase() !== 'input' && !relatedTarget?.closest('[data-reach-combobox-list]')) {
-            setIsInputFocused(false)
-        }
-        event.stopPropagation()
-    }
-
-    const repoSuggestions = useObservable(
-        useMemo(
-            () =>
-                fetchSuggestions(
-                    getRepositorySuggestionsQuery(repositoryName),
-                    (suggestion): suggestion is RepositoryMatch => suggestion.type === 'repo',
-                    repo => repo.repository
-                ),
-            [repositoryName]
-        )
+    const isLineRangeValid = useMemo(
+        () => (lineRangeInput.trim() ? parseLineRange(lineRangeInput) !== null : undefined),
+        [lineRangeInput]
     )
 
-    const fileSuggestions = useObservable(
-        useMemo(
-            () =>
-                fetchSuggestions(
-                    getFilePathSuggestionsQuery(repositoryName, revision, filePath),
-                    (suggestion): suggestion is PathMatch => suggestion.type === 'path',
-                    repo => repo.path
-                ),
-            [repositoryName, revision, filePath]
-        )
+    const onLineRangeInputChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            setLineRangeInput(event.target.value)
+            debouncedOnLineRangeChange(parseLineRange(event.target.value))
+        },
+        [setLineRangeInput, debouncedOnLineRangeChange]
+    )
+
+    const fetchFileSuggestions = useCallback(
+        (query: string) =>
+            fetchSuggestions(
+                getFileSuggestionsQuery(query),
+                (suggestion): suggestion is PathMatch => suggestion.type === 'path',
+                file => file
+            ),
+        []
+    )
+
+    const countSuggestions = useCallback((suggestions: PathMatch[]) => suggestions.length, [])
+
+    const onFileSuggestionSelected = useCallback(
+        (file: FileBlockInput) => {
+            onFileSelected(file)
+            setLineRangeInput(serializeLineRange(file.lineRange))
+        },
+        [onFileSelected, setLineRangeInput]
+    )
+
+    const renderSuggestions = useCallback(
+        (suggestions: PathMatch[]) => (
+            <FileSuggestions suggestions={suggestions} onFileSelected={onFileSuggestionSelected} />
+        ),
+        [onFileSuggestionSelected]
     )
 
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
@@ -111,80 +90,64 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <InfoCircleOutlineIcon className="icon-inline" /> To automatically fill the inputs, copy a
-                    Sourcegraph file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
+                    <InfoCircleOutlineIcon className="icon-inline" /> To automatically select a file, copy a Sourcegraph
+                    file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>
-            <label htmlFor={`file-location-input-${id}`}>File location</label>
-            <div id={`file-location-input-${id}`} className={styles.fileLocationInputWrapper}>
-                <NotebookFileBlockInput
-                    className="flex-1"
-                    inputClassName={styles.repositoryNameInput}
-                    value={repositoryName}
-                    placeholder="Repository name"
-                    onChange={repositoryName => debouncedSetFileInput({ repositoryName })}
-                    onFocus={onInputFocus}
-                    onBlur={onInputBlur}
-                    suggestions={repoSuggestions}
-                    suggestionsIcon={<SourceRepositoryIcon className="mr-1" size="1rem" />}
-                    isValid={isRepositoryNameValid}
-                    dataTestId="file-block-repository-name-input"
+            <SearchTypeSuggestionsInput<PathMatch>
+                id={id}
+                editor={editor}
+                setEditor={setEditor}
+                label="Find a file using a Sourcegraph search query"
+                queryPrefix="type:path"
+                fetchSuggestions={fetchFileSuggestions}
+                countSuggestions={countSuggestions}
+                renderSuggestions={renderSuggestions}
+                {...props}
+            />
+            <div className="mt-2">
+                <label htmlFor={`${id}-line-range-input`}>Line range</label>
+                <input
+                    id={`${id}-line-range-input`}
+                    type="text"
+                    className={classNames('form-control', isLineRangeValid === false && 'is-invalid')}
+                    value={lineRangeInput}
+                    onChange={onLineRangeInputChange}
+                    placeholder="Enter a single line (1), a line range (1-10), or leave empty to show the entire file."
                 />
-                <div className={styles.separator} />
-                <NotebookFileBlockInput
-                    className="flex-1"
-                    inputClassName={styles.filePathInput}
-                    value={filePath}
-                    placeholder="Path"
-                    onChange={filePath => debouncedSetFileInput({ filePath })}
-                    onFocus={onInputFocus}
-                    onBlur={onInputBlur}
-                    suggestions={fileSuggestions}
-                    suggestionsIcon={<FileDocumentIcon className="mr-1" size="1rem" />}
-                    isValid={isFilePathValid}
-                    dataTestId="file-block-file-path-input"
-                />
-            </div>
-            <div className={classNames('d-flex', (showRevisionInput || showLineRangeInput) && 'mt-3')}>
-                {showRevisionInput && (
-                    <div className="w-50 mr-2">
-                        <label htmlFor={`file-revision-input-${id}`}>Revision</label>
-                        <NotebookFileBlockInput
-                            id={`file-revision-input-${id}`}
-                            inputClassName={styles.revisionInput}
-                            value={revision}
-                            placeholder="feature/branch"
-                            onChange={revision => debouncedSetFileInput({ revision })}
-                            onFocus={onInputFocus}
-                            onBlur={onInputBlur}
-                            isValid={isRevisionValid}
-                            dataTestId="file-block-revision-input"
-                        />
-                    </div>
-                )}
-                {showLineRangeInput && (
-                    <div className="w-50">
-                        <label htmlFor={`file-line-range-input-${id}`}>Line range</label>
-                        <NotebookFileBlockInput
-                            id={`file-line-range-input-${id}`}
-                            inputClassName={styles.lineRangeInput}
-                            value={lineRangeInput}
-                            placeholder="1-10"
-                            onChange={lineRangeInput => {
-                                setLineRangeInput(lineRangeInput)
-                                const lineRange = parseLineRange(lineRangeInput)
-                                if (lineRange !== null) {
-                                    debouncedSetFileInput({ lineRange })
-                                }
-                            }}
-                            onFocus={onInputFocus}
-                            onBlur={onInputBlur}
-                            isValid={isLineRangeValid}
-                            dataTestId="file-block-line-range-input"
-                        />
+                {isLineRangeValid === false && (
+                    <div className="text-danger mt-1">
+                        Line range is invalid. Enter a single line (1), a line range (1-10), or leave empty to show the
+                        entire file.
                     </div>
                 )}
             </div>
         </div>
     )
 }
+
+const FileSuggestions: React.FunctionComponent<{
+    suggestions: PathMatch[]
+    onFileSelected: (symbol: FileBlockInput) => void
+}> = ({ suggestions, onFileSelected }) => (
+    <div className={styles.fileSuggestions}>
+        {suggestions.map(suggestion => (
+            <Button
+                className={styles.fileButton}
+                key={`${suggestion.repository}_${suggestion.path}`}
+                onClick={() =>
+                    onFileSelected({
+                        repositoryName: suggestion.repository,
+                        filePath: suggestion.path,
+                        revision: suggestion.commit ?? '',
+                        lineRange: null,
+                    })
+                }
+                data-testid="file-suggestion-button"
+            >
+                <span className="mb-1">{suggestion.path}</span>
+                <small className="text-muted">{suggestion.repository}</small>
+            </Button>
+        ))}
+    </div>
+)

@@ -13,48 +13,18 @@ const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlockInp
 
 const defaultProps = {
     id: 'block-id',
-    showRevisionInput: true,
-    showLineRangeInput: true,
-    setIsInputFocused: noop,
-    setFileInput: noop,
-    setLineRangeInput: noop,
-    onSelectBlock: noop,
-    isRepositoryNameValid: undefined,
-    isFilePathValid: undefined,
-    isRevisionValid: undefined,
-    isLineRangeValid: undefined,
     repositoryName: 'github.com/sourcegraph/sourcegraph',
     revision: 'main',
     filePath: 'client/web/file.tsx',
     lineRangeInput: '123-321',
+    sourcegraphSearchLanguageId: 'sourcegraph',
+    queryInput: '',
+    setQueryInput: noop,
+    debouncedSetQueryInput: noop,
+    onFileSelected: noop,
+    onRunBlock: noop,
+    lineRange: null,
+    onLineRangeChange: noop,
 }
 
-add('default', () => <WebStory>{() => <NotebookFileBlockInputs {...defaultProps} />}</WebStory>)
-
-add('all valid', () => (
-    <WebStory>
-        {() => (
-            <NotebookFileBlockInputs
-                {...defaultProps}
-                isRepositoryNameValid={true}
-                isFilePathValid={true}
-                isRevisionValid={true}
-                isLineRangeValid={true}
-            />
-        )}
-    </WebStory>
-))
-
-add('all invalid', () => (
-    <WebStory>
-        {() => (
-            <NotebookFileBlockInputs
-                {...defaultProps}
-                isRepositoryNameValid={false}
-                isFilePathValid={false}
-                isRevisionValid={false}
-                isLineRangeValid={false}
-            />
-        )}
-    </WebStory>
-))
+add('default', () => <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>)

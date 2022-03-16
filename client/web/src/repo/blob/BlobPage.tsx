@@ -31,7 +31,6 @@ import { SearchStreamingProps } from '../../search'
 import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
-import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -341,8 +340,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <RenderedNotebookMarkdown
                     {...props}
                     markdown={blobInfoOrError.content}
-                    resolveRevision={resolveRevision}
-                    fetchRepository={fetchRepository}
                     onCopyNotebook={onCopyNotebook}
                     showSearchContext={showSearchContext}
                     exportedFileName={basename(blobInfoOrError.filePath)}

@@ -22,6 +22,7 @@ export function useQueryIntelligence(
         globbing: boolean
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean
+        disablePatternSuggestions?: boolean
     }
 ): string {
     // Due to the global nature of Monaco (tokens, hover, completion) providers we have to create a unique
@@ -38,8 +39,15 @@ export function useQueryIntelligence(
             globbing: options.globbing,
             interpretComments: options.interpretComments,
             isSourcegraphDotCom: options.isSourcegraphDotCom,
+            disablePatternSuggestions: options.disablePatternSuggestions,
         }),
-        [options.patternType, options.globbing, options.interpretComments, options.isSourcegraphDotCom]
+        [
+            options.patternType,
+            options.globbing,
+            options.interpretComments,
+            options.isSourcegraphDotCom,
+            options.disablePatternSuggestions,
+        ]
     )
 
     useEffect(() => {

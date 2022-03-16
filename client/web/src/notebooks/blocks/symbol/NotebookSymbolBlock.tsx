@@ -65,16 +65,14 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     extensionsController,
     isLightTheme,
     onRunBlock,
-    onSelectBlock,
     onBlockInputChange,
     ...props
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
     const [symbolQueryInput, setSymbolQueryInput] = useState('')
-    const [isInputFocused, setIsInputFocused] = useState(false)
-
     const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
+
     const onSymbolSelected = useCallback(
         (input: SymbolBlockInput) => {
             onBlockInputChange(id, { type: 'symbol', input })
@@ -97,7 +95,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     const symbolOutput = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
 
     const commonMenuActions = useCommonBlockMenuActions({
-        isInputFocused,
+        id,
         isReadOnly,
         ...props,
     })
@@ -166,15 +164,11 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         <NotebookBlock
             className={styles.block}
             id={id}
-            isReadOnly={isReadOnly}
-            isInputFocused={isInputFocused}
             aria-label="Notebook symbol block"
             onEnterBlock={onEnterBlock}
+            onHideInput={hideInputs}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onRunBlock={hideInputs}
-            onBlockInputChange={onBlockInputChange}
-            onSelectBlock={onSelectBlock}
             actions={isSelected ? menuActions : linkMenuAction}
             {...props}
         >
@@ -198,15 +192,13 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 <NotebookSymbolBlockInput
                     id={id}
                     editor={editor}
-                    symbolQueryInput={symbolQueryInput}
+                    queryInput={symbolQueryInput}
                     isLightTheme={isLightTheme}
                     setEditor={setEditor}
-                    setSymbolQueryInput={setSymbolQueryInput}
-                    debouncedSetSymbolQueryInput={debouncedSetSymbolQueryInput}
+                    setQueryInput={setSymbolQueryInput}
+                    debouncedSetQueryInput={debouncedSetSymbolQueryInput}
                     onSymbolSelected={onSymbolSelected}
-                    setIsInputFocused={setIsInputFocused}
                     onRunBlock={hideInputs}
-                    onSelectBlock={onSelectBlock}
                     {...props}
                 />
             )}

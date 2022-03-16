@@ -269,8 +269,6 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             viewerCanManage={notebookOrError.viewerCanManage}
                             blocks={notebookOrError.blocks}
                             onUpdateBlocks={onUpdateBlocks}
-                            fetchRepository={fetchRepository}
-                            resolveRevision={resolveRevision}
                             onCopyNotebook={onCopyNotebook}
                             exportedFileName={exportedFileName}
                         />

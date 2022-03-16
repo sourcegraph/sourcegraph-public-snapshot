@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 
 import * as Monaco from 'monaco-editor'
 
@@ -39,10 +39,11 @@ export const MONACO_BLOCK_INPUT_OPTIONS: Monaco.editor.IStandaloneEditorConstruc
     wordWrap: 'on',
 }
 
-interface UseMonacoBlockEditorOptions extends Pick<BlockProps, 'onRunBlock' | 'onSelectBlock'> {
+interface UseMonacoBlockEditorOptions extends Pick<BlockProps, 'onRunBlock'> {
     editor: Monaco.editor.IStandaloneCodeEditor | undefined
     id: string
     preventNewLine?: boolean
+    tabMovesFocus?: boolean
     onInputChange: (value: string) => void
 }
 
@@ -52,14 +53,10 @@ export const useMonacoBlockInput = ({
     editor,
     id,
     preventNewLine,
+    tabMovesFocus = true,
     onRunBlock,
     onInputChange,
-    onSelectBlock,
-}: UseMonacoBlockEditorOptions): {
-    isInputFocused: boolean
-} => {
-    const [isInputFocused, setIsInputFocused] = useState(false)
-
+}: UseMonacoBlockEditorOptions): void => {
     useEffect(() => {
         if (!editor) {
             return
@@ -116,23 +113,19 @@ export const useMonacoBlockInput = ({
 
     useEffect(() => {
         if (!editor) {
-            setIsInputFocused(false)
             return
         }
         const disposables = [
             editor.onDidFocusEditorText(() => {
-                setIsInputFocused(true)
-                onSelectBlock(id)
+                if (tabMovesFocus) {
+                    editor.createContextKey('editorTabMovesFocus', true)
+                }
             }),
-            editor.onDidBlurEditorText(() => setIsInputFocused(false)),
-            editor.onDidDispose(() => setIsInputFocused(false)),
         ]
         return () => {
             for (const disposable of disposables) {
                 disposable.dispose()
             }
         }
-    }, [editor, id, setIsInputFocused, onSelectBlock])
-
-    return { isInputFocused }
+    }, [editor, id, tabMovesFocus])
 }
