@@ -1,8 +1,6 @@
 import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
-import { ElementHandle } from 'puppeteer'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
@@ -191,37 +189,37 @@ describe('Code intelligence regression test suite', () => {
 //
 // Code navigation utilities
 
-interface CodeNavigationTestCase {
-    /**
-     * The source page.
-     */
-    page: string
-
-    /**
-     * The source line.
-     */
-    line: number
-
-    /**
-     * The token to click. Should be unambiguous within this line for the test to succeed.
-     */
-    token: string
-
-    /**
-     * A substring of the expected hover text
-     */
-    expectedHoverContains: string
-
-    /**
-     * A locations (if unambiguous), or a subset of locations that must occur within the definitions panel.
-     */
-    expectedDefinition?: string | string[]
-
-    /**
-     * A subset of locations that must occur within the references panel.
-     */
-    expectedReferences?: string[]
-}
+// interface CodeNavigationTestCase {
+//     /**
+//      * The source page.
+//      */
+//     page: string
+//
+//     /**
+//      * The source line.
+//      */
+//     line: number
+//
+//     /**
+//      * The token to click. Should be unambiguous within this line for the test to succeed.
+//      */
+//     token: string
+//
+//     /**
+//      * A substring of the expected hover text
+//      */
+//     expectedHoverContains: string
+//
+//     /**
+//      * A locations (if unambiguous), or a subset of locations that must occur within the definitions panel.
+//      */
+//     expectedDefinition?: string | string[]
+//
+//     /**
+//      * A subset of locations that must occur within the references panel.
+//      */
+//     expectedReferences?: string[]
+// }
 
 // /**
 //  * Navigate to the given page and test the definitions, references, and hovers of the token
@@ -288,117 +286,117 @@ interface CodeNavigationTestCase {
 //     await driver.page.keyboard.press('Escape')
 // }
 
-/**
- * Return a list of locations (and their precision) that exist in the file list
- * panel. This will click on each repository and collect the visible links in a
- * sequence.
- */
-async function collectLinks(driver: Driver): Promise<Set<string>> {
-    await driver.page.waitForSelector('.test-loading-spinner', { hidden: true })
+// /**
+//  * Return a list of locations (and their precision) that exist in the file list
+//  * panel. This will click on each repository and collect the visible links in a
+//  * sequence.
+//  */
+// async function collectLinks(driver: Driver): Promise<Set<string>> {
+//     await driver.page.waitForSelector('.test-loading-spinner', { hidden: true })
+//
+//     const panelTabTitles = await getPanelTabTitles(driver)
+//     if (panelTabTitles.length === 0) {
+//         return new Set(await collectVisibleLinks(driver))
+//     }
+//
+//     const links = new Set<string>()
+//     for (const title of panelTabTitles) {
+//         const tabElement = await driver.page.$$(
+//             `[data-testid="hierarchical-locations-view-list"] span[title="${title}"]`
+//         )
+//         if (tabElement.length > 0) {
+//             await tabElement[0].click()
+//         }
+//
+//         for (const link of await collectVisibleLinks(driver)) {
+//             links.add(link)
+//         }
+//     }
+//
+//     return links
+// }
 
-    const panelTabTitles = await getPanelTabTitles(driver)
-    if (panelTabTitles.length === 0) {
-        return new Set(await collectVisibleLinks(driver))
-    }
+// /**
+//  * Return the list of repository titles on the left-hand side of the definition or
+//  * reference result panel.
+//  */
+// async function getPanelTabTitles(driver: Driver): Promise<string[]> {
+//     return (
+//         await Promise.all(
+//             (
+//                 await driver.page.$$('[data-testid="hierarchical-locations-view-list"]:first-child span[title]')
+//             ).map(elementHandle => elementHandle.evaluate(element => element.getAttribute('title') || ''))
+//         )
+//     ).map(normalizeWhitespace)
+// }
 
-    const links = new Set<string>()
-    for (const title of panelTabTitles) {
-        const tabElement = await driver.page.$$(
-            `[data-testid="hierarchical-locations-view-list"] span[title="${title}"]`
-        )
-        if (tabElement.length > 0) {
-            await tabElement[0].click()
-        }
+// /**
+//  * Return a list of locations (and their precision) that are current visible in a
+//  * file list panel. This may be definitions or references.
+//  */
+// function collectVisibleLinks(driver: Driver): Promise<string[]> {
+//     return driver.page.evaluate(() =>
+//         [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
+//             a => a.querySelector('.test-file-match-children-item')?.getAttribute('data-href') || ''
+//         )
+//     )
+// }
 
-        for (const link of await collectVisibleLinks(driver)) {
-            links.add(link)
-        }
-    }
+// /**
+//  * Close any visible hover overlay.
+//  */
+// async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
+//     await driver.page.click('.test-blob tr:nth-child(1) .line')
+//     await driver.page.waitForFunction(() => document.querySelectorAll('.test-tooltip-go-to-definition').length === 0)
+// }
 
-    return links
-}
+// /**
+//  * Find the element with the token text on the given line.
+//  *
+//  * Will close any toast so that the entire line is visible and will hover over the line
+//  * to ensure that the line is tokenized (as this is done on-demand).
+//  */
+// async function findTokenElement(driver: Driver, line: number, token: string): Promise<ElementHandle<Element>> {
+//     try {
+//         // If there's an open toast, close it. If the toast remains open and our target
+//         // identifier happens to be hidden by it, we won't be able to select the correct
+//         // token. This condition was reproducible in the code navigation test that searches
+//         // for the identifier `StdioLogger`.
+//         await driver.page.click('.test-close-toast')
+//     } catch {
+//         // No toast open, this is fine
+//     }
+//
+//     const selector = `.test-blob tr:nth-child(${line}) span`
+//     await driver.page.hover(selector)
+//     return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
+// }
 
-/**
- * Return the list of repository titles on the left-hand side of the definition or
- * reference result panel.
- */
-async function getPanelTabTitles(driver: Driver): Promise<string[]> {
-    return (
-        await Promise.all(
-            (
-                await driver.page.$$('[data-testid="hierarchical-locations-view-list"]:first-child span[title]')
-            ).map(elementHandle => elementHandle.evaluate(element => element.getAttribute('title') || ''))
-        )
-    ).map(normalizeWhitespace)
-}
+// /**
+//  * Wait for the hover tooltip to become visible. Compare the visible text with the expected
+//  * contents (expected contents must be a substring of the visible contents).
+//  */
+// async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
+//     await driver.page.waitForSelector('.test-tooltip-go-to-definition')
+//     await driver.page.waitForSelector('.test-tooltip-content')
+//     expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
+// }
 
-/**
- * Return a list of locations (and their precision) that are current visible in a
- * file list panel. This may be definitions or references.
- */
-function collectVisibleLinks(driver: Driver): Promise<string[]> {
-    return driver.page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>('.test-file-match-children-item-wrapper')].map(
-            a => a.querySelector('.test-file-match-children-item')?.getAttribute('data-href') || ''
-        )
-    )
-}
+// /**
+//  * Return the currently visible hover text.
+//  */
+// async function getTooltip(driver: Driver): Promise<string> {
+//     return driver.page.evaluate(
+//         () => (document.querySelector('.test-tooltip-content') as HTMLElement).textContent || ''
+//     )
+// }
 
-/**
- * Close any visible hover overlay.
- */
-async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
-    await driver.page.click('.test-blob tr:nth-child(1) .line')
-    await driver.page.waitForFunction(() => document.querySelectorAll('.test-tooltip-go-to-definition').length === 0)
-}
-
-/**
- * Find the element with the token text on the given line.
- *
- * Will close any toast so that the entire line is visible and will hover over the line
- * to ensure that the line is tokenized (as this is done on-demand).
- */
-async function findTokenElement(driver: Driver, line: number, token: string): Promise<ElementHandle<Element>> {
-    try {
-        // If there's an open toast, close it. If the toast remains open and our target
-        // identifier happens to be hidden by it, we won't be able to select the correct
-        // token. This condition was reproducible in the code navigation test that searches
-        // for the identifier `StdioLogger`.
-        await driver.page.click('.test-close-toast')
-    } catch {
-        // No toast open, this is fine
-    }
-
-    const selector = `.test-blob tr:nth-child(${line}) span`
-    await driver.page.hover(selector)
-    return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
-}
-
-/**
- * Wait for the hover tooltip to become visible. Compare the visible text with the expected
- * contents (expected contents must be a substring of the visible contents).
- */
-async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
-    await driver.page.waitForSelector('.test-tooltip-go-to-definition')
-    await driver.page.waitForSelector('.test-tooltip-content')
-    expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
-}
-
-/**
- * Return the currently visible hover text.
- */
-async function getTooltip(driver: Driver): Promise<string> {
-    return driver.page.evaluate(
-        () => (document.querySelector('.test-tooltip-content') as HTMLElement).textContent || ''
-    )
-}
-
-/**
- * Collapse multiple spaces into one.
- */
-function normalizeWhitespace(string: string): string {
-    return string.replace(/\s+/g, ' ')
-}
+// /**
+//  * Collapse multiple spaces into one.
+//  */
+// function normalizeWhitespace(string: string): string {
+//     return string.replace(/\s+/g, ' ')
+// }
 
 //
 // LSIF utilities
