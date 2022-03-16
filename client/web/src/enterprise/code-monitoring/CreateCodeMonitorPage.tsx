@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -17,14 +16,12 @@ import { convertActionsForCreate } from './action-converters'
 import { createCodeMonitor as _createCodeMonitor } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-interface CreateCodeMonitorPageProps extends ThemeProps {
+interface CreateCodeMonitorPageProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
-
-    isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMonitorPageProps> = ({
@@ -32,8 +29,6 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
     history,
     location,
     createCodeMonitor = _createCodeMonitor,
-    isLightTheme,
-    isSourcegraphDotCom,
 }) => {
     const triggerQuery = useMemo(() => new URLSearchParams(location.search).get('trigger-query') ?? undefined, [
         location.search,
@@ -91,8 +86,6 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 triggerQuery={triggerQuery}
                 description={description}
                 submitButtonLabel="Create code monitor"
-                isLightTheme={isLightTheme}
-                isSourcegraphDotCom={isSourcegraphDotCom}
             />
         </div>
     )

@@ -38,7 +38,6 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
 
@@ -54,7 +53,6 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
 
@@ -70,7 +68,6 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
 
@@ -86,7 +83,6 @@ add('FormTrigerArea', () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
             </>
