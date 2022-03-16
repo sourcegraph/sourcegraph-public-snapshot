@@ -38,10 +38,10 @@ func (s *insightsQueryRunnerJob) Config() []env.Config {
 
 func (s *insightsQueryRunnerJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
-		log15.Info("Code Insights Disabled.")
+		log15.Info("Code Insights Disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
-	log15.Info("Code Insights Enabled.")
+	log15.Info("Code Insights Enabled. Enabling query runner.")
 
 	mainAppDb, err := workerdb.Init()
 	if err != nil {
