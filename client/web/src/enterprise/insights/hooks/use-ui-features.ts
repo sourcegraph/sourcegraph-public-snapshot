@@ -1,7 +1,7 @@
 import { useContext, useMemo } from 'react'
 
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { InsightDashboard } from '../core/types'
+import { Insight, InsightDashboard, isSearchBasedInsight } from '../core/types'
 import { getTooltipMessage } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 interface DashboardMenuItem {
@@ -20,6 +20,11 @@ export interface UseUiFeatures {
             tooltip: string | undefined
         }
         menu: Record<DashboardMenuItemKey, DashboardMenuItem>
+        insights: {
+            menu: {
+                showYAxis: (insight: Insight) => boolean
+            }
+        }
     }
 }
 
@@ -53,6 +58,11 @@ export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFe
                     display: !licensed,
                     disabled: !permissions.isConfigurable,
                     tooltip: getTooltipMessage(currentDashboard, permissions),
+                },
+            },
+            insights: {
+                menu: {
+                    showYAxis: insight => isSearchBasedInsight(insight) && !insight.locked,
                 },
             },
         },
