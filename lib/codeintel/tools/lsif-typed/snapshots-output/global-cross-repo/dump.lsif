@@ -10,4 +10,16 @@
 {"id":10,"type":"edge","label":"moniker","inV":9,"outV":4}
 {"id":11,"type":"edge","label":"next","inV":4,"outV":3}
 {"id":12,"type":"edge","label":"item","inVs":[3],"outV":5,"document":2}
-{"id":13,"type":"edge","label":"contains","inVs":[3],"outV":2}
+{"id":13,"type":"vertex","label":"range","start":{"line":2,"character":10},"end":{"line":2,"character":57}}
+{"id":14,"type":"vertex","label":"resultSet"}
+{"id":15,"type":"vertex","label":"referenceResult"}
+{"id":16,"type":"vertex","label":"hoverResult","result":{"contents":{"kind":"markdown"}}}
+{"id":17,"type":"edge","label":"textDocument/references","inV":15,"outV":14}
+{"id":18,"type":"edge","label":"textDocument/hover","inV":16,"outV":14}
+{"id":19,"type":"vertex","label":"moniker","identifier":"reprolang repro_manager duplicates 1.0.0 duplicate.repro/readFileSync.","kind":"import","scheme":"reprolang"}
+{"id":20,"type":"edge","label":"moniker","inV":19,"outV":14}
+{"id":21,"name":"duplicates","version":"1.0.0","manager":"repro_manager","type":"vertex","label":"packageInformation"}
+{"id":22,"type":"edge","label":"packageInformation","inV":21,"outV":19}
+{"id":23,"type":"edge","label":"next","inV":14,"outV":13}
+{"id":24,"type":"edge","label":"item","inVs":[13],"outV":15,"document":2}
+{"id":25,"type":"edge","label":"contains","inVs":[3,13],"outV":2}

@@ -121,6 +121,9 @@ func (g *graph) emitPackage(pkg *lsiftyped.Package) int {
 // emitResultSet emits the associated resultSet, definitionResult, referenceResult, implementationResult and hoverResult
 // for the provided lsiftyped.SymbolInformation.
 func (g *graph) emitResultSet(info *lsiftyped.SymbolInformation, monikerKind string) symbolInformationIDs {
+	if ids, ok := g.symbolToResultSet[info.Symbol]; ok {
+		return ids
+	}
 	// NOTE: merge separate documentation sections with a horizontal Markdown rule. Indexers that emit LSIF graph
 	// directly need to emit this separator directly while with LSIF Typed we render the horizontal rule here.
 	hover := strings.Join(info.Documentation, "\n\n---\n\n")
@@ -195,9 +198,9 @@ func (g *graph) emitDocument(index *lsiftyped.Index, doc *lsiftyped.Document) {
 			if ok {
 				g.emitRelationships(rangeID, documentID, resultIDs, localSymbolInformationTable, symbolInfo)
 			}
-		} else { // reference
-			g.emitEdge("item", Edge{OutV: resultIDs.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 		}
+		// reference
+		g.emitEdge("item", Edge{OutV: resultIDs.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 	}
 	g.emitEdge("contains", Edge{OutV: documentID, InVs: rangeIDs})
 }
