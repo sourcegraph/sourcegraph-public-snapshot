@@ -24,19 +24,12 @@ import {
     LocationFields,
 } from '../graphql-operations'
 
-import { Location } from './ReferencesPanel'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
     LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
-
-interface CodeIntelData {
-    references: Location[]
-    implementations: Location[]
-    definitions: Location[]
-}
 
 export interface UsePreciseCodeIntelResult {
     lsifData?: PreciseCodeIntelForLocationFields
