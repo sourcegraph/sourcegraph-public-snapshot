@@ -246,7 +246,22 @@ update msg model =
                 ( { model | debounce = model.debounce - 1 }, Cmd.none )
 
         OnDataFilter dataFilterMsg ->
-            ( { model | dataFilter = updateDataFilter dataFilterMsg model.dataFilter }, Cmd.none )
+            let
+                newDataFilter =
+                    updateDataFilter dataFilterMsg model.dataFilter
+            in
+            ( { model | dataFilter = newDataFilter }
+            , emitInput
+                { computeQueries = [ model.query ]
+                , experimentalOptions =
+                    Just
+                        { dataPoints = Just newDataFilter.dataPoints
+                        , sortByCount = Just newDataFilter.sortByCount
+                        , reverse = Just newDataFilter.reverse
+                        , excludeStopWords = Just newDataFilter.excludeStopWords
+                        }
+                }
+            )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
