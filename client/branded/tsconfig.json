@@ -18,5 +18,6 @@
     { "path": "../storybook" },
     { "path": "../common" },
     { "path": "../codeintellify" },
+    { "path": "../client-api" },
   ],
 }

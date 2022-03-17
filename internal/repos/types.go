@@ -105,11 +105,12 @@ type ScopeCache interface {
 //
 // Currently only GitHub and GitLab external services with user or org namespace are supported,
 // other code hosts will simply return an empty slice
-func GrantedScopes(ctx context.Context, cache ScopeCache, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService) ([]string, error) {
+func GrantedScopes(ctx context.Context, cache ScopeCache, db database.DB, svc *types.ExternalService) ([]string, error) {
+	externalServicesStore := db.ExternalServices()
 	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
-	src, err := NewSource(externalServicesStore, svc, nil)
+	src, err := NewSource(db, svc, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating source")
 	}

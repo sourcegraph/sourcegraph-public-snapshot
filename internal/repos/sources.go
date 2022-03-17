@@ -23,9 +23,9 @@ type Sourcer func(*types.ExternalService) (Source, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(externalServicesStore database.ExternalServiceStore, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(externalServicesStore, svc, cf)
+		src, err := NewSource(db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -39,7 +39,9 @@ func NewSourcer(externalServicesStore database.ExternalServiceStore, cf *httpcli
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+	externalServicesStore := db.ExternalServices()
+
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
 		return NewGithubSource(externalServicesStore, svc, cf)
@@ -50,7 +52,7 @@ func NewSource(externalServicesStore database.ExternalServiceStore, svc *types.E
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(svc, cf)
+		return NewGitoliteSource(db, svc, cf)
 	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(svc, cf)
 	case extsvc.KindAWSCodeCommit:

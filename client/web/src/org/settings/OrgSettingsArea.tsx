@@ -18,6 +18,7 @@ import { SettingsRepositoriesPage } from '../../user/settings/repositories/Setti
 import { UserSettingsManageRepositoriesPage } from '../../user/settings/repositories/UserSettingsManageRepositoriesPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
 import { ORG_CODE_FEATURE_FLAG_NAME, GET_ORG_FEATURE_FLAG_VALUE } from '../backend'
+import { useEventBus } from '../emitter'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
 import { DeleteOrg } from './DeleteOrg'
@@ -45,6 +46,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
+    const emitter = useEventBus()
     // we can ignore the error states in this case
     // if there is an error, we will not show the code host connections and repository screens
     // same for until the feature flag value is loaded (which in practice should be fast)
@@ -58,6 +60,10 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
             skip: !props.authenticatedUser || !props.org.id,
         }
     )
+
+    const onOrgGetStartedRefresh = (): void => {
+        emitter.emit('refreshOrgHeader', 'refreshing due to changes on repo setup')
+    }
 
     if (!props.authenticatedUser) {
         return null
@@ -136,6 +142,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 type: 'org',
                                                 name: props.org.displayName || props.org.name,
                                             }}
+                                            onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                             context={window.context}
                                             routingPrefix={`${props.org.url}/settings`}
                                             telemetryService={props.telemetryService}
@@ -156,6 +163,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                                 type: 'org',
                                                 name: props.org.displayName || props.org.name,
                                             }}
+                                            onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                             routingPrefix={`${props.org.url}/settings`}
                                             onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                         />

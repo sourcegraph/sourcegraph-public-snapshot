@@ -6,7 +6,7 @@ import ElmComponent from 'react-elm-components'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { BlockProps, ComputeBlock } from '../..'
+import { BlockInput, BlockProps, ComputeBlock } from '../..'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 
@@ -24,10 +24,26 @@ interface ElmEvent {
     id?: string
 }
 
-function setupPorts(ports: {
+interface ExperimentalOptions {}
+
+interface ComputeInput {
+    computeQueries: string[]
+    experimentalOptions: ExperimentalOptions
+}
+
+interface Ports {
     receiveEvent: { send: (event: ElmEvent) => void }
     openStream: { subscribe: (callback: (args: string[]) => void) => void }
-}): void {
+    emitInput: { subscribe: (callback: (input: ComputeInput) => void) => void }
+}
+
+const updateBlockInput = (id: string, onBlockInputChange: (id: string, blockInput: BlockInput) => void) => (
+    blockInput: BlockInput
+): void => {
+    onBlockInputChange(id, blockInput)
+}
+
+const setupPorts = (updateBlockInputWithID: (blockInput: BlockInput) => void) => (ports: Ports): void => {
     const sources: { [key: string]: EventSource } = {}
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,6 +87,10 @@ function setupPorts(ports: {
             sendEventToElm({ type: 'done', data: '' })
         })
     })
+
+    ports.emitInput.subscribe((computeInput: ComputeInput) => {
+        updateBlockInputWithID({ type: 'compute', input: JSON.stringify(computeInput) })
+    })
 }
 
 export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = ({
@@ -81,34 +101,30 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
     isLightTheme,
     platformContext,
     isReadOnly,
+    onBlockInputChange,
     onRunBlock,
-    onSelectBlock,
     ...props
 }) => {
-    const isInputFocused = false
-    const commonMenuActions = useCommonBlockMenuActions({
-        isInputFocused,
-        isReadOnly,
-        ...props,
-    })
-
+    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
     return (
         <NotebookBlock
             className={styles.input}
             id={id}
-            isReadOnly={isReadOnly}
-            isInputFocused={isInputFocused}
             aria-label="Notebook compute block"
             onEnterBlock={noop}
             isSelected={isSelected}
-            onRunBlock={noop}
-            onSelectBlock={onSelectBlock}
             actions={isSelected ? commonMenuActions : []}
             {...props}
         >
             <div className="elm">
-                {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */}
-                <ElmComponent src={Elm.Main} ports={setupPorts} flags={platformContext.sourcegraphURL} />
+                <ElmComponent
+                    src={Elm.Main}
+                    ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
+                    flags={{
+                        sourcegraphURL: platformContext.sourcegraphURL,
+                        computeInput: input === '' ? null : (JSON.parse(input) as ComputeInput),
+                    }}
+                />
             </div>
         </NotebookBlock>
     )

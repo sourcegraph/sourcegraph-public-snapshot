@@ -13,7 +13,7 @@ import { NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { LATEST_VERSION } from '../../search/results/StreamingSearchResults'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
-import { fetchSuggestions } from '../blocks/suggestions'
+import { fetchSuggestions } from '../blocks/suggestions/suggestions'
 import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
 
 const DONE = 'DONE' as const

@@ -1540,6 +1540,16 @@ type Query {
         """
         query: String!
     ): [AutocompleteMemberSearchItem!]!
+
+    """
+    Get started organization summary
+    """
+    orgMembersSummary(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): OrgMembersSummary!
 }
 
 """
@@ -5192,6 +5202,24 @@ type AutocompleteMemberSearchItem {
     If the user belongs to current Organization.
     """
     inOrg: Boolean
+}
+
+"""
+Result organization members count and pending invitations count.
+"""
+type OrgMembersSummary {
+    """
+    The unique ID for the Org.
+    """
+    id: ID!
+    """
+    Total number of members for the org.
+    """
+    membersCount: Int!
+    """
+    Total number of pending invites for the org.
+    """
+    invitesCount: Int!
 }
 
 """

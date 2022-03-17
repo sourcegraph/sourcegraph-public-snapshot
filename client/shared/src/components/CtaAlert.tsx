@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import { Button, Card, Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CtaAlert.module.scss'
 
@@ -60,10 +60,11 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
                 </Button>
             ) : null}
         </div>
-        <CloseIcon
-            className="icon-inline position-absolute cursor-pointer"
+        <Icon
+            className="position-absolute cursor-pointer"
             style={{ top: '1rem', right: '1rem' }}
             onClick={props.onClose}
+            as={CloseIcon}
         />
     </Card>
 )

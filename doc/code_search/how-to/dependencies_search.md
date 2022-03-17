@@ -19,7 +19,7 @@ r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) Observable cannot be called a
 
 ### Compatibility
 
-The following table outlines the kinds of dependency repositories that dependency search supports how it finds those dependencies in your repositories.
+The following table outlines the kinds of dependency repositories that dependency search supports and how it finds those dependencies in your repositories.
 
 Kind | How | Supported
 ---- | ------ | ---------

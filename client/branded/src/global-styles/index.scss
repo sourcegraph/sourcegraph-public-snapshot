@@ -10,8 +10,6 @@ $popover-border-radius: var(--popover-border-radius);
 
 $box-shadow: var(--box-shadow);
 
-$grid-gutter-width: 1.5rem;
-
 // No max width except for xl.
 $container-max-widths: (
     xl: 1140px,
@@ -87,7 +85,6 @@ $enable-transitions: false;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
-@import 'bootstrap/scss/grid';
 
 // Modified in `./buttons.scss`
 @import 'bootstrap/scss/buttons';
@@ -112,6 +109,7 @@ $enable-transitions: false;
 @import './tabs';
 @import './progress';
 @import './collapse';
+@import './grid';
 
 * {
     box-sizing: border-box;

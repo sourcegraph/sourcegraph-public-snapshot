@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
+import { useEventBus } from '../emitter'
 
 import { OrgMembersListPage } from './OrgMembersListPage'
 import { OrgMembersSidebar } from './OrgMembersSidebar'
@@ -34,8 +35,13 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgMembersArea: React.FunctionComponent<Props> = props => {
+    const emitter = useEventBus()
     if (!props.authenticatedUser) {
         return null
+    }
+
+    const onOrgGetStartedRefresh = (): void => {
+        emitter.emit('refreshOrgHeader', 'refreshing due to changes on members section')
     }
     return (
         <div className="d-flex">
@@ -49,7 +55,12 @@ export const OrgMembersArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <OrgMembersListPage {...routeComponentProps} {...props} />
+                                    <OrgMembersListPage
+                                        key={props.org.name}
+                                        {...routeComponentProps}
+                                        {...props}
+                                        onOrgGetStartedRefresh={onOrgGetStartedRefresh}
+                                    />
                                 )}
                             />
                             <Route
@@ -57,7 +68,12 @@ export const OrgMembersArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <OrgPendingInvitesPage {...routeComponentProps} {...props} />
+                                    <OrgPendingInvitesPage
+                                        key={props.org.name}
+                                        {...routeComponentProps}
+                                        {...props}
+                                        onOrgGetStartedRefresh={onOrgGetStartedRefresh}
+                                    />
                                 )}
                             />
                             <Route component={NotFoundPage} />

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
 type indexingJob struct{}
@@ -62,6 +63,9 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		return nil, err
 	}
 
+	// Initialize metrics
+	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_index", nil)
+
 	repoUpdaterClient := InitRepoUpdaterClient()
 	extSvcStore := database.ExternalServices(db)
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
@@ -70,18 +74,6 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
 	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoUpdaterClient, indexingConfigInst.AutoIndexEnqueuerConfig, observationContext)
-
-	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_codeintel_dependency_index_total",
-		Help: "Total number of jobs in the queued state.",
-	}, func() float64 {
-		count, err := dependencySyncStore.QueuedCount(context.Background(), false, nil)
-		if err != nil {
-			log15.Error("Failed to get queued job count", "error", err)
-		}
-
-		return float64(count)
-	}))
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(dbStoreShim, policyMatcher, indexEnqueuer, indexingConfigInst.RepositoryProcessDelay, indexingConfigInst.RepositoryBatchSize, indexingConfigInst.PolicyBatchSize, indexingConfigInst.AutoIndexingTaskInterval, observationContext),

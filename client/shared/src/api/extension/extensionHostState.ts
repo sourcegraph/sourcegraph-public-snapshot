@@ -2,12 +2,12 @@ import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
+import { Contributions } from '@sourcegraph/client-api'
 import { Context } from '@sourcegraph/template-parser'
 
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'
 import { MainThreadAPI } from '../contract'
-import { Contributions } from '../protocol'
 import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
 import { ExecutableExtension, observeActiveExtensions } from './activation'

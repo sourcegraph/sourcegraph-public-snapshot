@@ -7,7 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 
@@ -49,7 +49,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                     {!updateCheck.errorMessage &&
                         (updateCheck.updateVersionAvailable ? (
                             <Alert className={styles.alert} variant="success">
-                                <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
+                                <Icon as={CloudDownloadIcon} /> Update available:{' '}
                                 <Link to="https://about.sourcegraph.com">{updateCheck.updateVersionAvailable}</Link>
                             </Alert>
                         ) : (
