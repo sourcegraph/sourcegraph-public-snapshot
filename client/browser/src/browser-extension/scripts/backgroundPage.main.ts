@@ -179,6 +179,11 @@ async function main(): Promise<void> {
         }
 
         if (tab.url && changeInfo.status === 'complete') {
+            browser.cookies
+                .get({ url: 'https://sourcegraph.com', name: 'sourcegraphSourceUrl' })
+                .then(value => console.log('cookies', value))
+                .catch(error => console.error('cookies error', error))
+
             checkUrlPermissions(tab.url)
                 .then(async hasPermissions => {
                     if (hasPermissions) {
