@@ -18,28 +18,28 @@ urlencode() {
   echo "$1" | curl -Gso /dev/null -w "%{url_effective}" --data-urlencode @- "" | cut -c 3- | sed -e 's/%0A//'
 }
 
-# branchName: BUILDKITE_BRANCH or current git branch
-branchName="${BUILDKITE_BRANCH}"
+# branch_name: BUILDKITE_BRANCH or current git branch
+branch_name="${BUILDKITE_BRANCH}"
 
-if [ -z "${branchName}" ]; then
-  branchName=$(git rev-parse --abbrev-ref HEAD)
+if [ -z "${branch_name}" ]; then
+  branch_name=$(git rev-parse --abbrev-ref HEAD)
 fi
 
-# repoUrl: BUILDKITE_PULL_REQUEST_REPO or current git remote `origin` url
+# repo_url: BUILDKITE_PULL_REQUEST_REPO or current git remote `origin` url
 # Should be in formats:
 # - https://github.com/sourcegraph/sourcegraph
 # - git://github.com/sourcegraph/sourcegraph.git
-repoUrl="${BUILDKITE_PULL_REQUEST_REPO}"
+repo_url="${BUILDKITE_PULL_REQUEST_REPO}"
 
-if [ -z "${repoUrl}" ]; then
-  repoUrl=$(git config --get remote.origin.url)
+if [ -z "${repo_url}" ]; then
+  repo_url=$(git config --get remote.origin.url)
 fi
 
 while getopts 'b:r:d' flag; do
   case "${flag}" in
-    d) isDeleting="true" ;;
-    b) branchName="${OPTARG}" ;;
-    r) repoUrl="${OPTARG}" ;;
+    d) is_deleting="true" ;;
+    b) branch_name="${OPTARG}" ;;
+    r) repo_url="${OPTARG}" ;;
     *)
       print_usage
       exit 1
@@ -47,35 +47,35 @@ while getopts 'b:r:d' flag; do
   esac
 done
 
-if [[ "$repoUrl" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
-  ownerAndRepo=$(echo "${BASH_REMATCH[2]}" | sed 's/\.git//')
+if [[ "$repo_url" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
+  owner_and_repo=$(echo "${BASH_REMATCH[2]}" | sed 's/\.git//')
 else
-  echo "Couldn't find ownerAndRepo"
+  echo "Couldn't find owner_and_repo"
   exit 1
 fi
 
-renderApiKey="${RENDER_COM_API_KEY}"
-renderOwnerId="${RENDER_COM_OWNER_ID}"
+render_api_key="${RENDER_COM_API_KEY}"
+render_owner_id="${RENDER_COM_OWNER_ID}"
+pr_number="${BUILDKITE_PULL_REQUEST}"
+github_token="${GITHUB_TOKEN}"
 
-if [[ -z "${renderApiKey}" || -z "${renderOwnerId}" ]]; then
+if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
   exit 1
 fi
 
-echo "repoUrl: ${repoUrl}"
-echo "branchName: ${branchName}"
-echo "ownerAndRepo: ${ownerAndRepo}"
+echo "repo_url: ${repo_url}"
+echo "branch_name: ${branch_name}"
+echo "owner_and_repo: ${owner_and_repo}"
 
-prPreviewAppName="sg-web-${branchName}"
-pullRequestNumber="${BUILDKITE_PULL_REQUEST}"
-githubToken="${GITHUB_TOKEN}"
+pr_preview_app_name="sg-web-${branch_name}"
 
 renderServiceId=$(curl -sS --request GET \
-  --url "https://api.render.com/v1/services?limit=1&type=web_service&name=$(urlencode "$prPreviewAppName")" \
+  --url "https://api.render.com/v1/services?limit=1&type=web_service&name=$(urlencode "$pr_preview_app_name")" \
   --header 'Accept: application/json' \
-  --header "Authorization: Bearer ${renderApiKey}" | jq -r '.[].service.id')
+  --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].service.id')
 
-if [ "${isDeleting}" = "true" ]; then
+if [ "${is_deleting}" = "true" ]; then
   if [ -z "${renderServiceId}" ]; then
     echo "Render app not found"
 
@@ -85,7 +85,7 @@ if [ "${isDeleting}" = "true" ]; then
   curl -sSf -o /dev/null --request DELETE \
     --url "https://api.render.com/v1/services/${renderServiceId}" \
     --header 'Accept: application/json' \
-    --header "Authorization: Bearer ${renderApiKey}"
+    --header "Authorization: Bearer ${render_api_key}"
 
   echo "Render app is deleted!"
 
@@ -93,11 +93,11 @@ if [ "${isDeleting}" = "true" ]; then
 fi
 
 if [ -z "${renderServiceId}" ]; then
-  prPreviewUrl=$(curl -sSf --request POST \
+  pr_preview_url=$(curl -sSf --request POST \
     --url https://api.render.com/v1/services \
     --header 'Accept: application/json' \
     --header 'Content-Type: application/json' \
-    --header "Authorization: Bearer ${renderApiKey}" \
+    --header "Authorization: Bearer ${render_api_key}" \
     --data "
     {
         \"autoDeploy\": \"yes\",
@@ -139,43 +139,43 @@ if [ -z "${renderServiceId}" ]; then
             \"env\": \"node\"
         },
         \"type\": \"web_service\",
-        \"name\": \"${prPreviewAppName}\",
-        \"ownerId\": \"${renderOwnerId}\",
-        \"repo\": \"${repoUrl}\",
-        \"branch\": \"${branchName}\"
+        \"name\": \"${pr_preview_app_name}\",
+        \"ownerId\": \"${render_owner_id}\",
+        \"repo\": \"${repo_url}\",
+        \"branch\": \"${branch_name}\"
     }
     " | jq -r '.service.serviceDetails.url')
 else
-  prPreviewUrl=$(curl -sSf --request GET \
+  pr_preview_url=$(curl -sSf --request GET \
     --url "https://api.render.com/v1/services/${renderServiceId}" \
     --header 'Accept: application/json' \
     --header 'Content-Type: application/json' \
-    --header "Authorization: Bearer ${renderApiKey}" | jq -r '.serviceDetails.url')
+    --header "Authorization: Bearer ${render_api_key}" | jq -r '.serviceDetails.url')
 fi
 
-echo "prPreviewUrl: ${prPreviewUrl}"
+echo "pr_preview_url: ${pr_preview_url}"
 
-if [[ -z "${pullRequestNumber}" || -z "${githubToken}" ]]; then
+if [[ -z "${pr_number}" || -z "${github_token}" ]]; then
   echo "Pull request number (BUILDKITE_PULL_REQUEST) or github token (GITHUB_TOKEN) is not set, abort updating PR description step"
 else
   echo "Update PR description with PR preview app url"
 
-  githubAPIUrl="https://api.github.com/repos/${ownerAndRepo}/pulls/${pullRequestNumber}"
+  github_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
 
-  prBody=$(curl -sSf --request GET \
-    --url "${githubAPIUrl}" \
-    --user "apikey:${githubToken}" \
+  pr_description=$(curl -sSf --request GET \
+    --url "${github_api_url}" \
+    --user "apikey:${github_token}" \
     --header 'Accept: application/vnd.github.v3+json' \
     --header 'Content-Type: application/json' | jq -r '.body')
 
-  if [[ "${prBody}" != *"## App preview"* ]]; then
-    prBody=$(echo -e "${prBody}\n## App preview:\n- [Link](${prPreviewUrl})\n" | jq -Rs .)
+  if [[ "${pr_description}" != *"## App preview"* ]]; then
+    pr_description=$(echo -e "${pr_description}\n## App preview:\n- [Link](${pr_preview_url})\n" | jq -Rs .)
 
     curl -sSf -o /dev/null --request PATCH \
-      --url "${githubAPIUrl}" \
-      --user "apikey:${githubToken}" \
+      --url "${github_api_url}" \
+      --user "apikey:${github_token}" \
       --header 'Accept: application/vnd.github.v3+json' \
       --header 'Content-Type: application/json' \
-      --data "{ \"body\": ${prBody} }"
+      --data "{ \"body\": ${pr_description} }"
   fi
 fi
