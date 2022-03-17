@@ -38,18 +38,16 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
+	t.Cleanup(git.ResetMocks)
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
 	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
-
 	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-		return "aaaa", errors.Errorf("merge base doesn't exist!")
+		return "", errors.Errorf("merge base doesn't exist!")
 	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(db, repo)
@@ -57,10 +55,9 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 	// There shouldn't be any error even when there is no merge base.
 	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
 	require.Nil(t, err)
-	// TODO: How to easily check that the base commit used for the comparison is the
-	// same the baseRevision specified earlier?
-	// using comp.base.resolveCommit(ctx) crashes "panic: unexpected state: no gitserver addresses"
-	_ = comp
+	require.Equal(t, wantBaseRevision, comp.baseRevspec)
+	require.Equal(t, wantHeadRevision, comp.headRevspec)
+	require.Equal(t, "..", comp.rangeType)
 }
 
 func TestRepositoryComparison(t *testing.T) {
