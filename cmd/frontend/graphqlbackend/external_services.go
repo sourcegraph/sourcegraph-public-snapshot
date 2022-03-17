@@ -217,7 +217,6 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 
 	// err is either nil or contains an actual error from the API call. And we return it
 	// nonetheless.
-	fmt.Println("error sync'ing external services")
 	return errors.Wrapf(err, "error in syncExternalService for service %q with ID %d", svc.Kind, svc.ID)
 }
 
@@ -342,7 +341,6 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	for _, externalService := range externalServices {
 		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
 	}
-
 	return resolvers, nil
 }
 

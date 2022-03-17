@@ -434,7 +434,6 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	var dest struct{}
 	respState, err := c.get(ctx, "/", &dest)
 
-	// if err != nil && (respState.statusCode < 200 || respState.statusCode >= 400) {
 	if err != nil {
 		return nil, err
 	}

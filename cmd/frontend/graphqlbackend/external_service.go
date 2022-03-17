@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -144,7 +143,6 @@ func (r *externalServiceResolver) Warning() *string {
 
 func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
 	latestError, err := r.db.ExternalServices().GetLastSyncError(ctx, r.externalService.ID)
-	fmt.Println("latest sync error", latestError)
 	if err != nil {
 		return nil, err
 	}
@@ -180,18 +178,11 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.
 		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
-		// here, sometimes, we got errors from one codehost but not from another
-		// in consequence, the code host that is returning an error will show up as green in the "code host connections page.
-		// but, if we return the error, both code host conections won't be diplayed...
-
 		return nil, nil
 	}
 	if scopes == nil {
-		fmt.Println("scopes are nil")
 		return nil, nil
 	}
-
-	fmt.Println("scopes...", scopes)
 	return &scopes, nil
 }
 
