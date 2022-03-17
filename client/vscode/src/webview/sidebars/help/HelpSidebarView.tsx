@@ -21,19 +21,20 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
 }) => {
     const [hasAccount, setHasAccount] = useState(false)
 
-    const onHelpItemClick = async (url: string): Promise<void> => {
-        platformContext.telemetryService.log('VSCESidebarCreateAccount')
+    const onHelpItemClick = async (url: string, item: string): Promise<void> => {
+        platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
         await extensionCoreAPI.openLink(url)
     }
 
     return (
-        // const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-
         <div className={classNames(styles.sidebarContainer)}>
             <button
                 type="button"
                 onClick={() =>
-                    onHelpItemClick('https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback')
+                    onHelpItemClick(
+                        'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback',
+                        'Feedback'
+                    )
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
@@ -44,7 +45,8 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 type="button"
                 onClick={() =>
                     onHelpItemClick(
-                        'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title='
+                        'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=',
+                        'Issues'
                     )
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
@@ -56,7 +58,8 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 type="button"
                 onClick={() =>
                     onHelpItemClick(
-                        'https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension'
+                        'https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension',
+                        'Troubleshoot'
                     )
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
@@ -68,7 +71,8 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 type="button"
                 onClick={() =>
                     onHelpItemClick(
-                        'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
+                        'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
+                        'Authenticate'
                     )
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
