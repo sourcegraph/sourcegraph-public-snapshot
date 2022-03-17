@@ -1,0 +1,49 @@
+.descriptor {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    grid-template-rows: min-content 1fr;
+    grid-template-areas:
+        'a b'
+        '. c';
+    padding: 1rem 0.5rem;
+}
+
+.status {
+    grid-area: a;
+    align-self: center;
+    justify-self: center;
+    display: flex;
+    margin: 0 0.5rem 0.5rem 0;
+}
+
+.name {
+    grid-area: b;
+    align-self: center;
+    margin: 0 0 0.5rem 0;
+
+    button {
+        text-align: left;
+        border: none;
+        display: flex;
+        padding: 0;
+        margin: 0;
+    }
+
+    h4 {
+        line-height: var(--icon-inline-md-size);
+        overflow-wrap: anywhere;
+        margin: 0;
+    }
+}
+
+.path-and-branch {
+    grid-area: c;
+}
+
+.path {
+    display: block;
+    overflow-wrap: anywhere;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
