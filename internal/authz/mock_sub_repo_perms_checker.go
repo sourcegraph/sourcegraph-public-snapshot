@@ -25,6 +25,9 @@ type MockSubRepoPermissionChecker struct {
 	// PermissionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Permissions.
 	PermissionsFunc *SubRepoPermissionCheckerPermissionsFunc
+	// RawPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method RawPermissions.
+	RawPermissionsFunc *SubRepoPermissionCheckerRawPermissionsFunc
 }
 
 // NewMockSubRepoPermissionChecker creates a new mock of the
@@ -50,6 +53,11 @@ func NewMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
 			defaultHook: func(context.Context, int32, RepoContent) (Perms, error) {
 				return 0, nil
+			},
+		},
+		RawPermissionsFunc: &SubRepoPermissionCheckerRawPermissionsFunc{
+			defaultHook: func(context.Context, int32, api.RepoName) (SubRepoPermissions, error) {
+				return SubRepoPermissions{}, nil
 			},
 		},
 	}
@@ -80,6 +88,11 @@ func NewStrictMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 				panic("unexpected invocation of MockSubRepoPermissionChecker.Permissions")
 			},
 		},
+		RawPermissionsFunc: &SubRepoPermissionCheckerRawPermissionsFunc{
+			defaultHook: func(context.Context, int32, api.RepoName) (SubRepoPermissions, error) {
+				panic("unexpected invocation of MockSubRepoPermissionChecker.RawPermissions")
+			},
+		},
 	}
 }
 
@@ -99,6 +112,9 @@ func NewMockSubRepoPermissionCheckerFrom(i SubRepoPermissionChecker) *MockSubRep
 		},
 		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
 			defaultHook: i.Permissions,
+		},
+		RawPermissionsFunc: &SubRepoPermissionCheckerRawPermissionsFunc{
+			defaultHook: i.RawPermissions,
 		},
 	}
 }
@@ -540,5 +556,120 @@ func (c SubRepoPermissionCheckerPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SubRepoPermissionCheckerPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SubRepoPermissionCheckerRawPermissionsFunc describes the behavior when
+// the RawPermissions method of the parent MockSubRepoPermissionChecker
+// instance is invoked.
+type SubRepoPermissionCheckerRawPermissionsFunc struct {
+	defaultHook func(context.Context, int32, api.RepoName) (SubRepoPermissions, error)
+	hooks       []func(context.Context, int32, api.RepoName) (SubRepoPermissions, error)
+	history     []SubRepoPermissionCheckerRawPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// RawPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSubRepoPermissionChecker) RawPermissions(v0 context.Context, v1 int32, v2 api.RepoName) (SubRepoPermissions, error) {
+	r0, r1 := m.RawPermissionsFunc.nextHook()(v0, v1, v2)
+	m.RawPermissionsFunc.appendCall(SubRepoPermissionCheckerRawPermissionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RawPermissions
+// method of the parent MockSubRepoPermissionChecker instance is invoked and
+// the hook queue is empty.
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoName) (SubRepoPermissions, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RawPermissions method of the parent MockSubRepoPermissionChecker instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) PushHook(hook func(context.Context, int32, api.RepoName) (SubRepoPermissions, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) SetDefaultReturn(r0 SubRepoPermissions, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoName) (SubRepoPermissions, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) PushReturn(r0 SubRepoPermissions, r1 error) {
+	f.PushHook(func(context.Context, int32, api.RepoName) (SubRepoPermissions, error) {
+		return r0, r1
+	})
+}
+
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) nextHook() func(context.Context, int32, api.RepoName) (SubRepoPermissions, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) appendCall(r0 SubRepoPermissionCheckerRawPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SubRepoPermissionCheckerRawPermissionsFuncCall objects describing the
+// invocations of this function.
+func (f *SubRepoPermissionCheckerRawPermissionsFunc) History() []SubRepoPermissionCheckerRawPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]SubRepoPermissionCheckerRawPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SubRepoPermissionCheckerRawPermissionsFuncCall is an object that
+// describes an invocation of method RawPermissions on an instance of
+// MockSubRepoPermissionChecker.
+type SubRepoPermissionCheckerRawPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 SubRepoPermissions
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SubRepoPermissionCheckerRawPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SubRepoPermissionCheckerRawPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

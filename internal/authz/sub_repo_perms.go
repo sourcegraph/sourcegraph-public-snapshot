@@ -37,6 +37,9 @@ type SubRepoPermissionChecker interface {
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 
+	// RawPermissions returns the SubRepoPermissions for the specified user
+	RawPermissions(ctx context.Context, userID int32, repo api.RepoName) (SubRepoPermissions, error)
+
 	// Enabled indicates whether sub-repo permissions are enabled.
 	Enabled() bool
 
@@ -57,6 +60,10 @@ type noopPermsChecker struct{}
 
 func (*noopPermsChecker) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	return None, nil
+}
+
+func (*noopPermsChecker) RawPermissions(ctx context.Context, userID int32, repo api.RepoName) (SubRepoPermissions, error) {
+	return SubRepoPermissions{}, nil
 }
 
 func (*noopPermsChecker) Enabled() bool {
@@ -168,6 +175,18 @@ var subRepoPermsCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "authz_sub_repo_perms_permissions_cache_count",
 	Help: "The number of sub-repo perms cache hits or misses",
 }, []string{"hit"})
+
+// RawPermissions returns the Sub-repo permissions for the user for the requested repo.
+func (s *SubRepoPermsClient) RawPermissions(ctx context.Context, userID int32, repo api.RepoName) (SubRepoPermissions, error) {
+	subrepoPermsMap, err := s.permissionsGetter.GetByUser(ctx, userID)
+	if err != nil {
+		return SubRepoPermissions{}, errors.Wrap(err, "fetching sub-repo permissions for user")
+	}
+	if perms, ok := subrepoPermsMap[repo]; ok {
+		return perms, nil
+	}
+	return SubRepoPermissions{}, nil
+}
 
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
@@ -328,6 +347,30 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 	perms, err := s.Permissions(ctx, a.UID, content)
 	if err != nil {
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
+	}
+	return perms, nil
+}
+
+// ActorRawPermissions returns the raw sub-repo permissions rules for the given actor
+//
+// If the context is unauthenticated, ErrUnauthenticated is returned. If the context is
+// internal, Read permissions is granted. TODO: what happens if context is internal?
+func ActorRawPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName) (SubRepoPermissions, error) {
+	// Check config here, despite checking again in the s.Permissions implementation,
+	// because we also make some permissions decisions here.
+	if !SubRepoEnabled(s) {
+		return SubRepoPermissions{}, nil
+	}
+	if a.IsInternal() {
+		return SubRepoPermissions{}, nil
+	}
+	if !a.IsAuthenticated() {
+		return SubRepoPermissions{}, &ErrUnauthenticated{}
+	}
+
+	perms, err := s.RawPermissions(ctx, a.UID, repo)
+	if err != nil {
+		return SubRepoPermissions{}, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
 }
