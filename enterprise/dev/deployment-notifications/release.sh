@@ -11,6 +11,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
+cd enterprise/dev/deployment-notifications/
 GOOS=linux GOARCH=amd64 go build -o "$OUTPUT/$NAME"
 gzip "$OUTPUT/$NAME"
 
