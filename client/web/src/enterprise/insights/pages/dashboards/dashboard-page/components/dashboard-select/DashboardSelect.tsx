@@ -1,13 +1,6 @@
 import React, { useContext } from 'react'
 
-import {
-    ListboxGroup,
-    ListboxGroupLabel,
-    ListboxInput,
-    ListboxList,
-    ListboxOption,
-    ListboxPopover,
-} from '@reach/listbox'
+import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
@@ -133,15 +126,12 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                         {!licensed && (
                             <ListboxGroup>
-                                <ListboxOption
-                                    className={classNames(styles.option, styles.limitedAccessWrapper)}
-                                    value="na"
-                                >
-                                    <div className={classNames(styles.limitedAccess)}>
-                                        <h3>Limited access</h3>
-                                        <p>Unlock for unlimited dashboards custom dashboards.</p>
-                                    </div>
-                                </ListboxOption>
+                                <hr />
+
+                                <div className={classNames(styles.limitedAccess)}>
+                                    <h3>Limited access</h3>
+                                    <p>Unlock for unlimited dashboards custom dashboards.</p>
+                                </div>
                             </ListboxGroup>
                         )}
                     </ListboxList>

@@ -41,6 +41,7 @@
 .limited-access {
     background: linear-gradient(90.64deg, rgba(228, 211, 252, 0.25) 3.11%, rgba(215, 240, 253, 0.25) 83.64%);
     padding: 0.5rem;
+    margin: 0.5rem 0.75rem;
     border-radius: 0.25rem;
 
     h3 {
@@ -58,6 +59,8 @@
 }
 
 .limited-access-wrapper {
+    // Override disabled visual state
+    opacity: 1 !important;
     margin-bottom: 0;
     padding-top: 0.5rem;
     border-top: 1px solid var(--border-color);
