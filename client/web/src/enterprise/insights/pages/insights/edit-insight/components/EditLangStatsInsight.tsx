@@ -21,7 +21,6 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
             repository: insight.repository,
             threshold: insight.otherThreshold * 100,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-            isFrozen: insight.isFrozen,
         }),
         [insight]
     )

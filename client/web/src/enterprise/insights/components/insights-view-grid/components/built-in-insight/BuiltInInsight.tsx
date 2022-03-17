@@ -1,4 +1,5 @@
-import React, { ReactElement, Ref, useContext, useMemo, useRef, useState } from 'react'
+import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
+
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -24,7 +25,6 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
     context: ViewContexts[D]
     innerRef: Ref<HTMLElement>
     resizing: boolean
-    alternate?: ReactElement
 }
 
 /**
@@ -36,7 +36,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
  * main work thread instead of using Extension API.
  */
 export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
-    const { insight, resizing, telemetryService, where, context, innerRef, alternate, ...otherProps } = props
+    const { insight, resizing, telemetryService, where, context, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { dashboard } = useContext(DashboardInsightsContext)
 
@@ -98,11 +98,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <View.Content
-                            content={data.view.content}
-                            onDatumLinkClick={trackDatumClicks}
-                            alternate={alternate}
-                        />
+                        <View.Content content={data.view.content} onDatumLinkClick={trackDatumClicks} />
                     </LineChartSettingsContext.Provider>
                 )
             )}

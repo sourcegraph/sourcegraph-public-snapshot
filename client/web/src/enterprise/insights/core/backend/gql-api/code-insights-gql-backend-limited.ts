@@ -22,8 +22,8 @@ export class CodeInsightsGqlBackendLimited extends CodeInsightsGqlBackend {
             )
     }
 
-    public getUiFeatures = (): UiFeaturesConfig => ({
+    public readonly UIFeatures: UiFeaturesConfig = {
         licensed: false,
         insightsLimit: 2,
-    })
+    }
 }

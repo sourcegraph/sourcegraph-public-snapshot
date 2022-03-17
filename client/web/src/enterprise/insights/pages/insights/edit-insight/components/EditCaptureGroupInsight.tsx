@@ -25,7 +25,6 @@ export const EditCaptureGroupInsight: React.FunctionComponent<EditCaptureGroupIn
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: insight.repositories.length === 0,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-            isFrozen: insight.isFrozen,
         }),
         [insight]
     )

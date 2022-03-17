@@ -43,7 +43,6 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             step: { [rawInsight.step]: +rawInsight.stepValue },
             dashboardReferenceCount: rawInsight.dashboardReferenceCount,
             repositories: rawInsight.repositories,
-            isFrozen: rawInsight.isFrozen,
         }
     }
 
@@ -58,6 +57,5 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         series: getSanitizedSeries(rawInsight.series),
         step: { [rawInsight.step]: +rawInsight.stepValue },
         dashboardReferenceCount: rawInsight.dashboardReferenceCount,
-        isFrozen: rawInsight.isFrozen,
     }
 }

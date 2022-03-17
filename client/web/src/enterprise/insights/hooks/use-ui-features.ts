@@ -42,8 +42,8 @@ export interface UseUiFeatures {
 }
 
 export function useUiFeatures(): UseUiFeatures {
-    const { getUiFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
-    const { licensed, insightsLimit } = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const { UIFeatures, hasInsights } = useContext(CodeInsightsBackendContext)
+    const { licensed, insightsLimit } = UIFeatures
 
     return useMemo(
         () => ({
@@ -51,22 +51,28 @@ export function useUiFeatures(): UseUiFeatures {
             dashboard: {
                 createPermissions: { submit: { disabled: !licensed } },
                 getAddRemoveInsightsPermission: (dashboard?: InsightDashboard) => {
-                    const permissions = getDashboardPermissions(dashboard, true)
+                    const permissions = getDashboardPermissions(dashboard)
+
+                    if (!licensed) {
+                        return {
+                            disabled: true,
+                            tooltip: 'Limited access: upgrade your license to add insights to dashboards',
+                        }
+                    }
 
                     return {
                         disabled: !permissions.isConfigurable,
-                        tooltip: getTooltipMessage(dashboard, permissions),
+                        tooltip: getTooltipMessage(permissions),
                     }
                 },
-                // Available menu items
                 getContextActionsPermissions: (dashboard?: InsightDashboard) => {
-                    const permissions = getDashboardPermissions(dashboard, true)
+                    const permissions = getDashboardPermissions(dashboard)
 
                     return {
                         configure: {
                             display: licensed,
                             disabled: !permissions.isConfigurable,
-                            tooltip: getTooltipMessage(dashboard, permissions),
+                            tooltip: getTooltipMessage(permissions),
                         },
                         copy: {
                             display: licensed,
@@ -75,7 +81,7 @@ export function useUiFeatures(): UseUiFeatures {
                         delete: {
                             display: true,
                             disabled: !permissions.isConfigurable,
-                            tooltip: getTooltipMessage(dashboard, permissions),
+                            tooltip: getTooltipMessage(permissions),
                         },
                     }
                 },

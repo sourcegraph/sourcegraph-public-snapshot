@@ -11,11 +11,11 @@ interface CodeInsightsPageProps extends React.HTMLAttributes<HTMLDivElement> {}
  * and demo mode banner in order to render it across all pages.
  */
 export const CodeInsightsPage: React.FunctionComponent<CodeInsightsPageProps> = props => {
-    const features = useUiFeatures({ currentDashboard: undefined })
+    const { licensed } = useUiFeatures()
 
     return (
         <Page {...props}>
-            {!features.licensed && <CodeInsightsLimitAccessBanner className="mb-4" />}
+            {!licensed && <CodeInsightsLimitAccessBanner className="mb-4" />}
             {props.children}
         </Page>
     )

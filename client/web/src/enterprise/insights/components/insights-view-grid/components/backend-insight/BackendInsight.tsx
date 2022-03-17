@@ -1,4 +1,4 @@
-import React, { ReactElement, Ref, useCallback, useContext, useRef, useState } from 'react'
+import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { camelCase } from 'lodash'
@@ -37,14 +37,13 @@ interface BackendInsightProps
 
     innerRef: Ref<HTMLElement>
     resizing?: boolean
-    alternate?: ReactElement
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, innerRef, resizing, alternate, ...otherProps } = props
+    const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
@@ -203,7 +202,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                                 />
                             }
                             onDatumLinkClick={trackDatumClicks}
-                            alternate={alternate}
                         />
                     </LineChartSettingsContext.Provider>
                 )

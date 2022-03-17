@@ -1,6 +1,7 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useCallback } from 'react'
 
 import { styles } from '../../../../../components/creation-ui-kit'
 import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
@@ -26,7 +27,6 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     stepValue: '2',
     allRepos: false,
     dashboardReferenceCount: 0,
-    isFrozen: false,
 }
 
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')

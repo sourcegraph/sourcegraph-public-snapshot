@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo } from 'react'
+import React, { useContext, useEffect } from 'react'
 
 import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
@@ -53,8 +53,9 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         }) ?? {}
 
     const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
@@ -76,7 +77,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
 
     return (
         <CodeInsightsPage>
-            {!features.licensed && (
+            {!licensed && (
                 <Badge variant="info" className="mb-2">
                     Free trial
                 </Badge>

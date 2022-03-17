@@ -7,7 +7,6 @@ interface InsightOptions {
 export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOptions): InsightViewNode => ({
     __typename: 'InsightView',
     id: '001',
-    isFrozen: false,
     dashboardReferenceCount: 0,
     appliedFilters: {
         __typename: 'InsightViewFilters',
@@ -71,7 +70,6 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
 export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '002',
-    isFrozen: false,
     dashboardReferenceCount: 0,
     appliedFilters: {
         __typename: 'InsightViewFilters',
@@ -113,7 +111,6 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
 export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
     __typename: 'InsightView',
     id: '003',
-    isFrozen: false,
     dashboardReferenceCount: 0,
     appliedFilters: {
         __typename: 'InsightViewFilters',

@@ -447,7 +447,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(
             // Next query is needed to update local apollo cache and re-trigger getInsights query.
             // Usually Apollo does that under the hood by itself based on response from a mutation
-            // but in this case since we don't have one single query to assign/unassign insights
+            // but in this case since we don't have one single query to assign/unassigned insights
             // from dashboard we have to call query manually.
             switchMap(() =>
                 this.apolloClient.query<GetDashboardInsightsResult>({
@@ -478,10 +478,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    public getUiFeatures = (): UiFeaturesConfig => ({
+    public readonly UIFeatures: UiFeaturesConfig = {
         licensed: true,
         insightsLimit: null,
-    })
+    }
 }
 
 const getRepositoryName = (

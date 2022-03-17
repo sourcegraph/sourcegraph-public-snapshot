@@ -9,7 +9,6 @@ import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core/types'
 import { getTrackingTypeByInsightType } from '../../pings'
 
-import { LockedBanner } from './components/locked-banner/LockedBanner'
 import { SmartInsight } from './components/smart-insight/SmartInsight'
 import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
@@ -91,7 +90,6 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     // only for the dashboard (insights) page
                     where="insightsPage"
                     context={INSIGHT_PAGE_CONTEXT}
-                    alternate={insight.isFrozen ? <LockedBanner /> : undefined}
                 />
             ))}
         </ViewGrid>

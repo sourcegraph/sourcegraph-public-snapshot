@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import React, { useContext } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Link } from '@sourcegraph/wildcard'
@@ -11,10 +11,11 @@ import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaAccepted', false)
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
-    const showConfirmationModal = !features.licensed && isGaAccepted === false
+    const showConfirmationModal = !licensed && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null

@@ -1,3 +1,5 @@
+import React, { useContext } from 'react'
+
 import {
     ListboxGroup,
     ListboxGroupLabel,
@@ -8,7 +10,6 @@ import {
 } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import React, { useContext, useMemo } from 'react'
 
 import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
 
@@ -26,6 +27,7 @@ import {
 
 import { MenuButton } from './components/menu-button/MenuButton'
 import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
+
 import styles from './DashboardSelect.module.scss'
 
 const LABEL_ID = 'insights-dashboards--select'
@@ -44,11 +46,9 @@ export interface DashboardSelectProps {
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { value, dashboards, onSelect, className, user } = props
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
-
-    const licensed = features.licensed
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     if (!user) {
         return null

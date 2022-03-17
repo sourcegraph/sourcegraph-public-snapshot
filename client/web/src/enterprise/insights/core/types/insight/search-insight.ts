@@ -33,7 +33,6 @@ export type SearchBasedInsight = SearchExtensionBasedInsight | SearchBackendBase
 export interface SearchExtensionBasedInsight extends SearchBasedExtensionInsightSettings, SyntheticInsightFields {
     type: InsightExecutionType.Runtime
     viewType: InsightType.SearchBased
-    isFrozen: boolean
 }
 
 export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSettings, SyntheticInsightFields {
@@ -41,7 +40,6 @@ export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSett
     viewType: InsightType.SearchBased
     series: SearchBasedInsightSeries[]
     step: Duration
-    isFrozen: boolean
 }
 
 /**

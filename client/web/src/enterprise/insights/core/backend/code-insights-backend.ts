@@ -155,5 +155,5 @@ export interface CodeInsightsBackend {
     /**
      * Returns a features object used to show/hide and enable/disable UI elements
      */
-    getUiFeatures: () => UiFeaturesConfig
+    readonly UIFeatures: UiFeaturesConfig
 }

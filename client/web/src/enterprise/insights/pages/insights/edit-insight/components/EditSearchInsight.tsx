@@ -27,7 +27,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
                 step: Object.keys(insight.step)[0] as InsightStep,
                 allRepos: true,
                 dashboardReferenceCount: insight.dashboardReferenceCount,
-                isFrozen: insight.isFrozen,
             }
         }
 
@@ -39,7 +38,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: false,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-            isFrozen: insight.isFrozen,
         }
     }, [insight])
 
