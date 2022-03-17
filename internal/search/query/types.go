@@ -212,6 +212,20 @@ func (b Basic) Index() YesNoOnly {
 	return *v
 }
 
+// PatternString returns the simple string pattern of a basic query. It assumes
+// there is only on pattern atom.
+func (b Basic) PatternString() string {
+	if p, ok := b.Pattern.(Pattern); ok {
+		if b.IsLiteral() {
+			// Escape regexp meta characters if this pattern should be treated literally.
+			return regexp.QuoteMeta(p.Value)
+		} else {
+			return p.Value
+		}
+	}
+	return ""
+}
+
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
 type Q []Node
 
