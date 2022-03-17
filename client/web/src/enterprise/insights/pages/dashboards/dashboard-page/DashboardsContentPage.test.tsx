@@ -6,9 +6,9 @@ import { waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/out/src/testing'
-import { MockedTestProvider } from '@sourcegraph/shared/out/src/testing/apollo'
-import { MockIntersectionObserver } from '@sourcegraph/shared/out/src/testing/MockIntersectionObserver'
+import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { InsightsDashboardsResult } from '../../../../../graphql-operations'
