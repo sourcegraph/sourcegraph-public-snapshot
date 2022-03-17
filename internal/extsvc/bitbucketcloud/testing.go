@@ -14,7 +14,7 @@ import (
 func GetenvTestBitbucketCloudUsername() string {
 	username := os.Getenv("BITBUCKET_CLOUD_USERNAME")
 	if username == "" {
-		username = "unknwon"
+		username = "sourcegraph-testing"
 	}
 	return username
 }
