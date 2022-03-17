@@ -9,7 +9,7 @@ import { showGetStartPage } from '../openBeta/GettingStarted'
 import { OrgAreaHeaderNavItem, OrgSummary } from './OrgHeader'
 
 const calculateLeftGetStartedSteps = (info: OrgSummary | undefined): number => {
-    if(!info) {
+    if (!info) {
         return 4
     }
 
@@ -34,7 +34,8 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         dynamicLabel: ({ getStartedInfo: info }) => `Get started ${calculateLeftGetStartedSteps(info)}`,
         icon: PlayCircleOutlineIcon,
         isActive: (_match, location) => location.pathname.includes('getstarted'),
-        condition: ({ getStartedInfo, org, featureFlags }) =>  showGetStartPage(getStartedInfo, org.name, !!featureFlags.get('open-beta-enabled')),
+        condition: ({ getStartedInfo, org, featureFlags }) =>
+            showGetStartPage(getStartedInfo, org.name, !!featureFlags.get('open-beta-enabled')),
     },
     {
         to: '/settings/members',
