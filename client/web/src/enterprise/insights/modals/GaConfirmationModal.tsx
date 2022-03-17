@@ -59,9 +59,7 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
 
             <div className={styles.textContent}>
                 <p>
-                    <b>Your instance is now using the limited access version of Code Insights.</b> This version is
-                    limited to 2 global code insights. All of the insights your team created during the trial are
-                    preserved.
+                    <b>Your instance is now using the limited access version of Code Insights.</b>
                 </p>
 
                 <p>
