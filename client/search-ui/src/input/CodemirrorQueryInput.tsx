@@ -77,7 +77,7 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     const editorReference = useRef<EditorView>()
 
     const editorCreated = useCallback(
-        editor => {
+        (editor: EditorView) => {
             setEditor(editor)
             editorReference.current = editor
             onEditorCreated?.(editor)
@@ -131,18 +131,7 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
             extensions.push(placeholderExtension(placeholder))
         }
         return extensions
-    }, [
-        autocompletion,
-        globbing,
-        isLightTheme,
-        isSourcegraphDotCom,
-        onBlur,
-        onChange,
-        onHandleFuzzyFinder,
-        onSubmit,
-        placeholder,
-        preventNewLine,
-    ])
+    }, [autocompletion, onBlur, onChange, onHandleFuzzyFinder, onSubmit, placeholder, preventNewLine])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {

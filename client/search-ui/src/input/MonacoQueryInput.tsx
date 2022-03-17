@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
-
 import classNames from 'classnames'
 import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { observeResize, hasProperty } from '@sourcegraph/common'
 import {

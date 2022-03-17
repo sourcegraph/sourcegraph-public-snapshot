@@ -1,6 +1,5 @@
-import React, { useCallback, useState } from 'react'
-
 import classNames from 'classnames'
+import React, { useCallback, useState } from 'react'
 
 import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -10,12 +9,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { LazyMonacoQueryInput, LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
-
+import styles from './SearchBox.module.scss'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles'
-
-import styles from './SearchBox.module.scss'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
