@@ -56,7 +56,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
     const {
         dashboard: { getAddRemoveInsightsPermission },
     } = useUiFeatures()
-    const addRemoveInsightPermissions = getAddRemoveInsightsPermission()
+    const addRemoveInsightPermissions = getAddRemoveInsightsPermission(dashboard)
 
     return (
         <section className={styles.emptySection}>
