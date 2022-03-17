@@ -53,7 +53,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		return nil, err
 	}
 	types, _ := q.StringValues(query.FieldType)
-	resultTypes := search.ComputeResultTypes(types, search.ToPatternString(b), jargs.SearchInputs.PatternType)
+	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
 
 	args := toTextParameters(jargs, b, q, resultTypes)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
