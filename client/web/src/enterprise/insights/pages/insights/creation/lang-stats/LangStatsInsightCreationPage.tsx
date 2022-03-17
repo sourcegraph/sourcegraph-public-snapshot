@@ -4,9 +4,10 @@ import classNames from 'classnames'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Link } from '@sourcegraph/wildcard'
+import { useLocalStorage, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
@@ -99,16 +100,18 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
         <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
-            <div className="mb-5">
-                <h2>Set up new language usage insight</h2>
-
-                <p className="text-muted">
-                    Shows language usage in your repository based on number of lines of code.{' '}
-                    <Link to="/help/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </Link>
-                </p>
-            </div>
+            <PageHeader
+                className="mb-3"
+                path={[{ icon: CodeInsightsIcon }, { text: 'Set up new language usage insight' }]}
+                description={
+                    <p className="text-muted">
+                        Shows language usage in your repository based on number of lines of code.{' '}
+                        <Link to="/help/code_insights" target="_blank" rel="noopener">
+                            Learn more.
+                        </Link>
+                    </p>
+                }
+            />
 
             <LangStatsInsightCreationContent
                 className="pb-5"

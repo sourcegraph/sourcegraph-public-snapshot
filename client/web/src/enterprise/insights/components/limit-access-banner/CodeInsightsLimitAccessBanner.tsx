@@ -11,20 +11,14 @@ interface CodeInsightsLimitAccessBannerProps extends React.HTMLAttributes<HTMLDi
 export const CodeInsightsLimitAccessBanner: React.FunctionComponent<CodeInsightsLimitAccessBannerProps> = props => (
     <div {...props} className={classNames(styles.banner, props.className)}>
         <div className={styles.content}>
-            <Badge variant="merged" className="mb-2">
-                LIMITED ACCESS
-            </Badge>
+            <Badge className={classNames('mb-2', styles.badge)}>LIMITED ACCESS</Badge>
             <p className="m-0">
                 Contact your admin or{' '}
-                <Link
-                    to="https://about.sourcegraph.com/contact/request-code-insights-demo?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
-                    target="_blank"
-                    rel="noopener"
-                >
+                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
                     reach out to us
                 </Link>{' '}
                 to upgrade your Sourcegraph license to unlock Code Insights for unlimited insights and dashboards.{' '}
-                <Link to="/help/code_insights" rel="noopener noreferrer" target="_blank">
+                <Link to="/help/code_insights/references/license" rel="noopener noreferrer" target="_blank">
                     Learn more
                 </Link>
             </p>

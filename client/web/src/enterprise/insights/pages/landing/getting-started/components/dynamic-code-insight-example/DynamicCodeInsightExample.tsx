@@ -51,8 +51,10 @@ interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttri
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
     const { telemetryService, ...otherProps } = props
 
-    const { getFirstExampleRepository, getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const {
+        getFirstExampleRepository,
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -184,7 +186,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                 </ul>
 
                 <footer className={styles.footer}>
-                    {features?.licensed ? (
+                    {licensed ? (
                         <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
                             <Icon as={PlusIcon} /> Create your first insight
                         </Button>
@@ -201,7 +203,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                         </Button>
                     )}
 
-                    {!features?.licensed && (
+                    {!licensed && (
                         <Button as={Link} variant="secondary" to="/insights/about#code-insights-templates">
                             Explore use cases
                         </Button>

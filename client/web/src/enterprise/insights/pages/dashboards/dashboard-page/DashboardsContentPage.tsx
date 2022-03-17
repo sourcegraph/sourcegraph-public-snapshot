@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
@@ -23,11 +25,22 @@ export const DashboardsContentPage: React.FunctionComponent<DashboardsContentPag
     const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
+    const { getDashboards } = useContext(CodeInsightsBackendContext)
+    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fall back on
         // built-in "All insights" dashboard
         return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
     }
 
-    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
+    if (dashboards === undefined) {
+        return (
+            <div data-testid="loading-spinner">
+                <LoadingSpinner inline={false} />
+            </div>
+        )
+    }
+
+    return <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
 }

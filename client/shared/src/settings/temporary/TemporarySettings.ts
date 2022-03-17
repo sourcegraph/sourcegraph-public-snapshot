@@ -12,6 +12,7 @@ export interface TemporarySettingsSchema {
     'search.onboarding.tourCancelled': boolean
     'search.contexts.ctaDismissed': boolean
     'insights.freeGaAccepted': boolean
+    'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean

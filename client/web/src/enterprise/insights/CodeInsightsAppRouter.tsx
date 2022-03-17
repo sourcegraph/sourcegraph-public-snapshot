@@ -115,7 +115,7 @@ const CodeInsightsRedirect: React.FunctionComponent = () => {
     const { hasInsights } = useContext(CodeInsightsBackendContext)
 
     const match = useRouteMatch()
-    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(), [hasInsights]))
+    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(1), [hasInsights]))
 
     if (isThereAvailableInsights === undefined) {
         return <LoadingSpinner />

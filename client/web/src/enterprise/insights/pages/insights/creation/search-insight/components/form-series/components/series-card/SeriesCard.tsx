@@ -9,6 +9,8 @@ import { DEFAULT_DATA_SERIES_COLOR } from '../../../../constants'
 import styles from './SeriesCard.module.scss'
 
 interface SeriesCardProps {
+    disabled: boolean
+
     /** Name of series. */
     name: string
     /** Query value of series. */
@@ -27,19 +29,24 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 export function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, stroke: color = DEFAULT_DATA_SERIES_COLOR, className, onEdit, onRemove } = props
+    const { disabled, name, query, stroke: color = DEFAULT_DATA_SERIES_COLOR, className, onEdit, onRemove } = props
 
     return (
         <Card
             as="li"
             data-testid="series-card"
             aria-label={`${name} data series`}
-            className={classNames(styles.card, className, 'd-flex flex-row p-3')}
+            aria-disabled={disabled}
+            className={classNames(styles.card, className, { [styles.cardDisabled]: disabled })}
         >
             <div className={styles.cardInfo}>
                 <div className={classNames('mb-1 ', styles.cardTitle)}>
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <div data-testid="series-color-mark" style={{ color }} className={styles.cardColorMark} />
+                    <div
+                        data-testid="series-color-mark"
+                        /* eslint-disable-next-line react/forbid-dom-props */
+                        style={{ color: disabled ? 'var(--icon-muted)' : color }}
+                        className={styles.cardColorMark}
+                    />
                     <span
                         data-testid="series-name"
                         title={name}
@@ -61,6 +68,7 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                     onClick={onEdit}
                     variant="primary"
                     outline={true}
+                    disabled={disabled}
                     className="border-0"
                 >
                     Edit

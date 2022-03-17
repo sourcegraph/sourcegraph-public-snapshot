@@ -1,7 +1,7 @@
-import React, { useContext, useMemo } from 'react'
+import React from 'react'
 
 import { Page } from '../../../../components/Page'
-import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
+import { useUiFeatures } from '../../hooks/use-ui-features'
 import { CodeInsightsLimitAccessBanner } from '../limit-access-banner/CodeInsightsLimitAccessBanner'
 
 interface CodeInsightsPageProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -11,8 +11,7 @@ interface CodeInsightsPageProps extends React.HTMLAttributes<HTMLDivElement> {}
  * and demo mode banner in order to render it across all pages.
  */
 export const CodeInsightsPage: React.FunctionComponent<CodeInsightsPageProps> = props => {
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const { licensed } = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const { licensed } = useUiFeatures()
 
     return (
         <Page {...props}>

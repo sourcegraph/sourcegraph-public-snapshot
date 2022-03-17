@@ -26,8 +26,9 @@ import {
     RepositorySuggestionData,
 } from './code-insights-backend-types'
 
-export interface UiFeatures {
+export interface UiFeaturesConfig {
     licensed: boolean
+    insightsLimit: number | null
 }
 
 /**
@@ -86,7 +87,7 @@ export interface CodeInsightsBackend {
 
     findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
 
-    hasInsights: () => Observable<boolean>
+    hasInsights: (insightsCount: number) => Observable<boolean>
 
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
@@ -154,5 +155,5 @@ export interface CodeInsightsBackend {
     /**
      * Returns a features object used to show/hide and enable/disable UI elements
      */
-    getUiFeatures: () => UiFeatures
+    readonly UIFeatures: UiFeaturesConfig
 }

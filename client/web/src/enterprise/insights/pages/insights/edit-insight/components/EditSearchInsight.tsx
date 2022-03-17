@@ -60,9 +60,9 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     return (
         <SearchInsightCreationContent
             mode="edit"
-            className="pb-5"
             initialValue={insightFormValues}
             dataTestId="search-insight-edit-page-content"
+            className="pb-5"
             onSubmit={handleSubmit}
             onCancel={onCancel}
         />

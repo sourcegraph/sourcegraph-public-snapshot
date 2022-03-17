@@ -7,9 +7,6 @@ import { CodeInsightsBackend } from './code-insights-backend'
 import { RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
-const errorMockSyncMethod = (methodName: string) => () => {
-    throw new Error(`Implement ${methodName} method first`)
-}
 
 /**
  * Default context api class. Provides mock methods only.
@@ -58,7 +55,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
 
     // License check
-    public getUiFeatures = errorMockSyncMethod('getUiFeatures')
+    public UIFeatures = { licensed: false, insightsLimit: null }
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())
