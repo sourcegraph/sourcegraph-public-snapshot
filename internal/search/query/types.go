@@ -226,6 +226,19 @@ func (b Basic) PatternString() string {
 	return ""
 }
 
+// IncludeExcludeValues partitions multiple values of a field into positive
+// (include) and negated (exclude) values.
+func (b Basic) IncludeExcludeValues(field string) (include, exclude []string) {
+	b.VisitParameter(field, func(v string, negated bool, _ Annotation) {
+		if negated {
+			exclude = append(exclude, v)
+		} else {
+			include = append(include, v)
+		}
+	})
+	return include, exclude
+}
+
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
 type Q []Node
 
