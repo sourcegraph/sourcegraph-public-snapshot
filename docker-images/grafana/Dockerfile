@@ -1,7 +1,7 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.12:137065_2022-03-15_8d18149c8604@sha256:1ed854101d8f0e966ab6dc0ffc0433db39bd44bc4867fb94c4ba90cb78b6219c AS monitoring_builder
+FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353 AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator

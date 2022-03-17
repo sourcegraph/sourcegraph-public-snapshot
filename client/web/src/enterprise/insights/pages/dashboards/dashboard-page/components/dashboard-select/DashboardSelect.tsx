@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useContext } from 'react'
 
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -6,6 +6,7 @@ import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
 
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     InsightDashboard,
     InsightDashboardOwner,
@@ -38,6 +39,9 @@ export interface DashboardSelectProps {
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { value, dashboards, onSelect, className, user } = props
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     if (!user) {
         return null
@@ -119,6 +123,17 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 ))}
                             </ListboxGroup>
                         ))}
+
+                        {!licensed && (
+                            <ListboxGroup>
+                                <hr />
+
+                                <div className={classNames(styles.limitedAccess)}>
+                                    <h3>Limited access</h3>
+                                    <p>Unlock for unlimited custom dashboards.</p>
+                                </div>
+                            </ListboxGroup>
+                        )}
                     </ListboxList>
                 </ListboxPopover>
             </ListboxInput>
