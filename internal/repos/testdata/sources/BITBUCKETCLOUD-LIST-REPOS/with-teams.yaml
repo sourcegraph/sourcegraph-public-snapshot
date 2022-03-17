@@ -10,41 +10,12 @@ interactions:
     url: https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=100
     method: GET
   response:
-    body: '{"pagelen": 100, "values": [{"scm": "git", "website": "", "has_wiki": false,
-      "uuid": "{e1e75436-05e6-4c38-8543-9c36ec26fad1}", "links": {"watchers": {"href":
-      "https://api.bitbucket.org/2.0/repositories/sglocal/mux/watchers"}, "branches":
-      {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/refs/branches"},
-      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/refs/tags"},
-      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/sglocal/mux.git", "name":
-      "https"}, {"href": "git@bitbucket.org:sglocal/mux.git", "name": "ssh"}], "self":
-      {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux"}, "source":
-      {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/src"}, "html":
-      {"href": "https://bitbucket.org/sglocal/mux"}, "avatar": {"href": "https://bytebucket.org/ravatar/%7Be1e75436-05e6-4c38-8543-9c36ec26fad1%7D?ts=default"},
-      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/hooks"},
-      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/forks"},
-      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/downloads"},
-      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/pullrequests"}},
-      "fork_policy": "allow_forks", "name": "mux", "project": {"key": "GOR", "type":
-      "project", "uuid": "{7f7a2f46-b5af-407e-a353-4a1689b8817d}", "links": {"self":
-      {"href": "https://api.bitbucket.org/2.0/teams/sglocal/projects/GOR"}, "html":
-      {"href": "https://bitbucket.org/account/user/sglocal/projects/GOR"}, "avatar":
-      {"href": "https://bitbucket.org/account/user/sglocal/projects/GOR/avatar/32"}},
-      "name": "gorilla"}, "language": "", "created_on": "2019-07-08T21:38:31.061442+00:00",
-      "mainbranch": {"type": "branch", "name": "master"}, "full_name": "sglocal/mux",
-      "has_issues": false, "owner": {"username": "sglocal", "display_name": "sglocal",
-      "type": "team", "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self":
-      {"href": "https://api.bitbucket.org/2.0/teams/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
-      "html": {"href": "https://bitbucket.org/%7B9e738e10-faae-489f-a19a-b01daa807596%7D/"},
-      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "updated_on":
-      "2019-07-10T21:19:51.119139+00:00", "size": 473453, "type": "repository", "slug":
-      "mux", "is_private": true, "description": ""}, {"scm": "git", "website": "",
-      "has_wiki": false, "uuid": "{003e49c8-47c5-458b-8fd3-4da90fe3a300}", "links":
+    body: '{"pagelen": 100, "values": [{"scm": "git", "has_wiki": false, "links":
       {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/watchers"},
       "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/refs/branches"},
       "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/refs/tags"},
       "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/sglocal/go-langserver.git",
+      "clone": [{"href": "https://sourcegraph-testing@bitbucket.org/sglocal/go-langserver.git",
       "name": "https"}, {"href": "git@bitbucket.org:sglocal/go-langserver.git", "name":
       "ssh"}], "self": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver"},
       "source": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/src"},
@@ -54,26 +25,29 @@ interactions:
       "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/forks"},
       "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/downloads"},
       "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/go-langserver/pullrequests"}},
-      "fork_policy": "allow_forks", "name": "go-langserver", "project": {"key": "TEST",
-      "type": "project", "uuid": "{4f269052-faf4-4e35-8f6b-b3127c46cee5}", "links":
-      {"self": {"href": "https://api.bitbucket.org/2.0/teams/sglocal/projects/TEST"},
-      "html": {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST"},
-      "avatar": {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST/avatar/32"}},
-      "name": "test"}, "language": "", "created_on": "2019-07-10T22:39:22.385369+00:00",
-      "mainbranch": {"type": "branch", "name": "master"}, "full_name": "sglocal/go-langserver",
-      "has_issues": false, "owner": {"username": "sglocal", "display_name": "sglocal",
-      "type": "team", "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self":
-      {"href": "https://api.bitbucket.org/2.0/teams/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
+      "created_on": "2019-07-10T22:39:22.385369+00:00", "full_name": "sglocal/go-langserver",
+      "owner": {"username": "sglocal", "display_name": "sglocal", "type": "team",
+      "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self": {"href":
+      "https://api.bitbucket.org/2.0/workspaces/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
       "html": {"href": "https://bitbucket.org/%7B9e738e10-faae-489f-a19a-b01daa807596%7D/"},
-      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "updated_on":
-      "2019-07-10T22:39:22.565939+00:00", "size": 5559189, "type": "repository", "slug":
-      "go-langserver", "is_private": false, "description": ""}, {"scm": "git", "website":
-      "", "has_wiki": false, "uuid": "{421b93e9-1f00-4054-8156-4d821d4a768b}", "links":
-      {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/watchers"},
+      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "size":
+      5559189, "uuid": "{003e49c8-47c5-458b-8fd3-4da90fe3a300}", "type": "repository",
+      "website": "", "override_settings": {"branching_model": false, "default_merge_strategy":
+      false, "branch_restrictions": false}, "description": "", "has_issues": false,
+      "slug": "go-langserver", "is_private": false, "name": "go-langserver", "language":
+      "", "fork_policy": "allow_forks", "project": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sglocal/projects/TEST"},
+      "html": {"href": "https://bitbucket.org/sglocal/workspace/projects/TEST"}, "avatar":
+      {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST/avatar/32?ts=1562798362"}},
+      "type": "project", "name": "test", "key": "TEST", "uuid": "{4f269052-faf4-4e35-8f6b-b3127c46cee5}"},
+      "mainbranch": {"type": "branch", "name": "master"}, "workspace": {"slug": "sglocal",
+      "type": "workspace", "name": "sglocal", "links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sglocal"},
+      "html": {"href": "https://bitbucket.org/sglocal/"}, "avatar": {"href": "https://bitbucket.org/workspaces/sglocal/avatar/?ts=1562621840"}},
+      "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}"}, "updated_on": "2019-07-10T22:39:22.565939+00:00"},
+      {"scm": "git", "has_wiki": false, "links": {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/watchers"},
       "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/refs/branches"},
       "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/refs/tags"},
       "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/sglocal/python-langserver.git",
+      "clone": [{"href": "https://sourcegraph-testing@bitbucket.org/sglocal/python-langserver.git",
       "name": "https"}, {"href": "git@bitbucket.org:sglocal/python-langserver.git",
       "name": "ssh"}], "self": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver"},
       "source": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/src"},
@@ -83,55 +57,76 @@ interactions:
       "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/forks"},
       "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/downloads"},
       "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/pullrequests"}},
-      "fork_policy": "allow_forks", "name": "python-langserver", "project": {"key":
-      "TEST", "type": "project", "uuid": "{4f269052-faf4-4e35-8f6b-b3127c46cee5}",
-      "links": {"self": {"href": "https://api.bitbucket.org/2.0/teams/sglocal/projects/TEST"},
-      "html": {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST"},
-      "avatar": {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST/avatar/32"}},
-      "name": "test"}, "language": "", "created_on": "2019-07-10T22:39:58.181685+00:00",
-      "mainbranch": {"type": "branch", "name": "master"}, "full_name": "sglocal/python-langserver",
-      "has_issues": false, "owner": {"username": "sglocal", "display_name": "sglocal",
-      "type": "team", "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self":
-      {"href": "https://api.bitbucket.org/2.0/teams/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
+      "created_on": "2019-07-10T22:39:58.181685+00:00", "full_name": "sglocal/python-langserver",
+      "owner": {"username": "sglocal", "display_name": "sglocal", "type": "team",
+      "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self": {"href":
+      "https://api.bitbucket.org/2.0/workspaces/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
       "html": {"href": "https://bitbucket.org/%7B9e738e10-faae-489f-a19a-b01daa807596%7D/"},
-      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "updated_on":
-      "2019-07-10T22:39:58.395470+00:00", "size": 885899, "type": "repository", "slug":
-      "python-langserver", "is_private": false, "description": ""}], "page": 1, "size":
-      3}'
+      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "size":
+      885899, "uuid": "{421b93e9-1f00-4054-8156-4d821d4a768b}", "type": "repository",
+      "website": "", "override_settings": {"branching_model": false, "default_merge_strategy":
+      false, "branch_restrictions": false}, "description": "", "has_issues": false,
+      "slug": "python-langserver", "is_private": false, "name": "python-langserver",
+      "language": "", "fork_policy": "allow_forks", "project": {"links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/workspaces/sglocal/projects/TEST"},
+      "html": {"href": "https://bitbucket.org/sglocal/workspace/projects/TEST"}, "avatar":
+      {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST/avatar/32?ts=1562798362"}},
+      "type": "project", "name": "test", "key": "TEST", "uuid": "{4f269052-faf4-4e35-8f6b-b3127c46cee5}"},
+      "mainbranch": {"type": "branch", "name": "master"}, "workspace": {"slug": "sglocal",
+      "type": "workspace", "name": "sglocal", "links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sglocal"},
+      "html": {"href": "https://bitbucket.org/sglocal/"}, "avatar": {"href": "https://bitbucket.org/workspaces/sglocal/avatar/?ts=1562621840"}},
+      "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}"}, "updated_on": "2019-07-10T22:39:58.395470+00:00"}],
+      "page": 1, "size": 2}'
     headers:
+      Cache-Control:
+      - private
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 11 Jul 2019 17:34:16 GMT
+      - Thu, 17 Mar 2022 12:04:34 GMT
       Etag:
-      - '"gz[982b3bc0ac80ce5a16f510f0c0676386]"'
+      - '"gz[5cdee3567505a14a2dbe85f8cd3dbeee]"'
       Server:
       - nginx
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Vary:
-      - Authorization
+      - Authorization, Origin, cookie, user-context
       - Accept-Encoding
       X-Accepted-Oauth-Scopes:
       - repository
-      X-Content-Type-Options:
-      - nosniff
+      X-B3-Traceid:
+      - bbf104913a33e534
       X-Credential-Type:
       - apppassword
+      X-Dc-Location:
+      - Micros
       X-Frame-Options:
       - SAMEORIGIN
       X-Oauth-Scopes:
-      - repository, team
+      - project
       X-Render-Time:
-      - "0.091784954071"
+      - "0.0903260707855"
       X-Request-Count:
-      - "223"
+      - "2813"
       X-Served-By:
-      - app-149
+      - e58f6eb5e174
       X-Static-Version:
-      - 8b902c173ec1
+      - 9199a160f11f
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000000"
+      X-Usage-Throttled:
+      - "True"
+      X-Usage-User-Time:
+      - "0.056013"
       X-Version:
-      - 8b902c173ec1
+      - 9199a160f11f
+      X-View-Name:
+      - bitbucket.apps.repo2.api.v20.repo.RepositoriesHandler
     status: 200 OK
     code: 200
     duration: ""
@@ -141,155 +136,128 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.bitbucket.org/2.0/repositories/unknwon?pagelen=100
+    url: https://api.bitbucket.org/2.0/repositories/sourcegraph-testing?pagelen=100
     method: GET
   response:
-    body: '{"pagelen": 100, "values": [{"scm": "git", "website": null, "has_wiki":
-      true, "uuid": "{e164a64c-bd73-4a40-b447-d71b43f328a8}", "links": {"watchers":
-      {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/watchers"},
-      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/refs/branches"},
-      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/refs/tags"},
-      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/Unknwon/boilerdb.git", "name":
-      "https"}, {"href": "git@bitbucket.org:Unknwon/boilerdb.git", "name": "ssh"}],
-      "self": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb"},
-      "source": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/src"},
-      "html": {"href": "https://bitbucket.org/Unknwon/boilerdb"}, "avatar": {"href":
-      "https://bytebucket.org/ravatar/%7Be164a64c-bd73-4a40-b447-d71b43f328a8%7D?ts=go"},
-      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/hooks"},
-      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/forks"},
-      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/downloads"},
-      "issues": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/issues"},
-      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/boilerdb/pullrequests"}},
-      "fork_policy": "allow_forks", "name": "BoilerDB", "language": "go", "created_on":
-      "2013-09-26T16:17:09.920116+00:00", "parent": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/dvirsky/boilerdb"},
-      "html": {"href": "https://bitbucket.org/dvirsky/boilerdb"}, "avatar": {"href":
-      "https://bytebucket.org/ravatar/%7B7a97a20d-69a4-465e-bf13-a368cdec0ae7%7D?ts=go"}},
-      "type": "repository", "name": "BoilerDB", "full_name": "dvirsky/boilerdb", "uuid":
-      "{7a97a20d-69a4-465e-bf13-a368cdec0ae7}"}, "mainbranch": {"type": "branch",
-      "name": "master"}, "full_name": "Unknwon/boilerdb", "has_issues": true, "owner":
-      {"display_name": "Unknwon", "uuid": "{1107ec02-472f-40a2-a5de-31b689718f10}",
-      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D"},
-      "html": {"href": "https://bitbucket.org/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D/"},
-      "avatar": {"href": "https://avatar-cdn.atlassian.com/557058%3Ab2fa9afb-f97f-4d86-8524-eb2f669047dd?by=id&sg=A9huJid3McNX9xEiKiQuHXfHiBo%3D&d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-5.png"}},
-      "nickname": "Unknwon", "type": "user", "account_id": "557058:b2fa9afb-f97f-4d86-8524-eb2f669047dd"},
-      "updated_on": "2013-09-26T16:17:09.985193+00:00", "size": 3522246, "type": "repository",
-      "slug": "boilerdb", "is_private": false, "description": ""}, {"scm": "hg", "website":
-      null, "has_wiki": true, "uuid": "{a782ea93-2c6e-4dbb-ace2-2bd447d03750}", "links":
-      {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/watchers"},
-      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/refs/branches"},
-      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/refs/tags"},
-      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/Unknwon/strftime", "name":
-      "https"}, {"href": "ssh://hg@bitbucket.org/Unknwon/strftime", "name": "ssh"}],
-      "self": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime"},
-      "source": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/src"},
-      "html": {"href": "https://bitbucket.org/Unknwon/strftime"}, "avatar": {"href":
-      "https://bytebucket.org/ravatar/%7Ba782ea93-2c6e-4dbb-ace2-2bd447d03750%7D?ts=go"},
-      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/hooks"},
-      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/forks"},
-      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/downloads"},
-      "issues": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/issues"},
-      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/strftime/pullrequests"}},
-      "fork_policy": "allow_forks", "name": "strftime", "language": "go", "created_on":
-      "2013-11-04T21:55:16.495254+00:00", "parent": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/repositories/tebeka/strftime"},
-      "html": {"href": "https://bitbucket.org/tebeka/strftime"}, "avatar": {"href":
-      "https://bytebucket.org/ravatar/%7Ba5628fdf-1553-4590-b035-79c9f0fcd590%7D?ts=go"}},
-      "type": "repository", "name": "strftime", "full_name": "tebeka/strftime", "uuid":
-      "{a5628fdf-1553-4590-b035-79c9f0fcd590}"}, "mainbranch": {"type": "named_branch",
-      "name": "default"}, "full_name": "Unknwon/strftime", "has_issues": true, "owner":
-      {"display_name": "Unknwon", "uuid": "{1107ec02-472f-40a2-a5de-31b689718f10}",
-      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D"},
-      "html": {"href": "https://bitbucket.org/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D/"},
-      "avatar": {"href": "https://avatar-cdn.atlassian.com/557058%3Ab2fa9afb-f97f-4d86-8524-eb2f669047dd?by=id&sg=A9huJid3McNX9xEiKiQuHXfHiBo%3D&d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-5.png"}},
-      "nickname": "Unknwon", "type": "user", "account_id": "557058:b2fa9afb-f97f-4d86-8524-eb2f669047dd"},
-      "updated_on": "2013-11-04T21:55:16.576787+00:00", "size": 33368, "type": "repository",
-      "slug": "strftime", "is_private": false, "description": ""}, {"scm": "git",
-      "website": "", "has_wiki": false, "name": "scripts", "links": {"watchers": {"href":
-      "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/watchers"}, "branches":
-      {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/refs/branches"},
-      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/refs/tags"},
-      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/Unknwon/scripts.git", "name":
-      "https"}, {"href": "git@bitbucket.org:Unknwon/scripts.git", "name": "ssh"}],
-      "self": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts"},
-      "source": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/src"},
-      "html": {"href": "https://bitbucket.org/Unknwon/scripts"}, "avatar": {"href":
-      "https://bytebucket.org/ravatar/%7Bfceb73c7-cef6-4abe-956d-e471281126bc%7D?ts=go"},
-      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/hooks"},
-      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/forks"},
-      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/downloads"},
-      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/scripts/pullrequests"}},
-      "fork_policy": "no_forks", "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}",
-      "language": "go", "created_on": "2015-02-19T04:14:17.078368+00:00", "mainbranch":
-      {"type": "branch", "name": "master"}, "full_name": "Unknwon/scripts", "has_issues":
-      false, "owner": {"display_name": "Unknwon", "uuid": "{1107ec02-472f-40a2-a5de-31b689718f10}",
-      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D"},
-      "html": {"href": "https://bitbucket.org/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D/"},
-      "avatar": {"href": "https://avatar-cdn.atlassian.com/557058%3Ab2fa9afb-f97f-4d86-8524-eb2f669047dd?by=id&sg=A9huJid3McNX9xEiKiQuHXfHiBo%3D&d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-5.png"}},
-      "nickname": "Unknwon", "type": "user", "account_id": "557058:b2fa9afb-f97f-4d86-8524-eb2f669047dd"},
-      "updated_on": "2018-09-16T22:33:32.843614+00:00", "size": 108486, "type": "repository",
-      "slug": "scripts", "is_private": true, "description": "Personal utility scripts
-      for Unknwon."}, {"scm": "git", "website": "", "has_wiki": false, "name": "wxvote",
-      "links": {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/watchers"},
-      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/refs/branches"},
-      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/refs/tags"},
-      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/commits"},
-      "clone": [{"href": "https://Unknwon@bitbucket.org/Unknwon/wxvote.git", "name":
-      "https"}, {"href": "git@bitbucket.org:Unknwon/wxvote.git", "name": "ssh"}],
-      "self": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote"},
-      "source": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/src"},
-      "html": {"href": "https://bitbucket.org/Unknwon/wxvote"}, "avatar": {"href":
-      "https://bytebucket.org/ravatar/%7B3fadba87-ec66-4a51-ad96-a20ccc641001%7D?ts=default"},
-      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/hooks"},
-      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/forks"},
-      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/downloads"},
-      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/Unknwon/wxvote/pullrequests"}},
-      "fork_policy": "no_forks", "uuid": "{3fadba87-ec66-4a51-ad96-a20ccc641001}",
-      "language": "", "created_on": "2015-03-13T21:26:13.611228+00:00", "mainbranch":
-      {"type": "branch", "name": "master"}, "full_name": "Unknwon/wxvote", "has_issues":
-      false, "owner": {"display_name": "Unknwon", "uuid": "{1107ec02-472f-40a2-a5de-31b689718f10}",
-      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D"},
-      "html": {"href": "https://bitbucket.org/%7B1107ec02-472f-40a2-a5de-31b689718f10%7D/"},
-      "avatar": {"href": "https://avatar-cdn.atlassian.com/557058%3Ab2fa9afb-f97f-4d86-8524-eb2f669047dd?by=id&sg=A9huJid3McNX9xEiKiQuHXfHiBo%3D&d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FU-5.png"}},
-      "nickname": "Unknwon", "type": "user", "account_id": "557058:b2fa9afb-f97f-4d86-8524-eb2f669047dd"},
-      "updated_on": "2015-03-13T21:28:18.879081+00:00", "size": 12529302, "type":
-      "repository", "slug": "wxvote", "is_private": true, "description": "backup"}], "page": 1,
-      "size": 4}'
+    body: '{"pagelen": 100, "values": [{"scm": "git", "has_wiki": false, "links":
+      {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/watchers"},
+      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/refs/branches"},
+      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/refs/tags"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/commits"},
+      "clone": [{"href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/src-cli.git",
+      "name": "https"}, {"href": "git@bitbucket.org:sourcegraph-testing/src-cli.git",
+      "name": "ssh"}], "self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli"},
+      "source": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/src"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/src-cli"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bb090a669-ac7b-44cd-9610-02d027cb39f3%7D?ts=default"},
+      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/hooks"},
+      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/forks"},
+      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/downloads"},
+      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/src-cli/pullrequests"}},
+      "created_on": "2022-03-17T11:17:48.581867+00:00", "full_name": "sourcegraph-testing/src-cli",
+      "owner": {"display_name": "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "size": 3500951, "uuid": "{b090a669-ac7b-44cd-9610-02d027cb39f3}", "type": "repository",
+      "website": null, "override_settings": {"branching_model": true, "default_merge_strategy":
+      true, "branch_restrictions": true}, "description": "", "has_issues": false,
+      "slug": "src-cli", "is_private": true, "name": "src-cli", "language": "", "fork_policy":
+      "no_public_forks", "project": {"links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing/projects/SOUR"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/workspace/projects/SOUR"},
+      "avatar": {"href": "https://bitbucket.org/account/user/sourcegraph-testing/projects/SOUR/avatar/32?ts=1647515868"}},
+      "type": "project", "name": "sourcegraph-testing", "key": "SOUR", "uuid": "{a862a17c-1726-47a2-bcd1-d9b37313b350}"},
+      "mainbranch": {"type": "branch", "name": "master"}, "workspace": {"slug": "sourcegraph-testing",
+      "type": "workspace", "name": "Sourcegraph Testing", "links": {"self": {"href":
+      "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing"}, "html": {"href":
+      "https://bitbucket.org/sourcegraph-testing/"}, "avatar": {"href": "https://bitbucket.org/workspaces/sourcegraph-testing/avatar/?ts=1647515473"}},
+      "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"}, "updated_on": "2022-03-17T11:17:49.067413+00:00"},
+      {"scm": "git", "has_wiki": false, "links": {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/watchers"},
+      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/refs/branches"},
+      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/refs/tags"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/commits"},
+      "clone": [{"href": "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/sourcegraph.git",
+      "name": "https"}, {"href": "git@bitbucket.org:sourcegraph-testing/sourcegraph.git",
+      "name": "ssh"}], "self": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph"},
+      "source": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/src"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/sourcegraph"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7Bf46afc56-15a7-4579-9429-1b9329ad4c09%7D?ts=default"},
+      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/hooks"},
+      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/forks"},
+      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/downloads"},
+      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-testing/sourcegraph/pullrequests"}},
+      "created_on": "2022-03-17T11:18:32.035547+00:00", "full_name": "sourcegraph-testing/sourcegraph",
+      "owner": {"display_name": "Sourcegraph Testing", "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/users/%7B4b85b785-1433-4092-8512-20302f4a03be%7D"},
+      "html": {"href": "https://bitbucket.org/%7B4b85b785-1433-4092-8512-20302f4a03be%7D/"},
+      "avatar": {"href": "https://secure.gravatar.com/avatar/f964dc31564db8243e952bdaeabbe884?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FST-2.png"}},
+      "type": "user", "nickname": "Sourcegraph Testing", "account_id": "623316f53fbb880068413f6b"},
+      "size": 657151990, "uuid": "{f46afc56-15a7-4579-9429-1b9329ad4c09}", "type":
+      "repository", "website": null, "override_settings": {"branching_model": true,
+      "default_merge_strategy": true, "branch_restrictions": true}, "description":
+      "", "has_issues": false, "slug": "sourcegraph", "is_private": true, "name":
+      "sourcegraph", "language": "", "fork_policy": "no_public_forks", "project":
+      {"links": {"self": {"href": "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing/projects/SOUR"},
+      "html": {"href": "https://bitbucket.org/sourcegraph-testing/workspace/projects/SOUR"},
+      "avatar": {"href": "https://bitbucket.org/account/user/sourcegraph-testing/projects/SOUR/avatar/32?ts=1647515868"}},
+      "type": "project", "name": "sourcegraph-testing", "key": "SOUR", "uuid": "{a862a17c-1726-47a2-bcd1-d9b37313b350}"},
+      "mainbranch": {"type": "branch", "name": "master"}, "workspace": {"slug": "sourcegraph-testing",
+      "type": "workspace", "name": "Sourcegraph Testing", "links": {"self": {"href":
+      "https://api.bitbucket.org/2.0/workspaces/sourcegraph-testing"}, "html": {"href":
+      "https://bitbucket.org/sourcegraph-testing/"}, "avatar": {"href": "https://bitbucket.org/workspaces/sourcegraph-testing/avatar/?ts=1647515473"}},
+      "uuid": "{4b85b785-1433-4092-8512-20302f4a03be}"}, "updated_on": "2022-03-17T11:18:32.485296+00:00"}],
+      "page": 1, "size": 2}'
     headers:
+      Cache-Control:
+      - private
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 11 Jul 2019 17:34:16 GMT
+      - Thu, 17 Mar 2022 12:04:34 GMT
       Etag:
-      - '"gz[3207eb0e8342d8b6565fc0979901c63b]"'
+      - '"gz[1fff76104bd2be320d298b08f372014e]"'
       Server:
       - nginx
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Vary:
-      - Authorization
+      - Authorization, Origin, cookie, user-context
       - Accept-Encoding
       X-Accepted-Oauth-Scopes:
       - repository
-      X-Content-Type-Options:
-      - nosniff
+      X-B3-Traceid:
+      - fcf085a3897674ea
       X-Credential-Type:
       - apppassword
+      X-Dc-Location:
+      - Micros
       X-Frame-Options:
       - SAMEORIGIN
       X-Oauth-Scopes:
-      - repository, team
+      - project
       X-Render-Time:
-      - "0.141399860382"
+      - "0.10423707962"
       X-Request-Count:
-      - "227"
+      - "3231"
       X-Served-By:
-      - app-149
+      - 976d1ec09537
       X-Static-Version:
-      - 8b902c173ec1
+      - 9199a160f11f
+      X-Usage-Input-Ops:
+      - "0"
+      X-Usage-Output-Ops:
+      - "0"
+      X-Usage-System-Time:
+      - "0.000602"
+      X-Usage-Throttled:
+      - "True"
+      X-Usage-User-Time:
+      - "0.058721"
       X-Version:
-      - 8b902c173ec1
+      - 9199a160f11f
+      X-View-Name:
+      - bitbucket.apps.repo2.api.v20.repo.RepositoriesHandler
     status: 200 OK
     code: 200
     duration: ""
