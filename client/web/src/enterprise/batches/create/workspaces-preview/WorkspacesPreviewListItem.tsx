@@ -1,7 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import CloseIcon from 'mdi-react/CloseIcon'
+
+import { Button, Icon } from '@sourcegraph/wildcard'
+
 import { PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
-import { CachedIcon, Descriptor, ExcludeButton, ExcludeIcon, ListItem } from '../../workspaces-list'
+import { CachedIcon, Descriptor, ExcludeIcon, ListItem } from '../../workspaces-list'
 
 import styles from './WorkspacesPreviewListItem.module.scss'
 
@@ -37,3 +41,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
         </ListItem>
     )
 }
+
+const ExcludeButton: React.FunctionComponent<{ handleExclude: () => void }> = ({ handleExclude }) => (
+    <Button className="p-0 my-0 mx-2" data-tooltip="Omit this repository from batch spec file" onClick={handleExclude}>
+        <Icon as={CloseIcon} />
+    </Button>
+)

@@ -1,14 +1,12 @@
 import React from 'react'
 
 import { storiesOf } from '@storybook/react'
-import { noop } from 'lodash'
 
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { mockWorkspace } from '../create/workspaces-preview/WorkspacesPreview.mock'
 
 import { Descriptor } from './Descriptor'
-import { ExcludeButton } from './ExcludeButton'
 import { CachedIcon, ExcludeIcon } from './Icons'
 import { ListItem } from './ListItem'
 
@@ -78,23 +76,6 @@ add('with status indicator', () => (
                         <Descriptor workspace={mockWorkspace(index)} statusIndicator={<Component />} />
                     </ListItem>
                 ))}
-            </>
-        )}
-    </WebStory>
-))
-
-add('with exclude button', () => (
-    <WebStory>
-        {props => (
-            <>
-                <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(1)} />
-                    <ExcludeButton handleExclude={noop} />
-                </ListItem>
-                <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(2)} />
-                    <ExcludeButton handleExclude={noop} />
-                </ListItem>
             </>
         )}
     </WebStory>
