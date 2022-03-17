@@ -1,7 +1,7 @@
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 
-import { ContributableViewContainer } from '../../protocol'
+import { ContributableViewContainer } from '@sourcegraph/client-api'
 
 import { callViewProvidersInParallel } from './callViewProvidersInParallel'
 
