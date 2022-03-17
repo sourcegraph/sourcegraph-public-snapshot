@@ -29,8 +29,8 @@ let
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/2b914ee8e20c7082b18a550bd93e1e7b384adc0f.tar.gz";
-      sha256 = "0qnhrm4ywci89kvl35vwd85ldid3g1z74gqsj1b4hw06186dvcnp";
+        "https://github.com/NixOS/nixpkgs/archive/350731a856a1d901b0d26f6c9892785a63f48e17.tar.gz";
+      sha256 = "1pbr62q57pcbfr9pnkr02p134ljrachp704j4f9qa86i08njfy0j";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -59,7 +59,7 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_17
+    go_1_18
 
     # Lots of our tooling and go tests rely on git et al.
     git
