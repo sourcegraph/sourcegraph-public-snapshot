@@ -1,7 +1,7 @@
-import React, { FormEventHandler, RefObject } from 'react'
+import React, { FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import {
@@ -13,6 +13,8 @@ import { FormInput } from '../../../../../../components/form/form-input/FormInpu
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
+import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -88,6 +90,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     } = props
 
     const isEditMode = mode === 'edit'
+    const { licensed, insight } = useUiFeatures()
+
+    const creationPermission = useObservable(
+        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
+            insight,
+            isEditMode,
+        ])
+    )
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -141,7 +151,9 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             <FormGroup
                 name="data series group"
                 title="Data series"
-                subtitle="Add any number of data series to your chart"
+                subtitle={
+                    licensed ? 'Add any number of data series to your chart' : 'Add up to 10 data series to your chart'
+                }
                 error={series.meta.touched && series.meta.error}
                 innerRef={series.input.ref}
             >
@@ -188,6 +200,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className="my-4 w-100" />
 
+            {!licensed && !isEditMode && (
+                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="my-3" />
+            )}
+
             <div className="d-flex flex-wrap align-items-center">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
 
@@ -196,7 +212,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     loading={submitting}
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"
                     variant="primary"
