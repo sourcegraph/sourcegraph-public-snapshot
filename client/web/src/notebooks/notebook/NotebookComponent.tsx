@@ -25,7 +25,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -470,7 +470,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     onClick={runAllBlocks}
                     disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                 >
-                    <PlayCircleOutlineIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={PlayCircleOutlineIcon} />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                 </Button>
                 {!isEmbedded && (
@@ -481,7 +481,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         onClick={exportNotebook}
                         data-testid="export-notebook-markdown-button"
                     >
-                        <DownloadIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={DownloadIcon} />
                         <span>Export as Markdown</span>
                     </Button>
                 )}

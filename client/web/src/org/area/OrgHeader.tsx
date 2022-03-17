@@ -5,7 +5,7 @@ import { Location } from 'history'
 import { match } from 'react-router'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
@@ -129,7 +129,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                         to,
                                         label,
                                         exact,
-                                        icon: Icon,
+                                        icon: ItemIcon,
                                         condition = () => true,
                                         isActive,
                                         dynamicLabel,
@@ -148,7 +148,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                                     }
                                                 >
                                                     <span>
-                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        {ItemIcon && <Icon as={ItemIcon} />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
                                                             {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>

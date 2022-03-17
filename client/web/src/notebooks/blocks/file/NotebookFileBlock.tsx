@@ -21,7 +21,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
-import { LoadingSpinner, useObservable, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon, Link, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
 import { parseFileBlockInput, serializeLineRange } from '../../serialize'
@@ -117,7 +117,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <OpenInNewIcon className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} />,
                 url: fileURL,
             },
         ],
@@ -129,7 +129,7 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {
                 type: 'button',
                 label: showInputs ? 'Save' : 'Edit',
-                icon: showInputs ? <CheckIcon className="icon-inline" /> : <PencilIcon className="icon-inline" />,
+                icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
                 onClick: () => setShowInputs(!showInputs),
                 keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
             },
@@ -240,7 +240,7 @@ const NotebookFileBlockHeader: React.FunctionComponent<FileBlockInput & { fileUR
 }) => (
     <>
         <div className="mr-2">
-            <FileDocumentIcon className="icon-inline" />
+            <Icon as={FileDocumentIcon} className="icon-inline" />
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">
