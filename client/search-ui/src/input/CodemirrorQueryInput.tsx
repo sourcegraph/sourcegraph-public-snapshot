@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import { autocompletion, CompletionResult, Completion, snippet, completionKeymap } from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
 import {
@@ -15,7 +17,6 @@ import { EditorView, ViewUpdate, keymap, Decoration, placeholder as placeholderE
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { editor as Monaco, MarkerSeverity, languages } from 'monaco-editor'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { delay, map, switchMap } from 'rxjs/operators'
 
@@ -35,8 +36,9 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import styles from './CodemirrorQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+
+import styles from './CodemirrorQueryInput.module.scss'
 
 const replacePattern = /[\n\r↵]/g
 

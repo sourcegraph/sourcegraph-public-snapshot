@@ -1,11 +1,13 @@
-import classNames from 'classnames'
 import React, { Suspense } from 'react'
+
+import classNames from 'classnames'
 
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import styles from './LazyMonacoQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+
+import styles from './LazyMonacoQueryInput.module.scss'
 
 /**
  * Minimal interface for external interaction with the editor.

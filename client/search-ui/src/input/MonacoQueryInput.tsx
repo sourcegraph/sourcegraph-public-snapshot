@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { observeResize, hasProperty } from '@sourcegraph/common'
 import {
@@ -22,6 +23,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor } from './LazyMonacoQueryInput'
+
 import styles from './MonacoQueryInput.module.scss'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
