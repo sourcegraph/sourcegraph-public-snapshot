@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"golang.org/x/exp/slices"
 )
 
 // adjustedUpload pairs an upload visible from the current target commit with the
@@ -105,7 +107,7 @@ func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []a
 
 		for _, monikers := range rangeMonikers {
 			for _, moniker := range monikers {
-				if moniker.PackageInformationID == "" || !sliceContains(kinds, moniker.Kind) {
+				if moniker.PackageInformationID == "" || !slices.Contains(kinds, moniker.Kind) {
 					continue
 				}
 
@@ -257,13 +259,4 @@ func monikersToString(vs []precise.QualifiedMonikerData) string {
 	}
 
 	return strings.Join(strs, ", ")
-}
-
-func sliceContains(slice []string, str string) bool {
-	for _, el := range slice {
-		if el == str {
-			return true
-		}
-	}
-	return false
 }
