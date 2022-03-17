@@ -76,10 +76,48 @@ func TestFilterRepositories(t *testing.T) {
 func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("insight_is_frozen_returns_nil_resolvers", func(t *testing.T) {
-		ivr := insightViewResolver{view: &types.Insight{IsFrozen: true}}
+	t.Run("insight_is_frozen_returns_real_resolvers", func(t *testing.T) {
+		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+		defer cleanup()
+		base := baseInsightResolver{
+			insightStore:   store.NewInsightStore(timescale),
+			dashboardStore: store.NewDashboardStore(timescale),
+			insightsDB:     timescale,
+		}
+
+		series, err := base.insightStore.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:            "series1234",
+			Query:               "supercoolseries",
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		view, err := base.insightStore.CreateView(ctx, types.InsightView{
+			Title:            "frozen view",
+			UniqueID:         "super frozen",
+			PresentationType: types.Line,
+			IsFrozen:         true,
+		}, []store.InsightViewGrant{store.GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = base.insightStore.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+			Label:  "label1",
+			Stroke: "blue",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		viewWithSeries, err := base.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueID: view.UniqueID})
+		if err != nil || len(viewWithSeries) == 0 {
+			t.Fatal(err)
+		}
+		ivr := insightViewResolver{view: &viewWithSeries[0], baseInsightResolver: base}
 		resolvers, err := ivr.DataSeries(ctx)
-		if err != nil || resolvers != nil {
+		if err != nil || resolvers == nil {
 			t.Errorf("unexpected results from frozen data series resolver")
 		}
 	})
