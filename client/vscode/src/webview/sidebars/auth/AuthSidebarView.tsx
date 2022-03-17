@@ -15,7 +15,7 @@ import styles from './AuthSidebarView.module.scss'
 const SIDEBAR_UTM_PARAMS = 'utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
 
 interface AuthSidebarViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL'> {
-    stateStatus: string
+    stateStatus: VSCEState['status']
 }
 
 interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> {}
