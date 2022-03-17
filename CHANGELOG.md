@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
 - Search: `select:file` and `select:file.directory` now properly deduplicates results. [#32469](https://github.com/sourcegraph/sourcegraph/pull/32469)
 - Security: Patch container images against CVE 2022-0778 [#32679](https://github.com/sourcegraph/sourcegraph/issues/32679)
+- On the close batch change page, draft changesets are now properly showing up as will be closed. [#32481](https://github.com/sourcegraph/sourcegraph/pull/32481)
 
 ### Removed
 
