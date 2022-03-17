@@ -38,7 +38,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
-                <i className="codicon codicon-github mr-1" />
+                <i className="codicon codicon-github" />
                 <span>Give feedback</span>
             </button>
             <button
@@ -51,7 +51,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
-                <i className="codicon codicon-bug mr-1" />
+                <i className="codicon codicon-bug" />
                 <span>Report issue</span>
             </button>
             <button
@@ -64,7 +64,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
-                <i className="codicon codicon-notebook mr-1" />
+                <i className="codicon codicon-notebook" />
                 <span>Troubleshooting docs</span>
             </button>
             <button
@@ -77,7 +77,11 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
             >
-                <i className="codicon codicon-reactions mr-1" />
+                <img
+                    alt="sg-logo"
+                    className="codicon"
+                    src="https://raw.githubusercontent.com/sourcegraph/sourcegraph/fd431743e811ba756490e5e7bd88aa2362b6453e/client/vscode/images/logomark_light.svg"
+                />
                 <span>Create an account</span>
             </button>
             <button
@@ -85,7 +89,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}
                 onClick={() => setHasAccount(previousHasAccount => !previousHasAccount)}
             >
-                <i className="codicon codicon-sign-in mr-1" />
+                <i className="codicon codicon-account" />
                 <span>Authenticate account</span>
             </button>
 
@@ -96,7 +100,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                             instanceURL={instanceURL}
                             extensionCoreAPI={extensionCoreAPI}
                             platformContext={platformContext}
-                            stateStatus=""
+                            authenticatedUser={authenticatedUser}
                         />
                     ) : (
                         <p className="ml-2">Logged in as {authenticatedUser.displayName}</p>

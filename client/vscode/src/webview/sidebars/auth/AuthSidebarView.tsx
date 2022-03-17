@@ -14,9 +14,8 @@ import styles from './AuthSidebarView.module.scss'
 
 const SIDEBAR_UTM_PARAMS = 'utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
 
-interface AuthSidebarViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL'> {
-    stateStatus: VSCEState['status']
-}
+interface AuthSidebarViewProps
+    extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL' | 'authenticatedUser'> {}
 
 interface AuthSidebarCtaProps extends Pick<WebviewPageProps, 'platformContext'> {}
 
@@ -27,10 +26,10 @@ export const AuthSidebarView: React.FunctionComponent<AuthSidebarViewProps> = ({
     instanceURL,
     extensionCoreAPI,
     platformContext,
-    stateStatus,
+    authenticatedUser,
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [hasAccount, setHasAccount] = useState(!stateStatus)
+    const [hasAccount, setHasAccount] = useState(!authenticatedUser)
     const [usePrivateInstance, setUsePrivateInstance] = useState(false)
     const signUpURL = `https://sourcegraph.com/sign-up?editor=vscode&${SIDEBAR_UTM_PARAMS}`
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])

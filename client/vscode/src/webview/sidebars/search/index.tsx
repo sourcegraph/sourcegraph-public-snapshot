@@ -98,7 +98,7 @@ const Main: React.FC = () => {
             return (
                 <>
                     <AuthSidebarCta platformContext={platformContext} />
-                    <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />
+                    <AuthSidebarView {...webviewPageProps} />
                 </>
             )
         }
@@ -114,7 +114,6 @@ const Main: React.FC = () => {
                 settingsCascade={settingsCascade}
                 filters={filters}
             />
-            {!authenticatedUser && <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />}
         </>
     )
 }

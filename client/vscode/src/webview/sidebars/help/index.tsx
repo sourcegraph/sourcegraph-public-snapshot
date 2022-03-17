@@ -33,8 +33,11 @@ const Main: React.FC = () => {
     const authenticatedUser = useObservable(
         useMemo(() => wrapRemoteObservable(extensionCoreAPI.getAuthenticatedUser()), [])
     )
+
+    const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
+
     const instanceURL = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.getInstanceURL()), []))
-    if (authenticatedUser === undefined || instanceURL === undefined) {
+    if (authenticatedUser === undefined || instanceURL === undefined || state === undefined) {
         return <VSCodeProgressRing />
     }
 
