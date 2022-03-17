@@ -816,17 +816,10 @@ func uploadBuildeventTrace() operations.Operation {
 	}
 }
 
-func prPreview(c Config) operations.Operation {
+func prPreview() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":globe_with_meridians: Trigger render.com PR Preview",
-			bk.Env("GITHUB_TOKEN", "*****"),
-			bk.Env("GITHUB_BRANCH", c.Branch),
-			bk.Env("GITHUB_PR", os.Getenv("BUILDKITE_PULL_REQUEST")),
-			bk.Env("GITHUB_REPOSITORY", "sourcegraph/sourcegraph"),
 
-			bk.Env("RENDER_COM_REPO", "https://github.com/sourcegraph/sourcegraph"),
-			bk.Env("RENDER_COM_OWNER_ID", "*****"),
-			bk.Env("RENDER_COM_API_KEY", "*****"),
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }
