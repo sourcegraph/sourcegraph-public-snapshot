@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import React, { useContext } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Link } from '@sourcegraph/wildcard'
@@ -10,11 +10,12 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent = () => {
-    const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaAccepted', false)
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
-    const showConfirmationModal = !features?.licensed && isGaAccepted === false
+    const showConfirmationModal = !licensed && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null
@@ -58,14 +59,7 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
 
             <div className={styles.textContent}>
                 <p>
-                    <b>Your instance is now using the limited access version of Code Insights.</b> This version is
-                    limited to 2 code insights.
-                </p>
-
-                <p>
-                    If your team has created more than 2 insights during the trial, some insights will be hidden. All of
-                    the insights you've created are preserved, <b>but</b> will be locked. All insights will be visible
-                    again after upgrading your license.
+                    <b>Your instance is now using the limited access version of Code Insights.</b>
                 </p>
 
                 <p>

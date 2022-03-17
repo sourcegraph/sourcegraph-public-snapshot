@@ -9,7 +9,7 @@ import { CodeInsightsGqlBackendLimited } from '../core/backend/gql-api/code-insi
 
 /**
  * Returns the full or limited version of the API based on
- * whether or not Code Insights is licened
+ * whether Code Insights is licensed
  */
 export function useGetApi(): CodeInsightsBackend | null {
     const apolloClient = useApolloClient()

@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import React, { useContext } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -106,8 +106,9 @@ const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExample
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const { trackMouseEnter, trackMouseLeave } = useCodeInsightViewPings({
         telemetryService,
@@ -142,7 +143,7 @@ const CodeInsightSearchExample: React.FunctionComponent<CodeInsightSearchExample
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {features?.licensed ? 'Use as template' : 'Explore template'}
+                        {licensed ? 'Use as template' : 'Explore template'}
                     </Button>
                 )
             }
@@ -177,8 +178,9 @@ interface CodeInsightCaptureExampleProps extends TelemetryProps {
 const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExampleProps> = props => {
     const { content, templateLink, className, telemetryService } = props
 
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
@@ -215,7 +217,7 @@ const CodeInsightCaptureExample: React.FunctionComponent<CodeInsightCaptureExamp
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {features?.licensed ? 'Use as template' : 'Explore template'}
+                        {licensed ? 'Use as template' : 'Explore template'}
                     </Button>
                 )
             }
