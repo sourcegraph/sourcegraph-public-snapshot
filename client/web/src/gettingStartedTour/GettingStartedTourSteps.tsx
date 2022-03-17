@@ -9,7 +9,7 @@ import { CircularProgressbar } from 'react-circular-progressbar'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { useGettingStartedTourState } from '../stores/gettingStartedTourState'
 
@@ -74,10 +74,7 @@ const GettingStartedTourStep: React.FunctionComponent<GettingStartedTourStepProp
             >
                 {title}
             </LinkOrAnchor>
-            <CheckCircleIcon
-                className={classNames('icon-inline', isCompleted ? 'text-success' : styles.iconMuted)}
-                size="1rem"
-            />
+            <Icon className={classNames(isCompleted ? 'text-success' : styles.iconMuted)} as={CheckCircleIcon} />
         </div>
     )
 }
@@ -138,7 +135,7 @@ export const GettingStartedTourSteps: React.FunctionComponent<GettingStartedTour
                                     value={completed}
                                 />
                             ) : (
-                                <CheckCircleIcon className={classNames('icon-inline', 'text-success')} size="1rem" />
+                                <Icon className="text-success" as={CheckCircleIcon} />
                             )}
                         </AccordionButton>
                         <AccordionPanel>
@@ -151,7 +148,7 @@ export const GettingStartedTourSteps: React.FunctionComponent<GettingStartedTour
             </Accordion>
 
             <footer>
-                <CheckCircleIcon className="icon-inline text-success" size="1rem" />
+                <Icon className="text-success" as={CheckCircleIcon} />
                 <span className={styles.footerText}>
                     {completedCount} of {steps.length}
                 </span>
