@@ -36,7 +36,7 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
 		opts.RangeType = ".."
-	} else if opts.RangeType == "" {
+	} else if opts.RangeType != ".." {
 		opts.RangeType = "..."
 	}
 
