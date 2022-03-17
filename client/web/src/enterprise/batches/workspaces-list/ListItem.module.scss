@@ -1,0 +1,15 @@
+.list-group-item {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border-left-width: 0;
+    border-right-width: 0;
+
+    &:nth-child(even) {
+        background-color: var(--subtle-bg-2);
+    }
+
+    &:nth-child(odd) {
+        background-color: none;
+    }
+}
