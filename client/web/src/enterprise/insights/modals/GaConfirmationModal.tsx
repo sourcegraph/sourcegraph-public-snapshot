@@ -10,7 +10,7 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent = () => {
-    const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaAccepted', false)
+    const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
     const {
         UIFeatures: { licensed },
     } = useContext(CodeInsightsBackendContext)
@@ -60,13 +60,12 @@ export const GaConfirmationModalContent: React.FunctionComponent<GaConfirmationM
             <div className={styles.textContent}>
                 <p>
                     <b>Your instance is now using the limited access version of Code Insights.</b> This version is
-                    limited to 2 code insights.
+                    limited to 2 fully accessible global code insights.
                 </p>
 
                 <p>
-                    If your team has created more than 2 insights during the trial, some insights will be hidden. All of
-                    the insights you've created are preserved, <b>but</b> will be locked. All insights will be visible
-                    again after upgrading your license.
+                    All of the insights your team created during the trial are preserved, <b>but</b> creation of new
+                    insights is disabled. All insights will be fully accessible again after upgrading your license.
                 </p>
 
                 <p>
