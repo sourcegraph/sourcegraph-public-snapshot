@@ -34,7 +34,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
 	flag.StringVar(&f.MockLiveCommit, "mock.live-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
 	flag.BoolVar(&f.Pretend, "pretend", false, "Pretend to post notifications, printing to stdout instead")
-	flag.BoolVar(&f.GuessSourcegraphCommit, "sourcegraph.guess-commit", false, "Attempt at deducting the deployed commit from the changes in the diff")
+	flag.BoolVar(&f.GuessSourcegraphCommit, "sourcegraph.guess-commit", false, "Attempt at inferring the deployed commit from the changes in the diff")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.Parse()
