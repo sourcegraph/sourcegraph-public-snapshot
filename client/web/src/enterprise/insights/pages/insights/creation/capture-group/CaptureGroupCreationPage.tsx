@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CaptureGroupInsight } from '../../../../core/types'
@@ -61,16 +62,22 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
         <CodeInsightsPage>
             <PageTitle title="Create new capture group code insight" />
 
-            <header className="mb-5">
-                <h2>Create new code insight</h2>
-
-                <p className="text-muted">
-                    Search-based code insights analyze your code based on any search query.{' '}
-                    <Link to="/help/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </Link>
-                </p>
-            </header>
+            <PageHeader
+                className="mb-3"
+                path={[{ icon: CodeInsightsIcon }, { text: 'Create new capture group insight' }]}
+                description={
+                    <p className="text-muted">
+                        Capture group code insights analyze your code based on generated data series queries.{' '}
+                        <Link
+                            to="/help/code_insights/explanations/automatically_generated_data_series"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more.
+                        </Link>
+                    </p>
+                }
+            />
 
             <CaptureGroupCreationContent
                 mode="creation"

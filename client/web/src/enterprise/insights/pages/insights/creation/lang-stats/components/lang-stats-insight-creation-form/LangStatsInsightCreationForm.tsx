@@ -54,7 +54,13 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
     const isEditMode = mode === 'edit'
     const { licensed, insight } = useUiFeatures()
-    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
+
+    const creationPermission = useObservable(
+        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
+            insight,
+            isEditMode,
+        ])
+    )
 
     return (
         // eslint-disable-next-line react/forbid-elements

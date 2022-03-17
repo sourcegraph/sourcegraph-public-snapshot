@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
@@ -7,11 +7,10 @@ import { useLocation } from 'react-router-dom'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Button, Link, PageHeader, Tabs, TabList, Tab, Badge, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon } from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
-import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
@@ -53,9 +52,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
         }) ?? {}
 
     const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
@@ -77,13 +73,8 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
 
     return (
         <CodeInsightsPage>
-            {!licensed && (
-                <Badge variant="info" className="mb-2">
-                    Free trial
-                </Badge>
-            )}
             <PageHeader
-                path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
+                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
                         <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">

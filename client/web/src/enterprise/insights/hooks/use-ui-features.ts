@@ -38,6 +38,7 @@ export interface UseUiFeatures {
     insight: {
         getContextActionsPermissions: (insight: Insight) => { showYAxis: boolean }
         getCreationPermissions: () => Observable<{ available: true } | { available: false; reason: string }>
+        getEditPermissions: () => Observable<{ available: true } | { available: false; reason: string }>
     }
 }
 
@@ -100,6 +101,7 @@ export function useUiFeatures(): UseUiFeatures {
                               )
                           )
                         : of({ available: true }),
+                getEditPermissions: () => of({ available: true }),
             },
         }),
         [licensed, insightsLimit, hasInsights]

@@ -63,9 +63,14 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
     } = form
 
     const { licensed, insight } = useUiFeatures()
-    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
-
     const isEditMode = mode === 'edit'
+
+    const creationPermission = useObservable(
+        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
+            insight,
+            isEditMode,
+        ])
+    )
 
     return (
         // eslint-disable-next-line react/forbid-elements
