@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-
 import { Scalars } from '../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../workspaces-list'
 import { useWorkspacesListConnection } from '../backend'
@@ -28,7 +26,6 @@ export const Workspaces: React.FunctionComponent<WorkspacesProps> = ({ batchSpec
     return (
         <div className="d-flex flex-column w-100 h-100 pr-3">
             <WorkspacesListHeader>Workspaces</WorkspacesListHeader>
-            {workspacesConnection.error && <ErrorAlert error={workspacesConnection.error} className="w-100 mb-0" />}
             <WorkspaceFilterRow onFiltersChange={setFilters} />
             <div className="overflow-auto w-100">
                 <WorkspacesList
