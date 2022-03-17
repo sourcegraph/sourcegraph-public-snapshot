@@ -1,4 +1,4 @@
-import React, { forwardRef, ReactElement, Ref } from 'react'
+import React, { forwardRef, ReactElement } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -51,6 +51,6 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof View
             {...otherProps}
         />
     )
-    // Cast here is needed since forwardRef doesn't support generics properly
-    // cause of static nature
-}) as <D extends keyof ViewContexts>(p: SmartInsightProps<D> & { ref?: Ref<HTMLElement> }) => ReactElement
+})
+
+SmartInsight.displayName = 'SmartInsight'
