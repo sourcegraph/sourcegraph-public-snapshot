@@ -1,9 +1,10 @@
-import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
+
+import LinkIcon from 'mdi-react/LinkIcon'
 
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -21,7 +22,7 @@ export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCas
             data-placement="right"
             className={styles.sidebarSectionListItem}
         >
-            <LinkIcon className="icon-inline pr-1 flex-shrink-0" />
+            <Icon className="pr-1 flex-shrink-0" as={LinkIcon} />
             {quickLink.name}
         </Link>
     ))

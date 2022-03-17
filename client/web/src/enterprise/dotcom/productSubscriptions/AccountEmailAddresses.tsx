@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'

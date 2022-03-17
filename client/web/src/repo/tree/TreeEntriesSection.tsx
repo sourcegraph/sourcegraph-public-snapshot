@@ -1,8 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { identity } from 'lodash'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
-import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import * as GQL from '@sourcegraph/shared/src/schema'

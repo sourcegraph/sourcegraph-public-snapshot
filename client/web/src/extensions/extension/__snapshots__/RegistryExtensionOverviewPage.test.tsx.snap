@@ -65,7 +65,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
             class="d-flex"
           >
             <githubicon
-              class="icon-inline mr-1"
+              class="iconInline mr-1"
             />
             <a
               class="anchorLink d-block"
@@ -223,7 +223,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
             class="d-flex"
           >
             <githubicon
-              class="icon-inline mr-1"
+              class="iconInline mr-1"
             />
             <a
               class="anchorLink d-block"

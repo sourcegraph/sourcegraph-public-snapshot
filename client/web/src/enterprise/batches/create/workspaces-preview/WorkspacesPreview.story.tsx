@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'

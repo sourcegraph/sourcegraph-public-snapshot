@@ -2,8 +2,9 @@
  * Forked component from @visx/text package.
  * Removed https://github.com/airbnb/visx/issues/1111 when will be resolved
  * */
-import { useText, TextProps as OriginTextProps } from '@visx/text'
 import React, { ReactElement } from 'react'
+
+import { useText, TextProps as OriginTextProps } from '@visx/text'
 
 const SVG_STYLE = { overflow: 'visible' }
 

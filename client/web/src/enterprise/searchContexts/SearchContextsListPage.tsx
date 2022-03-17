@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useState } from 'react'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

@@ -1,9 +1,10 @@
+import React, { useEffect, useState } from 'react'
+
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import React, { useEffect, useState } from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'

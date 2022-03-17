@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -16,8 +17,9 @@ import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { GettingStartedTour } from '../gettingStartedTour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
-import styles from './RepoRevisionSidebar.module.scss'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
+
+import styles from './RepoRevisionSidebar.module.scss'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     repoID: Scalars['ID']

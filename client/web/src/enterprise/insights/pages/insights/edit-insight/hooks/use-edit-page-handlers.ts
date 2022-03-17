@@ -1,4 +1,5 @@
 import { useContext, useMemo } from 'react'
+
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'

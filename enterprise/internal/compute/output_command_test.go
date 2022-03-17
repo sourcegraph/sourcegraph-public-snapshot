@@ -53,7 +53,7 @@ func fileMatch(content string) result.Match {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
-		File: result.File{Path: "my/awesome/path"},
+		File: result.File{Path: "my/awesome/path.ml"},
 	}
 }
 
@@ -98,4 +98,8 @@ func TestRun(t *testing.T) {
 		">bar<").
 		Equal(t, test(`content:output.structural(foo(:[arg]) -> >:[arg]<)`, fileMatch("foo(bar)")))
 
+	autogold.Want(
+		"substitute language",
+		"OCaml\n").
+		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
 }

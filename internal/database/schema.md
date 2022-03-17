@@ -118,6 +118,7 @@ Foreign-key constraints:
  last_heartbeat_at | timestamp with time zone |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
@@ -146,6 +147,7 @@ Foreign-key constraints:
  updated_at              | timestamp with time zone |           | not null | now()
  cancel                  | boolean                  |           | not null | false
  access_token_id         | bigint                   |           |          | 
+ queued_at               | timestamp with time zone |           |          | now()
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
@@ -263,6 +265,7 @@ Foreign-key constraints:
  updated_at        | timestamp with time zone |           | not null | now()
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_bulk_group_idx" btree (bulk_group)
@@ -353,6 +356,7 @@ Referenced by:
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
  external_fork_namespace  | citext                                       |           |          | 
+ queued_at                | timestamp with time zone                     |           |          | now()
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -400,6 +404,7 @@ Referenced by:
  execution_logs    | json[]                   |           |          | 
  webhook           | bigint                   |           |          | 
  slack_webhook     | bigint                   |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -600,6 +605,7 @@ Slack webhook actions configured on code monitors
  last_heartbeat_at | timestamp with time zone |           |          | 
  execution_logs    | json[]                   |           |          | 
  search_results    | jsonb                    |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -875,6 +881,7 @@ Foreign-key constraints:
  execution_logs      | json[]                   |           |          | 
  worker_hostname     | text                     |           | not null | ''::text
  last_heartbeat_at   | timestamp with time zone |           |          | 
+ queued_at           | timestamp with time zone |           |          | now()
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -1038,6 +1045,7 @@ Indexes:
  priority          | integer                  |           | not null | 1
  cost              | integer                  |           | not null | 500
  persist_mode      | persistmode              |           | not null | 'record'::persistmode
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_cost_idx" btree (cost)
@@ -1514,6 +1522,7 @@ Stores the retention policy of code intellience data for a repository.
  last_retention_scan_at | timestamp with time zone |           |          | 
  reference_count        | integer                  |           |          | 
  indexer_version        | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1781,6 +1790,20 @@ Referenced by:
     TABLE "saved_searches" CONSTRAINT "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "search_contexts" CONSTRAINT "search_contexts_namespace_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "settings" CONSTRAINT "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.orgs_open_beta_stats"
+```
+   Column   |           Type           | Collation | Nullable |      Default      
+------------+--------------------------+-----------+----------+-------------------
+ id         | uuid                     |           | not null | gen_random_uuid()
+ user_id    | integer                  |           |          | 
+ org_id     | integer                  |           |          | 
+ created_at | timestamp with time zone |           |          | now()
+ data       | jsonb                    |           | not null | '{}'::jsonb
+Indexes:
+    "orgs_open_beta_stats_pkey" PRIMARY KEY, btree (id)
 
 ```
 
@@ -2572,6 +2595,7 @@ Foreign-key constraints:
  id                  | integer                  |           |          | 
  state               | text                     |           |          | 
  failure_message     | text                     |           |          | 
+ queued_at           | timestamp with time zone |           |          | 
  started_at          | timestamp with time zone |           |          | 
  finished_at         | timestamp with time zone |           |          | 
  process_after       | timestamp with time zone |           |          | 
@@ -2589,6 +2613,7 @@ Foreign-key constraints:
  SELECT j.id,
     j.state,
     j.failure_message,
+    j.queued_at,
     j.started_at,
     j.finished_at,
     j.process_after,
@@ -2608,6 +2633,7 @@ Foreign-key constraints:
  id                     | integer                  |           |          | 
  commit                 | text                     |           |          | 
  root                   | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
  uploaded_at            | timestamp with time zone |           |          | 
  state                  | text                     |           |          | 
  failure_message        | text                     |           |          | 
@@ -2635,6 +2661,7 @@ Foreign-key constraints:
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -2664,6 +2691,7 @@ Foreign-key constraints:
  id                     | integer                  |           |          | 
  commit                 | text                     |           |          | 
  root                   | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
  uploaded_at            | timestamp with time zone |           |          | 
  state                  | text                     |           |          | 
  failure_message        | text                     |           |          | 
@@ -2692,6 +2720,7 @@ Foreign-key constraints:
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -2778,6 +2807,7 @@ Foreign-key constraints:
  id                     | integer                  |           |          | 
  commit                 | text                     |           |          | 
  root                   | text                     |           |          | 
+ queued_at              | timestamp with time zone |           |          | 
  uploaded_at            | timestamp with time zone |           |          | 
  state                  | text                     |           |          | 
  failure_message        | text                     |           |          | 
@@ -2805,6 +2835,7 @@ Foreign-key constraints:
  SELECT u.id,
     u.commit,
     u.root,
+    u.queued_at,
     u.uploaded_at,
     u.state,
     u.failure_message,
@@ -2835,6 +2866,7 @@ Foreign-key constraints:
  id                       | bigint                                       |           |          | 
  batch_change_ids         | jsonb                                        |           |          | 
  repo_id                  | integer                                      |           |          | 
+ queued_at                | timestamp with time zone                     |           |          | 
  created_at               | timestamp with time zone                     |           |          | 
  updated_at               | timestamp with time zone                     |           |          | 
  metadata                 | jsonb                                        |           |          | 
@@ -2879,6 +2911,7 @@ Foreign-key constraints:
  SELECT c.id,
     c.batch_change_ids,
     c.repo_id,
+    c.queued_at,
     c.created_at,
     c.updated_at,
     c.metadata,

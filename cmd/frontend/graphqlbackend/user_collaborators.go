@@ -32,7 +32,9 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	pickedRepos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
 		// SECURITY: This must be the authenticated user's ID.
 		UserID:                 a.UID,
-		IncludeUserPublicRepos: true,
+		IncludeUserPublicRepos: false,
+		NoForks:                true,
+		NoArchived:             true,
 		OrderBy: database.RepoListOrderBy{{
 			Field:      "stars",
 			Descending: true,

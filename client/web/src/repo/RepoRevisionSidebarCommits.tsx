@@ -1,8 +1,9 @@
+import * as React from 'react'
+import { useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
-import * as React from 'react'
-import { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -23,6 +24,7 @@ import { replaceRevisionInURL } from '../util/url'
 
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+
 import styles from './RepoRevisionSidebarCommits.module.scss'
 
 interface CommitNodeProps {

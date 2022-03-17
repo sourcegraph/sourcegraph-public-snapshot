@@ -1,9 +1,10 @@
+import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -19,7 +20,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Link, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -398,7 +399,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                     aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                 >
                     <small className="text-monospace">i</small>
-                    <CollapseIcon className="icon-inline" />
+                    <Icon as={CollapseIcon} />
                 </Button>
             </span>
             <Collapse isOpen={!collapsed}>
@@ -565,7 +566,7 @@ const SearchReference = React.memo(
                 <p className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <ExternalLinkIcon className="icon-inline" />
+                            Search syntax <Icon as={ExternalLinkIcon} />
                         </Link>
                     </small>
                 </p>

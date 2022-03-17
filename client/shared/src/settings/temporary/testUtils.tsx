@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
-import React from 'react'
 
 import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'

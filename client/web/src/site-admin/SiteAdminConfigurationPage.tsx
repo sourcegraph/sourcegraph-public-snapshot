@@ -1,8 +1,9 @@
+import * as React from 'react'
+
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
@@ -21,6 +22,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+
 import styles from './SiteAdminConfigurationPage.module.scss'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
