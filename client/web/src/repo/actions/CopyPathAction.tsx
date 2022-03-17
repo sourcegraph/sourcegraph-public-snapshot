@@ -1,11 +1,10 @@
 import React, { useState, useLayoutEffect } from 'react'
 
-import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { useLocation } from 'react-router'
 
-import { Button, TooltipController } from '@sourcegraph/wildcard'
+import { Button, TooltipController, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -44,7 +43,7 @@ export const CopyPathAction: React.FunctionComponent = () => {
             onClick={onClick}
             size="sm"
         >
-            <ContentCopyIcon className={classNames('icon-inline', styles.copyIcon)} />
+            <Icon className={styles.copyIcon} as={ContentCopyIcon} />
         </Button>
     )
 }

@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 
-import { PageHeader, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Icon } from '@sourcegraph/wildcard'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryComparePopover } from './RepositoryComparePopover'
@@ -39,7 +39,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
         />
         <div className="d-flex align-items-center">
             <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
-            <DotsHorizontalIcon className="icon-inline mx-2" />
+            <Icon className="mx-2" as={DotsHorizontalIcon} />
             <RepositoryComparePopover id="head-popover" type="head" comparison={{ base, head }} repo={repo} />
         </div>
     </div>

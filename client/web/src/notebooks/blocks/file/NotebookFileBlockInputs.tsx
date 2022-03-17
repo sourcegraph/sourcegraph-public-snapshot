@@ -9,7 +9,7 @@ import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Icon, Button } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
@@ -90,8 +90,8 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <InfoCircleOutlineIcon className="icon-inline" /> To automatically select a file, copy a Sourcegraph
-                    file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
+                    <Icon as={InfoCircleOutlineIcon} /> To automatically select a file, copy a Sourcegraph file URL,
+                    select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>
             <SearchTypeSuggestionsInput<PathMatch>

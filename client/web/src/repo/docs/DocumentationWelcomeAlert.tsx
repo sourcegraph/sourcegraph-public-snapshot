@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import { CardBody, Card, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card, Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './DocumentationWelcomeAlert.module.scss'
 
@@ -16,7 +16,7 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
         <Card>
             <CardBody>
                 <h1>
-                    <BookOpenBlankVariantIcon className="icon-inline mr-2" />
+                    <Icon className="mr-2" as={BookOpenBlankVariantIcon} />
                     API docs, for your code
                 </h1>
                 <ul className="mb-0 pl-3">

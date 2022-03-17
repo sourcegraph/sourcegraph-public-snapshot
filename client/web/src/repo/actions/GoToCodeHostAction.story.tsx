@@ -8,7 +8,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { Button, Popover, PopoverTrigger } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverTrigger, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -36,7 +36,7 @@ add('GitHub', () => (
             return (
                 <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                     <PopoverTrigger as={Button} id={targetID}>
-                        <GithubIcon className="icon-inline" />
+                        <Icon as={GithubIcon} />
                     </PopoverTrigger>
                     <InstallBrowserExtensionPopover
                         url=""
@@ -67,7 +67,7 @@ add(
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                         <PopoverTrigger as={Button} id={targetID}>
-                            <GitlabIcon className="icon-inline" />
+                            <Icon as={GitlabIcon} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -102,7 +102,7 @@ add(
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                         <PopoverTrigger as={Button} id={targetID}>
-                            <PhabricatorIcon className="icon-inline" />
+                            <Icon as={PhabricatorIcon} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""
@@ -137,7 +137,7 @@ add(
                 return (
                     <Popover isOpen={open} onOpenChange={event => setOpen(event.isOpen)}>
                         <PopoverTrigger as={Button} id={targetID}>
-                            <BitbucketIcon className="icon-inline" />
+                            <Icon as={BitbucketIcon} />
                         </PopoverTrigger>
                         <InstallBrowserExtensionPopover
                             url=""

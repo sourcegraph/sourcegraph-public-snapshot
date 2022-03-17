@@ -31,6 +31,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import {
+    Icon,
     Button,
     ButtonGroup,
     useLocalStorage,
@@ -247,7 +248,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                                 as={Link}
                             >
-                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
+                                <Icon as={SourceRepositoryIcon} /> {displayRepoName(repoOrError.name)}
                             </Button>
                             <PopoverTrigger
                                 as={Button}
@@ -257,7 +258,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 variant="secondary"
                                 size="sm"
                             >
-                                <ChevronDownIcon className="icon-inline" />
+                                <Icon as={ChevronDownIcon} />
                             </PopoverTrigger>
                         </ButtonGroup>
                         <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">

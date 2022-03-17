@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError, numberWithCommas, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
@@ -47,7 +47,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     children,
     className,
     onClick,
-    icon: Icon,
+    icon: ReferenceIcon,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -66,7 +66,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
             data-testid="git-ref-node"
         >
             <span className="d-flex align-items-center">
-                {Icon && <Icon className="icon-inline mr-1" />}
+                {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} />}
                 <Badge as="code">{node.displayName}</Badge>
                 {mostRecentSig && (
                     <small className="pl-2">

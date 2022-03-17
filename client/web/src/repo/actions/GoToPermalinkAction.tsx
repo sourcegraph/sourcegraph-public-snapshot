@@ -6,6 +6,7 @@ import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
@@ -68,7 +69,7 @@ export class GoToPermalinkAction extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
-                    <LinkIcon className="icon-inline" />
+                    <Icon as={LinkIcon} />
                     <span>Permalink (with full Git commit SHA)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -82,7 +83,7 @@ export class GoToPermalinkAction extends React.PureComponent<
                 onSelect={this.onClick.bind(this)}
                 data-tooltip="Permalink (with full Git commit SHA)"
             >
-                <LinkIcon className="icon-inline" />
+                <Icon as={LinkIcon} />
             </RepoHeaderActionButtonLink>
         )
     }
