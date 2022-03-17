@@ -11,6 +11,16 @@ In a deployment repository (such as `sourcegraph/deploy-sourcegraph-*`) you can 
 deployment-notifier -environment $MY_ENV -sourcegraph.commit $MY_COMMIT
 ```
 
+### Flags 
+
+- `-github.token` (defaults to `$GITHUB_TOKEN`) 
+- `-sourcegraph.commit` (optional) the SHA1 of the commit being deployed, used to find the pull requests to mention.
+- `-sourcegraph.guess-commit` (optional) infers the SHA1 of the commit being deployed from the changes, supersedes `-sourcegraph.commit`.
+- `-environment` either `preprod` or `production`
+- `-pretend` (optional) do not post on Slack or GitHub, just print out what would be posted.
+- `-slack.token` Slack Token used to find the matching Slack handle for pull request authors.
+- `-slack.webhook` Slack webhook URL to post the notifications on.
+
 ## How it works
 
 Deployment notifier works as following:
