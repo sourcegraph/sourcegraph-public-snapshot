@@ -350,6 +350,9 @@ function mockCommonGraphQLResponses(
                         totalCount: 0,
                     },
                 },
+                batchSpecs: {
+                    nodes: [{ state: BatchSpecState.COMPLETED }],
+                },
                 bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
                 ...batchesOverrides,
