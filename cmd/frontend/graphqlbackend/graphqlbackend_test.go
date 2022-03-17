@@ -354,7 +354,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `
 				{
 					"affiliatedRepositories": {
-						"codeHostErrors": "Error from gitlab: unexpected response from GitLab API (/api/v4/projects?archived=no&membership=true&per_page=40): HTTP error status 401",
+						"codeHostErrors": ["Error from gitlab: unexpected response from GitLab API (/api/v4/projects?archived=no&membership=true&per_page=40): HTTP error status 401"],
 						"nodes": [
 							{
 								"name": "test-user/test",

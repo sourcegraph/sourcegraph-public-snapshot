@@ -33,7 +33,7 @@ type affiliatedRepositoriesConnection struct {
 	nodes          []*codeHostRepositoryResolver
 	err            error
 	db             database.DB
-	codeHostErrors string
+	codeHostErrors []string
 }
 
 func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context) (*affiliatedRepositoriesConnection, error) {
@@ -162,7 +162,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 			a.err = errors.New("failed to fetch from any code host")
 		}
 
-		a.codeHostErrors = strings.Join(listOfErrors, ",")
+		a.codeHostErrors = listOfErrors
 	})
 
 	return a, a.err
@@ -177,7 +177,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 	return nodesAndErrors.nodes, nil
 }
 
-func (a *affiliatedRepositoriesConnection) CodeHostErrors(ctx context.Context) (string, error) {
+func (a *affiliatedRepositoriesConnection) CodeHostErrors(ctx context.Context) ([]string, error) {
 	nodesAndErrors, err := a.getNodesAndErrors(ctx)
 	if err != nil {
 		return a.codeHostErrors, err

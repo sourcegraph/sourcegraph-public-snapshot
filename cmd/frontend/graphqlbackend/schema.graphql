@@ -6523,7 +6523,7 @@ type CodeHostRepositoryConnection {
     """
     Errors returned from the code host.
     """
-    codeHostErrors: String!
+    codeHostErrors: [String!]!
 
     """
     A list of repositories affiliated with a code host.
