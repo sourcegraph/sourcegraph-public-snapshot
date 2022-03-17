@@ -19,6 +19,9 @@ export interface IconProps extends SVGProps<SVGSVGElement> {
     as?: ElementType
 }
 
+/**
+ * Use this component as the replacement for `icon-inline` class
+ */
 export const Icon = React.forwardRef<SVGElement, IconProps>(
     ({ children, className, size, as: Component = 'svg', ...attributes }, reference) => (
         <Component
