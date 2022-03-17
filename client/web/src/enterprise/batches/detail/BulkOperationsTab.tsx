@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'

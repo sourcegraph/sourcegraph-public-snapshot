@@ -1,3 +1,5 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
@@ -5,7 +7,6 @@ import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
-import React from 'react'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'

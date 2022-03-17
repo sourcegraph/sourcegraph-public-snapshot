@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Switch, Route, useRouteMatch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

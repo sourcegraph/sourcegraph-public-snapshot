@@ -1,10 +1,11 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
-import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
@@ -35,16 +36,20 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 
 import { ORG_PENDING_INVITES_QUERY, ORG_RESEND_INVITATION_MUTATION, ORG_REVOKE_INVITATION_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
-import styles from './OrgPendingInvites.module.scss'
 import {
     getInvitationCreationDateString,
     getInvitationExpiryDateString,
     getLocaleFormattedDateFromString,
     getPaginatedItems,
     OrgMemberNotification,
+    useQueryStringParameters,
 } from './utils'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+import styles from './OrgPendingInvites.module.scss'
+
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+    onOrgGetStartedRefresh: () => void
+}
 interface OrganizationInvitation {
     id: string
     recipientEmail?: string
@@ -236,8 +241,14 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    onOrgGetStartedRefresh,
+}) => {
     const orgId = org.id
+    const query = useQueryStringParameters()
+    const openInviteModal = !!query.get('openInviteModal')
     useEffect(() => {
         eventLogger.logViewEvent('OrgPendingInvites', { orgId })
     }, [orgId])
@@ -254,20 +265,22 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
 
     const onInviteSent = useCallback(
         async (result: IModalInviteResult) => {
+            onOrgGetStartedRefresh()
             setInvite(result)
             await refetch({ id: orgId })
         },
-        [setInvite, orgId, refetch]
+        [setInvite, orgId, refetch, onOrgGetStartedRefresh]
     )
 
     const onInviteResentRevoked = useCallback(
         async (recipient: string, revoked?: boolean) => {
+            onOrgGetStartedRefresh()
             const message = `${revoked ? 'Revoked' : 'Resent'} invite for ${recipient}`
             setNotification(message)
             setPage(1)
             await refetch({ id: orgId })
         },
-        [setNotification, orgId, refetch]
+        [setNotification, orgId, refetch, onOrgGetStartedRefresh]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -303,6 +316,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                 orgId={org.id}
                                 onInviteSent={onInviteSent}
                                 variant="success"
+                                initiallyOpened={openInviteModal}
                             />
                         )}
                     </div>

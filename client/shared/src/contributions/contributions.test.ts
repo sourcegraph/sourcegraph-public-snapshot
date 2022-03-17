@@ -1,5 +1,6 @@
+import { ContributableMenu } from '@sourcegraph/client-api'
+
 import { ActionItemAction } from '../actions/ActionItem'
-import { ContributableMenu } from '../api/protocol'
 
 import { getContributedActionItems } from './contributions'
 

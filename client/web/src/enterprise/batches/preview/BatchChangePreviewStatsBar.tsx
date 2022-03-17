@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
+
+import classNames from 'classnames'
 
 import { Badge, useObservable } from '@sourcegraph/wildcard'
 
@@ -8,7 +9,6 @@ import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graph
 
 import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
-import styles from './BatchChangePreviewStatsBar.module.scss'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
     PreviewActionArchive,
@@ -19,6 +19,8 @@ import {
     PreviewActionUndraft,
     PreviewActionUpdate,
 } from './list/PreviewActions'
+
+import styles from './BatchChangePreviewStatsBar.module.scss'
 
 const actionClassNames = classNames(
     styles.batchChangePreviewStatsBarStat,

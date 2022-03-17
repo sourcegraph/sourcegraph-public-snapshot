@@ -1,7 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { drop } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React from 'react'
+import { useLocation } from 'react-router'
 
 import { Alert, Button } from '@sourcegraph/wildcard'
 
@@ -81,4 +83,10 @@ export function getPaginatedItems<T>(
         totalPages: Math.ceil(items.length / pageSize),
         results: pagedItems,
     }
+}
+
+export function useQueryStringParameters(): URLSearchParams {
+    const { search } = useLocation()
+
+    return React.useMemo(() => new URLSearchParams(search), [search])
 }

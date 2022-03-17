@@ -49,6 +49,7 @@ coverage:
 comment: false
 ignore:
   - '**/bindata.go'
+  - 'client/vscode/**/*'
 
 flags:
   typescript:

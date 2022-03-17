@@ -1,5 +1,6 @@
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useCallback, useEffect, useState } from 'react'
+
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ReactDOM from 'react-dom'
 import { useLocation } from 'react-router-dom'
 
@@ -9,9 +10,10 @@ import { Icon } from '@sourcegraph/wildcard'
 import { useGettingStartedTourState } from '../stores/gettingStartedTourState'
 
 import { GettingStartedTourStepItem } from './data'
-import styles from './GettingStartedTour.module.scss'
 import { GETTING_STARTED_TOUR_MARKER } from './GettingStartedTourInfo'
 import { parseURIMarkers } from './utils'
+
+import styles from './GettingStartedTour.module.scss'
 
 interface GettingStartedTourCompletionAgentProps extends Partial<TelemetryProps> {
     steps: GettingStartedTourStepItem[]

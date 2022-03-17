@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 

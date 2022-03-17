@@ -1,6 +1,7 @@
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,9 +20,10 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
-import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
+
+import styles from './DashboardsContent.module.scss'
 
 export interface DashboardsContentProps extends TelemetryProps {
     /**

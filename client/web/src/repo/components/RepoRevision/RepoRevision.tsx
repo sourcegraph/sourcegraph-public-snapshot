@@ -1,7 +1,8 @@
+import React, { HTMLAttributes } from 'react'
+
 import classNames from 'classnames'
 import type { MdiReactIconProps } from 'mdi-react'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import React, { HTMLAttributes } from 'react'
 
 import styles from './RepoRevision.module.scss'
 

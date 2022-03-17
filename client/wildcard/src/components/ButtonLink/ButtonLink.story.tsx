@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import { startCase } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'

@@ -1,18 +1,19 @@
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -32,10 +33,10 @@ import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUse
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import blockStyles from '../NotebookBlock.module.scss'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
+import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookQueryBlock.module.scss'
 
 interface NotebookQueryBlockProps
@@ -67,7 +68,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     onBlockInputChange,
     fetchHighlightedFileLineRanges,
     onRunBlock,
-    onSelectBlock,
     ...props
 }) => {
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
@@ -75,26 +75,15 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
-    const runBlock = useCallback(
-        (id: string) => {
-            if (!isSelected) {
-                onSelectBlock(id)
-            }
-            onRunBlock(id)
-        },
-        [isSelected, onRunBlock, onSelectBlock]
-    )
-
     const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
         id,
         onBlockInputChange,
     ])
 
-    const { isInputFocused } = useMonacoBlockInput({
+    useMonacoBlockInput({
         editor,
         id,
-        onRunBlock: runBlock,
-        onSelectBlock,
+        onRunBlock,
         onInputChange,
         ...props,
     })
@@ -112,10 +101,10 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
             icon: <PlayCircleOutlineIcon className="icon-inline" />,
-            onClick: runBlock,
+            onClick: onRunBlock,
             keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
         }
-    }, [runBlock, isSelected, modifierKeyLabel, searchResults])
+    }, [onRunBlock, isSelected, modifierKeyLabel, searchResults])
 
     const linkMenuActions: BlockMenuAction[] = useMemo(
         () => [
@@ -129,7 +118,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         [input]
     )
 
-    const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ isInputFocused, ...props }))
+    const commonMenuActions = linkMenuActions.concat(useCommonBlockMenuActions({ id, ...props }))
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
@@ -146,26 +135,16 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         <NotebookBlock
             className={styles.block}
             id={id}
-            isInputFocused={isInputFocused}
             aria-label="Notebook query block"
             onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onRunBlock={onRunBlock}
-            onBlockInputChange={onBlockInputChange}
-            onSelectBlock={onSelectBlock}
             mainAction={mainMenuAction}
             actions={isSelected ? commonMenuActions : linkMenuActions}
             {...props}
         >
             <div className="mb-1 text-muted">Search query</div>
-            <div
-                className={classNames(
-                    blockStyles.monacoWrapper,
-                    isInputFocused && blockStyles.selected,
-                    styles.queryInputMonacoWrapper
-                )}
-            >
+            <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
                 <MonacoEditor
                     language={sourcegraphSearchLanguageId}
                     value={input}
