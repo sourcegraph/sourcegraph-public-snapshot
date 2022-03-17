@@ -158,7 +158,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
         } else {
             eventLogger.log('OrganizationInviteResendDismissed', { organizationId: orgId })
         }
-    }, [resendInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient])
+    }, [orgId, invite.recipient, invite.recipientEmail, invite.id, resendInvite, onInviteResentRevoked])
 
     const loading = revokeLoading || resendLoading
     const error = resendError || revokeError
@@ -353,6 +353,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
                                     invite={item}
                                     viewerCanAdminister={true}
                                     onInviteResentRevoked={onInviteResentRevoked}
+                                    orgId={org.id}
                                 />
                             ))}
                         </ul>
