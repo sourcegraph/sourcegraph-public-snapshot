@@ -23,12 +23,6 @@ var (
 	cf = httpcli.ExternalClientFactory
 )
 
-type codeHostRepositoryResolver struct {
-	repo     *types.CodeHostRepository
-	codeHost *types.ExternalService
-	db       database.DB
-}
-
 type affiliatedRepositoriesConnection struct {
 	userID   int32
 	orgID    int32
@@ -190,6 +184,12 @@ func (a *affiliatedRepositoriesConnection) CodeHostErrors(ctx context.Context) (
 	}
 
 	return nodesAndErrors.codeHostErrors, nil
+}
+
+type codeHostRepositoryResolver struct {
+	repo     *types.CodeHostRepository
+	codeHost *types.ExternalService
+	db       database.DB
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
