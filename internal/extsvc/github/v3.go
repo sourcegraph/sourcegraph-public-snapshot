@@ -433,7 +433,6 @@ func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, e
 	// We only care about headers
 	var dest struct{}
 	respState, err := c.get(ctx, "/", &dest)
-
 	if err != nil {
 		return nil, err
 	}

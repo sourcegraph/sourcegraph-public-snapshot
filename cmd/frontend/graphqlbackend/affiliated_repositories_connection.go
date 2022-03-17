@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -194,7 +193,6 @@ func (a *affiliatedRepositoriesConnection) CodeHostErrors(ctx context.Context) (
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
-	fmt.Println("name", r.repo.Name)
 	return r.repo.Name
 }
 
