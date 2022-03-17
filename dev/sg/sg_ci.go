@@ -446,9 +446,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 							continue
 						}
 
-						// Set buildkite branch if available
+						// Set buildkite metadata if available
 						if ciBranch := os.Getenv("BUILDKITE_BRANCH"); ciBranch != "" {
 							stream.Stream.Branch = ciBranch
+						}
+						if ciQueue := os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE"); ciQueue != "" {
+							stream.Stream.Queue = ciQueue
 						}
 
 						err = lokiClient.PushStreams(ctx, []*loki.Stream{stream})

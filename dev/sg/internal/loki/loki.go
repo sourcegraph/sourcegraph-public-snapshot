@@ -53,6 +53,7 @@ type StreamLabels struct {
 	// Additional metadata for CI when pushing
 
 	Branch string `json:"branch"`
+	Queue  string `json:"queue"`
 }
 
 // NewStreamFromJobLogs cleans the given log data, splits it into log entries, merges
