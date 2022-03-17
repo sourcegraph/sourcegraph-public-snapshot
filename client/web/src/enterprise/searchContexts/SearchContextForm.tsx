@@ -447,7 +447,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 caseSensitive={true}
                                 queryState={queryState}
                                 onChange={setQueryState}
-                                onSubmit={() => {}}
                                 globbing={false}
                                 preventNewLine={false}
                             />

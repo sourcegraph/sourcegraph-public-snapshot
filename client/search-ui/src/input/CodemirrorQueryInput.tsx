@@ -73,6 +73,7 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     className,
     preventNewLine = true,
     placeholder,
+    editorOptions,
 }) => {
     const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
     const [editor, setEditor] = useState<EditorView | undefined>()
@@ -132,8 +133,12 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
         if (placeholder) {
             extensions.push(placeholderExtension(placeholder))
         }
+
+        if (editorOptions?.readOnly) {
+            extensions.push(EditorView.editable.of(false))
+        }
         return extensions
-    }, [autocompletion, onBlur, onChange, onHandleFuzzyFinder, onSubmit, placeholder, preventNewLine])
+    }, [autocompletion, onBlur, onChange, onHandleFuzzyFinder, onSubmit, placeholder, preventNewLine, editorOptions])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
@@ -437,17 +442,25 @@ const tokenHighlight = EditorView.decorations.compute([parsedQueryField], state 
 
 // Determines whether the cursor is over a filter and if yes, decorates that
 // filter.
-const highlightFocusedFilter = EditorView.decorations.compute(['selection', parsedQueryField], state => {
-    const query = state.facet(parsedQueryField)
-    const position = state.selection.main.head
-    const focusedFilter = query.tokens.find(
-        (token): token is Filter =>
-            token.type === 'filter' && token.range.start <= position && token.range.end >= position
-    )
-    return focusedFilter
-        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-        : Decoration.none
-})
+const highlightFocusedFilter = EditorView.decorations.compute(
+    ['selection', EditorView.editable, parsedQueryField],
+    state => {
+        // No need to highlight anything if the input is "disabled"
+        if (!state.facet(EditorView.editable)) {
+            return Decoration.none
+        }
+
+        const query = state.facet(parsedQueryField)
+        const position = state.selection.main.head
+        const focusedFilter = query.tokens.find(
+            (token): token is Filter =>
+                token.type === 'filter' && token.range.start <= position && token.range.end >= position
+        )
+        return focusedFilter
+            ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+            : Decoration.none
+    }
+)
 
 // Tooltip information. This doesn't highlight the current token (yet).
 const tokenInfo = hoverTooltip(
