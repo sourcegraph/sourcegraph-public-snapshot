@@ -31,12 +31,8 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err erro
 	}
 	defer func() { err = tx.Done(err) }()
 
-	info, err := licensing.GetConfiguredProductLicenseInfo()
-	if err != nil {
-		return errors.Wrap(err, "GetConfiguredProductLicenseInfo")
-	}
-
-	if info.Plan().HasFeature(licensing.FeatureCodeInsights) {
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError == nil {
 		err := tx.UnfreezeAllInsights(ctx)
 		if err != nil {
 			return errors.Wrap(err, "UnfreezeAllInsights")
@@ -44,7 +40,8 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err erro
 		return nil
 	}
 
-	log15.Info("No license found for Code Insights. Freezing insights for limited access mode.")
+	log15.Info("No license found for Code Insights. Freezing insights for limited access mode", "error", licenseError.Error())
+
 	globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := tx.GetUnfrozenInsightCount(ctx)
 	if err != nil {
 		return errors.Wrap(err, "GetUnfrozenInsightCount")

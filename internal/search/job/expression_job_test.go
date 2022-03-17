@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type sender struct {
@@ -214,4 +215,23 @@ func TestOrJob(t *testing.T) {
 		}
 	})
 
+	t.Run("partial error still eventually sends results", func(t *testing.T) {
+		errSender := NewMockJob()
+		errSender.RunFunc.SetDefaultReturn(nil, errors.New("test error"))
+		senders := newMockSenders(2)
+		j := NewOrJob(append(senders.Jobs(), errSender)...)
+
+		stream := streaming.NewAggregatingStream()
+		finished := make(chan struct{})
+		go func() {
+			_, err := j.Run(context.Background(), nil, stream)
+			require.Error(t, err)
+			close(finished)
+		}()
+
+		senders.SendAll()
+		senders.ExitAll()
+		<-finished
+		require.Len(t, stream.Results, 1)
+	})
 }

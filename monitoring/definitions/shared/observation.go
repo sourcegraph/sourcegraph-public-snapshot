@@ -69,7 +69,7 @@ type ObservationGroupOptions struct {
 
 // NewGroup creates a group containing panels displaying the total number of operations, operation
 // duration histogram, number of errors, and error rate for the given observable within the given
-// container.
+// container, based on the RED methodology.
 //
 // Requires a:
 //   - counter of the format `src_{options.MetricNameRoot}_total`
