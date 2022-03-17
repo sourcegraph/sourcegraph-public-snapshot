@@ -16,6 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// maxRequestDuration clamps any compute queries to run for at most 1 minute.
+// It's possible to trigger longer-running queries with expensive operations,
+// and this is best avoided on large instances like Sourcegraph.com
+const maxRequestDuration = time.Minute
+
 // NewComputeStreamHandler is an http handler which streams back compute results.
 func NewComputeStreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
@@ -30,7 +35,7 @@ type streamHandler struct {
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
+	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 	defer cancel()
 
 	args, err := parseURLQuery(r.URL.Query())
