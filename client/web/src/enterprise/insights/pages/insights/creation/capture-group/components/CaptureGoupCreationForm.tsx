@@ -213,7 +213,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
             <hr className="my-4 w-100" />
 
-            {!licensed && (
+            {!licensed && !isEditMode && (
                 <LimitedAccessLabel
                     message="Unlock Code Insights to create unlimited insights"
                     className="my-3 mt-n2"
@@ -229,9 +229,6 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     loading={submitting}
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     disabled={submitting || !creationPermission?.available}
-                    data-tooltip={
-                        creationPermission && !creationPermission.available ? creationPermission.reason : undefined
-                    }
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"
                     variant="primary"

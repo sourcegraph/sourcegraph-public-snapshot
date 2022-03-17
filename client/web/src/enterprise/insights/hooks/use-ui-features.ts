@@ -37,8 +37,8 @@ export interface UseUiFeatures {
     }
     insight: {
         getContextActionsPermissions: (insight: Insight) => { showYAxis: boolean }
-        getCreationPermissions: () => Observable<{ available: true } | { available: false; reason: string }>
-        getEditPermissions: () => Observable<{ available: true } | { available: false; reason: string }>
+        getCreationPermissions: () => Observable<{ available: boolean }>
+        getEditPermissions: () => Observable<{ available: boolean }>
     }
 }
 
@@ -93,13 +93,7 @@ export function useUiFeatures(): UseUiFeatures {
                 }),
                 getCreationPermissions: () =>
                     insightsLimit !== null
-                        ? hasInsights(insightsLimit).pipe(
-                              map(reachedLimit =>
-                                  reachedLimit
-                                      ? { available: false, reason: 'You already have enough insights buddy' }
-                                      : { available: true }
-                              )
-                          )
+                        ? hasInsights(insightsLimit).pipe(map(reachedLimit => ({ available: !reachedLimit })))
                         : of({ available: true }),
                 getEditPermissions: () => of({ available: true }),
             },

@@ -117,7 +117,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
             <hr className={styles.formSeparator} />
 
-            {!licensed && (
+            {!licensed && !isEditMode && (
                 <LimitedAccessLabel
                     message="Unlock Code Insights to create unlimited insights"
                     className="my-3 mt-n2"
@@ -134,9 +134,6 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting || !creationPermission?.available}
-                    data-tooltip={
-                        creationPermission && !creationPermission.available ? creationPermission.reason : undefined
-                    }
                     className="mr-2 mb-2"
                     variant="primary"
                 />

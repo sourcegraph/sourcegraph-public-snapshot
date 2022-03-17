@@ -130,7 +130,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                                 <div className={classNames(styles.limitedAccess)}>
                                     <h3>Limited access</h3>
-                                    <p>Unlock for unlimited dashboards custom dashboards.</p>
+                                    <p>Unlock for unlimited custom dashboards.</p>
                                 </div>
                             </ListboxGroup>
                         )}

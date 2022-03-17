@@ -200,7 +200,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className="my-4 w-100" />
 
-            {!licensed && (
+            {!licensed && !isEditMode && (
                 <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="my-3" />
             )}
 
@@ -213,9 +213,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting || !creationPermission?.available}
-                    data-tooltip={
-                        creationPermission && !creationPermission.available ? creationPermission.reason : undefined
-                    }
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"
                     variant="primary"

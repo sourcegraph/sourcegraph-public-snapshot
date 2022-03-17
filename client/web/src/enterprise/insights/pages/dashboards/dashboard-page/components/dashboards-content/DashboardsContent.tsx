@@ -12,6 +12,7 @@ import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../../core/types/dashboard/virtual-dashboard'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -136,7 +137,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {!licensed && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
-                    message="Create up to two global insights"
+                    message={
+                        dashboardID === ALL_INSIGHTS_DASHBOARD_ID
+                            ? 'Create up to two global insights'
+                            : 'Unlock Code Insights for full access to custom dashboards'
+                    }
                 />
             )}
 
