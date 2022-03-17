@@ -1,9 +1,11 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import styles from './Markdown.module.scss'
 import { createLinkClickHandler } from './utils/linkClickHandler'
+
+import styles from './Markdown.module.scss'
 
 interface Props {
     wrapper?: 'div' | 'span'

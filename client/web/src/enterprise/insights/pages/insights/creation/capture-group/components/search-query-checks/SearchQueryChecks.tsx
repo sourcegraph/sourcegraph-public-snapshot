@@ -1,8 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React from 'react'
 
 import { Icon } from '@sourcegraph/wildcard'
 

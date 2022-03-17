@@ -1,15 +1,16 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -55,12 +56,13 @@ import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
-import styles from './GlobalNavbar.module.scss'
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
+
+import styles from './GlobalNavbar.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,

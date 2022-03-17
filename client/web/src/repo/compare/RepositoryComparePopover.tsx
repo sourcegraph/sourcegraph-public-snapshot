@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
@@ -76,7 +76,7 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
             >
                 <div className="text-muted mr-1">{type}: </div>
                 {comparison[type].revision || defaultBranch}
-                <RepoRevisionChevronDownIcon className="icon-inline" />
+                <Icon as={RepoRevisionChevronDownIcon} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomStart}>
                 <RevisionsPopover

@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
@@ -36,11 +37,12 @@ import {
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters, DRAFT_STATUS, OPEN_STATUS } from './BatchChangeListFilters'
-import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
+
+import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps
     extends TelemetryProps,

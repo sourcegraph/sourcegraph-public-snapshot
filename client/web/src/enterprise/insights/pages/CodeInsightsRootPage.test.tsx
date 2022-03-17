@@ -1,8 +1,9 @@
 /* eslint-disable ban/ban */
+import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { Route } from 'react-router-dom'
 import { of } from 'rxjs'

@@ -1,12 +1,23 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonGroup, useObservable, Link, Menu, MenuButton, MenuList, MenuItem } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    useObservable,
+    Link,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuItem,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
@@ -61,7 +72,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     variant="secondary"
                     as={Link}
                 >
-                    <PlusIcon className="icon-inline" />
+                    <Icon as={PlusIcon} />
                     Create a saved search
                 </Button>
             )}
@@ -96,14 +107,14 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ) : (
                                         <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
-                                            <PencilOutlineIcon className="icon-inline" />
+                                            <Icon as={PencilOutlineIcon} />
                                         </Link>
                                     ))}
                             </div>

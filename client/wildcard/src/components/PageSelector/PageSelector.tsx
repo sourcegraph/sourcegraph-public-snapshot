@@ -1,8 +1,9 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { omit } from 'lodash'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React from 'react'
 import useResizeObserver from 'use-resize-observer'
 
 import { createAggregateError } from '@sourcegraph/common'

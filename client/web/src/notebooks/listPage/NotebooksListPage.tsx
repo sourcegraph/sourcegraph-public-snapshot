@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -11,7 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, Link, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -21,6 +22,7 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 
 import { ImportMarkdownNotebookButton } from './ImportMarkdownNotebookButton'
 import { NotebooksList } from './NotebooksList'
+
 import styles from './NotebooksListPage.module.scss'
 
 export interface NotebooksListPageProps extends TelemetryProps {
@@ -234,7 +236,7 @@ export const NotebooksListPage: React.FunctionComponent<NotebooksListPageProps> 
                         authenticatedUser && (
                             <>
                                 <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link} className="mr-2">
-                                    <PlusIcon className="icon-inline mr-1" />
+                                    <Icon className="mr-1" as={PlusIcon} />
                                     Create notebook
                                 </Button>
                                 <ImportMarkdownNotebookButton

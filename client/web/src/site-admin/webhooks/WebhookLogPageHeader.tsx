@@ -1,14 +1,16 @@
-import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback } from 'react'
 
+import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+
 import { useQuery } from '@sourcegraph/http-client'
-import { Button, Select } from '@sourcegraph/wildcard'
+import { Button, Select, Icon } from '@sourcegraph/wildcard'
 
 import { WebhookLogPageHeaderResult } from '../../graphql-operations'
 
 import { SelectedExternalService, WEBHOOK_LOG_PAGE_HEADER } from './backend'
 import { PerformanceGauge } from './PerformanceGauge'
+
 import styles from './WebhookLogPageHeader.module.scss'
 
 export interface Props {
@@ -70,7 +72,7 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
             </div>
             <div className={styles.errorButton}>
                 <Button variant="danger" onClick={onErrorToggle} outline={!onlyErrors}>
-                    <AlertCircleIcon className={classNames('icon-inline', styles.icon, onlyErrors && styles.enabled)} />
+                    <Icon className={classNames(styles.icon, onlyErrors && styles.enabled)} as={AlertCircleIcon} />
                     <span className="ml-1">Only errors</span>
                 </Button>
             </div>

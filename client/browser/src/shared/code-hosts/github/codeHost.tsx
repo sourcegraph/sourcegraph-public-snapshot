@@ -1,7 +1,8 @@
+import React from 'react'
+
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
-import React from 'react'
 import { render } from 'react-dom'
 import { defer, of } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
@@ -33,13 +34,14 @@ import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
-import styles from './codeHost.module.scss'
 import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL, getFilePath } from './util'
+
+import styles from './codeHost.module.scss'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing

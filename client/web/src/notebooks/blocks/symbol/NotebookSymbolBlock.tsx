@@ -1,3 +1,5 @@
+import React, { useState, useMemo, useCallback } from 'react'
+
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -5,14 +7,13 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useMemo, useCallback } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -30,8 +31,9 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
-import styles from './NotebookSymbolBlock.module.scss'
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
+
+import styles from './NotebookSymbolBlock.module.scss'
 
 interface NotebookSymbolBlockProps
     extends BlockProps<SymbolBlock>,
@@ -63,16 +65,14 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     extensionsController,
     isLightTheme,
     onRunBlock,
-    onSelectBlock,
     onBlockInputChange,
     ...props
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
     const [symbolQueryInput, setSymbolQueryInput] = useState('')
-    const [isInputFocused, setIsInputFocused] = useState(false)
-
     const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
+
     const onSymbolSelected = useCallback(
         (input: SymbolBlockInput) => {
             onBlockInputChange(id, { type: 'symbol', input })
@@ -95,7 +95,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
     const symbolOutput = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
 
     const commonMenuActions = useCommonBlockMenuActions({
-        isInputFocused,
+        id,
         isReadOnly,
         ...props,
     })
@@ -164,15 +164,11 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         <NotebookBlock
             className={styles.block}
             id={id}
-            isReadOnly={isReadOnly}
-            isInputFocused={isInputFocused}
             aria-label="Notebook symbol block"
             onEnterBlock={onEnterBlock}
+            onHideInput={hideInputs}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onRunBlock={hideInputs}
-            onBlockInputChange={onBlockInputChange}
-            onSelectBlock={onSelectBlock}
             actions={isSelected ? menuActions : linkMenuAction}
             {...props}
         >
@@ -196,15 +192,13 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
                 <NotebookSymbolBlockInput
                     id={id}
                     editor={editor}
-                    symbolQueryInput={symbolQueryInput}
+                    queryInput={symbolQueryInput}
                     isLightTheme={isLightTheme}
                     setEditor={setEditor}
-                    setSymbolQueryInput={setSymbolQueryInput}
-                    debouncedSetSymbolQueryInput={debouncedSetSymbolQueryInput}
+                    setQueryInput={setSymbolQueryInput}
+                    debouncedSetQueryInput={debouncedSetSymbolQueryInput}
                     onSymbolSelected={onSymbolSelected}
-                    setIsInputFocused={setIsInputFocused}
                     onRunBlock={hideInputs}
-                    onSelectBlock={onSelectBlock}
                     {...props}
                 />
             )}

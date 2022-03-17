@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
 
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -22,9 +23,10 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
-import styles from './SearchPage.module.scss'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+
+import styles from './SearchPage.module.scss'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,

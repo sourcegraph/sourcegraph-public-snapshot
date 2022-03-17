@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 

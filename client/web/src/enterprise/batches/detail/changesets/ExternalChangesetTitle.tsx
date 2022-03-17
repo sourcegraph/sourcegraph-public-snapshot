@@ -1,5 +1,6 @@
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
+
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 

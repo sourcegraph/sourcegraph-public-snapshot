@@ -570,7 +570,7 @@ type ExperimentalFeatures struct {
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// DependenciesSearch description: Enables support for repo:dependencies predicate queries.
-	DependenciesSearch bool `json:"dependenciesSearch,omitempty"`
+	DependenciesSearch string `json:"dependenciesSearch,omitempty"`
 	// EnableGitServerCommandExecFilter description: Enable filtering of all exec commands on gitserver based on a pre-defined allowlist
 	EnableGitServerCommandExecFilter bool `json:"enableGitServerCommandExecFilter,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
@@ -890,6 +890,10 @@ type GitoliteConnection struct {
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
 	// Host description: Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).
 	Host string `json:"host"`
+	// Phabricator description: This is DEPRECATED
+	Phabricator *Phabricator `json:"phabricator,omitempty"`
+	// PhabricatorMetadataCommand description: This is DEPRECATED
+	PhabricatorMetadataCommand string `json:"phabricatorMetadataCommand,omitempty"`
 	// Prefix description: Repository name prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., "gitolite.example.com/".
 	//
 	// It is important that the Sourcegraph repository name generated with this prefix be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
@@ -1340,6 +1344,14 @@ type PermissionsUserMapping struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
+// Phabricator description: This is DEPRECATED
+type Phabricator struct {
+	// CallsignCommand description:  Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
+	CallsignCommand string `json:"callsignCommand"`
+	// Url description: URL of the Phabricator instance that integrates with this Gitolite instance. This should be set
+	Url string `json:"url"`
+}
+
 // PhabricatorConnection description: Configuration for a connection to Phabricator.
 type PhabricatorConnection struct {
 	// Repos description: The list of repositories available on Phabricator.
@@ -1618,7 +1630,7 @@ type SettingsExperimentalFeatures struct {
 	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// ShowSearchNotebook description: Enables the search notebook at search/notebook
 	ShowSearchNotebook *bool `json:"showSearchNotebook,omitempty"`
-	// TreeSitterEnabled description: Enables tree sitter for enabled filetypes
+	// TreeSitterEnabled description: DEPRECATED: Enables tree sitter for enabled filetypes.
 	TreeSitterEnabled *bool `json:"treeSitterEnabled,omitempty"`
 }
 
@@ -1802,6 +1814,8 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
+	// SyntaxHighlighting description: Syntax highlighting configuration
+	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UserReposMaxPerSite description: The site wide maximum number of repos that can be added by non site admins
@@ -1834,6 +1848,30 @@ type SubRepoPermissions struct {
 	UserCacheSize int `json:"userCacheSize,omitempty"`
 	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
+}
+
+// SyntaxHighlighting description: Syntax highlighting configuration
+type SyntaxHighlighting struct {
+	Engine    SyntaxHighlightingEngine   `json:"engine"`
+	Languages SyntaxHighlightingLanguage `json:"languages"`
+}
+type SyntaxHighlightingEngine struct {
+	// Default description: The default syntax highlighting engine to use
+	Default string `json:"default"`
+	// Overrides description: Manually specify overrides for syntax highlighting engine per language
+	Overrides map[string]string `json:"overrides,omitempty"`
+}
+type SyntaxHighlightingLanguage struct {
+	// Extensions description: Map of extension to language
+	Extensions map[string]string `json:"extensions"`
+	// Patterns description: Map of patterns to language. Will return after first match, if any.
+	Patterns []*SyntaxHighlightingLanguagePatterns `json:"patterns"`
+}
+type SyntaxHighlightingLanguagePatterns struct {
+	// Language description: Name of the language if pattern matches
+	Language string `json:"language"`
+	// Pattern description: Regular expression which matches the filepath
+	Pattern string `json:"pattern"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

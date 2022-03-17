@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
+
+import classNames from 'classnames'
 
 import { Button, FlexTextArea } from '@sourcegraph/wildcard'
 

@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
-import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -10,7 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -130,12 +131,8 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
                                 variant="primary"
                             >
-                                {loading === 'addUserToOrganization' ? (
-                                    <LoadingSpinner />
-                                ) : (
-                                    <AddIcon className="icon-inline" />
-                                )}{' '}
-                                Add member
+                                {loading === 'addUserToOrganization' ? <LoadingSpinner /> : <Icon as={AddIcon} />} Add
+                                member
                             </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
@@ -153,7 +150,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                 {loading === 'inviteUserToOrganization' ? (
                                     <LoadingSpinner />
                                 ) : (
-                                    <EmailOpenOutlineIcon className="icon-inline" />
+                                    <Icon as={EmailOpenOutlineIcon} />
                                 )}{' '}
                                 {emailInvitesEnabled
                                     ? viewerCanAddUserToOrganization
@@ -275,7 +272,7 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <CloseIcon className="icon-inline" />
+            <Icon as={CloseIcon} />
         </Button>
     </Alert>
 )

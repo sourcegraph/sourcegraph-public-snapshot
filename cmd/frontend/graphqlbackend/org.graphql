@@ -37,3 +37,14 @@ extend type Org {
         externalServiceIDs: [ID]
     ): RepositoryConnection!
 }
+
+extend type Mutation {
+    """
+    Collects the stats users enter when accessing organizations open beta on Cloud
+
+    Only authenticated users are able to perform this operation.
+
+    Only possible to execute on Cloud deployment.
+    """
+    addOrgsOpenBetaStats(stats: JSONCString!): ID
+}

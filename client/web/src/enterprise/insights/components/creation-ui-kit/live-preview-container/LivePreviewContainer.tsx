@@ -1,6 +1,7 @@
+import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
+
 import classNames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
-import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'

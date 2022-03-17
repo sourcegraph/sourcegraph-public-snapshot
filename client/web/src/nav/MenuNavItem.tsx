@@ -1,11 +1,12 @@
+import React, { ComponentType, forwardRef } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { ComponentType, forwardRef } from 'react'
 
-import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
+import { ForwardReferenceComponent, Menu, MenuButton, MenuItem, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import styles from './MenuNavItem.module.scss'
 
@@ -29,8 +30,8 @@ export const MenuNavItem: React.FunctionComponent<MenuNavItemProps> = forwardRef
             {({ isExpanded }) => (
                 <>
                     <MenuButton className={classNames('bg-transparent', styles.menuNavItem)} ref={menuButtonRef}>
-                        <MenuIcon className="icon-inline" />
-                        {isExpanded ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                        <Icon as={MenuIcon} />
+                        <Icon as={isExpanded ? MenuUpIcon : MenuDownIcon} />
                     </MenuButton>
                     <MenuList position={position}>
                         {React.Children.map(children, child => child && <MenuItem onSelect={noop}>{child}</MenuItem>)}

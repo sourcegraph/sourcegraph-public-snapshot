@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { Maybe } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -40,7 +41,7 @@ const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
                     </div>
                 </div>
                 <div className="d-flex flex-column">
-                    <Link to={org.url} className={styles.orgLink}>
+                    <Link to={`${org.url}/getstarted`} className={styles.orgLink}>
                         {org.displayName || org.name}
                     </Link>
                     {org.displayName && (

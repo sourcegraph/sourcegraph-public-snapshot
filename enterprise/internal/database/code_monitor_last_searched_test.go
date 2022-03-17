@@ -6,34 +6,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCodeMonitorStoreLastSearched(t *testing.T) {
 	t.Parallel()
 
-	type testFixtures struct {
-		User    *types.User
-		Monitor *Monitor
-	}
-	populateFixtures := func(db EnterpriseDB) testFixtures {
-		ctx := context.Background()
-		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
-		require.NoError(t, err)
-		ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
-		m, err := db.CodeMonitors().CreateMonitor(ctx, MonitorArgs{NamespaceUserID: &u.ID})
-		require.NoError(t, err)
-		return testFixtures{User: u, Monitor: m}
-	}
-
 	t.Run("insert get upsert get", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
 		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
-		fixtures := populateFixtures(db)
+		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
 		// Insert
@@ -61,7 +45,7 @@ func TestCodeMonitorStoreLastSearched(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
 		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
-		fixtures := populateFixtures(db)
+		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
 		// GetLastSearched should not return an error for a monitor that hasn't
@@ -75,7 +59,7 @@ func TestCodeMonitorStoreLastSearched(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
 		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
-		fixtures := populateFixtures(db)
+		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
 		// Insert with nil last searched

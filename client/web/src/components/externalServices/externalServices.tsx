@@ -1,3 +1,5 @@
+import React from 'react'
+
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import AwsIcon from 'mdi-react/AwsIcon'
@@ -7,7 +9,6 @@ import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
-import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Link } from '@sourcegraph/wildcard'

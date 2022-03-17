@@ -1,6 +1,7 @@
+import React, { useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useState } from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { Observable } from 'rxjs'
 
@@ -9,8 +10,9 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { RepositoryFields } from '../../graphql-operations'
 
-import styles from './DocumentationExamples.module.scss'
 import { DocumentationExamplesList } from './DocumentationExamplesList'
+
+import styles from './DocumentationExamples.module.scss'
 
 interface Props extends SettingsCascadeProps {
     location: H.Location
