@@ -134,12 +134,12 @@ func formatMarkdown(issues []prAuditIssue, w io.Writer) error {
 
 var auditMarkdownTemplate = `*SOC2 Pull Request missing test plans :alert:*
 
-> If you are mentioned in the following list, it means that one of your pull request has been merged without a review or a test plan.
+> If you are mentioned in the following list, it means that one of your pull request has been merged without the mandatory test plan and review. 
 
 In order to be compliant with SOC2, you or someone from your team *must* document in the relevant issue why it was skipped and how you made sure that the changes aren't breaking anything.
 
 1. Navigate to the issue mentioning you.
-2. Explain why no test plan was provided or why the PR wasn't reviewed before being merged.
+2. Explain why no test plan was provided and why the PR wasn't reviewed before being merged.
 3. Close the issue.
 
 Read more about [test plans](https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans) and [reviews](https://docs.sourcegraph.com/dev/background-information/pull_request_reviews).
