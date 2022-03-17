@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -131,7 +130,6 @@ type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	RepoOptions RepoOptions
 	Features    Features
-	ResultTypes result.Types
 	Timeout     time.Duration
 
 	Repos []*RepositoryRevisions
