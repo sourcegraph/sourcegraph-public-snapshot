@@ -5,6 +5,7 @@ import * as uuid from 'uuid'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { background } from '../../browser-extension/web-extension-api/runtime'
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
 import { logUserEvent, logEvent } from '../backend/userEvents'
@@ -120,6 +121,7 @@ export class EventLogger implements TelemetryService {
         userEvent?: UserEvent
     ): Promise<void> {
         const anonUserId = await this.getAnonUserID()
+        console.log(await background.getCookie())
         if (userEvent) {
             logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
         }

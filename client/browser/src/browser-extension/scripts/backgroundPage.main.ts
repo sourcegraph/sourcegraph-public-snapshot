@@ -233,6 +233,11 @@ async function main(): Promise<void> {
         },
 
         fetchCache,
+
+        getCookie() {
+            // console.log((chrome || browser).cookies?.getAll({ domain: location.hostname }, console.log))
+            return Promise.resolve(document.cookie)
+        },
     }
 
     // Handle calls from other scripts
