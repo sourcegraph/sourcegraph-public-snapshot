@@ -31,7 +31,7 @@ exports[`GlobalNavbar default 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -42,7 +42,7 @@ exports[`GlobalNavbar default 1`] = `
           />
         </svg>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -73,7 +73,7 @@ exports[`GlobalNavbar default 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
-                    class="mdi-icon icon-inline icon"
+                    class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -102,7 +102,7 @@ exports[`GlobalNavbar default 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
-                    class="mdi-icon icon-inline icon"
+                    class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -128,7 +128,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -157,7 +157,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent pl-2"
             >
               <span
-                class="text"
+                class="text iconIncluded"
               >
                 Contexts
               </span>
@@ -175,7 +175,7 @@ exports[`GlobalNavbar default 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -289,7 +289,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -300,7 +300,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           />
         </svg>
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -331,7 +331,7 @@ exports[`GlobalNavbar low-profile 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
-                    class="mdi-icon icon-inline icon"
+                    class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -360,7 +360,7 @@ exports[`GlobalNavbar low-profile 1`] = `
                   class="itemFocusableContent"
                 >
                   <svg
-                    class="mdi-icon icon-inline icon"
+                    class="mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
                     viewBox="0 0 24 24"
@@ -386,7 +386,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -415,7 +415,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent pl-2"
             >
               <span
-                class="text"
+                class="text iconIncluded"
               >
                 Contexts
               </span>
@@ -433,7 +433,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               class="linkContent"
             >
               <svg
-                class="mdi-icon icon-inline icon"
+                class="mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
