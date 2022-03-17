@@ -257,5 +257,5 @@ SELECT
 `
 
 const insightsCriticalCountQuery = `
-SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
+SELECT COUNT(*) FROM insight_view
 `
