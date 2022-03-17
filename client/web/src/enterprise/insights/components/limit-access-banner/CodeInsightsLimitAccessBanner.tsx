@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Badge, Link } from '@sourcegraph/wildcard'
 
@@ -10,9 +11,7 @@ interface CodeInsightsLimitAccessBannerProps extends React.HTMLAttributes<HTMLDi
 export const CodeInsightsLimitAccessBanner: React.FunctionComponent<CodeInsightsLimitAccessBannerProps> = props => (
     <div {...props} className={classNames(styles.banner, props.className)}>
         <div className={styles.content}>
-            <Badge variant="merged" className="mb-2">
-                LIMITED ACCESS
-            </Badge>
+            <Badge className={classNames('mb-2', styles.badge)}>LIMITED ACCESS</Badge>
             <p className="m-0">
                 Contact your admin or{' '}
                 <Link
