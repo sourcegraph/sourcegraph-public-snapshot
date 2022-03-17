@@ -165,7 +165,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 <Container className="mb-4">
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
-                            {typeof currentTotalCount === 'number' && lastTotalCount !== undefined && (
+                            {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
                                 <h3 className="align-self-end flex-1">
                                     {lastTotalCount} of {currentTotalCount}{' '}
                                     {pluralize('batch change', currentTotalCount)}
