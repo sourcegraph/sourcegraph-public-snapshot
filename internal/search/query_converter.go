@@ -114,20 +114,6 @@ const (
 	Batch
 )
 
-// ToPatternString returns the simple string pattern of a basic query. It
-// assumes there is only on pattern atom.
-func ToPatternString(q query.Basic) string {
-	if p, ok := q.Pattern.(query.Pattern); ok {
-		if q.IsLiteral() {
-			// Escape regexp meta characters if this pattern should be treated literally.
-			return regexp.QuoteMeta(p.Value)
-		} else {
-			return p.Value
-		}
-	}
-	return ""
-}
-
 // ToTextPatternInfo converts a an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
@@ -165,7 +151,7 @@ func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *Tex
 		IsStructuralPat: q.IsStructural(),
 		IsCaseSensitive: q.IsCaseSensitive(),
 		FileMatchLimit:  int32(count),
-		Pattern:         ToPatternString(q),
+		Pattern:         q.PatternString(),
 		IsNegated:       negated,
 
 		// Values dependent on parameters.
