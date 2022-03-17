@@ -19,7 +19,6 @@ import React, {
     useEffect,
     useLayoutEffect,
 } from 'react'
-import { useHistory } from 'react-router-dom'
 
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -31,8 +30,6 @@ import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/ut
 import { Button, Link, TextArea } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
-import { serializeBlocksToURL } from '../notebooks/serialize'
-import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import {
     useSearchStackState,
@@ -75,9 +72,12 @@ function useHasNewEntry(entries: SearchStackEntry[]): boolean {
     return previous !== undefined && previous < entries.length
 }
 
-export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
-    const history = useHistory()
+export interface SearchStackProps {
+    initialOpen?: boolean
+    onCreateNotebook: (blocks: BlockInput[]) => void
+}
 
+export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initialOpen = false, onCreateNotebook }) => {
     const [open, setOpen] = useState(initialOpen)
     const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const addableEntry = useSearchStackState(state => state.addableEntry)
@@ -170,13 +170,8 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                     break
             }
         }
-
-        const location = {
-            pathname: PageRoutes.NotebookCreate,
-            hash: serializeBlocksToURL(blocks, window.location.origin),
-        }
-        history.push(location)
-    }, [entries, history])
+        onCreateNotebook(blocks)
+    }, [entries, onCreateNotebook])
 
     const toggleOpen = useCallback(() => {
         setOpen(open => {
@@ -191,7 +186,13 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     // Handles key events on the whole list
     const handleKey = useCallback(
         (event: KeyboardEvent): void => {
-            const hasMeta = (isMacPlatform_ && event.metaKey) || (!isMacPlatform_ && event.ctrlKey)
+            const hasMacMeta = isMacPlatform_ && event.metaKey
+            const hasMeta = hasMacMeta || (!isMacPlatform_ && event.ctrlKey)
+
+            if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
+                // Ignore any events originating from an annotations input
+                return
+            }
 
             switch (event.key) {
                 // Select all entries
@@ -210,8 +211,13 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                     break
                 // Delete selected entries
                 case 'Delete':
-                case 'Backspace':
                     if (selectedEntries.length > 0) {
+                        deleteSelectedEntries()
+                    }
+                    break
+                // On macOS we also support CMD+Backpace for deletion
+                case 'Backspace':
+                    if (hasMacMeta && selectedEntries.length > 0) {
                         deleteSelectedEntries()
                     }
                     break
@@ -539,12 +545,10 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                     onBlur={() => setEntryAnnotation(entry, annotation)}
                     onChange={event => setAnnotation(event.currentTarget.value)}
                     onClick={stopPropagation}
-                    onKeyUp={event => {
-                        // This is used mainly to prevent deletion of the entry
-                        // when Delete or Backspace are pressed (one of the
-                        // ancestors listens to keyup events to handle
-                        // keybindings)
-                        event.stopPropagation()
+                    onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                            event.currentTarget.blur()
+                        }
                     }}
                 />
             )}

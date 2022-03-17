@@ -1,12 +1,11 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
-import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { SearchBasedInsight } from '../../../../core/types'
 import { CodeInsightTrackType } from '../../../../pings'
@@ -91,7 +90,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <Page className={classNames(styles.creationPage)}>
+        <CodeInsightsPage className={styles.creationPage}>
             <PageTitle title="Create new code insight" />
 
             {loading && (
@@ -129,6 +128,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                     </>
                 )
             }
-        </Page>
+        </CodeInsightsPage>
     )
 }

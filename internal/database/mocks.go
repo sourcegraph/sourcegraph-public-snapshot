@@ -10706,9 +10706,6 @@ type MockExternalServiceStore struct {
 	// UpsertFunc is an instance of a mock function object controlling the
 	// behavior of the method Upsert.
 	UpsertFunc *ExternalServiceStoreUpsertFunc
-	// ValidateConfigFunc is an instance of a mock function object
-	// controlling the behavior of the method ValidateConfig.
-	ValidateConfigFunc *ExternalServiceStoreValidateConfigFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *ExternalServiceStoreWithFunc
@@ -10800,11 +10797,6 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 		UpsertFunc: &ExternalServiceStoreUpsertFunc{
 			defaultHook: func(context.Context, ...*types.ExternalService) error {
 				return nil
-			},
-		},
-		ValidateConfigFunc: &ExternalServiceStoreValidateConfigFunc{
-			defaultHook: func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error) {
-				return nil, nil
 			},
 		},
 		WithFunc: &ExternalServiceStoreWithFunc{
@@ -10905,11 +10897,6 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.Upsert")
 			},
 		},
-		ValidateConfigFunc: &ExternalServiceStoreValidateConfigFunc{
-			defaultHook: func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error) {
-				panic("unexpected invocation of MockExternalServiceStore.ValidateConfig")
-			},
-		},
 		WithFunc: &ExternalServiceStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) ExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.With")
@@ -10975,9 +10962,6 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 		},
 		UpsertFunc: &ExternalServiceStoreUpsertFunc{
 			defaultHook: i.Upsert,
-		},
-		ValidateConfigFunc: &ExternalServiceStoreValidateConfigFunc{
-			defaultHook: i.ValidateConfig,
 		},
 		WithFunc: &ExternalServiceStoreWithFunc{
 			defaultHook: i.With,
@@ -12713,117 +12697,6 @@ func (c ExternalServiceStoreUpsertFuncCall) Args() []interface{} {
 // invocation.
 func (c ExternalServiceStoreUpsertFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// ExternalServiceStoreValidateConfigFunc describes the behavior when the
-// ValidateConfig method of the parent MockExternalServiceStore instance is
-// invoked.
-type ExternalServiceStoreValidateConfigFunc struct {
-	defaultHook func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error)
-	hooks       []func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error)
-	history     []ExternalServiceStoreValidateConfigFuncCall
-	mutex       sync.Mutex
-}
-
-// ValidateConfig delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockExternalServiceStore) ValidateConfig(v0 context.Context, v1 ValidateExternalServiceConfigOptions) ([]byte, error) {
-	r0, r1 := m.ValidateConfigFunc.nextHook()(v0, v1)
-	m.ValidateConfigFunc.appendCall(ExternalServiceStoreValidateConfigFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ValidateConfig
-// method of the parent MockExternalServiceStore instance is invoked and the
-// hook queue is empty.
-func (f *ExternalServiceStoreValidateConfigFunc) SetDefaultHook(hook func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ValidateConfig method of the parent MockExternalServiceStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ExternalServiceStoreValidateConfigFunc) PushHook(hook func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ExternalServiceStoreValidateConfigFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ExternalServiceStoreValidateConfigFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error) {
-		return r0, r1
-	})
-}
-
-func (f *ExternalServiceStoreValidateConfigFunc) nextHook() func(context.Context, ValidateExternalServiceConfigOptions) ([]byte, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ExternalServiceStoreValidateConfigFunc) appendCall(r0 ExternalServiceStoreValidateConfigFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ExternalServiceStoreValidateConfigFuncCall
-// objects describing the invocations of this function.
-func (f *ExternalServiceStoreValidateConfigFunc) History() []ExternalServiceStoreValidateConfigFuncCall {
-	f.mutex.Lock()
-	history := make([]ExternalServiceStoreValidateConfigFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ExternalServiceStoreValidateConfigFuncCall is an object that describes an
-// invocation of method ValidateConfig on an instance of
-// MockExternalServiceStore.
-type ExternalServiceStoreValidateConfigFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 ValidateExternalServiceConfigOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []byte
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ExternalServiceStoreValidateConfigFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ExternalServiceStoreValidateConfigFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ExternalServiceStoreWithFunc describes the behavior when the With method
@@ -15744,6 +15617,9 @@ type MockGitserverRepoStore struct {
 	// SetLastFetchedFunc is an instance of a mock function object
 	// controlling the behavior of the method SetLastFetched.
 	SetLastFetchedFunc *GitserverRepoStoreSetLastFetchedFunc
+	// SetRepoSizeFunc is an instance of a mock function object controlling
+	// the behavior of the method SetRepoSize.
+	SetRepoSizeFunc *GitserverRepoStoreSetRepoSizeFunc
 	// TotalErroredCloudDefaultReposFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// TotalErroredCloudDefaultRepos.
@@ -15798,6 +15674,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
 			defaultHook: func(context.Context, api.RepoName, GitserverFetchData) error {
+				return nil
+			},
+		},
+		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
+			defaultHook: func(context.Context, api.RepoName, int64, string) error {
 				return nil
 			},
 		},
@@ -15864,6 +15745,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastFetched")
 			},
 		},
+		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
+			defaultHook: func(context.Context, api.RepoName, int64, string) error {
+				panic("unexpected invocation of MockGitserverRepoStore.SetRepoSize")
+			},
+		},
 		TotalErroredCloudDefaultReposFunc: &GitserverRepoStoreTotalErroredCloudDefaultReposFunc{
 			defaultHook: func(context.Context) (int, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.TotalErroredCloudDefaultRepos")
@@ -15910,6 +15796,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
 			defaultHook: i.SetLastFetched,
+		},
+		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
+			defaultHook: i.SetRepoSize,
 		},
 		TotalErroredCloudDefaultReposFunc: &GitserverRepoStoreTotalErroredCloudDefaultReposFunc{
 			defaultHook: i.TotalErroredCloudDefaultRepos,
@@ -16794,6 +16683,119 @@ func (c GitserverRepoStoreSetLastFetchedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreSetLastFetchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreSetRepoSizeFunc describes the behavior when the
+// SetRepoSize method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreSetRepoSizeFunc struct {
+	defaultHook func(context.Context, api.RepoName, int64, string) error
+	hooks       []func(context.Context, api.RepoName, int64, string) error
+	history     []GitserverRepoStoreSetRepoSizeFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepoSize delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) SetRepoSize(v0 context.Context, v1 api.RepoName, v2 int64, v3 string) error {
+	r0 := m.SetRepoSizeFunc.nextHook()(v0, v1, v2, v3)
+	m.SetRepoSizeFunc.appendCall(GitserverRepoStoreSetRepoSizeFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetRepoSize method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, int64, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepoSize method of the parent MockGitserverRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreSetRepoSizeFunc) PushHook(hook func(context.Context, api.RepoName, int64, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreSetRepoSizeFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, int64, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreSetRepoSizeFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, int64, string) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreSetRepoSizeFunc) nextHook() func(context.Context, api.RepoName, int64, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreSetRepoSizeFunc) appendCall(r0 GitserverRepoStoreSetRepoSizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreSetRepoSizeFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreSetRepoSizeFunc) History() []GitserverRepoStoreSetRepoSizeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreSetRepoSizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreSetRepoSizeFuncCall is an object that describes an
+// invocation of method SetRepoSize on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreSetRepoSizeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreSetRepoSizeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreSetRepoSizeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

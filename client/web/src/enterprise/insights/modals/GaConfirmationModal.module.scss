@@ -10,13 +10,36 @@
 
 .media-hero-content {
     display: flex;
-    // Stretch the charts container to the full width ignore parent paddings and border
-    // stylelint-disable-next-line declaration-property-unit-allowed-list
-    margin: 1.5rem calc((-1px - 1.5rem));
     padding: 1rem 1.5rem;
-    background: var(--marketing-gradient);
     height: 10.625rem;
     gap: 0.5rem;
+}
+
+.media-hero-overlay {
+    top: 0;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--marketing-gradient);
+    height: 10.625rem;
+    width: 100%;
+    opacity: 0.9;
+
+    font-style: normal;
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 125%;
+    text-align: center;
+    letter-spacing: 1px;
+
+    color: var(--text-muted);
+}
+
+.media-hero-wrapper {
+    position: relative;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    margin: 1.5rem calc((-1px - 1.5rem));
 }
 
 .chart {

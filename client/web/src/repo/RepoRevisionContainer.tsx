@@ -20,7 +20,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { parseQueryAndHash, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -30,7 +30,6 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { CoolCodeIntel, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -183,13 +182,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
-    // Experimental reference panel
-    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-    const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
-    // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
-    const showCoolCodeIntelPanel =
-        coolCodeIntelEnabled && viewState && (viewState === 'references' || viewState.startsWith('implementations_'))
-
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -310,9 +302,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {showCoolCodeIntelPanel && (
-                <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
-            )}
         </>
     )
 }

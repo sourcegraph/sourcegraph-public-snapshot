@@ -38,10 +38,6 @@ type MockClient struct {
 	// CreateCommitFromPatchFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateCommitFromPatch.
 	CreateCommitFromPatchFunc *ClientCreateCommitFromPatchFunc
-	// GetGitolitePhabricatorMetadataFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetGitolitePhabricatorMetadata.
-	GetGitolitePhabricatorMetadataFunc *ClientGetGitolitePhabricatorMetadataFunc
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *ClientGetObjectFunc
@@ -118,11 +114,6 @@ func NewMockClient() *MockClient {
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
 			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
 				return "", nil
-			},
-		},
-		GetGitolitePhabricatorMetadataFunc: &ClientGetGitolitePhabricatorMetadataFunc{
-			defaultHook: func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-				return nil, nil
 			},
 		},
 		GetObjectFunc: &ClientGetObjectFunc{
@@ -232,11 +223,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.CreateCommitFromPatch")
 			},
 		},
-		GetGitolitePhabricatorMetadataFunc: &ClientGetGitolitePhabricatorMetadataFunc{
-			defaultHook: func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-				panic("unexpected invocation of MockClient.GetGitolitePhabricatorMetadata")
-			},
-		},
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: func(context.Context, api.RepoName, string) (*gitdomain.GitObject, error) {
 				panic("unexpected invocation of MockClient.GetObject")
@@ -331,9 +317,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
 			defaultHook: i.CreateCommitFromPatch,
-		},
-		GetGitolitePhabricatorMetadataFunc: &ClientGetGitolitePhabricatorMetadataFunc{
-			defaultHook: i.GetGitolitePhabricatorMetadata,
 		},
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: i.GetObject,
@@ -1010,121 +993,6 @@ func (c ClientCreateCommitFromPatchFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientCreateCommitFromPatchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientGetGitolitePhabricatorMetadataFunc describes the behavior when the
-// GetGitolitePhabricatorMetadata method of the parent MockClient instance
-// is invoked.
-type ClientGetGitolitePhabricatorMetadataFunc struct {
-	defaultHook func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
-	hooks       []func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)
-	history     []ClientGetGitolitePhabricatorMetadataFuncCall
-	mutex       sync.Mutex
-}
-
-// GetGitolitePhabricatorMetadata delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockClient) GetGitolitePhabricatorMetadata(v0 context.Context, v1 string, v2 api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	r0, r1 := m.GetGitolitePhabricatorMetadataFunc.nextHook()(v0, v1, v2)
-	m.GetGitolitePhabricatorMetadataFunc.appendCall(ClientGetGitolitePhabricatorMetadataFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetGitolitePhabricatorMetadata method of the parent MockClient instance
-// is invoked and the hook queue is empty.
-func (f *ClientGetGitolitePhabricatorMetadataFunc) SetDefaultHook(hook func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetGitolitePhabricatorMetadata method of the parent MockClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ClientGetGitolitePhabricatorMetadataFunc) PushHook(hook func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientGetGitolitePhabricatorMetadataFunc) SetDefaultReturn(r0 *protocol.GitolitePhabricatorMetadataResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGetGitolitePhabricatorMetadataFunc) PushReturn(r0 *protocol.GitolitePhabricatorMetadataResponse, r1 error) {
-	f.PushHook(func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientGetGitolitePhabricatorMetadataFunc) nextHook() func(context.Context, string, api.RepoName) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientGetGitolitePhabricatorMetadataFunc) appendCall(r0 ClientGetGitolitePhabricatorMetadataFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// ClientGetGitolitePhabricatorMetadataFuncCall objects describing the
-// invocations of this function.
-func (f *ClientGetGitolitePhabricatorMetadataFunc) History() []ClientGetGitolitePhabricatorMetadataFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientGetGitolitePhabricatorMetadataFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientGetGitolitePhabricatorMetadataFuncCall is an object that describes
-// an invocation of method GetGitolitePhabricatorMetadata on an instance of
-// MockClient.
-type ClientGetGitolitePhabricatorMetadataFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *protocol.GitolitePhabricatorMetadataResponse
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientGetGitolitePhabricatorMetadataFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientGetGitolitePhabricatorMetadataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
