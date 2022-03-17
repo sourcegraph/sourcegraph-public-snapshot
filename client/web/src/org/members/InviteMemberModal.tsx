@@ -60,7 +60,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             return
         }
 
-        eventLogger.log('InviteOrgMemberClicked', isEmail)
+        eventLogger.log('InviteOrganizationMemberClicked', { organizationId: orgId, isEmail })
         try {
             await inviteUserToOrganization({
                 variables: {
@@ -69,19 +69,24 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
                     email: isEmail ? userNameOrEmail : null,
                 },
             })
-            eventLogger.log('OrgMemberInvited')
+            eventLogger.log('InviteOrganizationMemberSucceeded', { organizationId: orgId })
         } catch {
-            eventLogger.log('OrgMemberInviteFailed')
+            eventLogger.log('InviteOrganizationMemberFailed', { organizationId: orgId })
         }
     }, [userNameOrEmail, orgId, inviteUserToOrganization, isEmail])
 
     const debounceInviteUser = debounce(inviteUser, 500, { leading: true })
 
+    const dismissWithLogging = useCallback(() => {
+        eventLogger.log('OrganizationInviteModalDismissed', { organizationId: orgId })
+        onDismiss()
+    }, [onDismiss, orgId])
+
     return (
-        <Modal className={styles.modal} onDismiss={onDismiss} position="center" aria-label={title}>
+        <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
                 <h3>{title}</h3>
-                <Button className={classNames('btn-icon', styles.closeButton)} onClick={onDismiss}>
+                <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
                     <CloseIcon />
                 </Button>
@@ -144,18 +149,22 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     triggerLabel?: string
     as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
     initiallyOpened?: boolean
+    eventLoggerEventName?: string
 }
 export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModalButtonProps> = (
     props: InviteMemberModalButtonProps
 ) => {
     const query = useQueryStringParameters()
     const showBetaBanner = !!query.get('openBetaBanner')
-    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, ...rest } = props
+    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, eventLoggerEventName, ...rest } = props
     const [modalOpened, setModalOpened] = React.useState<boolean>(!!initiallyOpened)
 
     const onInviteClick = useCallback(() => {
         setModalOpened(true)
-    }, [setModalOpened])
+        if (eventLoggerEventName) {
+            eventLogger.log(eventLoggerEventName, { organizationId: orgId })
+        }
+    }, [setModalOpened, orgId, eventLoggerEventName])
 
     const onCloseIviteModal = useCallback(() => {
         setModalOpened(false)
