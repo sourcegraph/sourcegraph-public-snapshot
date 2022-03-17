@@ -10,7 +10,7 @@ import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
 import { logUserEvent, logEvent } from '../backend/userEvents'
 import { isInPage } from '../context'
-import { getExtensionVersion, getPlatformName } from '../util/context'
+import { getExtensionVersion, getPlatformName, isDefaultSourcegraphUrl } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -66,8 +66,6 @@ export class EventLogger implements TelemetryService {
 
     private platform = getPlatformName()
     private version = getExtensionVersion()
-
-    private firstSourceURL: string | undefined = undefined
 
     /**
      * Buffered Observable for the latest Sourcegraph URL
@@ -127,18 +125,16 @@ export class EventLogger implements TelemetryService {
             logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
         }
 
-        if (!this.firstSourceURL) {
-            this.firstSourceURL = (
-                await background.getCookie({ url: this.sourcegraphURL, name: 'sourcegraphSourceUrl' })
-            )?.value
-        }
+        const firstSourceURL = isDefaultSourcegraphUrl(this.sourcegraphURL)
+            ? (await background.getCookie({ url: this.sourcegraphURL, name: 'sourcegraphSourceUrl' }))?.value
+            : undefined
 
         logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
                 url: this.sourcegraphURL,
-                firstSourceURL: this.firstSourceURL,
+                firstSourceURL,
                 argument: { platform: this.platform, version: this.version, ...eventProperties },
                 publicArgument: { platform: this.platform, version: this.version, ...publicArgument },
             },
