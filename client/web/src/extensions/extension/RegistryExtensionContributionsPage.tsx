@@ -4,8 +4,8 @@ import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 

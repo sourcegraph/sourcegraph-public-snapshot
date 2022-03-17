@@ -21,6 +21,7 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import {
     getCodeElementsInRange,
     HoveredToken,
@@ -43,7 +44,6 @@ import {
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'

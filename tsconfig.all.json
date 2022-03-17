@@ -23,5 +23,6 @@
     { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },
+    { "path": "client/client-api" },
   ],
 }

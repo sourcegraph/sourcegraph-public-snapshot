@@ -6,11 +6,11 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
+import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
 import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
-import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'

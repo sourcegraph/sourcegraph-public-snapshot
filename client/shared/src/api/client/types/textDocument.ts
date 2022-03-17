@@ -4,27 +4,6 @@ import { DocumentFilter, DocumentSelector, TextDocument } from 'sourcegraph'
 import { Position } from '@sourcegraph/extension-api-types'
 
 /**
- * The URI scheme for the resources that hold the body of comments (such as comments on a GitHub
- * issue).
- */
-export const COMMENT_URI_SCHEME = 'comment'
-
-/**
- * The URI scheme for the resources that hold the body of snippets.
- */
-export const SNIPPET_URI_SCHEME = 'snippet'
-
-/**
- * A literal to identify a text document in the client.
- */
-export interface TextDocumentIdentifier {
-    /**
-     * The text document's URI.
-     */
-    uri: string
-}
-
-/**
  * Returns whether any of the document selectors match (or "select") the document.
  *
  * TODO(tj): move to extension host dir (actually, top level extensions_platform)

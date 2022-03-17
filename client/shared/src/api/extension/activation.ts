@@ -3,13 +3,13 @@ import { BehaviorSubject, combineLatest, from, Observable, Subscription } from '
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
+import { Contributions } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
-import { Contributions } from '../protocol'
 import { tryCatchPromise } from '../util'
 
 import { parseContributionExpressions } from './api/contribution'

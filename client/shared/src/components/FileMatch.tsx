@@ -4,12 +4,12 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { ActionItemAction } from '../actions/ActionItem'
-import { HoverMerged } from '../api/client/types/hover'
 import { Controller as ExtensionsController } from '../extensions/controller'
 import { HoverContext } from '../hover/HoverOverlay.types'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
