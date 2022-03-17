@@ -116,6 +116,6 @@ If you don't want to write your own client, you can also use Sourcegraph's [src-
 src search -stream "secret count:all"
 ```
 
-### Q: Are there plans for parallelization/convenience-wrappers/multiplexing/etc.?
+### Q: Are there plans for supporting a streaming client or interface with more functionality (e.g., parallelizing multiple streaming requests or aggregating results from multiple streams)?
 
-At time of writing, there are no such plans for parallelization/convenience-wrappers/multiplexing/etc. If a user wants these characteristics, we would recommend that user to write their own scripts that handles firing multiple requests, accepting the return values, and formatting/parsing them as needed.
+There are currently no plans to support additional client-side functionality to interact with a streaming endpoint. We recommend users write their own scripts or client wrappers that handle, e.g., firing multiple requests, accepting and aggregating the return values, and additional result formatting or processing.
