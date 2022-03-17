@@ -5,7 +5,7 @@ import { Location } from 'history'
 import { match } from 'react-router'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button, Link, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Link } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
@@ -83,7 +83,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
             emitter.unSubscribe('refreshOrgHeader', unsubscribe)
         }
     })
-    const { loading, data, refetch } = useQuery<GetStartedInfoResult, GetStartedInfoVariables>(GET_STARTED_INFO_QUERY, {
+    const { data, refetch } = useQuery<GetStartedInfoResult, GetStartedInfoVariables>(GET_STARTED_INFO_QUERY, {
         variables: { organization: org.id },
     })
 
@@ -124,42 +124,39 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         />
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
-                                {loading && <LoadingSpinner />}
-                                {!loading &&
-                                    navItems.map(
-                                        ({
-                                            to,
-                                            label,
-                                            exact,
-                                            icon: Icon,
-                                            condition = () => true,
-                                            isActive,
-                                            dynamicLabel,
-                                        }) =>
-                                            condition(context) && (
-                                                <li key={label} className="nav-item">
-                                                    <NavLink
-                                                        to={match.url + to}
-                                                        className="nav-link"
-                                                        activeClassName="active"
-                                                        exact={exact}
-                                                        isActive={
-                                                            isActive
-                                                                ? (match, location) =>
-                                                                      isActive(match, location, context)
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        <span>
-                                                            {Icon && <Icon className="icon-inline" />}{' '}
-                                                            <span className="text-content" data-tab-content={label}>
-                                                                {dynamicLabel ? dynamicLabel(context) : label}
-                                                            </span>
+                                {navItems.map(
+                                    ({
+                                        to,
+                                        label,
+                                        exact,
+                                        icon: Icon,
+                                        condition = () => true,
+                                        isActive,
+                                        dynamicLabel,
+                                    }) =>
+                                        condition(context) && (
+                                            <li key={label} className="nav-item">
+                                                <NavLink
+                                                    to={match.url + to}
+                                                    className="nav-link"
+                                                    activeClassName="active"
+                                                    exact={exact}
+                                                    isActive={
+                                                        isActive
+                                                            ? (match, location) => isActive(match, location, context)
+                                                            : undefined
+                                                    }
+                                                >
+                                                    <span>
+                                                        {Icon && <Icon className="icon-inline" />}{' '}
+                                                        <span className="text-content" data-tab-content={label}>
+                                                            {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>
-                                                    </NavLink>
-                                                </li>
-                                            )
-                                    )}
+                                                    </span>
+                                                </NavLink>
+                                            </li>
+                                        )
+                                )}
                             </ul>
                             <div className="flex-1" />
                             {org.viewerPendingInvitation?.respondURL && (

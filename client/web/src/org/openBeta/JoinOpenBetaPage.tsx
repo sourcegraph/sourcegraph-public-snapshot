@@ -10,17 +10,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import {
-    Badge,
-    Button,
-    Checkbox,
-    Container,
-    Input,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    RadioButton,
-} from '@sourcegraph/wildcard'
+import { Badge, Button, Checkbox, Input, Link, LoadingSpinner, PageHeader, RadioButton } from '@sourcegraph/wildcard'
 
 import { SendJoinBetaStatsResult, SendJoinBetaStatsVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -173,7 +163,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
             <PageTitle title="Join Sourcegraph Open Beta" />
             <PageHeader
                 path={[{ text: 'Join the open beta for Sourcegraph Cloud for small teams' }]}
-                className="mb-4"
+                className="mb-3"
                 description={
                     <span className="text-muted">
                         Get access to Sourcegraph Cloud for small teams and start searching across your code today.
@@ -191,113 +181,123 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
             </MarketingBlock>
             <h3 className="mt-4 mb-4">To get started, please tell us about your organization:</h3>
             <Form className="mb-5" onSubmit={onSubmit}>
-                <Container className={styles.formContainer}>
-                    {error && <ErrorAlert className="mb-3" error={error} />}
-                    <div className={classNames('form-group', styles.formItem)}>
-                        <label htmlFor="company_employees_band">About how many developers work for your company?</label>
+                {error && <ErrorAlert className="mb-3" error={error} />}
+                <div className={classNames('form-group', styles.formItem)}>
+                    <label htmlFor="company_employees_band">About how many developers work for your company?</label>
 
-                        <div className="mt-2">
-                            {CompanyDevsSize.map(item => (
-                                <div className="mb-2" key={item.replace(/\s/g, '_')}>
-                                    <RadioButton
-                                        id={`cEmp_${item.replace(/\s/g, '_')}`}
-                                        name="company_employees_band"
-                                        value={item}
-                                        checked={item === companySize}
-                                        onChange={onCompanySizeChange}
-                                        label={item}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                    <div className="mt-2">
+                        {CompanyDevsSize.map(item => (
+                            <div className="mb-2" key={item.replace(/\s/g, '_')}>
+                                <RadioButton
+                                    id={`cEmp_${item.replace(/\s/g, '_')}`}
+                                    name="company_employees_band"
+                                    value={item}
+                                    checked={item === companySize}
+                                    onChange={onCompanySizeChange}
+                                    label={item}
+                                />
+                            </div>
+                        ))}
                     </div>
+                </div>
 
-                    <div className={classNames('form-group', styles.formItem)}>
-                        <label className={styles.cbLabel} htmlFor="company_code_repo">
-                            Where does your company store your code today?
-                        </label>
-                        <span className={classNames('text-muted d-block', styles.cbSubLabel)}>
-                            <small>Select all that apply</small>
-                        </span>
-                        <div className="mt-2">
-                            {CompanyRepos.map(item => (
-                                <div className="mb-2" key={item.replace(/\s/g, '_')}>
-                                    <Checkbox
-                                        id={`cRepo_${item.replace(/\s/g, '_')}`}
-                                        name="company_code_repo"
-                                        value={item}
-                                        checked={companyReposSelected.includes(item)}
-                                        onChange={onCompanyRepoChange}
-                                        label={item}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {showOtherRepo && (
-                        <div className={classNames('form-group', styles.formItem)}>
-                            <Input
-                                id="otherRepo_company"
-                                type="text"
-                                placeholder=""
-                                autoCorrect="off"
-                                value={otherRepo || ''}
-                                label="Where else does your company store your code today?"
-                                required={true}
-                                onChange={onOtherRepoChange}
-                                status={otherRepo === '' ? 'error' : undefined}
-                            />
-                        </div>
+                <div
+                    className={classNames(
+                        'form-group',
+                        styles.formItem,
+                        showOtherRepo ? styles.otherBottom : undefined
                     )}
+                >
+                    <label className={styles.cbLabel} htmlFor="company_code_repo">
+                        Where does your company store your code today?
+                    </label>
+                    <span className={classNames('text-muted d-block', styles.cbSubLabel)}>
+                        <small>Select all that apply</small>
+                    </span>
+                    <div>
+                        {CompanyRepos.map(item => (
+                            <div className="mb-2" key={item.replace(/\s/g, '_')}>
+                                <Checkbox
+                                    id={`cRepo_${item.replace(/\s/g, '_')}`}
+                                    name="company_code_repo"
+                                    value={item}
+                                    checked={companyReposSelected.includes(item)}
+                                    onChange={onCompanyRepoChange}
+                                    label={item}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
+                {showOtherRepo && (
                     <div className={classNames('form-group', styles.formItem)}>
-                        <label className={styles.cbLabel} htmlFor="sg_usage_plan">
-                            What do you plan to use Sourcegraph to do?
-                        </label>
-                        <span className={classNames('text-muted d-block', styles.cbSubLabel)}>
-                            <small>Select all that apply</small>
-                        </span>
-                        <div className="mt-2">
-                            {SgUsagePlan.map(item => (
-                                <div className="mb-2" key={item.replace(/\s/g, '_')}>
-                                    <Checkbox
-                                        id={`sgPlan_${item.replace(/\s/g, '_')}`}
-                                        name="sg_usage_plan"
-                                        value={item}
-                                        checked={sgUsagePlanSelected.includes(item)}
-                                        onChange={onSgUsagePlanChange}
-                                        label={item}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                        <Input
+                            id="otherRepo_company"
+                            type="text"
+                            placeholder=""
+                            autoCorrect="off"
+                            value={otherRepo || ''}
+                            label="Where else does your company store your code today?"
+                            required={true}
+                            onChange={onOtherRepoChange}
+                            status={otherRepo === '' ? 'error' : undefined}
+                        />
                     </div>
-                    {showOtherPlan && (
-                        <div className={classNames('form-group', styles.formItem)}>
-                            <Input
-                                id="otherPlan_company"
-                                type="text"
-                                placeholder=""
-                                autoCorrect="off"
-                                value={otherPlan || ''}
-                                label="What else do you plan to use Sourcegraph to do?"
-                                required={true}
-                                onChange={onOtherPlanChange}
-                                status={otherPlan === '' ? 'error' : undefined}
-                            />
-                        </div>
+                )}
+
+                <div
+                    className={classNames(
+                        'form-group',
+                        styles.formItem,
+                        showOtherPlan ? styles.otherBottom : undefined
                     )}
-                    <div className={classNames('form-group d-flex justify-content-end mb-5', styles.buttonsRow)}>
-                        <Button disabled={loading} variant="secondary" size="sm" onClick={onCancelClick}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={loading || !isValidForm} variant="primary" size="sm">
-                            {loading && <LoadingSpinner />}
-                            Continue
-                        </Button>
+                >
+                    <label className={styles.cbLabel} htmlFor="sg_usage_plan">
+                        What do you plan to use Sourcegraph to do?
+                    </label>
+                    <span className={classNames('text-muted d-block', styles.cbSubLabel)}>
+                        <small>Select all that apply</small>
+                    </span>
+                    <div>
+                        {SgUsagePlan.map(item => (
+                            <div className="mb-2" key={item.replace(/\s/g, '_')}>
+                                <Checkbox
+                                    id={`sgPlan_${item.replace(/\s/g, '_')}`}
+                                    name="sg_usage_plan"
+                                    value={item}
+                                    checked={sgUsagePlanSelected.includes(item)}
+                                    onChange={onSgUsagePlanChange}
+                                    label={item}
+                                />
+                            </div>
+                        ))}
                     </div>
-                </Container>
+                </div>
+                {showOtherPlan && (
+                    <div className={classNames('form-group', styles.formItem)}>
+                        <Input
+                            id="otherPlan_company"
+                            type="text"
+                            placeholder=""
+                            autoCorrect="off"
+                            value={otherPlan || ''}
+                            label="What else do you plan to use Sourcegraph to do?"
+                            required={true}
+                            onChange={onOtherPlanChange}
+                            status={otherPlan === '' ? 'error' : undefined}
+                        />
+                    </div>
+                )}
+                <div className={classNames('form-group d-flex justify-content-end', styles.buttonsRow)}>
+                    <Button disabled={loading} variant="secondary" size="sm" onClick={onCancelClick}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading || !isValidForm} variant="primary" size="sm">
+                        {loading && <LoadingSpinner />}
+                        Continue
+                    </Button>
+                </div>
             </Form>
         </Page>
     )

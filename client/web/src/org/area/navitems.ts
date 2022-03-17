@@ -34,8 +34,8 @@ export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
         dynamicLabel: ({ getStartedInfo: info }) => `Get started ${calculateLeftGetStartedSteps(info)}`,
         icon: PlayCircleOutlineIcon,
         isActive: (_match, location) => location.pathname.includes('getstarted'),
-        condition: ({ getStartedInfo, org, featureFlags }) =>
-            showGetStartPage(getStartedInfo, org.name, !!featureFlags.get('open-beta-enabled')),
+        condition: ({ getStartedInfo, org, featureFlags, isSourcegraphDotCom }) =>
+            showGetStartPage(getStartedInfo, org.name, !!featureFlags.get('open-beta-enabled'), isSourcegraphDotCom),
     },
     {
         to: '/settings/members',

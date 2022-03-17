@@ -58,13 +58,18 @@ const GET_STARTED_INFO_QUERY = gql`
     }
 `
 
-export const showGetStartPage = (info: OrgSummary | undefined, orgName: string, openBetaEnabled: boolean): boolean => {
-    if (!openBetaEnabled) {
+export const showGetStartPage = (
+    info: OrgSummary | undefined,
+    orgName: string,
+    openBetaEnabled: boolean,
+    isDotCom: boolean
+): boolean => {
+    if (!openBetaEnabled || !isDotCom) {
         return false
     }
 
     if (!info) {
-        return true
+        return false
     }
 
     const firstStepsPending =
@@ -84,6 +89,7 @@ export const showGetStartPage = (info: OrgSummary | undefined, orgName: string, 
 interface Props extends RouteComponentProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser
     org: OrgAreaOrganizationFields
+    isSourcegraphDotCom: boolean
 }
 
 const Step: React.FunctionComponent<{ complete: boolean; textMuted: boolean; label: string; to?: string }> = ({
@@ -135,6 +141,7 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     org,
     featureFlags,
     history,
+    isSourcegraphDotCom,
 }) => {
     const openBetaEnabled = !!featureFlags.get('open-beta-enabled')
     const { data, loading, error } = useQuery<GetStartedPageDataResult, GetStartedPageDataVariables>(
@@ -157,7 +164,8 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     const otherMembers =
         membersResult.length > 1 ? membersResult.filter(user => user.username !== authenticatedUser.username) : []
     const shouldRedirect =
-        !openBetaEnabled || (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled))
+        !openBetaEnabled ||
+        (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled, isSourcegraphDotCom))
 
     useEffect(() => {
         eventLogger.log('OpenBeta getting started')
