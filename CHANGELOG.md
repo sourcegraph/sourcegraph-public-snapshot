@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.38.0
+
+### Changed
+
+- Batch Changes: Step results are now also cached when the overall execution fails. [#709](https://github.com/sourcegraph/src-cli/pull/709)
+
 ## 3.37.0
 
 No noteworthy changes, mechanical release to match Sourcegraph release.
