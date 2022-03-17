@@ -479,7 +479,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getUiFeatures = (currentDashboard?: InsightDashboard): UiFeaturesConfig => ({
         licensed: true,
-        permissions: getDashboardPermissions(currentDashboard, true),
+        permissions: getDashboardPermissions(currentDashboard),
     })
 }
 

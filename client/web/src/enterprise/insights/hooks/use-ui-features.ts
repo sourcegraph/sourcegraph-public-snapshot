@@ -46,8 +46,8 @@ export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFe
         licensed,
         dashboards: {
             addRemoveInsightsButton: {
-                disabled: !permissions.isConfigurable,
-                tooltip: getTooltipMessage(currentDashboard, permissions),
+                disabled: !licensed,
+                tooltip: 'Limited access: upgrade your license to add insights to dashboards',
             },
             create: {
                 addDashboardButton: {
@@ -57,15 +57,15 @@ export function useUiFeatures({ currentDashboard }: UseUiFeaturesProps): UseUiFe
             // Available menu items
             menu: {
                 configure: {
-                    display: !licensed,
+                    display: licensed,
                     disabled: !permissions.isConfigurable,
                     tooltip: getTooltipMessage(currentDashboard, permissions),
                 },
                 copy: {
-                    display: true,
+                    display: licensed,
                 },
                 delete: {
-                    display: !licensed,
+                    display: true,
                     disabled: !permissions.isConfigurable,
                     tooltip: getTooltipMessage(currentDashboard, permissions),
                 },

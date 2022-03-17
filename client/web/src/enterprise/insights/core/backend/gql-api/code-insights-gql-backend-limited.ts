@@ -26,6 +26,6 @@ export class CodeInsightsGqlBackendLimited extends CodeInsightsGqlBackend {
 
     public getUiFeatures = (currentDashboard?: InsightDashboard): UiFeaturesConfig => ({
         licensed: false,
-        permissions: getDashboardPermissions(currentDashboard, false),
+        permissions: getDashboardPermissions(currentDashboard),
     })
 }
