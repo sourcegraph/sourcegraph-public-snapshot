@@ -95,7 +95,7 @@ describe('CodeInsightsRootPage', () => {
                 route: '/insights/dashboards/',
                 api: {
                     getUiFeatures: () => of({ licensed: true }),
-                    getDashboards: () => of([])
+                    getDashboards: () => of([]),
                 },
             }
         )
