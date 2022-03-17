@@ -4,34 +4,16 @@ import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
-import { showGetStartPage } from '../openBeta/GettingStarted'
+import { calculateLeftGetStartedSteps, showGetStartPage } from '../openBeta/GettingStarted'
 
-import { OrgAreaHeaderNavItem, OrgSummary } from './OrgHeader'
-
-const calculateLeftGetStartedSteps = (info: OrgSummary | undefined): number => {
-    if (!info) {
-        return 4
-    }
-
-    let leftSteps = 1
-    if (info.membersSummary.invitesCount === 0 && info.membersSummary.membersCount < 2) {
-        leftSteps += 1
-    }
-    if (info.repoCount.total.totalCount === 0) {
-        leftSteps += 1
-    }
-    if (info.extServices.totalCount === 0) {
-        leftSteps += 1
-    }
-
-    return leftSteps
-}
+import { OrgAreaHeaderNavItem } from './OrgHeader'
 
 export const orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[] = [
     {
         to: '/getstarted',
         label: 'Get started',
-        dynamicLabel: ({ getStartedInfo: info }) => `Get started ${calculateLeftGetStartedSteps(info)}`,
+        dynamicLabel: ({ getStartedInfo, org }) =>
+            `Get started ${calculateLeftGetStartedSteps(getStartedInfo, org.name)}`,
         icon: PlayCircleOutlineIcon,
         isActive: (_match, location) => location.pathname.includes('getstarted'),
         condition: ({ getStartedInfo, org, featureFlags, isSourcegraphDotCom }) =>

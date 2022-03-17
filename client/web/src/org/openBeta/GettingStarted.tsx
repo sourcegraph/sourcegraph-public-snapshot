@@ -21,11 +21,10 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgSummary } from '../area/OrgHeader'
+import { useEventBus } from '../emitter'
 import { Member } from '../members/OrgMembersListPage'
 
 import styles from './GettingStarted.module.scss'
-
-const GET_STARTED_STATUS = 'sgGetStarted'
 
 const GET_STARTED_INFO_QUERY = gql`
     query GetStartedPageData($organization: ID!) {
@@ -58,6 +57,32 @@ const GET_STARTED_INFO_QUERY = gql`
     }
 `
 
+export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgName: string): number => {
+    if (!info) {
+        return 4
+    }
+
+    let leftSteps = 0
+    if (info.membersSummary.invitesCount === 0 && info.membersSummary.membersCount < 2) {
+        leftSteps += 1
+    }
+    if (info.repoCount.total.totalCount === 0) {
+        setSearchStep(orgName, 'incomplete')
+        leftSteps += 1
+    }
+    if (info.extServices.totalCount === 0) {
+        setSearchStep(orgName, 'incomplete')
+        leftSteps += 1
+    }
+
+    const searchPending = !isSearchStepComplete(orgName)
+    if (searchPending) {
+        leftSteps += 1
+    }
+
+    return leftSteps
+}
+
 export const showGetStartPage = (
     info: OrgSummary | undefined,
     orgName: string,
@@ -78,8 +103,7 @@ export const showGetStartPage = (
         info.extServices.totalCount === 0
     let searchStatusPending = true
     try {
-        const status = localStorage.getItem(`${GET_STARTED_STATUS}${orgName}`)
-        searchStatusPending = !!status && status !== 'complete'
+        searchStatusPending = !isSearchStepComplete(orgName)
     } catch {
         eventLogger.log('getStartedStatusError')
     }
@@ -92,12 +116,13 @@ interface Props extends RouteComponentProps, FeatureFlagProps {
     isSourcegraphDotCom: boolean
 }
 
-const Step: React.FunctionComponent<{ complete: boolean; textMuted: boolean; label: string; to?: string }> = ({
-    complete,
-    label,
-    textMuted,
-    to,
-}) => (
+const Step: React.FunctionComponent<{
+    complete: boolean
+    textMuted: boolean
+    label: string
+    to?: string
+    onClick?: () => void
+}> = ({ complete, label, textMuted, to, onClick }) => (
     <li className={styles.entryItem}>
         <div className={styles.iconContainer}>
             <CheckCircleIcon
@@ -115,7 +140,7 @@ const Step: React.FunctionComponent<{ complete: boolean; textMuted: boolean; lab
         </h3>
         {to && (
             <div className={styles.linkContainer}>
-                <Link to={to}>
+                <Link to={to} onClick={onClick}>
                     <ArrowRightIcon />
                 </Link>
             </div>
@@ -136,6 +161,27 @@ const InviteLink: React.FunctionComponent<{ orgName: string; membersCount: numbe
     )
 }
 
+const SEARCH_STATUS_RADIX = 'sgGetStartedSearchStep'
+const getSearchStepStatus = (orgName: string): 'complete' | 'incomplete' | null => {
+    try {
+        return localStorage.getItem(`${SEARCH_STATUS_RADIX}${orgName}`) as 'complete' | 'incomplete' | null
+    } catch (error) {
+        eventLogger.log('GetStartedLocalStorageError', error)
+        return null
+    }
+}
+const isSearchStepComplete = (orgName: string): boolean => {
+    const stepStatus = getSearchStepStatus(orgName)
+    return !stepStatus || stepStatus === 'complete'
+}
+const setSearchStep = (orgName: string, status: 'complete' | 'incomplete'): void => {
+    try {
+        localStorage.setItem(`${SEARCH_STATUS_RADIX}${orgName}`, status)
+    } catch (error) {
+        eventLogger.log('GetStartedLocalStorageError', error)
+    }
+}
+
 export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     authenticatedUser,
     org,
@@ -143,6 +189,7 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     history,
     isSourcegraphDotCom,
 }) => {
+    const emitter = useEventBus()
     const openBetaEnabled = !!featureFlags.get('open-beta-enabled')
     const { data, loading, error } = useQuery<GetStartedPageDataResult, GetStartedPageDataVariables>(
         GET_STARTED_INFO_QUERY,
@@ -153,13 +200,11 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
 
     const queryResult = data ? (data as OrgSummary & { membersList: { members: { nodes: Member[] } } }) : undefined
 
-    const searchStepStorageKey = `${GET_STARTED_STATUS}${org.name}`
     const codeHostsCompleted = !!queryResult && queryResult.extServices.totalCount > 0
     const repoCompleted = !!queryResult && queryResult.repoCount.total.totalCount > 0
     const membersCompleted =
         !!queryResult && (queryResult.membersSummary.membersCount > 1 || queryResult.membersSummary.invitesCount > 0)
-    const allCompleted = codeHostsCompleted && repoCompleted && membersCompleted
-    const searchCompleted = codeHostsCompleted && repoCompleted
+    const allowSearch = codeHostsCompleted && repoCompleted
     const membersResult = queryResult ? queryResult.membersList.members.nodes : []
     const otherMembers =
         membersResult.length > 1 ? membersResult.filter(user => user.username !== authenticatedUser.username) : []
@@ -172,22 +217,22 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     }, [])
 
     useEffect(() => {
-        if (queryResult && !loading) {
-            const currentSearchStatus = localStorage.getItem(searchStepStorageKey)
-            const newStatus = !allCompleted
-                ? 'incomplete'
-                : currentSearchStatus === 'incomplete'
-                ? 'active'
-                : 'complete'
-            localStorage.setItem(searchStepStorageKey, newStatus)
+        if (queryResult && !loading && !allowSearch) {
+            setSearchStep(org.name, 'incomplete')
+            emitter.emit('refreshOrgHeader', 'changedsearchPrerequisites')
         }
-    }, [allCompleted, searchStepStorageKey, queryResult, loading])
+    }, [allowSearch, org.name, queryResult, loading, emitter])
 
     useEffect(() => {
         if (shouldRedirect) {
             history.push(`/organizations/${org.name}/settings/members`)
         }
     }, [shouldRedirect, org.name, history])
+
+    const completeSearchStep = (): void => {
+        setSearchStep(org.name, 'complete')
+        emitter.emit('refreshOrgHeader', 'searchdone')
+    }
 
     if (shouldRedirect) {
         return null
@@ -240,13 +285,12 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
                                 />
                                 <Step
                                     label={`Search across ${org.displayName || org.name}’s code`}
-                                    complete={false}
+                                    complete={getSearchStepStatus(org.name) === 'complete'}
+                                    onClick={completeSearchStep}
                                     to={
-                                        searchCompleted
-                                            ? `/search?q=context:%40${org.name}&patternType=literal`
-                                            : undefined
+                                        allowSearch ? `/search?q=context:%40${org.name}&patternType=literal` : undefined
                                     }
-                                    textMuted={!searchCompleted}
+                                    textMuted={!allowSearch}
                                 />
                             </ul>
                         </MarketingBlock>
