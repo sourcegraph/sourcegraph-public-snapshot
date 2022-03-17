@@ -572,7 +572,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(uri, gheToken, testServer.Client())
+		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
 		testCli.ListOrganizations(context.Background(), 1)
 	})
 
@@ -622,7 +622,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(uri, gheToken, testServer.Client())
+		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
 
 		runTest := func(expectedOrgs []byte) {
 			orgs, hasNextPage, err := testCli.ListOrganizations(context.Background(), 1)
@@ -800,7 +800,7 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(uri, vcrToken, doer), save
+	return NewV3Client("Test", uri, vcrToken, doer), save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -817,7 +817,7 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(uri, gheToken, doer), save
+	return NewV3Client("Test", uri, gheToken, doer), save
 }
 
 func strPtr(s string) *string { return &s }

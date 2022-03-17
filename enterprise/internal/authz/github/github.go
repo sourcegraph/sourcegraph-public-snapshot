@@ -48,7 +48,7 @@ type ProviderOptions struct {
 func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
-		opts.GitHubClient = github.NewV3Client(apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+		opts.GitHubClient = github.NewV3Client(urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
