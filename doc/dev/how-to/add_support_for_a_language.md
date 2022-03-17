@@ -39,6 +39,8 @@ To support precise code intelligence, [write an LSIF indexer](../../code_intelli
 
 ### Customizing Syntax Highlight Language
 
+The following settings apply only to the site settings. They are global configuration options for your Sourcegraph instance.
+
 If you have a custom language that is derived from an existing language, it is possible to configure Sourcegraph to highlight that language as another.
 
 For example:
