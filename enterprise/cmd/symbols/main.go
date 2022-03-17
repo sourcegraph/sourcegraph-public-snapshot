@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/go-ctags"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -47,7 +48,7 @@ func main() {
 			}
 
 			searchFunc := func(ctx context.Context, args types.SearchArgs) (results result.Symbols, err error) {
-				if sliceContains(repos, string(args.Repo)) {
+				if slices.Contains(repos, string(args.Repo)) {
 					return rockskipSearchFunc(ctx, args)
 				} else {
 					return sqliteSearchFunc(ctx, args)
@@ -229,13 +230,4 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 	}
 
 	return nil
-}
-
-func sliceContains(slice []string, s string) bool {
-	for _, v := range slice {
-		if v == s {
-			return true
-		}
-	}
-	return false
 }
