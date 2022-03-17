@@ -82,7 +82,12 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	}
 	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
 	routines = append(routines, NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB))
-	routines = append(routines, NewLicenseCheckJob(ctx, mainAppDB, insightsDB))
+
+	// I suspect the linter doesn't like this not being used when I delete it. So let's try this.
+	enableLicneseCheck := false
+	if enableLicneseCheck {
+		routines = append(routines, NewLicenseCheckJob(ctx, mainAppDB, insightsDB))
+	}
 
 	return routines
 }
