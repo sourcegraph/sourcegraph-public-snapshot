@@ -77,17 +77,6 @@ func mapSlice(values []string, f func(string) string) []string {
 	return result
 }
 
-func IncludeExcludeValues(q query.Basic, field string) (include, exclude []string) {
-	q.VisitParameter(field, func(v string, negated bool, _ query.Annotation) {
-		if negated {
-			exclude = append(exclude, v)
-		} else {
-			include = append(include, v)
-		}
-	})
-	return include, exclude
-}
-
 func count(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
@@ -120,12 +109,12 @@ const (
 // expression). See TextPatternInfo for the values it computes and populates.
 func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
-	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
+	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
-	langInclude, langExclude := IncludeExcludeValues(q, query.FieldLang)
+	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
 
