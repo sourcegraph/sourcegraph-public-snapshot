@@ -1,6 +1,5 @@
 import React from 'react'
 
-// import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 
