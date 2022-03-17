@@ -20,6 +20,7 @@ import {
 } from '../../../graphql-operations'
 import { Description } from '../Description'
 
+import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
@@ -138,6 +139,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             />
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
+            <ActiveExecutionNotice
+                batchSpecs={batchChange.batchSpecs.nodes}
+                batchChangeURL={batchChange.url}
+                className="mb-3"
+            />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
                 unpublished={batchChange.changesetsStats.unpublished}

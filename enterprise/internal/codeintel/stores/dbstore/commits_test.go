@@ -115,6 +115,39 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 	}
 }
 
+func TestMaxStaleAge(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+
+	for _, id := range []int{50, 51, 52} {
+		insertRepo(t, db, id, "")
+	}
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO lsif_dirty_repositories (
+			repository_id,
+			update_token,
+			dirty_token,
+			updated_at
+		)
+		VALUES
+			(50, 10, 10, NOW() - '45 minutes'::interval), -- not dirty
+			(51, 20, 25, NOW() - '30 minutes'::interval), -- dirty
+			(52, 30, 35, NOW() - '20 minutes'::interval), -- dirty
+			(53, 40, 45, NOW() - '30 minutes'::interval); -- no associated repo
+	`); err != nil {
+		t.Fatalf("unexpected error marking repostiory as dirty: %s", err)
+	}
+
+	age, err := store.MaxStaleAge(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+	if age.Round(time.Second) != 30*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	}
+}
+
 func TestSkipsDeletedRepositories(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)

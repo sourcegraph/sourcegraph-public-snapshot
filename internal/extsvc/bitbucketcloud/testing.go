@@ -1,7 +1,6 @@
 package bitbucketcloud
 
 import (
-	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,19 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func GetenvTestBitbucketCloudUsername() string {
 	username := os.Getenv("BITBUCKET_CLOUD_USERNAME")
 	if username == "" {
-		username = "unknwon"
+		username = "sourcegraph-testing"
 	}
 	return username
 }
 
 // NewTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool, apiURL *url.URL) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -35,9 +35,14 @@ func NewTestClient(t testing.TB, name string, update bool, apiURL *url.URL) (*Cl
 		t.Fatal(err)
 	}
 
-	cli := NewClient(apiURL, hc)
-	cli.Username = GetenvTestBitbucketCloudUsername()
-	cli.AppPassword = os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD")
+	cli, err := NewClient(&schema.BitbucketCloudConnection{
+		ApiURL:      "https://api.bitbucket.org",
+		Username:    GetenvTestBitbucketCloudUsername(),
+		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+	}, hc)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {

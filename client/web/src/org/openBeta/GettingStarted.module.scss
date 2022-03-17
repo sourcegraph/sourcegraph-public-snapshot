@@ -1,0 +1,98 @@
+.entry-items {
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    li {
+        display: flex;
+        gap: 1rem;
+        &:first-child {
+            border-top: unset;
+        }
+        list-style: none;
+        padding: 0.8rem 1.5rem;
+        border-top: 1px solid var(--border-color-2);
+
+        h3 {
+            margin: 0;
+        }
+    }
+}
+
+.entry-item {
+    width: 100%;
+}
+
+.box-container {
+    padding: 0 !important;
+}
+
+.icon-muted {
+    color: var(--icon-color);
+    opacity: 0.4;
+}
+
+.icon-container {
+    width: 1rem;
+}
+
+.step-text {
+    flex: 1;
+}
+
+.link-container {
+    width: 1rem;
+}
+
+.members-list {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    min-width: 2.5rem;
+}
+
+.avatar-container {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.1);
+}
+
+.total-count {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    left: 3rem;
+    z-index: 2;
+    background-color: var(--gray-03);
+}
+
+.avatar-ellipse {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--body-bg);
+    position: absolute;
+    left: 1.3rem;
+    z-index: 1;
+}
+
+.avatar-ellipse-second {
+    left: 2.8rem;
+}
+
+.second-avatar {
+    position: absolute;
+    left: 1.5rem;
+    z-index: 1;
+}

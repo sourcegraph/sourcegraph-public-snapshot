@@ -1,8 +1,7 @@
 import { Primitive } from 'utility-types'
 
+import { KeyPath } from '@sourcegraph/shared/src/api/client/services/settings'
 import { Expression, TemplateExpression } from '@sourcegraph/template-parser'
-
-import { KeyPath } from '../client/services/settings'
 
 // NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
 // extension_schema.go, if your changes are relevant to the subset of this schema used by our Go code).
