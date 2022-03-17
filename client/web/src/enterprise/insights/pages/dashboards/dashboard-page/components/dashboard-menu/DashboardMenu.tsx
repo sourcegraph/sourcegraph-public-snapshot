@@ -75,22 +75,21 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                         </MenuItem>
                     )}
 
-                    {menuPermissions.delete.display && (
-                        <>
-                            <hr />
+                    {(menuPermissions.configure.display || menuPermissions.copy.display) &&
+                        menuPermissions.delete.display && <hr />}
 
-                            <MenuItem
-                                as={Button}
-                                disabled={menuPermissions.delete.disabled}
-                                data-tooltip={menuPermissions.delete.tooltip}
-                                data-placement="right"
-                                className={classNames(styles.menuItem, styles.menuItemDanger)}
-                                onSelect={() => onSelect(DashboardMenuAction.Delete)}
-                                outline={true}
-                            >
-                                Delete
-                            </MenuItem>
-                        </>
+                    {menuPermissions.delete.display && (
+                        <MenuItem
+                            as={Button}
+                            disabled={menuPermissions.delete.disabled}
+                            data-tooltip={menuPermissions.delete.tooltip}
+                            data-placement="right"
+                            className={classNames(styles.menuItem, styles.menuItemDanger)}
+                            onSelect={() => onSelect(DashboardMenuAction.Delete)}
+                            outline={true}
+                        >
+                            Delete
+                        </MenuItem>
                     )}
                 </MenuItems>
             </MenuPopover>
