@@ -81,9 +81,13 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     >(ORG_MEMBER_REMOVE_MUTATION)
 
     const onRemoveClick = useCallback(async () => {
+        eventLogger.log('RemoveFromOrganizationClicked', { organizationId: orgId })
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
+            eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId })
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
             onMemberRemoved(member.username)
+        } else {
+            eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId })
         }
     }, [isSelf, member.username, removeUserFromOrganization, onMemberRemoved, member.id, orgId])
 
@@ -180,6 +184,13 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [notification, setNotification] = useState<string>()
     const [page, setPage] = useState(1)
+    const setPageWithEventLogging = useCallback(
+        (index: number) => {
+            setPage(index)
+            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id })
+        },
+        [setPage, org.id]
+    )
 
     const { data, loading, error, refetch } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
         ORG_MEMBERS_QUERY,
@@ -189,7 +200,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrgMembersListV2', { orgId: org.id })
+        eventLogger.logViewEvent('OrganizationMembers', { organizationId: org.id })
     }, [org.id])
 
     const isSelf = (userId: string): boolean => authenticatedUser !== null && userId === authenticatedUser.id
@@ -263,6 +274,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                             orgName={org.name}
                             orgId={org.id}
                             onInviteSent={onInviteSent}
+                            eventLoggerEventName="InviteMemberButtonClicked"
                         />
                     )}
                 </div>
@@ -296,7 +308,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                     <PageSelector
                         className="mt-4 mb-4"
                         currentPage={page}
-                        onPageChange={setPage}
+                        onPageChange={setPageWithEventLogging}
                         totalPages={pagedData.totalPages}
                     />
                 )}
@@ -309,6 +321,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                                 <InviteMemberModalHandler
                                     orgName={org.name}
                                     triggerLabel="Invite a teammate"
+                                    eventLoggerEventName="InviteMemberCTAClicked"
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
                                     className={styles.inviteMemberLink}
