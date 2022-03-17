@@ -312,6 +312,10 @@ func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		if bk.FeatureFlags.StatelessBuild {
 			s.Agents["queue"] = bk.AgentQueueJob
+		} else if os.Getenv("BUILDKITE_RETRY_COUNT") != "0" {
+			// Always process retries on stateless agents.
+			// TODO: remove when we switch over entirely to stateless agents
+			s.Agents["queue"] = bk.AgentQueueJob
 		} else {
 			s.Agents["queue"] = bk.AgentQueueStandard
 		}
