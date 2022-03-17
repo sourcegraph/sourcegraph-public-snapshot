@@ -20,7 +20,7 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 1. Install dependencies via `yarn` for the Sourcegraph repository
 1. Run `yarn generate` at the root directory to generate the required schemas
 1. Make your changes to the files within the `client/vscode` directory with VS Code
-1. Run `yarn build` to build or `yarn watch:node` / `yarn watch:web` to build and watch the tasks in the `client/vscode` directory
+1. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks in the `client/vscode` directory
 1. Select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu in the `Run and Debug` sidebar view to see your changes
 
 ### Debugging

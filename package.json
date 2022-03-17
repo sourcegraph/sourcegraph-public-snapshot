@@ -46,7 +46,9 @@
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "yarn --cwd client/browser run build",
     "install:sg": "dev/sg/install.sh",
-    "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\""
+    "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
+    "build-vsce": "yarn --cwd client/vscode run build",
+    "watch-vsce": "yarn --cwd client/vscode run watch"
   },
   "browserslist": [
     "last 1 version",

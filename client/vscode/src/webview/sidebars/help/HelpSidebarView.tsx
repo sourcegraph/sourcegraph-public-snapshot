@@ -68,7 +68,7 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                 type="button"
                 onClick={() =>
                     onHelpItemClick(
-                        'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
+                        'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up'
                     )
                 }
                 className={classNames(styles.itemContainer, 'btn btn-text text-left')}

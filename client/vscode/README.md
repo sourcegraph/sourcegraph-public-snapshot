@@ -116,12 +116,4 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ## Development
 
-To develop the extension:
-
-1. `git clone` the sourcegraph repository
-1. Run `yarn generate` at the root directory
-1. `cd` to the `client/vscode` directory and run `yarn` to install dependencies
-1. Make your changes to the files within the `client/vscode` directory with VS Code
-1. Run `yarn build` to build
-1. Select `Launch & Watch VS Code Extension` from the dropdown menu to see your changes
-1. Select `Launch & Watch VS Code Web Extension` from the dropdown menu to see your changes for VS Code Web
+Please see the [CONTRIBUTING](./CONTRIBUTING.md) document if you are interested in contributing directly to our code base.

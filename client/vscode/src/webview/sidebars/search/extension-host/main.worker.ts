@@ -1,4 +1,4 @@
-import '../../platform/polyfills'
+import '../../../platform/polyfills'
 
 import { startExtensionHost } from '@sourcegraph/shared/src/api/extension/extensionHost'
 
