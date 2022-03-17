@@ -1,12 +1,13 @@
-import * as H from 'history'
 import React, { useCallback, useMemo, useEffect } from 'react'
+
+import * as H from 'history'
 import { Subject } from 'rxjs'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { ErrorLike, isDefined, property } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -26,13 +27,14 @@ import {
 } from '../detail/backend'
 import { getLSPTextDocumentPositionParameters } from '../utils'
 
-import styles from './BatchChangeCloseChangesetsList.module.scss'
 import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
 } from './BatchChangeCloseHeader'
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
+
+import styles from './BatchChangeCloseChangesetsList.module.scss'
 
 interface Props
     extends ThemeProps,

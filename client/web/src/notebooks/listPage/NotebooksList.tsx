@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
+
 import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -8,6 +9,7 @@ import { ListNotebooksResult, ListNotebooksVariables, NotebookFields, NotebooksO
 import { fetchNotebooks as _fetchNotebooks } from '../backend'
 
 import { NotebookNode, NotebookNodeProps } from './NotebookNode'
+
 import styles from './NotebooksList.module.scss'
 
 interface NotebooksListProps extends TelemetryProps {

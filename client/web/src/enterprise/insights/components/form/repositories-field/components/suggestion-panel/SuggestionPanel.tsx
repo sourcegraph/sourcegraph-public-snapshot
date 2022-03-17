@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'

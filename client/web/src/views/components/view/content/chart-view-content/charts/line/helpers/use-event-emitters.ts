@@ -1,5 +1,6 @@
-import { useEventEmitter } from '@visx/xychart'
 import { FocusEventHandler, MouseEventHandler, useCallback } from 'react'
+
+import { useEventEmitter } from '@visx/xychart'
 
 interface PointerEventEmitterParameters {
     /** Source of the events, e.g., the component name. */

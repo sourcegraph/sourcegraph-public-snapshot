@@ -62,14 +62,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	archived := q.Archived()
 	archivedNotSet := archived == nil
 
-	if len(repoFilters) == 0 && len(minusRepoFilters) == 0 && len(dependencies) == 0 {
-		return &search.Alert{
-			PrometheusType: "no_resolved_repos__no_repositories",
-			Title:          "Add repositories or connect repository hosts",
-			Description:    "There are no repositories to search. Add an external service connection to your code host.",
-		}
-	}
-
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
 		proposedQueries := []*search.ProposedQuery{
@@ -169,7 +161,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		return &search.Alert{
 			PrometheusType:  "no_resolved_repos__repos_exist_when_altered",
 			Title:           "No repositories found",
-			Description:     "Try alter the query or use a different `repo:<regexp>` filter to see results",
+			Description:     "Try altering the query or use a different `repo:<regexp>` filter to see results",
 			ProposedQueries: proposedQueries,
 		}
 	}
@@ -266,7 +258,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}
 	}
 
-	if errors.Is(err, searchrepos.ErrNoResolvedRepos) {
+	if !o.HasResults && errors.Is(err, searchrepos.ErrNoResolvedRepos) {
 		return o.alertForNoResolvedRepos(ctx, o.Query), nil
 	}
 

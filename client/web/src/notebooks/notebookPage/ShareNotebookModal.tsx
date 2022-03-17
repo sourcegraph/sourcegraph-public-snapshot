@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo, useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Modal, Button } from '@sourcegraph/wildcard'
@@ -7,6 +8,7 @@ import { Modal, Button } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 
 import { NotebookShareOptionsDropdown, ShareOption } from './NotebookShareOptionsDropdown'
+
 import styles from './ShareNotebookModal.module.scss'
 
 interface ShareNotebookModalProps extends TelemetryProps {

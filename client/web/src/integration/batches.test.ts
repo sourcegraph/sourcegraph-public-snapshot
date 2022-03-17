@@ -318,6 +318,7 @@ function mockCommonGraphQLResponses(
                     unpublished: 3,
                     draft: 2,
                 },
+                state: BatchChangeState.OPEN,
                 closedAt: null,
                 createdAt: subDays(now, 5).toISOString(),
                 updatedAt: subDays(now, 5).toISOString(),
@@ -348,6 +349,9 @@ function mockCommonGraphQLResponses(
                         pageInfo: { hasNextPage: false },
                         totalCount: 0,
                     },
+                },
+                batchSpecs: {
+                    nodes: [{ state: BatchSpecState.COMPLETED }],
                 },
                 bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
@@ -393,6 +397,11 @@ function mockCommonGraphQLResponses(
                           },
                       },
                   },
+        GetStartedInfo: () => ({
+            membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+            repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+            extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+        }),
     }
 }
 

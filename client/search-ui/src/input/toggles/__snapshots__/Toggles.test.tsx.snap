@@ -12,7 +12,7 @@ Array [
     tabindex="0"
   >
     <svg
-      class="mdi-icon icon-inline"
+      class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
       viewBox="0 0 24 24"
@@ -38,7 +38,7 @@ Array [
     tabindex="0"
   >
     <svg
-      class="mdi-icon icon-inline"
+      class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
       viewBox="0 0 24 24"
@@ -64,7 +64,7 @@ Array [
     tabindex="0"
   >
     <svg
-      class="mdi-icon icon-inline"
+      class="mdi-icon iconInline"
       fill="currentColor"
       height="24"
       viewBox="0 0 24 24"

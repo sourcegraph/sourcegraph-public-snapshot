@@ -1,8 +1,10 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { BadgeProps, Badge } from './Badge'
 import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
+
 import styles from './ProductStatusBadge.module.scss'
 
 export type ProductStatusType = typeof PRODUCT_STATUSES[number]

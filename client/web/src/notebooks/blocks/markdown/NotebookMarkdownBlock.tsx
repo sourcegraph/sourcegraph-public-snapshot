@@ -1,22 +1,25 @@
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import blockStyles from '../NotebookBlock.module.scss'
+import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
+import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookMarkdownBlock.module.scss'
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
@@ -30,7 +33,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     isReadOnly,
     onBlockInputChange,
     onRunBlock,
-    onSelectBlock,
     ...props
 }) => {
     const [isEditing, setIsEditing] = useState(!isReadOnly && input.length === 0)
@@ -49,12 +51,12 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         onBlockInputChange,
     ])
 
-    const { isInputFocused } = useMonacoBlockInput({
+    useMonacoBlockInput({
         editor,
         id,
+        tabMovesFocus: false,
         ...props,
         onInputChange,
-        onSelectBlock,
         onRunBlock: runBlock,
     })
 
@@ -64,9 +66,8 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
         if (!isEditing) {
             setIsEditing(true)
-            onSelectBlock(id)
         }
-    }, [id, isReadOnly, isEditing, setIsEditing, onSelectBlock])
+    }, [isReadOnly, isEditing, setIsEditing])
 
     // setTimeout turns on editing mode in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {
@@ -82,11 +83,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
     }, [isEditing, editor])
 
-    const commonMenuActions = useCommonBlockMenuActions({
-        isInputFocused,
-        isReadOnly,
-        ...props,
-    })
+    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
 
     const modifierKeyLabel = useModifierKeyLabel()
     const menuActions = useMemo(() => {
@@ -95,14 +92,14 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
                 ? {
                       type: 'button',
                       label: 'Render',
-                      icon: <PlayCircleOutlineIcon className="icon-inline" />,
+                      icon: <Icon as={PlayCircleOutlineIcon} />,
                       onClick: runBlock,
                       keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
                   }
                 : {
                       type: 'button',
                       label: 'Edit',
-                      icon: <PencilIcon className="icon-inline" />,
+                      icon: <Icon as={PencilIcon} />,
                       onClick: onEnterBlock,
                       keyboardShortcutLabel: '↵',
                   },
@@ -113,30 +110,19 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     const notebookBlockProps = useMemo(
         () => ({
             id,
-            isInputFocused,
             onEnterBlock,
             isReadOnly,
             isSelected,
             onRunBlock,
             onBlockInputChange,
-            onSelectBlock,
-            actions: isSelected ? menuActions : [],
+            actions: isSelected && !isReadOnly ? menuActions : [],
             'aria-label': 'Notebook markdown block',
             ...props,
         }),
-        [
-            id,
-            isInputFocused,
-            isReadOnly,
-            isSelected,
-            menuActions,
-            onBlockInputChange,
-            onEnterBlock,
-            onRunBlock,
-            onSelectBlock,
-            props,
-        ]
+        [id, isReadOnly, isSelected, menuActions, onBlockInputChange, onEnterBlock, onRunBlock, props]
     )
+
+    const isInputFocused = useIsBlockInputFocused(id)
 
     if (!isEditing) {
         return (

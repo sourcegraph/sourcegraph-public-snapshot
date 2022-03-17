@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+
 import { NavLink } from 'react-router-dom'
 
 import { Icon, PageHeader } from '@sourcegraph/wildcard'
@@ -8,6 +9,7 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 
 import { UserAreaRouteContext } from './UserArea'
+
 import styles from './UserAreaHeader.module.scss'
 
 interface Props extends UserAreaRouteContext {

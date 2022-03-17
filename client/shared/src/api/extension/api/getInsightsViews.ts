@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs'
 import { debounceTime, map } from 'rxjs/operators'
 
-import { ContributableViewContainer } from '../../protocol'
+import { ContributableViewContainer } from '@sourcegraph/client-api'
+
 import { RegisteredViewProvider, ViewContexts, ViewProviderResult } from '../extensionHostApi'
 
 import { callViewProvidersInParallel } from './callViewProvidersInParallel'

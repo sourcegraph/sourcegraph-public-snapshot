@@ -47,7 +47,7 @@ type ResetterGroupOptions struct {
 // NewGroup creates a group containing panels displaying the total number of records reset, the number
 // of records moved to errored, and the error rate of the resetter operating within the given container.
 //
-// Requires a:
+// Requires any of the following:
 //   - counter of the format `src_{options.MetricNameRoot}_record_resets_total`
 //   - counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
 //   - counter of the format `src_{options.MetricNameRoot}_record_reset_errors_total`

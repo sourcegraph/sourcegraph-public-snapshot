@@ -34,7 +34,14 @@
         "type": "object",
         "title": "ExcludedGitoliteRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["pattern"] }],
+        "anyOf": [
+          {
+            "required": ["name"]
+          },
+          {
+            "required": ["pattern"]
+          }
+        ],
         "properties": {
           "name": {
             "description": "The name of a Gitolite repo (\"my-repo\") to exclude from mirroring.",
@@ -48,7 +55,39 @@
           }
         }
       },
-      "examples": [[{ "name": "myrepo" }, { "pattern": ".*secret.*" }]]
+      "examples": [
+        [
+          {
+            "name": "myrepo"
+          },
+          {
+            "pattern": ".*secret.*"
+          }
+        ]
+      ]
+    },
+    "phabricatorMetadataCommand": {
+      "description": "This is DEPRECATED",
+      "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
+      "type": "string"
+    },
+    "phabricator": {
+      "description": "This is DEPRECATED",
+      "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
+      "type": "object",
+      "required": ["url", "callsignCommand"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "description": "URL of the Phabricator instance that integrates with this Gitolite instance. This should be set ",
+          "type": "string",
+          "format": "uri"
+        },
+        "callsignCommand": {
+          "description": " Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)",
+          "type": "string"
+        }
+      }
     }
   }
 }

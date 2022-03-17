@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -18,6 +19,7 @@ import {
 } from '../../../../graphql-operations'
 
 import { CollapsibleDetailsWithStatus } from './CollapsibleDetailsWithStatus'
+
 import styles from './TriggerEvent.module.scss'
 
 export const TriggerEvent: React.FunctionComponent<{

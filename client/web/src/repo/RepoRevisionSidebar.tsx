@@ -1,8 +1,9 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -10,14 +11,25 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
-import { Button, useLocalStorage, useMatchMedia, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import {
+    Button,
+    useLocalStorage,
+    useMatchMedia,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { GettingStartedTour } from '../gettingStartedTour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
-import styles from './RepoRevisionSidebar.module.scss'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
+
+import styles from './RepoRevisionSidebar.module.scss'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     repoID: Scalars['ID']
@@ -68,7 +80,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                 onClick={() => handleSidebarToggle(true)}
                 data-tooltip="Show sidebar"
             >
-                <ChevronDoubleRightIcon className="icon-inline" />
+                <Icon as={ChevronDoubleRightIcon} />
             </Button>
         )
     }
@@ -98,7 +110,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                     data-tooltip="Hide sidebar"
                                     data-placement="right"
                                 >
-                                    <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
+                                    <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} />
                                 </Button>
                             }
                         >

@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import LockIcon from 'mdi-react/LockIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
@@ -9,7 +10,7 @@ import { catchError, switchMap, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, FeedbackText, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, FeedbackText, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -20,6 +21,7 @@ import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
 import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
+
 import styles from './RepoSettingsMirrorPage.module.scss'
 
 interface UpdateMirrorRepositoryActionContainerProps {
@@ -303,7 +305,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                         <label>
                             Remote repository URL{' '}
                             <small className="text-info">
-                                <LockIcon className="icon-inline" /> Only visible to site admins
+                                <Icon as={LockIcon} /> Only visible to site admins
                             </small>
                         </label>
                         <input

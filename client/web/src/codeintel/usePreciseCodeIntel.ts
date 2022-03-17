@@ -1,5 +1,6 @@
-import { ApolloError, QueryResult } from '@apollo/client'
 import { useEffect, useRef, useState } from 'react'
+
+import { ApolloError, QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'

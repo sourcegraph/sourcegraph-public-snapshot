@@ -1,15 +1,17 @@
+import React, { useState, useCallback } from 'react'
+
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useState, useCallback } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
-import styles from '../FormActionArea.module.scss'
 
 import { ActionEditor } from './ActionEditor'
+
+import styles from '../FormActionArea.module.scss'
 
 export const SEND_TEST_EMAIL = gql`
     mutation SendTestEmail($namespace: ID!, $description: String!, $email: MonitorEmailInput!) {

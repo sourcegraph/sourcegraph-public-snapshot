@@ -28,6 +28,10 @@ func (e *InsightsPingEmitter) GetTotalCountByViewType(ctx context.Context) (_ []
 	return results, nil
 }
 
+func (e *InsightsPingEmitter) GetTotalCountCritical(ctx context.Context) (_ int, err error) {
+	return basestore.ScanInt(e.insightsDb.QueryRowContext(ctx, insightsCriticalCountQuery))
+}
+
 func (e *InsightsPingEmitter) GetTotalCountByViewSeriesType(ctx context.Context) (_ []types.InsightViewSeriesCountPing, err error) {
 	q := fmt.Sprintf(insightViewSeriesTotalCountQuery, pingSeriesType)
 	rows, err := e.insightsDb.QueryContext(ctx, q)
@@ -250,4 +254,8 @@ SELECT
 	(
 		SELECT DISTINCT(dashboard_id), COUNT(insight_view_id) FROM dashboard_insight_view GROUP BY dashboard_id
 	) counts;
+`
+
+const insightsCriticalCountQuery = `
+SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
 `
