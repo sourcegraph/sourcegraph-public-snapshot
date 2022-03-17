@@ -31,6 +31,14 @@ Deployment notifier works as following:
 4. Post a comment in each of those PRs with the list of applications computed in 2.
 5. Post a Slack message pinging all pull request authors.
 
+### Building it for usage in the `deploy-sourcegraph-*` repositories
+
+Assuming you have correct GCP credentials set:
+
+```sh 
+./release.sh
+```
+
 ## Contributing
 
 ### Local usage
