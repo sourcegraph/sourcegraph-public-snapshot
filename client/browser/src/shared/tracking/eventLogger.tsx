@@ -67,6 +67,8 @@ export class EventLogger implements TelemetryService {
     private platform = getPlatformName()
     private version = getExtensionVersion()
 
+    private firstSourceURL: string | undefined = undefined
+
     /**
      * Buffered Observable for the latest Sourcegraph URL
      */
@@ -121,15 +123,22 @@ export class EventLogger implements TelemetryService {
         userEvent?: UserEvent
     ): Promise<void> {
         const anonUserId = await this.getAnonUserID()
-        console.log(await background.getCookie())
         if (userEvent) {
             logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
         }
+
+        if (!this.firstSourceURL) {
+            this.firstSourceURL = (
+                await background.getCookie({ url: this.sourcegraphURL, name: 'sourcegraphSourceUrl' })
+            )?.value
+        }
+
         logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
                 url: this.sourcegraphURL,
+                firstSourceURL: this.firstSourceURL,
                 argument: { platform: this.platform, version: this.version, ...eventProperties },
                 publicArgument: { platform: this.platform, version: this.version, ...publicArgument },
             },
