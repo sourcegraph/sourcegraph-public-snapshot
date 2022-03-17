@@ -41,7 +41,7 @@ const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
                     </div>
                 </div>
                 <div className="d-flex flex-column">
-                    <Link to={org.url} className={styles.orgLink}>
+                    <Link to={`${org.url}/getstarted`} className={styles.orgLink}>
                         {org.displayName || org.name}
                     </Link>
                     {org.displayName && (
