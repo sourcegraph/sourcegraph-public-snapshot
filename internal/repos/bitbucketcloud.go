@@ -38,15 +38,6 @@ func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*
 }
 
 func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
-	if c.ApiURL == "" {
-		c.ApiURL = "https://api.bitbucket.org"
-	}
-	apiURL, err := url.Parse(c.ApiURL)
-	if err != nil {
-		return nil, err
-	}
-	apiURL = extsvc.NormalizeBaseURL(apiURL)
-
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -67,9 +58,10 @@ func newBitbucketCloudSource(svc *types.ExternalService, c *schema.BitbucketClou
 		return nil, err
 	}
 
-	client := bitbucketcloud.NewClient(apiURL, cli)
-	client.Username = c.Username
-	client.AppPassword = c.AppPassword
+	client, err := bitbucketcloud.NewClient(c, cli)
+	if err != nil {
+		return nil, err
+	}
 
 	return &BitbucketCloudSource{
 		svc:     svc,

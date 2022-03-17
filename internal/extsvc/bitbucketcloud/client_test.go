@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -15,7 +14,7 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 func TestClient_Repos(t *testing.T) {
-	cli, save := NewTestClient(t, "Repos", *update, &url.URL{Scheme: "https", Host: "api.bitbucket.org"})
+	cli, save := NewTestClient(t, "Repos", *update)
 	defer save()
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
