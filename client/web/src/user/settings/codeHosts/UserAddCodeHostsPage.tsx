@@ -36,6 +36,7 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
+    onOrgGetStartedRefresh?: () => void
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -77,6 +78,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
+    onOrgGetStartedRefresh,
 }) => {
     if (window.opener) {
         const parentWindow: ParentWindow = window.opener as ParentWindow
@@ -184,6 +186,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         fetchExternalServices().catch(error => {
             setStatusOrError(asError(error))
         })
+
+        if (onOrgGetStartedRefresh) {
+            onOrgGetStartedRefresh()
+        }
     }
 
     useEffect(() => {
@@ -329,9 +335,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         (service: ListExternalServiceFields): void => {
             if (isServicesByKind(statusOrError)) {
                 setStatusOrError({ ...statusOrError, [service.kind]: service })
+                if (onOrgGetStartedRefresh) {
+                    onOrgGetStartedRefresh()
+                }
             }
         },
-        [statusOrError]
+        [statusOrError, onOrgGetStartedRefresh]
     )
 
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])

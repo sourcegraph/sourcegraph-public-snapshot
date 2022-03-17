@@ -23,6 +23,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     OrganizationResult,
     OrganizationVariables,
@@ -115,6 +116,7 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
+        FeatureFlagProps,
         ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -146,6 +148,7 @@ export interface OrgAreaPageProps
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,
+        FeatureFlagProps,
         BreadcrumbSetters,
         BatchChangesProps {
     /** The org that is the subject of the page. */
@@ -287,6 +290,7 @@ export class OrgArea extends React.Component<Props> {
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
             newMembersInviteEnabled: this.state.newMembersInviteEnabled,
+            featureFlags: this.props.featureFlags,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

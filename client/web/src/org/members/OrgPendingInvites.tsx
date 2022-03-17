@@ -42,11 +42,14 @@ import {
     getLocaleFormattedDateFromString,
     getPaginatedItems,
     OrgMemberNotification,
+    useQueryStringParameters,
 } from './utils'
 
 import styles from './OrgPendingInvites.module.scss'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+    onOrgGetStartedRefresh: () => void
+}
 interface OrganizationInvitation {
     id: string
     recipientEmail?: string
@@ -238,8 +241,14 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    onOrgGetStartedRefresh,
+}) => {
     const orgId = org.id
+    const query = useQueryStringParameters()
+    const openInviteModal = !!query.get('openInviteModal')
     useEffect(() => {
         eventLogger.logViewEvent('OrgPendingInvites', { orgId })
     }, [orgId])
@@ -256,20 +265,22 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
 
     const onInviteSent = useCallback(
         async (result: IModalInviteResult) => {
+            onOrgGetStartedRefresh()
             setInvite(result)
             await refetch({ id: orgId })
         },
-        [setInvite, orgId, refetch]
+        [setInvite, orgId, refetch, onOrgGetStartedRefresh]
     )
 
     const onInviteResentRevoked = useCallback(
         async (recipient: string, revoked?: boolean) => {
+            onOrgGetStartedRefresh()
             const message = `${revoked ? 'Revoked' : 'Resent'} invite for ${recipient}`
             setNotification(message)
             setPage(1)
             await refetch({ id: orgId })
         },
-        [setNotification, orgId, refetch]
+        [setNotification, orgId, refetch, onOrgGetStartedRefresh]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -305,6 +316,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                 orgId={org.id}
                                 onInviteSent={onInviteSent}
                                 variant="success"
+                                initiallyOpened={openInviteModal}
                             />
                         )}
                     </div>

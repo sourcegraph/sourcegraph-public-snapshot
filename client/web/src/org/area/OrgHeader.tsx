@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
+import { gql, useQuery } from '@apollo/client'
 import { Location } from 'history'
 import { match } from 'react-router'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
@@ -7,7 +8,10 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { PageHeader, Button, Link } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
+import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
+import { useEventBus } from '../emitter'
 import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaPageProps } from './OrgArea'
@@ -18,14 +22,40 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
+export interface OrgSummary {
+    membersSummary: { membersCount: number; invitesCount: number }
+    repoCount: { total: { totalCount: number } }
+    extServices: { totalCount: number }
+}
+
+export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org' | 'featureFlags'> {
     isSourcegraphDotCom: boolean
     newMembersInviteEnabled: boolean
+    getStartedInfo: OrgSummary | undefined
 }
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {
     isActive?: (match: match | null, location: Location, props: OrgAreaHeaderContext) => boolean
 }
+
+const GET_STARTED_INFO_QUERY = gql`
+    query GetStartedInfo($organization: ID!) {
+        membersSummary: orgMembersSummary(organization: $organization) {
+            membersCount
+            invitesCount
+        }
+        repoCount: node(id: $organization) {
+            ... on Org {
+                total: repositories(cloned: true, notCloned: true) {
+                    totalCount(precise: true)
+                }
+            }
+        }
+        extServices: externalServices(namespace: $organization) {
+            totalCount
+        }
+    }
+`
 
 /**
  * Header for the organization area.
@@ -40,7 +70,23 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
     className = '',
     isSourcegraphDotCom,
     newMembersInviteEnabled,
+    featureFlags,
 }) => {
+    const emitter = useEventBus()
+
+    useEffect(() => {
+        const unsubscribe = emitter.subscribe('refreshOrgHeader', () => {
+            refetch({ organization: org.id }).catch(() => eventLogger.log('OrgHeaderSummaryrefreshError'))
+        })
+
+        return () => {
+            emitter.unSubscribe('refreshOrgHeader', unsubscribe)
+        }
+    })
+    const { data, refetch } = useQuery<GetStartedInfoResult, GetStartedInfoVariables>(GET_STARTED_INFO_QUERY, {
+        variables: { organization: org.id },
+    })
+
     const context = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
@@ -48,6 +94,8 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
         org,
         isSourcegraphDotCom,
         newMembersInviteEnabled,
+        featureFlags,
+        getStartedInfo: data ? (data as OrgSummary) : undefined,
     }
 
     return (
@@ -77,7 +125,15 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
-                                    ({ to, label, exact, icon: Icon, condition = () => true, isActive }) =>
+                                    ({
+                                        to,
+                                        label,
+                                        exact,
+                                        icon: Icon,
+                                        condition = () => true,
+                                        isActive,
+                                        dynamicLabel,
+                                    }) =>
                                         condition(context) && (
                                             <li key={label} className="nav-item">
                                                 <NavLink
@@ -94,7 +150,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                                     <span>
                                                         {Icon && <Icon className="icon-inline" />}{' '}
                                                         <span className="text-content" data-tab-content={label}>
-                                                            {label}
+                                                            {dynamicLabel ? dynamicLabel(context) : label}
                                                         </span>
                                                     </span>
                                                 </NavLink>

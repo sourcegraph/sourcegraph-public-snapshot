@@ -1,0 +1,32 @@
+.new-join-beta-page {
+    max-width: 35rem;
+    margin: 0 auto;
+    margin-bottom: 2rem;
+    height: fit-content;
+}
+
+.form-container {
+    padding: 0 !important;
+}
+
+.buttons-row {
+    gap: 1rem;
+    border-top: 2px solid var(--border-color-2);
+    padding-top: 1rem;
+}
+
+.form-item {
+    margin-bottom: 1.5rem !important;
+}
+
+.cb-label {
+    margin-bottom: 0.25rem !important;
+}
+
+.cb-sub-label {
+    margin-bottom: 1rem !important;
+}
+
+.other-bottom {
+    margin-bottom: 1rem !important;
+}
