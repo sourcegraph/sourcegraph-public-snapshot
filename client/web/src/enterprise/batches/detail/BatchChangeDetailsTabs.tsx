@@ -134,7 +134,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                             </span>{' '}
                             <Badge variant="warning" pill={true} className="ml-1">
                                 {batchChange.batchSpecs
-                                    ? batchChange.batchSpecs.nodes?.filter(node => node.state === 'PROCESSING').length
+                                    ? batchChange.batchSpecs.nodes?.filter(
+                                          node => node.state === 'PROCESSING' || 'QUEUED'
+                                      ).length
                                     : 0}
                             </Badge>
                         </span>
