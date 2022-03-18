@@ -1,5 +1,5 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
+import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
@@ -22,6 +22,7 @@ import { WebviewPageProps } from '../platform/context'
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { BrandHeader } from './components/BrandHeader'
 import { HomeFooter } from './components/HomeFooter'
+
 import styles from './index.module.scss'
 export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
@@ -151,7 +152,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
 
     return (
         <div className="d-flex flex-column align-items-center">
-            <BrandHeader theme={theme} extensionCoreAPI={extensionCoreAPI} />
+            <BrandHeader theme={theme} />
 
             <div className={styles.homeSearchBoxContainer}>
                 {/* eslint-disable-next-line react/forbid-elements */}

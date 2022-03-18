@@ -6,26 +6,23 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentSearches } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../graphql-operations'
+import { SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
 
-import styles from '../SearchSidebarView.module.scss'
+import styles from '../../search/SearchSidebarView.module.scss'
 
-export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentSearchesSection: React.FunctionComponent<HistorySidebarProps> = ({
     platformContext,
-    authenticatedUser,
     extensionCoreAPI,
+    authenticatedUser,
 }) => {
     const itemsToLoad = 15
     const [collapsed, setCollapsed] = useState(false)
 
-    // Debt: lift this shared query up to HistorySidebarView.
-    const recentRepositoriesResult = useObservable(
+    const recentSearchesResult = useObservable(
         useMemo(() => fetchRecentSearches(authenticatedUser.id, itemsToLoad, platformContext), [
             authenticatedUser.id,
             itemsToLoad,
@@ -33,18 +30,17 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
         ])
     )
 
-    if (!recentRepositoriesResult) {
+    const recentSearches: RecentSearch[] | null = useMemo(
+        () => processRecentSearches(recentSearchesResult ?? undefined),
+        [recentSearchesResult]
+    )
+
+    if (!recentSearches) {
         return null
     }
 
-    const processedRepositories = processRepositories(recentRepositoriesResult)
-
-    if (!processedRepositories) {
-        return null
-    }
-
-    const onRecentRepositoryClick = (query: string): void => {
-        platformContext.telemetryService.log('VSCERecentRepositoryClick')
+    const onSavedSearchClick = (query: string): void => {
+        platformContext.telemetryService.log('VSCERecentSearchClick')
         extensionCoreAPI
             .streamSearch(query, {
                 // Debt: using defaults here. The saved search should override these, though.
@@ -66,7 +62,7 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
                 onClick={() => setCollapsed(!collapsed)}
             >
-                <h5 className="flex-grow-1">Recent Repositories</h5>
+                <h5 className="flex-grow-1">Recent Searches</h5>
                 {collapsed ? (
                     <ChevronLeftIcon className="icon-inline mr-1" />
                 ) : (
@@ -76,17 +72,17 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
 
             {!collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
-                    {processedRepositories
+                    {recentSearches
                         .filter((search, index) => index < itemsToLoad)
-                        .map((repository, index) => (
-                            <div key={`${repository}-${index}`}>
+                        .map(search => (
+                            <div key={search.timestamp + search.searchText}>
                                 <small className={styles.sidebarSectionListItem}>
                                     <button
                                         type="button"
                                         className="btn btn-link p-0 text-left text-decoration-none"
-                                        onClick={() => onRecentRepositoryClick(`repo:${repository}`)}
+                                        onClick={() => onSavedSearchClick(search.searchText)}
                                     >
-                                        <SyntaxHighlightedSearchQuery query={`r:${repository}`} />
+                                        <SyntaxHighlightedSearchQuery query={search.searchText} />
                                     </button>
                                 </small>
                             </div>
@@ -97,31 +93,40 @@ export const RecentRepositoriesSection: React.FunctionComponent<HistorySidebarPr
     )
 }
 
-export function parseSearchURLQuery(query: string): string | undefined {
-    const searchParameters = new URLSearchParams(query)
-    return searchParameters.get('q') || undefined
+interface RecentSearch {
+    count: number
+    searchText: string
+    timestamp: string
+    url: string
 }
 
-function processRepositories(eventLogResult: EventLogResult): string[] | null {
+function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] | null {
     if (!eventLogResult) {
         return null
     }
-    const recentlySearchedRepos: string[] = []
+
+    const recentSearches: RecentSearch[] = []
+
     for (const node of eventLogResult.nodes) {
-        if (node.url) {
-            const url = new URL(node.url)
-            const queryFromURL = parseSearchURLQuery(url.search)
-            const scannedQuery = scanSearchQuery(queryFromURL || '')
-            if (scannedQuery.type === 'success') {
-                for (const token of scannedQuery.term) {
-                    if (isRepoFilter(token)) {
-                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                            recentlySearchedRepos.push(token.value.value)
-                        }
-                    }
+        if (node.argument && node.url) {
+            const parsedArguments = JSON.parse(node.argument)
+            const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
+
+            if (searchText) {
+                if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
+                    recentSearches[recentSearches.length - 1].count += 1
+                } else {
+                    const parsedUrl = new URL(node.url)
+                    recentSearches.push({
+                        count: 1,
+                        url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                        searchText,
+                        timestamp: node.timestamp,
+                    })
                 }
             }
         }
     }
-    return recentlySearchedRepos
+
+    return recentSearches
 }

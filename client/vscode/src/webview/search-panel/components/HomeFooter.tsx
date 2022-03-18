@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback } from 'react'
+
+import classNames from 'classnames'
 
 import { QueryState } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -8,8 +9,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { ModalVideo } from '../alias/ModalVideo'
 
-import styles from './HomeFooter.module.scss'
 import { SearchExample, exampleQueries } from './SearchExamples'
+
+import styles from './HomeFooter.module.scss'
 
 export interface HomeFooterProps extends TelemetryProps, ThemeProps {
     setQuery: (newState: QueryState) => void
