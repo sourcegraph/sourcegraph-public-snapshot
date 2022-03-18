@@ -93,6 +93,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
         false
 
+    console.log(batchChange)
+
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
@@ -131,7 +133,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
-                            </span>
+                            </span>{' '}
+                            <Badge variant="warning" pill={true} className="ml-1">
+                                {batchChange.batchSpecs
+                                    ? batchChange.batchSpecs.nodes?.filter(node => node.state === 'PROCESSING').length
+                                    : 0}
+                            </Badge>
                         </span>
                     </BatchChangeTab>
                 )}
