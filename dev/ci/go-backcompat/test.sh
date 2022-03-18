@@ -91,7 +91,7 @@ echo ""
 PROTECTED_FILES=(
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
-  ./.buildkite/hooks
+  ./dev/ci/asdf-install.sh
 )
 
 # Rewrite the current migrations into a temporary folder that we can force
@@ -132,7 +132,7 @@ fi
 
 # Re-run asdf to ensure we have the correct set of utilities to
 # run the currently checked out version of the Go unit tests.
-./.buildkite/hooks/pre-command
+./dev/ci/asdf-install.sh
 
 if ! ./dev/ci/go-test.sh "$@"; then
   annotation=$(

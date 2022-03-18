@@ -68,6 +68,9 @@ func ParseDiff(files []string) (diff Diff) {
 		if strings.HasPrefix(p, "migrations/") {
 			diff |= (DatabaseSchema | Go)
 		}
+		if strings.HasPrefix(p, "dev/ci/go-backcompat") {
+			diff |= DatabaseSchema
+		}
 
 		// Affects docs
 		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
