@@ -10,7 +10,10 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## 3.37 -> 3.38
 
-TODO
+This release adds the requirement that the environment variables `SRC_GIT_SERVERS`, `SEARCHER_URL`, `SYMBOLS_URL`, and `INDEXED_SEARCH_SERVERS` are set for the worker process.
+
+To upgrade, please perform the changes in the following diff:
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/3273d3c7da750ff15ba9d4f24d1e09e835bf11d9)
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
