@@ -9,6 +9,7 @@ import {
     DeleteDashboardResult,
     ExampleFirstRepositoryResult,
     ExampleTodoRepositoryResult,
+    GetAccessibleInsightsListResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     HasAvailableCodeInsightResult,
@@ -21,13 +22,13 @@ import {
 } from 'src/graphql-operations'
 
 import { fromObservableQuery } from '@sourcegraph/http-client'
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { SupportedInsightSubject } from '../../types/subjects'
 import { CodeInsightsBackend, UiFeaturesConfig } from '../code-insights-backend'
 import {
+    AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
@@ -40,7 +41,6 @@ import {
     GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
-    ReachableInsight,
     RemoveInsightFromDashboardInput,
 } from '../code-insights-backend-types'
 import { getBuiltInInsight } from '../core/api/get-built-in-insight'
@@ -51,6 +51,7 @@ import { getSearchInsightContent } from '../core/api/get-search-insight-content/
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
 import { createInsightView } from './deserialization/create-insight-view'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './gql/GetAccessibleInsightsList'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } from './gql/GetExampleRepository'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
@@ -133,15 +134,16 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // title field as soon as setting-based api will be deprecated
     public findInsightByName = (): Observable<Insight | null> => of(null)
 
-    public getReachableInsights = (): Observable<ReachableInsight[]> =>
-        this.getInsights({ dashboardId: ALL_INSIGHTS_DASHBOARD_ID }).pipe(
-            map(insights =>
-                insights.map(insight => ({
-                    ...insight,
-                    owner: {
-                        id: '',
-                        name: '',
-                    },
+    public getAccessibleInsightsList = (): Observable<AccessibleInsightInfo[]> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<GetAccessibleInsightsListResult>({
+                query: GET_ACCESSIBLE_INSIGHTS_LIST,
+            })
+        ).pipe(
+            map(response =>
+                response.data.insightViews.nodes.map(view => ({
+                    id: view.id,
+                    title: view.presentation.title,
                 }))
             )
         )
@@ -394,13 +396,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     }
 
     // Live preview fetchers
-    public getSearchInsightContent = <D extends keyof ViewContexts>(
-        input: GetSearchInsightContentInput<D>
-    ): Promise<LineChartContent<any, string>> => getSearchInsightContent(input.insight, input.options)
+    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<LineChartContent<any, string>> =>
+        getSearchInsightContent(input.insight)
 
-    public getLangStatsInsightContent = <D extends keyof ViewContexts>(
-        input: GetLangStatsInsightContentInput<D>
-    ): Promise<PieChartContent<any>> => getLangStatsInsightContent(input.insight, input.options)
+    public getLangStatsInsightContent = (input: GetLangStatsInsightContentInput): Promise<PieChartContent<any>> =>
+        getLangStatsInsightContent(input.insight)
 
     public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LineChartContent<any, string>> =>
         getCaptureGroupInsightsPreview(this.apolloClient, input)

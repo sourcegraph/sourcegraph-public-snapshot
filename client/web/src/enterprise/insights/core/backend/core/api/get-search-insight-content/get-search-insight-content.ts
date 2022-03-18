@@ -2,13 +2,10 @@ import { formatISO, isAfter, startOfDay, sub, Duration } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
-import type { DirectoryViewContext, LineChartContent } from 'sourcegraph'
-
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import type { LineChartContent } from 'sourcegraph'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../../../../views'
 import { SearchInsightSettings } from '../../../code-insights-backend-types'
-import { resolveDocumentURI } from '../../../utils/resolve-uri'
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
 
 import { queryHasCountFilter } from './query-has-count-filter'
@@ -24,32 +21,8 @@ interface InsightSeriesData {
     [seriesName: string]: number
 }
 
-interface InsightOptions<D extends keyof ViewContexts> {
-    where: D
-    context: ViewContexts[D]
-}
-
-export async function getSearchInsightContent<D extends keyof ViewContexts>(
-    insight: SearchInsightSettings,
-    options: InsightOptions<D>
-): Promise<LineChartContent<any, string>> {
-    const { where, context } = options
-
-    switch (where) {
-        case 'directory': {
-            const { viewer } = context as DirectoryViewContext
-            const { repo, path } = resolveDocumentURI(viewer.directory.uri)
-
-            return getInsightContent({ insight, repos: [repo], path })
-        }
-
-        case 'homepage':
-        case 'insightsPage': {
-            return getInsightContent({ insight, repos: insight.repositories })
-        }
-    }
-
-    throw new Error(`This context is not supported for search insight: context: ${where}`)
+export async function getSearchInsightContent(insight: SearchInsightSettings): Promise<LineChartContent<any, string>> {
+    return getInsightContent({ insight, repos: insight.repositories })
 }
 
 interface GetInsightContentInput {

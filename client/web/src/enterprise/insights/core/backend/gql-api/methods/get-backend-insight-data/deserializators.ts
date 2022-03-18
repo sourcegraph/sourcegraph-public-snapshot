@@ -1,7 +1,7 @@
 import { InsightDataNode, InsightDataSeries } from '../../../../../../../graphql-operations'
 import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../../../types'
 import { BackendInsightData } from '../../../code-insights-backend-types'
-import { createLineChartContentFromIndexedSeries } from '../../../utils/create-line-chart-content'
+import { createLineChartContent } from '../../../utils/create-line-chart-content'
 
 export const MAX_NUMBER_OF_SERIES = 20
 
@@ -13,7 +13,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
         id: insight.id,
         view: {
             title: insight.title,
-            content: [createLineChartContentFromIndexedSeries(rawSeries, series, insight.filters)],
+            content: [createLineChartContent(rawSeries, series, insight.filters)],
             isFetchingHistoricalData: response.dataSeries.some(
                 ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
             ),
@@ -26,7 +26,7 @@ const COLORS = ['grape', 'indigo', 'green', 'red', 'violet', 'lime', 'pink', 'bl
 const SERIES_COLORS = COLORS.map(name => `var(--oc-${name}-7)`)
 
 function getParsedSeries(insight: BackendInsight, series: InsightDataSeries[]): SearchBasedInsightSeries[] {
-    switch (insight.viewType) {
+    switch (insight.type) {
         case InsightType.SearchBased:
             return insight.series
 
