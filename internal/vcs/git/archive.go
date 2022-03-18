@@ -27,7 +27,7 @@ func ArchiveReader(
 	repoName api.RepoName,
 	options gitserver.ArchiveOptions,
 ) (io.ReadCloser, error) {
-	return gitserver.DefaultClient.Archive(ctx, repoName, options)
+	return gitserver.NewClient(db).Archive(ctx, repoName, options)
 }
 
 func ArchiveReaderWithSubRepo(

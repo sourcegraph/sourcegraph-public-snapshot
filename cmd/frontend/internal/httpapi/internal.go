@@ -313,7 +313,7 @@ func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) er
 			Format:  "tar",
 		}
 
-		location := gitserver.DefaultClient.ArchiveURL(ctx, repo, opts)
+		location := gitserver.NewClient(db).ArchiveURL(ctx, repo, opts)
 
 		w.Header().Set("Location", location.String())
 		w.WriteHeader(http.StatusFound)
@@ -352,7 +352,7 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 		}
 
 		// Find the correct shard to query
-		addr := gitserver.DefaultClient.AddrForRepo(ctx, repo.Name)
+		addr := gitserver.NewClient(db).AddrForRepo(ctx, repo.Name)
 
 		director := func(req *http.Request) {
 			req.URL.Scheme = "http"

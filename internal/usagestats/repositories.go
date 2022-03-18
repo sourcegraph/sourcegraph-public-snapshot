@@ -39,7 +39,7 @@ type Repositories struct {
 func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
 	var total Repositories
 
-	stats, err := gitserver.DefaultClient.ReposStats(ctx)
+	stats, err := gitserver.NewClient(db).ReposStats(ctx)
 	if err != nil {
 		return nil, err
 	}

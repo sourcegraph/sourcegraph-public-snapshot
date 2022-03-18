@@ -38,7 +38,7 @@ func execSafe(ctx context.Context, db database.DB, repo api.RepoName, params []s
 		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", params...)
+	cmd := gitserver.NewClient(db).Command("git", params...)
 	cmd.Repo = repo
 	stdout, stderr, err = cmd.DividedOutput(ctx)
 	exitCode = cmd.ExitStatus
@@ -65,7 +65,7 @@ func execReader(ctx context.Context, db database.DB, repo api.RepoName, args []s
 	if !gitdomain.IsAllowedGitCmd(args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	return gitserver.StdoutReader(ctx, cmd)
 }
@@ -81,7 +81,7 @@ func checkSpecArgSafety(spec string) error {
 
 func gitserverCmdFunc(repo api.RepoName, db database.DB) cmdFunc {
 	return func(args []string) cmd {
-		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd := gitserver.NewClient(db).Command("git", args...)
 		cmd.Repo = repo
 		return cmd
 	}

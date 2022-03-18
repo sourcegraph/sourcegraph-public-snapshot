@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/go-rendezvous"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -43,13 +44,12 @@ var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
 	defaultLimiter = parallel.NewRun(500)
-
-	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-	DefaultClient Client = NewClient(defaultDoer)
 )
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo  func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive   func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 }
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
@@ -60,12 +60,13 @@ func ResetClientMocks() {
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
-func NewClient(cli httpcli.Doer) *ClientImplementor {
+func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		HTTPClient:  cli,
+		db:          db,
+		HTTPClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -74,12 +75,12 @@ func NewClient(cli httpcli.Doer) *ClientImplementor {
 	}
 }
 
-func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
+func NewTestClient(db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return addrs
 		},
-		HTTPClient:  cli,
+		db:          db,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -104,6 +105,9 @@ type ClientImplementor struct {
 	// UserAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
 	UserAgent string
+
+	// db is a connection to the database
+	db database.DB
 }
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
@@ -309,6 +313,9 @@ func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, o
 }
 
 func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
+	if ClientMocks.Archive != nil {
+		return ClientMocks.Archive(ctx, repo, opt)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
@@ -907,6 +914,10 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 }
 
 func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+	if ClientMocks.RepoInfo != nil {
+		return ClientMocks.RepoInfo(ctx, repos...)
+	}
+
 	numPossibleShards := len(c.addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 

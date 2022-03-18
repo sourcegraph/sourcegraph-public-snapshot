@@ -233,7 +233,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(patternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-				Gitserver:            gitserver.DefaultClient,
+				Gitserver:            gitserver.NewClient(db),
 			})
 		}
 

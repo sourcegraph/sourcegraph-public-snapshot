@@ -398,7 +398,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.DefaultClient.Addrs())
+		limit := 10 * len(gitserver.NewClient(s.DB).Addrs())
 		if limit == 0 {
 			limit = 15
 		}

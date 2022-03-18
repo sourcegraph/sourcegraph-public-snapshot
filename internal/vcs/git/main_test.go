@@ -21,12 +21,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 var root string
+
+var testGitserverClient *gitserver.ClientImplementor
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -76,7 +79,8 @@ func init() {
 		}
 	}()
 
-	gitserver.DefaultClient = gitserver.NewTestClient(httpcli.InternalDoer, []string{l.Addr().String()})
+	testGitserverClient = gitserver.NewTestClient(database.NewMockDB(), []string{l.Addr().String()})
+	testGitserverClient.HTTPClient = httpcli.InternalDoer
 }
 
 func AsJSON(v interface{}) string {
@@ -129,7 +133,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
 	repo := api.RepoName(filepath.Base(dir))
-	if resp, err := gitserver.DefaultClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
+	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {
 		t.Fatal(resp.Error)

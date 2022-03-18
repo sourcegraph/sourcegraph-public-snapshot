@@ -107,7 +107,7 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 	}})
 	defer endObservation(1, observation.Args{})
 
-	resp, err := gitserver.DefaultClient.RepoInfo(ctx, repos...)
+	resp, err := gitserver.NewClient(c.db).RepoInfo(ctx, repos...)
 	if resp == nil {
 		return nil, err
 	}
