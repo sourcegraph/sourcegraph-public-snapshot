@@ -31,17 +31,32 @@ func ArchiveReader(
 		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
 		} else if enabled {
-			pathSpec, err := createPathSpecFromSubRepoPerms(ctx, checker, repo)
-			if err != nil {
-				return nil, errors.Wrap(err, "creating git pathspec from sub-repo perms")
+			if options.Paths != nil && len(options.Paths) > 0 {
+				filteredPaths, err := filterRequestedPaths(ctx, checker, repo, options.Treeish, options.Paths)
+				if err != nil {
+					return nil, errors.Wrap(err, "error filtering the requested paths")
+				}
+				options.Paths = filteredPaths
+			} else {
+				pathSpec, err := createPathSpecFromSubRepoPerms(ctx, checker, repo)
+				if err != nil {
+					return nil, errors.Wrap(err, "creating git pathspec from sub-repo perms")
+				}
+				options.Paths = pathSpec
 			}
-			options.Paths = pathSpec
 		}
 	}
 	return gitserver.DefaultClient.Archive(ctx, repo, options)
 }
 
-// TODO: handle case where options.Paths is non-empty
+func filterRequestedPaths(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string, requestedPaths []string) ([]string, error) {
+	if commit == "" {
+		return []string{}, errors.New("empty commit id")
+	}
+	// Call LsFiles which will list the files requested and filter out any the user doesn't have access to.
+	return LsFiles(ctx, checker, repo, api.CommitID(commit), requestedPaths...)
+}
+
 func createPathSpecFromSubRepoPerms(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
 	a := actor.FromContext(ctx)
 	perms, err := authz.ActorRawPermissions(ctx, checker, a, repo)

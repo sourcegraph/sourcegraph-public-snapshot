@@ -112,6 +112,8 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 		label                  string
 		subRepoPerms           authz.SubRepoPermissions
 		expectedFilesInArchive []string
+		requestedPaths         []string
+		permissionsFunc        func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error)
 	}{
 		{
 			label: "path includes",
@@ -129,6 +131,18 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 			},
 			expectedFilesInArchive: []string{"file1", "subdir/", "subdir/file2"},
 		},
+		{
+			label:                  "with files requested",
+			subRepoPerms:           authz.SubRepoPermissions{},
+			requestedPaths:         []string{"subdir/file2", "subdir_no_access/file3"},
+			expectedFilesInArchive: []string{"subdir/", "subdir/file2"},
+			permissionsFunc: func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error) {
+				if content.Path == "subdir_no_access/file3" {
+					return authz.None, nil
+				}
+				return authz.Read, nil
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -137,11 +151,15 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 				return tc.subRepoPerms, nil
 			})
 
+			if tc.permissionsFunc != nil {
+				checker.PermissionsFunc.SetDefaultHook(tc.permissionsFunc)
+			}
 			repo := &types.Repo{Name: repoName, ID: 1}
 
 			opts := gitserver.ArchiveOptions{
 				Format:  ArchiveFormatZip,
 				Treeish: lastCommit,
+				Paths:   tc.requestedPaths,
 			}
 			readCloser, err := ArchiveReader(ctx, checker, repo.Name, opts)
 			if err != nil {
