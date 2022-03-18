@@ -56,6 +56,10 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
 
 	args := toTextParameters(jargs, b, q, resultTypes)
+
+	// searcher to use full deadline if timeout: set or we are streaming.
+	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
+
 	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
@@ -165,7 +169,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				PatternInfo:     args.PatternInfo,
 				Indexed:         false,
 				SearcherURLs:    jargs.SearcherURLs,
-				UseFullDeadline: args.UseFullDeadline,
+				UseFullDeadline: useFullDeadline,
 			})
 
 			addJob(true, &repoPagerJob{
@@ -199,7 +203,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Limit:       maxResults,
 			})
 
-			required := args.UseFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+			required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
 			addJob(required, &repoPagerJob{
 				child:            NewParallelJob(symbolSearchJobs...),
 				repoOptions:      repoOptions,
@@ -212,7 +216,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			diff := resultTypes.Has(result.TypeDiff)
 			var required bool
-			if args.UseFullDeadline {
+			if useFullDeadline {
 				required = true
 			} else if diff {
 				required = resultTypes.Without(result.TypeDiff) == 0
@@ -247,7 +251,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			searcherArgs := &search.SearcherParameters{
 				SearcherURLs:    jargs.SearcherURLs,
 				PatternInfo:     args.PatternInfo,
-				UseFullDeadline: args.UseFullDeadline,
+				UseFullDeadline: useFullDeadline,
 			}
 
 			addJob(true, &structural.StructuralSearch{
@@ -346,6 +350,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					args.SearcherURLs = jargs.SearcherURLs
 					args.RepoOptions = repoOptions
 					args.Features = features
+					args.UseFullDeadline = useFullDeadline
 					if repoUniverseSearch {
 						args.Mode = search.ZoektGlobalSearch
 					}
@@ -378,12 +383,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 }
 
 func toTextParameters(jargs *Args, b query.Basic, q query.Q, resultTypes result.Types) search.TextParameters {
-	args := search.TextParameters{
-		Query: q,
-
-		// UseFullDeadline if timeout: set or we are streaming.
-		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
-	}
+	args := search.TextParameters{Query: q}
 
 	args.PatternInfo = search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
 	if args.PatternInfo.Pattern == "" {
