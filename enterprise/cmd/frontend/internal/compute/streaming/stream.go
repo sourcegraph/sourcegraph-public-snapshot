@@ -115,6 +115,13 @@ LOOP:
 		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
 		return
 	}
+
+	if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
+		_ = eventWriter.Event("alert", streamhttp.EventAlert{
+			Title:       "Heads up",
+			Description: "This data is incomplete! We ran this query for 1 minute and we'll need more time to compute all the results. Ask in #compute for more Compute Credits™",
+		})
+	}
 }
 
 type args struct {
