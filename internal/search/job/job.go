@@ -56,6 +56,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
 
 	args := toTextParameters(jargs, b, q, resultTypes)
+	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
@@ -88,7 +89,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
 				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -118,7 +119,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 			if resultTypes.Has(result.TypeSymbol) {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -147,7 +148,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			var textSearchJobs []Job
 			typ := search.TextRequest
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -181,7 +182,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			typ := search.SymbolRequest
 
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -231,7 +232,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && args.PatternInfo.Pattern != "" {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &features, typ)
 			if err != nil {
 				return nil, err
 			}
@@ -344,6 +345,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					args.Zoekt = jargs.Zoekt
 					args.SearcherURLs = jargs.SearcherURLs
 					args.RepoOptions = repoOptions
+					args.Features = features
 					if repoUniverseSearch {
 						args.Mode = search.ZoektGlobalSearch
 					}
@@ -377,9 +379,8 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 func toTextParameters(jargs *Args, b query.Basic, q query.Q, resultTypes result.Types) search.TextParameters {
 	args := search.TextParameters{
-		Query:    q,
-		Features: toFeatures(jargs.SearchInputs.Features),
-		Timeout:  search.TimeoutDuration(b),
+		Query:   q,
+		Timeout: search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
