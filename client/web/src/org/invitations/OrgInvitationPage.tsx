@@ -107,11 +107,19 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     })
 
     const acceptInvitation = useCallback(async () => {
-        eventLogger.log('OrganizationInvitationAcceptClicked', {
-            organizationId: orgId,
-            invitationId: data?.id,
-            willVerifyEmail,
-        })
+        eventLogger.log(
+            'OrganizationInvitationAcceptClicked',
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
+            },
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
+            }
+        )
         try {
             await respondToInvitation({
                 variables: {
@@ -119,9 +127,17 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                     response: OrganizationInvitationResponseType.ACCEPT,
                 },
             })
-            eventLogger.log('OrganizationInvitationAcceptSucceeded', { organizationId: orgId, invitationId: data?.id })
+            eventLogger.log(
+                'OrganizationInvitationAcceptSucceeded',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
         } catch {
-            eventLogger.log('OrganizationInvitationAcceptFailed', { organizationId: orgId, invitationId: data?.id })
+            eventLogger.log(
+                'OrganizationInvitationAcceptFailed',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
             return
         }
 
@@ -131,11 +147,19 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     }, [data?.id, history, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
-        eventLogger.log('OrganizationInvitationDeclineClicked', {
-            organizationId: orgId,
-            invitationId: data?.id,
-            willVerifyEmail,
-        })
+        eventLogger.log(
+            'OrganizationInvitationDeclineClicked',
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
+            },
+            {
+                organizationId: orgId,
+                invitationId: data?.id,
+                willVerifyEmail,
+            }
+        )
         try {
             await respondToInvitation({
                 variables: {
@@ -143,9 +167,17 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
                     response: OrganizationInvitationResponseType.REJECT,
                 },
             })
-            eventLogger.log('OrganizationInvitationDeclineSucceeded', { organizationId: orgId, invitationId: data?.id })
+            eventLogger.log(
+                'OrganizationInvitationDeclineSucceeded',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
         } catch {
-            eventLogger.log('OrganizationInvitationDeclineFailed', { organizationId: orgId, invitationId: data?.id })
+            eventLogger.log(
+                'OrganizationInvitationDeclineFailed',
+                { organizationId: orgId, invitationId: data?.id },
+                { organizationId: orgId, invitationId: data?.id }
+            )
         }
 
         history.push(userURL(authenticatedUser.username))

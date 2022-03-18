@@ -77,6 +77,10 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     isSourcegraphDotCom,
 }) => {
     const openBetaId = match.params.openBetaId
+    useEffect(() => {
+        eventLogger.log('NewOrganizationStarted', { openBetaId }, { openBetaId })
+    }, [openBetaId])
+
     const [orgId, setOrgId] = useState<string>('')
     const [displayName, setDisplayName] = useState<string>('')
     const [termsAccepted, setTermsAccepted] = useState(false)
@@ -97,6 +101,12 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     const debounceTryGetOrg = useRef(debounce(tryGetOrg, 250, { leading: false }))
     const existId = !!data?.organization?.id
     const hasValidId = !existId && orgId
+
+    useEffect(() => {
+        if (!hasValidId) {
+            eventLogger.log('NewOrganizationIdExisted', { openBetaId }, { openBetaId })
+        }
+    }, [hasValidId, openBetaId])
 
     useEffect(() => {
         if (isSourcegraphDotCom && (!openBetaId || !isValidOpenBetaId(openBetaId))) {
@@ -139,6 +149,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     }
 
     const onCancelClick = (): void => {
+        eventLogger.log('NewOrganizationCancelled', { openBetaId }, { openBetaId })
         localStorage.removeItem(OPEN_BETA_ID_KEY)
         history.push(`/users/${authenticatedUser.username}/settings/organizations`)
     }
@@ -156,19 +167,19 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
-            eventLogger.log('CreateNewOrgBetaClicked')
+            eventLogger.log('NewOrganizationCreateClicked', { openBetaId }, { openBetaId })
             if (!event.currentTarget.checkValidity() || !hasValidId) {
                 return
             }
             try {
                 const result = await createOpenBetaOrg({ variables: { name: orgId, displayName, statsID: openBetaId } })
-                eventLogger.log('CreateNewOrgBetaOK')
+                eventLogger.log('NewOrganizationCreateSucceeded', { openBetaId }, { openBetaId })
                 if (result?.data?.createOrganization) {
                     localStorage.removeItem(OPEN_BETA_ID_KEY)
                     history.push(result.data.createOrganization.settingsURL as string)
                 }
             } catch {
-                eventLogger.log('CreateNewOrgBetaFailed')
+                eventLogger.log('NewOrganizationCreateFailed', { openBetaId }, { openBetaId })
             }
         },
         [orgId, displayName, history, createOpenBetaOrg, hasValidId, openBetaId]

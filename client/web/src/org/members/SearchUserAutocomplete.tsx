@@ -166,7 +166,11 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
 
     const onSelectUser = useCallback(
         (user: IUserItem) => {
-            eventLogger.logViewEvent('InviteAutocompleteUserSelected', { organizationId: orgId, user: user.username })
+            eventLogger.log(
+                'InviteAutocompleteUserSelected',
+                { organizationId: orgId, user: user.username },
+                { organizationId: orgId }
+            )
             setOpenResults(false)
             setUsernameOrEmail(user.username)
         },

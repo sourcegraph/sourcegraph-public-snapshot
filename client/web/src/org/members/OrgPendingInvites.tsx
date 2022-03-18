@@ -120,43 +120,43 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 
     const onCopyInviteLink = useCallback(() => {
         copy(`${window.location.origin}${invite.respondURL}`)
-        eventLogger.log('OrganizationInviteCopied', { organizationId: orgId })
+        eventLogger.log('OrganizationInviteCopied', { organizationId: orgId }, { organizationId: orgId })
         alert('invite url copied to clipboard!')
     }, [invite.respondURL, orgId])
 
     const onRevokeInvite = useCallback(async () => {
-        eventLogger.log('OrganizationInviteRevokeClicked', { organizationId: orgId })
+        eventLogger.log('OrganizationInviteRevokeClicked', { organizationId: orgId }, { organizationId: orgId })
 
         const inviteToText = invite.recipient ? invite.recipient.username : (invite.recipientEmail as string)
         if (window.confirm(`Revoke invitation from ${inviteToText}?`)) {
-            eventLogger.log('OrganizationInviteRevokeConfirmed', { organizationId: orgId })
+            eventLogger.log('OrganizationInviteRevokeConfirmed', { organizationId: orgId }, { organizationId: orgId })
             try {
                 await revokeInvite({ variables: { id: invite.id } })
-                eventLogger.log('OrgRevokeInvitation', { id: invite.id })
+                eventLogger.log('OrgRevokeInvitation', { id: invite.id }, { id: invite.id })
                 onInviteResentRevoked(inviteToText, true)
             } catch {
-                eventLogger.log('OrgRevokeInvitationError', { id: invite.id })
+                eventLogger.log('OrgRevokeInvitationError', { id: invite.id }, { id: invite.id })
             }
         } else {
-            eventLogger.log('OrganizationInviteRevokeDismissed', { organizationId: orgId })
+            eventLogger.log('OrganizationInviteRevokeDismissed', { organizationId: orgId }, { organizationId: orgId })
         }
     }, [revokeInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient, orgId])
 
     const onResendInvite = useCallback(async () => {
-        eventLogger.log('OrganizationInviteResendClicked', { organizationId: orgId })
+        eventLogger.log('OrganizationInviteResendClicked', { organizationId: orgId }, { organizationId: orgId })
 
         const inviteToText = invite.recipient ? invite.recipient.username : (invite.recipientEmail as string)
         if (window.confirm(`Resend invitation to ${inviteToText}?`)) {
-            eventLogger.log('OrganizationInviteResendConfirmed', { organizationId: orgId })
+            eventLogger.log('OrganizationInviteResendConfirmed', { organizationId: orgId }, { organizationId: orgId })
             try {
                 await resendInvite({ variables: { id: invite.id } })
-                eventLogger.logViewEvent('OrgResendInvitation', { id: invite.id })
+                eventLogger.log('OrgResendInvitation', { id: invite.id }, { id: invite.id })
                 onInviteResentRevoked(inviteToText, false)
             } catch {
-                eventLogger.logViewEvent('OrgResendInvitationError', { id: invite.id })
+                eventLogger.log('OrgResendInvitationError', { id: invite.id }, { id: invite.id })
             }
         } else {
-            eventLogger.log('OrganizationInviteResendDismissed', { organizationId: orgId })
+            eventLogger.log('OrganizationInviteResendDismissed', { organizationId: orgId }, { organizationId: orgId })
         }
     }, [orgId, invite.recipient, invite.recipientEmail, invite.id, resendInvite, onInviteResentRevoked])
 
