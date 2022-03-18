@@ -178,8 +178,14 @@ func renderPipelineDocs(w io.Writer) {
 
 				pipeline, err := ci.GeneratePipeline(ci.Config{
 					RunType: rt,
-					Diff:    changed.All,
 					Branch:  m.Branch,
+					// Let generated reference docs be a subset of steps that are
+					// guaranteed to be in the pipeline, rather than a superset, which
+					// can be surprising.
+					//
+					// In the future we might want to be more clever about this to
+					// generate more accurate docs for runtypes that run conditional steps.
+					Diff: changed.None,
 				})
 				if err != nil {
 					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
