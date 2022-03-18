@@ -1,6 +1,7 @@
+import React, { useContext, useMemo } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 
 import { asError } from '@sourcegraph/common'
@@ -9,9 +10,9 @@ import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Li
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
+import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
@@ -83,7 +84,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
         try {
             const updatedDashboard = await updateDashboard({
-                previousDashboard: dashboard,
+                id: dashboard.id,
                 nextDashboardInput: {
                     name,
                     visibility,
@@ -101,7 +102,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const handleCancel = (): void => history.goBack()
 
     return (
-        <Page className={classNames('col-8', styles.page)}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title="Configure dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
@@ -145,7 +146,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                     )}
                 </InsightsDashboardCreationContent>
             </Container>
-        </Page>
+        </CodeInsightsPage>
     )
 }
 

@@ -1,12 +1,14 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { useWildcardTheme } from '../../hooks/useWildcardTheme'
 import { ForwardReferenceComponent } from '../../types'
 
-import styles from './Button.module.scss'
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
 import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
+
+import styles from './Button.module.scss'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**

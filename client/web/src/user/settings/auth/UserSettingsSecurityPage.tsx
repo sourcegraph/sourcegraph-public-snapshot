@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
@@ -303,13 +304,13 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                     disabled={this.state.loading}
                                     variant="primary"
                                 >
+                                    {this.state.loading && (
+                                        <>
+                                            <LoadingSpinner />{' '}
+                                        </>
+                                    )}
                                     {this.shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
                                 </Button>
-                                {this.state.loading && (
-                                    <div className="icon-inline">
-                                        <LoadingSpinner />
-                                    </div>
-                                )}
                             </Form>
                         </Container>
                     </>

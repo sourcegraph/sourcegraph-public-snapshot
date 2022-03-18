@@ -13,7 +13,6 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         viewType: InsightType.CaptureGroup,
         type: InsightExecutionType.Backend,
         id: '',
-        visibility: '',
         step: { [values.step]: +values.stepValue },
         repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
         dashboardReferenceCount: values.dashboardReferenceCount,

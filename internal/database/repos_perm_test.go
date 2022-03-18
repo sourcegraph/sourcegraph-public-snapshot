@@ -115,7 +115,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		},
 		{
 			name: "authenticated user is a site admin",
-			setup: func(t *testing.T) (context.Context, DB) {
+			setup: func(_ *testing.T) (context.Context, DB) {
 				users := NewMockUserStoreFrom(db.Users())
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 				mockDB := NewMockDBFrom(db)
@@ -141,7 +141,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		},
 		{
 			name: "authenticated user is not a site admin",
-			setup: func(t *testing.T) (context.Context, DB) {
+			setup: func(_ *testing.T) (context.Context, DB) {
 				users := NewMockUserStoreFrom(db.Users())
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				mockDB := NewMockDBFrom(db)

@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { cleanup } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,6 +13,8 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
+import { FeatureFlagName } from '../../featureFlags/featureFlags'
+import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
@@ -27,12 +30,16 @@ jest.mock('./SearchPageInput', () => ({
 // CommonJS).
 jest.mock('./LoggedOutHomepage.constants', () => ({
     fonts: [],
-    exampleQueries: [],
-    exampleNotebooks: [],
+    exampleTripsAndTricks: [],
 }))
 
 describe('SearchPage', () => {
     afterAll(cleanup)
+
+    beforeEach(() => {
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+        window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+    })
 
     let container: HTMLElement
 
@@ -61,13 +68,13 @@ describe('SearchPage', () => {
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchCollaborators: () => of([]),
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-        featureFlags: new Map(),
-        extensionViews: () => null,
+        featureFlags: new Map<FeatureFlagName, boolean>(),
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

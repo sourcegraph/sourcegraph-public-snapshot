@@ -1,6 +1,7 @@
+import React, { useEffect, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
 
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -22,9 +23,10 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
-import styles from './SearchPage.module.scss'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+
+import styles from './SearchPage.module.scss'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -55,18 +57,18 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
-    const { extensionViews: ExtensionViewsSection } = props
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
 
     const isExperimentalOnboardingTourEnabled = useExperimentalFeatures(
         features => features.showOnboardingTour ?? false
     )
     const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL !== '')
-    const isGettingStartedTourEnabled = props.featureFlags.get('getting-started-tour')
     const showOnboardingTour = useMemo(
-        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !isGettingStartedTourEnabled,
-        [hasSearchQuery, isGettingStartedTourEnabled, isExperimentalOnboardingTourEnabled]
+        () => isExperimentalOnboardingTourEnabled && !hasSearchQuery && !props.isSourcegraphDotCom,
+        [hasSearchQuery, isExperimentalOnboardingTourEnabled, props.isSourcegraphDotCom]
     )
+    const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
+    const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
 
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
@@ -84,19 +86,17 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
-                <ExtensionViewsSection
-                    className="mt-5"
-                    telemetryService={props.telemetryService}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    settingsCascade={props.settingsCascade}
-                    where="homepage"
-                />
             </div>
-            <div className={styles.panelsContainer}>
+            <div
+                className={classNames(styles.panelsContainer, {
+                    [styles.panelsContainerWithCollaborators]: showCollaborators,
+                })}
+            >
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
-                {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+                {showEnterpriseHomePanels && props.authenticatedUser && (
+                    <HomePanels showCollaborators={showCollaborators} {...props} />
+                )}
             </div>
 
             <SearchPageFooter {...props} />

@@ -1,3 +1,5 @@
+import React, { ReactElement, useMemo, useRef, useState } from 'react'
+
 import { curveLinear } from '@visx/curve'
 import { Group } from '@visx/group'
 import { scaleTime, scaleLinear } from '@visx/scale'
@@ -5,21 +7,20 @@ import { LinePath } from '@visx/shape'
 import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { ReactElement, useMemo, useRef, useState } from 'react'
 
-import { AxisBottom, AxisLeft } from './components/axis/Axis'
-import { NonActiveBackground } from './components/NonActiveBackground'
-import { PointGlyph } from './components/PointGlyph'
-import { Tooltip, TooltipContent } from './components/tooltip/Tooltip'
+import { AxisBottom, AxisLeft, Tooltip, TooltipContent, NonActiveBackground, PointGlyph } from './components'
 import { useChartEventHandlers } from './hooks/event-listeners'
-import styles from './LineChart.module.scss'
 import { LineChartSeries, Point } from './types'
-import { isValidNumber } from './utils/data-guards'
-import { getSeriesWithData } from './utils/data-series-processing'
-import { generatePointsField } from './utils/generate-points-field'
-import { getChartContentSizes } from './utils/get-chart-content-sizes'
-import { getMinMaxBoundaries } from './utils/get-min-max-boundary'
-import { getStackedAreaPaths } from './utils/get-stacked-area-paths'
+import {
+    isValidNumber,
+    getSeriesWithData,
+    generatePointsField,
+    getChartContentSizes,
+    getMinMaxBoundaries,
+    getStackedAreaPaths,
+} from './utils'
+
+import styles from './LineChart.module.scss'
 
 export interface LineChartContentProps<D> {
     width: number
@@ -225,7 +226,7 @@ export function LineChart<D>(props: LineChartContentProps<D>): ReactElement | nu
             </Group>
 
             {activePoint && (
-                <Tooltip reference={activePoint.element}>
+                <Tooltip>
                     <TooltipContent series={series} xAxisKey={xAxisKey} activePoint={activePoint} />
                 </Tooltip>
             )}

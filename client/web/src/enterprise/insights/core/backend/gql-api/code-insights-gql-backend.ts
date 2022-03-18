@@ -14,8 +14,8 @@ import {
     HasAvailableCodeInsightResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
-    IsCodeInsightsLicensedResult,
     RemoveInsightViewFromDashboardResult,
+    RemoveInsightViewFromDashboardVariables,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
 } from 'src/graphql-operations'
@@ -26,8 +26,9 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { SupportedInsightSubject } from '../../types/subjects'
-import { CodeInsightsBackend } from '../code-insights-backend'
+import { CodeInsightsBackend, UiFeaturesConfig } from '../code-insights-backend'
 import {
+    AssignInsightsToDashboardInput,
     BackendInsightData,
     CaptureInsightSettings,
     DashboardCreateInput,
@@ -40,6 +41,7 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     ReachableInsight,
+    RemoveInsightFromDashboardInput,
 } from '../code-insights-backend-types'
 import { getBuiltInInsight } from '../core/api/get-built-in-insight'
 import { getLangStatsInsightContent } from '../core/api/get-lang-stats-insight-content'
@@ -54,6 +56,7 @@ import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } fro
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
+import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createInsight } from './methods/create-insight/create-insight'
 import { getBackendInsightData } from './methods/get-backend-insight-data/get-backend-insight-data'
 import { getCaptureGroupInsightsPreview } from './methods/get-capture-group-insight-preivew'
@@ -108,20 +111,22 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public hasInsights = (): Observable<boolean> =>
-        from(
-            this.apolloClient.query<HasAvailableCodeInsightResult>({
+    public hasInsights = (insightsCount: number): Observable<boolean> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<HasAvailableCodeInsightResult>({
                 query: gql`
-                    query HasAvailableCodeInsight {
-                        insightViews {
-                            pageInfo {
-                                hasNextPage
+                    query HasAvailableCodeInsight($count: Int!) {
+                        insightViews(first: $count) {
+                            nodes {
+                                id
                             }
                         }
                     }
                 `,
+                variables: { count: insightsCount },
+                nextFetchPolicy: 'cache-only',
             })
-        ).pipe(map(({ data }) => data.insightViews.pageInfo.hasNextPage))
+        ).pipe(map(({ data }) => data.insightViews.nodes.length === insightsCount))
 
     // TODO: This method is used only for insight title validation but since we don't have
     // limitations about title field in gql api remove this method and async validation for
@@ -146,10 +151,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getBuiltInInsightData = getBuiltInInsight
 
-    // We don't have insight visibility and subject levels in the new GQL API anymore.
-    // it was part of setting-cascade based API.
-    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => of([])
-
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
     public updateInsight = (input: InsightUpdateInput): Observable<unknown> => updateInsight(this.apolloClient, input)
@@ -173,6 +174,23 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 },
             })
         )
+
+    public removeInsightFromDashboard = (input: RemoveInsightFromDashboardInput): Observable<unknown> => {
+        const { insightId, dashboardId } = input
+
+        return from(
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult, RemoveInsightViewFromDashboardVariables>({
+                mutation: REMOVE_INSIGHT_FROM_DASHBOARD_GQL,
+                variables: { insightId, dashboardId },
+                update(cache: ApolloCache<RemoveInsightViewFromDashboardResult>) {
+                    const deletedInsightReference = cache.identify({ __typename: 'InsightView', id: insightId })
+
+                    // Remove deleted insights from the apollo cache
+                    cache.evict({ id: deletedInsightReference })
+                },
+            })
+        )
+    }
 
     // Dashboards
     public getDashboards = (id?: string): Observable<InsightDashboard[]> =>
@@ -201,9 +219,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                             title: dashboard.title,
                             insightIds: dashboard.views?.nodes.map(view => view.id),
                             grants: dashboard.grants,
-
-                            // BE gql dashboards don't have setting key (it's setting cascade conception only)
-                            settingsKey: null,
                         })
                     ),
                 ]
@@ -214,7 +229,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         const { dashboardId } = input
 
         // the 'all' dashboardId is not a real dashboard so return nothing
-        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
+        if (!dashboardId || dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return of(null)
         }
 
@@ -333,10 +348,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    public updateDashboard = ({
-        previousDashboard,
-        nextDashboardInput,
-    }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
+    public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
         if (!nextDashboardInput.type) {
             throw new Error('`grants` are required to update a dashboard')
         }
@@ -364,7 +376,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: {
-                    id: previousDashboard.id,
+                    id,
                     input,
                 },
             })
@@ -399,9 +411,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public assignInsightsToDashboard = ({
         id,
-        nextDashboardInput,
-        previousDashboard,
-    }: DashboardUpdateInput): Observable<unknown> => {
+        prevInsightIds,
+        nextInsightIds,
+    }: AssignInsightsToDashboardInput): Observable<unknown> => {
         const addInsightViewToDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
             this.apolloClient.mutate<AddInsightViewToDashboardResult>({
                 mutation: gql`
@@ -416,28 +428,16 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 variables: { insightViewId, dashboardId },
             })
 
-        const removeInsightViewFromDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
-            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
-                mutation: gql`
-                    mutation RemoveInsightViewFromDashboard($insightViewId: ID!, $dashboardId: ID!) {
-                        removeInsightViewFromDashboard(
-                            input: { insightViewId: $insightViewId, dashboardId: $dashboardId }
-                        ) {
-                            dashboard {
-                                id
-                            }
-                        }
-                    }
-                `,
-                variables: { insightViewId, dashboardId },
+        const removeInsightViewFromDashboard = (insightId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult, RemoveInsightViewFromDashboardVariables>({
+                mutation: REMOVE_INSIGHT_FROM_DASHBOARD_GQL,
+                variables: { insightId, dashboardId },
             })
 
-        const addedInsightIds =
-            nextDashboardInput.insightIds?.filter(insightId => !previousDashboard.insightIds?.includes(insightId)) || []
+        const addedInsightIds = nextInsightIds.filter(insightId => !prevInsightIds.includes(insightId)) || []
 
         // Get array of removed insight view ids
-        const removedInsightIds =
-            previousDashboard.insightIds?.filter(insightId => !nextDashboardInput.insightIds?.includes(insightId)) || []
+        const removedInsightIds = prevInsightIds.filter(insightId => !nextInsightIds.includes(insightId)) || []
 
         return from(
             Promise.all([
@@ -447,7 +447,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(
             // Next query is needed to update local apollo cache and re-trigger getInsights query.
             // Usually Apollo does that under the hood by itself based on response from a mutation
-            // but in this case since we don't have one single query to assign/unassign insights
+            // but in this case since we don't have one single query to assign/unassigned insights
             // from dashboard we have to call query manually.
             switchMap(() =>
                 this.apolloClient.query<GetDashboardInsightsResult>({
@@ -478,18 +478,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    public isCodeInsightsLicensed = (): Observable<boolean> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<IsCodeInsightsLicensedResult>({
-                query: gql`
-                    query IsCodeInsightsLicensed {
-                        enterpriseLicenseHasFeature(feature: "code-insights")
-                    }
-                `,
-            })
-        ).pipe(map(({ data }) => data.enterpriseLicenseHasFeature))
+    public readonly UIFeatures: UiFeaturesConfig = {
+        licensed: true,
+        insightsLimit: null,
+    }
 }
 
 const getRepositoryName = (
     result: ApolloQueryResult<ExampleTodoRepositoryResult | ExampleFirstRepositoryResult>
-): string => result.data.search?.results.repositories[0].name || ''
+): string => result.data.search?.results.repositories[0]?.name || ''

@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { forwardRef, PropsWithChildren, useLayoutEffect, useRef, useState } from 'react'
+
+import classNames from 'classnames'
 import { createPortal } from 'react-dom'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
@@ -22,6 +23,11 @@ export interface FloatingPanelProps
      * floating panel.
      */
     tail?: boolean
+
+    /**
+     * Class name for the tail element
+     */
+    tailClassName?: string
 }
 
 /**
@@ -42,7 +48,9 @@ export const FloatingPanel = forwardRef((props, reference) => {
         strategy = Strategy.Fixed,
         windowPadding,
         constraintPadding,
+        targetPadding,
         constraint,
+        tailClassName,
         ...otherProps
     } = props
 
@@ -80,6 +88,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
             pin,
             windowPadding,
             constraintPadding,
+            targetPadding,
             position,
             strategy,
             overlapping,
@@ -96,6 +105,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
         constraint,
         windowPadding,
         constraintPadding,
+        targetPadding,
         pin,
         position,
         strategy,
@@ -104,6 +114,10 @@ export const FloatingPanel = forwardRef((props, reference) => {
         overflowToScrollParents,
         flipping,
     ])
+
+    const tailClassNames = tail
+        ? classNames(styles.tail, tailClassName, { [styles.tailAbsolute]: strategy === Strategy.Absolute })
+        : undefined
 
     if (strategy === Strategy.Absolute) {
         return (
@@ -116,7 +130,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
                     {props.children}
                 </Component>
 
-                {tail && <div className={classNames(styles.tail, styles.tailAbsolute)} ref={setTooltipTailElement} />}
+                {tail && <div className={tailClassNames} ref={setTooltipTailElement} />}
             </>
         )
     }
@@ -131,7 +145,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
                 {props.children}
             </Component>
 
-            {tail && <div className={styles.tail} ref={setTooltipTailElement} />}
+            {tail && <div className={tailClassNames} ref={setTooltipTailElement} />}
         </>,
         containerReference.current
     )

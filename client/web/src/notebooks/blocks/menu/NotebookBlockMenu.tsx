@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Button, ButtonProps } from '@sourcegraph/wildcard'
 
@@ -66,7 +67,7 @@ const BlockMenuActionComponent: React.FunctionComponent<BlockMenuActionComponent
     )
 }
 
-interface NotebookBlockMenuProps {
+export interface NotebookBlockMenuProps {
     id: string
     mainAction?: BlockMenuButtonAction
     actions: BlockMenuAction[]

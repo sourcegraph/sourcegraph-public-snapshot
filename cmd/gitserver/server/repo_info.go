@@ -63,7 +63,7 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	return &resp, nil
 }
 
-func (s *Server) repoCloneProgress(repo api.RepoName) (*protocol.RepoCloneProgress, error) {
+func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgress {
 	dir := s.dir(repo)
 	resp := protocol.RepoCloneProgress{
 		Cloned: repoCloned(dir),
@@ -73,7 +73,7 @@ func (s *Server) repoCloneProgress(repo api.RepoName) (*protocol.RepoCloneProgre
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"
 	}
-	return &resp, nil
+	return &resp
 }
 
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
@@ -128,11 +128,7 @@ func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request)
 		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
 	}
 	for _, repoName := range req.Repos {
-		result, err := s.repoCloneProgress(repoName)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		result := s.repoCloneProgress(repoName)
 		resp.Results[repoName] = result
 	}
 

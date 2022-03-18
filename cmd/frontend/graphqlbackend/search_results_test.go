@@ -13,7 +13,6 @@ import (
 	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -241,6 +239,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
+				globbing := globbing // avoid a reference to the loop variable
 				MockDecodedViewerFinalSettings.SearchGlobbing = &globbing
 				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
@@ -326,19 +325,26 @@ func TestSearchResultsHydration(t *testing.T) {
 	var ctxUser int32 = 1234
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(ctxUser))
 
-	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
+	query := `foobar index:only count:350`
+	literalPatternType := "literal"
+	searchInputs, err := run.NewSearchInputs(
+		ctx,
+		db,
+		"V2",
+		&literalPatternType,
+		query,
+		search.Batch,
+		&schema.Settings{},
+		false,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	resolver := &searchResolver{
-		db: db,
-		SearchInputs: &run.SearchInputs{
-			Plan:         p,
-			Query:        p.ToParseTree(),
-			UserSettings: &schema.Settings{},
-		},
-		zoekt: z,
+		db:           db,
+		SearchInputs: searchInputs,
+		zoekt:        z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -564,19 +570,25 @@ func TestEvaluateAnd(t *testing.T) {
 			repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 			db.ReposFunc.SetDefaultReturn(repos)
 
-			p, err := query.Pipeline(query.InitLiteral(tt.query))
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.query,
+				search.Batch,
+				&schema.Settings{},
+				false,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resolver := &searchResolver{
-				db: db,
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: z,
+				db:           db,
+				SearchInputs: searchInputs,
+				zoekt:        z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -588,69 +600,6 @@ func TestEvaluateAnd(t *testing.T) {
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
 				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
-			}
-		})
-	}
-}
-
-func TestSearchContext(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
-	tts := []struct {
-		name        string
-		searchQuery string
-		numContexts int
-	}{
-		{name: "single search context", searchQuery: "foo context:@userA", numContexts: 1},
-		{name: "multiple search contexts", searchQuery: "foo (context:@userA or context:@userB)", numContexts: 2},
-	}
-
-	users := map[string]int32{
-		"userA": 1,
-		"userB": 2,
-	}
-
-	mockZoekt := &searchbackend.FakeSearcher{Repos: []*zoekt.RepoListEntry{}}
-
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			repos := database.NewMockRepoStore()
-			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
-			repos.CountFunc.SetDefaultReturn(0, nil)
-
-			ns := database.NewMockNamespaceStore()
-			ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-				userID, ok := users[name]
-				if !ok {
-					t.Errorf("User with ID %d not found", userID)
-				}
-				return &database.Namespace{Name: name, User: userID}, nil
-			})
-
-			db := database.NewMockDB()
-			db.ReposFunc.SetDefaultReturn(repos)
-			db.NamespacesFunc.SetDefaultReturn(ns)
-
-			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: mockZoekt,
-				db:    db,
-			}
-
-			_, err = resolver.Results(context.Background())
-			if err != nil {
-				t.Fatal(err)
 			}
 		})
 	}
@@ -747,11 +696,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				authz.DefaultSubRepoPermsChecker = tt.checker()
 			}
 
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			repos := database.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
@@ -762,14 +706,25 @@ func TestSubRepoFiltering(t *testing.T) {
 				return database.NewMockEventLogStore()
 			})
 
+			literalPatternType := "literal"
+			searchInputs, err := run.NewSearchInputs(
+				context.Background(),
+				db,
+				"V2",
+				&literalPatternType,
+				tt.searchQuery,
+				search.Batch,
+				&schema.Settings{},
+				false,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			resolver := searchResolver{
-				SearchInputs: &run.SearchInputs{
-					Plan:         p,
-					Query:        p.ToParseTree(),
-					UserSettings: &schema.Settings{},
-				},
-				zoekt: mockZoekt,
-				db:    db,
+				SearchInputs: searchInputs,
+				zoekt:        mockZoekt,
+				db:           db,
 			}
 
 			ctx := context.Background()

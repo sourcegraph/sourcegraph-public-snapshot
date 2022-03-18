@@ -1,5 +1,6 @@
-import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { storiesOf } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -12,7 +13,6 @@ import {
 
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
-import { RepositoryFields } from '../../graphql-operations'
 
 import { NotebookComponent } from './NotebookComponent'
 
@@ -36,15 +36,11 @@ const blocks: BlockInit[] = [
     },
 ]
 
-const resolveRevision = () => of({ commitID: 'commit1', defaultBranch: 'main', rootTreeURL: '' })
-const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
-
 add('default', () => (
     <WebStory>
         {props => (
             <NotebookComponent
                 {...props}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}
@@ -55,12 +51,11 @@ add('default', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
-                fetchRepository={fetchRepository}
-                resolveRevision={resolveRevision}
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
+                onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>
@@ -72,7 +67,6 @@ add('default read-only', () => (
             <NotebookComponent
                 {...props}
                 isReadOnly={true}
-                isMacPlatform={true}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={true}
@@ -83,12 +77,11 @@ add('default read-only', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
-                fetchRepository={fetchRepository}
-                resolveRevision={resolveRevision}
                 authenticatedUser={null}
                 showSearchContext={true}
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
+                onCopyNotebook={() => NEVER}
             />
         )}
     </WebStory>

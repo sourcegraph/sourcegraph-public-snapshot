@@ -1,5 +1,6 @@
-import { Story, Meta } from '@storybook/react'
 import React from 'react'
+
+import { Story, Meta } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -22,6 +23,11 @@ const config: Meta = {
         chromatic: {
             enableDarkMode: true,
             disableSnapshot: false,
+        },
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1366%3A611',
         },
     },
 }

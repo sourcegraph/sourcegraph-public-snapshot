@@ -1,7 +1,8 @@
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -9,7 +10,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Button, Position } from '@sourcegraph/wildcard'
 
 import { Popover, PopoverContent, PopoverOpenEvent, PopoverTrigger } from '../Popover'
-import { Point, Strategy } from '../tether'
+import { createRectangle, Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
 
@@ -17,6 +18,20 @@ const config: Meta = {
     title: 'wildcard/Popover',
     component: Popover,
     decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
+    parameters: {
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A1352',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=954%3A2975',
+            },
+        ],
+    },
 }
 
 export default config
@@ -35,6 +50,7 @@ export const PositionSettingsGallery: Story = () => {
                     <PopoverContent
                         position={position}
                         focusLocked={false}
+                        tail={boolean('tail', false)}
                         className={classNames(styles.floating, styles.floatingTooltipLike)}
                     >
                         Position {position}
@@ -161,6 +177,36 @@ export const StandardExample: Story = () => (
                 </PopoverTrigger>
 
                 <PopoverContent position={Position.rightStart} className={styles.floating}>
+                    Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
+                    Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
+                    career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
+                    in the Ukrainian SSR, where Limonov grew up. He studied at the H.S. Skovoroda Kharkiv National
+                    Pedagogical University.
+                    <div className="mt-2 d-flex" style={{ gap: 10 }}>
+                        <Button variant="secondary">Action 1</Button>
+                        <Button variant="secondary">Action 2</Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+    </ScrollCenterBox>
+)
+
+const TARGET_PADDING = createRectangle(0, 0, 10, 10)
+
+export const TargetPaddingExample: Story = () => (
+    <ScrollCenterBox title="Root scroll block" className={styles.container}>
+        <div className={styles.content}>
+            <Popover>
+                <PopoverTrigger as={Button} variant="secondary" className={styles.target}>
+                    Hello
+                </PopoverTrigger>
+
+                <PopoverContent
+                    targetPadding={TARGET_PADDING}
+                    position={Position.bottomStart}
+                    className={styles.floating}
+                >
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv

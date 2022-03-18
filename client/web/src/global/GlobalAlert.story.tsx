@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { AlertType } from '@sourcegraph/web/src/graphql-operations'

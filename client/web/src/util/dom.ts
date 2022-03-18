@@ -1,5 +1,5 @@
-import { isArray } from 'lodash'
 import { useMemo } from 'react'
+
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, map } from 'rxjs/operators'
 
@@ -96,4 +96,4 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
  */
 const normalizeResizeObserverSize = (
     resizeObserverSize: undefined | readonly ResizeObserverSize[] | ResizeObserverSize
-): ResizeObserverSize | undefined => (!isArray(resizeObserverSize) ? resizeObserverSize : resizeObserverSize[0])
+): ResizeObserverSize | undefined => (!Array.isArray(resizeObserverSize) ? resizeObserverSize : resizeObserverSize[0])

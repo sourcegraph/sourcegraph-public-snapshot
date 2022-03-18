@@ -1,18 +1,21 @@
-import { cleanup, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import React from 'react'
+
+import { act, cleanup, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { noop } from 'lodash'
+import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
-import { SearchStackEntry } from '../stores/searchStack'
+import { addSearchStackEntry, SearchStackEntry } from '../stores/searchStack'
 
-import { SearchStack } from './SearchStack'
+import { SearchStack, SearchStackProps } from './SearchStack'
 
 describe('Search Stack', () => {
-    const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithBrandedContextResult =>
-        renderWithBrandedContext(<SearchStack {...props} />)
+    const renderSearchStack = (props?: Partial<SearchStackProps>): RenderWithBrandedContextResult =>
+        renderWithBrandedContext(<SearchStack onCreateNotebook={noop} {...props} />)
 
     function open() {
         userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
@@ -111,15 +114,13 @@ describe('Search Stack', () => {
         })
 
         it('creates notebooks', () => {
-            const result = renderSearchStack()
+            const onCreateNotebook = sinon.spy()
+            renderSearchStack({ onCreateNotebook })
             open()
 
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
 
-            expect(result.history.location.pathname).toMatchInlineSnapshot('"/notebooks/new"')
-            expect(result.history.location.hash).toMatchInlineSnapshot(
-                '"#query:TODO,file:http%3A%2F%2Flocalhost%2Ftest%40master%2F-%2Fblob%2Fpath%2Fto%2Ffile"'
-            )
+            sinon.assert.calledOnce(onCreateNotebook)
         })
 
         it('allows to delete entries', () => {
@@ -146,22 +147,22 @@ describe('Search Stack', () => {
             useSearchStackState.setState({
                 entries: [
                     {
-                        id: 0,
+                        id: 1,
                         type: 'search',
                         query: 'TODO',
                         caseSensitive: false,
                         patternType: SearchPatternType.literal,
                     },
-                    { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+                    { id: 2, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                     {
-                        id: 2,
+                        id: 3,
                         type: 'search',
                         query: 'another query',
                         caseSensitive: true,
                         patternType: SearchPatternType.literal,
                     },
                     {
-                        id: 3,
+                        id: 4,
                         type: 'search',
                         query: 'yet another query',
                         caseSensitive: true,
@@ -318,6 +319,157 @@ describe('Search Stack', () => {
             expect(screen.queryAllByRole('option', { selected: true })).toEqual(item)
         })
 
+        it('selects all items on ctrl+a', () => {
+            renderSearchStack()
+            open()
+
+            const list = screen.getByRole('listbox')
+            const items = screen.getAllByRole('option')
+
+            list.focus()
+            userEvent.keyboard('{ctrl}{a}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual(items)
+        })
+
+        it('selects the next item on arrow-down', () => {
+            renderSearchStack()
+            open()
+
+            const list = screen.getByRole('listbox')
+            const items = screen.getAllByRole('option')
+
+            list.focus()
+            userEvent.keyboard('{arrowdown}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
+
+            userEvent.keyboard('{arrowdown}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[1]])
+        })
+
+        it('selects the previous item on arrow-up', () => {
+            renderSearchStack()
+            open()
+
+            const list = screen.getByRole('listbox')
+            const items = screen.getAllByRole('option')
+
+            list.focus()
+            userEvent.keyboard('{arrowup}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[3]])
+
+            userEvent.keyboard('{arrowup}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[2]])
+        })
+
+        it('extends/shrinks selection on shift+arrow-down/up', () => {
+            renderSearchStack()
+            open()
+
+            const list = screen.getByRole('listbox')
+            const items = screen.getAllByRole('option')
+
+            list.focus()
+            userEvent.keyboard('{arrowdown}')
+            userEvent.keyboard('{shift}{arrowdown}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0], items[1]])
+
+            userEvent.keyboard('{shift}{arrowup}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
+        })
+
+        it('skips over selected entries using shift+arrow-down', () => {
+            renderSearchStack()
+            open()
+
+            const items = screen.getAllByRole('option')
+
+            userEvent.click(items[2], { ctrlKey: true }) // select 3. item
+            userEvent.click(items[0], { ctrlKey: true }) // select 1. item
+
+            userEvent.keyboard('{shift}{arrowdown}') // selects 2. item
+            userEvent.keyboard('{shift}{arrowdown}') // selects 4. item
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([
+                items[0],
+                items[1],
+                items[2],
+                items[3],
+            ])
+        })
+
+        it('skips over selected entries using shift+arrow-up', () => {
+            renderSearchStack()
+            open()
+
+            const items = screen.getAllByRole('option')
+
+            userEvent.click(items[1], { ctrlKey: true }) // select 2. item
+            userEvent.click(items[3], { ctrlKey: true }) // select 4. item
+
+            userEvent.keyboard('{shift}{arrowdown}') // selects 3. item
+            userEvent.keyboard('{shift}{arrowdown}') // selects 1. item
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([
+                items[0],
+                items[1],
+                items[2],
+                items[3],
+            ])
+        })
+
+        it('extends/shrinks selection on shift+arrow-up/down', () => {
+            renderSearchStack()
+            open()
+
+            const list = screen.getByRole('listbox')
+            const items = screen.getAllByRole('option')
+
+            list.focus()
+            userEvent.keyboard('{arrowup}')
+            userEvent.keyboard('{shift}{arrowup}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[2], items[3]])
+
+            userEvent.keyboard('{shift}{arrowdown}')
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[3]])
+        })
+
+        it('maintains the right selected items when non-selected items get removed', () => {
+            renderSearchStack()
+            open()
+
+            const items = screen.getAllByRole('option')
+            userEvent.click(items[1])
+            userEvent.click(screen.getAllByTitle('Remove entry')[0])
+
+            // Verifies that the item is still the selected one (if not it would
+            // item[2] which is now the second item).
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[1]])
+        })
+
+        it('selectes the newly added item', () => {
+            renderSearchStack()
+            open()
+
+            let items = screen.getAllByRole('option')
+
+            // Selected 2. item
+            userEvent.click(items[1])
+
+            act(() => {
+                addSearchStackEntry({
+                    type: 'search',
+                    patternType: SearchPatternType.literal,
+                    query: 'new TODO',
+                    caseSensitive: false,
+                })
+            })
+
+            // Referesh items
+            items = screen.getAllByRole('option')
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
+        })
+
         it('deletes all selected entries', () => {
             renderSearchStack()
             open()
@@ -328,6 +480,30 @@ describe('Search Stack', () => {
             userEvent.click(screen.queryAllByRole('button', { name: 'Remove all selected entries' })[0])
 
             expect(screen.queryAllByRole('option').length).toBe(1)
+        })
+
+        it('deletes all selected entries when Delete is pressed', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            userEvent.click(item[0])
+            userEvent.click(item[2], { shiftKey: true })
+            userEvent.keyboard('{delete}')
+
+            expect(screen.queryAllByRole('option').length).toBe(1)
+        })
+
+        it('clears selection on ESC', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            userEvent.click(item[0])
+            expect(screen.queryAllByRole('option', { selected: true }).length).toBe(1)
+
+            userEvent.keyboard('{escape}')
+            expect(screen.queryAllByRole('option', { selected: true }).length).toBe(0)
         })
 
         it('does not select entry on toggle annotion click', () => {

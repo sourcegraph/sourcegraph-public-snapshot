@@ -256,9 +256,10 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				continue
 			}
 
+			id := policy.ID // avoid a reference to the loop variable
 			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
 				Name:           commit,
-				PolicyID:       &policy.ID,
+				PolicyID:       &id,
 				PolicyDuration: policyDuration,
 			})
 		}

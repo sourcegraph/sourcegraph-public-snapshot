@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -116,6 +117,12 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         ),
         exact: true,
         condition: userExternalServicesEnabled,
+    },
+    {
+        path: '/organizations',
+        render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
+        exact: true,
+        condition: context => !!context.featureFlags.get('open-beta-enabled'),
     },
     {
         path: '/repositories/manage',

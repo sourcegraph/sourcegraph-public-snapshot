@@ -100,6 +100,26 @@ go build -o ~/my/path/sg ./dev/sg
 
 Then make sure that `~/my/path` is in your `$PATH`.
 
+## Updates
+
+Once set up, `sg` will automatically check for updates and update itself if a change is detected in your local copy of `origin/main`.
+
+To force a manual update of `sg`, run:
+
+```sh
+sg update
+```
+
+In order to temporarily turn off automatic updates, run your commands with the `-skip-auto-update` flag: 
+
+```sh
+sg -skip-auto-update [cmds ...]
+```
+
+On the next command run, if a new version is detected, `sg` will auto update before running.
+
+> NOTE: This feature requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).
+
 ## Usage
 
 See [configuration](#configuration) to learn more about configuring `sg` behaviour.
@@ -208,7 +228,7 @@ sg rfc open 420
 
 ### `sg ci` - Interact with Sourcegraph's continuous integration
 
-Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/ci) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
 
 ```bash
 # Preview what a CI run for your current changes will look like
@@ -306,6 +326,13 @@ sg db reset-redis
 sg db add-user -name=foo
 ```
 
+### `sg update` - Update sg itself
+
+```bash 
+# Manually update sg
+sg update
+```
+
 ## Configuration
 
 Default `sg` behaviour is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
@@ -400,6 +427,16 @@ The `-config` can be anything you want, of course.
 Have questions or need help? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
 
 > NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
+
+## Dockerized sg
+
+A `sourcegraph/sg` Docker image is available: 
+
+```
+# ... 
+COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
+# ...
+```
 
 ### Development tips
 

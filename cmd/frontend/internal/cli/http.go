@@ -44,7 +44,7 @@ func newExternalHTTPHandler(
 	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-) (http.Handler, error) {
+) http.Handler {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
@@ -57,6 +57,7 @@ func newExternalHTTPHandler(
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
 	}
 	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
+	apiHandler = actor.AnonymousUIDMiddleware(apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
@@ -79,6 +80,7 @@ func newExternalHTTPHandler(
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
 	appHandler = featureflag.Middleware(database.FeatureFlags(db), appHandler)
+	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
@@ -110,7 +112,7 @@ func newExternalHTTPHandler(
 	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
-	return h, nil
+	return h
 }
 
 func healthCheckMiddleware(next http.Handler) http.Handler {

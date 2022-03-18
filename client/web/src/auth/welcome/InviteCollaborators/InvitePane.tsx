@@ -1,12 +1,13 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
-import { LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -15,8 +16,9 @@ import { UserAvatar } from '../../../user/UserAvatar'
 import { useSteps } from '../../Steps'
 
 import { InvitableCollaborator } from './InviteCollaborators'
-import styles from './InviteCollaborators.module.scss'
 import { useInviteEmailToSourcegraph } from './useInviteEmailToSourcegraph'
+
+import styles from './InviteCollaborators.module.scss'
 
 const SELECT_REPOS_STEP = 2
 
@@ -109,7 +111,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
             <div className={styles.titleDescription}>
                 <h3>Introduce friends and colleagues to Sourcegraph</h3>
                 <p className="text-muted mb-4">
-                    We’ve selected a few collaborators you might want to invite to Sourcegraph. These users won’t be
+                    We’ll look for a few collaborators you might want to invite to Sourcegraph. These users won’t be
                     able to see your code unless they have access to it on the code host and also add that code to
                     Sourcegraph.
                 </p>
@@ -159,7 +161,7 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                                     <LoadingSpinner inline={true} className={classNames('ml-auto', 'mr-3')} />
                                 ) : successfulInvites.has(person.email) ? (
                                     <span className="text-muted ml-auto mr-3">
-                                        <CheckCircleIcon className="icon-inline mr-1" />
+                                        <Icon className="mr-1" as={CheckCircleIcon} />
                                         Invited
                                     </span>
                                 ) : (

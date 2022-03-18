@@ -4,7 +4,7 @@
 
 # Commit hash of github.com/universal-ctags/ctags.
 # Last bumped 2022-02-10
-CTAGS_VERSION=40603a68c1f3b14dc1db4671111096733f6d2485
+CTAGS_VERSION=37a4b3601288bcdc02a387197ff8d9b971f7ab34
 
 cleanup() {
   apk --no-cache --purge del ctags-build-deps || true

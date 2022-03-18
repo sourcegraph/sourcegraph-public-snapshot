@@ -100,7 +100,7 @@ type cachedRepo struct {
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
+func (c *Client) getRepositoryFromCache(_ context.Context, key string) *cachedRepo {
 	b, ok := c.repoCache.Get(key)
 	if !ok {
 		return nil

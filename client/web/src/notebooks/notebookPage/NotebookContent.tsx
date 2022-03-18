@@ -1,5 +1,7 @@
-import { noop } from 'lodash'
 import React, { useMemo } from 'react'
+
+import { noop } from 'lodash'
+import { Observable } from 'rxjs'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -9,8 +11,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Block, BlockInit } from '..'
-import { fetchRepository, resolveRevision } from '../../repo/backend'
+import { NotebookFields } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
+import { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
@@ -18,25 +21,21 @@ export interface NotebookContentProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
-    isMacPlatform: boolean
     viewerCanManage: boolean
     blocks: NotebookBlock[]
     exportedFileName: string
     isEmbedded?: boolean
     onUpdateBlocks: (blocks: Block[]) => void
-    fetchRepository: typeof fetchRepository
-    resolveRevision: typeof resolveRevision
+    onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
 
 export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
     viewerCanManage,
     blocks,
     onUpdateBlocks,
-    resolveRevision,
-    fetchRepository,
     ...props
 }) => {
     const initializerBlocks: BlockInit[] = useMemo(
@@ -51,10 +50,19 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
                         return {
                             id: block.id,
                             type: 'file',
-                            input: {
-                                ...block.fileInput,
-                                revision: block.fileInput.revision ?? '',
-                            },
+                            input: { ...block.fileInput, revision: block.fileInput.revision ?? '' },
+                        }
+                    case 'SymbolBlock':
+                        return {
+                            id: block.id,
+                            type: 'symbol',
+                            input: { ...block.symbolInput, revision: block.symbolInput.revision ?? '' },
+                        }
+                    case 'ComputeBlock':
+                        return {
+                            id: block.id,
+                            type: 'compute',
+                            input: block.computeInput,
                         }
                 }
             }),
@@ -67,8 +75,6 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
             isReadOnly={!viewerCanManage}
             blocks={initializerBlocks}
             onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
-            resolveRevision={resolveRevision}
-            fetchRepository={fetchRepository}
         />
     )
 }

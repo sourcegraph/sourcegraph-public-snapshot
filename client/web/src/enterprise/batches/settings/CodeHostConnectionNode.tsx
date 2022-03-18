@@ -1,17 +1,19 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
-import React, { useCallback, useState } from 'react'
 
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
-import styles from './CodeHostConnectionNode.module.scss'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
+
+import styles from './CodeHostConnectionNode.module.scss'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
@@ -26,7 +28,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
     refetchAll,
     userID,
 }) => {
-    const Icon = defaultExternalServices[node.externalServiceKind].icon
+    const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
 
     const [openModal, setOpenModal] = useState<OpenModal | undefined>()
     const onClickAdd = useCallback(() => {
@@ -66,18 +68,20 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                 >
                     <h3 className="text-nowrap mb-0">
                         {isEnabled && (
-                            <CheckCircleOutlineIcon
-                                className="text-success icon-inline test-code-host-connection-node-enabled"
+                            <Icon
+                                className="text-success test-code-host-connection-node-enabled"
                                 data-tooltip="Connected"
+                                as={CheckCircleOutlineIcon}
                             />
                         )}
                         {!isEnabled && (
-                            <CheckboxBlankCircleOutlineIcon
-                                className="text-danger icon-inline test-code-host-connection-node-disabled"
+                            <Icon
+                                className="text-danger test-code-host-connection-node-disabled"
                                 data-tooltip="No token set"
+                                as={CheckboxBlankCircleOutlineIcon}
                             />
                         )}
-                        <Icon className="icon-inline mx-2" /> {node.externalServiceURL}{' '}
+                        <Icon className="mx-2" as={ExternalServiceIcon} /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
                             <Badge
                                 variant="secondary"

@@ -64,11 +64,11 @@ func TestGetAndSaveUser(t *testing.T) {
 	}}
 	getOneUserOp := GetAndSaveUserOp{
 		ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-		UserProps:       userProps("u1", "u1@example.com", true),
+		UserProps:       userProps("u1", "u1@example.com"),
 	}
 	getNonExistentUserCreateIfNotExistOp := GetAndSaveUserOp{
 		ExternalAccount:  ext("st1", "s1", "c1", "nonexistent"),
-		UserProps:        userProps("nonexistent", "nonexistent@example.com", true),
+		UserProps:        userProps("nonexistent", "nonexistent@example.com"),
 		CreateIfNotExist: true,
 	}
 
@@ -103,7 +103,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct exists, user has same username and email",
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("u1", "u1@example.com", true),
+					UserProps:       userProps("u1", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -117,7 +117,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				// save this as a new verified user email
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("doesnotexist", "doesnotexist@example.com", true),
+					UserProps:       userProps("doesnotexist", "doesnotexist@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -131,7 +131,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				// inconsistency
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("u1", "u2@example.com", true),
+					UserProps:       userProps("u1", "u2@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -143,7 +143,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct doesn't exist, user with username and email exists",
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:       userProps("u1", "u1@example.com", true),
+					UserProps:       userProps("u1", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -157,7 +157,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				// Note: if the email doesn't match, the user effectively doesn't exist from our POV
 				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:        userProps("u1", "doesnotmatch@example.com", true),
+					UserProps:        userProps("u1", "doesnotmatch@example.com"),
 					CreateIfNotExist: true,
 				},
 				expSafeErr: "Username \"u1\" already exists, but no verified email matched \"doesnotmatch@example.com\"",
@@ -168,7 +168,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				// We treat this as a resolved user and ignore the non-matching username
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:       userProps("doesnotmatch", "u1@example.com", true),
+					UserProps:       userProps("doesnotmatch", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -181,7 +181,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct doesn't exist, username and email don't exist, should create user",
 				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s1", "c1", "s1/u-new"),
-					UserProps:        userProps("u-new", "u-new@example.com", true),
+					UserProps:        userProps("u-new", "u-new@example.com"),
 					CreateIfNotExist: true,
 				},
 				expUserID: 10001,
@@ -189,7 +189,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					10001: {ext("st1", "s1", "c1", "s1/u-new")},
 				},
 				expCreatedUsers: map[int32]database.NewUser{
-					10001: userProps("u-new", "u-new@example.com", true),
+					10001: userProps("u-new", "u-new@example.com"),
 				},
 				expCalledGrantPendingPermissions: true,
 			},
@@ -197,7 +197,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
 				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s1", "c1", "s1/u-new"),
-					UserProps:        userProps("u-new", "u-new@example.com", true),
+					UserProps:        userProps("u-new", "u-new@example.com"),
 					CreateIfNotExist: false,
 				},
 				expSafeErr: "User account with verified email \"u-new@example.com\" does not exist. Ask a site admin to create your account and then verify your email.",
@@ -207,7 +207,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct exists, (ignore username and email), authenticated",
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u2"),
-					UserProps:       userProps("ignore", "ignore", true),
+					UserProps:       userProps("ignore", "ignore"),
 				},
 				createIfNotExistIrrelevant: true,
 				actorUID:                   2,
@@ -222,7 +222,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				actorUID:    1,
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("u1", "u1@example.com", true),
+					UserProps:       userProps("u1", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -237,7 +237,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				actorUID: 1,
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("doesnotmatch", "u1@example.com", true),
+					UserProps:       userProps("doesnotmatch", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -255,7 +255,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				actorUID: 1,
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:       userProps("u1", "doesnotmatch@example.com", true),
+					UserProps:       userProps("u1", "doesnotmatch@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expUserID:                  1,
@@ -268,7 +268,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
 				op: GetAndSaveUserOp{
 					ExternalAccount:  ext("st1", "s1", "c1", "doesnotexist"),
-					UserProps:        userProps("u1", "", true),
+					UserProps:        userProps("u1", ""),
 					LookUpByUsername: true,
 				},
 				createIfNotExistIrrelevant: true,
@@ -306,7 +306,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			innerCases: []innerCase{{
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps:       userProps("u1", "u1@example.com", true),
+					UserProps:       userProps("u1", "u1@example.com"),
 				},
 				expSafeErr: "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.",
 				expErr:     unexpectedErr,
@@ -318,7 +318,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			innerCases: []innerCase{{
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps:       userProps("u1", "u1@example.com", true),
+					UserProps:       userProps("u1", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expSafeErr:                 "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.",
@@ -331,7 +331,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			innerCases: []innerCase{{
 				op: GetAndSaveUserOp{
 					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps:       userProps("u1", "u1@example.com", true),
+					UserProps:       userProps("u1", "u1@example.com"),
 				},
 				createIfNotExistIrrelevant: true,
 				expSafeErr:                 "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.",
@@ -737,10 +737,10 @@ func ext(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec 
 	}
 }
 
-func userProps(username, email string, verifiedEmail bool) database.NewUser {
+func userProps(username, email string) database.NewUser {
 	return database.NewUser{
 		Username:        username,
 		Email:           email,
-		EmailIsVerified: verifiedEmail,
+		EmailIsVerified: true,
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -55,6 +54,7 @@ func init() {
 }
 
 // IsBinary is a helper to tell if the content of a file is binary or not.
+// TODO(tjdevries): This doesn't make sense to be here, IMO
 func IsBinary(content []byte) bool {
 	// We first check if the file is valid UTF8, since we always consider that
 	// to be non-binary.
@@ -90,11 +90,6 @@ type Params struct {
 	// respond.
 	SimulateTimeout bool
 
-	// Whether to use tree-sitter to power syntax highlighting instead of
-	// syntect (default). Tree-sitter support is only available for a small
-	// number of programming languages.
-	TreeSitterEnabled bool
-
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 }
@@ -113,6 +108,186 @@ type Metadata struct {
 // ErrBinary is returned when a binary file was attempted to be highlighted.
 var ErrBinary = errors.New("cannot render binary file")
 
+type HighlightedCode struct {
+	// The code as a string. Not HTML
+	code string
+
+	// Formatted HTML. This is generally from syntect, as LSIF documents
+	// will be formatted on the fly using HighlightedCode.document
+	//
+	// Can be an empty string if we have an lsiftyped.Document instead.
+	// Access via HighlightedCode.HTML()
+	html template.HTML
+
+	// The document returned which contains SyntaxKinds. These are used
+	// to generate formatted HTML.
+	//
+	// This is optional because not every language has a treesitter parser
+	// and queries that can send back an lsiftyped.Document
+	document *lsiftyped.Document
+}
+
+func (h *HighlightedCode) HTML() (template.HTML, error) {
+	if h.document == nil {
+		return h.html, nil
+	}
+
+	return DocumentToHTML(h.code, h.document)
+}
+
+func NewHighlightedCodeWithHTML(html template.HTML) HighlightedCode {
+	return HighlightedCode{
+		html: html,
+	}
+}
+
+func (h *HighlightedCode) LSIF() *lsiftyped.Document {
+	return h.document
+}
+
+// SplitHighlightedLines takes the highlighted HTML table and returns a slice
+// of highlighted strings, where each string corresponds a single line in the
+// original, highlighted file.
+func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]template.HTML, error) {
+	if h.document != nil {
+		return DocumentToSplitHTML(h.code, h.document, includeLineNumbers)
+	}
+
+	input, err := h.HTML()
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := html.Parse(strings.NewReader(string(input)))
+	if err != nil {
+		return nil, err
+	}
+
+	lines := make([]template.HTML, 0)
+
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return nil, errors.Errorf("expected html->body->table, found %+v", table)
+	}
+
+	// Iterate over each table row and extract content
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		var render *html.Node
+		if includeLineNumbers {
+			render = tr
+		} else {
+			render = tr.LastChild.FirstChild // tr > td > div
+		}
+		err = html.Render(&buf, render)
+		if err != nil {
+			return nil, err
+		}
+		lines = append(lines, template.HTML(buf.String()))
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	return lines, nil
+}
+
+// LinesForRanges returns a list of list of strings (which are valid HTML). Each list of strings is a set
+// of HTML lines correspond to the range passed in ranges.
+//
+// This is the corresponding function for SplitLineRanges, but uses lsiftyped.
+//
+// TODO(tjdevries): The call heirarchy could be reversed later to only have one entry point
+func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
+	if h.document == nil {
+		return nil, errors.New("must have a document")
+	}
+
+	// We use `h.code` here because we just want to find out what the max line number
+	// is that we should consider a valid line. This bounds our ranges to make sure that we
+	// are only including and slicing from valid lines.
+	maxLines := len(strings.Split(h.code, "\n"))
+
+	validLines := map[int32]bool{}
+	for _, r := range ranges {
+		if r.StartLine < 0 {
+			r.StartLine = 0
+		}
+
+		if r.StartLine > r.EndLine {
+			r.StartLine = 0
+			r.EndLine = 0
+		}
+
+		if r.EndLine > int32(maxLines) {
+			r.EndLine = int32(maxLines)
+		}
+
+		for row := r.StartLine; row < r.EndLine; row++ {
+			validLines[row] = true
+		}
+	}
+
+	htmlRows := map[int32]*html.Node{}
+	var currentCell *html.Node
+
+	addRow := func(row int32) {
+		tr, cell := newHtmlRow(row, true)
+
+		// Add our newest row to our list
+		htmlRows[row] = tr
+
+		// Set current cell that we should append text to
+		currentCell = cell
+	}
+
+	addText := func(kind lsiftyped.SyntaxKind, line string) {
+		appendTextToNode(currentCell, kind, line)
+	}
+
+	lsifToHTML(h.code, h.document, addRow, addText, validLines)
+
+	stringRows := map[int32]string{}
+	for row, node := range htmlRows {
+		var buf bytes.Buffer
+		err := html.Render(&buf, node)
+		if err != nil {
+			return nil, err
+		}
+		stringRows[row] = buf.String()
+	}
+
+	var lineRanges [][]string
+	for _, r := range ranges {
+		curRange := []string{}
+
+		if r.StartLine < 0 {
+			r.StartLine = 0
+		}
+
+		if r.StartLine > r.EndLine {
+			r.StartLine = 0
+			r.EndLine = 0
+		}
+
+		if r.EndLine > int32(maxLines) {
+			r.EndLine = int32(maxLines)
+		}
+
+		for row := r.StartLine; row < r.EndLine; row++ {
+			if str, ok := stringRows[row]; !ok {
+				return nil, errors.New("Missing row for some reason")
+			} else {
+				curRange = append(curRange, str)
+			}
+		}
+
+		lineRanges = append(lineRanges, curRange)
+	}
+
+	return lineRanges, nil
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -121,9 +296,21 @@ var ErrBinary = errors.New("cannot render binary file")
 // to timeout. In this scenario, a plain text table is returned.
 //
 // In the event the input content is binary, ErrBinary is returned.
-func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document, aborted bool, err error) {
+func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
+	}
+
+	p.Filepath = normalizeFilepath(p.Filepath)
+
+	filetypeQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
+
+	// Only send tree sitter requests for the languages that we support.
+	// TODO: It could be worthwhile to log that this language isn't supported or something
+	// like that? Otherwise there is no feedback that this configuration isn't currently working,
+	// which is a bit of a confusing situation for the user.
+	if !client.IsTreesitterSupported(filetypeQuery.Language) {
+		filetypeQuery.Engine = EngineSyntect
 	}
 
 	ctx, errCollector, trace, endObservation := highlightOp.WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
@@ -134,7 +321,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		otlog.Int("sizeBytes", len(p.Content)),
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.Bool("treeSitterEnabled", p.TreeSitterEnabled),
+		otlog.String("syntaxEngine", engineToDisplay[filetypeQuery.Engine]),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -162,7 +349,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 
 	// Never pass binary files to the syntax highlighter.
 	if IsBinary(p.Content) {
-		return "", nil, false, ErrBinary
+		return nil, false, ErrBinary
 	}
 	code := string(p.Content)
 
@@ -191,26 +378,32 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		maxLineLength = 2000
 	}
 
-	p.Filepath = normalizeFilepath(p.Filepath)
-
-	filetype := enry.GetLanguage(p.Filepath, []byte(code))
-	useTreeSitter := p.TreeSitterEnabled && client.IsTreesitterSupported(filetype)
-
-	resp, err := client.Highlight(ctx, &gosyntect.Query{
+	query := &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
-		Filetype:         filetype,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
-	}, useTreeSitter)
+	}
+
+	// Set the Filetype part of the command if:
+	//    1. We are overriding the config, because then we don't want syntect to try and
+	//       guess the filetype (but otherwise we want to maintain backwards compat with
+	//       whatever we were calculating before)
+	//    2. We are using treesitter. Always have syntect use the language provided in that
+	//       case to make sure that we have normalized the names of the language by then.
+	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == EngineTreeSitter {
+		query.Filetype = filetypeQuery.Language
+	}
+
+	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
 			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
 			"filepath", p.Filepath,
-			"filetype", filetype,
+			"filetype", query.Filetype,
 			"repo_name", p.Metadata.RepoName,
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
@@ -219,13 +412,13 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 		prometheusStatus = "timeout"
 
 		// Timeout, so render plain table.
-		table, err := generatePlainTable(code)
-		return table, nil, true, err
+		plainResponse, err := generatePlainTable(code)
+		return plainResponse, true, err
 	} else if err != nil {
 		log15.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
 			"filepath", p.Filepath,
-			"filetype", filetype,
+			"filetype", query.Filetype,
 			"repo_name", p.Metadata.RepoName,
 			"revision", p.Metadata.Revision,
 			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
@@ -254,26 +447,56 @@ func Code(ctx context.Context, p Params) (h template.HTML, l *lsiftyped.Document
 			trace.Log(otlog.Bool(problem, true))
 			errCollector.Collect(&err)
 			prometheusStatus = problem
-			table, err := generatePlainTable(code)
-			return table, nil, false, err
+			plainResponse, err := generatePlainTable(code)
+			return plainResponse, false, err
 		}
-		return "", nil, false, err
+
+		return nil, false, err
 	}
 
-	if useTreeSitter {
+	if filetypeQuery.Engine == EngineTreeSitter {
 		document := new(lsiftyped.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
+
+		// TODO: Should we generate the plaintext table here?
 		if err != nil {
-			return "", nil, false, err
+			return nil, false, err
 		}
 		err = proto.Unmarshal(data, document)
 		if err != nil {
-			return "", nil, false, err
+			return nil, false, err
 		}
-		return "", document, false, nil
+
+		// TODO(probably not this PR): I would like to not
+		// have to convert this in the hotpath for every
+		// syntax highlighting request, but instead that we
+		// would *ONLY* pass around the document until someone
+		// needs the HTML.
+		//
+		// This would also allow us to only have to do the HTML
+		// rendering for the amount of lines that we wanted
+		// (for example, in search results)
+		//
+		// Until then though, this is basically a port of the typescript
+		// version that I wrote before, so it should work just as well as
+		// that.
+		// respData, err := lsifToHTML(code, document)
+		// if err != nil {
+		// 	return nil, true, err
+		// }
+
+		return &HighlightedCode{
+			code:     code,
+			html:     "",
+			document: document,
+		}, false, nil
 	}
 
-	return template.HTML(resp.Data), nil, false, nil
+	return &HighlightedCode{
+		code:     code,
+		html:     template.HTML(resp.Data),
+		document: nil,
+	}, false, nil
 }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
@@ -296,7 +519,7 @@ func firstCharacters(s string, n int) string {
 	return string(v[:n])
 }
 
-func generatePlainTable(code string) (template.HTML, error) {
+func generatePlainTable(code string) (*HighlightedCode, error) {
 	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
 	for row, line := range strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files
@@ -324,9 +547,14 @@ func generatePlainTable(code string) (template.HTML, error) {
 
 	var buf bytes.Buffer
 	if err := html.Render(&buf, table); err != nil {
-		return "", err
+		return nil, err
 	}
-	return template.HTML(buf.String()), nil
+
+	return &HighlightedCode{
+		code:     code,
+		html:     template.HTML(buf.String()),
+		document: nil,
+	}, nil
 }
 
 // CodeAsLines highlights the file and returns a list of highlighted lines.
@@ -335,50 +563,14 @@ func generatePlainTable(code string) (template.HTML, error) {
 //
 // In the event the input content is binary, ErrBinary is returned.
 func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
-	html, _, aborted, err := Code(ctx, p)
+	highlightResponse, aborted, err := Code(ctx, p)
 	if err != nil {
 		return nil, aborted, err
 	}
-	lines, err := SplitHighlightedLines(html, false)
+
+	lines, err := highlightResponse.SplitHighlightedLines(false)
+
 	return lines, aborted, err
-}
-
-// SplitHighlightedLines takes the highlighted HTML table and returns a slice
-// of highlighted strings, where each string corresponds a single line in the
-// original, highlighted file.
-func SplitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
-	doc, err := html.Parse(strings.NewReader(string(input)))
-	if err != nil {
-		return nil, err
-	}
-
-	lines := make([]template.HTML, 0)
-
-	table := doc.FirstChild.LastChild.FirstChild // html > body > table
-	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
-		return nil, errors.Errorf("expected html->body->table, found %+v", table)
-	}
-
-	// Iterate over each table row and extract content
-	var buf bytes.Buffer
-	tr := table.FirstChild.FirstChild // table > tbody > tr
-	for tr != nil {
-		var render *html.Node
-		if wholeRow {
-			render = tr
-		} else {
-			render = tr.LastChild.FirstChild // tr > td > div
-		}
-		err = html.Render(&buf, render)
-		if err != nil {
-			return nil, err
-		}
-		lines = append(lines, template.HTML(buf.String()))
-		buf.Reset()
-		tr = tr.NextSibling
-	}
-
-	return lines, nil
 }
 
 // normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
@@ -417,7 +609,11 @@ type LineRange struct {
 //
 // Input line ranges will automatically be clamped within the bounds of the file.
 func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
-	lines, err := SplitHighlightedLines(html, true)
+	response := &HighlightedCode{
+		html: html,
+	}
+
+	lines, err := response.SplitHighlightedLines(true)
 	if err != nil {
 		return nil, err
 	}

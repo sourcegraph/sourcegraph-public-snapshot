@@ -1,5 +1,6 @@
-import ImportIcon from 'mdi-react/ImportIcon'
 import React from 'react'
+
+import ImportIcon from 'mdi-react/ImportIcon'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { UseConnectionResult } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
@@ -11,9 +12,11 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { Icon } from '@sourcegraph/wildcard'
+
+import { ImportingChangesetFields } from './useImportingChangesets'
 
 import styles from './ImportingChangesetsPreviewList.module.scss'
-import { ImportingChangesetFields } from './useImportingChangesets'
 
 interface ImportingChangesetsPreviewListProps {
     importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
@@ -44,7 +47,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<ImportingCh
                                     : undefined
                             }
                         >
-                            <ImportIcon className="icon-inline" />{' '}
+                            <Icon as={ImportIcon} />{' '}
                             {node.description.__typename === 'ExistingChangesetReference' &&
                                 node.description.baseRepository.name}
                         </LinkOrSpan>{' '}

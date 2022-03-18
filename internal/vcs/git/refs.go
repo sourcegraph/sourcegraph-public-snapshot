@@ -1,9 +1,11 @@
 package git
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -353,4 +355,45 @@ var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|
 // NOTE: It does not require a slash as mentioned in point 2.
 func ValidateBranchName(branch string) bool {
 	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
+}
+
+// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+func RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	command := gitserver.DefaultClient.Command("git", RevListArgs(commit)...)
+	command.Repo = api.RepoName(repo)
+	command.DisableTimeout()
+	stdout, err := gitserver.StdoutReader(ctx, command)
+	if err != nil {
+		return err
+	}
+	defer stdout.Close()
+
+	return RevListEach(stdout, onCommit)
+}
+
+func RevListArgs(givenCommit string) []string {
+	return []string{"rev-list", "--first-parent", givenCommit}
+}
+
+func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	reader := bufio.NewReader(stdout)
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
+		shouldContinue, err := onCommit(commit)
+		if !shouldContinue {
+			return err
+		}
+	}
+
+	return nil
 }

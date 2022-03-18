@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
@@ -36,12 +37,14 @@ import {
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
+import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
 import { NotebookContent } from './NotebookContent'
-import styles from './NotebookPage.module.scss'
 import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
+
+import styles from './NotebookPage.module.scss'
 
 interface NotebookPageProps
     extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
@@ -49,11 +52,10 @@ interface NotebookPageProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'extensionsController' | 'platformContext'>,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
-    isMacPlatform: boolean
     resolveRevision?: typeof _resolveRevision
     fetchRepository?: typeof _fetchRepository
     fetchNotebook?: typeof _fetchNotebook
@@ -61,6 +63,7 @@ interface NotebookPageProps
     deleteNotebook?: typeof _deleteNotebook
     createNotebookStar?: typeof _createNotebookStar
     deleteNotebookStar?: typeof _deleteNotebookStar
+    copyNotebook?: typeof _copyNotebook
 }
 
 const LOADING = 'loading' as const
@@ -77,6 +80,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     deleteNotebook = _deleteNotebook,
     createNotebookStar = _createNotebookStar,
     deleteNotebookStar = _deleteNotebookStar,
+    copyNotebook = _copyNotebook,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
@@ -159,6 +163,11 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
         (isPublic: boolean, namespace: string) =>
             setUpdateQueue(queue => queue.concat([{ public: isPublic, namespace }])),
         [setUpdateQueue]
+    )
+
+    const onCopyNotebook = useCallback(
+        (props: Omit<CopyNotebookProps, 'title'>) => copyNotebook({ title: `Copy of ${notebookTitle}`, ...props }),
+        [notebookTitle, copyNotebook]
     )
 
     return (
@@ -260,8 +269,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             viewerCanManage={notebookOrError.viewerCanManage}
                             blocks={notebookOrError.blocks}
                             onUpdateBlocks={onUpdateBlocks}
-                            fetchRepository={fetchRepository}
-                            resolveRevision={resolveRevision}
+                            onCopyNotebook={onCopyNotebook}
                             exportedFileName={exportedFileName}
                         />
                         <div className={styles.spacer} />

@@ -21,19 +21,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/search/textsearch"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Args struct {
-	SearchInputs        *run.SearchInputs
-	OnSourcegraphDotCom bool
-	Zoekt               zoekt.Streamer
-	SearcherURLs        *endpoint.Map
+	SearchInputs *run.SearchInputs
+	Zoekt        zoekt.Streamer
+	SearcherURLs *endpoint.Map
 }
 
 // ToSearchJob converts a query parse tree to the _internal_ representation
@@ -48,16 +47,21 @@ type Args struct {
 // toSearchJob.
 func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	maxResults := q.MaxResults(jargs.SearchInputs.DefaultLimit())
-	args, err := toTextParameters(jargs, q)
+
+	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
 	}
+	types, _ := q.StringValues(query.FieldType)
+	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
+
+	args := toTextParameters(jargs, b, q, resultTypes)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
-	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(args, jargs.SearchInputs.PatternType, jargs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
@@ -82,7 +86,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			}
 			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
 
-			if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+			if resultTypes.Has(result.TypeFile | result.TypePath) {
 				typ := search.TextRequest
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
@@ -104,7 +108,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Zoekt:          args.Zoekt,
 				}
 
-				addJob(true, &textsearch.RepoUniverseTextSearch{
+				addJob(true, &zoektutil.GlobalSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
 
@@ -112,7 +116,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				})
 			}
 
-			if args.ResultTypes.Has(result.TypeSymbol) {
+			if resultTypes.Has(result.TypeSymbol) {
 				typ := search.SymbolRequest
 				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
@@ -139,80 +143,86 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			}
 		}
 
-		if args.ResultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
+		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
+			var textSearchJobs []Job
 			typ := search.TextRequest
-			// TODO(rvantonder): we don't always have to run
-			// this converter. It depends on whether we run
-			// a zoekt search at all.
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-			if err != nil {
-				return nil, err
-			}
-			zoektArgs := &search.ZoektParameters{
-				Query:          zoektQuery,
-				Typ:            typ,
-				FileMatchLimit: args.PatternInfo.FileMatchLimit,
-				Select:         args.PatternInfo.Select,
-				Zoekt:          args.Zoekt,
+			if !onlyRunSearcher {
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				if err != nil {
+					return nil, err
+				}
+				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
+					Query:          zoektQuery,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				})
 			}
 
-			searcherArgs := &search.SearcherParameters{
-				SearcherURLs:    args.SearcherURLs,
+			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
 				PatternInfo:     args.PatternInfo,
+				Indexed:         false,
+				SearcherURLs:    args.SearcherURLs,
 				UseFullDeadline: args.UseFullDeadline,
-			}
+			})
 
-			addJob(true, &textsearch.RepoSubsetTextSearch{
-				ZoektArgs:        zoektArgs,
-				SearcherArgs:     searcherArgs,
-				NotSearcherOnly:  !onlyRunSearcher,
-				UseIndex:         args.PatternInfo.Index,
-				ContainsRefGlobs: query.ContainsRefGlobs(q),
-				RepoOpts:         repoOptions,
+			addJob(true, &repoPagerJob{
+				child:            NewParallelJob(textSearchJobs...),
+				repoOptions:      repoOptions,
+				useIndex:         args.PatternInfo.Index,
+				containsRefGlobs: query.ContainsRefGlobs(q),
+				zoekt:            args.Zoekt,
 			})
 		}
 
-		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" && !skipRepoSubsetSearch {
+		if resultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" && !skipRepoSubsetSearch {
+			var symbolSearchJobs []Job
 			typ := search.SymbolRequest
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
-			if err != nil {
-				return nil, err
-			}
-			zoektArgs := &search.ZoektParameters{
-				Query:          zoektQuery,
-				Typ:            typ,
-				FileMatchLimit: args.PatternInfo.FileMatchLimit,
-				Select:         args.PatternInfo.Select,
-				Zoekt:          args.Zoekt,
+
+			if !onlyRunSearcher {
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				if err != nil {
+					return nil, err
+				}
+				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
+					Query:          zoektQuery,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				})
 			}
 
-			required := args.UseFullDeadline || args.ResultTypes.Without(result.TypeSymbol) == 0
-			addJob(required, &symbol.RepoSubsetSymbolSearch{
-				ZoektArgs:        zoektArgs,
-				PatternInfo:      args.PatternInfo,
-				Limit:            maxResults,
-				NotSearcherOnly:  !onlyRunSearcher,
-				UseIndex:         args.PatternInfo.Index,
-				ContainsRefGlobs: query.ContainsRefGlobs(q),
-				RepoOpts:         repoOptions,
+			symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+				PatternInfo: args.PatternInfo,
+				Limit:       maxResults,
+			})
+
+			required := args.UseFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+			addJob(required, &repoPagerJob{
+				child:            NewParallelJob(symbolSearchJobs...),
+				repoOptions:      repoOptions,
+				useIndex:         args.PatternInfo.Index,
+				containsRefGlobs: query.ContainsRefGlobs(q),
+				zoekt:            args.Zoekt,
 			})
 		}
 
-		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
-			diff := args.ResultTypes.Has(result.TypeDiff)
+		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			diff := resultTypes.Has(result.TypeDiff)
 			var required bool
 			if args.UseFullDeadline {
 				required = true
 			} else if diff {
-				required = args.ResultTypes.Without(result.TypeDiff) == 0
+				required = resultTypes.Without(result.TypeDiff) == 0
 			} else {
-				required = args.ResultTypes.Without(result.TypeCommit) == 0
+				required = resultTypes.Without(result.TypeCommit) == 0
 			}
 			addJob(required, &commit.CommitSearch{
 				Query:                commit.QueryToGitQuery(args.Query, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
-				HasTimeFilter:        commit.HasTimeFilter(args.Query),
+				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 				Gitserver:            gitserver.DefaultClient,
@@ -250,7 +260,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			})
 		}
 
-		if args.ResultTypes.Has(result.TypeRepo) {
+		if resultTypes.Has(result.TypeRepo) {
 			valid := func() bool {
 				fieldAllowlist := map[string]struct{}{
 					query.FieldRepo:               {},
@@ -360,32 +370,11 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	return job, nil
 }
 
-func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
-	b, err := query.ToBasicQuery(q)
-	if err != nil {
-		return search.TextParameters{}, err
-	}
-
-	p := search.ToTextPatternInfo(b, jargs.SearchInputs.Protocol)
-
-	forceResultTypes := result.TypeEmpty
-	if jargs.SearchInputs.PatternType == query.SearchTypeStructural {
-		if p.Pattern == "" {
-			// Fallback to literal search for searching repos and files if
-			// the structural search pattern is empty.
-			jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-			p.IsStructuralPat = false
-			forceResultTypes = result.Types(0)
-		} else {
-			forceResultTypes = result.TypeStructural
-		}
-	}
-
+func toTextParameters(jargs *Args, b query.Basic, q query.Q, resultTypes result.Types) search.TextParameters {
 	args := search.TextParameters{
-		PatternInfo: p,
-		Query:       q,
-		Features:    toFeatures(jargs.SearchInputs.Features),
-		Timeout:     search.TimeoutDuration(b),
+		Query:    q,
+		Features: toFeatures(jargs.SearchInputs.Features),
+		Timeout:  search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
@@ -393,8 +382,16 @@ func toTextParameters(jargs *Args, q query.Q) (search.TextParameters, error) {
 		Zoekt:        jargs.Zoekt,
 		SearcherURLs: jargs.SearcherURLs,
 	}
-	args = withResultTypes(args, forceResultTypes)
-	return args, nil
+
+	args.PatternInfo = search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
+	if args.PatternInfo.Pattern == "" {
+		// Fallback to basic search for searching repos and files if
+		// the structural search pattern is empty.
+		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
+		args.PatternInfo.IsStructuralPat = false
+	}
+
+	return args
 }
 
 func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions {
@@ -441,7 +438,6 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		MinusRepoFilters:  minusRepoFilters,
 		Dependencies:      q.Dependencies(),
 		SearchContextSpec: searchContextSpec,
-		UserSettings:      userSettings,
 		OnlyForks:         fork == query.Only,
 		NoForks:           fork == query.No,
 		OnlyArchived:      archived == query.Only,
@@ -452,13 +448,13 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	}
 }
 
-func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
+func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
 			return false
 		}
 
-		return query.ForAll(args.Query, func(node query.Node) bool {
+		return query.ForAll(b.ToParseTree(), func(node query.Node) bool {
 			n, ok := node.(query.Parameter)
 			if !ok {
 				return true
@@ -477,9 +473,12 @@ func jobMode(args search.TextParameters, st query.SearchType, onSourcegraphDotCo
 		})
 	}
 
-	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
-	isIndexedSearch := args.PatternInfo.Index != query.No
-	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
+	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
+	isIndexedSearch := b.Index() != query.No
+	noPattern := b.PatternString() == ""
+	noFile := !b.Exists(query.FieldFile)
+	noLang := !b.Exists(query.FieldLang)
+	isEmpty := noPattern && noFile && noLang
 
 	repoUniverseSearch = isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
 	// skipRepoSubsetSearch is a value that controls whether to
@@ -509,34 +508,6 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	return search.Features{
 		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
 	}
-}
-
-// withResultTypes populates the ResultTypes field of args, which drives the kind
-// of search to run (e.g., text search, symbol search).
-func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
-	var rts result.Types
-	if forceTypes != 0 {
-		rts = forceTypes
-	} else {
-		stringTypes, _ := args.Query.StringValues(query.FieldType)
-		if len(stringTypes) == 0 {
-			rts = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, stringType := range stringTypes {
-				rts = rts.With(result.TypeFromString[stringType])
-			}
-		}
-	}
-
-	if rts.Has(result.TypeFile) {
-		args.PatternInfo.PatternMatchesContent = true
-	}
-
-	if rts.Has(result.TypePath) {
-		args.PatternInfo.PatternMatchesPath = true
-	}
-	args.ResultTypes = rts
-	return args
 }
 
 // toAndJob creates a new job from a basic query whose pattern is an And operator at the root.
@@ -629,7 +600,7 @@ func ToEvaluateJob(args *Args, q query.Basic) (Job, error) {
 		job = NewSelectJob(sp, job)
 	}
 
-	return NewAlertJob(args.SearchInputs, NewTimeoutJob(timeout, NewLimitJob(maxResults, job))), err
+	return NewTimeoutJob(timeout, NewLimitJob(maxResults, job)), nil
 }
 
 // FromExpandedPlan takes a query plan that has had all predicates expanded,
@@ -643,7 +614,7 @@ func FromExpandedPlan(args *Args, plan query.Plan) (Job, error) {
 		}
 		children = append(children, child)
 	}
-	return NewOrJob(children...), nil
+	return NewAlertJob(args.SearchInputs, NewOrJob(children...)), nil
 }
 
 var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{

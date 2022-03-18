@@ -1,14 +1,15 @@
+import * as React from 'react'
+import { useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
-import * as React from 'react'
-import { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -23,6 +24,7 @@ import { replaceRevisionInURL } from '../util/url'
 
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+
 import styles from './RepoRevisionSidebarCommits.module.scss'
 
 interface CommitNodeProps {
@@ -45,7 +47,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location, 
                     className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
-                    <FileIcon className="icon-inline" />
+                    <Icon as={FileIcon} />
                 </Link>
             }
         />

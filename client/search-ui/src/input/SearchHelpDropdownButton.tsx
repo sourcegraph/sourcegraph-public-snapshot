@@ -1,10 +1,24 @@
+import React, { useCallback, useState } from 'react'
+
+import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import React, { useCallback, useState } from 'react'
-import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Alert } from '@sourcegraph/wildcard'
+import {
+    PopoverTrigger,
+    PopoverContent,
+    Popover,
+    Button,
+    Alert,
+    Position,
+    Link,
+    MenuDivider,
+    MenuHeader,
+    Icon,
+} from '@sourcegraph/wildcard'
+
+import styles from './SearchHelpDropdownButton.module.scss'
 
 interface SearchHelpDropdownButtonProps extends TelemetryProps {
     isSourcegraphDotCom?: boolean
@@ -27,24 +41,21 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
     const documentationUrlPrefix = isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-help-dropdown-button d-flex">
-            <DropdownToggle
-                caret={false}
-                color="link"
-                className="px-2 d-flex align-items-center cursor-pointer"
+        <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
+            <PopoverTrigger
+                as={Button}
+                variant="link"
+                className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
             >
-                <HelpCircleOutlineIcon
-                    className="test-search-help-dropdown-button-icon icon-inline"
-                    aria-hidden="true"
-                />
-            </DropdownToggle>
-            <DropdownMenu right={true} className="pb-0">
-                <DropdownItem header={true}>
+                <Icon className="test-search-help-dropdown-button-icon" aria-hidden="true" as={HelpCircleOutlineIcon} />
+            </PopoverTrigger>
+            <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
+                <MenuHeader>
                     <strong>Search reference</strong>
-                </DropdownItem>
-                <DropdownItem divider={true} />
-                <DropdownItem header={true}>Finding matches:</DropdownItem>
+                </MenuHeader>
+                <MenuDivider />
+                <MenuHeader>Finding matches:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <span className="text-muted small">Structural:</span>{' '}
@@ -65,8 +76,8 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         </code>
                     </li>
                 </ul>
-                <DropdownItem divider={true} />
-                <DropdownItem header={true}>Common search keywords:</DropdownItem>
+                <MenuDivider />
+                <MenuHeader>Common search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <code>
@@ -91,8 +102,8 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         </code>
                     </li>
                 </ul>
-                <DropdownItem divider={true} />
-                <DropdownItem header={true}>Diff/commit search keywords:</DropdownItem>
+                <MenuDivider />
+                <MenuHeader>Diff/commit search keywords:</MenuHeader>
                 <ul className="list-unstyled px-2 mb-2">
                     <li>
                         <code>type:diff</code> <em className="text-muted small">or</em> <code>type:commit</code>
@@ -114,7 +125,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         <span className="text-muted small">(all branches)</span>
                     </li>
                 </ul>
-                <DropdownItem divider={true} className="mb-0" />
+                <MenuDivider className="mb-0" />
                 <Link
                     target="_blank"
                     rel="noopener"
@@ -122,7 +133,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                     className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <ExternalLinkIcon className="icon-inline small" /> All search keywords
+                    <Icon className="small" as={ExternalLinkIcon} /> All search keywords
                 </Link>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">
@@ -130,7 +141,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                         repositories.
                     </Alert>
                 )}
-            </DropdownMenu>
-        </ButtonDropdown>
+            </PopoverContent>
+        </Popover>
     )
 }

@@ -1,8 +1,9 @@
+import React, { useCallback, useEffect, useState } from 'react'
+
 import { useMutation, useQuery } from '@apollo/client'
 import classNames from 'classnames'
 import ChevronDown from 'mdi-react/ChevronDownIcon'
 import CogIcon from 'mdi-react/CogIcon'
-import React, { useCallback, useEffect, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
@@ -16,6 +17,7 @@ import {
     MenuList,
     MenuItem,
     Position,
+    PageSelector,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -34,18 +36,21 @@ import { OrgAreaPageProps } from '../area/OrgArea'
 import { AddMemberToOrgModal } from './AddMemberToOrgModal'
 import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
-import styles from './OrgMembersListPage.module.scss'
-import { OrgMemberNotification } from './utils'
+import { getPaginatedItems, OrgMemberNotification } from './utils'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
-interface Member {
+import styles from './OrgMembersListPage.module.scss'
+
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+    onOrgGetStartedRefresh: () => void
+}
+export interface Member {
     id: string
     username: string
     displayName: Maybe<string>
     avatarURL: Maybe<string>
 }
 
-interface MembersTypeNode {
+export interface MembersTypeNode {
     viewerCanAdminister: boolean
     members: {
         totalCount: number
@@ -76,9 +81,13 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     >(ORG_MEMBER_REMOVE_MUTATION)
 
     const onRemoveClick = useCallback(async () => {
+        eventLogger.log('RemoveFromOrganizationClicked', { organizationId: orgId })
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
+            eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId })
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
             onMemberRemoved(member.username)
+        } else {
+            eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId })
         }
     }, [isSelf, member.username, removeUserFromOrganization, onMemberRemoved, member.id, orgId])
 
@@ -167,9 +176,21 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgMembersListPage: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    onOrgGetStartedRefresh,
+}) => {
     const [invite, setInvite] = useState<IModalInviteResult>()
     const [notification, setNotification] = useState<string>()
+    const [page, setPage] = useState(1)
+    const setPageWithEventLogging = useCallback(
+        (index: number) => {
+            setPage(index)
+            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id })
+        },
+        [setPage, org.id]
+    )
 
     const { data, loading, error, refetch } = useQuery<OrganizationMembersResult, OrganizationMembersVariables>(
         ORG_MEMBERS_QUERY,
@@ -179,7 +200,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     )
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrgMembersListV2', { orgId: org.id })
+        eventLogger.logViewEvent('OrganizationMembers', { organizationId: org.id })
     }, [org.id])
 
     const isSelf = (userId: string): boolean => authenticatedUser !== null && userId === authenticatedUser.id
@@ -187,8 +208,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     const onInviteSent = useCallback(
         (result: IModalInviteResult) => {
             setInvite(result)
+            onOrgGetStartedRefresh()
         },
-        [setInvite]
+        [setInvite, onOrgGetStartedRefresh]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -203,16 +225,19 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
         async (username: string) => {
             setNotification(`You succesfully added ${username} to ${org.name}`)
             await onShouldRefetch()
+            onOrgGetStartedRefresh()
         },
-        [setNotification, onShouldRefetch, org.name]
+        [setNotification, onShouldRefetch, org.name, onOrgGetStartedRefresh]
     )
 
     const onMemberRemoved = useCallback(
         async (username: string) => {
             setNotification(`${username} has been removed from the ${org.name} organization on Sourcegraph`)
+            setPage(1)
             await onShouldRefetch()
+            onOrgGetStartedRefresh()
         },
-        [setNotification, onShouldRefetch, org.name]
+        [setNotification, onShouldRefetch, org.name, onOrgGetStartedRefresh]
     )
 
     const onNotificationDismiss = useCallback(() => {
@@ -220,8 +245,9 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
     }, [setNotification])
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
-
     const membersResult = data ? (data.node as MembersTypeNode) : undefined
+    const pagedData = getPaginatedItems(page, membersResult?.members.nodes)
+    const showOnlyYou = membersResult && membersResult.members.totalCount === 1
 
     return (
         <>
@@ -248,16 +274,17 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                             orgName={org.name}
                             orgId={org.id}
                             onInviteSent={onInviteSent}
+                            eventLoggerEventName="InviteMemberButtonClicked"
                         />
                     )}
                 </div>
 
-                <Container className={styles.membersList}>
+                <Container className={classNames({ 'mb-3': !showOnlyYou }, styles.membersList)}>
                     {loading && <LoadingSpinner />}
                     {membersResult && (
                         <ul>
                             <MembersResultHeader total={membersResult.members.totalCount} orgName={org.name} />
-                            {membersResult.members.nodes.map(usr => (
+                            {pagedData.results.map(usr => (
                                 <MemberItem
                                     key={usr.id}
                                     member={usr}
@@ -277,30 +304,36 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({ org, authen
                         />
                     )}
                 </Container>
+                {pagedData.totalPages > 1 && (
+                    <PageSelector
+                        className="mt-4 mb-4"
+                        currentPage={page}
+                        onPageChange={setPageWithEventLogging}
+                        totalPages={pagedData.totalPages}
+                    />
+                )}
 
-                {authenticatedUser &&
-                    membersResult &&
-                    membersResult.members.totalCount === 1 &&
-                    isSelf(membersResult.members.nodes[0].id) && (
-                        <Container className={styles.onlyYouContainer}>
-                            <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                                <h3>Looks like it’s just you!</h3>
-                                <div>
-                                    <InviteMemberModalHandler
-                                        orgName={org.name}
-                                        triggerLabel="Invite a teammate"
-                                        orgId={org.id}
-                                        onInviteSent={onInviteSent}
-                                        className={styles.inviteMemberLink}
-                                        as="a"
-                                        size="lg"
-                                        variant="link"
-                                    />
-                                    {` to join you on ${org.name} on Sourcegraph`}
-                                </div>
+                {authenticatedUser && membersResult && showOnlyYou && isSelf(membersResult.members.nodes[0].id) && (
+                    <Container className={styles.onlyYouContainer}>
+                        <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
+                            <h3>Looks like it’s just you!</h3>
+                            <div>
+                                <InviteMemberModalHandler
+                                    orgName={org.name}
+                                    triggerLabel="Invite a teammate"
+                                    eventLoggerEventName="InviteMemberCTAClicked"
+                                    orgId={org.id}
+                                    onInviteSent={onInviteSent}
+                                    className={styles.inviteMemberLink}
+                                    as="a"
+                                    size="lg"
+                                    variant="link"
+                                />
+                                {` to join you on ${org.name} on Sourcegraph`}
                             </div>
-                        </Container>
-                    )}
+                        </div>
+                    </Container>
+                )}
             </div>
         </>
     )

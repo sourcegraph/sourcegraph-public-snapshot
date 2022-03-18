@@ -1,6 +1,9 @@
-import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
+
+import classNames from 'classnames'
+import { drop } from 'lodash'
+import CloseIcon from 'mdi-react/CloseIcon'
+import { useLocation } from 'react-router'
 
 import { Alert, Button } from '@sourcegraph/wildcard'
 
@@ -61,3 +64,29 @@ export const OrgMemberNotification: React.FunctionComponent<MembersNotificationP
         </Button>
     </Alert>
 )
+
+export function getPaginatedItems<T>(
+    currentPage: number,
+    items?: T[],
+    pageSize = 20
+): { totalPages: number; results: T[] } {
+    if (!items || items.length === 0) {
+        return {
+            totalPages: 0,
+            results: [],
+        }
+    }
+    const page = currentPage || 1
+    const offset = (page - 1) * pageSize
+    const pagedItems = drop(items, offset).slice(0, pageSize)
+    return {
+        totalPages: Math.ceil(items.length / pageSize),
+        results: pagedItems,
+    }
+}
+
+export function useQueryStringParameters(): URLSearchParams {
+    const { search } = useLocation()
+
+    return React.useMemo(() => new URLSearchParams(search), [search])
+}

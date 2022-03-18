@@ -97,8 +97,9 @@
         },
         "dependenciesSearch": {
           "description": "Enables support for repo:dependencies predicate queries.",
-          "type": "boolean",
-          "default": false
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         },
         "andOrQuery": {
           "description": "DEPRECATED: Interpret a search input query as an and/or query.",
@@ -160,7 +161,7 @@
           }
         },
         "npmPackages": {
-          "description": "Allow adding NPM packages code host connections",
+          "description": "Allow adding npm packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -622,6 +623,63 @@
       "default": -1,
       "group": "External services"
     },
+    "syntaxHighlighting": {
+      "title": "SyntaxHighlighting",
+      "description": "Syntax highlighting configuration",
+      "type": "object",
+      "required": ["engine", "languages"],
+      "properties": {
+        "engine": {
+          "title": "SyntaxHighlightingEngine",
+          "type": "object",
+          "required": ["default"],
+          "properties": {
+            "default": {
+              "description": "The default syntax highlighting engine to use",
+              "type": "string",
+              "enum": ["tree-sitter", "syntect"]
+            },
+            "overrides": {
+              "description": "Manually specify overrides for syntax highlighting engine per language",
+              "type": "object",
+              "additionalProperties": { "type": "string", "enum": ["tree-sitter", "syntect"] }
+            }
+          }
+        },
+        "languages": {
+          "title": "SyntaxHighlightingLanguage",
+          "type": "object",
+          "required": ["extensions", "patterns"],
+          "properties": {
+            "extensions": {
+              "description": "Map of extension to language",
+              "type": "object",
+              "additionalProperties": { "type": "string" }
+            },
+            "patterns": {
+              "description": "Map of patterns to language. Will return after first match, if any.",
+              "type": "array",
+              "items": {
+                "title": "SyntaxHighlightingLanguagePatterns",
+                "type": "object",
+                "required": ["pattern", "language"],
+                "properties": {
+                  "pattern": {
+                    "description": "Regular expression which matches the filepath",
+                    "type": "string",
+                    "format": "regex"
+                  },
+                  "language": {
+                    "description": "Name of the language if pattern matches",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",
@@ -746,6 +804,21 @@
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
       "group": "Security"
     },
+    "permissions.syncScheduleInterval": {
+      "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 15
+    },
+    "permissions.syncOldestUsers": {
+      "description": "Number of user permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
+    },
+    "permissions.syncOldestRepos": {
+      "description": "Number of repo permissions to schedule for syncing in single scheduler iteration",
+      "type": "integer",
+      "default": 10
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
@@ -790,7 +863,7 @@
     },
     "email.smtp": {
       "title": "SMTPServerConfig",
-      "description": "The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).",
+      "description": "The SMTP server used to send transactional emails.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "object",
       "additionalProperties": false,
       "required": ["host", "port", "authentication"],
@@ -838,7 +911,7 @@
       "group": "Email"
     },
     "email.address": {
-      "description": "The \"from\" address for emails sent by this server.",
+      "description": "The \"from\" address for emails sent by this server.\nPlease see https://docs.sourcegraph.com/admin/config/email",
       "type": "string",
       "format": "email",
       "group": "Email",
@@ -933,15 +1006,16 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
-    "useJaeger": {
-      "description": "DEPRECATED. Use `\"observability.tracing\": { \"sampling\": \"all\" }`, instead. Enables Jaeger tracing.",
-      "type": "boolean",
-      "group": "Misc."
-    },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
       "type": "object",
       "properties": {
+        "type": {
+          "description": "Determines what tracing provider to enable. Supports \"datadog\" or \"opentracing\"",
+          "type": "string",
+          "enum": ["datadog", "opentracing"],
+          "default": "opentracing"
+        },
         "sampling": {
           "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever `?trace=1` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
           "type": "string",

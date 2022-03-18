@@ -1,17 +1,19 @@
+import React, { useEffect, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { authenticatedUser } from '@sourcegraph/web/src/auth'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { isVirtualDashboard } from '../../../../../core/types'
+import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../../core/types/dashboard/virtual-dashboard'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
@@ -19,11 +21,10 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
-import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
-import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
-import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
+
+import styles from './DashboardsContent.module.scss'
 
 export interface DashboardsContentProps extends TelemetryProps {
     /**
@@ -33,22 +34,23 @@ export interface DashboardsContentProps extends TelemetryProps {
      * version of merged settings (all insights)
      */
     dashboardID: string
+    dashboards: InsightDashboard[]
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { dashboardID, telemetryService } = props
+    const { dashboardID, telemetryService, dashboards } = props
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 
     const history = useHistory()
-    const { getDashboards, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
-
-    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
-    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const handleDashboardSelect = useDashboardSelectHandler()
+    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
+        history.push(`/insights/dashboards/${dashboard.id}`)
+
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
@@ -58,17 +60,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         telemetryService.logViewEvent('Insights')
     }, [telemetryService, dashboardID])
 
-    if (dashboards === undefined) {
-        return (
-            <div data-testid="loading-spinner">
-                <LoadingSpinner inline={false} />
-            </div>
-        )
-    }
-
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
-    const permissions = getDashboardPermissions(currentDashboard, subjects)
-
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
@@ -77,9 +68,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     !isVirtualDashboard(currentDashboard) &&
                     isCustomInsightDashboard(currentDashboard)
                 ) {
-                    const dashboardURL = currentDashboard.settingsKey ?? currentDashboard.id
-
-                    history.push(`/insights/dashboards/${dashboardURL}/edit`)
+                    history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
             }
@@ -110,8 +99,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         setAddInsightsState(true)
     }
 
+    const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
+
     return (
-        <div>
+        <main className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
@@ -124,7 +115,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 />
 
                 <DashboardMenu
-                    subjects={subjects}
                     innerRef={menuReference}
                     tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
@@ -135,8 +125,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <Button
                     outline={true}
                     variant="secondary"
-                    disabled={!permissions.isConfigurable}
-                    data-tooltip={getTooltipMessage(currentDashboard, permissions)}
+                    disabled={addRemovePermissions.disabled}
+                    data-tooltip={addRemovePermissions.tooltip}
                     data-placement="bottom"
                     onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
@@ -144,9 +134,19 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 </Button>
             </DashboardHeader>
 
+            {!licensed && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedAccessLabel)}
+                    message={
+                        dashboardID === ALL_INSIGHTS_DASHBOARD_ID
+                            ? 'Create up to two global insights'
+                            : 'Unlock Code Insights for full access to custom dashboards'
+                    }
+                />
+            )}
+
             {currentDashboard ? (
                 <DashboardInsights
-                    subjects={subjects}
                     dashboard={currentDashboard}
                     telemetryService={telemetryService}
                     onAddInsightRequest={handleAddInsightRequest}
@@ -162,6 +162,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
                 <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
-        </div>
+        </main>
     )
 }

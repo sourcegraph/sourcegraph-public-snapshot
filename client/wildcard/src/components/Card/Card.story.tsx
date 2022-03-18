@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
@@ -26,11 +27,18 @@ const config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1172%3A285',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1172%3A285',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=1172%3A558',
+            },
+        ],
     },
 }
 

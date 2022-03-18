@@ -335,6 +335,7 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewRepoUpdaterClientGroup(containerName),
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyServiceGroup(containerName),
+			shared.CodeIntelligence.NewLockfilesGroup(containerName),
 
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),

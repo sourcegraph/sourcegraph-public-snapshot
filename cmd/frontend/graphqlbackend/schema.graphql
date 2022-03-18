@@ -87,7 +87,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String): Org!
+    createOrganization(name: String!, displayName: String, statsID: ID): Org!
     """
     Updates an organization.
 
@@ -95,9 +95,14 @@ type Mutation {
     """
     updateOrganization(id: ID!, displayName: String): Org!
     """
-    Deletes an organization. Only site admins may perform this mutation.
+    Soft or hard deletes an organization.
+    - When the second argument is not provided, it soft deletes an organization, marking it as deleted.
+    Only site admins may perform this mutation.
+    - When the second argument is true, it hard deletes an organization and its associated resources.
+    Hard deletion is currently only supported on cloud. Only org members may perform this mutation
     """
-    deleteOrganization(organization: ID!): EmptyResponse
+    deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
+
     """
     Adds a external service. Only site admins may perform this mutation.
     """
@@ -741,6 +746,13 @@ type Mutation {
         """
         settingsToEdit: String!
     ): EmptyResponse!
+
+    """
+    Sends an email for testing Sourcegraph's email configuration.
+
+    Only administrators can use this API.
+    """
+    sendTestEmail(to: String!): String!
 }
 
 """
@@ -867,6 +879,7 @@ enum EventSource {
     CODEHOSTINTEGRATION
     BACKEND
     STATICWEB
+    IDEEXTENSION
 }
 
 """
@@ -1513,6 +1526,30 @@ type Query {
         """
         organization: ID!
     ): [OrganizationInvitation!]!
+
+    """
+    Search for users that opt-in to search autocomplete.
+    """
+    autocompleteMembersSearch(
+        """
+        The organization ID
+        """
+        organization: ID!
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String!
+    ): [AutocompleteMemberSearchItem!]!
+
+    """
+    Get started organization summary
+    """
+    orgMembersSummary(
+        """
+        The organization ID
+        """
+        organization: ID!
+    ): OrgMembersSummary!
 }
 
 """
@@ -3138,7 +3175,6 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -4139,8 +4175,6 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4204,7 +4238,6 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4306,7 +4339,6 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        treeSitterEnabled: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule
@@ -4727,6 +4759,12 @@ type User implements Node & SettingsSubject & Namespace {
     publicRepositories returns the repos listed in user_public_repos for this user
     """
     publicRepositories: [Repository!]!
+
+    """
+    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
+    repositories this user has access to, and is derived from recent commit history of those.
+    """
+    invitableCollaborators: [Person!]!
 }
 
 """
@@ -5139,6 +5177,49 @@ type OrganizationInvitation implements Node {
     Boolean flag which returns true if the email on the invite matches a verified email of the user
     """
     isVerifiedEmail: Boolean
+}
+"""
+Result user returned by invite members autocomplete search.
+"""
+type AutocompleteMemberSearchItem {
+    """
+    The unique ID for the user.
+    """
+    id: ID!
+    """
+    The user's username.
+    """
+    username: String!
+    """
+    The display name chosen by the user.
+    """
+    displayName: String
+    """
+    The URL of the user's avatar image.
+    """
+    avatarURL: String
+    """
+    If the user belongs to current Organization.
+    """
+    inOrg: Boolean
+}
+
+"""
+Result organization members count and pending invitations count.
+"""
+type OrgMembersSummary {
+    """
+    The unique ID for the Org.
+    """
+    id: ID!
+    """
+    Total number of members for the org.
+    """
+    membersCount: Int!
+    """
+    Total number of pending invites for the org.
+    """
+    invitesCount: Int!
 }
 
 """

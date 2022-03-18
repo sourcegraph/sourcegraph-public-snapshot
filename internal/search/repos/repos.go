@@ -15,15 +15,18 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lockfiles"
+	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -62,7 +65,7 @@ type Resolver struct {
 }
 
 func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Paginate", "")
+	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -526,12 +529,12 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		tr.Finish()
 	}()
 
-	if !conf.ExperimentalFeatures().DependenciesSearch {
+	if !conf.DependeciesSearchEnabled() {
 		return nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
 	repoStore := r.DB.Repos()
-	repoRevs := make(map[api.RepoName]codeintel.RevSpecSet, len(op.Dependencies))
+	repoRevs := make(map[api.RepoName]codeintelTypes.RevSpecSet, len(op.Dependencies))
 	for _, depParams := range op.Dependencies {
 		repoPattern, revs := search.ParseRepositoryRevisions(depParams)
 		if len(revs) == 0 {
@@ -555,7 +558,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 				}
 
 				if _, ok := repoRevs[repo.Name]; !ok {
-					repoRevs[repo.Name] = codeintel.RevSpecSet{}
+					repoRevs[repo.Name] = codeintelTypes.RevSpecSet{}
 				}
 
 				repoRevs[repo.Name][api.RevSpec(rev.RevSpec)] = struct{}{}
@@ -563,7 +566,13 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		}
 	}
 
-	dependencyRepoRevs, err := codeintel.GetOrCreateGlobalDependencyService(r.DB, &syncer{backend.NewRepos(repoStore)}).Dependencies(ctx, repoRevs)
+	depsSvc := codeintel.GetDependenciesService(
+		r.DB,
+		lockfiles.GetService(lockfiles.NewDefaultGitService(nil)),
+		&packageRepoSyncer{cli: repoupdater.DefaultClient},
+	)
+
+	dependencyRepoRevs, err := depsSvc.Dependencies(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -583,20 +592,11 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	return depNames, depRevs, nil
 }
 
-type syncer struct {
-	svc interface {
-		GetByName(ctx context.Context, repo api.RepoName) (*types.Repo, error)
-	}
-}
+type packageRepoSyncer struct{ cli *repoupdater.Client }
 
-func (s *syncer) Sync(ctx context.Context, repos []api.RepoName) error {
-	for _, repo := range repos {
-		if _, err := s.svc.GetByName(ctx, repo); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (s *packageRepoSyncer) Sync(ctx context.Context, repo api.RepoName) error {
+	_, err := s.cli.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo, Update: true})
+	return err
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and

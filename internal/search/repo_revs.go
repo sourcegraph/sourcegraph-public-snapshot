@@ -72,7 +72,7 @@ type RepositoryRevisions struct {
 
 	// ListRefs is called to list all Git refs for a repository. It is intended to be mocked by
 	// tests. If nil, git.ListRefs is used.
-	ListRefs func(context.Context, api.RepoName) ([]git.Ref, error)
+	ListRefs func(context.Context, api.RepoName) ([]git.Ref, error) `json:"-"`
 }
 
 func (r *RepositoryRevisions) Copy() *RepositoryRevisions {

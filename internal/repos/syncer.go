@@ -252,7 +252,7 @@ func (d Diff) Len() int {
 // It works for repos from:
 // 1. Public "cloud_default" code hosts since we don't sync them in the background
 //    (which would delete lazy synced repos).
-// 2. Any package hosts (i.e. NPM, Maven, etc) since callers are expected to store
+// 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
 //    repos in the `lsif_dependency_repos` table which is used as the source of truth
 //    for the next full sync, so lazy added repos don't get wiped.
 //
@@ -704,6 +704,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
 
+		*sourced = *stored[0]
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
 		if !svc.IsSiteOwned() { // enforce user and org repo limits

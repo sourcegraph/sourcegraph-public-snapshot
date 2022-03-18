@@ -1,6 +1,7 @@
+import React, { ChangeEvent, FormEvent, useCallback, useEffect, useState, useRef } from 'react'
+
 import classNames from 'classnames'
 import { isEqual, capitalize } from 'lodash'
-import React, { ChangeEvent, FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
 
@@ -53,6 +54,7 @@ import {
     UserSettingReposContainer,
 } from './components'
 import { CheckboxRepositoryNode } from './RepositoryNode'
+
 import styles from './UserSettingsManageRepositoriesPage.module.scss'
 
 interface Props

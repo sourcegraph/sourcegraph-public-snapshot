@@ -52,9 +52,9 @@ func mainErr(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
 		Subcommands: []*ffcli.Command{
-			cliutil.Up(appName, runnerFactory, out),
-			cliutil.UpTo(appName, runnerFactory, out),
-			cliutil.DownTo(appName, runnerFactory, out),
+			cliutil.Up(appName, runnerFactory, out, false),
+			cliutil.UpTo(appName, runnerFactory, out, false),
+			cliutil.DownTo(appName, runnerFactory, out, false),
 			cliutil.Validate(appName, runnerFactory, out),
 			cliutil.AddLog(appName, runnerFactory, out),
 		},

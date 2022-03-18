@@ -51,6 +51,17 @@ itself](https://www.jaegertracing.io/docs/1.17/sampling/), and even then, the vo
 traffic caused by Jaeger spans being sent to the collector may disrupt the performance of the
 overall Sourcegraph instance.
 
+## Using Datadog (experimental)
+
+Modify the site configuration to specify type "datadog" within `observability.tracing`.
+
+  ```
+   "observability.tracing": {
+     "type": "datadog"
+   }
+  ```
+When Datadog tracing is enabled, the `sampling` field currently has no effect.
+
 ### GraphQL Requests
 
 To receive a traceID on a GraphQL request, include the header `X-Sourcegraph-Should-Trace: true` with the request.
@@ -88,4 +99,3 @@ there, click **Requests** to view the traces for that service.
 See the following docs on how to connect Sourcegraph to an external Jaeger instance:
   1. [For Kubernetes Deployments](../install/kubernetes/configure.md)
   2. For Docker-Compose Deployments - Currently not available
-  

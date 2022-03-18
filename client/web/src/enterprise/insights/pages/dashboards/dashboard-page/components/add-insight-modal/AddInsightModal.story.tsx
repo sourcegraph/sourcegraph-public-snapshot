@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
-import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
+
+import { storiesOf } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
@@ -28,7 +28,6 @@ const dashboard: CustomInsightDashboard = {
     type: InsightsDashboardType.Custom,
     scope: InsightsDashboardScope.Personal,
     id: '001',
-    settingsKey: 'testDashboard',
     title: 'Test dashboard',
     insightIds: [],
     owner: {

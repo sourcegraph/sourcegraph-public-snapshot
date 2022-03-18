@@ -1,7 +1,8 @@
+import * as React from 'react'
+
 import { cleanup, fireEvent, getByTestId, getByText } from '@testing-library/react'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
-import * as React from 'react'
 import sinon from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'

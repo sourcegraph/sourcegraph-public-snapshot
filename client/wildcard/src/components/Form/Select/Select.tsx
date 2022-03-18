@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
@@ -73,6 +74,7 @@ export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
                     {props.label}
                 </FormFieldLabel>
             )}
+            {/* eslint-disable-next-line react/forbid-elements */}
             <select
                 ref={reference}
                 className={classNames(

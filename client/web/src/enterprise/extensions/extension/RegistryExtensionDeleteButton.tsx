@@ -1,13 +1,14 @@
+import * as React from 'react'
+
 import { upperFirst } from 'lodash'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
-import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, ButtonGroup } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Icon } from '@sourcegraph/wildcard'
 
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
@@ -80,11 +81,11 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                     title={this.props.compact ? 'Delete extension' : ''}
                     variant="danger"
                 >
-                    <DeleteIcon className="icon-inline" /> {!this.props.compact && 'Delete extension'}
+                    <Icon as={DeleteIcon} /> {!this.props.compact && 'Delete extension'}
                 </Button>
                 {isErrorLike(this.state.deletionOrError) && (
                     <Button disabled={true} title={upperFirst(this.state.deletionOrError.message)} variant="danger">
-                        <WarningIcon className="icon-inline" />
+                        <Icon as={WarningIcon} />
                     </Button>
                 )}
             </ButtonGroup>

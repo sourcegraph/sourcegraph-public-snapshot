@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 // eslint-disable-next-line no-restricted-imports
 import { Link } from 'react-router-dom'
 
@@ -22,6 +23,7 @@ export const AnchorLink = React.forwardRef(({ to, as: Component, children, class
 
     if (!Component) {
         return (
+            // eslint-disable-next-line react/forbid-elements
             <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...rest} {...commonProps}>
                 {children}
             </a>

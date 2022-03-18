@@ -181,6 +181,7 @@ type pingRequest struct {
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
 	AutomationUsage               json.RawMessage `json:"automationUsage"`
 	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
+	CTAUsage                      json.RawMessage `json:"ctaUsage"`
 	SavedSearches                 json.RawMessage `json:"savedSearches"`
 	HomepagePanels                json.RawMessage `json:"homepagePanels"`
 	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
@@ -195,9 +196,11 @@ type pingRequest struct {
 	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
 	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
+	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
 	InitialAdminEmail             string          `json:"initAdmin"`
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
+	TotalOrgs                     int32           `json:"totalOrgs"`
 	HasRepos                      bool            `json:"repos"`
 	EverSearched                  bool            `json:"searched"`
 	EverFindRefs                  bool            `json:"refs"`
@@ -292,6 +295,7 @@ type pingPayload struct {
 	NewCodeIntelUsage        json.RawMessage `json:"new_code_intel_usage"`
 	SearchUsage              json.RawMessage `json:"search_usage"`
 	GrowthStatistics         json.RawMessage `json:"growth_statistics"`
+	CTAUsage                 json.RawMessage `json:"cta_usage"`
 	SavedSearches            json.RawMessage `json:"saved_searches"`
 	HomepagePanels           json.RawMessage `json:"homepage_panels"`
 	RetentionStatistics      json.RawMessage `json:"retention_statistics"`
@@ -303,6 +307,7 @@ type pingPayload struct {
 	CodeMonitoringUsage      json.RawMessage `json:"code_monitoring_usage"`
 	CodeHostVersions         json.RawMessage `json:"code_host_versions"`
 	CodeHostIntegrationUsage json.RawMessage `json:"code_host_integration_usage"`
+	IDEExtensionsUsage       json.RawMessage `json:"ide_extensions_usage"`
 	InstallerEmail           string          `json:"installer_email"`
 	AuthProviders            string          `json:"auth_providers"`
 	ExtServices              string          `json:"ext_services"`
@@ -376,6 +381,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		NewCodeIntelUsage:        codeIntelUsage,
 		SearchUsage:              searchUsage,
 		GrowthStatistics:         pr.GrowthStatistics,
+		CTAUsage:                 pr.CTAUsage,
 		SavedSearches:            pr.SavedSearches,
 		HomepagePanels:           pr.HomepagePanels,
 		RetentionStatistics:      pr.RetentionStatistics,
@@ -388,6 +394,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeMonitoringUsage:      pr.CodeMonitoringUsage,
 		CodeHostVersions:         pr.CodeHostVersions,
 		CodeHostIntegrationUsage: pr.CodeHostIntegrationUsage,
+		IDEExtensionsUsage:       pr.IDEExtensionsUsage,
 		AuthProviders:            strings.Join(pr.AuthProviders, ","),
 		ExtServices:              strings.Join(pr.ExternalServices, ","),
 		BuiltinSignupAllowed:     strconv.FormatBool(pr.BuiltinSignupAllowed),

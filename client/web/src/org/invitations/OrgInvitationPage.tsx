@@ -1,17 +1,19 @@
+import React, { useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { Maybe, OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { IEmptyResponse, IOrganizationInvitation } from '@sourcegraph/shared/src/schema'
-import { Alert, AnchorLink, Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
 import { OrgAvatar } from '../OrgAvatar'
@@ -86,8 +88,14 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
 
     const data = inviteData?.invitationByToken
     const orgName = data?.organization.name
+    const orgId = data?.organization.id
     const sender = data?.sender
     const orgDisplayName = data?.organization.displayName || orgName
+    const willVerifyEmail = data?.recipientEmail && !data?.isVerifiedEmail
+
+    useEffect(() => {
+        eventLogger.logViewEvent('OrganizationInvitation', { organizationId: orgId, invitationId: data?.id })
+    }, [orgId, data?.id])
 
     const [respondToInvitation, { loading: respondLoading, error: respondError }] = useMutation<
         RespondToOrgInvitationResult,
@@ -99,28 +107,49 @@ export const OrgInvitationPage: React.FunctionComponent<Props> = ({ authenticate
     })
 
     const acceptInvitation = useCallback(async () => {
-        await respondToInvitation({
-            variables: {
-                id: data?.id || '',
-                response: OrganizationInvitationResponseType.ACCEPT,
-            },
+        eventLogger.log('OrganizationInvitationAcceptClicked', {
+            organizationId: orgId,
+            invitationId: data?.id,
+            willVerifyEmail,
         })
+        try {
+            await respondToInvitation({
+                variables: {
+                    id: data?.id || '',
+                    response: OrganizationInvitationResponseType.ACCEPT,
+                },
+            })
+            eventLogger.log('OrganizationInvitationAcceptSucceeded', { organizationId: orgId, invitationId: data?.id })
+        } catch {
+            eventLogger.log('OrganizationInvitationAcceptFailed', { organizationId: orgId, invitationId: data?.id })
+            return
+        }
 
         if (orgName) {
             history.push(orgURL(orgName))
         }
-    }, [data?.id, history, orgName, respondToInvitation])
+    }, [data?.id, history, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
-        await respondToInvitation({
-            variables: {
-                id: data?.id || '',
-                response: OrganizationInvitationResponseType.REJECT,
-            },
+        eventLogger.log('OrganizationInvitationDeclineClicked', {
+            organizationId: orgId,
+            invitationId: data?.id,
+            willVerifyEmail,
         })
+        try {
+            await respondToInvitation({
+                variables: {
+                    id: data?.id || '',
+                    response: OrganizationInvitationResponseType.REJECT,
+                },
+            })
+            eventLogger.log('OrganizationInvitationDeclineSucceeded', { organizationId: orgId, invitationId: data?.id })
+        } catch {
+            eventLogger.log('OrganizationInvitationDeclineFailed', { organizationId: orgId, invitationId: data?.id })
+        }
 
         history.push(userURL(authenticatedUser.username))
-    }, [authenticatedUser.username, data?.id, history, respondToInvitation])
+    }, [authenticatedUser.username, data?.id, history, orgId, respondToInvitation, willVerifyEmail])
 
     const loading = inviteLoading || respondLoading
     const error = inviteError?.message || respondError?.message

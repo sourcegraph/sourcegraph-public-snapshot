@@ -1,14 +1,13 @@
+import React from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
-import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../mocks/settings-cascade'
 
 import {
     DEFAULT_MOCK_CHART_CONTENT,
@@ -57,17 +56,9 @@ const codeInsightsBackend = {
     ],
 }
 
-const SUBJECTS = [
-    createUserSubject('Emir Kusturica'),
-    createOrgSubject('Warner Brothers'),
-    createGlobalSubject('Global'),
-] as SupportedInsightSubject[]
-
 export const SearchInsightCreationPage: Story = () => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <SearchInsightCreationPageComponent
-            visibility="user_test_id"
-            subjects={SUBJECTS}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             onInsightCreateRequest={fakeAPIRequest}
             onSuccessfulCreation={noop}

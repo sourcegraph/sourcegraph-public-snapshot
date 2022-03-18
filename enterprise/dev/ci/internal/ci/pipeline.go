@@ -109,7 +109,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addTsLint,
+			addClientLinters,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -119,7 +119,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addTsLint,
+			addClientLinters,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -311,6 +311,10 @@ func withDefaultTimeout(s *bk.Step) {
 func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		if bk.FeatureFlags.StatelessBuild {
+			s.Agents["queue"] = bk.AgentQueueJob
+		} else if os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" {
+			// Always process retries on stateless agents.
+			// TODO: remove when we switch over entirely to stateless agents
 			s.Agents["queue"] = bk.AgentQueueJob
 		} else {
 			s.Agents["queue"] = bk.AgentQueueStandard

@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -65,7 +66,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
 
     return (
         <div id={targetID} className={classNames(styles.userAvatar, className)}>
-            {getInitials(name)}
+            <span className={styles.initials}>{getInitials(name)}</span>
         </div>
     )
 }

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import { startCase } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -25,6 +26,18 @@ const Config: Meta = {
             enableDarkMode: true,
             disableSnapshot: false,
         },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma Light',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A2513',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Dark',
+                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A5794',
+            },
+        ],
     },
 }
 

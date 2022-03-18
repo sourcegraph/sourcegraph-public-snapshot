@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
 import { Subtract } from 'utility-types'

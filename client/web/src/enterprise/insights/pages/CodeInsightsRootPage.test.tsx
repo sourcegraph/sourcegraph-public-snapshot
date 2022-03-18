@@ -1,8 +1,9 @@
 /* eslint-disable ban/ban */
+import React from 'react'
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { Route } from 'react-router-dom'
 import { of } from 'rxjs'
@@ -93,7 +94,8 @@ describe('CodeInsightsRootPage', () => {
             {
                 route: '/insights/dashboards/',
                 api: {
-                    isCodeInsightsLicensed: () => of(true),
+                    getUiFeatures: () => of({ licensed: true }),
+                    getDashboards: () => of([]),
                 },
             }
         )
@@ -112,7 +114,7 @@ describe('CodeInsightsRootPage', () => {
                 api: {
                     getDashboardSubjects: () => of([]),
                     getDashboards: () => of([]),
-                    isCodeInsightsLicensed: () => of(true),
+                    getUiFeatures: () => of({ licensed: true }),
                 },
             }
         )
@@ -131,7 +133,7 @@ describe('CodeInsightsRootPage', () => {
                 api: {
                     getDashboardSubjects: () => of([]),
                     getDashboards: () => of([]),
-                    isCodeInsightsLicensed: () => of(true),
+                    getUiFeatures: () => of({ licensed: true }),
                 },
             }
         )

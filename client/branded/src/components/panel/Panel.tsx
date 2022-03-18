@@ -1,19 +1,20 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { isDefined, combineLatestOrDefault } from '@sourcegraph/common'
+import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -22,16 +23,17 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
 
-import styles from './Panel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
+
+import styles from './Panel.module.scss'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -59,6 +61,12 @@ export interface PanelViewWithComponent extends PanelViewData {
      * The React element to render in the panel view.
      */
     reactElement?: React.ReactFragment
+
+    // Should the content of the panel be put inside a wrapper container with padding or not.
+    noWrapper?: boolean
+
+    // Should the panel be shown for the given `#tab=<ID>` in the URL?
+    matchesTabID?: (id: string) => boolean
 }
 
 /**
@@ -83,6 +91,12 @@ interface PanelItem {
      * location provider (even if the result set is empty).
      */
     hasLocations?: boolean
+
+    /** Callback that's triggered when the panel is selected */
+    trackTabClick: () => void
+
+    // Should the panel item be shown for the given `#tab=<ID>` in the URL?
+    matchesTabID?: (id: string) => boolean
 }
 
 export type BuiltinPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
@@ -92,12 +106,17 @@ const builtinPanelViewProviders = new BehaviorSubject<
 >(new Map())
 
 /**
+ * BuiltinPanelDefinition defines which BuiltinPanelViews will be available.
+ */
+export interface BuiltinPanelDefinition {
+    id: string
+    provider: Observable<BuiltinPanelView | null>
+}
+/**
  * React hook to add panel views from other components (panel views are typically
  * contributed by Sourcegraph extensions)
  */
-export function useBuiltinPanelViews(
-    builtinPanels: { id: string; provider: Observable<BuiltinPanelView | null> }[]
-): void {
+export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
             builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
@@ -124,6 +143,10 @@ export const Panel = React.memo<Props>(props => {
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
+
+    const isExperimentalReferencePanelEnabled =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
 
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
@@ -169,6 +192,13 @@ export const Panel = React.memo<Props>(props => {
                                     .filter(panelView =>
                                         panelView.selector !== null ? match(panelView.selector, document) : true
                                     )
+                                    .filter(panelView =>
+                                        // If we use the new reference panel we don't want to display additional
+                                        // 'implementations_' panels
+                                        isExperimentalReferencePanelEnabled
+                                            ? !panelView.component?.locationProvider?.startsWith('implementations_')
+                                            : true
+                                    )
                                     .map((panelView: PanelViewWithComponent) => {
                                         const locationProviderID = panelView.component?.locationProvider
                                         const maxLocations = panelView.component?.maxLocationResults
@@ -202,7 +232,7 @@ export const Panel = React.memo<Props>(props => {
                         )
                     )
                 ),
-            [props.extensionsController]
+            [isExperimentalReferencePanelEnabled, props.extensionsController]
         )
     )
 
@@ -219,14 +249,17 @@ export const Panel = React.memo<Props>(props => {
         () =>
             panelViews
                 ? panelViews
-                      .map((panelView): PanelItem & { trackTabClick: () => void } => ({
-                          label: panelView.title,
-                          id: panelView.id,
-                          priority: panelView.priority,
-                          element: <PanelView {...props} panelView={panelView} location={location} />,
-                          hasLocations: !!panelView.locationProvider,
-                          trackTabClick: () => trackTabClick(panelView.title),
-                      }))
+                      .map(
+                          (panelView): PanelItem => ({
+                              label: panelView.title,
+                              id: panelView.id,
+                              priority: panelView.priority,
+                              element: <PanelView {...props} panelView={panelView} location={location} />,
+                              hasLocations: !!panelView.locationProvider,
+                              trackTabClick: () => trackTabClick(panelView.title),
+                              matchesTabID: panelView.matchesTabID,
+                          })
+                      )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
         [location, panelViews, props, trackTabClick]
@@ -245,7 +278,9 @@ export const Panel = React.memo<Props>(props => {
     )
 
     useEffect(() => {
-        setTabIndex(items.findIndex(({ id }) => id === currentTabID))
+        setTabIndex(
+            items.findIndex(({ id, matchesTabID }) => (matchesTabID ? matchesTabID(currentTabID) : id === currentTabID))
+        )
     }, [items, hash, currentTabID])
 
     if (!areExtensionsReady) {
@@ -260,57 +295,60 @@ export const Panel = React.memo<Props>(props => {
 
     return (
         <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
-            <div className="sticky-top">
-                <TabList
-                    wrapperClassName={styles.header}
-                    actions={
-                        <div className="align-items-center d-flex">
-                            {activeTab && (
-                                <ActionsNavItems
-                                    {...props}
-                                    // TODO remove references to Bootstrap from shared, get class name from prop
-                                    // This is okay for now because the Panel is currently only used in the webapp
-                                    listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                    listItemClass="px-2 mx-2"
-                                    actionItemClass="font-weight-medium"
-                                    actionItemIconClass="icon-inline"
-                                    menu={ContributableMenu.PanelToolbar}
-                                    scope={{
-                                        type: 'panelView',
-                                        id: activeTab.id,
-                                        hasLocations: Boolean(activeTab.hasLocations),
-                                    }}
-                                    wrapInList={true}
-                                    location={location}
-                                    transformContributions={transformPanelContributions}
-                                />
-                            )}
-                            <Button
-                                onClick={handlePanelClose}
-                                variant="icon"
-                                className={classNames('ml-2', styles.dismissButton)}
-                                title="Close panel"
-                                data-tooltip="Close panel"
-                                data-placement="left"
-                            >
-                                <CloseIcon className="icon-inline" />
-                            </Button>
-                        </div>
-                    }
-                >
-                    {items.map(({ label, id, trackTabClick }) => (
-                        <Tab key={id}>
-                            <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
-                                {label}
-                            </span>
-                        </Tab>
-                    ))}
-                </TabList>
-            </div>
-            <TabPanels className={styles.tabs}>
+            <TabList
+                wrapperClassName={classNames(styles.panelHeader, 'sticky-top')}
+                actions={
+                    <div className="align-items-center d-flex">
+                        {activeTab && (
+                            <ActionsNavItems
+                                {...props}
+                                // TODO remove references to Bootstrap from shared, get class name from prop
+                                // This is okay for now because the Panel is currently only used in the webapp
+                                listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                listItemClass="px-2 mx-2"
+                                actionItemClass="font-weight-medium"
+                                actionItemIconClass="icon-inline"
+                                menu={ContributableMenu.PanelToolbar}
+                                scope={{
+                                    type: 'panelView',
+                                    id: activeTab.id,
+                                    hasLocations: Boolean(activeTab.hasLocations),
+                                }}
+                                wrapInList={true}
+                                location={location}
+                                transformContributions={transformPanelContributions}
+                            />
+                        )}
+                        <Button
+                            onClick={handlePanelClose}
+                            variant="icon"
+                            className={classNames('ml-2', styles.dismissButton)}
+                            title="Close panel"
+                            data-tooltip="Close panel"
+                            data-placement="left"
+                        >
+                            <Icon as={CloseIcon} />
+                        </Button>
+                    </div>
+                }
+            >
+                {items.map(({ label, id, trackTabClick }, index) => (
+                    <Tab key={id} index={index}>
+                        <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
+                            {label}
+                        </span>
+                    </Tab>
+                ))}
+            </TabList>
+            <TabPanels>
                 {activeTab ? (
-                    items.map(({ id, element }) => (
-                        <TabPanel key={id} className={styles.tabsContent} data-testid="panel-tabs-content">
+                    items.map(({ id, element }, index) => (
+                        <TabPanel
+                            index={index}
+                            key={id}
+                            className={styles.tabsContent}
+                            data-testid="panel-tabs-content"
+                        >
                             {id === activeTab.id ? element : null}
                         </TabPanel>
                     ))

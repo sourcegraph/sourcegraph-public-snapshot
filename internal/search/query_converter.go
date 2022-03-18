@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	zoekt "github.com/google/zoekt/query"
@@ -76,17 +77,6 @@ func mapSlice(values []string, f func(string) string) []string {
 	return result
 }
 
-func IncludeExcludeValues(q query.Basic, field string) (include, exclude []string) {
-	q.VisitParameter(field, func(v string, negated bool, _ query.Annotation) {
-		if negated {
-			exclude = append(exclude, v)
-		} else {
-			include = append(include, v)
-		}
-	})
-	return include, exclude
-}
-
 func count(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
@@ -117,14 +107,14 @@ const (
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
+func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
-	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
+	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
-	langInclude, langExclude := IncludeExcludeValues(q, query.FieldLang)
+	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
 
@@ -132,16 +122,6 @@ func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 	// TextPatternInfo must be set true. The logic assumes that a literal
 	// pattern is an escaped regular expression.
 	isRegexp := q.IsLiteral() || q.IsRegexp()
-
-	var pattern string
-	if p, ok := q.Pattern.(query.Pattern); ok {
-		if q.IsLiteral() {
-			// Escape regexp meta characters if this pattern should be treated literally.
-			pattern = regexp.QuoteMeta(p.Value)
-		} else {
-			pattern = p.Value
-		}
-	}
 
 	if q.Pattern == nil {
 		// For compatibility: A nil pattern implies isRegexp is set to
@@ -160,7 +140,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 		IsStructuralPat: q.IsStructural(),
 		IsCaseSensitive: q.IsCaseSensitive(),
 		FileMatchLimit:  int32(count),
-		Pattern:         pattern,
+		Pattern:         q.PatternString(),
 		IsNegated:       negated,
 
 		// Values dependent on parameters.
@@ -168,6 +148,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol) *TextPatternInfo {
 		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
+		PatternMatchesPath:           resultTypes.Has(result.TypePath),
+		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,
 		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
 		CombyRule:                    q.FindValue(query.FieldCombyRule),
@@ -303,7 +285,10 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 	if err != nil {
 		return nil, err
 	}
+	return WithZoektParameters(q, p, feat, typ)
+}
 
+func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
 	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
@@ -371,4 +356,22 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
+}
+
+// ComputeResultTypes returns result types based three inputs: `type:...` in the query,
+// the `pattern`, and top-level `searchType` (coming from a GQL value).
+func ComputeResultTypes(types []string, pattern string, searchType query.SearchType) result.Types {
+	var rts result.Types
+	if searchType == query.SearchTypeStructural && pattern != "" {
+		rts = result.TypeStructural
+	} else {
+		if len(types) == 0 {
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				rts = rts.With(result.TypeFromString[t])
+			}
+		}
+	}
+	return rts
 }

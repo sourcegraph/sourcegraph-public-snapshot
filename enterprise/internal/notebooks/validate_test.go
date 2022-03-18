@@ -19,6 +19,10 @@ func TestNotebookBlocksValidation(t *testing.T) {
 		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookQueryBlockType}}, wantErr: "invalid query block with id: id1"},
 		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookMarkdownBlockType}}, wantErr: "invalid markdown block with id: id1"},
 		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookFileBlockType}}, wantErr: "invalid file block with id: id1"},
+		{blocks: NotebookBlocks{
+			{ID: "id1", SymbolInput: &NotebookSymbolBlockInput{LineContext: -10}, Type: NotebookSymbolBlockType},
+		}, wantErr: "symbol block line context cannot be negative, block id: id1"},
+		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookComputeBlockType}}, wantErr: "invalid compute block with id: id1"},
 	}
 
 	for _, tt := range tests {

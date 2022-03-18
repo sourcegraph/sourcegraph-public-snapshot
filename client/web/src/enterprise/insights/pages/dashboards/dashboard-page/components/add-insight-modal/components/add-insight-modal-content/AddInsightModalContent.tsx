@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Link } from '@sourcegraph/wildcard'
@@ -51,6 +52,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     )
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 autoFocus={true}

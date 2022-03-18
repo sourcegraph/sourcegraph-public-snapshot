@@ -89,6 +89,12 @@ func ScanFirstNullString(rows *sql.Rows, queryErr error) (_ string, _ bool, err 
 	return "", false, nil
 }
 
+// ScanInt is a convenience method to return an integer value and any query error from a given row object.
+func ScanInt(row *sql.Row) (int, error) {
+	var value int
+	return value, row.Scan(&value)
+}
+
 // ScanInts reads integer values from the given row object.
 func ScanInts(rows *sql.Rows, queryErr error) (_ []int, err error) {
 	if queryErr != nil {

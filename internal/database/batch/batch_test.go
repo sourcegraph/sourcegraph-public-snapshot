@@ -8,7 +8,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
+
+func init() {
+	checkBatchInserterInvariants = true
+}
 
 func TestBatchInserter(t *testing.T) {
 	db := dbtest.NewDB(t)
@@ -168,7 +173,7 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 		[]string{"col1", "col2", "col3", "col4", "col5"},
 		"",
 		[]string{"id"},
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			var id int
 			if err := rows.Scan(&id); err != nil {
 				return err
@@ -203,7 +208,7 @@ func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expected
 		[]string{"id", "col1", "col2", "col3", "col4", "col5"},
 		"ON CONFLICT DO NOTHING",
 		[]string{"id"},
-		func(rows *sql.Rows) error {
+		func(rows dbutil.Scanner) error {
 			var id int
 			if err := rows.Scan(&id); err != nil {
 				return err

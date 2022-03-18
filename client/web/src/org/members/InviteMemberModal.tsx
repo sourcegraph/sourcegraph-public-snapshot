@@ -1,18 +1,22 @@
+import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
+
 import { useMutation } from '@apollo/client'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { Component, FunctionComponent, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Input, Modal } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Link, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { INVITE_USERNAME_OR_EMAIL_TO_ORG_MUTATION } from './gqlQueries'
+import { AutocompleteSearchUsers } from './SearchUserAutocomplete'
+import { useQueryStringParameters } from './utils'
+
 import styles from './InviteMemberModal.module.scss'
 
 export interface IModalInviteResult {
@@ -24,18 +28,14 @@ export interface InviteMemberModalProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     onDismiss: () => void
+    showBetaBanner?: boolean
 }
 
 export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
-    const { orgName, orgId, onInviteSent, onDismiss } = props
-    const emailPattern = useRef(new RegExp(/^[\w!#$%&'*+./=?^`{|}~-]+@[A-Z_a-z]+?\.[A-Za-z]{2,3}$/))
+    const { orgName, orgId, onInviteSent, onDismiss, showBetaBanner } = props
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
     const title = `Invite a teammate to ${orgName}`
-
-    useEffect(() => {
-        setIsEmail(emailPattern.current.test(userNameOrEmail))
-    }, [userNameOrEmail])
 
     const [inviteUserToOrganization, { data, loading: isInviting, error }] = useMutation<
         InviteUserToOrganizationResult,
@@ -50,8 +50,9 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
         }
     }, [data, onDismiss, setUsernameOrEmail, onInviteSent, userNameOrEmail])
 
-    const onUsernameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setUsernameOrEmail(event.currentTarget.value)
+    const onValueChanged = useCallback((value: string, isEmail: boolean) => {
+        setUsernameOrEmail(value)
+        setIsEmail(isEmail)
     }, [])
 
     const inviteUser = useCallback(async () => {
@@ -59,7 +60,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             return
         }
 
-        eventLogger.log('InviteOrgMemberClicked', isEmail)
+        eventLogger.log('InviteOrganizationMemberClicked', { organizationId: orgId, isEmail })
         try {
             await inviteUserToOrganization({
                 variables: {
@@ -68,34 +69,43 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
                     email: isEmail ? userNameOrEmail : null,
                 },
             })
-            eventLogger.log('OrgMemberInvited')
+            eventLogger.log('InviteOrganizationMemberSucceeded', { organizationId: orgId })
         } catch {
-            eventLogger.log('OrgMemberInviteFailed')
+            eventLogger.log('InviteOrganizationMemberFailed', { organizationId: orgId })
         }
     }, [userNameOrEmail, orgId, inviteUserToOrganization, isEmail])
 
     const debounceInviteUser = debounce(inviteUser, 500, { leading: true })
 
+    const dismissWithLogging = useCallback(() => {
+        eventLogger.log('OrganizationInviteModalDismissed', { organizationId: orgId })
+        onDismiss()
+    }, [onDismiss, orgId])
+
     return (
-        <Modal className={styles.modal} onDismiss={onDismiss} position="center" aria-label={title}>
+        <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
                 <h3>{title}</h3>
-                <Button className={classNames('btn-icon', styles.closeButton)} onClick={onDismiss}>
+                <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
                     <CloseIcon />
                 </Button>
             </div>
             {error && <ErrorAlert className={styles.alert} error={error} />}
             <div className="d-flex flex-row position-relative mt-2">
-                <Input
-                    autoFocus={true}
-                    value={userNameOrEmail}
-                    label="Email address or username"
-                    title="Email address or username"
-                    onChange={onUsernameChange}
-                    status={isInviting ? 'loading' : error ? 'error' : undefined}
-                />
+                <AutocompleteSearchUsers onValueChanged={onValueChanged} disabled={isInviting} orgId={orgId} />
             </div>
+            {showBetaBanner && (
+                <div className="d-flex flex-row position-relative mt-2">
+                    <small>
+                        <span className="text-muted">
+                            During open beta for Sourcegraph Cloud for small teams, all members invited to your
+                            organization will be admins for your organization.{' '}
+                        </span>
+                        <Link to="#">Learn more.</Link>
+                    </small>
+                </div>
+            )}
             <div className="d-flex justify-content-end mt-4">
                 <Button type="button" variant="primary" onClick={debounceInviteUser} disabled={isInviting}>
                     Send invite
@@ -127,7 +137,7 @@ export const InvitedNotification: React.FunctionComponent<InvitedNotificationPro
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <CloseIcon className="icon-inline" />
+            <Icon as={CloseIcon} />
         </Button>
     </Alert>
 )
@@ -138,16 +148,23 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
     as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
+    initiallyOpened?: boolean
+    eventLoggerEventName?: string
 }
 export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModalButtonProps> = (
     props: InviteMemberModalButtonProps
 ) => {
-    const { orgName, orgId, onInviteSent, triggerLabel, as, ...rest } = props
-    const [modalOpened, setModalOpened] = React.useState<boolean>()
+    const query = useQueryStringParameters()
+    const showBetaBanner = !!query.get('openBetaBanner')
+    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, eventLoggerEventName, ...rest } = props
+    const [modalOpened, setModalOpened] = React.useState<boolean>(!!initiallyOpened)
 
     const onInviteClick = useCallback(() => {
         setModalOpened(true)
-    }, [setModalOpened])
+        if (eventLoggerEventName) {
+            eventLogger.log(eventLoggerEventName, { organizationId: orgId })
+        }
+    }, [setModalOpened, orgId, eventLoggerEventName])
 
     const onCloseIviteModal = useCallback(() => {
         setModalOpened(false)
@@ -165,6 +182,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModal
                     orgName={orgName}
                     onInviteSent={onInviteSent}
                     onDismiss={onCloseIviteModal}
+                    showBetaBanner={showBetaBanner}
                 />
             )}
         </>

@@ -80,18 +80,30 @@ func TestSearch(t *testing.T) {
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
 	})
+
+	streamClient := &gqltestutil.SearchStreamClient{Client: client}
 	t.Run("stream", func(t *testing.T) {
-		testSearchClient(t, &gqltestutil.SearchStreamClient{
-			Client: client,
-		})
+		testSearchClient(t, streamClient)
 	})
 
 	testSearchOther(t)
+
+	// This test runs after all others because its adds a npm external service
+	// which expands the set of repositories in the instance. All previous tests
+	// assume only the repos from gqltest-github-search exist.
+	//
+	// Adding and deleting the npm external service in between all other tests is
+	// flaky since deleting an external service doesn't cancel a running external
+	// service sync job for it.
+	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
 // based search API. It only supports the methods that streaming supports.
 type searchClient interface {
+	AddExternalService(input gqltestutil.AddExternalServiceInput) (string, error)
+	DeleteExternalService(id string) error
+
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
@@ -101,7 +113,10 @@ type searchClient interface {
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
+
 	Repository(repositoryName string) (*gqltestutil.Repository, error)
+	WaitForReposToBeCloned(repos ...string) error
+
 	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
 	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
 	DeleteSearchContext(id string) error
@@ -1143,9 +1158,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 0},
 			},
 			{
-				`repo contains respects parameters that affect repo search (fork)`,
-				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
-				counts{Repo: 1},
+				name:   `repo contains respects parameters that affect repo search (fork)`,
+				query:  `repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
@@ -1163,19 +1178,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 6},
 			},
 			{
-				`repo has commit after`,
-				`repo:go-diff repo:contains.commit.after(10 years ago)`,
-				counts{Repo: 1},
+				name:   `repo has commit after`,
+				query:  `repo:go-diff repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`repo has commit after no results`,
-				`repo:go-diff repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `repo has commit after no results`,
+				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 			{
-				`unscoped repo has commit after no results`,
-				`repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `unscoped repo has commit after no results`,
+				query:  `repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 		}
 
@@ -1339,6 +1354,97 @@ func testSearchClient(t *testing.T, client searchClient) {
 			})
 		}
 	})
+}
+
+func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Helper()
+
+		_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindNpmPackages,
+			DisplayName: "gqltest-npm-search",
+			Config: mustMarshalJSONString(&schema.NpmPackagesConnection{
+				Registry: "https://registry.npmjs.org",
+				Dependencies: []string{
+					"urql@2.2.0", // We're searching the dependencies of this repo.
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = client.WaitForReposToBeCloned("npm/urql")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, tc := range []struct {
+			name   string
+			client searchClient
+		}{
+			{"graphql", client},
+			{"stream", streamClient},
+		} {
+			tc := tc
+			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
+				began := time.Now()
+
+				const query = `r:deps(^npm/urql$@v2.2.0) r:core|wonka`
+
+				want := []string{
+					"/npm/urql/core@v1.9.2",
+					"/npm/wonka@v4.0.7",
+				}
+
+				for {
+					results, err := tc.client.SearchRepositories(query)
+					require.NoError(t, err)
+
+					var have []string
+					for _, r := range results {
+						have = append(have, r.URL)
+					}
+
+					sort.Strings(have)
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						if time.Since(began) >= time.Minute {
+							t.Fatalf("missing repositories after 1m: %v", diff)
+						}
+
+						t.Logf("still missing repositories: %v", diff)
+						time.Sleep(time.Second)
+						continue
+					}
+					break
+				}
+			})
+
+			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
+				const query = `r:deps(^npm/urql$@v2.2.0) split`
+				results, err := tc.client.SearchFiles(query)
+
+				require.NoError(t, err)
+				require.NotEmpty(t, results.Results)
+				require.NotZero(t, results.MatchCount)
+				require.Nil(t, results.Alert)
+			})
+
+			t.Run(tc.name+"/"+"alert", func(t *testing.T) {
+				const query = `r:deps(^npm/urqLOL$) split`
+				results, err := tc.client.SearchFiles(query)
+
+				require.NoError(t, err)
+				require.Empty(t, results.Results)
+				require.Zero(t, results.MatchCount)
+				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
+					Title:       "No dependency repositories found",
+					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+				})
+			})
+		}
+	}
 }
 
 // testSearchOther other contains search tests for parts of the GraphQL API

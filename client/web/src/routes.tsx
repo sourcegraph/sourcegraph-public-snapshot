@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -8,10 +9,10 @@ import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import { GlobalCoolCodeIntelProps } from './global/CoolCodeIntel'
 import type { LayoutProps } from './Layout'
 import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
+import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
 import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
@@ -38,8 +39,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ExtensionAlertProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps,
-        GlobalCoolCodeIntelProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -170,6 +170,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             ),
 
         exact: true,
+    },
+    {
+        path: PageRoutes.InstallGitHubAppSuccess,
+        render: () => <InstallGitHubAppSuccessPage />,
     },
     {
         path: PageRoutes.Settings,

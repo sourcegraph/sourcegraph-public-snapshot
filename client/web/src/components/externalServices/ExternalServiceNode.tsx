@@ -1,12 +1,13 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import React, { useCallback, useState } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -52,7 +53,7 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                 <div>
                     {node.namespace && (
                         <>
-                            <AccountIcon className="icon-inline" />
+                            <Icon as={AccountIcon} />
                             <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
                         </>
                     )}
@@ -67,7 +68,7 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                         size="sm"
                         as={Link}
                     >
-                        <SettingsIcon className="icon-inline" /> Edit
+                        <Icon as={SettingsIcon} /> Edit
                     </Button>{' '}
                     <Button
                         className="test-delete-external-service-button"
@@ -77,7 +78,7 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                         variant="danger"
                         size="sm"
                     >
-                        <DeleteIcon className="icon-inline" />
+                        <Icon as={DeleteIcon} />
                     </Button>
                 </div>
             </div>

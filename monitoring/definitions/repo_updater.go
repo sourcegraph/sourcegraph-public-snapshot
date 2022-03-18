@@ -112,7 +112,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "syncer_synced_repos",
 							Description: "repositories synced",
-							Query:       `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
+							Query:       `max(max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m])))`,
 							Warning: monitoring.Alert().LessOrEqual(0).
 								AggregateBy(monitoring.AggregatorMax).
 								For(syncDurationThreshold),
@@ -462,7 +462,7 @@ func RepoUpdater() *monitoring.Container {
 			shared.Batches.NewServiceGroup(containerName),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNPMGroup(containerName),
+			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),

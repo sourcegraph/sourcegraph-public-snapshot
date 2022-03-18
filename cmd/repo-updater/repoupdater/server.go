@@ -192,7 +192,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	var sourcer repos.Sourcer
 	if sourcer = s.Sourcer; sourcer == nil {
-		sourcer = repos.NewSourcer(httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
+		sourcer = repos.NewSourcer(database.NewDB(s.Handle().DB()), httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
 	}
 	src, err := sourcer(&types.ExternalService{
 		ID:          req.ExternalService.ID,
@@ -325,6 +325,11 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return nil, err
 	}
 
+	if s.Scheduler != nil && args.Update {
+		// Enqueue a high priority update for this repo.
+		s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+	}
+
 	repoInfo := protocol.NewRepoInfo(repo)
 
 	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
@@ -367,7 +372,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		respond(w, http.StatusBadRequest, errors.New("neither user and repo ids provided"))
+		respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
 		return
 	}
 

@@ -1,13 +1,14 @@
+import React, { useCallback, useState } from 'react'
+
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
-import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
@@ -59,8 +60,8 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
                 outline={true}
                 variant="danger"
             >
-                {isErrorLike(isDeleting) && <InformationIcon className="icon-inline" data-tooltip={isDeleting} />}
-                <DeleteIcon className="icon-inline" /> Delete
+                {isErrorLike(isDeleting) && <Icon data-tooltip={isDeleting} as={InformationIcon} />}
+                <Icon as={DeleteIcon} /> Delete
             </Button>
         )
     }
@@ -68,7 +69,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
         <div className="d-flex">
             {showEditButton && (
                 <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link}>
-                    <PencilIcon className="icon-inline" /> Edit
+                    <Icon as={PencilIcon} /> Edit
                 </Button>
             )}
             <Button
@@ -79,7 +80,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
                 outline={true}
                 as={Link}
             >
-                <DeleteIcon className="icon-inline" /> Close
+                <Icon as={DeleteIcon} /> Close
             </Button>
         </div>
     )

@@ -1,14 +1,13 @@
+import React from 'react'
+
 import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
-import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
-import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../mocks/settings-cascade'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent } from './LangStatsInsightCreationPage'
@@ -54,18 +53,9 @@ const codeInsightsBackend = {
     },
 }
 
-const SUBJECTS = [
-    createUserSubject('Emir Kusturica'),
-    createOrgSubject('Warner Brothers'),
-    createOrgSubject('Jim Jarmusch Org'),
-    createGlobalSubject('Global'),
-] as SupportedInsightSubject[]
-
 export const LangStatsInsightCreationPage: Story = () => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <LangStatsInsightCreationPageComponent
-            subjects={SUBJECTS}
-            visibility="user_test_id"
             telemetryService={NOOP_TELEMETRY_SERVICE}
             onInsightCreateRequest={fakeAPIRequest}
             onSuccessfulCreation={noop}
