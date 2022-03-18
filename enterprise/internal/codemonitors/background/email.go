@@ -66,7 +66,7 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 	codeMonitorURL := getCodeMonitorURL(args.ExternalURL, email.Monitor, utmSourceEmail)
 
 	if email.Priority == priorityCritical {
-		priority = " [Critical]"
+		priority = "[Critical] "
 	} else {
 		priority = ""
 	}
