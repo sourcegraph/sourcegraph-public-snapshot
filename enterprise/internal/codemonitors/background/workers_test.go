@@ -16,19 +16,19 @@ import (
 
 func TestActionRunner(t *testing.T) {
 	tests := []struct {
-		name               string
-		results            []*result.CommitMatch
-		wantNumResultsText string
+		name           string
+		results        []*result.CommitMatch
+		wantNumResults int
 	}{
 		{
-			name:               "5 results",
-			results:            make([]*result.CommitMatch, 5),
-			wantNumResultsText: "There were 5 new search results for your query",
+			name:           "5 results",
+			results:        make([]*result.CommitMatch, 5),
+			wantNumResults: 5,
 		},
 		{
-			name:               "1 result",
-			results:            make([]*result.CommitMatch, 1),
-			wantNumResultsText: "There was 1 new search result for your query",
+			name:           "1 result",
+			results:        make([]*result.CommitMatch, 1),
+			wantNumResults: 1,
 		},
 	}
 
@@ -80,14 +80,21 @@ func TestActionRunner(t *testing.T) {
 			err = a.Handle(ctx, record)
 			require.NoError(t, err)
 
-			want := TemplateDataNewSearchResults{
-				Priority:       "New",
-				SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
-				Description:    "test description",
-				CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
+			wantResultsPluralized := "results"
+			if tt.wantNumResults == 1 {
+				wantResultsPluralized = "result"
 			}
 
-			want.NumberOfResultsWithDetail = tt.wantNumResultsText
+			want := TemplateDataNewSearchResults{
+				Priority:         "",
+				SearchURL:        externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
+				Description:      "test description",
+				CodeMonitorURL:   externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
+				NumberOfResults:  tt.wantNumResults,
+				ResultPluralized: wantResultsPluralized,
+			}
+
+			want.NumberOfResults = tt.wantNumResults
 			require.Equal(t, want, got)
 		})
 	}

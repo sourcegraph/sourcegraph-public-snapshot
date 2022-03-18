@@ -15,12 +15,13 @@ func TestEmail(t *testing.T) {
 
 	t.Run("test message", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:                  "New",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
-			Description:               "My test monitor",
-			NumberOfResultsWithDetail: "There was 1 new search result for your query",
-			IsTest:                    true,
+			Priority:         "",
+			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
+			SearchURL:        "https://sourcegraph.com/search",
+			Description:      "My test monitor",
+			NumberOfResults:  1,
+			IsTest:           true,
+			ResultPluralized: "result",
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -41,17 +42,18 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "Test: [New event] My test monitor", buf.String())
+			require.Equal(t, "Test: Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("one result", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:                  "New",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
-			Description:               "My test monitor",
-			NumberOfResultsWithDetail: "There was 1 new search result for your query",
+			Priority:         "",
+			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
+			SearchURL:        "https://sourcegraph.com/search",
+			Description:      "My test monitor",
+			NumberOfResults:  1,
+			ResultPluralized: "result",
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -72,17 +74,18 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "[New event] My test monitor", buf.String())
+			require.Equal(t, "Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("multiple results", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:                  "New",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
-			Description:               "My test monitor",
-			NumberOfResultsWithDetail: "There was 1 new search result for your query",
+			Priority:         "",
+			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
+			SearchURL:        "https://sourcegraph.com/search",
+			Description:      "My test monitor",
+			NumberOfResults:  2,
+			ResultPluralized: "results",
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -103,7 +106,7 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "[New event] My test monitor", buf.String())
+			require.Equal(t, "Sourcegraph code monitor My test monitor detected 2 new results", buf.String())
 		})
 	})
 }

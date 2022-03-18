@@ -1,11 +1,8 @@
 {{ if .IsTest }}This email is a preview. Links are disabled.{{ end }}
 
-Code monitoring triggered a new event:
+Your Sourcegraph code monitor, {{.Description}}, detected {{.NumberOfResults}} new {{.ResultPluralized}}.
 
-{{.Description}}
-{{.NumberOfResultsWithDetail}}
-
-View search on Sourcegraph {{.SearchURL}}
+View search on Sourcegraph: {{.SearchURL}}
 
 __
 You are receiving this notification because you are a recipient on a code monitor.
