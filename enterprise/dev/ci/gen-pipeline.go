@@ -190,7 +190,7 @@ func renderPipelineDocs(w io.Writer) {
 				if err != nil {
 					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
 				}
-				fmt.Fprint(w, "\nDefault pipeline:\n\n")
+				fmt.Fprint(w, "\nBase pipeline (more steps might be included based on branch changes):\n\n")
 				for _, raw := range pipeline.Steps {
 					printStepSummary(w, "", raw)
 				}

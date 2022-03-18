@@ -65,7 +65,7 @@ The default run type.
 
 The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Trigger 3.38 release branch healthcheck build
 - Trigger 3.37 release branch healthcheck build
@@ -75,7 +75,7 @@ Default pipeline:
 
 The run type for environment including `{"BEXT_NIGHTLY":"true"}`.
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - ESLint
 - Build TS
@@ -90,7 +90,7 @@ Default pipeline:
 
 The run type for tags starting with `v`.
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg
@@ -109,7 +109,7 @@ Default pipeline:
 
 The run type for branches matching `^[0-9]+\.[0-9]+$` (regexp match).
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image, Build docker registry mirror image
@@ -128,7 +128,7 @@ Default pipeline:
 
 The run type for branches matching `bext/release` (exact match).
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - ESLint
 - Build TS
@@ -146,7 +146,7 @@ Default pipeline:
 
 The run type for branches matching `main` (exact match).
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image
@@ -170,7 +170,7 @@ You can create a build of this run type for your changes using:
 sg ci build main-dry-run
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image
@@ -212,7 +212,7 @@ You can create a build of this run type for your changes using:
 sg ci build docker-images-candidates-notest
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Build alpine-3.12
 - Build alpine-3.14
@@ -254,7 +254,7 @@ You can create a build of this run type for your changes using:
 sg ci build executor-patch-notest
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Build executor image
 - Publish executor image
@@ -271,7 +271,7 @@ You can create a build of this run type for your changes using:
 sg ci build backend-integration
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Build server
 - Backend integration tests
