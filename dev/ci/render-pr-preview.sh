@@ -48,7 +48,7 @@ while getopts 'b:r:d' flag; do
 done
 
 if [[ "$repo_url" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
-  owner_and_repo=$(echo "${BASH_REMATCH[2]//\.git/}")
+  owner_and_repo="${BASH_REMATCH[2]//\.git/}"
 else
   echo "Couldn't find owner_and_repo"
   exit 1
