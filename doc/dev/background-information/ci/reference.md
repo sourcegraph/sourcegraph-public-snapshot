@@ -275,9 +275,7 @@ Default pipeline:
 
 - Build server
 - Backend integration tests
-- **Linters and static analysis**: Prettier, Misc linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Docker linters, Checkov Terraform scanning, Check and build docsite
-- **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Puppeteer tests for chrome extension, Test (client/browser), ESLint, Build TS, Stylelint
+- **Linters and static analysis**: Prettier, Misc linters
 - **Go checks**: Test (all), Test (enterprise/internal/codeintel/stores/dbstore), Test (enterprise/internal/codeintel/stores/lsifstore), Test (enterprise/internal/insights), Test (internal/database), Test (internal/repos), Test (enterprise/internal/batches), Test (cmd/frontend), Test (enterprise/internal/database), Test (enterprise/cmd/frontend/internal/batches/resolvers), Build
 - **DB backcompat tests**: Backcompat test (all), Backcompat test (enterprise/internal/codeintel/stores/dbstore), Backcompat test (enterprise/internal/codeintel/stores/lsifstore), Backcompat test (enterprise/internal/insights), Backcompat test (internal/database), Backcompat test (internal/repos), Backcompat test (enterprise/internal/batches), Backcompat test (cmd/frontend), Backcompat test (enterprise/internal/database), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers)
-- **CI script tests**: test-trace-command.sh
 - Upload build trace
