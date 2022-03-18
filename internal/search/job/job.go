@@ -55,7 +55,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	types, _ := q.StringValues(query.FieldType)
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
 
-	args := toTextParameters(jargs, b, q, resultTypes)
+	args := toTextParameters(jargs, b, resultTypes)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
@@ -224,7 +224,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				required = resultTypes.Without(result.TypeCommit) == 0
 			}
 			addJob(required, &commit.CommitSearch{
-				Query:                commit.QueryToGitQuery(args.Query, diff),
+				Query:                commit.QueryToGitQuery(q, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
@@ -304,7 +304,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				}
 
 				opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
-				opts.CaseSensitiveRepoFilters = args.Query.IsCaseSensitive()
+				opts.CaseSensitiveRepoFilters = q.IsCaseSensitive()
 
 				patternPrefix := strings.SplitN(pattern, "@", 2)
 				if len(patternPrefix) == 1 {
@@ -351,6 +351,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					args.RepoOptions = repoOptions
 					args.Features = features
 					args.UseFullDeadline = useFullDeadline
+					args.Query = q
 					if repoUniverseSearch {
 						args.Mode = search.ZoektGlobalSearch
 					}
@@ -382,8 +383,8 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	return job, nil
 }
 
-func toTextParameters(jargs *Args, b query.Basic, q query.Q, resultTypes result.Types) search.TextParameters {
-	args := search.TextParameters{Query: q}
+func toTextParameters(jargs *Args, b query.Basic, resultTypes result.Types) search.TextParameters {
+	args := search.TextParameters{}
 
 	args.PatternInfo = search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
 	if args.PatternInfo.Pattern == "" {
