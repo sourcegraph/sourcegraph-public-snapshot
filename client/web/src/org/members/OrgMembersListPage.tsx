@@ -81,13 +81,13 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     >(ORG_MEMBER_REMOVE_MUTATION)
 
     const onRemoveClick = useCallback(async () => {
-        eventLogger.log('RemoveFromOrganizationClicked', { organizationId: orgId })
+        eventLogger.log('RemoveFromOrganizationClicked', { organizationId: orgId }, { organizationId: orgId })
         if (window.confirm(isSelf ? 'Leave the organization?' : `Remove the user ${member.username}?`)) {
-            eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId })
+            eventLogger.log('RemoveFromOrganizationConfirmed', { organizationId: orgId }, { organizationId: orgId })
             await removeUserFromOrganization({ variables: { organization: orgId, user: member.id } })
             onMemberRemoved(member.username)
         } else {
-            eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId })
+            eventLogger.log('RemoveFromOrganizationDismissed', { organizationId: orgId }, { organizationId: orgId })
         }
     }, [isSelf, member.username, removeUserFromOrganization, onMemberRemoved, member.id, orgId])
 
@@ -187,7 +187,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     const setPageWithEventLogging = useCallback(
         (index: number) => {
             setPage(index)
-            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id })
+            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id }, { organizationId: org.id })
         },
         [setPage, org.id]
     )
