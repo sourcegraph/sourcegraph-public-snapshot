@@ -120,11 +120,13 @@ function launchVSC(executablePath: string, userDataDirectory: string, extensions
             `--user-data-dir=${userDataDirectory}`,
             `--extensions-dir=${extensionsDirectory}`,
             '--enable-logging',
+            '--skip-release-notes',
+            // https://github.com/microsoft/vscode-test/issues/120
+            '--disable-updates',
         ],
         {
-            detached: true,
             env: process.env,
-            stdio: ['pipe', 'pipe', 'pipe'],
+            stdio: 'inherit',
         }
     )
 }
