@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -33,7 +34,9 @@ var FeatureFlags = featureFlags{
 	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true" ||
 		// Always process retries on stateless agents.
 		// TODO: remove when we switch over entirely to stateless agents
-		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "",
+		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" ||
+		// Roll out to 75% of builds
+		rand.Uint32()%100 < uint32(75),
 }
 
 type Pipeline struct {
