@@ -124,7 +124,7 @@ func TestSyncRateLimiters(t *testing.T) {
 
 		// GitLab should have the infinite
 		gl := reg.Get(svcs[1].URN())
-		assert.Equal(t, rate.Limit(rate.Inf), gl.Limit())
+		assert.Equal(t, rate.Inf, gl.Limit())
 	})
 
 	t.Run("limit offset", func(t *testing.T) {
