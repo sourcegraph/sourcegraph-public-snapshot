@@ -1202,7 +1202,11 @@ FROM external_services es
                    ON es.id = essj.external_service_id
                        AND essj.state IN ('completed', 'errored', 'failed')
                        AND essj.finished_at IS NOT NULL
-WHERE ((es.namespace_user_id = %s) OR (%s AND es.namespace_user_id IS NULL))
+WHERE
+  (
+    (es.namespace_user_id = %s) OR
+    (%s AND es.namespace_user_id IS NULL AND es.namespace_org_id IS NULL)
+  )
   AND es.deleted_at IS NULL
   AND NOT es.cloud_default
 ORDER BY es.id, essj.finished_at DESC
