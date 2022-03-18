@@ -46,7 +46,7 @@ function go_test() {
     cp "./dev/ci/go-test-failures.richstyle.yml" $RICHGO_CONFIG
     mkdir -p ./annotations
     richgo testfilter <"$tmpfile" >>./annotations/go-test
-    rm -rf RICHGO_CONFIG
+    rm -rf $RICHGO_CONFIG
     set +x
   fi
 
@@ -69,11 +69,14 @@ if [ -n "$FILTER_ACTION" ]; then
   echo -e "--- :information_source: \033[0;34mFiltering go tests: $FILTER_ACTION $FILTER_TARGETS\033[0m"
 fi
 
-# Buildkite analytics
-
+echo "--- install tools"
 # https://github.com/sourcegraph/sourcegraph/issues/28469
 # TODO is that the best way to handle this?
 go install github.com/jstemmer/go-junit-report@latest
+# Install richgo for better output
+# This fork gives us the `anyStyle` configuration required to hide log lines
+go install github.com/jhchabran/richgo@installable
+# Reshim so that the above tools are available
 asdf reshim golang
 
 # For searcher
@@ -87,11 +90,6 @@ export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in som
 
 # Disable GraphQL logs which are wildly noisy
 export NO_GRAPHQL_LOG=true
-
-# Install richgo for better output
-# This fork gives us the `anyStyle` configuration required to hide log lines
-go install github.com/jhchabran/richgo@installable
-asdf reshim golang
 
 # Used to ignore directories (for example, when using submodules)
 #   (It appears to be unused, but it's actually used doing -v below)

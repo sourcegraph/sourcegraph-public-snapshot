@@ -148,13 +148,26 @@ const Step: React.FunctionComponent<{
     </li>
 )
 
-const InviteLink: React.FunctionComponent<{ orgName: string; membersCount: number }> = ({ membersCount, orgName }) => {
+const InviteLink: React.FunctionComponent<{ orgName: string; orgId: string; membersCount: number }> = ({
+    membersCount,
+    orgId,
+    orgName,
+}) => {
     const preText = membersCount === 1 ? 'It’s just you so far! ' : null
     const linkText = membersCount === 1 ? 'Invite your teammates' : 'Invite the rest of your teammates'
     return (
         <small>
             {preText}
-            <Link to={`/organizations/${orgName}/settings/members/pending-invites?openInviteModal=1&openBetaBanner=1`}>
+            <Link
+                to={`/organizations/${orgName}/settings/members/pending-invites?openInviteModal=1&openBetaBanner=1`}
+                onClick={() =>
+                    eventLogger.log(
+                        'OrganizationGetStartedInviteTeammatesCTAClicked',
+                        { organizationId: orgId },
+                        { organizationId: orgId }
+                    )
+                }
+            >
                 {linkText}
             </Link>
         </small>
@@ -213,8 +226,8 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
         (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled, isSourcegraphDotCom))
 
     useEffect(() => {
-        eventLogger.log('OpenBeta getting started')
-    }, [])
+        eventLogger.logViewEvent('OrganizationGetStarted', { organizationId: org.id })
+    }, [org.id])
 
     useEffect(() => {
         if (queryResult && !loading && !allowSearch) {
@@ -266,12 +279,26 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
                                             ? undefined
                                             : `/organizations/${org.name}/settings/code-hosts`
                                     }
+                                    onClick={() =>
+                                        eventLogger.log(
+                                            'OrganizationGetStartedCodeHostsClicked',
+                                            { organizationId: org.id },
+                                            { organizationId: org.id }
+                                        )
+                                    }
                                 />
                                 <Step
                                     label="Choose repositories to sync with Sourcegraph"
                                     complete={repoCompleted}
                                     textMuted={repoCompleted}
                                     to={repoCompleted ? undefined : `/organizations/${org.name}/settings/repositories`}
+                                    onClick={() =>
+                                        eventLogger.log(
+                                            'OrganizationGetStartedChooseRepositoriesClicked',
+                                            { organizationId: org.id },
+                                            { organizationId: org.id }
+                                        )
+                                    }
                                 />
                                 <Step
                                     label="Invite your teammates"
@@ -282,11 +309,25 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
                                             ? undefined
                                             : `/organizations/${org.name}/settings/members/pending-invites?openInviteModal=1&openBetaBanner=1`
                                     }
+                                    onClick={() =>
+                                        eventLogger.log(
+                                            'OrganizationGetStartedInviteTeammatesClicked',
+                                            { organizationId: org.id },
+                                            { organizationId: org.id }
+                                        )
+                                    }
                                 />
                                 <Step
                                     label={`Search across ${org.displayName || org.name}’s code`}
                                     complete={getSearchStepStatus(org.name) === 'complete'}
-                                    onClick={completeSearchStep}
+                                    onClick={() => {
+                                        eventLogger.log(
+                                            'OrganizationGetStartedSearchClicked',
+                                            { organizationId: org.id },
+                                            { organizationId: org.id }
+                                        )
+                                        completeSearchStep()
+                                    }}
                                     to={
                                         allowSearch ? `/search?q=context:%40${org.name}&patternType=literal` : undefined
                                     }
@@ -332,7 +373,11 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
                                         </div>
                                     )}
                                 </div>
-                                <InviteLink orgName={org.name} membersCount={queryResult.membersSummary.membersCount} />
+                                <InviteLink
+                                    orgName={org.name}
+                                    orgId={org.id}
+                                    membersCount={queryResult.membersSummary.membersCount}
+                                />
                             </div>
                         </div>
                     </div>
