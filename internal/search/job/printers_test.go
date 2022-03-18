@@ -250,7 +250,7 @@ func TestPrettyJSON(t *testing.T) {
       }
     },
     {
-      "Repo": {
+      "RepoSearch": {
         "Args": {
           "PatternInfo": {
             "Pattern": "bar",
