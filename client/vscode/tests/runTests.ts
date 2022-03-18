@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import childProcess from 'child_process'
-import { mkdtempSync } from 'fs'
+import { mkdtempSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
@@ -22,10 +24,14 @@ async function run(): Promise<void> {
 
         console.log('Starting VS Code', { vscodeExecutablePath, userDataDirectory, extensionsDirectory })
 
-        await installExtension(
-            '/Users/philipp/dev/sourcegraph/client/vscode/dist/sourcegraph-2.2.0.vsix',
-            extensionsDirectory
-        )
+        const extensionVersion: string = JSON.parse(readFileSync('package.json').toString()).version
+        if (typeof extensionVersion !== 'string' || extensionVersion === '') {
+            throw new Error('Could not extract extension version from client/vscode/package.json')
+        }
+
+        const extensionPackage = join(process.cwd(), 'dist', `sourcegraph-${extensionVersion}.vsix`)
+
+        await installExtension(extensionPackage, extensionsDirectory)
 
         vscodeProccess = launchVSC(vscodeExecutablePath, userDataDirectory, extensionsDirectory, PORT)
 
