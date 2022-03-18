@@ -313,7 +313,7 @@ func withAgentQueueDefaults(s *bk.Step) {
 		if bk.FeatureFlags.StatelessBuild {
 			s.Agents["queue"] = bk.AgentQueueJob
 		} else {
-			s.Agents["queue"] = bk.AgentQueueStandard
+			s.Agents["queue"] = bk.AgentQueueStateful
 		}
 	}
 

@@ -224,17 +224,6 @@ func expandUsernamesToEmails(ctx context.Context, db database.DB, values []strin
 	return expandedValues, nil
 }
 
-func HasTimeFilter(q query.Q) bool {
-	hasTimeFilter := false
-	if _, afterPresent := q.Fields()["after"]; afterPresent {
-		hasTimeFilter = true
-	}
-	if _, beforePresent := q.Fields()["before"]; beforePresent {
-		hasTimeFilter = true
-	}
-	return hasTimeFilter
-}
-
 func QueryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...))
 }

@@ -10,6 +10,7 @@ import Element.Border as Border
 import Element.Events
 import Element.Font as F
 import Element.Input as I
+import File.Download
 import Html exposing (Html, input, text)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, fail, field, maybe)
@@ -217,6 +218,7 @@ type Msg
     | OnDebounce
     | OnDataFilter DataFilterMsg
     | OnTabSelected Tab
+    | OnDownloadData
       -- Data processing
     | RunCompute
     | OnResults (List Result)
@@ -266,6 +268,15 @@ update msg model =
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
+
+        OnDownloadData ->
+            let
+                data =
+                    Dict.toList model.resultsMap
+                        |> List.map Tuple.second
+                        |> filterData model.dataFilter
+            in
+            ( model, File.Download.string "notebook-compute-data.txt" "text/plain" (String.join "\n" (List.map .name data)) )
 
         RunCompute ->
             if model.serverless then
@@ -342,17 +353,15 @@ table data =
             [ F.bold
             , F.size 12
             , F.color darkModeFontColor
-            , E.padding 5
-            , Border.widthEach { bottom = 1, top = 0, left = 0, right = 0 }
             ]
     in
-    E.el [ E.padding 100, E.centerX ]
+    E.el [ E.padding 10, E.centerX ]
         (E.table [ E.width E.fill ]
             { data = data
             , columns =
                 [ { header = E.el headerAttrs (E.text " ")
                   , width = E.fillPortion 2
-                  , view = \v -> E.el [ E.padding 5 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
+                  , view = \v -> E.el [ E.padding 10 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
                   }
                 , { header = E.el (headerAttrs ++ [ F.alignRight ]) (E.text "Count")
                   , width = E.fillPortion 1
@@ -363,7 +372,6 @@ table data =
                                 , F.size 12
                                 , F.color darkModeFontColor
                                 , F.alignRight
-                                , E.padding 5
                                 ]
                                 (E.text (String.fromFloat v.value))
                   }
@@ -397,9 +405,21 @@ histogram data =
 
 dataView : List DataValue -> E.Element Msg
 dataView data =
-    E.row []
-        [ E.el [ E.padding 10, E.alignLeft, E.width E.fill ]
+    E.row [ E.width E.fill ]
+        [ E.el [ E.padding 10, E.alignLeft ]
             (E.column [] (List.map (\d -> E.text d.name) data))
+        , E.el
+            [ E.paddingXY 0 10
+            , E.alignRight
+            , E.alignTop
+            ]
+            (I.button
+                [ Border.width 1
+                , Border.rounded 3
+                , E.padding 10
+                ]
+                { onPress = Just OnDownloadData, label = E.text "Download Data" }
+            )
         ]
 
 

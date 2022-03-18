@@ -61,7 +61,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 	// still relies on all of args. In time it should depend only on the bits it truly needs.
 	args.RepoOptions = repoOptions
 
-	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(args, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
+	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []Job
 	addJob := func(required bool, job Job) {
@@ -222,7 +222,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Query:                commit.QueryToGitQuery(args.Query, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
-				HasTimeFilter:        commit.HasTimeFilter(args.Query),
+				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 				Gitserver:            gitserver.DefaultClient,
@@ -281,12 +281,13 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				}
 
 				// Don't run a repo search if the search contains fields that aren't on the allowlist.
-				for field := range args.Query.Fields() {
+				exists := true
+				query.VisitParameter(q, func(field, _ string, _ bool, _ query.Annotation) {
 					if _, ok := fieldAllowlist[field]; !ok {
-						return false
+						exists = false
 					}
-				}
-				return true
+				})
+				return exists
 			}
 
 			// returns an updated RepoOptions if the pattern part of a query can be used to
@@ -448,13 +449,13 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	}
 }
 
-func jobMode(args search.TextParameters, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
+func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
 			return false
 		}
 
-		return query.ForAll(args.Query, func(node query.Node) bool {
+		return query.ForAll(b.ToParseTree(), func(node query.Node) bool {
 			n, ok := node.(query.Parameter)
 			if !ok {
 				return true
@@ -474,8 +475,11 @@ func jobMode(args search.TextParameters, resultTypes result.Types, st query.Sear
 	}
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
-	isIndexedSearch := args.PatternInfo.Index != query.No
-	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
+	isIndexedSearch := b.Index() != query.No
+	noPattern := b.PatternString() == ""
+	noFile := !b.Exists(query.FieldFile)
+	noLang := !b.Exists(query.FieldLang)
+	isEmpty := noPattern && noFile && noLang
 
 	repoUniverseSearch = isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty
 	// skipRepoSubsetSearch is a value that controls whether to
