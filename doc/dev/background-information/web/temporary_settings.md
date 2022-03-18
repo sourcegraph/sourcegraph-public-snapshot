@@ -21,7 +21,7 @@ between temporary settings and site settings:
 | Cascades from global to org to users | ✅  | ❌ |
 | Persisted across sessions | ✅  | ✅ |
 | Stored for unauthenticated users | ❌ <br /> (will use global site settings) | ✅ |
-| Typed schema | ✅  <br /> (in [`settings.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/settings.schema.json))| ✅  <br /> (in [`TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/settings/temporary/TemporarySettings.ts))|
+| Typed schema | ✅  <br /> (in [`settings.schema.json`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/settings.schema.json))| ✅  <br /> (in [`TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/settings/temporary/TemporarySettings.ts))|
 | Available in Go code | ✅  | ❌ |
 
 
@@ -51,14 +51,14 @@ Examples of data that should not be stored as temporary settings include:
 
 ### Update schema
 
-Update the interface [`TemporarySettingsSchema` in `TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/settings/temporary/TemporarySettings.ts?L8:18)
+Update the interface [`TemporarySettingsSchema` in `TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/settings/temporary/TemporarySettings.ts?L8)
 by adding a key for the setting you want to store. The key should be namespaced based on
 the area of the site that will be using the settings. Example names include `'search.collapsedSidebarSections'`
 or `'codeInsights.hiddenCharts'`. The value of the setting can be any JSON-serializable type.
 
 ### Getting and setting settings
 
-Use the React hook [`useTemporarySetting`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/settings/temporary/useTemporarySetting.ts?L14:33)
+Use the React hook [`useTemporarySetting`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/settings/temporary/useTemporarySetting.ts)
 to get an up-to-date value of the setting and a function that can update the value,
 similar to other hooks like `useState`. The value will be updated automatically if
 the user's authentication state changes or the setting is modified elsewhere in the
