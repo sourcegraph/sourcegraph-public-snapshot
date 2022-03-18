@@ -192,8 +192,8 @@
   },
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "test": "echo \"No tests exist yet\" && exit 1",
-    "package": "echo \"package script not implemented yet\" && exit 1",
+    "test": "ts-node ./test/runTest.ts",
+    "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build": "yarn task:gulp webpack",
     "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
@@ -203,6 +203,15 @@
   },
   "dependencies": {
     "https-browserify": "^1.0.0",
-    "stream-http": "^3.2.0"
+    "stream-http": "^3,.2.0"
+  },
+  "devDependencies": {
+    "@types/puppeteer": "^5.4.5",
+    "@types/request-promise-native": "^1.0.18",
+    "@vscode/test-electron": "^2.1.3",
+    "puppeteer": "^13.5.1",
+    "request-promise-native": "^1.0.9",
+    "ts-node": "^10.7.0",
+    "vsce": "^2.7.0"
   }
 }
