@@ -147,7 +147,6 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 
 // TODO Use openTelemetry https://github.com/sourcegraph/sourcegraph/issues/27386
 func newTracer(opts *options, prevTracer tracerType) (opentracing.Tracer, io.Closer, error) {
-	fmt.Printf("%#v\n", opts)
 	if opts.tracerType == None {
 		log15.Info("tracing disabled")
 		if prevTracer == Datadog {
@@ -172,7 +171,6 @@ func newTracer(opts *options, prevTracer tracerType) (opentracing.Tracer, io.Clo
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
 	}
-	fmt.Printf("%#v\n", cfg)
 	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: version.Version()})
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
