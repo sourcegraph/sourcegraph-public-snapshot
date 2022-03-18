@@ -5,14 +5,8 @@ import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
-import { ReachableInsight } from '../../../../../core/backend/code-insights-backend-types'
-import {
-    InsightsDashboardType,
-    InsightsDashboardScope,
-    CustomInsightDashboard,
-    InsightExecutionType,
-    InsightType,
-} from '../../../../../core/types'
+import { AccessibleInsightInfo } from '../../../../../core/backend/code-insights-backend-types'
+import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -36,72 +30,29 @@ const dashboard: CustomInsightDashboard = {
     },
 }
 
-const mockInsights: ReachableInsight[] = [
+const mockInsights: AccessibleInsightInfo[] = [
     {
         id: 'searchInsights.insight.personalGraphQLTypesMigration',
         title: '[Personal] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'user_test_id',
-            name: 'test',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg1graphQLTypesMigration',
         title:
             '[Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types [Test ORG 1] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_1_id',
-            name: 'Test organization 1 Test organization 1 Test organization 1',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg1graphQLTypesMigration1',
         title: '[Test ORG 1] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_1_id',
-            name: 'Test organization 1 Test organization 1 Test organization 1',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg1graphQLTypesMigration2',
         title: '[Test ORG 1] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_1_id',
-            name: 'Test organization 1 Test organization 1 Test organization 1',
-        },
     },
     {
         id: 'searchInsights.insight.testOrg2graphQLTypesMigration',
         title: '[Test ORG 2] Migration to new GraphQL TS types',
-        repositories: ['github.com/sourcegraph/sourcegraph'],
-        series: [],
-        step: { weeks: 6 },
-        owner: {
-            id: 'test_org_2_id',
-            name: 'Test organization 2',
-        },
     },
-].map(insight => ({
-    ...insight,
-    dashboardReferenceCount: 0,
-    otherThreshold: 0,
-    query: '',
-    type: InsightExecutionType.Backend,
-    viewType: InsightType.SearchBased,
-    visibility: 'global',
-}))
+]
 
 const codeInsightsBackend = {
     getReachableInsights: () => of(mockInsights),
