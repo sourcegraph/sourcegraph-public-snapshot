@@ -346,9 +346,49 @@ function useCodeMirror(
     return view
 }
 
-// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 // The remainder of the file defines all the extensions that provide the query
-// editor behavior.
+// editor behavior. Here is also a brief overview over Codemirror's architecture
+// to make more sense of this (see https://codemirror.net/6/docs/guide/ for more
+// details):
+//
+// In its own words, Codemirror has a "Functional Core" and an "Imperative
+// Shell". Updates to the editor's state are performed via transactions and
+// produce a new state. This new state is passed to the editor's view, which in
+// turn updates itself according to the new state.
+//
+// Almost all behavior is implemented via extensions. There are various types of
+// extensions and sometimes multiple different types are needed to implement
+// some functionality:
+//
+// - Transaction filters can inspect transactions to change them or remove them.
+// - StateFields store arbitrary values, often some form of configuration. The
+// value of a state field can be updated via transactions. The fields can be
+// accessed anywhere where there is access to the field object and to the
+// editor's state.
+// - StateEffects are a way to update a StateField's value. A StateField can
+// inspect a transaction to see whether it has a specific effect and extact the
+// value from the effect.
+// This implementation uses this to update the query parsing options that are
+// passed to the editor from the outer component.
+// - Facets provide external extension points and allow aggregation of multiple
+// inputs into a single output value. They also make it possible to derive
+// values from the editor's current state. A concrete example is the built-in
+// `EditorView.decorations` facet. A new extension can be created by calling the
+// facets `compute` method, which will compute a new list of decorations based
+// on the editor's current state.
+// This is how the query syntax highlighting and diagnostic decorations are
+// implemented.
+// As another example, the diagnostics information is also stored in a facet.
+// We could eventually have multiple sources that compute diagnostics
+// information (which gets combined into a single list). The extension which
+// computes the diagnostics decorations doesn't (need to) know where all the
+// information came from.
+// - ViewPlugins provide a way to extend the editor's UI in various ways. They
+// can access the editor's current state and update decorations or DOM elements
+// based on it.
+//
+// Sometimes it's not always obvious which type of extension to use to achieve a
+// certain goal (and I don't claim that the implementation below is optimal).
 
 // Enforces that the input won't split over multiple lines (basically prevents
 // Enter from inserting a new line)
@@ -417,7 +457,8 @@ const decoratedToDecoration = (token: DecoratedToken): Decoration => {
     return tokenDecorators[cssClass] ?? emptyDecorator
 }
 
-// Editor state to keep information about how to parse the query
+// Editor state to keep information about how to parse the query. Can be updated
+// with the `setQueryOptions` effect.
 const queryParsingOptions = StateField.define<{ patternType: SearchPatternType; interpretComments?: boolean }>({
     create() {
         return {
@@ -433,7 +474,6 @@ const queryParsingOptions = StateField.define<{ patternType: SearchPatternType; 
         return value
     },
 })
-// Effect to update the the selected pattern type
 const setQueryOptions = StateEffect.define<{ patternType: SearchPatternType; interpretComments?: boolean }>()
 
 interface ParsedQuery {
@@ -566,7 +606,7 @@ const tokenInfo = hoverTooltip(
 
 // Hooks query diagnostics into the editor.
 // The facet stores the diagnostics data which is used by the text decoration
-// extension and the tooltip extensions respectively.
+// and the tooltip extensions.
 const diagnostics = Facet.define<Monaco.IMarkerData[], Monaco.IMarkerData[]>({
     combine: markerData => markerData.flat(),
 })
@@ -621,7 +661,7 @@ const autocomplete = (
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>,
     options: { globbing: boolean; isSourcegraphDotCom: boolean }
 ): Extension[] => [
-    // Uses the default keymapping by changes accepting suggestions from Enter
+    // Uses the default keymapping but changes accepting suggestions from Enter
     // to Tab
     Prec.highest(
         keymap.of(
