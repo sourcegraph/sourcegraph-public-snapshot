@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -138,7 +139,7 @@ type ClientImplementor struct {
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(context.Context, api.RepoName) string
+	AddrForRepo(context.Context, api.RepoName) (string, error)
 
 	Addrs() []string
 
@@ -147,7 +148,7 @@ type Client interface {
 
 	// ArchiveURL returns a URL from which an archive of the given Git repository can
 	// be downloaded from.
-	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) *url.URL
+	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
@@ -229,12 +230,12 @@ func (c *ClientImplementor) Addrs() []string {
 	return c.addrs()
 }
 
-func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
+func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) (string, error) {
 	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.db, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -245,7 +246,9 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-
+	if repoPinned, addr := getPinnedRepoAddr(string(repo), c.pinned()); repoPinned {
+		return addr
+	}
 	return RendezvousAddrForRepo(repo, addrs)
 }
 
@@ -259,22 +262,31 @@ func (c *ClientImplementor) addrForKey(key string) string {
 	return addrForKey(key, addrs)
 }
 
-var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
+var addrForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 })
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(repo api.RepoName, addresses GitServerAddresses) string {
-	addForRepoInvoked.Inc()
+func AddrForRepo(ctx context.Context, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+	addrForRepoInvoked.Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
-	if pinned, found := addresses.PinnedServers[rs]; found {
-		return pinned
+	if repoPinned, addr := getPinnedRepoAddr(string(repo), addresses.PinnedServers); repoPinned {
+		return addr, nil
 	}
-	return addrForKey(rs, addresses.Addresses)
+
+	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
+	if err != nil {
+		return "", err
+	}
+	if useRendezvous {
+		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
+	}
+
+	return addrForKey(rs, addresses.Addresses), nil
 }
 
 type GitServerAddresses struct {
@@ -333,7 +345,7 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -344,12 +356,16 @@ func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, o
 		q.Add("path", path)
 	}
 
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.AddrForRepo(ctx, repo),
+		Host:     addrForRepo,
 		Path:     "/archive",
 		RawQuery: q.Encode(),
-	}
+	}, nil
 }
 
 func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
@@ -373,7 +389,11 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u := c.ArchiveURL(ctx, repo, opt)
+	u, err := c.ArchiveURL(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -487,7 +507,12 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		return false, err
 	}
 
-	uri := "http://" + c.AddrForRepo(ctx, repoName) + "/search"
+	addrForRepo, err := c.AddrForRepo(ctx, repoName)
+	if err != nil {
+		return false, err
+	}
+
+	uri := "http://" + addrForRepo + "/search"
 	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
 	if err != nil {
 		return false, err
@@ -776,9 +801,13 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// We do not need to set a value for the attribute "Since" because the repo is not expected to
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
 	// ignored.
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: c.AddrForRepo(ctx, repo),
+		CloneFromShard: addrForRepo,
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -888,7 +917,10 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(ctx, r)
+		addr, err := c.AddrForRepo(ctx, r)
+		if err != nil {
+			return nil, err
+		}
 		shard := shards[addr]
 
 		if shard == nil {
@@ -962,7 +994,10 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(ctx, r)
+		addr, err := c.AddrForRepo(ctx, r)
+		if err != nil {
+			return nil, err
+		}
 		shard := shards[addr]
 
 		if shard == nil {
@@ -1088,7 +1123,11 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 
-	uri := "http://" + c.AddrForRepo(ctx, repo) + "/" + op
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	uri := "http://" + addrForRepo + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
@@ -1242,4 +1281,29 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 		args = append(args, "HEAD")
 	}
 	return args
+}
+
+// shouldUseRendezvousHashing returns true if rendezvous hashing is to be used to find
+// an address of gitserver instance for a given repo
+func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string) (bool, error) {
+	cursor, err := migration.GetCursor(ctx, db)
+	if err != nil {
+		return false, err
+	}
+	if cursor == "" {
+		return false, nil
+	}
+
+	// Migration is in progress or finished, if the name is less than or equal to cursor -- use rendezvous
+	return repo <= cursor, nil
+}
+
+// getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
+// Otherwise, if repo is not pinned -- false and empty string are returned
+func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
+	if pinned, found := pinnedServers[repo]; found {
+		return true, pinned
+	} else {
+		return false, ""
+	}
 }
