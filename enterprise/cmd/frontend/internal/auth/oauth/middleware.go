@@ -3,6 +3,7 @@ package oauth
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -23,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -96,6 +99,57 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
+	mux.Handle("/get-user-orgs", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		dotcomConfig := conf.SiteConfig().Dotcom
+		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
+		if !envvar.SourcegraphDotComMode() || !repos.IsGitHubAppCloudEnabled(dotcomConfig) {
+			http.NotFound(w, req)
+			return
+		}
+
+		a := actor.FromContext(req.Context())
+		if !a.IsAuthenticated() {
+			http.Error(w, "Authentication failed. Could not find authenticated user.", http.StatusUnauthorized)
+			return
+		}
+
+		// fetch list of orgs user belongs to
+		externalServices, err := db.ExternalServices().List(req.Context(), database.ExternalServicesListOptions{
+			NamespaceUserID: a.UID,
+			Kinds:           []string{extsvc.KindGitHub},
+		})
+
+		if err != nil {
+			log15.Error("Unexpected error while fetching user's external services.", "error", err)
+			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
+			return
+		}
+
+		if len(externalServices) != 1 {
+			http.Error(w, "User is supposed to have only one GitHub service connected.", http.StatusBadRequest)
+			return
+		}
+
+		esConfg, err := extsvc.ParseConfig("github", externalServices[0].Config)
+		if err != nil {
+			log15.Error("Unexpected error while parsing external service config.", "error", err)
+			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
+		}
+		esConf := esConfg.(*schema.GitHubConnection)
+
+		auther := &eauth.OAuthBearerToken{Token: esConf.Token}
+
+		client := github.NewV3Client(&url.URL{Host: "github.com"}, auther, nil)
+
+		installs, err := client.GetUserInstallations(req.Context())
+		if err != nil {
+			log15.Error("Unexpected error while fetching app installs.", "error", err)
+			http.Error(w, "Unexpected error while fetching list of GitHub organizations.", http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(installs)
+	}))
 	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		dotcomConfig := conf.SiteConfig().Dotcom
 		// if not on Sourcegraph.com with GitHub App enabled, this page does not exist
@@ -103,10 +157,57 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.NotFound(w, req)
 			return
 		}
-		state := req.URL.Query().Get("state")
-		appInstallURL := "https://github.com/apps/" + dotcomConfig.GithubAppCloud.Slug + "/installations/new?state=" + state
 
-		http.Redirect(w, req, appInstallURL, http.StatusFound)
+		a := actor.FromContext(req.Context())
+		if !a.IsAuthenticated() {
+			http.Error(w, "Authentication failed. Could not find authenticated user.", http.StatusUnauthorized)
+			return
+		}
+
+		// fetch list of orgs user belongs to
+		externalServices, err := db.ExternalServices().List(req.Context(), database.ExternalServicesListOptions{
+			NamespaceUserID: a.UID,
+			Kinds:           []string{extsvc.KindGitHub},
+		})
+
+		if err != nil {
+			log15.Error("Unexpected error while fetching user's external services.", "error", err)
+			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
+			return
+		}
+
+		if len(externalServices) != 1 {
+			http.Error(w, "User is supposed to have only one GitHub service connected.", http.StatusBadRequest)
+			return
+		}
+
+		esConfg, err := extsvc.ParseConfig("github", externalServices[0].Config)
+		if err != nil {
+			log15.Error("Unexpected error while parsing external service config.", "error", err)
+			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
+		}
+		esConf := esConfg.(*schema.GitHubConnection)
+
+		auther := &eauth.OAuthBearerToken{Token: esConf.Token}
+
+		client := github.NewV3Client(&url.URL{Host: "github.com"}, auther, nil)
+
+		installs, err := client.GetUserInstallations(req.Context())
+		if err != nil {
+			log15.Error("Unexpected error while fetching app installs.", "error", err)
+			http.Error(w, "Unexpected error while fetching list of GitHub organizations.", http.StatusBadRequest)
+			return
+		}
+
+		state := req.URL.Query().Get("state")
+
+		if len(installs) == 0 {
+			appInstallURL := "https://github.com/apps/" + dotcomConfig.GithubAppCloud.Slug + "/installations/new?state=" + state
+
+			http.Redirect(w, req, appInstallURL, http.StatusFound)
+		} else {
+			http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
+		}
 	}))
 	return mux
 }
