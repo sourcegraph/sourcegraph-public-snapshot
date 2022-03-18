@@ -42,7 +42,6 @@ export const useBatchChangeListFilters = (): UseBatchChangeListFiltersResult => 
 
     useEffect(() => {
         if (defaultFilters && !hasModifiedFilters) {
-            console.log('setting defaults', { defaultFilters })
             setSelectedFiltersRaw(defaultFilters)
         }
     }, [defaultFilters, hasModifiedFilters])
