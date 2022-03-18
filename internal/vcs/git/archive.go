@@ -48,7 +48,7 @@ func ArchiveReader(
 }
 
 func shouldFilterPaths(paths []string) bool {
-	if paths == nil || len(paths) <= 0 {
+	if len(paths) == 0 {
 		return false
 	}
 	if len(paths) == 1 && paths[0] == "." {
