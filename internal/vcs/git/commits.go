@@ -301,7 +301,7 @@ func commitLog(ctx context.Context, db database.DB, repo api.RepoName, opt Commi
 	return filtered, err
 }
 
-func getWrappedCommits(ctx context.Context, db database.DB, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
+func getWrappedCommits(ctx context.Context, _ database.DB, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -464,7 +464,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // commitCount returns the number of commits that would be returned by Commits.
-func commitCount(ctx context.Context, db database.DB, repo api.RepoName, opt CommitsOptions) (uint, error) {
+func commitCount(ctx context.Context, _ database.DB, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()

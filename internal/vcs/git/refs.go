@@ -202,7 +202,7 @@ func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt Br
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]string, error) {
+func branches(ctx context.Context, _ database.DB, repo api.RepoName, args ...string) ([]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
@@ -317,7 +317,7 @@ type Ref struct {
 	CommitID api.CommitID
 }
 
-func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
+func showRef(ctx context.Context, _ database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
 	cmd := gitserver.DefaultClient.Command("git", "show-ref")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Repo = repo

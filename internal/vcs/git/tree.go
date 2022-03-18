@@ -230,7 +230,7 @@ func lsTree(
 	return entries, nil
 }
 
-func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
