@@ -36,7 +36,7 @@ import {
 } from '../../../graphql-operations'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
-import { BatchChangeListFilters, DRAFT_STATUS, OPEN_STATUS } from './BatchChangeListFilters'
+import { BatchChangeListFilters } from './BatchChangeListFilters'
 import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
@@ -59,11 +59,6 @@ type SelectedTab = 'batchChanges' | 'gettingStarted'
 
 const BATCH_CHANGES_PER_PAGE_COUNT = 15
 
-// Drafts are a new feature of severside execution that for now should not be shown if
-// execution is not enabled.
-const getInitialFilters = (isExecutionEnabled: boolean): MultiSelectState<BatchChangeState> =>
-    isExecutionEnabled ? [OPEN_STATUS, DRAFT_STATUS] : [OPEN_STATUS]
-
 /**
  * A list of all batch changes on the Sourcegraph instance.
  */
@@ -81,9 +76,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
-    const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>(
-        getInitialFilters(isExecutionEnabled)
-    )
+    const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>([])
     // We keep state to track to the last total count of batch changes in the connection
     // to avoid the display flickering as the connection is loading more data or a
     // different set of filtered data.
