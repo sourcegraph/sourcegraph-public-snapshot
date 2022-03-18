@@ -90,7 +90,7 @@
           "type": "webview",
           "id": "sourcegraph.helpSidebar",
           "name": "Help and feedback",
-          "visibility": "visible"
+          "visibility": "collapsed"
         }
       ]
     },
