@@ -10,6 +10,7 @@ import Element.Border as Border
 import Element.Events
 import Element.Font as F
 import Element.Input as I
+import File.Download
 import Html exposing (Html, input, text)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, fail, field, maybe)
@@ -217,6 +218,7 @@ type Msg
     | OnDebounce
     | OnDataFilter DataFilterMsg
     | OnTabSelected Tab
+    | OnDownloadData
       -- Data processing
     | RunCompute
     | OnResults (List Result)
@@ -266,6 +268,15 @@ update msg model =
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
+
+        OnDownloadData ->
+            let
+                data =
+                    Dict.toList model.resultsMap
+                        |> List.map Tuple.second
+                        |> filterData model.dataFilter
+            in
+            ( model, File.Download.string "notebook-compute-data.txt" "text/plain" (String.join "\n" (List.map .name data)) )
 
         RunCompute ->
             if model.serverless then
@@ -394,9 +405,21 @@ histogram data =
 
 dataView : List DataValue -> E.Element Msg
 dataView data =
-    E.row []
-        [ E.el [ E.padding 10, E.alignLeft, E.width E.fill ]
+    E.row [ E.width E.fill ]
+        [ E.el [ E.padding 10, E.alignLeft ]
             (E.column [] (List.map (\d -> E.text d.name) data))
+        , E.el
+            [ E.paddingXY 0 10
+            , E.alignRight
+            , E.alignTop
+            ]
+            (I.button
+                [ Border.width 1
+                , Border.rounded 3
+                , E.padding 10
+                ]
+                { onPress = Just OnDownloadData, label = E.text "Download Data" }
+            )
         ]
 
 
