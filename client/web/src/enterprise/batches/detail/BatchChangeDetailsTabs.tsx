@@ -93,8 +93,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
         false
 
-    console.log(batchChange)
-
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
