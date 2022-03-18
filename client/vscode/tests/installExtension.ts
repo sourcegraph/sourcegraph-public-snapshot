@@ -71,14 +71,7 @@ function extractZip(zipfile: ZipFile, targetPath: string): Promise<void> {
     })
 }
 
-function extractEntry(
-    stream: Readable,
-    fileName: string,
-    mode: number,
-    targetPath: string
-    // options: IOptions,
-    // token: CancellationToken
-): Promise<void> {
+function extractEntry(stream: Readable, fileName: string, mode: number, targetPath: string): Promise<void> {
     const directoryName = path.dirname(fileName)
     const targetDirectoryName = path.join(targetPath, directoryName)
     if (!targetDirectoryName.startsWith(targetPath)) {
