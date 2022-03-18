@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { autocompletion, CompletionResult, Completion, snippet, completionKeymap } from '@codemirror/autocomplete'
+import {
+    autocompletion,
+    CompletionResult,
+    Completion,
+    snippet,
+    completionKeymap,
+    closeCompletion,
+    startCompletion,
+} from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
 import {
     EditorSelection,
@@ -170,12 +178,10 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
                     selection: EditorSelection.range(selectionRange.start, selectionRange.end),
                     scrollIntoView: true,
                 })
-                /*
-                if (queryState.showSuggestions) {
-                    editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
-                }
-                 */
                 editor.focus()
+                if (queryState.showSuggestions) {
+                    startCompletion(editor)
+                }
                 break
             }
             default: {
@@ -590,6 +596,20 @@ const autocomplete = (
             )
         )
     ),
+    EditorView.updateListener.of(update => {
+        // We want the completion list to be hidden when the editor looses focus
+        if (update.focusChanged && !update.view.hasFocus) {
+            closeCompletion(update.view)
+        }
+        // Show the completion list again if a filter was completed
+        if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
+            const query = update.state.facet(parsedQueryField)
+            const token = query.tokens.find(token => isTokenInRange(update.state.selection.main.anchor - 1, token))
+            if (token) {
+                startCompletion(update.view)
+            }
+        }
+    }),
     autocompletion({
         defaultKeymap: false,
         override: [
