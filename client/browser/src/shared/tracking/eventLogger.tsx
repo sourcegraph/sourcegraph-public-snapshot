@@ -9,7 +9,7 @@ import { background } from '../../browser-extension/web-extension-api/runtime'
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
 import { logUserEvent, logEvent } from '../backend/userEvents'
-import { isInPage } from '../context'
+import { isBackground, isInPage } from '../context'
 import { getExtensionVersion, getPlatformName, isDefaultSourcegraphUrl } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
@@ -126,7 +126,12 @@ export class EventLogger implements TelemetryService {
         }
 
         const firstSourceURL = isDefaultSourcegraphUrl(this.sourcegraphURL)
-            ? (await background.getCookie({ url: this.sourcegraphURL, name: 'sourcegraphSourceUrl' }))?.value
+            ? (
+                  await (isBackground ? browser.cookies.get : background.getCookie)({
+                      url: this.sourcegraphURL,
+                      name: 'sourcegraphSourceUrl',
+                  })
+              )?.value
             : undefined
 
         logEvent(
