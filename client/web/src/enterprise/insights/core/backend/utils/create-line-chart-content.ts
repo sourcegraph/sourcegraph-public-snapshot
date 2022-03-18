@@ -32,7 +32,7 @@ export function createLineChartContent(
     filters?: InsightFilters
 ): LineChartContent<SeriesDataset, 'dateTime'> {
     const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
-        seriesDefinition.map(definition => [definition.id ?? '', definition])
+        seriesDefinition.map(definition => [definition.id, definition])
     )
 
     const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
