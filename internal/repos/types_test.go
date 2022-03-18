@@ -58,7 +58,7 @@ func TestSyncRateLimiters(t *testing.T) {
 	now := time.Now()
 	ctx := context.Background()
 
-	baseURL := "http://gitlab.com/"
+	baseURL := "https://gitlab.com/"
 
 	type limitOptions struct {
 		includeLimit bool

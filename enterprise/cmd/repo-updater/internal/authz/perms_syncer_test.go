@@ -891,7 +891,7 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err := s.waitForRateLimit(ctx, "https://github.com/", 10, "user")
+		err := s.waitForRateLimit(ctx, "extsvc:github:1", 10, "user")
 		if err == nil {
 			t.Fatalf("err: want %v but got nil", context.Canceled)
 		}

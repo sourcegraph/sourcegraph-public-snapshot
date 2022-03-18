@@ -28,6 +28,8 @@ type Registry struct {
 // Get returns the rate limiter configured for the given URN of an external
 // service. It returns an infinite limiter if no rate limiter has been configured
 // for the URN.
+//
+// Modifications to the returned rate limiter takes effect on all call sites.
 func (r *Registry) Get(urn string) *rate.Limiter {
 	return r.GetOrSet(urn, nil)
 }
@@ -35,6 +37,8 @@ func (r *Registry) Get(urn string) *rate.Limiter {
 // GetOrSet returns the rate limiter configured for the given URN of an external
 // service, and sets the `fallback` to be the rate limiter if no rate limiter has
 // been configured for the URN. A nil `fallback` indicates an infinite limiter.
+//
+// Modifications to the returned rate limiter takes effect on all call sites.
 func (r *Registry) GetOrSet(urn string, fallback *rate.Limiter) *rate.Limiter {
 	r.mu.Lock()
 	defer r.mu.Unlock()
