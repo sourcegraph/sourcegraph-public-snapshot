@@ -22,7 +22,7 @@ import (
 //
 // execSafe should NOT be exported. We want to limit direct git calls to this
 // package.
-func execSafe(ctx context.Context, db database.DB, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
+func execSafe(ctx context.Context, _ database.DB, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
 	if Mocks.ExecSafe != nil {
 		return Mocks.ExecSafe(params)
 	}
@@ -53,7 +53,7 @@ func execSafe(ctx context.Context, db database.DB, repo api.RepoName, params []s
 //
 // execReader should NOT be exported. We want to limit direct git calls to this
 // package.
-func execReader(ctx context.Context, db database.DB, repo api.RepoName, args []string) (io.ReadCloser, error) {
+func execReader(ctx context.Context, _ database.DB, repo api.RepoName, args []string) (io.ReadCloser, error) {
 	if Mocks.ExecReader != nil {
 		return Mocks.ExecReader(args)
 	}
@@ -79,7 +79,7 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-func gitserverCmdFunc(repo api.RepoName, db database.DB) cmdFunc {
+func gitserverCmdFunc(repo api.RepoName, _ database.DB) cmdFunc {
 	return func(args []string) cmd {
 		cmd := gitserver.DefaultClient.Command("git", args...)
 		cmd.Repo = repo
