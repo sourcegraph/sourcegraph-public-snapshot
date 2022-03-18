@@ -7,10 +7,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/alert"
+	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,19 +31,16 @@ type alertJob struct {
 	child  Job
 }
 
-func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "AlertJob", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx := jobutil.StartSpan(ctx, j)
+	defer func() { jobutil.FinishSpan(tr, alert, err) }()
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)
 	statsObserver := streaming.NewStatsObservingStream(countingStream)
 	jobAlert, err := j.child.Run(ctx, db, statsObserver)
 
-	ao := alert.Observer{
+	ao := searchalert.Observer{
 		Db:           db,
 		SearchInputs: j.inputs,
 		HasResults:   countingStream.Count() > 0,
