@@ -92,7 +92,7 @@ func serveRaw(db database.DB) handlerFunc {
 		}
 
 		if requestedPath == "/" && r.Method == "HEAD" {
-			_, err = gitserver.DefaultClient.RepoInfo(r.Context(), common.Repo.Name)
+			_, err = gitserver.NewClient(db).RepoInfo(r.Context(), common.Repo.Name)
 			if err != nil {
 				w.WriteHeader(http.StatusNotFound)
 				return err

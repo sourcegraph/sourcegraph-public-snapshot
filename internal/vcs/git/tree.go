@@ -114,7 +114,7 @@ func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissio
 		args = append(args, pathspecs...)
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -145,7 +145,7 @@ func lStat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionC
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := gitserver.DefaultClient.GetObject(ctx, repo, string(commit)+"^{tree}")
+		obj, err := gitserver.NewClient(db).GetObject(ctx, repo, string(commit)+"^{tree}")
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +230,7 @@ func lsTree(
 	return entries, nil
 }
 
-func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commi
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -334,7 +334,7 @@ func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commi
 			}
 		case "commit":
 			mode = mode | ModeSubmodule
-			cmd := gitserver.DefaultClient.Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
+			cmd := gitserver.NewClient(db).Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
 			cmd.Repo = repo
 			var submodule Submodule
 			if out, err := cmd.Output(ctx); err == nil {
@@ -374,7 +374,7 @@ func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commi
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func ListFiles(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
-	cmd := gitserver.DefaultClient.Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd := gitserver.NewClient(db).Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -419,7 +419,7 @@ func ListDirectoryChildren(
 ) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)

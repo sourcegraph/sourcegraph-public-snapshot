@@ -138,7 +138,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	}()
 
 	if !codehost.IsPackageHost() {
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
+		if err := gitserver.NewClient(s.db).IsRepoCloneable(ctx, name); err != nil {
 			if ctx.Err() != nil {
 				status = "timeout"
 			} else {
