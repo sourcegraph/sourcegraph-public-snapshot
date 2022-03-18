@@ -458,35 +458,47 @@ func TestHasDashboardPermission(t *testing.T) {
 		shouldHavePermission bool
 		userIds              []int
 		orgIds               []int
+		dashboardID          int
 	}{
 		{
 			name:                 "user 1 has access to dashboard",
 			shouldHavePermission: true,
 			userIds:              []int{1},
 			orgIds:               nil,
+			dashboardID:          created.ID,
 		},
 		{
 			name:                 "user 3 does not have access to dashboard",
 			shouldHavePermission: false,
 			userIds:              []int{3},
 			orgIds:               nil,
+			dashboardID:          created.ID,
 		},
 		{
 			name:                 "org 5 has access to dashboard",
 			shouldHavePermission: true,
 			userIds:              nil,
 			orgIds:               []int{5},
+			dashboardID:          created.ID,
 		},
 		{
 			name:                 "org 7 does not have access to dashboard",
 			shouldHavePermission: false,
 			userIds:              nil,
 			orgIds:               []int{7},
+			dashboardID:          created.ID,
+		},
+		{
+			name:                 "no access when dashboard does not exist",
+			shouldHavePermission: false,
+			userIds:              []int{3},
+			orgIds:               []int{5},
+			dashboardID:          -1,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := store.HasDashboardPermission(ctx, []int{created.ID}, test.userIds, test.orgIds)
+			got, err := store.HasDashboardPermission(ctx, []int{test.dashboardID}, test.userIds, test.orgIds)
 			if err != nil {
 				t.Error(err)
 			}
