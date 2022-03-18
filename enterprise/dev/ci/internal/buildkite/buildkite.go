@@ -30,7 +30,7 @@ type featureFlags struct {
 
 // FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
 var FeatureFlags = featureFlags{
-	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
+	StatelessBuild: strings.Contains(os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE"), "job"),
 }
 
 type Pipeline struct {
