@@ -8,9 +8,9 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -24,7 +24,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
@@ -36,7 +35,6 @@ import {
     FeedbackPrompt,
     ButtonLink,
     PopoverTrigger,
-    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -192,7 +190,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
-    const [hasInsightPageBeenViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
 
     const searchNavBar = (
         <SearchNavbarItem
@@ -251,14 +248,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">
-                                Insights{' '}
-                                {hasInsightPageBeenViewed === false && (
-                                    <Badge variant="info" className="ml-1">
-                                        New
-                                    </Badge>
-                                )}
-                            </NavLink>
+                            <NavLink to="/insights">Insights</NavLink>
                         </NavItem>
                     )}
                     <NavItem icon={PuzzleOutlineIcon}>

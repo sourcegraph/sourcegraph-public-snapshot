@@ -200,27 +200,3 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 
 	return nil
 }
-
-func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
-}
-
-func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	reader := bufio.NewReader(stdout)
-
-	for {
-		commit, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		commit = commit[:len(commit)-1] // Drop the trailing newline
-		shouldContinue, err := onCommit(commit)
-		if !shouldContinue {
-			return err
-		}
-	}
-
-	return nil
-}

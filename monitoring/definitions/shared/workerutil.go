@@ -82,7 +82,7 @@ type WorkerutilGroupOptions struct {
 // processing, error count, error rate, and number of workers operating on the queue for the given
 // worker observable within the given container.
 //
-// Requires a:
+// Requires any of the following:
 //   - counter of the format `src_{options.MetricNameRoot}_processor_total`
 //   - histogram of the format `src_{options.MetricNameRoot}_processor_duration_seconds_bucket`
 //   - counter of the format `src_{options.MetricNameRoot}_processor_errors_total`

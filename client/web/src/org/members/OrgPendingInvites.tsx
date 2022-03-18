@@ -42,11 +42,14 @@ import {
     getLocaleFormattedDateFromString,
     getPaginatedItems,
     OrgMemberNotification,
+    useQueryStringParameters,
 } from './utils'
 
 import styles from './OrgPendingInvites.module.scss'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {}
+interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+    onOrgGetStartedRefresh: () => void
+}
 interface OrganizationInvitation {
     id: string
     recipientEmail?: string
@@ -93,12 +96,14 @@ const PendingInvitesHeader: React.FunctionComponent = () => (
 )
 
 interface InvitationItemProps {
+    orgId: string
     invite: OrganizationInvitation
     viewerCanAdminister: boolean
     onInviteResentRevoked: (recipient: string, revoked?: boolean) => void
 }
 
 const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
+    orgId,
     invite,
     viewerCanAdminister,
     onInviteResentRevoked,
@@ -115,25 +120,34 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 
     const onCopyInviteLink = useCallback(() => {
         copy(`${window.location.origin}${invite.respondURL}`)
+        eventLogger.log('OrganizationInviteCopied', { organizationId: orgId })
         alert('invite url copied to clipboard!')
-    }, [invite.respondURL])
+    }, [invite.respondURL, orgId])
 
     const onRevokeInvite = useCallback(async () => {
+        eventLogger.log('OrganizationInviteRevokeClicked', { organizationId: orgId })
+
         const inviteToText = invite.recipient ? invite.recipient.username : (invite.recipientEmail as string)
         if (window.confirm(`Revoke invitation from ${inviteToText}?`)) {
+            eventLogger.log('OrganizationInviteRevokeConfirmed', { organizationId: orgId })
             try {
                 await revokeInvite({ variables: { id: invite.id } })
-                eventLogger.logViewEvent('OrgRevokeInvitation', { id: invite.id })
+                eventLogger.log('OrgRevokeInvitation', { id: invite.id })
                 onInviteResentRevoked(inviteToText, true)
             } catch {
-                eventLogger.logViewEvent('OrgRevokeInvitationError', { id: invite.id })
+                eventLogger.log('OrgRevokeInvitationError', { id: invite.id })
             }
+        } else {
+            eventLogger.log('OrganizationInviteRevokeDismissed', { organizationId: orgId })
         }
-    }, [revokeInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient])
+    }, [revokeInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient, orgId])
 
     const onResendInvite = useCallback(async () => {
+        eventLogger.log('OrganizationInviteResendClicked', { organizationId: orgId })
+
         const inviteToText = invite.recipient ? invite.recipient.username : (invite.recipientEmail as string)
         if (window.confirm(`Resend invitation to ${inviteToText}?`)) {
+            eventLogger.log('OrganizationInviteResendConfirmed', { organizationId: orgId })
             try {
                 await resendInvite({ variables: { id: invite.id } })
                 eventLogger.logViewEvent('OrgResendInvitation', { id: invite.id })
@@ -141,8 +155,10 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
             } catch {
                 eventLogger.logViewEvent('OrgResendInvitationError', { id: invite.id })
             }
+        } else {
+            eventLogger.log('OrganizationInviteResendDismissed', { organizationId: orgId })
         }
-    }, [resendInvite, onInviteResentRevoked, invite.id, invite.recipientEmail, invite.recipient])
+    }, [orgId, invite.recipient, invite.recipientEmail, invite.id, resendInvite, onInviteResentRevoked])
 
     const loading = revokeLoading || resendLoading
     const error = resendError || revokeError
@@ -238,10 +254,16 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, authenticatedUser }) => {
+export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    onOrgGetStartedRefresh,
+}) => {
     const orgId = org.id
+    const query = useQueryStringParameters()
+    const openInviteModal = !!query.get('openInviteModal')
     useEffect(() => {
-        eventLogger.logViewEvent('OrgPendingInvites', { orgId })
+        eventLogger.logViewEvent('OrganizationPendingInvites', { organizationId: orgId })
     }, [orgId])
 
     const [invite, setInvite] = useState<IModalInviteResult>()
@@ -256,20 +278,22 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
 
     const onInviteSent = useCallback(
         async (result: IModalInviteResult) => {
+            onOrgGetStartedRefresh()
             setInvite(result)
             await refetch({ id: orgId })
         },
-        [setInvite, orgId, refetch]
+        [setInvite, orgId, refetch, onOrgGetStartedRefresh]
     )
 
     const onInviteResentRevoked = useCallback(
         async (recipient: string, revoked?: boolean) => {
+            onOrgGetStartedRefresh()
             const message = `${revoked ? 'Revoked' : 'Resent'} invite for ${recipient}`
             setNotification(message)
             setPage(1)
             await refetch({ id: orgId })
         },
-        [setNotification, orgId, refetch]
+        [setNotification, orgId, refetch, onOrgGetStartedRefresh]
     )
 
     const onInviteSentMessageDismiss = useCallback(() => {
@@ -304,7 +328,9 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                 orgName={org.name}
                                 orgId={org.id}
                                 onInviteSent={onInviteSent}
+                                eventLoggerEventName="InviteMemberButtonClicked"
                                 variant="success"
+                                initiallyOpened={openInviteModal}
                             />
                         )}
                     </div>
@@ -327,6 +353,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                     invite={item}
                                     viewerCanAdminister={true}
                                     onInviteResentRevoked={onInviteResentRevoked}
+                                    orgId={org.id}
                                 />
                             ))}
                         </ul>
@@ -356,6 +383,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({ org, aut
                                     triggerLabel="Invite a teammate"
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
+                                    eventLoggerEventName="InviteMemberCTAClicked"
                                     className={styles.inviteMemberLink}
                                     as="a"
                                     variant="link"

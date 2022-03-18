@@ -11,7 +11,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Menu, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
+import { Menu, MenuItem, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -247,7 +247,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({ onLifecyclePropsCha
                         <li className="nav-item">
                             <Menu>
                                 <RepoHeaderActionDropdownToggle>
-                                    <DotsVerticalIcon className="icon-inline" />
+                                    <Icon as={DotsVerticalIcon} />
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
                                     {rightActions.map((a, index) => (

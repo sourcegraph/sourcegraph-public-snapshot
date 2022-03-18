@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -6,13 +6,14 @@ import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { authenticatedUser } from '@sourcegraph/web/src/auth'
-import { Button, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, useObservable } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
 import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { getTooltipMessage, getDashboardPermissions } from '../../utils/get-dashboard-permissions'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../../core/types/dashboard/virtual-dashboard'
+import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
@@ -33,15 +34,15 @@ export interface DashboardsContentProps extends TelemetryProps {
      * version of merged settings (all insights)
      */
     dashboardID: string
+    dashboards: InsightDashboard[]
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { dashboardID, telemetryService } = props
+    const { dashboardID, telemetryService, dashboards } = props
+    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
 
     const history = useHistory()
-    const { getDashboards } = useContext(CodeInsightsBackendContext)
-
-    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -58,17 +59,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
     }, [telemetryService, dashboardID])
-
-    if (dashboards === undefined) {
-        return (
-            <div data-testid="loading-spinner">
-                <LoadingSpinner inline={false} />
-            </div>
-        )
-    }
-
-    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
-    const permissions = getDashboardPermissions(currentDashboard)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -109,6 +99,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         setAddInsightsState(true)
     }
 
+    const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
+
     return (
         <main className="pb-4">
             <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
@@ -133,14 +125,25 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <Button
                     outline={true}
                     variant="secondary"
-                    disabled={!permissions.isConfigurable}
-                    data-tooltip={getTooltipMessage(currentDashboard, permissions)}
+                    disabled={addRemovePermissions.disabled}
+                    data-tooltip={addRemovePermissions.tooltip}
                     data-placement="bottom"
                     onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
                 >
                     Add or remove insights
                 </Button>
             </DashboardHeader>
+
+            {!licensed && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedAccessLabel)}
+                    message={
+                        dashboardID === ALL_INSIGHTS_DASHBOARD_ID
+                            ? 'Create up to two global insights'
+                            : 'Unlock Code Insights for full access to custom dashboards'
+                    }
+                />
+            )}
 
             {currentDashboard ? (
                 <DashboardInsights

@@ -2,13 +2,14 @@ package background
 
 import (
 	"context"
+
 	"testing"
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 )
@@ -26,16 +27,13 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
 	}()
 
-	setMockLicense := func(hasCodeInsights bool) {
-		licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-			tag := "starter"
+	setMockLicenseCheck := func(hasCodeInsights bool) {
+		licensing.MockCheckFeature = func(feature licensing.Feature) error {
+			err := errors.New("error")
 			if hasCodeInsights {
-				tag = "dev"
+				err = nil
 			}
-
-			return &license.Info{
-				Tags: []string{tag},
-			}, "", nil
+			return err
 		}
 	}
 
@@ -86,7 +84,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		}
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
-		setMockLicense(true)
+		setMockLicenseCheck(true)
 		checkAndEnforceLicense(ctx, timescale)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
@@ -102,7 +100,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		}
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 0)
 
-		setMockLicense(false)
+		setMockLicenseCheck(false)
 		checkAndEnforceLicense(ctx, timescale)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
@@ -117,7 +115,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		}
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
-		setMockLicense(false)
+		setMockLicenseCheck(false)
 		checkAndEnforceLicense(ctx, timescale)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {

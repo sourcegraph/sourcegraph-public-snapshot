@@ -5,6 +5,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import { render } from 'react-dom'
 
+import { ContributableMenu } from '@sourcegraph/client-api'
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { isExternalLink } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -14,7 +15,6 @@ import {
     decorationStyleForTheme,
     groupDecorationsByLine,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,

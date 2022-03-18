@@ -9,6 +9,7 @@ import * as Monaco from 'monaco-editor'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -91,14 +92,14 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
                 ? {
                       type: 'button',
                       label: 'Render',
-                      icon: <PlayCircleOutlineIcon className="icon-inline" />,
+                      icon: <Icon as={PlayCircleOutlineIcon} />,
                       onClick: runBlock,
                       keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
                   }
                 : {
                       type: 'button',
                       label: 'Edit',
-                      icon: <PencilIcon className="icon-inline" />,
+                      icon: <Icon as={PencilIcon} />,
                       onClick: onEnterBlock,
                       keyboardShortcutLabel: '↵',
                   },

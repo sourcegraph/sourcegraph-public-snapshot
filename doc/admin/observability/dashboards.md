@@ -5466,7 +5466,7 @@ Query: `sum by(app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*git
 
 ## Postgres
 
-<p class="subtitle">Postgres metrics, exported from postgres_exporter (only available on Kubernetes).</p>
+<p class="subtitle">Postgres metrics, exported from postgres_exporter (not available on server).</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/postgres/postgres` on your Sourcegraph instance.
 
@@ -5826,6 +5826,25 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_codeintel_upload_total{job=~"^precise-code-intel-worker.*"}[30m])) / sum(increase(src_codeintel_upload_processor_total{job=~"^precise-code-intel-worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### precise-code-intel-worker: codeintel_upload_queued_max_age
+
+<p class="subtitle">Unprocessed upload record queue longest time in queue</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#precise-code-intel-worker-codeintel-upload-queued-max-age) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_codeintel_upload_queued_duration_seconds_total{job=~"^precise-code-intel-worker.*"})`
 
 </details>
 
@@ -7411,6 +7430,25 @@ Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^worker.*"}[30m])) /
 
 <br />
 
+#### worker: codeintel_commit_graph_queued_max_age
+
+<p class="subtitle">Repository queue longest time in queue</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#worker-codeintel-commit-graph-queued-max-age) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100102` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^worker.*"})`
+
+</details>
+
+<br />
+
 ### Worker: Codeintel: Repository commit graph updates
 
 #### worker: codeintel_commit_graph_processor_total
@@ -7530,6 +7568,25 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100301` on 
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_codeintel_dependency_index_total{job=~"^worker.*"}[30m])) / sum(increase(src_codeintel_dependency_index_processor_total{job=~"^worker.*"}[30m]))`
+
+</details>
+
+<br />
+
+#### worker: codeintel_dependency_index_queued_max_age
+
+<p class="subtitle">Dependency index job queue longest time in queue</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_codeintel_dependency_index_queued_duration_seconds_total{job=~"^worker.*"})`
 
 </details>
 
@@ -15132,6 +15189,25 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100001`
 <summary>Technical details</summary>
 
 Query: `sum by (queue)(increase(src_executor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m])) / sum by (queue)(increase(src_executor_processor_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"}[30m]))`
+
+</details>
+
+<br />
+
+#### executor: executor_queued_max_age
+
+<p class="subtitle">Unprocessed executor job queue longest time in queue</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (queue)(src_executor_queued_duration_seconds_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*"})`
 
 </details>
 

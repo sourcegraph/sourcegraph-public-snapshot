@@ -77,17 +77,6 @@ func mapSlice(values []string, f func(string) string) []string {
 	return result
 }
 
-func IncludeExcludeValues(q query.Basic, field string) (include, exclude []string) {
-	q.VisitParameter(field, func(v string, negated bool, _ query.Annotation) {
-		if negated {
-			exclude = append(exclude, v)
-		} else {
-			include = append(include, v)
-		}
-	})
-	return include, exclude
-}
-
 func count(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
@@ -114,32 +103,18 @@ const (
 	Batch
 )
 
-// ToPatternString returns the simple string pattern of a basic query. It
-// assumes there is only on pattern atom.
-func ToPatternString(q query.Basic) string {
-	if p, ok := q.Pattern.(query.Pattern); ok {
-		if q.IsLiteral() {
-			// Escape regexp meta characters if this pattern should be treated literally.
-			return regexp.QuoteMeta(p.Value)
-		} else {
-			return p.Value
-		}
-	}
-	return ""
-}
-
 // ToTextPatternInfo converts a an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
 func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *TextPatternInfo {
 	// Handle file: and -file: filters.
-	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
+	filesInclude, filesExclude := q.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
-	langInclude, langExclude := IncludeExcludeValues(q, query.FieldLang)
+	langInclude, langExclude := q.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := q.IncludeExcludeValues(query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
 
@@ -165,7 +140,7 @@ func ToTextPatternInfo(q query.Basic, resultTypes result.Types, p Protocol) *Tex
 		IsStructuralPat: q.IsStructural(),
 		IsCaseSensitive: q.IsCaseSensitive(),
 		FileMatchLimit:  int32(count),
-		Pattern:         ToPatternString(q),
+		Pattern:         q.PatternString(),
 		IsNegated:       negated,
 
 		// Values dependent on parameters.
