@@ -8,6 +8,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
+import { mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
@@ -97,6 +98,7 @@ describe('Code monitoring', () => {
                 },
             }),
         })
+        testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -145,8 +147,7 @@ describe('Code monitoring', () => {
             ).toBeGreaterThan(0)
         })
 
-        // TODO: Disabled because it's flaky: https://github.com/sourcegraph/sourcegraph/issues/32643
-        it.skip('disables the actions area until trigger is complete', async () => {
+        it('disables the actions area until trigger is complete', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
             await driver.page.type('.test-name-input', 'test monitor')
@@ -183,8 +184,7 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-action-form-email')
         })
 
-        // TODO: Disabled because it's flaky: https://github.com/sourcegraph/sourcegraph/issues/32643
-        it.skip('disables submitting the code monitor area until trigger and action are complete', async () => {
+        it('disables submitting the code monitor area until trigger and action are complete', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
             await driver.page.type('.test-name-input', 'test monitor')
