@@ -123,6 +123,8 @@ function launchVSC(executablePath: string, userDataDirectory: string, extensions
             '--skip-release-notes',
             // https://github.com/microsoft/vscode-test/issues/120
             '--disable-updates',
+            // https://github.com/microsoft/vscode/issues/84238
+            '--no-sandbox',
         ],
         {
             env: process.env,
