@@ -15,7 +15,7 @@ import styles from './organizationList.module.scss'
 export interface OrganizationsListProps extends ThemeProps, FeatureFlagProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
-        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
+        'id' | 'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
 }
 

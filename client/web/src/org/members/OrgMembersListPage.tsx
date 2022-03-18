@@ -187,7 +187,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     const setPageWithEventLogging = useCallback(
         (index: number) => {
             setPage(index)
-            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id }, { organizationId: orgId })
+            eventLogger.log('MemberListPaginationClicked', { organizationId: org.id }, { organizationId: org.id })
         },
         [setPage, org.id]
     )
