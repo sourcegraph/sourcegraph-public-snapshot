@@ -89,10 +89,11 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 
 func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
 	return &TemplateDataNewSearchResults{
-		Priority:        "New",
-		Description:     monitorDescription,
-		NumberOfResults: 1,
-		IsTest:          true,
+		Priority:         "",
+		Description:      monitorDescription,
+		NumberOfResults:  1,
+		IsTest:           true,
+		ResultPluralized: "result",
 	}
 }
 
