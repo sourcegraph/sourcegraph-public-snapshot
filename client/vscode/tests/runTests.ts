@@ -103,8 +103,12 @@ async function run(): Promise<void> {
             if (vscodeProccess !== null) {
                 vscodeProccess.kill()
             }
-            rimraf.sync(userDataDirectory)
-            rimraf.sync(extensionsDirectory)
+
+            // eslint-disable-next-line no-void
+            void delay(1000).then(() => {
+                rimraf.sync(userDataDirectory)
+                rimraf.sync(extensionsDirectory)
+            })
         }, 1000)
     }
 }
@@ -125,6 +129,7 @@ function launchVSC(executablePath: string, userDataDirectory: string, extensions
             '--disable-updates',
             // https://github.com/microsoft/vscode/issues/84238
             '--no-sandbox',
+            '--disable-gpu',
         ],
         {
             env: process.env,
