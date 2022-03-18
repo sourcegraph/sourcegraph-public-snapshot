@@ -16,18 +16,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type insightsJob struct{}
+type insightsQueryRunnerBaseConfig struct {
+	env.BaseConfig
 
-func (s *insightsJob) Config() []env.Config {
-	return nil
+	enabled bool
 }
 
-func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (i *insightsQueryRunnerBaseConfig) Load() {
+	i.enabled = insights.IsEnabled()
+}
+
+type insightsQueryRunnerJob struct {
+	env.BaseConfig
+}
+
+var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
+
+func (s *insightsQueryRunnerJob) Config() []env.Config {
+	return []env.Config{insightsQueryRunnerConfigInst}
+}
+
+func (s *insightsQueryRunnerJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
-		log15.Info("Code Insights Disabled. Disabling background jobs.")
+		log15.Info("Code Insights Disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
-	log15.Info("Code Insights Enabled. Enabling background jobs.")
+	log15.Info("Code Insights Enabled. Enabling query runner.")
 
 	mainAppDb, err := workerdb.Init()
 	if err != nil {
@@ -39,14 +53,14 @@ func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB("worker")
+	insightsDB, err := insights.InitializeCodeInsightsDB("query-runner-worker")
 	if err != nil {
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(context.Background(), mainAppDb, insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), mainAppDb, insightsDB), nil
 }
 
-func NewInsightsJob() job.Job {
-	return &insightsJob{}
+func NewInsightsQueryRunnerJob() job.Job {
+	return &insightsQueryRunnerJob{}
 }
