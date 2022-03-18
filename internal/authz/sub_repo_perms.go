@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"strconv"
 	"time"
@@ -484,4 +485,31 @@ func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, 
 		return false, errors.Wrap(err, "checking sub-repo permissions")
 	}
 	return perms.Include(Read), nil
+}
+
+// CreateGitPathSpecFromSubRepoPerms fetches the raw sub-repo permissions for the given actor and repo, then converts
+// the list of globs into git pathspecs to be used in git commands for filtering
+func CreateGitPathSpecFromSubRepoPerms(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+	a := actor.FromContext(ctx)
+	perms, err := ActorRawPermissions(ctx, checker, a, repo)
+	if err != nil {
+		return []string{}, err
+	}
+	pathSpecs := make([]string, 0, len(perms.PathExcludes)+len(perms.PathIncludes))
+	for _, p := range perms.PathIncludes {
+		// TODO: Find a better way to handle this case.
+		if p != "" {
+			p = "**/" + p
+		}
+		pathSpec := fmt.Sprintf(":(glob)%s", p)
+		pathSpecs = append(pathSpecs, pathSpec)
+	}
+	for _, p := range perms.PathExcludes {
+		if p != "" {
+			p = "**/" + p
+		}
+		pathSpec := fmt.Sprintf(":(glob,exclude)%s", p)
+		pathSpecs = append(pathSpecs, pathSpec)
+	}
+	return pathSpecs, nil
 }

@@ -94,8 +94,13 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 		"echo foo > subdir_no_access/file3",
 		"git add subdir_no_access/file3",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+		"mkdir testdir",
+		"echo testing > testdir/my_test.go",
+		"git add testdir/my_test.go",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit -m commit4 --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
 	)
-	lastCommit := "4b3dd6935d913243907b327fc6393aff194de354"
+	thirdCommit := "4b3dd6935d913243907b327fc6393aff194de354"
+	lastCommit := "85c7532e5591e0f63f67bb1a3cf49790969730c5"
 
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -113,6 +118,7 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 		subRepoPerms           authz.SubRepoPermissions
 		expectedFilesInArchive []string
 		requestedPaths         []string
+		commit                 string
 		permissionsFunc        func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error)
 	}{
 		{
@@ -121,6 +127,8 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 				PathIncludes: []string{"**/file2"},
 				PathExcludes: nil,
 			},
+			commit:                 thirdCommit,
+			requestedPaths:         []string{"."},
 			expectedFilesInArchive: []string{"subdir/", "subdir/file2"},
 		},
 		{
@@ -129,12 +137,14 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 				PathIncludes: nil,
 				PathExcludes: []string{"subdir_no_access/**"},
 			},
+			commit:                 thirdCommit,
 			expectedFilesInArchive: []string{"file1", "subdir/", "subdir/file2"},
 		},
 		{
 			label:                  "with files requested",
 			subRepoPerms:           authz.SubRepoPermissions{},
 			requestedPaths:         []string{"subdir/file2", "subdir_no_access/file3"},
+			commit:                 thirdCommit,
 			expectedFilesInArchive: []string{"subdir/", "subdir/file2"},
 			permissionsFunc: func(ctx context.Context, userID int32, content authz.RepoContent) (authz.Perms, error) {
 				if content.Path == "subdir_no_access/file3" {
@@ -142,6 +152,15 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 				}
 				return authz.Read, nil
 			},
+		},
+		{
+			label: "exclude test file and sub-directory",
+			subRepoPerms: authz.SubRepoPermissions{
+				PathIncludes: []string{"**"},
+				PathExcludes: []string{"**_test.go", "subdir_no_access/**"},
+			},
+			commit:                 lastCommit,
+			expectedFilesInArchive: []string{"file1", "subdir/", "subdir/file2"},
 		},
 	}
 
@@ -158,7 +177,7 @@ func TestArchiveReaderSubRepoFiltersFiles(t *testing.T) {
 
 			opts := gitserver.ArchiveOptions{
 				Format:  ArchiveFormatZip,
-				Treeish: lastCommit,
+				Treeish: tc.commit,
 				Paths:   tc.requestedPaths,
 			}
 			readCloser, err := ArchiveReader(ctx, checker, repo.Name, opts)
