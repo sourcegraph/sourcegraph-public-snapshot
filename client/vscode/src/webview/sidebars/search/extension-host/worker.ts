@@ -2,7 +2,7 @@ import { Subscription } from 'rxjs'
 
 import { ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
 
-import { createEndpointsForWebToWeb } from '../../comlink/webviewEndpoint'
+import { createEndpointsForWebToWeb } from '../../../comlink/webviewEndpoint'
 
 // eslint-disable-next-line import/extensions
 import ExtensionHostWorker from './main.worker.ts'

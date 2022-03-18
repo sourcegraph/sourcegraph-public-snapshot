@@ -1,8 +1,9 @@
+import React, { useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import LinkIcon from 'mdi-react/LinkIcon'
-import React, { useCallback, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -11,6 +12,7 @@ import { WebviewPageProps } from '../../platform/context'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { BookmarkRadialGradientIcon, CodeMonitoringLogo } from './icons'
+
 import styles from './SearchResultsInfoBar.module.scss'
 
 // Debt: this is a fork of the web <SearchResultsInfobar>.
@@ -207,19 +209,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
-                    <li className={classNames('mr-2', styles.navItem)} data-tooltip="Feedback">
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-primary border-0 text-decoration-none"
-                            onClick={() =>
-                                extensionCoreAPI.openLink(
-                                    'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback'
-                                )
-                            }
-                        >
-                            Feedback
-                        </button>
-                    </li>
                     {createCodeMonitorButton}
                     {saveSearchButton}
                     <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">

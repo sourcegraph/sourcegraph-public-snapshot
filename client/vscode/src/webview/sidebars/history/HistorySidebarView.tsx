@@ -1,15 +1,17 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
-import { WebviewPageProps } from '../platform/context'
+import { WebviewPageProps } from '../../platform/context'
 
 import { RecentFilesSection } from './components/RecentFilesSection'
 import { RecentRepositoriesSection } from './components/RecentRepositoriesSection'
 import { RecentSearchesSection } from './components/RecentSearchesSection'
 import { SavedSearchesSection } from './components/SavedSearchesSection'
-import styles from './SearchSidebarView.module.scss'
+
+import styles from '../search/SearchSidebarView.module.scss'
 
 export interface HistorySidebarProps extends WebviewPageProps {
     authenticatedUser: AuthenticatedUser

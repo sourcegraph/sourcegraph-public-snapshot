@@ -24,7 +24,7 @@ export const IdeExtensionTracker: React.FunctionComponent = () => {
 
         if (utmProductName === 'IntelliJ IDEA') {
             setLastJetBrainsDetection(Date.now())
-        } else if (utmMedium === 'VSCIDE' || utmSource?.toLowerCase().startsWith('vscode')) {
+        } else if (utmMedium === 'VSCODE' || utmSource?.toLowerCase().startsWith('vscode')) {
             setLastVSCodeDetection(Date.now())
         }
 

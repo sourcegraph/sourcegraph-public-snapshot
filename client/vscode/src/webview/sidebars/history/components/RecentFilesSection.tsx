@@ -1,13 +1,15 @@
+import React, { useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useMemo, useState } from 'react'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/search'
 import { Link, useObservable } from '@sourcegraph/wildcard'
 
 import { HistorySidebarProps } from '../HistorySidebarView'
-import styles from '../SearchSidebarView.module.scss'
+
+import styles from '../../search/SearchSidebarView.module.scss'
 
 interface RecentFile {
     repoName: string

@@ -1,7 +1,7 @@
+import React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import isAbsoluteUrl from 'is-absolute-url'
-import React from 'react'
 
 import styles from '@sourcegraph/wildcard/src/components/Link/AnchorLink/AnchorLink.module.scss'
 import { useWildcardTheme } from '@sourcegraph/wildcard/src/hooks/useWildcardTheme'
@@ -128,7 +128,7 @@ function checkLink(uri: string): string {
         uri.startsWith('/code_search/reference/queries') ||
         uri.startsWith('/help')
     ) {
-        return `https://sourcegraph.com${uri}?editor=vscode&utm_medium=VSCIDE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up`
+        return `https://sourcegraph.com${uri}?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up`
     }
     if (uri.startsWith('https://')) {
         return uri

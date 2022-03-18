@@ -6,7 +6,12 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
-- TBA
+- Add Help and Feedback sidebar [issues/31021](https://github.com/sourcegraph/sourcegraph/issues/31021)
+- Add CONTRIBUTING guide [issues/26536](https://github.com/sourcegraph/sourcegraph/issues/26536)
+
+### Fixes
+
+- Improve developer scripts [issues/32741](https://github.com/sourcegraph/sourcegraph/issues/32741)
 
 ## 2.2.0
 
