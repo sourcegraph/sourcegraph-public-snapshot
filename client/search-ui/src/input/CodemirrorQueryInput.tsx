@@ -87,6 +87,8 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
 
+    const hasSubmitHandler = onSubmit !== undefined
+
     const editorCreated = useCallback(
         (editor: EditorView) => {
             setEditor(editor)
@@ -123,8 +125,8 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
             autocompletion,
         ]
 
-        if (onSubmit) {
-            extensions.push(Prec.highest(notifyOnEnter(onSubmit)))
+        if (hasSubmitHandler) {
+            extensions.push(Prec.high(notifyOnEnter))
         }
 
         if (onHandleFuzzyFinder) {
@@ -146,7 +148,25 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
             extensions.push(EditorView.editable.of(false))
         }
         return extensions
-    }, [autocompletion, onBlur, onChange, onHandleFuzzyFinder, onSubmit, placeholder, preventNewLine, editorOptions])
+    }, [
+        autocompletion,
+        onBlur,
+        onChange,
+        onHandleFuzzyFinder,
+        hasSubmitHandler,
+        placeholder,
+        preventNewLine,
+        editorOptions,
+    ])
+
+    // We use an effect + field to configure the submission handler so that we
+    // don't reconfigure the whole editor should the onSubmit handler change
+    // because of the changed query
+    useEffect(() => {
+        if (editor && onSubmit) {
+            editor.dispatch({ effects: [setNotifyHandler.of(onSubmit)] })
+        }
+    }, [editor, onSubmit])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
@@ -334,17 +354,31 @@ function useCodeMirror(
 // Enter from inserting a new line)
 const singleLine = EditorState.transactionFilter.of(transaction => (transaction.newDoc.lines > 1 ? [] : transaction))
 
-// Binds a function to the Enter key
-const notifyOnEnter = (notify: () => void): Extension =>
-    keymap.of([
-        {
-            key: 'Enter',
-            run: () => {
-                notify()
-                return true
+// Binds a function to the Enter key. Instead of using keymap directly, this is
+// configured via a state field that contains the event handler. This way the
+// event handler can be updated without having to reconfigure the whole editor.
+// The event handler must be set via the setNotifyHandler effect.
+const setNotifyHandler = StateEffect.define<() => void>()
+const notifyOnEnter = StateField.define<() => void>({
+    create() {
+        return () => {}
+    },
+    update(value, transaction) {
+        const effect = transaction.effects.find(effect => effect.is(setNotifyHandler))
+        return effect ? effect.value : value
+    },
+    provide(field) {
+        return keymap.of([
+            {
+                key: 'Enter',
+                run: view => {
+                    view.state.field(field)?.()
+                    return true
+                },
             },
-        },
-    ])
+        ])
+    },
+})
 
 // Defines decorators for syntax highlighting
 type StyleNames = keyof typeof styles
