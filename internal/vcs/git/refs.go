@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -148,28 +149,28 @@ func (f branchFilter) add(list []string) {
 }
 
 // ListBranches returns a list of all branches in the repository.
-func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*Branch, error) {
+func ListBranches(ctx context.Context, db database.DB, repo api.RepoName, opt BranchesOptions) ([]*Branch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
 	f := make(branchFilter)
 	if opt.MergedInto != "" {
-		b, err := branches(ctx, repo, "--merged", opt.MergedInto)
+		b, err := branches(ctx, db, repo, "--merged", opt.MergedInto)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 	if opt.ContainsCommit != "" {
-		b, err := branches(ctx, repo, "--contains="+opt.ContainsCommit)
+		b, err := branches(ctx, db, repo, "--contains="+opt.ContainsCommit)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 
-	refs, err := showRef(ctx, repo, "--heads")
+	refs, err := showRef(ctx, db, repo, "--heads")
 	if err != nil {
 		return nil, err
 	}
@@ -183,13 +184,13 @@ func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (
 
 		branch := &Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = getCommit(ctx, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+			branch.Commit, err = getCommit(ctx, db, repo, ref.CommitID, ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
+			branch.Counts, err = GetBehindAhead(ctx, db, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
 			if err != nil {
 				return nil, err
 			}
@@ -201,7 +202,7 @@ func ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
+func branches(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
@@ -219,7 +220,7 @@ func branches(ctx context.Context, repo api.RepoName, args ...string) ([]string,
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*BehindAhead, error) {
+func GetBehindAhead(ctx context.Context, db database.DB, repo api.RepoName, left, right string) (*BehindAhead, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
@@ -249,7 +250,7 @@ func GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) 
 }
 
 // ListTags returns a list of all tags in the repository.
-func ListTags(ctx context.Context, repo api.RepoName) ([]*Tag, error) {
+func ListTags(ctx context.Context, db database.DB, repo api.RepoName) ([]*Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
@@ -304,10 +305,10 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
-func ListRefs(ctx context.Context, repo api.RepoName) ([]Ref, error) {
+func ListRefs(ctx context.Context, db database.DB, repo api.RepoName) ([]Ref, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
 	defer span.Finish()
-	return showRef(ctx, repo)
+	return showRef(ctx, db, repo)
 }
 
 // Ref describes a Git ref.
@@ -316,7 +317,7 @@ type Ref struct {
 	CommitID api.CommitID
 }
 
-func showRef(ctx context.Context, repo api.RepoName, args ...string) ([]Ref, error) {
+func showRef(ctx context.Context, db database.DB, repo api.RepoName, args ...string) ([]Ref, error) {
 	cmd := gitserver.DefaultClient.Command("git", "show-ref")
 	cmd.Args = append(cmd.Args, args...)
 	cmd.Repo = repo
@@ -358,7 +359,7 @@ func ValidateBranchName(branch string) bool {
 }
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+func RevList(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

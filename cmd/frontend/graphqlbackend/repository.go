@@ -172,7 +172,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.db.Repos()).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -195,7 +195,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := git.GetDefaultBranch(ctx, r.RepoName())
+		refName, _, err := git.GetDefaultBranch(ctx, r.db, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -220,13 +220,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.db.Repos()).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -408,7 +408,8 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	Description *string
 	Date        *string
 }) (*GitCommitResolver, error) {
-	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
+	db := r.db
+	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -418,13 +419,13 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = git.ResolveRevision(ctx, repo.Name, targetRef, git.ResolveRevisionOptions{
+		_, err = git.ResolveRevision(ctx, db, repo.Name, targetRef, git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(r.db, repo)
+		r := NewRepositoryResolver(db, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
@@ -434,7 +435,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	origin := ""
-	if phabRepo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := database.Phabricator(db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 
@@ -442,7 +443,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, errors.New("unable to resolve the origin of the phabricator instance")
 	}
 
-	client, clientErr := makePhabClientForOrigin(ctx, r.db, origin)
+	client, clientErr := makePhabClientForOrigin(ctx, db, origin)
 
 	patch := ""
 	if args.Patch != nil {

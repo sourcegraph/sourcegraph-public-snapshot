@@ -84,7 +84,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	externalUploadHandler := newUploadHandler(false)
 
 	// Initialize gitserver client
-	gitserverClient := gitserver.New(dbStore, observationContext)
+	gitserverClient := gitserver.New(db, dbStore, observationContext)
 	repoUpdaterClient := repoupdater.New(observationContext)
 
 	// Initialize the index enqueuer

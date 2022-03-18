@@ -16,19 +16,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CaptureGroupExecutor struct {
+	db        database.DB
 	repoStore database.RepoStore
 	filter    compression.DataFrameFilter
 	clock     func() time.Time
 }
 
-func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
+func NewCaptureGroupExecutor(postgres, insightsDb database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
+		db:        postgres,
 		repoStore: database.Repos(postgres),
 		// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 		filter: &compression.NoopFilter{},
@@ -53,7 +54,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return nil, errors.Wrapf(err, "FirstEverCommit")
 		}
@@ -81,7 +82,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			commits, err := git.Commits(ctx, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {

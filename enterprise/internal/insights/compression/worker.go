@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,16 +30,17 @@ type RepoStore interface {
 }
 
 type CommitIndexer struct {
+	db                database.DB
 	limiter           *rate.Limiter
 	allReposIterator  func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
-	getCommits        func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
+	getCommits        func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
 	commitStore       CommitStore
 	maxHistoricalTime time.Time
 	background        context.Context
 	operations        *operations
 }
 
-func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbutil.DB, observationContext *observation.Context) *CommitIndexer {
+func NewCommitIndexer(background context.Context, base database.DB, insights database.DB, observationContext *observation.Context) *CommitIndexer {
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
@@ -65,6 +65,7 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 	operations := newOperations(observationContext)
 
 	indexer := CommitIndexer{
+		db:                base,
 		limiter:           limiter,
 		allReposIterator:  iterator.ForEach,
 		commitStore:       commitStore,
@@ -76,7 +77,7 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base dbutil.DB, insights dbutil.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights database.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	indexer := NewCommitIndexer(ctx, base, insights, observationContext)
 
 	return indexer.Handler(ctx, observationContext)
@@ -142,7 +143,7 @@ func (i *CommitIndexer) index(name string, id api.RepoID) (err error) {
 	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
 
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
-	commits, err := i.getCommits(ctx, repoName, searchTime, i.operations.getCommits)
+	commits, err := i.getCommits(ctx, i.db, repoName, searchTime, i.operations.getCommits)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
@@ -170,11 +171,11 @@ func (i *CommitIndexer) index(name string, id api.RepoID) (err error) {
 }
 
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.
-func getCommits(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
+func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
 	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return git.Commits(ctx, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)}, authz.DefaultSubRepoPermsChecker)
+	return git.Commits(ctx, db, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)}, authz.DefaultSubRepoPermsChecker)
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as

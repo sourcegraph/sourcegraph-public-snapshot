@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -105,6 +104,7 @@ const (
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
 // is limited by the gitMaxConcurrentClones site configuration.
 type UpdateScheduler struct {
+	db          database.DB
 	updateQueue *updateQueue
 	schedule    *schedule
 }
@@ -123,8 +123,9 @@ type configuredRepo struct {
 const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
-func NewUpdateScheduler() *UpdateScheduler {
+func NewUpdateScheduler(db database.DB) *UpdateScheduler {
 	return &UpdateScheduler{
+		db: db,
 		updateQueue: &updateQueue{
 			index:         make(map[api.RepoID]*repoUpdate),
 			notifyEnqueue: make(chan struct{}, notifyChanBuffer),
@@ -203,7 +204,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
 				// deadline shorter than the value of this config.
-				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
+				resp, err := requestRepoUpdate(ctx, s.db, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
 					log15.Error("runUpdateLoop: error requesting repo update", "uri", repo.Name, "err", err)
@@ -252,7 +253,7 @@ func getCustomInterval(c *conf.Unified, repoName string) time.Duration {
 }
 
 // requestRepoUpdate sends a request to gitserver to request an update.
-var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+var requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 	return gitserver.DefaultClient.RequestRepoUpdate(ctx, repo.Name, since)
 }
 
@@ -386,7 +387,7 @@ func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
-func (s *UpdateScheduler) DebugDump(ctx context.Context, db dbutil.DB) interface{} {
+func (s *UpdateScheduler) DebugDump(ctx context.Context, db database.DB) interface{} {
 	data := struct {
 		Name        string
 		UpdateQueue []*repoUpdate

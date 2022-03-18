@@ -9,11 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestRead(t *testing.T) {
 	t.Parallel()
 
+	db := database.NewMockDB()
 	const wantData = "abcd\n"
 	repo := MakeGitRepository(t,
 		"echo abcd > file1",
@@ -60,7 +62,7 @@ func TestRead(t *testing.T) {
 			UID: 1,
 		})
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, nil)
+			data, err := ReadFile(ctx, db, repo, commitID, test.file, test.maxBytes, nil)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
@@ -73,7 +75,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, checker)
+			data, err := ReadFile(ctx, db, repo, commitID, test.file, test.maxBytes, checker)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -83,7 +85,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, checker)
+			data, err := ReadFile(ctx, db, repo, commitID, test.file, test.maxBytes, checker)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
@@ -113,7 +115,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			rc, err := NewFileReader(ctx, repo, commitID, test.file, checker)
+			rc, err := NewFileReader(ctx, database.NewMockDB(), repo, commitID, test.file, checker)
 			if err != os.ErrNotExist {
 				t.Fatalf("unexpected error: %s", err)
 			}
@@ -124,7 +126,7 @@ func TestRead(t *testing.T) {
 	}
 
 	t.Run("maxBytes", func(t *testing.T) {
-		data, err := ReadFile(ctx, repo, commitID, "file1", 3, nil)
+		data, err := ReadFile(ctx, db, repo, commitID, "file1", 3, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -137,7 +139,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewFileReader(ctx, repo, commitID, file, checker)
+	rc, err := NewFileReader(ctx, database.NewMockDB(), repo, commitID, file, checker)
 	if err != nil {
 		t.Fatal(err)
 	}
