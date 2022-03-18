@@ -86,6 +86,7 @@ type alias Model =
     , dataFilter : DataFilter
     , selectedTab : Tab
     , resultsMap : Dict String DataValue
+    , alerts : List Alert
 
     -- Debug client only
     , serverless : Bool
@@ -136,6 +137,7 @@ init json =
       , selectedTab = Chart
       , debounce = 0
       , resultsMap = Dict.empty
+      , alerts = []
       , serverless = False
       }
     , Task.perform identity (Task.succeed RunCompute)
@@ -194,6 +196,9 @@ eventDecoder event =
         Just "done" ->
             ResultStreamDone
 
+        Just "alert" ->
+            OnAlert (alertEventDecoder event.data)
+
         _ ->
             NoOp
 
@@ -203,6 +208,16 @@ resultEventDecoder input =
     case Decode.decodeString (Decode.list resultDecoder) input of
         Ok results ->
             results
+
+        Err _ ->
+            []
+
+
+alertEventDecoder : String -> List Alert
+alertEventDecoder input =
+    case Decode.decodeString alertDecoder input of
+        Ok alert ->
+            [ alert ]
 
         Err _ ->
             []
@@ -222,6 +237,7 @@ type Msg
       -- Data processing
     | RunCompute
     | OnResults (List Result)
+    | OnAlert (List Alert)
     | ResultStreamDone
     | NoOp
 
@@ -283,7 +299,7 @@ update msg model =
                 ( { model | resultsMap = exampleResultsMap }, Cmd.none )
 
             else
-                ( { model | resultsMap = Dict.empty }
+                ( { model | resultsMap = Dict.empty, alerts = [] }
                 , Cmd.batch
                     [ emitInput
                         { computeQueries = [ model.query ]
@@ -309,6 +325,9 @@ update msg model =
             ( { model | resultsMap = List.foldl updateResultsMap model.resultsMap (parseResults r) }
             , Cmd.none
             )
+
+        OnAlert alert ->
+            ( { model | alerts = List.append model.alerts alert }, Cmd.none )
 
         ResultStreamDone ->
             ( model, Cmd.none )
@@ -554,6 +573,22 @@ tab thisTab selectedTab =
         )
 
 
+outputAlerts : List Alert -> E.Element Msg
+outputAlerts alerts =
+    E.column [ E.width E.fill, F.size 10, E.paddingEach { top = 0, left = 0, right = 0, bottom = 10 }, E.spacing 3 ]
+        (List.map
+            (\a ->
+                E.el
+                    [ Background.color alertBackgroundColor
+                    , E.paddingEach { top = 5, bottom = 5, left = 10, right = 10 }
+                    , Border.rounded 2
+                    ]
+                    (E.paragraph [] [ E.text (a.title ++ ": " ++ a.description) ])
+            )
+            alerts
+        )
+
+
 outputRow : Tab -> E.Element Msg
 outputRow selectedTab =
     E.row [ E.centerX, E.width E.fill ]
@@ -575,6 +610,7 @@ view model =
         (E.row [ E.centerX, E.width (E.fill |> E.maximum width) ]
             [ E.column [ E.centerX, E.width (E.fill |> E.maximum width), E.paddingXY 20 20 ]
                 [ inputRow model
+                , outputAlerts model.alerts
                 , outputRow model.selectedTab
                 , let
                     data =
@@ -692,6 +728,12 @@ type alias TextResult =
     }
 
 
+type alias Alert =
+    { title : String
+    , description : String
+    }
+
+
 
 -- DECODERS
 
@@ -747,6 +789,13 @@ textResultDecoder =
         |> Json.Decode.Pipeline.optional "path" (maybe Decode.string) Nothing
 
 
+alertDecoder : Decoder Alert
+alertDecoder =
+    Decode.succeed Alert
+        |> Json.Decode.Pipeline.required "title" Decode.string
+        |> Json.Decode.Pipeline.required "description" Decode.string
+
+
 
 -- STYLING
 
@@ -764,6 +813,11 @@ darkModeFontColor =
 darkModeTextInputColor : E.Color
 darkModeTextInputColor =
     E.rgb255 0x1D 0x22 0x2F
+
+
+alertBackgroundColor : E.Color
+alertBackgroundColor =
+    E.rgb255 0x9C 0x65 0x00
 
 
 
