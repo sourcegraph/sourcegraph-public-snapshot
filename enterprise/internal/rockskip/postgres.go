@@ -15,6 +15,13 @@ import (
 
 type CommitId = int
 
+type StatusAD int
+
+const (
+	AddedAD   StatusAD = 0
+	DeletedAD StatusAD = 1
+)
+
 func GetCommitById(ctx context.Context, db dbutil.DB, givenCommit CommitId) (commitHash string, ancestor CommitId, height int, present bool, err error) {
 	err = db.QueryRowContext(ctx, `
 		SELECT commit_id, ancestor, height
