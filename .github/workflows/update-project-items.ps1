@@ -54,9 +54,11 @@ switch ($github.event_name) {
             $proposer = $github.event.sender.login
             Write-Information "Updating issue as 'Proposed for iteration' by @$proposer"
 
-            $item |
-                Set-GitHubBetaProjectItemField -Name 'Status' -Value 'Proposed for iteration' |
-                Set-GitHubBetaProjectItemField -Name 'Proposed by' -Value $proposer
+            if ($item.Fields['Status'] -notin 'In Progress', 'In Review', 'Done') {
+                $item |
+                    Set-GitHubBetaProjectItemField -Name 'Status' -Value 'Proposed for iteration' |
+                    Set-GitHubBetaProjectItemField -Name 'Proposed by' -Value $proposer
+            }
 
             # Post Slack message
 
