@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
@@ -10,7 +11,7 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (insight: MinimalSearchBasedInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
@@ -18,7 +19,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
-        if (insight.type === InsightExecutionType.Backend) {
+        if (insight.executionType === InsightExecutionType.Backend) {
             return {
                 title: insight.title,
                 repositories: '',
@@ -47,7 +48,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
 
         // Preserve backend insight filters since these filters aren't represented
         // in the editing form
-        if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
+        if (sanitizedInsight.executionType === InsightExecutionType.Backend && isSearchBackendBasedInsight(insight)) {
             return onSubmit({
                 ...sanitizedInsight,
                 filters: insight.filters,
