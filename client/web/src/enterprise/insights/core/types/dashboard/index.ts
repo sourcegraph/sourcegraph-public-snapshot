@@ -1,25 +1,23 @@
-import { InsightDashboardOwner, InsightsDashboardScope, InsightsDashboardType } from './core'
-import { BuiltInInsightDashboard, CustomInsightDashboard, RealInsightDashboard } from './real-dashboard'
+import { InsightsDashboardScope, InsightsDashboardType } from './core'
+import { CustomInsightDashboard } from './custom-dashboard'
 import { VirtualInsightsDashboard } from './virtual-dashboard'
 
 export { InsightsDashboardScope, InsightsDashboardType }
+
 export type {
-    RealInsightDashboard,
     VirtualInsightsDashboard,
     CustomInsightDashboard,
-    BuiltInInsightDashboard,
-    InsightDashboardOwner,
 }
 
 /** Main insight dashboard definition */
-export type InsightDashboard = RealInsightDashboard | VirtualInsightsDashboard
+export type InsightDashboard = CustomInsightDashboard | VirtualInsightsDashboard
 
 // Type guards for code insights dashboards
 export const isVirtualDashboard = (dashboard: InsightDashboard): dashboard is VirtualInsightsDashboard =>
     dashboard.type === InsightsDashboardType.Virtual
 
-export const isRealDashboard = (dashboard: InsightDashboard): dashboard is RealInsightDashboard =>
-    dashboard.type === InsightsDashboardType.BuiltIn || dashboard.type === InsightsDashboardType.Custom
+export const isCustomDashboard = (dashboard: InsightDashboard): dashboard is CustomInsightDashboard =>
+    dashboard.type === InsightsDashboardType.Custom
 
 // Scope dashboard selectors
 export const isOrganizationDashboard = (dashboard: InsightDashboard): boolean =>
@@ -30,3 +28,4 @@ export const isPersonalDashboard = (dashboard: InsightDashboard): boolean =>
 
 export const isGlobalDashboard = (dashboard: InsightDashboard): boolean =>
     dashboard.scope === InsightsDashboardScope.Global
+

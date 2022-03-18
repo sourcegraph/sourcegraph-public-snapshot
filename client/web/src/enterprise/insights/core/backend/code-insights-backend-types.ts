@@ -12,9 +12,8 @@ import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/i
 
 export interface DashboardCreateInput {
     name: string
-    visibility: string
+    visibility:
     insightIds?: string[]
-    type?: string
 }
 
 export interface DashboardCreateResult {

@@ -1,5 +1,5 @@
 import { InsightDashboard, isRealDashboard, CustomInsightDashboard } from '../../../../../../core/types'
-import { isCustomInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../../../../../../core/types/dashboard/custom-dashboard'
 
 /**
  * Only dashboards that are stored in user/org/global settings can be edited.

@@ -16,7 +16,7 @@ import { CodeInsightsPage } from '../../../components/code-insights-page/CodeIns
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
-import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
+import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/custom-dashboard'
 import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/subjects'
 import {
     DashboardCreationFields,

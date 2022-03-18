@@ -1,5 +1,12 @@
 import { gql } from '@apollo/client'
 
+const USER_SUBJECT_FRAGMENT = gql`
+    fragment UserSubjectFragment on User {
+        __typename
+        id
+    }
+`
+
 export const GET_INSIGHTS_SUBJECTS_GQL = gql`
     query InsightSubjects {
         currentUser {

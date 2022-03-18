@@ -1,16 +1,13 @@
-import React, { ReactNode, useCallback, useContext } from 'react'
+import React, { ReactNode } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
 
 import { FormGroup } from '../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
-import { AsyncValidator } from '../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../components/form/validators'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import {
     isGlobalSubject,
     isOrganizationSubject,
@@ -28,7 +25,6 @@ const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
 export interface DashboardCreationFields {
     name: string
     visibility: string
-    type?: string
     userId?: string
 }
 
@@ -50,8 +46,6 @@ export interface InsightsDashboardCreationContentProps {
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
     const { initialValues, subjects, onSubmit, children } = props
 
-    const { findDashboardByName } = useContext(CodeInsightsBackendContext)
-
     // We always have user subject in our settings cascade
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
     const organizationSubjects = subjects.filter(isOrganizationSubject)
@@ -61,50 +55,13 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
-        // Override onSubmit to pass type value
-        // to correctly set the grants' property for graphql api
-        onSubmit: async (): Promise<SubmissionErrors> => {
-            let type = 'organization'
-            if (visibility.input.value === userSubjectID) {
-                type = 'personal'
-            }
-
-            if (visibility.input.value === globalSubject?.id) {
-                type = 'global'
-            }
-
-            return onSubmit({
-                name: name.input.value,
-                visibility: visibility.input.value,
-                type,
-            })
-        },
+        onSubmit
     })
-
-    const asyncNameValidator = useCallback<AsyncValidator<string>>(
-        async name => {
-            // Pass empty value and initial value (for edit page original name is acceptable)
-            if (!name || name === '' || name === initialValues?.name) {
-                return
-            }
-
-            try {
-                const possibleDashboard = await findDashboardByName(name).toPromise()
-
-                return possibleDashboard !== null
-                    ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
-                    : undefined
-            } catch (error) {
-                return asError(error).message || 'Unknown Error'
-            }
-        },
-        [findDashboardByName, initialValues?.name]
-    )
 
     const name = useField({
         name: 'name',
         formApi: formAPI,
-        validators: { sync: dashboardTitleRequired, async: asyncNameValidator },
+        validators: { sync: dashboardTitleRequired },
     })
 
     const visibility = useField({
@@ -168,15 +125,19 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     />
                 )}
 
-                <FormRadioInput
-                    name="visibility"
-                    value={globalSubject?.id}
-                    title="Global"
-                    description="visible to everyone on your Sourcegraph instance"
-                    checked={visibility.input.value === globalSubject?.id}
-                    className="mr-3 flex-grow-0"
-                    onChange={visibility.input.onChange}
-                />
+                {
+                    globalSubject &&
+                        <FormRadioInput
+                            name="visibility"
+                            value={globalSubject.id}
+                            title="Global"
+                            description="visible to everyone on your Sourcegraph instance"
+                            checked={visibility.input.value === globalSubject.id}
+                            className="mr-3 flex-grow-0"
+                            onChange={visibility.input.onChange}
+                        />
+                }
+
             </FormGroup>
 
             {formAPI.submitErrors?.[FORM_ERROR] && (

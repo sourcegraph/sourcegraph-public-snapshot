@@ -21,17 +21,6 @@ export enum SupportedInsightSubjectType {
     Global = 'Site',
 }
 
-export const SUBJECT_SHARING_LEVELS: Record<string, number> = {
-    [SupportedInsightSubjectType.User]: 1,
-    [SupportedInsightSubjectType.Organization]: 2,
-    [SupportedInsightSubjectType.Global]: 3,
-}
-
-export const SUPPORTED_TYPES_OF_SUBJECT = new Set<string>(Object.values(SupportedInsightSubjectType))
-
-export const isSubjectInsightSupported = (subject: SettingsSubject): subject is SupportedInsightSubject =>
-    SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
-
 export const isGlobalSubject = (subject: SettingsSubject): subject is SettingsSiteSubject =>
     subject.__typename === SupportedInsightSubjectType.Global
 

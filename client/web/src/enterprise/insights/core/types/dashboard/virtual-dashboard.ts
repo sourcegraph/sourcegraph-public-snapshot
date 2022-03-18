@@ -1,14 +1,14 @@
-import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from './core'
+import { InsightsDashboardScope, InsightsDashboardType } from './core'
 
 /**
  * Special 'virtual' dashboard that includes all insights from the personal and organization and global
  * level dashboards. Virtual dashboard doesn't exist in settings but lives only in a runtime.
  */
-export interface VirtualInsightsDashboard extends InsightDashboard {
+export interface VirtualInsightsDashboard {
+    id: string
     type: InsightsDashboardType.Virtual
     scope: InsightsDashboardScope.Personal
-    id: string
-    insightIds?: string[]
+    title: string
 }
 
 /**
@@ -25,5 +25,4 @@ export const ALL_INSIGHTS_DASHBOARD: VirtualInsightsDashboard = {
     type: InsightsDashboardType.Virtual,
     scope: InsightsDashboardScope.Personal,
     title: 'All Insights',
-    insightIds: [],
 }

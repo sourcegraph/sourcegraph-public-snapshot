@@ -23,28 +23,6 @@ export enum InsightsDashboardScope {
 
 export enum InsightsDashboardType {
     Virtual = 'virtual',
-    BuiltIn = 'builtIn',
     Custom = 'custom',
 }
 
-/**
- * Information about dashboard owner. It can be a user-type subject (personal dashboard), org subject
- * (org level dashboard)
- */
-export interface InsightDashboardOwner {
-    id: string
-    name: string
-}
-
-export interface InsightDashboard {
-    id: string
-    type: InsightsDashboardType
-    scope: InsightsDashboardScope
-    title: string
-    insightIds?: string[]
-    grants?: {
-        users: string[]
-        organizations: string[]
-        global: boolean
-    }
-}

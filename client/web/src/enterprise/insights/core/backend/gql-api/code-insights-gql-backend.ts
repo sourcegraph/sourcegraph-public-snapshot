@@ -219,7 +219,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                             type: InsightsDashboardType.Custom,
                             scope: parseDashboardScope(dashboard.grants),
                             title: dashboard.title,
-                            insightIds: dashboard.views?.nodes.map(view => view.id),
+                            insightIds: dashboard.views?.nodes.map(view => view.id) ?? [],
                             grants: dashboard.grants,
                         })
                     ),
@@ -255,15 +255,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return []
                 }
 
-                return [{ ...currentUser }, ...currentUser.organizations.nodes, site]
+                return [currentUser, ...currentUser.organizations.nodes, site]
             })
         )
 
     public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> => {
-        if (!input.type) {
-            throw new Error('`grants` are required to create a new dashboard')
-        }
-
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
             grants: createDashboardGrants(input),
@@ -351,10 +347,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     }
 
     public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
-        if (!nextDashboardInput.type) {
-            throw new Error('`grants` are required to update a dashboard')
-        }
-
         const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
             grants: createDashboardGrants(nextDashboardInput),
