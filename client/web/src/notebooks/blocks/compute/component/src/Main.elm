@@ -342,17 +342,15 @@ table data =
             [ F.bold
             , F.size 12
             , F.color darkModeFontColor
-            , E.padding 5
-            , Border.widthEach { bottom = 1, top = 0, left = 0, right = 0 }
             ]
     in
-    E.el [ E.padding 100, E.centerX ]
+    E.el [ E.padding 10, E.centerX ]
         (E.table [ E.width E.fill ]
             { data = data
             , columns =
                 [ { header = E.el headerAttrs (E.text " ")
                   , width = E.fillPortion 2
-                  , view = \v -> E.el [ E.padding 5 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
+                  , view = \v -> E.el [ E.padding 10 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
                   }
                 , { header = E.el (headerAttrs ++ [ F.alignRight ]) (E.text "Count")
                   , width = E.fillPortion 1
@@ -363,7 +361,6 @@ table data =
                                 , F.size 12
                                 , F.color darkModeFontColor
                                 , F.alignRight
-                                , E.padding 5
                                 ]
                                 (E.text (String.fromFloat v.value))
                   }
