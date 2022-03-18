@@ -99,7 +99,7 @@ function createSearchBasedInsight(
 
                 return updateInsight(
                     apolloClient,
-                    { oldInsight: createdInsight, nextInsightData: createdInsight },
+                    { insightId: createdInsight.id, nextInsightData: createdInsight },
                     (cache, result) => {
                         const { data } = result
 

@@ -2,7 +2,7 @@ import { ApolloClient } from '@apollo/client'
 import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { fromObservableQuery } from '@sourcegraph/http-client';
+import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { GetInsightViewResult, InsightViewFiltersInput } from '../../../../../../../graphql-operations'
 import { BackendInsight } from '../../../../types'

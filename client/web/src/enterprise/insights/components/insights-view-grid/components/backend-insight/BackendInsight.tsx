@@ -89,7 +89,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         try {
             const insightWithNewFilters = { ...insight, filters }
 
-            await updateInsight({ oldInsight: insight, nextInsightData: insightWithNewFilters }).toPromise()
+            await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
 

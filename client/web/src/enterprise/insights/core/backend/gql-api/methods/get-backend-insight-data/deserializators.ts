@@ -1,5 +1,5 @@
 import { InsightDataNode, InsightDataSeries } from '../../../../../../../graphql-operations'
-import { DATA_SERIES_COLORS } from '../../../../../pages/insights/creation/search-insight';
+import { DATA_SERIES_COLORS } from '../../../../../pages/insights/creation/search-insight'
 import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../../../types'
 import { BackendInsightData } from '../../../code-insights-backend-types'
 import { createLineChartContent } from '../../../utils/create-line-chart-content'
@@ -23,7 +23,10 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
     }
 }
 
-function getParsedDataSeriesMetadata(insight: BackendInsight, seriesData: InsightDataSeries[]): SearchBasedInsightSeries[] {
+function getParsedDataSeriesMetadata(
+    insight: BackendInsight,
+    seriesData: InsightDataSeries[]
+): SearchBasedInsightSeries[] {
     switch (insight.type) {
         case InsightType.SearchBased:
             return insight.series
