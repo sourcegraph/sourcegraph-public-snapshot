@@ -281,12 +281,13 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				}
 
 				// Don't run a repo search if the search contains fields that aren't on the allowlist.
-				for field := range args.Query.Fields() {
+				exists := true
+				query.VisitParameter(q, func(field, _ string, _ bool, _ query.Annotation) {
 					if _, ok := fieldAllowlist[field]; !ok {
-						return false
+						exists = false
 					}
-				}
-				return true
+				})
+				return exists
 			}
 
 			// returns an updated RepoOptions if the pattern part of a query can be used to
