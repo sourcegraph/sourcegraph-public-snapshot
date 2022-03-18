@@ -105,7 +105,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Typ:            typ,
 					FileMatchLimit: args.PatternInfo.FileMatchLimit,
 					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
+					Zoekt:          jargs.Zoekt,
 				}
 
 				addJob(true, &zoektutil.GlobalSearch{
@@ -129,7 +129,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Typ:            typ,
 					FileMatchLimit: args.PatternInfo.FileMatchLimit,
 					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
+					Zoekt:          jargs.Zoekt,
 				}
 
 				addJob(true, &symbol.RepoUniverseSymbolSearch{
@@ -163,7 +163,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
 				PatternInfo:     args.PatternInfo,
 				Indexed:         false,
-				SearcherURLs:    args.SearcherURLs,
+				SearcherURLs:    jargs.SearcherURLs,
 				UseFullDeadline: args.UseFullDeadline,
 			})
 
@@ -244,7 +244,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 			}
 
 			searcherArgs := &search.SearcherParameters{
-				SearcherURLs:    args.SearcherURLs,
+				SearcherURLs:    jargs.SearcherURLs,
 				PatternInfo:     args.PatternInfo,
 				UseFullDeadline: args.UseFullDeadline,
 			}
