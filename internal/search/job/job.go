@@ -222,7 +222,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Query:                commit.QueryToGitQuery(args.Query, diff),
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
-				HasTimeFilter:        commit.HasTimeFilter(args.Query),
+				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(args.PatternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 				Gitserver:            gitserver.DefaultClient,
