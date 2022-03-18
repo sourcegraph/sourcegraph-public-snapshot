@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": false,
@@ -85,6 +85,12 @@
           "id": "sourcegraph.files",
           "name": "Files",
           "visibility": "visible"
+        },
+        {
+          "type": "webview",
+          "id": "sourcegraph.helpSidebar",
+          "name": "Help and feedback",
+          "visibility": "collapsed"
         }
       ]
     },
@@ -198,11 +204,8 @@
     "build": "yarn task:gulp webpack",
     "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
     "build:web": "TARGET_TYPE=webworker yarn task:gulp webpack",
+    "watch": "yarn task:gulp watchWebpack",
     "watch:node": "NODE_ENV=development TARGET_TYPE=node yarn task:gulp watchWebpack",
     "watch:web": "NODE_ENV=development TARGET_TYPE=webworker yarn task:gulp watchWebpack"
-  },
-  "dependencies": {
-    "https-browserify": "^1.0.0",
-    "stream-http": "^3.2.0"
   }
 }

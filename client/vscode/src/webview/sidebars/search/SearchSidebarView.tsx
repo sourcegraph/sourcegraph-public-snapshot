@@ -15,7 +15,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { WebviewPageProps } from '../platform/context'
+import { WebviewPageProps } from '../../platform/context'
 
 import styles from './SearchSidebarView.module.scss'
 

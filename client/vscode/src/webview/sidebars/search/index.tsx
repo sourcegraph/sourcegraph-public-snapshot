@@ -1,9 +1,10 @@
-import '../platform/polyfills'
+import '../../platform/polyfills'
+
+import React, { useMemo, useState } from 'react'
 
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import React, { useMemo, useState } from 'react'
 import { render } from 'react-dom'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
@@ -11,15 +12,15 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExtensionCoreAPI } from '../../contract'
-import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
-import { createPlatformContext, WebviewPageProps } from '../platform/context'
-import { adaptSourcegraphThemeToEditorTheme } from '../theming/sourcegraphTheme'
+import { ExtensionCoreAPI } from '../../../contract'
+import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
+import { createPlatformContext, WebviewPageProps } from '../../platform/context'
+import { adaptSourcegraphThemeToEditorTheme } from '../../theming/sourcegraphTheme'
+import { AuthSidebarCta, AuthSidebarView } from '../auth/AuthSidebarView'
+import { HistoryHomeSidebar } from '../history/HistorySidebarView'
 
 import { createSearchSidebarAPI } from './api'
-import { AuthSidebarView } from './AuthSidebarView'
 import { ContextInvalidatedSidebarView } from './ContextInvalidatedSidebarView'
-import { HistoryHomeSidebar } from './HistorySidebarView'
 import { SearchSidebarView } from './SearchSidebarView'
 
 const vsCodeApi = window.acquireVsCodeApi()
@@ -94,7 +95,12 @@ const Main: React.FC = () => {
         // TODO: should we hide the access token form permanently if an unauthenticated user
         // has performed a search before? Or just for this session?
         if (!authenticatedUser) {
-            return <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />
+            return (
+                <>
+                    <AuthSidebarCta platformContext={platformContext} />
+                    <AuthSidebarView {...webviewPageProps} />
+                </>
+            )
         }
         return <HistoryHomeSidebar {...webviewPageProps} authenticatedUser={authenticatedUser} />
     }
@@ -108,7 +114,6 @@ const Main: React.FC = () => {
                 settingsCascade={settingsCascade}
                 filters={filters}
             />
-            {!authenticatedUser && <AuthSidebarView {...webviewPageProps} stateStatus={state.status} />}
         </>
     )
 }

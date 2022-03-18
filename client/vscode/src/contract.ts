@@ -79,3 +79,5 @@ export interface SearchSidebarAPI
 
     addViewerIfNotExists: (viewer: ViewerData) => Promise<ViewerId>
 }
+
+export interface HelpSidebarAPI {}

@@ -7,8 +7,8 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 
-import { SearchSidebarAPI } from '../../../contract'
-import { WebviewPageProps } from '../../platform/context'
+import { SearchSidebarAPI } from '../../../../contract'
+import { WebviewPageProps } from '../../../platform/context'
 
 import { createExtensionHost } from './worker'
 

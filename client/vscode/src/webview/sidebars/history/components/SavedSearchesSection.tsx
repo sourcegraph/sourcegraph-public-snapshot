@@ -9,10 +9,10 @@ import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../graphql-operations'
+import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
 
-import styles from '../SearchSidebarView.module.scss'
+import styles from '../../search/SearchSidebarView.module.scss'
 
 const savedSearchQuery = gql`
     query SavedSearches {
