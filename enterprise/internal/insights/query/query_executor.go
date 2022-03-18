@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,9 +28,9 @@ type CaptureGroupExecutor struct {
 	clock     func() time.Time
 }
 
-func NewCaptureGroupExecutor(postgres, insightsDb database.DB, clock func() time.Time) *CaptureGroupExecutor {
+func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
-		db:        postgres,
+		db:        database.NewDB(postgres),
 		repoStore: database.Repos(postgres),
 		// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 		filter: &compression.NoopFilter{},

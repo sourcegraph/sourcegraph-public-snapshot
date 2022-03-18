@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -73,7 +74,7 @@ func FetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit 
 	return openGzipReader(path)
 }
 
-func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+func FetchTarFromGithub(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 	r, err := FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
 	return r, err
 }

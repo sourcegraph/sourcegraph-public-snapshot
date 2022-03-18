@@ -10,6 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -193,8 +194,8 @@ func commit(ref string, commitTime string) *gitdomain.Commit {
 	}
 }
 
-func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
-	return func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+	return func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 		return commits[(string(name))], nil
 	}
 }
