@@ -14,7 +14,7 @@ const STATUS_OPTIONS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, DRAF
 const STATUS_OPTIONS_NO_DRAFTS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, CLOSED_STATUS]
 
 interface BatchChangeListFiltersProps
-    extends Required<Pick<MultiSelectProps<MultiSelectOption<BatchChangeState>>, 'onChange' | 'defaultValue'>> {
+    extends Required<Pick<MultiSelectProps<MultiSelectOption<BatchChangeState>>, 'onChange' | 'value'>> {
     className?: string
     isExecutionEnabled: boolean
 }
