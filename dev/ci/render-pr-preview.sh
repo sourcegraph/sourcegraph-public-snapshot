@@ -48,7 +48,7 @@ while getopts 'b:r:d' flag; do
 done
 
 if [[ "$repo_url" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
-  owner_and_repo=$(echo "${BASH_REMATCH[2]}" | sed 's/\.git//')
+  owner_and_repo=$(echo "${BASH_REMATCH[2]//\.git/}")
 else
   echo "Couldn't find owner_and_repo"
   exit 1
@@ -57,7 +57,7 @@ fi
 render_api_key="${RENDER_COM_API_KEY}"
 render_owner_id="${RENDER_COM_OWNER_ID}"
 pr_number="${BUILDKITE_PULL_REQUEST}"
-github_token="${GITHUB_TOKEN}"
+github_api_key="${GITHUB_TOKEN}"
 
 if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
@@ -155,7 +155,7 @@ fi
 
 echo "pr_preview_url: ${pr_preview_url}"
 
-if [[ -z "${pr_number}" || -z "${github_token}" ]]; then
+if [[ -z "${pr_number}" || -z "${github_api_key}" ]]; then
   echo "Pull request number (BUILDKITE_PULL_REQUEST) or github token (GITHUB_TOKEN) is not set, abort updating PR description step"
 else
   echo "Update PR description with PR preview app url"
@@ -164,7 +164,7 @@ else
 
   pr_description=$(curl -sSf --request GET \
     --url "${github_api_url}" \
-    --user "apikey:${github_token}" \
+    --user "apikey:${github_api_key}" \
     --header 'Accept: application/vnd.github.v3+json' \
     --header 'Content-Type: application/json' | jq -r '.body')
 
@@ -173,7 +173,7 @@ else
 
     curl -sSf -o /dev/null --request PATCH \
       --url "${github_api_url}" \
-      --user "apikey:${github_token}" \
+      --user "apikey:${github_api_key}" \
       --header 'Accept: application/vnd.github.v3+json' \
       --header 'Content-Type: application/json' \
       --data "{ \"body\": ${pr_description} }"
