@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import React, { useState } from 'react'
 
 import { storiesOf } from '@storybook/react'

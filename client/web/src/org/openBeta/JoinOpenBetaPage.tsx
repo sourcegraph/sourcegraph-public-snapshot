@@ -75,8 +75,12 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
         otherPlanValid
 
     useEffect(() => {
-        eventLogger.log('JoinOpenBetaLoaded')
-    }, [])
+        eventLogger.log(
+            'CloudOpenBetaEnrollmentStarted',
+            { userId: authenticatedUser.id },
+            { userId: authenticatedUser.id }
+        )
+    }, [authenticatedUser.id])
 
     useEffect(() => {
         setOtherRepo(undefined)
@@ -100,6 +104,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
     }
 
     const onCancelClick = (): void => {
+        eventLogger.log('CloudOpenBetaEnrollmentCancelled')
         history.push(`/users/${authenticatedUser.username}/settings/organizations`)
     }
 
@@ -123,7 +128,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         async event => {
             event.preventDefault()
-            eventLogger.log('JoinOpenBetaAnswers')
+            eventLogger.log('OpenBetaEnrollmentContinueClicked')
             if (!event.currentTarget.checkValidity() || !isValidForm) {
                 return
             }
@@ -140,10 +145,10 @@ export const JoinOpenBetaPage: React.FunctionComponent<Props> = ({ authenticated
                     ? (result.data as { addOrgsOpenBetaStats: string }).addOrgsOpenBetaStats
                     : INVALID_BETA_ID_KEY
                 localStorage.setItem(OPEN_BETA_ID_KEY, openBetaId)
-                eventLogger.log('JoinOpenBetaAnswersOK')
+                eventLogger.log('OpenBetaEnrollmentSucceeded', { openBetaId }, { openBetaId })
                 history.push(`/organizations/joinopenbeta/neworg/${openBetaId}`)
             } catch {
-                eventLogger.log('JoinOpenBetaAnswersFailed')
+                eventLogger.log('OpenBetaEnrollmentFailed')
             }
         },
         [

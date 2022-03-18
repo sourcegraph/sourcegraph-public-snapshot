@@ -2,11 +2,12 @@ import React, { useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
-import { Badge, LoadingSpinner, useObservable, Link } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, useObservable, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
+import { CodeInsightsIcon } from '../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { isCaptureGroupInsight, isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
@@ -61,16 +62,18 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
         <CodeInsightsPage>
             <PageTitle title="Edit code insight" />
 
-            <div className="mb-5">
-                <h2>Edit insight</h2>
-
-                <p className="text-muted">
-                    Insights analyze your code based on any search query.{' '}
-                    <Link to="/help/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </Link>
-                </p>
-            </div>
+            <PageHeader
+                className="mb-3"
+                path={[{ icon: CodeInsightsIcon }, { text: 'Edit insight' }]}
+                description={
+                    <p className="text-muted">
+                        Insights analyze your code based on any search query.{' '}
+                        <Link to="/help/code_insights" target="_blank" rel="noopener">
+                            Learn more.
+                        </Link>
+                    </p>
+                }
+            />
 
             {isSearchBasedInsight(insight) && (
                 <EditSearchBasedInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />

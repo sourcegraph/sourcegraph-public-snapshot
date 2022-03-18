@@ -74,7 +74,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
     return (
         <CodeInsightsPage>
             <PageHeader
-                path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
+                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
                         <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">

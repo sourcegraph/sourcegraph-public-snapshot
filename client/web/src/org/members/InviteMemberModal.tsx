@@ -60,7 +60,11 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
             return
         }
 
-        eventLogger.log('InviteOrganizationMemberClicked', { organizationId: orgId, isEmail })
+        eventLogger.log(
+            'InviteOrganizationMemberClicked',
+            { organizationId: orgId, isEmail },
+            { organizationId: orgId, isEmail }
+        )
         try {
             await inviteUserToOrganization({
                 variables: {
@@ -69,16 +73,16 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
                     email: isEmail ? userNameOrEmail : null,
                 },
             })
-            eventLogger.log('InviteOrganizationMemberSucceeded', { organizationId: orgId })
+            eventLogger.log('InviteOrganizationMemberSucceeded', { organizationId: orgId }, { organizationId: orgId })
         } catch {
-            eventLogger.log('InviteOrganizationMemberFailed', { organizationId: orgId })
+            eventLogger.log('InviteOrganizationMemberFailed', { organizationId: orgId }, { organizationId: orgId })
         }
     }, [userNameOrEmail, orgId, inviteUserToOrganization, isEmail])
 
     const debounceInviteUser = debounce(inviteUser, 500, { leading: true })
 
     const dismissWithLogging = useCallback(() => {
-        eventLogger.log('OrganizationInviteModalDismissed', { organizationId: orgId })
+        eventLogger.log('OrganizationInviteModalDismissed', { organizationId: orgId }, { organizationId: orgId })
         onDismiss()
     }, [onDismiss, orgId])
 
@@ -162,7 +166,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModal
     const onInviteClick = useCallback(() => {
         setModalOpened(true)
         if (eventLoggerEventName) {
-            eventLogger.log(eventLoggerEventName, { organizationId: orgId })
+            eventLogger.log(eventLoggerEventName, { organizationId: orgId }, { organizationId: orgId })
         }
     }, [setModalOpened, orgId, eventLoggerEventName])
 

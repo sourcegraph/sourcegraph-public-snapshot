@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -189,19 +190,7 @@ func (g Gitserver) LogReverseEach(repo string, commit string, n int, onLogEntry 
 }
 
 func (g Gitserver) RevListEach(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	command := gitserver.DefaultClient.Command("git", rockskip.RevListArgs(commit)...)
-	command.Repo = api.RepoName(repo)
-	command.DisableTimeout()
-	stdout, err := gitserver.StdoutReader(ctx, command)
-	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	return rockskip.RevListEach(stdout, onCommit)
+	return git.RevList(repo, commit, onCommit)
 }
 
 func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
