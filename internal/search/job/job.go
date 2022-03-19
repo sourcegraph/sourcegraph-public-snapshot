@@ -379,14 +379,10 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 func toTextParameters(jargs *Args, b query.Basic, q query.Q, resultTypes result.Types) search.TextParameters {
 	args := search.TextParameters{
-		Query:   q,
-		Timeout: search.TimeoutDuration(b),
+		Query: q,
 
 		// UseFullDeadline if timeout: set or we are streaming.
 		UseFullDeadline: q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming,
-
-		Zoekt:        jargs.Zoekt,
-		SearcherURLs: jargs.SearcherURLs,
 	}
 
 	args.PatternInfo = search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)

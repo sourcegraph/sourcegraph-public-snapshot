@@ -322,7 +322,6 @@ func TestPrettyJSON(t *testing.T) {
           "Features": {
             "ContentBasedLangFilters": false
           },
-          "Timeout": 20000000000,
           "Repos": null,
           "Mode": 0,
           "Query": [

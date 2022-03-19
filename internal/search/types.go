@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -130,7 +129,6 @@ type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	RepoOptions RepoOptions
 	Features    Features
-	Timeout     time.Duration
 
 	Repos []*RepositoryRevisions
 
