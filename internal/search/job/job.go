@@ -105,7 +105,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Typ:            typ,
 					FileMatchLimit: args.PatternInfo.FileMatchLimit,
 					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
+					Zoekt:          jargs.Zoekt,
 				}
 
 				addJob(true, &zoektutil.GlobalSearch{
@@ -129,7 +129,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Typ:            typ,
 					FileMatchLimit: args.PatternInfo.FileMatchLimit,
 					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
+					Zoekt:          jargs.Zoekt,
 				}
 
 				addJob(true, &symbol.RepoUniverseSymbolSearch{
@@ -156,14 +156,14 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Typ:            typ,
 					FileMatchLimit: args.PatternInfo.FileMatchLimit,
 					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
+					Zoekt:          jargs.Zoekt,
 				})
 			}
 
 			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
 				PatternInfo:     args.PatternInfo,
 				Indexed:         false,
-				SearcherURLs:    args.SearcherURLs,
+				SearcherURLs:    jargs.SearcherURLs,
 				UseFullDeadline: args.UseFullDeadline,
 			})
 
@@ -172,7 +172,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				repoOptions:      repoOptions,
 				useIndex:         args.PatternInfo.Index,
 				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            args.Zoekt,
+				zoekt:            jargs.Zoekt,
 			})
 		}
 
@@ -189,7 +189,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 					Query:          zoektQuery,
 					FileMatchLimit: args.PatternInfo.FileMatchLimit,
 					Select:         args.PatternInfo.Select,
-					Zoekt:          args.Zoekt,
+					Zoekt:          jargs.Zoekt,
 				})
 			}
 
@@ -204,7 +204,7 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				repoOptions:      repoOptions,
 				useIndex:         args.PatternInfo.Index,
 				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            args.Zoekt,
+				zoekt:            jargs.Zoekt,
 			})
 		}
 
@@ -240,11 +240,11 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 				Typ:            typ,
 				FileMatchLimit: args.PatternInfo.FileMatchLimit,
 				Select:         args.PatternInfo.Select,
-				Zoekt:          args.Zoekt,
+				Zoekt:          jargs.Zoekt,
 			}
 
 			searcherArgs := &search.SearcherParameters{
-				SearcherURLs:    args.SearcherURLs,
+				SearcherURLs:    jargs.SearcherURLs,
 				PatternInfo:     args.PatternInfo,
 				UseFullDeadline: args.UseFullDeadline,
 			}
@@ -336,10 +336,14 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(args.PatternInfo.Pattern, repoOptions); ok {
+					// Note: if we run a repo search,
+					// downstream logic relies on the
+					// following args values to be set for
+					// repoHasFile operation. It is slated
+					// for removal.
+					args.Zoekt = jargs.Zoekt
+					args.SearcherURLs = jargs.SearcherURLs
 					args.RepoOptions = repoOptions
-					// Note: downstream logic relies on
-					// args.Mode for repoHasFile, so we set
-					// it here. It is slated for removal.
 					if repoUniverseSearch {
 						args.Mode = search.ZoektGlobalSearch
 					}
