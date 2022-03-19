@@ -42,23 +42,14 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "insights_search_queue")
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 
-	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
-
 	// Start background goroutines for all of our workers.
+	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, workerBaseStore, insightsMetadataStore, observationContext),
-
-		// Register the query-runner worker and resetter, which executes search queries and records
-		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
-		// disabling the cleaner job while we debug mismatched results from historical insights
-		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
@@ -80,16 +71,48 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
 		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
-	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
-	routines = append(routines, NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB))
+	routines = append(
+		routines,
+		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
+		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+	)
 
 	// I suspect the linter doesn't like this not being used when I delete it. So let's try this.
-	enableLicneseCheck := false
-	if enableLicneseCheck {
+	enableLicenseCheck := false
+	if enableLicenseCheck {
 		routines = append(routines, NewLicenseCheckJob(ctx, mainAppDB, insightsDB))
 	}
 
 	return routines
+}
+
+// GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
+// insights query runner. It is called from the worker service.
+func GetBackgroundQueryRunnerJob(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.DB) []goroutine.BackgroundRoutine {
+	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+	insightsStore := store.New(insightsDB, insightPermStore)
+
+	// Create a base store to be used for storing worker state. We store this in the main app Postgres
+	// DB, not the TimescaleDB (which we use only for storing insights data.)
+	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
+
+	// Create basic metrics for recording information about background jobs.
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
+
+	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+
+	return []goroutine.BackgroundRoutine{
+		// Register the query-runner worker and resetter, which executes search queries and records
+		// results to TimescaleDB.
+		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
+		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
+	}
 }
 
 // newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:

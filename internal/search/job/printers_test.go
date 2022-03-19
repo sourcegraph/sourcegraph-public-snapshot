@@ -250,7 +250,7 @@ func TestPrettyJSON(t *testing.T) {
       }
     },
     {
-      "Repo": {
+      "RepoSearch": {
         "Args": {
           "PatternInfo": {
             "Pattern": "bar",
@@ -322,7 +322,6 @@ func TestPrettyJSON(t *testing.T) {
           "Features": {
             "ContentBasedLangFilters": false
           },
-          "ResultTypes": 13,
           "Timeout": 20000000000,
           "Repos": null,
           "Mode": 0,

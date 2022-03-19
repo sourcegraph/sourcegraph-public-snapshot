@@ -261,7 +261,7 @@ func TestToTextPatternInfo(t *testing.T) {
 		mode := Batch
 		resultTypes := ComputeResultTypes(
 			types,
-			ToPatternString(b),
+			b.PatternString(),
 			query.SearchTypeLiteral,
 		)
 		p := ToTextPatternInfo(b, resultTypes, mode)
