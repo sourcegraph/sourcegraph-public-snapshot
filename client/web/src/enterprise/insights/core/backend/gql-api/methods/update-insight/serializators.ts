@@ -3,19 +3,24 @@ import {
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
-import { CaptureGroupInsight, LangStatsInsight, SearchBasedInsight } from '../../../../types'
-import { isSearchBackendBasedInsight } from '../../../../types/insight/search-insight'
+import { InsightExecutionType } from '../../../../types'
+import {
+    MinimalCaptureGroupInsightData,
+    MinimalLangStatsInsightData,
+    MinimalSearchBasedInsightData,
+} from '../../../code-insights-backend-types'
 import { getStepInterval } from '../../utils/get-step-interval'
 
-export function getSearchInsightUpdateInput(insight: SearchBasedInsight): UpdateLineChartSearchInsightInput {
-    const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
+export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
+    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
     const [unit, value] = getStepInterval(insight.step)
-    const filters = isSearchBackendBasedInsight(insight)
-        ? {
-              includeRepoRegex: insight.filters?.includeRepoRegexp,
-              excludeRepoRegex: insight.filters?.excludeRepoRegexp,
-          }
-        : {}
+    const filters =
+        insight.executionType === InsightExecutionType.Backend
+            ? {
+                  includeRepoRegex: insight.filters?.includeRepoRegexp,
+                  excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+              }
+            : {}
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -35,7 +40,9 @@ export function getSearchInsightUpdateInput(insight: SearchBasedInsight): Update
     }
 }
 
-export function getCaptureGroupInsightUpdateInput(insight: CaptureGroupInsight): UpdateLineChartSearchInsightInput {
+export function getCaptureGroupInsightUpdateInput(
+    insight: MinimalCaptureGroupInsightData
+): UpdateLineChartSearchInsightInput {
     const [unit, value] = getStepInterval(insight.step)
 
     return {
@@ -60,7 +67,7 @@ export function getCaptureGroupInsightUpdateInput(insight: CaptureGroupInsight):
     }
 }
 
-export function getLangStatsInsightUpdateInput(insight: LangStatsInsight): UpdatePieChartSearchInsightInput {
+export function getLangStatsInsightUpdateInput(insight: MinimalLangStatsInsightData): UpdatePieChartSearchInsightInput {
     return {
         // Query do not exist as setting for this type of insight, it's predefined
         // and locked on BE.

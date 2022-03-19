@@ -28,15 +28,14 @@ export const updateInsight = (
     input: InsightUpdateInput,
     update?: MutationUpdaterFunction<UpdateResult, UpdateVariables, unknown, ApolloCache<unknown>>
 ): Observable<unknown> => {
-    const insight = input.newInsight
-    const oldInsight = input.oldInsight
+    const { nextInsightData, insightId } = input
 
-    switch (insight.viewType) {
+    switch (nextInsightData.type) {
         case InsightType.SearchBased: {
             return from(
                 client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
                     mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
-                    variables: { input: getSearchInsightUpdateInput(insight), id: oldInsight.id },
+                    variables: { input: getSearchInsightUpdateInput(nextInsightData), id: insightId },
                     update,
                 })
             )
@@ -46,7 +45,7 @@ export const updateInsight = (
             return from(
                 client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
                     mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
-                    variables: { input: getCaptureGroupInsightUpdateInput(insight), id: oldInsight.id },
+                    variables: { input: getCaptureGroupInsightUpdateInput(nextInsightData), id: insightId },
                     update,
                 })
             )
@@ -57,8 +56,8 @@ export const updateInsight = (
                 client.mutate<UpdateLangStatsInsightResult, UpdateLangStatsInsightVariables>({
                     mutation: UPDATE_LANG_STATS_INSIGHT_GQL,
                     variables: {
-                        id: oldInsight.id,
-                        input: getLangStatsInsightUpdateInput(insight),
+                        id: insightId,
+                        input: getLangStatsInsightUpdateInput(nextInsightData),
                     },
                     update,
                 })

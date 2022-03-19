@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { isSearchBasedInsight } from '../../../types'
 import { GetBuiltInsightInput } from '../../code-insights-backend-types'
@@ -10,16 +10,13 @@ import { GetBuiltInsightInput } from '../../code-insights-backend-types'
 import { getLangStatsInsightContent } from './get-lang-stats-insight-content'
 import { getSearchInsightContent } from './get-search-insight-content/get-search-insight-content'
 
-export function getBuiltInInsight<D extends keyof ViewContexts>(
-    input: GetBuiltInsightInput<D>
-): Observable<ViewProviderResult> {
-    const { insight, options } = input
+export function getBuiltInInsight(input: GetBuiltInsightInput): Observable<ViewProviderResult> {
+    const { insight } = input
+
     return of(insight).pipe(
         // TODO Implement declarative fetchers map by insight type
         switchMap(insight =>
-            isSearchBasedInsight(insight)
-                ? getSearchInsightContent(insight, options)
-                : getLangStatsInsightContent(insight, options)
+            isSearchBasedInsight(insight) ? getSearchInsightContent(insight) : getLangStatsInsightContent(insight)
         ),
         map(data => ({
             id: insight.id,

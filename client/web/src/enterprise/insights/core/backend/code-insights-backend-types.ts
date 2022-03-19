@@ -1,9 +1,14 @@
 import { Duration } from 'date-fns'
 import { LineChartContent } from 'sourcegraph'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-
-import { ExtensionInsight, Insight, InsightDashboard, SearchBasedInsightSeries } from '../types'
+import {
+    RuntimeInsight,
+    InsightDashboard,
+    SearchBasedInsightSeries,
+    CaptureGroupInsight,
+    LangStatsInsight,
+} from '../types'
+import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/insight/search-insight'
 
 export interface DashboardCreateInput {
     name: string
@@ -39,14 +44,26 @@ export interface FindInsightByNameInput {
     name: string
 }
 
+export type MinimalSearchRuntimeBasedInsightData = Omit<SearchRuntimeBasedInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalSearchBackendBasedInsightData = Omit<SearchBackendBasedInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
+
+export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount'>
+
+export type CreationInsightInput =
+    | MinimalSearchBasedInsightData
+    | MinimalCaptureGroupInsightData
+    | MinimalLangStatsInsightData
+
 export interface InsightCreateInput {
-    insight: Insight
+    insight: CreationInsightInput
     dashboard: InsightDashboard | null
 }
 
 export interface InsightUpdateInput {
-    oldInsight: Insight
-    newInsight: Insight
+    insightId: string
+    nextInsightData: CreationInsightInput
 }
 
 export interface RemoveInsightFromDashboardInput {
@@ -71,11 +88,9 @@ export interface CaptureInsightSettings {
     step: Duration
 }
 
-export type ReachableInsight = Insight & {
-    owner: {
-        id: string
-        name: string
-    }
+export interface AccessibleInsightInfo {
+    id: string
+    title: string
 }
 
 export interface BackendInsightData {
@@ -88,25 +103,16 @@ export interface BackendInsightData {
     }
 }
 
-export interface GetBuiltInsightInput<D extends keyof ViewContexts> {
-    insight: ExtensionInsight
-    options: { where: D; context: ViewContexts[D] }
+export interface GetBuiltInsightInput {
+    insight: RuntimeInsight
 }
 
-export interface GetSearchInsightContentInput<D extends keyof ViewContexts> {
+export interface GetSearchInsightContentInput {
     insight: SearchInsightSettings
-    options: {
-        where: D
-        context: ViewContexts[D]
-    }
 }
 
-export interface GetLangStatsInsightContentInput<D extends keyof ViewContexts> {
+export interface GetLangStatsInsightContentInput {
     insight: LangStatsInsightsSettings
-    options: {
-        where: D
-        context: ViewContexts[D]
-    }
 }
 
 export interface RepositorySuggestionData {

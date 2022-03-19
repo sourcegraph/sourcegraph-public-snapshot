@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { LangStatsInsight } from '../../../../core/types'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
@@ -8,7 +9,7 @@ import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/in
 
 export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
-    onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (insight: MinimalLangStatsInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 

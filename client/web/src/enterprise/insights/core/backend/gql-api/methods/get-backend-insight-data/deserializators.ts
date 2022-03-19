@@ -1,43 +1,44 @@
 import { InsightDataNode, InsightDataSeries } from '../../../../../../../graphql-operations'
+import { DATA_SERIES_COLORS } from '../../../../../pages/insights/creation/search-insight'
 import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../../../types'
 import { BackendInsightData } from '../../../code-insights-backend-types'
-import { createLineChartContentFromIndexedSeries } from '../../../utils/create-line-chart-content'
+import { createLineChartContent } from '../../../utils/create-line-chart-content'
 
 export const MAX_NUMBER_OF_SERIES = 20
+export const DATA_SERIES_COLORS_LIST = Object.values(DATA_SERIES_COLORS)
 
 export const createBackendInsightData = (insight: BackendInsight, response: InsightDataNode): BackendInsightData => {
-    const rawSeries = response.dataSeries.slice(0, MAX_NUMBER_OF_SERIES)
-    const series = getParsedSeries(insight, rawSeries)
+    const seriesData = response.dataSeries.slice(0, MAX_NUMBER_OF_SERIES)
+    const seriesMetadata = getParsedDataSeriesMetadata(insight, seriesData)
 
     return {
         id: insight.id,
         view: {
             title: insight.title,
-            content: [createLineChartContentFromIndexedSeries(rawSeries, series, insight.filters)],
-            isFetchingHistoricalData: response.dataSeries.some(
+            content: [createLineChartContent(seriesData, seriesMetadata, insight.filters)],
+            isFetchingHistoricalData: seriesData.some(
                 ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
             ),
         },
     }
 }
 
-const COLORS = ['grape', 'indigo', 'green', 'red', 'violet', 'lime', 'pink', 'blue', 'yellow', 'orange', 'cyan', 'teal']
-
-const SERIES_COLORS = COLORS.map(name => `var(--oc-${name}-7)`)
-
-function getParsedSeries(insight: BackendInsight, series: InsightDataSeries[]): SearchBasedInsightSeries[] {
-    switch (insight.viewType) {
+function getParsedDataSeriesMetadata(
+    insight: BackendInsight,
+    seriesData: InsightDataSeries[]
+): SearchBasedInsightSeries[] {
+    switch (insight.type) {
         case InsightType.SearchBased:
             return insight.series
 
         case InsightType.CaptureGroup: {
             const { query } = insight
 
-            return series.map((generatedSeries, index) => ({
+            return seriesData.map((generatedSeries, index) => ({
                 id: generatedSeries.seriesId,
                 name: generatedSeries.label,
                 query,
-                stroke: SERIES_COLORS[index % SERIES_COLORS.length],
+                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
             }))
         }
     }

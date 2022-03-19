@@ -8,7 +8,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { SearchBasedInsight } from '../../../../core/types'
+import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -22,7 +22,7 @@ import { useSearchInsightInitialValues } from './utils/use-initial-values'
 import styles from './SearchInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
-    insight: SearchBasedInsight
+    insight: MinimalSearchBasedInsightData
 }
 
 export interface SearchInsightCreationPageProps extends TelemetryProps {
@@ -37,7 +37,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: SearchBasedInsight) => void
+    onSuccessfulCreation: (insight: MinimalSearchBasedInsightData) => void
 
     /**
      * Whenever the user click on cancel button

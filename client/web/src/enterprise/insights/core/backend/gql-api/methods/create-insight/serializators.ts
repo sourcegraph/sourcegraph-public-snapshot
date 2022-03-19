@@ -3,16 +3,14 @@ import {
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
+import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard } from '../../../../types'
 import {
-    CaptureGroupInsight,
-    Insight,
-    InsightDashboard,
-    InsightType,
-    isVirtualDashboard,
-    LangStatsInsight,
-    SearchBasedInsight,
-} from '../../../../types'
-import { isSearchBackendBasedInsight } from '../../../../types/insight/search-insight'
+    CreationInsightInput,
+    MinimalCaptureGroupInsightData,
+    MinimalLangStatsInsightData,
+    MinimalSearchBackendBasedInsightData,
+    MinimalSearchRuntimeBasedInsightData,
+} from '../../../code-insights-backend-types'
 import { getStepInterval } from '../../utils/get-step-interval'
 
 type CreateInsightInput = LineChartSearchInsightInput | PieChartSearchInsightInput
@@ -20,8 +18,11 @@ type CreateInsightInput = LineChartSearchInsightInput | PieChartSearchInsightInp
 /**
  * Returns serialized GQL input for create insight mutation from Insight FE model.
  */
-export function getInsightCreateGqlInput(insight: Insight, dashboard: InsightDashboard | null): CreateInsightInput {
-    switch (insight.viewType) {
+export function getInsightCreateGqlInput(
+    insight: CreationInsightInput,
+    dashboard: InsightDashboard | null
+): CreateInsightInput {
+    switch (insight.type) {
         case InsightType.SearchBased:
             return getSearchInsightCreateInput(insight, dashboard)
         case InsightType.CaptureGroup:
@@ -32,7 +33,7 @@ export function getInsightCreateGqlInput(insight: Insight, dashboard: InsightDas
 }
 
 export function getCaptureGroupInsightCreateInput(
-    insight: CaptureGroupInsight,
+    insight: MinimalCaptureGroupInsightData,
     dashboard: InsightDashboard | null
 ): LineChartSearchInsightInput {
     const [unit, value] = getStepInterval(insight.step)
@@ -58,10 +59,10 @@ export function getCaptureGroupInsightCreateInput(
 }
 
 export function getSearchInsightCreateInput(
-    insight: SearchBasedInsight,
+    insight: MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData,
     dashboard: InsightDashboard | null
 ): LineChartSearchInsightInput {
-    const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
+    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
 
     const [unit, value] = getStepInterval(insight.step)
     const input: LineChartSearchInsightInput = {
@@ -85,7 +86,7 @@ export function getSearchInsightCreateInput(
 }
 
 export function getLangStatsInsightCreateInput(
-    insight: LangStatsInsight,
+    insight: MinimalLangStatsInsightData,
     dashboard: InsightDashboard | null
 ): PieChartSearchInsightInput {
     const input: PieChartSearchInsightInput = {

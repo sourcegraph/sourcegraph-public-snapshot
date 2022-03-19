@@ -11,14 +11,13 @@ import { FormInput } from '../../../../../../../components/form/form-input/FormI
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
-import { ReachableInsight } from '../../../../../../../core/backend/code-insights-backend-types'
-import { InsightsBadge } from '../../../dashboard-select/components/insights-badge/InsightsBadge'
+import { AccessibleInsightInfo } from '../../../../../../../core/backend/code-insights-backend-types'
 import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
 
 import styles from './AddInsightModalContent.module.scss'
 
 interface AddInsightModalContentProps {
-    insights: ReachableInsight[]
+    insights: AccessibleInsightInfo[]
     initialValues: AddInsightFormValues
     dashboardID: string
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
@@ -80,9 +79,6 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                         />
 
                         <TruncatedText>{insight.title}</TruncatedText>
-                        {insight.owner.name.length > 0 && (
-                            <InsightsBadge value={insight.owner.name} className={styles.insightOwnerName} />
-                        )}
                     </label>
                 ))}
             </fieldset>

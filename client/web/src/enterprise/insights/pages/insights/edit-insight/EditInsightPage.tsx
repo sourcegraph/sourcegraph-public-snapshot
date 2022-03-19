@@ -22,7 +22,7 @@ export interface EditInsightPageProps {
     insightID: string
 
     /**
-     * Authenticated user info, Used to decide where code insight will appears
+     * Authenticated user info, Used to decide where code insight will appear
      * in personal dashboard (private) or in organisation dashboard (public)
      */
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
@@ -32,9 +32,9 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     const { insightID, authenticatedUser } = props
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
-    const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
 
-    const { handleSubmit, handleCancel } = useEditPageHandlers({ originalInsight: insight })
+    const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
+    const { handleSubmit, handleCancel } = useEditPageHandlers({ id: insight?.id })
 
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />

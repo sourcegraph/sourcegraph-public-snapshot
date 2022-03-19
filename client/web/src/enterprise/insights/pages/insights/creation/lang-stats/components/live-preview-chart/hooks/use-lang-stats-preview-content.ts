@@ -50,7 +50,7 @@ export function useLangStatsPreviewContent(props: UseLangStatsPreviewContentProp
             return
         }
 
-        getLangStatsInsightContent({ insight: liveDebouncedSettings, options: { where: 'insightsPage', context: {} } })
+        getLangStatsInsightContent({ insight: liveDebouncedSettings })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))

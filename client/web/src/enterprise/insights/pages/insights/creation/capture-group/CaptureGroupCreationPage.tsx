@@ -7,7 +7,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CaptureGroupInsight } from '../../../../core/types'
+import { MinimalCaptureGroupInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
@@ -16,8 +16,8 @@ import { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
-    onInsightCreateRequest: (event: { insight: CaptureGroupInsight }) => Promise<unknown>
-    onSuccessfulCreation: (insight: CaptureGroupInsight) => void
+    onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
+    onSuccessfulCreation: (insight: MinimalCaptureGroupInsightData) => void
     onCancel: () => void
 }
 
