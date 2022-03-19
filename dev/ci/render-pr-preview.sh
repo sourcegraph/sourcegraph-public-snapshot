@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Env variables:
 # - RENDER_COM_API_KEY (required)
 # - RENDER_COM_OWNER_ID (required)
@@ -7,8 +9,7 @@
 # - BUILDKITE_PULL_REQUEST_REPO (optional)
 # - BUILDKITE_PULL_REQUEST (optional)
 # - GITHUB_TOKEN (optional)
-
-echo "--- Render.com PR Preview"
+# - GITHUB_CHECK_RUN_ID (optional)
 
 print_usage() {
   echo "Usage: $0 [ -b BRANCH_NAME ] [ -r REPO_URL ] [ -d ]" 1>&2
@@ -63,10 +64,6 @@ if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
   exit 1
 fi
-
-echo "repo_url: ${repo_url}"
-echo "branch_name: ${branch_name}"
-echo "owner_and_repo: ${owner_and_repo}"
 
 pr_preview_app_name="sg-web-${branch_name}"
 
@@ -153,17 +150,13 @@ else
     --header "Authorization: Bearer ${render_api_key}" | jq -r '.serviceDetails.url')
 fi
 
-echo "pr_preview_url: ${pr_preview_url}"
+if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
+  # GitHub Pull Request Number is set => Appending `App Preview` section into PR description
 
-if [[ -z "${pr_number}" || -z "${github_api_key}" ]]; then
-  echo "Pull request number (BUILDKITE_PULL_REQUEST) or github token (GITHUB_TOKEN) is not set, abort updating PR description step"
-else
-  echo "Update PR description with PR preview app url"
-
-  github_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
+  github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
 
   pr_description=$(curl -sSf --request GET \
-    --url "${github_api_url}" \
+    --url "${github_pr_api_url}" \
     --user "apikey:${github_api_key}" \
     --header 'Accept: application/vnd.github.v3+json' \
     --header 'Content-Type: application/json' | jq -r '.body')
@@ -172,10 +165,12 @@ else
     pr_description=$(echo -e "${pr_description}\n## App preview:\n- [Link](${pr_preview_url})\n" | jq -Rs .)
 
     curl -sSf -o /dev/null --request PATCH \
-      --url "${github_api_url}" \
+      --url "${github_pr_api_url}" \
       --user "apikey:${github_api_key}" \
       --header 'Accept: application/vnd.github.v3+json' \
       --header 'Content-Type: application/json' \
       --data "{ \"body\": ${pr_description} }"
   fi
 fi
+
+echo "${pr_preview_url}"
