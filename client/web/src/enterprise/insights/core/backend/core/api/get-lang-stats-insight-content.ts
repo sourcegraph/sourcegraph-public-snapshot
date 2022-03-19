@@ -1,12 +1,9 @@
 import { escapeRegExp, partition, sum } from 'lodash'
 import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
-import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
-
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { PieChartContent } from 'sourcegraph'
 
 import { LangStatsInsightsSettings } from '../../code-insights-backend-types'
-import { resolveDocumentURI } from '../../utils/resolve-uri'
 import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
 
 const getLangColor = async (language: string): Promise<string> => {
@@ -22,32 +19,8 @@ const getLangColor = async (language: string): Promise<string> => {
     return 'gray'
 }
 
-interface InsightOptions<D extends keyof ViewContexts> {
-    where: D
-    context: ViewContexts[D]
-}
-
-export async function getLangStatsInsightContent<D extends keyof ViewContexts>(
-    insight: LangStatsInsightsSettings,
-    options: InsightOptions<D>
-): Promise<PieChartContent<any>> {
-    const { where, context } = options
-
-    switch (where) {
-        case 'directory': {
-            const { viewer } = context as DirectoryViewContext
-            const { repo, path } = resolveDocumentURI(viewer.directory.uri)
-
-            return getInsightContent({ insight, repo, path })
-        }
-
-        case 'homepage':
-        case 'insightsPage': {
-            return getInsightContent({ insight, repo: insight.repository })
-        }
-    }
-
-    throw new Error(`This context is not supported for code-stats insight: context: ${where}`)
+export async function getLangStatsInsightContent(insight: LangStatsInsightsSettings): Promise<PieChartContent<any>> {
+    return getInsightContent({ insight, repo: insight.repository })
 }
 
 interface GetInsightContentInputs {

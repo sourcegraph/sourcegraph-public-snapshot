@@ -8,7 +8,7 @@ import { Insight, InsightDashboard } from '../core/types'
 import { getTrackingTypeByInsightType } from '../pings'
 
 interface RemoveInsightInput {
-    insight: Pick<Insight, 'id' | 'title' | 'viewType'>
+    insight: Pick<Insight, 'id' | 'title' | 'type'>
     dashboard: Pick<InsightDashboard, 'id' | 'title'>
 }
 
@@ -45,7 +45,7 @@ export function useRemoveInsightFromDashboard(): useRemoveInsightFromDashboardAP
                     dashboardId: dashboard.id,
                 }).toPromise()
 
-                const insightType = getTrackingTypeByInsightType(insight.viewType)
+                const insightType = getTrackingTypeByInsightType(insight.type)
 
                 eventLogger.log('InsightRemovalFromDashboard', { insightType }, { insightType })
             } catch (error) {

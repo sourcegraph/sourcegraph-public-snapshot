@@ -29,8 +29,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
                 return {
                     id: insight.id,
-                    type: InsightExecutionType.Backend,
-                    viewType: InsightType.CaptureGroup,
+                    executionType: InsightExecutionType.Backend,
+                    type: InsightType.CaptureGroup,
                     title: insight.presentation.title,
                     repositories,
                     query,
@@ -60,8 +60,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             if (isBackendInsight) {
                 return {
                     id: insight.id,
-                    type: InsightExecutionType.Backend,
-                    viewType: InsightType.SearchBased,
+                    executionType: InsightExecutionType.Backend,
+                    type: InsightType.SearchBased,
                     title: insight.presentation.title,
                     series,
                     step,
@@ -75,8 +75,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
             return {
                 id: insight.id,
-                type: InsightExecutionType.Runtime,
-                viewType: InsightType.SearchBased,
+                executionType: InsightExecutionType.Runtime,
+                type: InsightType.SearchBased,
                 title: insight.presentation.title,
                 step,
                 repositories,
@@ -93,8 +93,8 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
             return {
                 id: insight.id,
-                type: InsightExecutionType.Runtime,
-                viewType: InsightType.LangStats,
+                executionType: InsightExecutionType.Runtime,
+                type: InsightType.LangStats,
                 title: insight.presentation.title,
                 otherThreshold: insight.presentation.otherThreshold,
                 repository,

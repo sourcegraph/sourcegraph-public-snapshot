@@ -1,16 +1,15 @@
 import { Duration } from 'date-fns'
 
-import { InsightFilters } from '@sourcegraph/shared/src/schema/settings.schema'
+import { InsightExecutionType, InsightFilters, InsightType } from './common'
 
-import { InsightExecutionType, InsightType, SyntheticInsightFields } from './common'
-
-export interface CaptureGroupInsight extends SyntheticInsightFields {
+export interface CaptureGroupInsight {
+    id: string
     /**
      * We do not support capture group insight in setting based API or in
      * runtime mode. Capture group should always have data provided by BE.
      */
-    type: InsightExecutionType.Backend
-    viewType: InsightType.CaptureGroup
+    executionType: InsightExecutionType.Backend
+    type: InsightType.CaptureGroup
     title: string
 
     /** Capture group regexp query string */
@@ -21,5 +20,6 @@ export interface CaptureGroupInsight extends SyntheticInsightFields {
      */
     repositories: string[]
     step: Duration
-    filters?: InsightFilters
+    dashboardReferenceCount: number
+    filters: InsightFilters
 }
