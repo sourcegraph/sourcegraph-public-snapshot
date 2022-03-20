@@ -7,13 +7,13 @@ import {
     SearchBasedInsightSeries,
     CaptureGroupInsight,
     LangStatsInsight,
+    InsightsDashboardOwner,
 } from '../types'
-import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/insight/search-insight'
+import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/insight/types/search-insight'
 
 export interface DashboardCreateInput {
     name: string
-    visibility:
-    insightIds?: string[]
+    owners: InsightsDashboardOwner[]
 }
 
 export interface DashboardCreateResult {

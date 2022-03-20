@@ -1,10 +1,13 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client/out/src'
 
-import { requestGraphQL } from '../../../../../../backend/graphql'
-import { LangStatsInsightContentResult, LangStatsInsightContentVariables } from '../../../../../../graphql-operations'
+import { requestGraphQL } from '../../../../../../../../backend/graphql'
+import {
+    LangStatsInsightContentResult,
+    LangStatsInsightContentVariables,
+} from '../../../../../../../../graphql-operations'
 
 export function fetchLangStatsInsight(query: string): Observable<LangStatsInsightContentResult> {
     return requestGraphQL<LangStatsInsightContentResult, LangStatsInsightContentVariables>(

@@ -3,8 +3,9 @@ import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
 import { PieChartContent } from 'sourcegraph'
 
-import { LangStatsInsightsSettings } from '../../code-insights-backend-types'
-import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
+import { LangStatsInsightsSettings } from '../../../code-insights-backend-types'
+
+import { fetchLangStatsInsight } from './utils/fetch-lang-stats-insight'
 
 const getLangColor = async (language: string): Promise<string> => {
     const { default: languagesMap } = await import('linguist-languages')
