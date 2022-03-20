@@ -4,18 +4,14 @@
 
     &--right {
         border-left-width: 1px;
-        // margin-left: calc(-0.5 * var(--panel-handle-size));
     }
     &--left {
         border-right-width: 1px;
-        // margin-right: calc(-0.5 * var(--panel-handle-size));
     }
     &--bottom {
         border-top-width: 1px;
-        // margin-top: calc(-0.5 * var(--panel-handle-size));
     }
     &--top {
         border-bottom-width: 1px;
-        // margin-bottom: calc(-0.5 * var(--panel-handle-size));
     }
 }
