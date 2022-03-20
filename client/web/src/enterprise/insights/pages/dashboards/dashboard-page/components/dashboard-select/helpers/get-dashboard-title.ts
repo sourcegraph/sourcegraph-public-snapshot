@@ -1,9 +1,9 @@
 import {
+    CustomInsightDashboard,
     InsightDashboard,
     isGlobalDashboard,
     isPersonalDashboard,
 } from '../../../../../../core/types'
-import { CustomDashboardWithOwner } from '../types';
 
 /**
  * Get formatted dashboard title for the dashboard select option.
@@ -13,7 +13,7 @@ export const getDashboardTitle = (dashboard: InsightDashboard): string => dashbo
 /**
  * Get formatted dashboard owner name. Used for list option badge element.
  */
-export const getDashboardOwnerName = (dashboard: InsightDashboard | CustomDashboardWithOwner): string => {
+export const getDashboardOwnerName = (dashboard: CustomInsightDashboard): string => {
     if (isPersonalDashboard(dashboard)) {
         return 'Private'
     }
@@ -22,5 +22,5 @@ export const getDashboardOwnerName = (dashboard: InsightDashboard | CustomDashbo
         return 'Global'
     }
 
-    return ''
+    return dashboard.owners.map(owner => owner.title).join(' ')
 }

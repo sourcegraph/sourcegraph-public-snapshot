@@ -4,47 +4,36 @@ import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopo
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
-
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     CustomInsightDashboard,
-    InsightDashboard, isCustomDashboard,
+    InsightDashboard,
+    isCustomDashboard,
     isGlobalDashboard,
     isOrganizationDashboard,
     isPersonalDashboard,
     isVirtualDashboard,
 } from '../../../../../core/types'
 
-import { MenuButton } from './components/menu-button/MenuButton'
-import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
-import { CustomDashboardWithOwner, DashboardOrganizationGroup, InsightDashboardOwner } from './types';
+import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
 import styles from './DashboardSelect.module.scss'
-
-const LABEL_ID = 'insights-dashboards--select'
 
 export interface DashboardSelectProps {
     value: string | undefined
     dashboards: InsightDashboard[]
-
-    onSelect: (dashboard: InsightDashboard) => void
     className?: string
-    user?: AuthenticatedUser | null
+    onSelect: (dashboard: InsightDashboard) => void
 }
 
 /**
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
-    const { value, dashboards, onSelect, className, user } = props
+    const { value, dashboards, onSelect, className } = props
     const {
         UIFeatures: { licensed },
     } = useContext(CodeInsightsBackendContext)
-
-    if (!user) {
-        return null
-    }
 
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
@@ -55,13 +44,17 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
     }
 
     const customDashboards = dashboards.filter(isCustomDashboard)
-    const organizationGroups = getDashboardOrganizationsGroups(customDashboards, user.organizations.nodes)
+    const organizationGroups = getDashboardOrganizationsGroups(customDashboards)
 
     return (
         <div className={className}>
-            <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
+            <VisuallyHidden id="insights-dashboards--select">Choose a dashboard</VisuallyHidden>
 
-            <ListboxInput aria-labelledby={LABEL_ID} value={value ?? 'unknown'} onChange={handleChange}>
+            <ListboxInput
+                aria-labelledby="insights-dashboards--select"
+                value={value ?? 'unknown'}
+                onChange={handleChange}
+            >
                 <MenuButton dashboards={dashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
@@ -140,49 +133,29 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
     )
 }
 
+interface DashboardOrganizationGroup {
+    id: string
+    name: string
+    dashboards: CustomInsightDashboard[]
+}
+
 /**
  * Returns organization dashboards grouped by dashboard owner id
  */
-const getDashboardOrganizationsGroups = (
-    dashboards: CustomInsightDashboard[],
-    organizations: AuthenticatedUser['organizations']['nodes']
-): DashboardOrganizationGroup[] => {
-    // We need a map of the organization names when using the new GraphQL API
-    const organizationsMap = organizations.reduce<Record<string, InsightDashboardOwner>>(
-        (map, organization) => ({
-            ...map,
-            [organization.id]: {
-                id: organization.id,
-                name: organization.displayName ?? organization.name,
-            },
-        }),
-        {}
-    )
-
+const getDashboardOrganizationsGroups = (dashboards: CustomInsightDashboard[]): DashboardOrganizationGroup[] => {
     const groupsDictionary = dashboards
         .filter(isOrganizationDashboard)
-        .map<CustomDashboardWithOwner>(dashboard => {
-            // Grabbing the first organization to minimize changes with existing api
-            // TODO: handle multiple organizations when settings API is deprecated
-            const owner = dashboard.grants.organizations &&
-                organizationsMap[dashboard.grants.organizations[0]]
-
-            return {
-                ...dashboard,
-                owner,
-            }
-        })
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
-            if (!store[dashboard.owner.id]) {
-                store[dashboard.owner.id] = {
-                    id: dashboard.owner.id,
-                    name: dashboard.owner.name,
-                    dashboards: [],
+            for (const owner of dashboard.owners) {
+                if (!store[owner.id]) {
+                    store[owner.id] = {
+                        id: owner.id,
+                        name: owner.title,
+                        dashboards: [],
+                    }
                 }
-            }
 
-            if (dashboard.owner) {
-                store[dashboard.owner.id].dashboards.push(dashboard)
+                store[owner.id].dashboards.push(dashboard)
             }
 
             return store
