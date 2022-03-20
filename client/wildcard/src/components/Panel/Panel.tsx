@@ -5,10 +5,19 @@ import { upperFirst } from 'lodash'
 
 import { PANEL_POSITIONS } from './constants'
 import { useResizablePanel } from './useResizablePanel'
+import { getDisplayStyle, getPositionStyle } from './utils'
 
 import styles from './Panel.module.scss'
 
 export interface PanelProps {
+    /**
+     * If true, panel moves over elements on resize, defaults to true
+     */
+    isFloating?: boolean
+    /**
+     * CSS class applied to the resize handle
+     */
+    handleClassName?: string
     className?: string
     storageKey?: string
     defaultSize?: number
@@ -21,6 +30,8 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
     defaultSize = 200,
     storageKey,
     position = 'bottom',
+    isFloating = true,
+    handleClassName,
 }) => {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
@@ -40,15 +51,18 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
             className={classNames(
                 className,
                 styles.panel,
-                styles[`panel${upperFirst(position)}` as keyof typeof styles]
+                getPositionStyle({ position }),
+                getDisplayStyle({ isFloating })
             )}
             ref={panelReference}
         >
             <div
                 ref={handleReference}
+                role="presentation"
                 className={classNames(
                     styles.handle,
                     styles[`handle${upperFirst(position)}` as keyof typeof styles],
+                    handleClassName,
                     isResizing && styles.handleResizing
                 )}
             />

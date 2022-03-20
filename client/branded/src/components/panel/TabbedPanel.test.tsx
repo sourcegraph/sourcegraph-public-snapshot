@@ -4,10 +4,10 @@ import { cleanup, fireEvent } from '@testing-library/react'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
-import { Panel } from './Panel'
-import { panels, panelProps } from './Panel.fixtures'
+import { TabbedPanel } from './TabbedPanel'
+import { panels, panelProps } from './TabbedPanel.fixtures'
 
-describe('Panel', () => {
+describe('TabbedPanel', () => {
     const location = {
         pathname: `/${panelProps.repoName}`,
         search: '?L4:7',
@@ -18,7 +18,7 @@ describe('Panel', () => {
     afterEach(cleanup)
 
     it('preserves `location.pathname` and `location.hash` on tab change', async () => {
-        const renderResult = renderWithBrandedContext(<Panel {...panelProps} />, { route })
+        const renderResult = renderWithBrandedContext(<TabbedPanel {...panelProps} />, { route })
 
         const panelToSelect = panels[2]
         const panelButton = await renderResult.findByRole('tab', { name: panelToSelect.title })
