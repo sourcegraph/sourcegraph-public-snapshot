@@ -1,6 +1,6 @@
 import { Duration } from 'date-fns'
 
-import { InsightExecutionType, InsightFilters, InsightType } from './common'
+import { InsightExecutionType, InsightFilters, InsightType } from '../common'
 
 export interface CaptureGroupInsight {
     id: string
