@@ -4,11 +4,13 @@ import (
 	"context"
 	"math"
 
+	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -21,23 +23,46 @@ import (
 )
 
 type RepoSearch struct {
-	Args *search.TextParameters
+	PatternInfo *search.TextPatternInfo
+	RepoOptions search.RepoOptions
+	Features    search.Features
+
+	Repos []*search.RepositoryRevisions
+
+	Mode search.GlobalSearchMode
+
+	// Query is the parsed query from the user. You should be using Pattern
+	// instead, but Query is useful for checking extra fields that are set and
+	// ignored by Pattern, such as index:no
+	Query query.Q
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
+
+	Zoekt        zoekt.Streamer
+	SearcherURLs *endpoint.Map
 }
 
 func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx := jobutil.StartSpan(ctx, s)
 	defer func() { jobutil.FinishSpan(tr, alert, err) }()
 
-	tr.LogFields(otlog.String("pattern", s.Args.PatternInfo.Pattern))
+	tr.LogFields(otlog.String("pattern", s.PatternInfo.Pattern))
 
-	repos := &searchrepos.Resolver{DB: db, Opts: s.Args.RepoOptions}
+	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOptions}
 	err = repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
-		if len(s.Args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(s.Args.PatternInfo.FilePatternsReposMustInclude) > 0 {
+		if len(s.PatternInfo.FilePatternsReposMustExclude) > 0 || len(s.PatternInfo.FilePatternsReposMustInclude) > 0 {
 			// Fallback to batch for reposToAdd
-			page.RepoRevs, err = reposToAdd(ctx, s.Args, page.RepoRevs)
+			page.RepoRevs, err = s.reposToAdd(ctx, page.RepoRevs)
 			if err != nil {
 				return err
 			}
@@ -50,7 +75,7 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		return nil
 	})
 
-	if s.Args.PatternInfo.Pattern != "" {
+	if s.PatternInfo.Pattern != "" {
 		err = errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos))
 	}
 
@@ -93,7 +118,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 
 var MockReposContainingPath func() ([]*result.FileMatch, error)
 
-func reposContainingPath(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
+func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
 	if MockReposContainingPath != nil {
 		return MockReposContainingPath()
 	}
@@ -113,11 +138,17 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	if err != nil {
 		return nil, err
 	}
-	newArgs := *args
-	newArgs.PatternInfo = &p
-	newArgs.Repos = repos
-	newArgs.Query = q
-	newArgs.UseFullDeadline = true
+	newArgs := &RepoSearch{
+		Query:           q,
+		PatternInfo:     &p,
+		Repos:           repos,
+		RepoOptions:     s.RepoOptions,
+		Features:        s.Features,
+		Mode:            s.Mode,
+		Zoekt:           s.Zoekt,
+		SearcherURLs:    s.SearcherURLs,
+		UseFullDeadline: true,
+	}
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
@@ -203,13 +234,13 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
+func (s *RepoSearch) reposToAdd(ctx context.Context, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
-	if len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
-		for _, pattern := range args.PatternInfo.FilePatternsReposMustInclude {
-			matches, err := reposContainingPath(ctx, args, repos, pattern)
+	if len(s.PatternInfo.FilePatternsReposMustInclude) > 0 {
+		for _, pattern := range s.PatternInfo.FilePatternsReposMustInclude {
+			matches, err := s.reposContainingPath(ctx, repos, pattern)
 			if err != nil {
 				return nil, err
 			}
@@ -231,9 +262,9 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 		}
 	}
 
-	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 {
-		for _, pattern := range args.PatternInfo.FilePatternsReposMustExclude {
-			matches, err := reposContainingPath(ctx, args, repos, pattern)
+	if len(s.PatternInfo.FilePatternsReposMustExclude) > 0 {
+		for _, pattern := range s.PatternInfo.FilePatternsReposMustExclude {
+			matches, err := s.reposContainingPath(ctx, repos, pattern)
 			if err != nil {
 				return nil, err
 			}
@@ -245,7 +276,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 
 	var rsta []*search.RepositoryRevisions
 	for _, r := range repos {
-		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(args.PatternInfo.FilePatternsReposMustInclude) {
+		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(s.PatternInfo.FilePatternsReposMustInclude) {
 			rsta = append(rsta, r)
 		}
 	}
