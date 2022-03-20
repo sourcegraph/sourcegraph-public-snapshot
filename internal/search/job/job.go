@@ -343,27 +343,22 @@ func ToSearchJob(jargs *Args, q query.Q) (Job, error) {
 
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(patternInfo.Pattern, repoOptions); ok {
-					// Note: if we run a repo search,
-					// downstream logic relies on the
-					// following args values to be set for
-					// repoHasFile operation. It is slated
-					// for removal.
-					args := search.TextParameters{}
-					args.Zoekt = jargs.Zoekt
-					args.SearcherURLs = jargs.SearcherURLs
-					args.RepoOptions = repoOptions
-					args.Features = features
-					args.UseFullDeadline = useFullDeadline
-					args.Query = q
-					args.PatternInfo = patternInfo
+					var mode search.GlobalSearchMode
 					if repoUniverseSearch {
-						args.Mode = search.ZoektGlobalSearch
+						mode = search.ZoektGlobalSearch
 					}
 					if skipRepoSubsetSearch {
-						args.Mode = search.SkipUnindexed
+						mode = search.SkipUnindexed
 					}
 					addJob(true, &run.RepoSearch{
-						Args: &args,
+						Zoekt:           jargs.Zoekt,
+						SearcherURLs:    jargs.SearcherURLs,
+						RepoOptions:     repoOptions,
+						Features:        features,
+						UseFullDeadline: useFullDeadline,
+						Query:           q,
+						PatternInfo:     patternInfo,
+						Mode:            mode,
 					})
 				}
 			}

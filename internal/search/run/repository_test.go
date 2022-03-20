@@ -131,11 +131,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func repoShouldBeAdded(ctx context.Context, zoekt zoekt.Streamer, repo *search.RepositoryRevisions, pattern *search.TextPatternInfo) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
-	args := search.TextParameters{
+	s := RepoSearch{
 		PatternInfo: pattern,
 		Zoekt:       zoekt,
 	}
-	rsta, err := reposToAdd(ctx, &args, repos)
+	rsta, err := s.reposToAdd(ctx, repos)
 	if err != nil {
 		return false, err
 	}
