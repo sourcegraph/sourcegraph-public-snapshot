@@ -8,34 +8,23 @@ import { FormRadioInput } from '../../../../components/form/form-radio-input/For
 import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../components/form/validators'
-import {
-    isGlobalSubject,
-    isOrganizationSubject,
-    isUserSubject,
-    SupportedInsightSubject,
-} from '../../../../core/types/subjects'
+import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core/types'
 
 const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
-    visibility: 'personal',
+    owner: null,
 }
 
 export interface DashboardCreationFields {
     name: string
-    visibility: string
-    userId?: string
+    owner: InsightsDashboardOwner | null
 }
 
 export interface InsightsDashboardCreationContentProps {
     initialValues?: DashboardCreationFields
-
-    /**
-     * Organizations list used in the creation form for dashboard visibility setting.
-     */
-    subjects: SupportedInsightSubject[]
-
+    owners: InsightsDashboardOwner[]
     onSubmit: (values: DashboardCreationFields) => Promise<SubmissionErrors>
     children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
 }
@@ -44,18 +33,19 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues, subjects, onSubmit, children } = props
+    const { initialValues, owners, onSubmit, children } = props
 
-    // We always have user subject in our settings cascade
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
-    const organizationSubjects = subjects.filter(isOrganizationSubject)
-
-    // We always have global subject in our settings cascade
-    const globalSubject = subjects.find(isGlobalSubject)
+    const userOwner = owners.find(isPersonalOwner)
+    const personalOwners = owners.filter(isPersonalOwner)
+    const organizationOwners = owners.filter(isOrganizationOwner)
+    const globalOwners = owners.filter(isGlobalOwner)
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
-        initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
-        onSubmit
+        initialValues: initialValues ?? {
+            ...DASHBOARD_INITIAL_VALUES,
+            owner: userOwner ?? null,
+        },
+        onSubmit,
     })
 
     const name = useField({
@@ -65,7 +55,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     const visibility = useField({
-        name: 'visibility',
+        name: 'owner',
         formApi: formAPI,
     })
 
@@ -84,15 +74,18 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
             />
 
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
-                <FormRadioInput
-                    name="visibility"
-                    value={userSubjectID}
-                    title="Private"
-                    description="visible only to you"
-                    checked={visibility.input.value === userSubjectID}
-                    className="mr-3"
-                    onChange={visibility.input.onChange}
-                />
+                {personalOwners.map(owner => (
+                    <FormRadioInput
+                        key={owner.id}
+                        name="visibility"
+                        value={owner.id}
+                        title="Private"
+                        description="visible only to you"
+                        checked={visibility.input.value?.id === owner.id}
+                        className="mr-3"
+                        onChange={() => visibility.input.onChange(owner)}
+                    />
+                ))}
 
                 <hr className="mt-2 mb-3" />
 
@@ -100,19 +93,19 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     Shared - visible to everyone in the chosen organization
                 </small>
 
-                {organizationSubjects.map(org => (
+                {organizationOwners.map(org => (
                     <FormRadioInput
                         key={org.id}
                         name="visibility"
                         value={org.id}
-                        title={org.displayName ?? org.name}
-                        checked={visibility.input.value === org.id}
-                        onChange={visibility.input.onChange}
+                        title={org.title}
+                        checked={visibility.input.value?.id === org.id}
+                        onChange={() => visibility.input.onChange(org)}
                         className="mr-3"
                     />
                 ))}
 
-                {organizationSubjects.length === 0 && (
+                {organizationOwners.length === 0 && (
                     <FormRadioInput
                         name="visibility"
                         value="organization"
@@ -125,19 +118,18 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     />
                 )}
 
-                {
-                    globalSubject &&
-                        <FormRadioInput
-                            name="visibility"
-                            value={globalSubject.id}
-                            title="Global"
-                            description="visible to everyone on your Sourcegraph instance"
-                            checked={visibility.input.value === globalSubject.id}
-                            className="mr-3 flex-grow-0"
-                            onChange={visibility.input.onChange}
-                        />
-                }
-
+                {globalOwners.map(owner => (
+                    <FormRadioInput
+                        key={owner.id}
+                        name="visibility"
+                        value={owner.id}
+                        title={owner.title}
+                        description="visible to everyone on your Sourcegraph instance"
+                        checked={visibility.input.value?.id === owner.id}
+                        className="mr-3 flex-grow-0"
+                        onChange={() => visibility.input.onChange(owner)}
+                    />
+                ))}
             </FormGroup>
 
             {formAPI.submitErrors?.[FORM_ERROR] && (
