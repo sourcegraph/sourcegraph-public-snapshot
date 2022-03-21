@@ -75,8 +75,22 @@ type RenderedMarkup struct {
 	HTML   string `json:"html"`
 }
 
+type PullRequestStatus struct {
+	Links       Links                  `json:"links"`
+	UUID        string                 `json:"uuid"`
+	Key         string                 `json:"key"`
+	RefName     string                 `json:"refname"`
+	URL         string                 `json:"url"`
+	State       PullRequestStatusState `json:"state"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	CreatedOn   time.Time              `json:"created_on"`
+	UpdatedOn   time.Time              `json:"updated_on"`
+}
+
 type MergeStrategy string
 type PullRequestState string
+type PullRequestStatusState string
 
 const (
 	MergeStrategyMergeCommit MergeStrategy = "merge_commit"
@@ -87,4 +101,9 @@ const (
 	PullRequestStateSuperseded PullRequestState = "SUPERSEDED"
 	PullRequestStateOpen       PullRequestState = "OPEN"
 	PullRequestStateDeclined   PullRequestState = "DECLINED"
+
+	PullRequestStatusStateSuccessful PullRequestStatusState = "SUCCESSFUL"
+	PullRequestStatusStateFailed     PullRequestStatusState = "FAILED"
+	PullRequestStatusStateInProgress PullRequestStatusState = "INPROGRESS"
+	PullRequestStatusStateStopped    PullRequestStatusState = "STOPPED"
 )
