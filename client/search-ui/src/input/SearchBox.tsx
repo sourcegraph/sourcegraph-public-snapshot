@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import * as Monaco from 'monaco-editor'
 
 import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -10,7 +9,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { LazyMonacoQueryInput, LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles'
@@ -22,7 +21,8 @@ export interface SearchBoxProps
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL'> {
+        PlatformContextProps<'requestGraphQL'>,
+        Pick<LazyMonacoQueryInputProps, 'editorComponent'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -56,7 +56,7 @@ export interface SearchBoxProps
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
     const { queryState } = props
 
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const [editor, setEditor] = useState<{ focus: () => void }>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
 
     return (
@@ -80,6 +80,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                         onEditorCreated={setEditor}
+                        placeholder="Enter search query..."
                     />
                     <Toggles
                         {...props}

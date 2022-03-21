@@ -1,0 +1,183 @@
+.root {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+
+    :global(.cm-editor) {
+        &:global(.cm-focused) {
+            // Codemirror shows a focus ring by default. Since we handle that
+            // differently, disable it here.
+            outline: none;
+        }
+
+        :global(.cm-scroller) {
+            // Codemirror shows a vertical scroll bar by default (when
+            // overflowing). This disables it.
+            overflow-x: hidden;
+        }
+
+        :global(.cm-content) {
+            caret-color: var(--search-query-text-color);
+            font-family: var(--code-font-family);
+            color: var(--search-query-text-color);
+            // Disable default padding
+            padding: 0;
+        }
+
+        :global(.cm-line) {
+            // Disable default padding
+            padding: 0;
+        }
+
+        :global(.cm-tooltip) {
+            padding: 0.25rem;
+            color: var(--search-query-text-color);
+            background-color: var(--color-bg-1);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-width: 50vw;
+
+            p:last-child {
+                margin-bottom: 0;
+            }
+
+            code {
+                background-color: rgba(220, 220, 220, 0.4);
+                border-radius: var(--border-radius);
+                padding: 0 0.4em;
+            }
+
+            :global(.cm-tooltip-section) {
+                padding-bottom: 0.25rem;
+                border-top-color: var(--border-color);
+
+                &:last-child {
+                    padding-top: 0.25rem;
+                    padding-bottom: 0;
+                }
+
+                &:last-child:first-child {
+                    padding: 0;
+                }
+            }
+        }
+
+        :global(.cm-tooltip-autocomplete) {
+            /* Resets padding added above to .cm-tooltip */
+            padding: 0;
+            color: var(--search-query-text-color);
+            background-color: var(--color-bg-1);
+
+            > ul > li {
+                padding-top: 0.25rem;
+                padding-bottom: 0.25rem;
+
+                &[aria-selected] {
+                    color: var(--search-query-text-color);
+                    background-color: var(--color-bg-2);
+
+                    :global(.theme-dark) & {
+                        background-color: var(--color-bg-3);
+                    }
+                }
+
+                :global(.cm-completionDetail) {
+                    padding-left: 0.25rem;
+                    color: var(--gray-06);
+                }
+
+                :global(.cm-completionMatchedText) {
+                    // Reset
+                    text-decoration: none;
+
+                    // Our style
+                    background-color: var(--mark-bg);
+                }
+            }
+        }
+    }
+}
+
+.diagnosticError {
+    background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%206%203'%20enable-background%3D'new%200%200%206%203'%20height%3D'3'%20width%3D'6'%3E%3Cg%20fill%3D'%23e51400'%3E%3Cpolygon%20points%3D'5.5%2C0%202.5%2C3%201.1%2C3%204.1%2C0'%2F%3E%3Cpolygon%20points%3D'4%2C0%206%2C2%206%2C0.6%205.4%2C0'%2F%3E%3Cpolygon%20points%3D'0%2C2%201%2C3%202.4%2C3%200%2C0.6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
+        repeat-x bottom left;
+}
+
+.diagnosticWarning {
+    background: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%206%203'%20enable-background%3D'new%200%200%206%203'%20height%3D'3'%20width%3D'6'%3E%3Cg%20fill%3D'%23bf8803'%3E%3Cpolygon%20points%3D'5.5%2C0%202.5%2C3%201.1%2C3%204.1%2C0'%2F%3E%3Cpolygon%20points%3D'4%2C0%206%2C2%206%2C0.6%205.4%2C0'%2F%3E%3Cpolygon%20points%3D'0%2C2%201%2C3%202.4%2C3%200%2C0.6'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")
+        repeat-x bottom left;
+}
+
+.focusedFilter {
+    background-color: var(--color-bg-2);
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-3);
+    }
+}
+
+.identifier,
+.metaStructuralVariable,
+.metaRevisionCommitHash,
+.metaRevisionLabel,
+.metaRevisionReferencePath {
+    color: var(--search-query-text-color);
+}
+
+.metaRevisionWildcard {
+    color: var(--oc-cyan-7);
+}
+
+.field,
+.metaRepoRevisionSeparator,
+.metaPredicateDot {
+    color: var(--search-filter-keyword-color);
+}
+
+.keyword,
+.openingParen,
+.closingParen,
+.metaContextPrefix,
+.metaPredicateNameAccess {
+    color: var(--search-keyword-color);
+}
+
+.metaRegexp {
+    &CharacterSet,
+    &CharacterClass,
+    &CharacterClassRangeHyphen {
+        color: var(--search-keyword-color);
+    }
+
+    &Alternative,
+    &RangeQuantifier {
+        color: var(--oc-cyan-7);
+    }
+
+    &Delimited,
+    &Assertion,
+    &LazyQualifier {
+        color: var(--oc-red-9);
+    }
+}
+
+.comment,
+.metaPredicateParenthesis,
+.metaRegexpEscapedCharacter,
+.metaStructuralRegexpSeparator,
+.metaRevisionSeparator {
+    color: var(--oc-orange-9);
+}
+
+.metaFilterSeparator,
+.metaPathSeparator {
+    color: var(--oc-gray-6);
+}
+
+.metaStructuralHole,
+.metaStructuralRegexpHole,
+.metaRevisionIncludeGlobMarker,
+.metaRevisionExcludeGlobMarker {
+    color: var(--oc-red-9);
+}

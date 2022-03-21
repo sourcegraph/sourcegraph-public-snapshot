@@ -65,6 +65,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -108,6 +109,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
+                editorComponent={editorComponent}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
