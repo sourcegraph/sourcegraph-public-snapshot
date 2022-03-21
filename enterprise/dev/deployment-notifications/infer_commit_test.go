@@ -31,6 +31,6 @@ index 686a43f17..3b661041d 100644
          envFrom:
 `
 
-	commit := extractCommitFromDiff([]byte(diffBody), "frontend")
+	commit := extractSourcegraphCommitFromDeploymentManifestsDiff([]byte(diffBody), "frontend")
 	assert.Equal(t, "73b7bfcf2c40", commit)
 }
