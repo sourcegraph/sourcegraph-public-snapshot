@@ -31,7 +31,7 @@ func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) Unsup
 //
 // It is valid to pass in nil for the default options.
 func httpClientCertificateOptions(defaultOpts []httpcli.Opt, certificate string) []httpcli.Opt {
-	opts := defaultOpts[:]
+	opts := defaultOpts
 	if certificate != "" {
 		opts = append(opts, httpcli.NewCertPoolOpt(certificate))
 	}
