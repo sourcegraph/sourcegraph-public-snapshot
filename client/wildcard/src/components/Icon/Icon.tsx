@@ -5,6 +5,8 @@ import { MdiReactIconProps } from 'mdi-react'
 
 import { ForwardReferenceComponent } from '../..'
 
+import { ICON_SIZES } from './constants'
+
 import styles from './Icon.module.scss'
 
 export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
