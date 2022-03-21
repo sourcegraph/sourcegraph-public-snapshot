@@ -450,6 +450,10 @@ func TestHasDashboardPermission(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if created == nil {
+		t.Fatalf("nil dashboard")
+	}
+
 	second, err := store.CreateDashboard(ctx, CreateDashboardArgs{
 		Dashboard: types.Dashboard{
 			Title: "second test dashboard",
