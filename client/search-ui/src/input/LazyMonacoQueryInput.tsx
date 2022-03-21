@@ -17,7 +17,7 @@ export interface IEditor {
 }
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
-const CodemirrorQueryInput = lazyComponent(() => import('./CodemirrorQueryInput'), 'CodemirrorMonacoFacade')
+const CodemirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInput'), 'CodeMirrorMonacoFacade')
 
 /**
  * A plain query input displayed during lazy-loading of the MonacoQueryInput.
