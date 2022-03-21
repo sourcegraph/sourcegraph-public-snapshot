@@ -41,14 +41,21 @@ func TestGitCommitResolver(t *testing.T) {
 	t.Run("URL Escaping", func(t *testing.T) {
 		repo := NewRepositoryResolver(db, &types.Repo{Name: "xyz"})
 		commitResolver := NewGitCommitResolver(db, repo, "c1", commit)
-		inputRev := "master^1"
-		commitResolver.inputRev = &inputRev
-		require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
+		{
+			inputRev := "master^1"
+			commitResolver.inputRev = &inputRev
+			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
 
-		treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
-		url, err := treeResolver.URL(ctx)
-		require.Nil(t, err)
-		require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
+			treeResolver := NewGitTreeEntryResolver(db, commitResolver, CreateFileInfo("a/b", false))
+			url, err := treeResolver.URL(ctx)
+			require.Nil(t, err)
+			require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
+		}
+		{
+			inputRev := "refs/heads/main"
+			commitResolver.inputRev = &inputRev
+			require.Equal(t, "/xyz/-/commit/refs/heads/main", commitResolver.URL())
+		}
 	})
 
 	t.Run("Lazy loading", func(t *testing.T) {
