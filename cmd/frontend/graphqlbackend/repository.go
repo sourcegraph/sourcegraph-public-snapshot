@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -250,7 +251,11 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	return r.RepoMatch.URL().String()
+	return r.url().String()
+}
+
+func (r *RepositoryResolver) url() *url.URL {
+	return r.RepoMatch.URL()
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

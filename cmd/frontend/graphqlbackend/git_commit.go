@@ -183,11 +183,15 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() string {
-	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
+	url := r.repoResolver.url()
+	url.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	return url.String()
 }
 
 func (r *GitCommitResolver) CanonicalURL() string {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.oid)
+	url := r.repoResolver.url()
+	url.Path += "/-/commit/" + string(r.oid)
+	return url.String()
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -326,7 +330,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapePathForURL(*r.inputRev)
+		return *r.inputRev
 	}
 	return string(r.oid)
 }
