@@ -221,14 +221,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const fetchAffiliatedRepos = useCallback(
-        async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
+        async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']> =>
             listAffiliatedRepositories({
                 namespace: owner.id,
                 codeHost: null,
                 query: null,
             })
                 .toPromise()
-                .then(({ affiliatedRepositories: { nodes } }) => nodes),
+                .then(data => data.affiliatedRepositories),
 
         [owner.id]
     )
@@ -264,8 +264,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const codeHostsHaveSyncAllQuery = []
 
-        // if external services may return code hosts with errors or warnings -
-        // we can't safely continue
+        // if external services return errors or warnings, we can display the errors from one code host along with the repos from another.
         const codeHostProblems = []
 
         for (const host of externalServices) {
@@ -282,7 +281,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (hostHasProblems) {
-                // skip this code hots
+                // skip this code host
                 continue
             }
 
@@ -312,18 +311,26 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
         }
 
-        if (codeHostProblems.length > 0) {
-            setAffiliateRepoProblems(codeHostProblems)
-        }
-
         const [affiliatedRepos, selectedRepos] = await Promise.all([
             fetchAffiliatedRepos(),
             fetchSelectedRepositories(),
         ])
 
+        if (codeHostProblems.length > 0) {
+            setAffiliateRepoProblems(codeHostProblems)
+        }
+
+        // If the external services call doen't return any errors, we can get them from the affiliated repos call.
+        if (codeHostProblems.length === 0 && affiliatedRepos.codeHostErrors !== []) {
+            for (const codeHostError of affiliatedRepos.codeHostErrors) {
+                codeHostProblems.push(asError(codeHostError))
+            }
+            setAffiliateRepoProblems(codeHostProblems)
+        }
+
         const selectedAffiliatedRepos = new Map<string, Repo>()
 
-        const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
+        const affiliatedReposWithMirrorInfo = affiliatedRepos.nodes.map(affiliatedRepo => {
             const foundInSelected = selectedRepos.find(
                 ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
                     // selected repo names formatted: code-host/owner/repository
@@ -574,11 +581,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
     }
 
-    const hasProblems = affiliateRepoProblems !== undefined
     // code hosts were loaded and some were configured
     const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
-    const noCodeHostsOrErrors = !hasCodeHosts || hasProblems
-    const hasCodeHostsNoErrors = hasCodeHosts && !hasProblems
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
@@ -588,7 +592,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         name="all_repositories"
                         id="sync_all_repositories"
                         value="all"
-                        disabled={noCodeHostsOrErrors}
+                        disabled={!hasCodeHosts}
                         checked={selectionState.radio === 'all'}
                         onChange={handleRadioSelect}
                         label={
@@ -609,11 +613,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     id="sync_selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
-                    disabled={noCodeHostsOrErrors}
+                    disabled={!hasCodeHosts}
                     onChange={handleRadioSelect}
                     label={
                         <div className="d-flex flex-column ml-2">
-                            <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
+                            <p className={classNames('mb-0', !hasCodeHosts && styles.textDisabled)}>
                                 Sync selected repositories
                             </p>
                         </div>
@@ -834,14 +838,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
                             {/* display radio buttons shimmer only when user has code hosts */}
-                            {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
+                            {hasCodeHosts && !selectionState.loaded && modeSelectShimmer}
 
                             {/* display type of repo sync radio buttons */}
-                            {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
+                            {hasCodeHosts && selectionState.loaded && modeSelect}
 
                             {
                                 // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                                hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
+                                hasCodeHosts && selectionState.radio === 'selected' && (
                                     <div className="ml-4">
                                         {filterControls}
                                         <table role="grid" className="table">

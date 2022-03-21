@@ -29,13 +29,14 @@ type affiliatedRepositoriesConnection struct {
 	codeHost int64
 	query    string
 
-	once  sync.Once
-	nodes []*codeHostRepositoryResolver
-	err   error
-	db    database.DB
+	once           sync.Once
+	nodes          []*codeHostRepositoryResolver
+	err            error
+	db             database.DB
+	codeHostErrors []string
 }
 
-func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context) (*affiliatedRepositoriesConnection, error) {
 	a.once.Do(func() {
 		var (
 			svcs []*types.ExternalService
@@ -51,6 +52,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				a.err = err
 				return
 			}
+
 		} else {
 			svc, err := a.db.ExternalServices().GetByID(ctx, a.codeHost)
 			if err != nil {
@@ -90,6 +92,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				continue
 			}
 			pending++
+
 			svcID := svc.ID
 			goroutine.Go(func() {
 				affiliated, err := af.AffiliatedRepositories(ctx)
@@ -108,8 +111,10 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			return
 		}
 
-		// collect all results
 		var fetchErrors []error
+		var listOfErrors []string
+		var errMessage string
+
 		a.nodes = []*codeHostRepositoryResolver{}
 		for i := 0; i < pending; i++ {
 			select {
@@ -118,8 +123,13 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 					// An error from one code is not fatal
 					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 					fetchErrors = append(fetchErrors, result.err)
+
+					errMessage = "Error from " + svcsByID[result.svcID].DisplayName + ": " + result.err.Error()
+					listOfErrors = append(listOfErrors, errMessage)
+
 					continue
 				}
+
 				for _, repo := range result.repos {
 					if a.query != "" && !strings.Contains(strings.ToLower(repo.Name), a.query) {
 						continue
@@ -127,6 +137,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 					if !allowPrivate && repo.Private {
 						continue
 					}
+
 					repo := repo
 					a.nodes = append(a.nodes, &codeHostRepositoryResolver{
 						db:       a.db,
@@ -134,6 +145,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 						repo:     &repo,
 					})
 				}
+
 			case <-ctx.Done():
 				a.err = ctx.Err()
 				return
@@ -149,13 +161,29 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			a.nodes = nil
 			a.err = errors.New("failed to fetch from any code host")
 		}
+
+		a.codeHostErrors = listOfErrors
 	})
+
+	return a, a.err
+}
+
+func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	nodesAndErrors, _ := a.getNodesAndErrors(ctx)
 
 	if envvar.SourcegraphDotComMode() && a.orgID != 0 {
 		a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(a.nodes)))
 	}
+	return nodesAndErrors.nodes, nil
+}
 
-	return a.nodes, a.err
+func (a *affiliatedRepositoriesConnection) CodeHostErrors(ctx context.Context) ([]string, error) {
+	nodesAndErrors, err := a.getNodesAndErrors(ctx)
+	if err != nil {
+		return a.codeHostErrors, err
+	}
+
+	return nodesAndErrors.codeHostErrors, nil
 }
 
 type codeHostRepositoryResolver struct {
