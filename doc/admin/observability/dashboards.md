@@ -10606,13 +10606,32 @@ Query: `max(rate(src_repoupdater_sched_loops[1m]))`
 
 <br />
 
+#### repo-updater: src_repoupdater_stale_repos
+
+<p class="subtitle">Repos that haven't been fetched in more than 8 hours</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-stale-repos) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100060` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(src_repoupdater_stale_repos)`
+
+</details>
+
+<br />
+
 #### repo-updater: sched_error
 
 <p class="subtitle">Repositories schedule error rate</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sched-error) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100060` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100061` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
