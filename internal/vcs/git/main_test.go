@@ -79,8 +79,12 @@ func init() {
 		}
 	}()
 
-	testGitserverClient = gitserver.NewTestClient(database.NewMockDB(), []string{l.Addr().String()})
+	serverAddress := l.Addr().String()
+	testGitserverClient = gitserver.NewTestClient(database.NewMockDB(), []string{serverAddress})
 	testGitserverClient.HTTPClient = httpcli.InternalDoer
+	if err := os.Setenv("GO_TEST_SERVER_ADDRESS", serverAddress); err != nil {
+		panic(err)
+	}
 }
 
 func AsJSON(v interface{}) string {

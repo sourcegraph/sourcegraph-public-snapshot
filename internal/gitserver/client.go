@@ -198,11 +198,15 @@ type Client interface {
 }
 
 func (c *ClientImplementor) Addrs() []string {
+	testAddress := os.Getenv("GO_TEST_SERVER_ADDRESS")
+	if testAddress != "" {
+		return []string{testAddress}
+	}
 	return c.addrs()
 }
 
 func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -210,7 +214,7 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 }
 
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -221,7 +225,7 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *ClientImplementor) addrForKey(key string) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -666,7 +670,7 @@ func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	for _, addr := range addrs {
 		wg.Add(1)
 		go func(addr string) {
@@ -844,7 +848,7 @@ func (c *ClientImplementor) IsRepoCloned(ctx context.Context, repo api.RepoName)
 }
 
 func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	numPossibleShards := len(c.addrs())
+	numPossibleShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
@@ -918,7 +922,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		return ClientMocks.RepoInfo(ctx, repos...)
 	}
 
-	numPossibleShards := len(c.addrs())
+	numPossibleShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
@@ -990,7 +994,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
-	for _, addr := range c.addrs() {
+	for _, addr := range c.Addrs() {
 		stat, err := c.doReposStats(ctx, addr)
 		if err != nil {
 			allErr = errors.Append(allErr, err)

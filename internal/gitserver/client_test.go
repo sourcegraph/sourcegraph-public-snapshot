@@ -141,6 +141,7 @@ func TestClient_Archive(t *testing.T) {
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
 	cli := gitserver.NewTestClient(database.NewMockDB(), addrs)
+	cli.HTTPClient = &http.Client{}
 
 	ctx := context.Background()
 	for name, test := range tests {
