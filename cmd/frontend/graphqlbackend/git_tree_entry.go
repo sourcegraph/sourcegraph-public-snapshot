@@ -127,24 +127,31 @@ func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commi
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
+	url, err := r.url(ctx)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
+}
+
+func (r *GitTreeEntryResolver) url(ctx context.Context) (*url.URL, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
 	defer span.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
 		span.SetTag("Submodule", "true")
-		url := submodule.URL()
-		if strings.HasPrefix(url, "../") {
-			url = path.Join(r.Repository().Name(), url)
+		submoduleURL := submodule.URL()
+		if strings.HasPrefix(submoduleURL, "../") {
+			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
 		}
-		repoName, err := cloneURLToRepoName(ctx, r.db, url)
+		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return "", nil
+			return url.Parse("")
 		}
-		return "/" + repoName + "@" + submodule.Commit(), nil
+		return url.Parse("/" + repoName + "@" + submodule.Commit())
 	}
-	url := r.commit.repoRevURL()
-	return r.urlPath(url).String(), nil
+	return r.urlPath(r.commit.repoRevURL()), nil
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() string {
