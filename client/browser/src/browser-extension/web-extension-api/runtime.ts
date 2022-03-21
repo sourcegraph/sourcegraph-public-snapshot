@@ -22,4 +22,5 @@ export const background: BackgroundPageApi = {
     notifyPrivateCloudError: messageSender('notifyPrivateCloudError'),
     checkPrivateCloudError: messageSender('checkPrivateCloudError'),
     fetchCache: messageSender('fetchCache'),
+    getCookie: messageSender('getCookie'),
 }

@@ -98,6 +98,7 @@ export interface BackgroundPageApi {
     notifyPrivateCloudError(hasPrivateCloudError: boolean): Promise<void>
     checkPrivateCloudError(tabId: number): Promise<boolean>
     fetchCache: typeof fetchCache
+    getCookie: typeof browser.cookies.get
 }
 
 /**
