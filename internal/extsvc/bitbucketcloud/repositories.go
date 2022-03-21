@@ -3,6 +3,7 @@ package bitbucketcloud
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,6 +25,15 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", accountName), nil, pageToken, &repos)
 	}
 	return repos, next, err
+}
+
+func (c *Client) NewRepos(accountName string) (*ResultSet[Repo], error) {
+	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s", accountName))
+	if err != nil {
+		return nil, err
+	}
+
+	return newResultSet[Repo](c, u), nil
 }
 
 type Repo struct {
