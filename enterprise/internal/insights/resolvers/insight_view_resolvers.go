@@ -402,10 +402,16 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 	defer func() { err = tx.Done(err) }()
 
+	filters := types.InsightViewFilters{}
+	if args.Input.ViewControls != nil {
+		filters.IncludeRepoRegex = args.Input.ViewControls.Filters.IncludeRepoRegex
+		filters.ExcludeRepoRegex = args.Input.ViewControls.Filters.ExcludeRepoRegex
+	}
+
 	view, err := tx.CreateView(ctx, types.InsightView{
 		Title:            emptyIfNil(args.Input.Options.Title),
 		UniqueID:         ksuid.New().String(),
-		Filters:          types.InsightViewFilters{},
+		Filters:          filters,
 		PresentationType: types.Line,
 	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
 	if err != nil {

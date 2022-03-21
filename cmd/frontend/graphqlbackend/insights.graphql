@@ -573,6 +573,11 @@ input LineChartSearchInsightInput {
     The dashboard IDs to associate this insight with once created.
     """
     dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }
 
 """
