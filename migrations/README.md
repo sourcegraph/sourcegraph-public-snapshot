@@ -1,7 +1,5 @@
 # Postgres Migrations
 
-<!-- fluff change -->
-
 The children of this directory contain migrations for each Postgres database instance:
 
 - `frontend` is the main database (things should go here unless there is a good reason)
