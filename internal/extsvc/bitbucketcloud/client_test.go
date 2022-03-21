@@ -2,7 +2,6 @@ package bitbucketcloud
 
 import (
 	"context"
-	"flag"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,12 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-var update = flag.Bool("update", false, "update testdata")
-
 func TestClient_Ping(t *testing.T) {
 	ctx := context.Background()
 
-	cli, save := NewTestClient(t, "Ping", *update)
+	cli, save := newTestClient(t)
 	defer save()
 
 	t.Run("unauthorised", func(t *testing.T) {

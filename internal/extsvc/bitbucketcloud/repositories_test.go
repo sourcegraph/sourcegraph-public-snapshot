@@ -11,7 +11,7 @@ import (
 )
 
 func TestClient_Repos(t *testing.T) {
-	cli, save := NewTestClient(t, "Repos", *update)
+	cli, save := newTestClient(t)
 	defer save()
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -32,6 +32,7 @@ func TestClient_Repos(t *testing.T) {
 				},
 				HTML: Link{Href: "https://bitbucket.org/sourcegraph-testing/src-cli"},
 			},
+			ForkPolicy: ForkPolicyNoPublic,
 		},
 		"sourcegraph": {
 			Slug:      "sourcegraph",
@@ -47,6 +48,7 @@ func TestClient_Repos(t *testing.T) {
 				},
 				HTML: Link{Href: "https://bitbucket.org/sourcegraph-testing/sourcegraph"},
 			},
+			ForkPolicy: ForkPolicyNoPublic,
 		},
 	}
 
