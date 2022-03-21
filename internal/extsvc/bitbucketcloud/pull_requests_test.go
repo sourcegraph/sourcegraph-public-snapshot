@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestClient_GetPullRequest(t *testing.T) {
@@ -35,7 +34,6 @@ func TestClient_GetPullRequest(t *testing.T) {
 		pr, err := c.GetPullRequest(ctx, repo, 1)
 		assert.Nil(t, err)
 		assert.NotNil(t, pr)
-
-		testutil.AssertGolden(t, "testdata/golden/"+normalize(t.Name()), update(t.Name()), pr)
+		assertGolden(t, pr)
 	})
 }
