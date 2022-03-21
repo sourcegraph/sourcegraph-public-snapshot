@@ -39,10 +39,7 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 		cf = httpcli.ExternalClientFactory
 	}
 
-	var opts []httpcli.Opt
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
-	}
+	opts := httpClientCertificateOptions(nil, c.Certificate)
 
 	cli, err := cf.Doer(opts...)
 	if err != nil {
