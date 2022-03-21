@@ -1552,24 +1552,19 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		rateLimitMonitor.Update(resp.Header)
 	}
 
-	if resp.StatusCode < 200 || (resp.StatusCode >= 400 && resp.StatusCode < 500) {
+	if resp.StatusCode < 200 || (resp.StatusCode >= 400) {
 		var err APIError
+
 		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 			// if 500, we are here
 		}
+
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode
 		return newHttpResponseState(resp.StatusCode, resp.Header), &err
-	}
-
-	if resp.StatusCode == 500 {
-		var err APIError
-		if isDown() {
-			err.Message = fmt.Sprintf("Githbub is returning a: %s status code", resp.Status)
-		}
 	}
 
 	// If this is a conditional request (If-None-Match or If-Modified-Since header in the request)
@@ -2019,4 +2014,8 @@ func normalizeURL(rawURL string) string {
 		parsed.Path += "/"
 	}
 	return parsed.String()
+}
+
+func (c *GithubStatusClient) codeHostIsDown(ctx context.Context) bool {
+	return c.IsGithubDown(ctx)
 }

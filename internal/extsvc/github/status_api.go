@@ -7,18 +7,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type StatusApiClient struct {
+type GithubStatusClient struct {
 	baseURL    *url.URL
 	httpClient httpcli.Doer
 }
 
-type Status struct {
+type status struct {
 	Description string `json:"description,omitempty"`
 	Indicator   string `json:"indicator,omitempty"`
 }
@@ -29,14 +28,14 @@ var baseURL = url.URL{
 	Path:   "/api/v2",
 }
 
-func NewStatusApiClient(baseURL *url.URL, httpClient httpcli.Doer) *StatusApiClient {
-	return &StatusApiClient{
+func NewStatusClient(baseURL *url.URL, httpClient httpcli.Doer) *GithubStatusClient {
+	return &GithubStatusClient{
 		baseURL:    baseURL,
 		httpClient: httpClient,
 	}
 }
 
-func (c *StatusApiClient) request(ctx context.Context) (status *Status, err error) {
+func (c *GithubStatusClient) request(ctx context.Context) (*status, error) {
 	req, err := http.NewRequest("GET", c.baseURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -56,21 +55,22 @@ func (c *StatusApiClient) request(ctx context.Context) (status *Status, err erro
 		return nil, errors.Wrap(err, fmt.Sprintf("unexpected response from Github Status API (%s)", req.URL))
 	}
 
-	var result Status
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	var s status
+	err = json.NewDecoder(resp.Body).Decode(&s)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
-
+	return &s, nil
 }
 
-func (c *StatusApiClient) isGithubDown(ctx context.Context) bool {
-	res, _ := c.request(ctx)
-
-	if strings.EqualFold(res.State, "major") || strings.EqualFold(res.State, "critical") {
-		return true
+func (c *GithubStatusClient) IsGithubDown(ctx context.Context) bool {
+	res, err := c.request(ctx)
+	if err != nil {
+		return false
 	}
 
+	if res.Indicator == "critical" || res.Indicator == "major" || res.Indicator == "minor" {
+		return true
+	}
 	return false
 }
