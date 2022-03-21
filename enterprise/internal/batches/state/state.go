@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -509,6 +510,18 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 		}
 		return btypes.ChangesetReviewStatePending, nil
+
+	case *bitbucketcloud.PullRequest:
+		for _, participant := range m.Participants {
+			switch participant.State {
+			case bitbucketcloud.ParticipantStateApproved:
+				states[btypes.ChangesetReviewStateApproved] = true
+			case bitbucketcloud.ParticipantStateChangesRequested:
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
 
 	default:
 		return "", errors.New("unknown changeset type")
