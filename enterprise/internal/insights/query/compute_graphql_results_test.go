@@ -33,7 +33,7 @@ func TestGroupByCaptureMatch(t *testing.T) {
 	defaultEnvironmentEntry := ComputeEnvironmentEntry{
 		Value: "func ()",
 	}
-	longValue := "alpha bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra"
+	longValue := "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra"
 
 	t.Run("no compute results returns no group", func(t *testing.T) {
 		got := GroupByCaptureMatch([]ComputeResult{})

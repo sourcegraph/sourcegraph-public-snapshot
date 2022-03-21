@@ -32,7 +32,7 @@ type TimeDataPoint struct {
 	Count int
 }
 
-const capturedValueMaxLength = 100
+const capturedValueMaxLength = 10
 
 func GroupByCaptureMatch(results []ComputeResult) []GroupedResults {
 	if len(results) < 1 {
