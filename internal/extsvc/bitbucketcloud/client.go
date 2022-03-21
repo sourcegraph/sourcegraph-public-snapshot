@@ -118,24 +118,6 @@ func (c *Client) Ping(ctx context.Context) error {
 	return nil
 }
 
-// Repos returns a list of repositories that are fetched and populated based on given account
-// name and pagination criteria. If the account requested is a team, results will be filtered
-// down to the ones that the app password's user has access to.
-// If the argument pageToken.Next is not empty, it will be used directly as the URL to make
-// the request. The PageToken it returns may also contain the URL to the next page for
-// succeeding requests if any.
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName string) ([]*Repo, *PageToken, error) {
-	var repos []*Repo
-	var next *PageToken
-	var err error
-	if pageToken.HasMore() {
-		next, err = c.reqPage(ctx, pageToken.Next, &repos)
-	} else {
-		next, err = c.page(ctx, fmt.Sprintf("/2.0/repositories/%s", accountName), nil, pageToken, &repos)
-	}
-	return repos, next, err
-}
-
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
@@ -249,42 +231,6 @@ func (t *PageToken) Values() url.Values {
 		v.Set("pagelen", strconv.Itoa(t.Pagelen))
 	}
 	return v
-}
-
-type Repo struct {
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	UUID        string `json:"uuid"`
-	SCM         string `json:"scm"`
-	Description string `json:"description"`
-	Parent      *Repo  `json:"parent"`
-	IsPrivate   bool   `json:"is_private"`
-	Links       Links  `json:"links"`
-}
-
-type Links struct {
-	Clone CloneLinks `json:"clone"`
-	HTML  Link       `json:"html"`
-}
-
-type CloneLinks []struct {
-	Href string `json:"href"`
-	Name string `json:"name"`
-}
-
-type Link struct {
-	Href string `json:"href"`
-}
-
-// HTTPS returns clone link named "https", it returns an error if not found.
-func (cl CloneLinks) HTTPS() (string, error) {
-	for _, l := range cl {
-		if l.Name == "https" {
-			return l.Href, nil
-		}
-	}
-	return "", errors.New("HTTPS clone link not found")
 }
 
 type httpError struct {
