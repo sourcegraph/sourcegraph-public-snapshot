@@ -32,17 +32,18 @@ The options are:
 
 The commands are:
 
-	search          search for results on Sourcegraph
 	api             interacts with the Sourcegraph GraphQL API
-	repos,repo      manages repositories
-	users,user      manages users
-	orgs,org        manages organizations
-	config          manages global, org, and user settings
-	extsvc          manages external services
-	extensions,ext  manages extensions (experimental)
 	batch           manages batch changes
+	config          manages global, org, and user settings
+	extensions,ext  manages extensions (experimental)
+	extsvc          manages external services
+	login           authenticate to a Sourcegraph instance with your user credentials
 	lsif            manages LSIF data
+	orgs,org        manages organizations
+	repos,repo      manages repositories
+	search          search for results on Sourcegraph
 	serve-git       serves your local git repositories over HTTP for Sourcegraph to pull
+	users,user      manages users
 	version         display and compare the src-cli version against the recommended version for your instance
 
 Use "src [command] -h" for more information about a command.

@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Added `login` text to command text menu and ordered alphabetically [#713](https://github.com/sourcegraph/src-cli/pull/713)
+
 ### Changed
 
 ### Fixed
