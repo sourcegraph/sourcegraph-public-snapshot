@@ -29,8 +29,8 @@ type SymbolSearcher struct {
 
 // Run calls the searcher service to search symbols.
 func (s *SymbolSearcher) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, s)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

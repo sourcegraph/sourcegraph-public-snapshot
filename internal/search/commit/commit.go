@@ -49,8 +49,8 @@ type GitserverClient interface {
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, j)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	defer func() { finish(alert, err) }()
 	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, db); err != nil {

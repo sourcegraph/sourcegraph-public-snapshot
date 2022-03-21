@@ -36,8 +36,8 @@ func (r *PriorityJob) Name() string {
 }
 
 func (r *PriorityJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, r)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, s, finish := jobutil.StartSpan(ctx, s, r)
+	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -102,8 +102,8 @@ func (p *ParallelJob) Name() string {
 }
 
 func (p *ParallelJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, p)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, s, finish := jobutil.StartSpan(ctx, s, p)
+	defer func() { finish(alert, err) }()
 
 	var (
 		g          errors.Group
@@ -138,8 +138,8 @@ type TimeoutJob struct {
 }
 
 func (t *TimeoutJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, t)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, s, finish := jobutil.StartSpan(ctx, s, t)
+	defer func() { finish(alert, err) }()
 
 	ctx, cancel := context.WithTimeout(ctx, t.timeout)
 	defer cancel()
@@ -171,8 +171,8 @@ type LimitJob struct {
 }
 
 func (l *LimitJob) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, l)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, s, finish := jobutil.StartSpan(ctx, s, l)
+	defer func() { finish(alert, err) }()
 
 	ctx, s, cancel := streaming.WithLimit(ctx, s, l.limit)
 	defer cancel()

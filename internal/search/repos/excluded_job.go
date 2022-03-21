@@ -14,8 +14,8 @@ type ComputeExcludedRepos struct {
 }
 
 func (c *ComputeExcludedRepos) Run(ctx context.Context, db database.DB, s streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, c)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, s, finish := jobutil.StartSpan(ctx, s, c)
+	defer func() { finish(alert, err) }()
 
 	repositoryResolver := Resolver{DB: db}
 	excluded, err := repositoryResolver.Excluded(ctx, c.Options)

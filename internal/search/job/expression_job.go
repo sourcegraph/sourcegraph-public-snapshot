@@ -30,8 +30,8 @@ type AndJob struct {
 }
 
 func (a *AndJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, a)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, a)
+	defer func() { finish(alert, err) }()
 
 	var (
 		g           errors.Group
@@ -125,8 +125,8 @@ type OrJob struct {
 //   Additionally, a bias towards matching all subqueries is probably desirable, since it's more likely that
 //   a document matching all subqueries is what the user is looking for than a document matching only one.
 func (j *OrJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, j)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	defer func() { finish(alert, err) }()
 
 	var (
 		maxAlerter search.MaxAlerter

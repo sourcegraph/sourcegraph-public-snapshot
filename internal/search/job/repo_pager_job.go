@@ -61,8 +61,8 @@ func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Repos
 }
 
 func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, p)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, p)
+	defer func() { finish(alert, err) }()
 
 	var maxAlerter search.MaxAlerter
 

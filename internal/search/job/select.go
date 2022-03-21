@@ -22,8 +22,8 @@ type selectJob struct {
 }
 
 func (j *selectJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, j)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	defer func() { finish(alert, err) }()
 
 	selectingStream := streaming.WithSelect(stream, j.path)
 	return j.child.Run(ctx, db, selectingStream)
