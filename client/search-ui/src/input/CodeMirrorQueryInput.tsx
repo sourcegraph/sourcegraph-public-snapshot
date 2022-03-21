@@ -46,29 +46,25 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
-import styles from './CodemirrorQueryInput.module.scss'
+import styles from './CodeMirrorQueryInput.module.scss'
 
 const replacePattern = /[\n\r↵]/g
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
- * creates the approprate extensions and event handlers for the provided props.
+ * creates the appropriate extensions and event handlers for the provided props.
  *
  * Deliberate differences compared to MonacoQueryInput:
  * - Filters are "highlighted" when the cursor is at their position
- * - Shift+Enter won't insert a new line if preventNewLine is true (default)
- * - Not supplying onSubmit and setting preventNewLine to false will result in a
- * new line being added when Enter is pressed
+ * - Shift+Enter won't insert a new line if 'preventNewLine' is true (default)
+ * - Not supplying 'onSubmit' and setting 'preventNewLine' to false will result
+ * in a new line being added when Enter is pressed
  */
-export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputProps> = ({
+export const CodeMirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputProps> = ({
     patternType,
     selectedSearchContextSpec,
     queryState,
     onChange,
-    /**
-     * If not provided and preventNewLine is false, Enter will insert a new
-     * line. This is different from MonacoQueryInput's behavior.
-     */
     onSubmit,
     autoFocus,
     onBlur,
@@ -84,6 +80,10 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     editorOptions,
 }) => {
     const value = preventNewLine ? queryState.query.replace(replacePattern, '') : queryState.query
+    // We use both, state and a ref, for the editor instance because we need to
+    // re-run some hooks when the editor changes but we also need a stable
+    // reference that doesn't change across renders (and some hooks should only
+    // run when a prop changes, not the editor).
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
 
@@ -136,7 +136,7 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
         if (preventNewLine) {
             extensions.push(singleLine)
         } else {
-            // Automatically enable linewrapping in multi-line mode
+            // Automatically enable line wrapping in multi-line mode
             extensions.push(EditorView.lineWrapping)
         }
 
@@ -160,15 +160,15 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
     ])
 
     // We use an effect + field to configure the submission handler so that we
-    // don't reconfigure the whole editor should the onSubmit handler change
-    // because of the changed query
+    // don't reconfigure the whole editor should the 'onSubmit' handler change
+    // because of the changed query.
     useEffect(() => {
         if (editor && onSubmit) {
             editor.dispatch({ effects: [setNotifyHandler.of(onSubmit)] })
         }
     }, [editor, onSubmit])
 
-    // Always focus the editor on selectedSearchContextSpec change
+    // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
         if (selectedSearchContextSpec) {
             editorReference.current?.focus()
@@ -182,6 +182,8 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
         }
     }, [editor, autoFocus])
 
+    // Update the editor's selection and cursor depending on how the search
+    // query was changed.
     useEffect(() => {
         if (!editor) {
             return
@@ -193,6 +195,8 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
                 break
             case QueryChangeSource.searchTypes:
             case QueryChangeSource.searchReference: {
+                // Select the specified range (most of the time this will be a
+                // placeholder filter value).
                 const selectionRange = queryState.selectionRange
                 editor.dispatch({
                     selection: EditorSelection.range(selectionRange.start, selectionRange.end),
@@ -228,7 +232,7 @@ export const CodemirrorMonacoFacade: React.FunctionComponent<MonacoQueryInputPro
 
     return (
         <>
-            <CodemirrorQueryInput
+            <CodeMirrorQueryInput
                 isLightTheme={isLightTheme}
                 onEditorCreated={editorCreated}
                 patternType={patternType}
@@ -257,8 +261,11 @@ interface CodeMirrorQueryInputProps extends ThemeProps, SearchPatternTypeProps {
  * "Core" codemirror query input component. Provides the basic behavior such as
  * theming, syntax highlighting and token info.
  */
-const CodemirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
+const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> = React.memo(
     ({ isLightTheme, onEditorCreated, patternType, interpretComments, value, className, extensions = [] }) => {
+        // This is using state instead of a ref because `useRef` doesn't cause a
+        // re-render when the ref is attached, but we need that so that
+        // `useCodeMirror` is called again and the editor is actually created.
         const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
         const editor = useCodeMirror(
@@ -279,13 +286,16 @@ const CodemirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
             )
         )
 
+        // Notify parent component about editor instance. Among other things,
+        // having a reference to the editor allows other components to initiate
+        // transactions.
         useEffect(() => {
             if (editor) {
                 onEditorCreated?.(editor)
             }
         }, [editor, onEditorCreated])
 
-        // Update pattern type and/or interpretComments when the change
+        // Update pattern type and/or interpretComments when changed
         useEffect(() => {
             editor?.dispatch({ effects: [setQueryOptions.of({ patternType, interpretComments })] })
         }, [editor, patternType, interpretComments])
@@ -295,7 +305,7 @@ const CodemirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
 )
 
 /**
- * Hook for rendering and updating a Codemirror instance.
+ * Hook for rendering and updating a CodeMirror instance.
  */
 function useCodeMirror(
     container: HTMLDivElement | null,
@@ -347,11 +357,11 @@ function useCodeMirror(
 }
 
 // The remainder of the file defines all the extensions that provide the query
-// editor behavior. Here is also a brief overview over Codemirror's architecture
+// editor behavior. Here is also a brief overview over CodeMirror's architecture
 // to make more sense of this (see https://codemirror.net/6/docs/guide/ for more
 // details):
 //
-// In its own words, Codemirror has a "Functional Core" and an "Imperative
+// In its own words, CodeMirror has a "Functional Core" and an "Imperative
 // Shell". Updates to the editor's state are performed via transactions and
 // produce a new state. This new state is passed to the editor's view, which in
 // turn updates itself according to the new state.
