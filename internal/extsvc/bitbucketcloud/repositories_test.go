@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestClient_Repos(t *testing.T) {
@@ -114,6 +115,47 @@ func TestClient_Repos(t *testing.T) {
 
 			if have, want := repos, tc.repos; !reflect.DeepEqual(have, want) {
 				t.Error(cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestRepo_Namespace(t *testing.T) {
+	for name, tc := range map[string]struct {
+		input   string
+		want    string
+		wantErr bool
+	}{
+		"empty string": {
+			input:   "",
+			want:    "",
+			wantErr: true,
+		},
+		"no slash": {
+			input:   "foo",
+			want:    "",
+			wantErr: true,
+		},
+		"one slash": {
+			input:   "foo/bar",
+			want:    "foo",
+			wantErr: false,
+		},
+		"multiple slashes": {
+			input:   "foo/bar/quux",
+			want:    "foo",
+			wantErr: false,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			repo := &Repo{FullName: tc.input}
+			have, haveErr := repo.Namespace()
+			if tc.wantErr {
+				assert.Empty(t, have)
+				assert.NotNil(t, haveErr)
+			} else {
+				assert.Nil(t, haveErr)
+				assert.Equal(t, tc.want, have)
 			}
 		})
 	}
