@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -394,6 +395,22 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
+	case *bitbucketcloud.PullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(pr.ID, 10)
+		c.ExternalServiceType = extsvc.TypeBitbucketCloud
+		c.ExternalBranch = git.EnsureRefPrefix(pr.Source.Branch.Name)
+		c.ExternalUpdatedAt = pr.UpdatedOn
+
+		if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {
+			namespace, err := pr.Source.Repo.Namespace()
+			if err != nil {
+				return errors.Wrap(err, "determining fork namespace")
+			}
+			c.ExternalForkNamespace = namespace
+		} else {
+			c.ExternalForkNamespace = ""
+		}
 	default:
 		return errors.New("unknown changeset type")
 	}

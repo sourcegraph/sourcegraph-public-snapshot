@@ -3,6 +3,7 @@ package bitbucketcloud
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,6 +37,20 @@ type Repo struct {
 	IsPrivate   bool       `json:"is_private"`
 	Links       RepoLinks  `json:"links"`
 	ForkPolicy  ForkPolicy `json:"fork_policy"`
+}
+
+func (r *Repo) Namespace() (string, error) {
+	// Bitbucket Cloud will return cut down versions of the repository in some
+	// cases (for example, embedded in pull requests), but we always have the
+	// full name, so let's parse the namespace out of that.
+
+	// TODO: replace with strings.Cut() once we upgrade to Go 1.18.
+	parts := strings.SplitN(r.FullName, "/", 2)
+	if len(parts) < 2 {
+		return "", errors.New("cannot split namespace from repo name")
+	}
+
+	return parts[0], nil
 }
 
 type ForkPolicy string
