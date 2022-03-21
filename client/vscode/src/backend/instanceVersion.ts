@@ -15,20 +15,21 @@ export function initializeInstantVersionNumber(localStorageService: LocalStorage
     requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {})
         .then(async siteVersionResult => {
             if (siteVersionResult.data) {
-                await localStorageService.setValue(
-                    INSTANCE_VERSION_NUMBER_KEY,
-                    siteVersionResult.data.site.productVersion
-                )
+                // assume instance version longer than 8 is using insider version
+                const flattenVersion =
+                    siteVersionResult.data.site.productVersion.length > 8
+                        ? '999999'
+                        : siteVersionResult.data.site.productVersion.split('.').join('')
+                await localStorageService.setValue(INSTANCE_VERSION_NUMBER_KEY, flattenVersion)
             }
         })
         .catch(error => {
             console.error('Failed to get instance version from host:', error)
         })
     const versionNumber = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
-    // assume instance version longer than 8 is using insider version
-    const flattenVersion = versionNumber.length > 8 ? '999999' : versionNumber.split('.').join()
+
     // instances below 3.38.0 does not support EventSource.IDEEXTENSION
-    return flattenVersion > '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
+    return versionNumber > '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
 }
 
 const siteVersionQuery = gql`

@@ -17,6 +17,17 @@ export class LocalStorageService {
             return false
         }
     }
+
+    public instanceVersionWarnings(): string | null {
+        const versionNumber = this.storage.get<string>(INSTANCE_VERSION_NUMBER_KEY)
+        if (!versionNumber) {
+            return 'Cannot determine instance version number'
+        }
+        if (versionNumber < '3320') {
+            return 'Your Sourcegraph instance version is not compatible with this Sourcegraph extension. Please ask your site admin to upgrade the instance to 3.32.0 or above for searches to work with this extension.'
+        }
+        return null
+    }
 }
 
 export const SELECTED_SEARCH_CONTEXT_SPEC_KEY = 'selected-search-context-spec'
