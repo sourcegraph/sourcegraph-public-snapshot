@@ -47,15 +47,11 @@ func GroupByCaptureMatch(results []ComputeResult) []GroupedResults {
 				value = value[:capturedValueMaxLength]
 			}
 			mapped[value] += count
-			// log15.Info(fmt.Sprintf("%v", mapped))
 		}
 	}
 
 	grouped := make([]GroupedResults, 0, len(mapped))
 	for value, count := range mapped {
-		if len(value) > 10 {
-			// log15.Info(value)
-		}
 		grouped = append(grouped, GroupedResults{
 			Value: value,
 			Count: count,

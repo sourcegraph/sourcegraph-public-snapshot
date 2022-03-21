@@ -33,6 +33,7 @@ func TestGroupByCaptureMatch(t *testing.T) {
 	defaultEnvironmentEntry := ComputeEnvironmentEntry{
 		Value: "func ()",
 	}
+	longValue := "alpha bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra"
 
 	t.Run("no compute results returns no group", func(t *testing.T) {
 		got := GroupByCaptureMatch([]ComputeResult{})
@@ -166,5 +167,61 @@ func TestGroupByCaptureMatch(t *testing.T) {
 		}
 		got := GroupByCaptureMatch(results)
 		autogold.Want("multiple results multiple matches multiple values returns correct groups", stringify(want)).Equal(t, stringify(got))
+	})
+
+	t.Run("results with values over max allowed length get truncated", func(t *testing.T) {
+		results := mockComputeResults([]ComputeMatchContext{
+			{
+				Matches: []ComputeMatch{
+					{
+						Environment: []ComputeEnvironmentEntry{
+							{
+								Value: longValue,
+							},
+						},
+					},
+				},
+			},
+		})
+		want := []GroupedResults{
+			{
+				Value: longValue[:capturedValueMaxLength],
+				Count: 1,
+			},
+		}
+		got := GroupByCaptureMatch(results)
+		autogold.Want("results with values over max allowed length get truncated", stringify(want)).Equal(t, stringify(got))
+	})
+
+	t.Run("identical values after truncation get grouped together", func(t *testing.T) {
+		results := mockComputeResults([]ComputeMatchContext{
+			{
+				Matches: []ComputeMatch{
+					{
+						Environment: []ComputeEnvironmentEntry{
+							{
+								Value: longValue,
+							},
+						},
+					},
+					{
+						Environment: []ComputeEnvironmentEntry{
+							{
+								Value: longValue + " tango",
+							},
+						},
+					},
+				},
+			},
+		})
+		want := []GroupedResults{
+			{
+				Value: longValue[:capturedValueMaxLength],
+				Count: 2,
+			},
+		}
+		got := GroupByCaptureMatch(results)
+		autogold.Want("identical values after truncation get grouped together", stringify(want)).Equal(t, stringify(got))
+
 	})
 }
