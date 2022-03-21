@@ -2,12 +2,15 @@ package query
 
 import (
 	"fmt"
+	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strconv"
 	"time"
 
+	zoekt "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type ExpectedOperand struct {
@@ -246,6 +249,99 @@ func (b Basic) Exists(field string) bool {
 		found = true
 	})
 	return found
+}
+
+func (b Basic) ToZoektQuery(isCaseSensitive, patternMatchesContent, patternMatchesPath bool) (zoekt.Q, error) {
+	var fold func(node Node) (zoekt.Q, error)
+	fold = func(node Node) (zoekt.Q, error) {
+		switch n := node.(type) {
+		case Operator:
+			children := make([]zoekt.Q, 0, len(n.Operands))
+			for _, op := range n.Operands {
+				child, err := fold(op)
+				if err != nil {
+					return nil, err
+				}
+				children = append(children, child)
+			}
+			switch n.Kind {
+			case Or:
+				return &zoekt.Or{Children: children}, nil
+			case And:
+				return &zoekt.And{Children: children}, nil
+			default:
+				// unreachable
+				return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+			}
+		case Pattern:
+			var q zoekt.Q
+			var err error
+			if n.Annotation.Labels.IsSet(Regexp) {
+				fileNameOnly := patternMatchesPath && !patternMatchesContent
+				contentOnly := !patternMatchesPath && patternMatchesContent
+				q, err = parseRe(n.Value, fileNameOnly, contentOnly, isCaseSensitive)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				q = &zoekt.Substring{
+					Pattern:       n.Value,
+					CaseSensitive: isCaseSensitive,
+
+					FileName: true,
+					Content:  true,
+				}
+			}
+
+			if n.Negated {
+				q = &zoekt.Not{Child: q}
+			}
+			return q, nil
+		}
+		// unreachable
+		return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+	}
+
+	q, err := fold(b.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	return q, nil
+}
+
+func noOpAnyChar(re *syntax.Regexp) {
+	if re.Op == syntax.OpAnyChar {
+		re.Op = syntax.OpAnyCharNotNL
+	}
+	for _, s := range re.Sub {
+		noOpAnyChar(s)
+	}
+}
+
+func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoekt.Q, error) {
+	// these are the flags used by zoekt, which differ to searcher.
+	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return nil, err
+	}
+	noOpAnyChar(re)
+	// zoekt decides to use its literal optimization at the query parser
+	// level, so we check if our regex can just be a literal.
+	if re.Op == syntax.OpLiteral {
+		return &zoekt.Substring{
+			Pattern:       string(re.Rune),
+			CaseSensitive: queryIsCaseSensitive,
+			Content:       contentOnly,
+			FileName:      filenameOnly,
+		}, nil
+	}
+	return &zoekt.Regexp{
+		Regexp:        re,
+		CaseSensitive: queryIsCaseSensitive,
+		Content:       contentOnly,
+		FileName:      filenameOnly,
+	}, nil
 }
 
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
