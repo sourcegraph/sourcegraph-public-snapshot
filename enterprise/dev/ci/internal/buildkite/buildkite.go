@@ -37,7 +37,7 @@ var FeatureFlags = featureFlags{
 		// TODO: remove when we switch over entirely to stateless agents
 		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" ||
 		// Roll out to 75% of builds
-		rand.NewSource(time.Now().UnixNano()).Int63()%100 < 75,
+		rand.NewSource(time.Now().UnixNano()).Int63()%100 < 10,
 }
 
 type Pipeline struct {
