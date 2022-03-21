@@ -65,7 +65,7 @@ The default run type.
 
 The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Trigger 3.38 release branch healthcheck build
 - Trigger 3.37 release branch healthcheck build
@@ -75,7 +75,7 @@ Default pipeline:
 
 The run type for environment including `{"BEXT_NIGHTLY":"true"}`.
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - ESLint
 - Build TS
@@ -90,7 +90,7 @@ Default pipeline:
 
 The run type for tags starting with `v`.
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg
@@ -109,7 +109,7 @@ Default pipeline:
 
 The run type for branches matching `^[0-9]+\.[0-9]+$` (regexp match).
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image, Build docker registry mirror image
@@ -128,7 +128,7 @@ Default pipeline:
 
 The run type for branches matching `bext/release` (exact match).
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - ESLint
 - Build TS
@@ -146,10 +146,10 @@ Default pipeline:
 
 The run type for branches matching `main` (exact match).
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image, Build docker registry mirror image
+- **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image
 - **Image security scans**: Scan alpine-3.12, Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan minio, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan server, Scan sg
 - **Linters and static analysis**: Prettier, Misc linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Docker linters, Checkov Terraform scanning, Check and build docsite
 - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Puppeteer tests for chrome extension, Test (client/browser), ESLint, Build TS, Stylelint
@@ -158,7 +158,7 @@ Default pipeline:
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests, Code Intel QA
 - **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
-- **Publish images**: alpine-3.12, alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, server, sg, Publish executor image, Publish docker registry mirror image
+- **Publish images**: alpine-3.12, alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, server, sg, Publish executor image
 - Upload build trace
 
 ### Main dry run
@@ -170,10 +170,10 @@ You can create a build of this run type for your changes using:
 sg ci build main-dry-run
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image, Build docker registry mirror image
+- **Image builds**: Build alpine-3.12, Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build minio, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build server, Build sg, Build executor image
 - **Image security scans**: Scan alpine-3.12, Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan minio, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan server, Scan sg
 - **Linters and static analysis**: Prettier, Misc linters, GraphQL lint, SVG lint, Yarn deduplicate lint, Docker linters, Checkov Terraform scanning, Check and build docsite
 - **Client checks**: Puppeteer tests prep, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests finalize, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Puppeteer tests for chrome extension, Test (client/browser), ESLint, Build TS, Stylelint
@@ -212,7 +212,7 @@ You can create a build of this run type for your changes using:
 sg ci build docker-images-candidates-notest
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Build alpine-3.12
 - Build alpine-3.14
@@ -254,7 +254,7 @@ You can create a build of this run type for your changes using:
 sg ci build executor-patch-notest
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Build executor image
 - Publish executor image
@@ -271,7 +271,7 @@ You can create a build of this run type for your changes using:
 sg ci build backend-integration
 ```
 
-Default pipeline:
+Base pipeline (more steps might be included based on branch changes):
 
 - Build server
 - Backend integration tests
