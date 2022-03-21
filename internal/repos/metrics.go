@@ -281,7 +281,7 @@ AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id 
 		// repos owned by the Starburst service in this state and until that's resolved
 		// it would just be noise.
 		count, err := scanCount(`
-select repo_id, last_error, last_fetched
+select count(*)
 from gitserver_repos
 where last_fetched < now() - interval '8 hours'
   and last_error <> ''
