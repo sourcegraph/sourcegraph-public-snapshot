@@ -32,7 +32,7 @@ import {
 } from './ReferencesPanelQueries'
 import { definitionQuery, referencesQuery } from './searchBased'
 
-interface CodeIntelResults {
+interface CodeIntelData {
     references: {
         endCursor: string | null
         nodes: Location[]
@@ -47,8 +47,8 @@ interface CodeIntelResults {
     }
 }
 
-export interface UsePreciseCodeIntelResult {
-    results?: CodeIntelResults
+export interface UseCodeIntelResult {
+    data?: CodeIntelData
     error?: ApolloError
     loading: boolean
 
@@ -61,16 +61,13 @@ export interface UsePreciseCodeIntelResult {
     fetchMoreImplementationsLoading: boolean
 }
 
-interface UsePreciseCodeIntelParameters {
+interface UseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     searchToken?: string
 }
 
-export const usePreciseCodeIntel = ({
-    variables,
-    searchToken,
-}: UsePreciseCodeIntelParameters): UsePreciseCodeIntelResult => {
-    const [codeIntelResults, setCodeIntelResults] = useState<CodeIntelResults>()
+export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters): UseCodeIntelResult => {
+    const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 
     const fellBackToSearchBased = useRef(false)
     const shouldFetchPrecise = useRef(true)
@@ -96,9 +93,9 @@ export const usePreciseCodeIntel = ({
         onCompleted: result => {
             const newReferences = searchResultsToLocations(result).map(buildSearchBasedLocation)
 
-            const previousData = codeIntelResults
+            const previousData = codeIntelData
             if (!previousData) {
-                setCodeIntelResults({
+                setCodeIntelData({
                     implementations: {
                         endCursor: null,
                         nodes: [],
@@ -113,7 +110,7 @@ export const usePreciseCodeIntel = ({
                     },
                 })
             } else {
-                setCodeIntelResults({
+                setCodeIntelData({
                     implementations: previousData.implementations,
                     definitions: previousData.definitions,
                     references: {
@@ -133,9 +130,9 @@ export const usePreciseCodeIntel = ({
         onCompleted: result => {
             const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)
 
-            const previousData = codeIntelResults
+            const previousData = codeIntelData
             if (!previousData) {
-                setCodeIntelResults({
+                setCodeIntelData({
                     implementations: { endCursor: null, nodes: [] },
                     references: { endCursor: null, nodes: [] },
                     definitions: {
@@ -144,7 +141,7 @@ export const usePreciseCodeIntel = ({
                     },
                 })
             } else {
-                setCodeIntelResults({
+                setCodeIntelData({
                     implementations: previousData.implementations,
                     references: previousData.references,
                     definitions: {
@@ -187,7 +184,7 @@ export const usePreciseCodeIntel = ({
 
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 if (lsifData) {
-                    setCodeIntelResults(lsifData)
+                    setCodeIntelData(lsifData)
                 } else if (searchToken !== undefined) {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
@@ -207,7 +204,7 @@ export const usePreciseCodeIntel = ({
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             console.log('fetch additional references')
-            const previousData = codeIntelResults
+            const previousData = codeIntelData
 
             const newReferenceData = result.repository?.commit?.blob?.lsif?.references
 
@@ -215,7 +212,7 @@ export const usePreciseCodeIntel = ({
                 return
             }
 
-            setCodeIntelResults({
+            setCodeIntelData({
                 implementations: previousData.implementations,
                 definitions: previousData.definitions,
                 references: {
@@ -232,7 +229,7 @@ export const usePreciseCodeIntel = ({
     >(LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
-            const previousData = codeIntelResults
+            const previousData = codeIntelData
 
             const newImplementationsData = result.repository?.commit?.blob?.lsif?.implementations
 
@@ -240,7 +237,7 @@ export const usePreciseCodeIntel = ({
                 return
             }
 
-            setCodeIntelResults({
+            setCodeIntelData({
                 references: previousData.references,
                 definitions: previousData.definitions,
                 implementations: {
@@ -256,7 +253,7 @@ export const usePreciseCodeIntel = ({
 
     const fetchMoreReferences = (): void => {
         console.log('fetchMoreReferences')
-        const cursor = codeIntelResults?.references.endCursor || null
+        const cursor = codeIntelData?.references.endCursor || null
 
         if (cursor === null && attemptedSearchReferences === false) {
             setAttemptedSearchReferences(true)
@@ -279,7 +276,7 @@ export const usePreciseCodeIntel = ({
     }
 
     const fetchMoreImplementations = (): void => {
-        const cursor = codeIntelResults?.implementations.endCursor || null
+        const cursor = codeIntelData?.implementations.endCursor || null
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         fetchAdditionalImplementations({
@@ -299,17 +296,17 @@ export const usePreciseCodeIntel = ({
     const combinedError = error || fetchSearchBasedReferencesResult.error || fetchSearchBasedDefinitionsResult.error
 
     return {
-        results: codeIntelResults,
+        data: codeIntelData,
         loading: combinedLoading,
 
         error: combinedError,
 
         fetchMoreReferences,
         fetchMoreReferencesLoading: additionalReferencesResult.loading,
-        referencesHasNextPage: codeIntelResults ? codeIntelResults.references.endCursor !== null : false,
+        referencesHasNextPage: codeIntelData ? codeIntelData.references.endCursor !== null : false,
 
         fetchMoreImplementations,
-        implementationsHasNextPage: codeIntelResults ? codeIntelResults.implementations.endCursor !== null : false,
+        implementationsHasNextPage: codeIntelData ? codeIntelData.implementations.endCursor !== null : false,
         fetchMoreImplementationsLoading: additionalImplementationsResult.loading,
     }
 }
@@ -317,7 +314,7 @@ export const usePreciseCodeIntel = ({
 const getLsifData = ({
     data,
     error,
-}: Pick<QueryResult<UsePreciseCodeIntelForPositionResult>, 'data' | 'error'>): CodeIntelResults | undefined => {
+}: Pick<QueryResult<UsePreciseCodeIntelForPositionResult>, 'data' | 'error'>): CodeIntelData | undefined => {
     const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
 
     const extractedData = dataOrThrowErrors(result)
@@ -353,7 +350,7 @@ function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields
     const searchResults = result.search.results.results
         .filter(value => value !== undefined)
         .filter(result => result.__typename === 'FileMatch')
-    console.log('searchResults', searchResults)
+
     const newReferences: LocationFields[] = []
     for (const result of searchResults) {
         if (result.__typename !== 'FileMatch') {
@@ -370,7 +367,6 @@ function searchResultsToLocations(result: CodeIntelSearchResult): LocationFields
         }
 
         for (const lineMatch of result.lineMatches) {
-            console.log('lineMatch', lineMatch)
             const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({
                 // TODO: only using first offset?
                 position: { line: lineMatch.lineNumber + 1, character: lineMatch.offsetAndLengths[0][0] + 1 },

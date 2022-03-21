@@ -55,7 +55,7 @@ import { goSpec } from './language-specs/go'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { findSearchToken } from './token'
-import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+import { useCodeIntel } from './usePreciseCodeIntel'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
@@ -201,7 +201,7 @@ export const ReferencesList: React.FunctionComponent<
     console.log('tokenResult', tokenResult)
 
     const {
-        results,
+        data: results,
         error,
         loading,
         referencesHasNextPage,
@@ -210,7 +210,7 @@ export const ReferencesList: React.FunctionComponent<
         fetchMoreImplementations,
         fetchMoreReferencesLoading,
         fetchMoreImplementationsLoading,
-    } = usePreciseCodeIntel({
+    } = useCodeIntel({
         variables: {
             repository: props.token.repoName,
             commit: props.token.commitID,
