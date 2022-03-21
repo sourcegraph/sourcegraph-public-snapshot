@@ -8,13 +8,12 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GithubStatusClient struct {
 	baseURL    *url.URL
-	httpClient httpcli.Doer
+	httpClient *http.Client
 }
 
 type status struct {
@@ -28,10 +27,10 @@ var baseURL = url.URL{
 	Path:   "/api/v2",
 }
 
-func NewStatusClient(baseURL *url.URL, httpClient httpcli.Doer) *GithubStatusClient {
+func NewGithubStatusClient() *GithubStatusClient {
 	return &GithubStatusClient{
-		baseURL:    baseURL,
-		httpClient: httpClient,
+		baseURL:    &baseURL,
+		httpClient: &http.Client{},
 	}
 }
 
@@ -63,13 +62,13 @@ func (c *GithubStatusClient) request(ctx context.Context) (*status, error) {
 	return &s, nil
 }
 
-func (c *GithubStatusClient) IsGithubDown(ctx context.Context) bool {
+func (c *GithubStatusClient) IsServiceDown(ctx context.Context) bool {
 	res, err := c.request(ctx)
 	if err != nil {
 		return false
 	}
 
-	if res.Indicator == "critical" || res.Indicator == "major" || res.Indicator == "minor" {
+	if res.Indicator == "critical" || res.Indicator == "major" {
 		return true
 	}
 	return false

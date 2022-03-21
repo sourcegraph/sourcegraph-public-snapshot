@@ -1559,7 +1559,10 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
-			// if 500, we are here
+		}
+
+		if resp.StatusCode == 500 && GithubOutage(ctx) {
+			err.Message = fmt.Sprintf("Github is experiencing an outage. Status code: %v", resp.StatusCode)
 		}
 
 		err.URL = req.URL.String()
@@ -2016,6 +2019,7 @@ func normalizeURL(rawURL string) string {
 	return parsed.String()
 }
 
-func (c *GithubStatusClient) codeHostIsDown(ctx context.Context) bool {
-	return c.IsGithubDown(ctx)
+func GithubOutage(ctx context.Context) bool {
+	c := NewGithubStatusClient()
+	return c.IsServiceDown(ctx)
 }
