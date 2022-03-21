@@ -18,23 +18,23 @@ import (
 )
 
 type Flags struct {
-	SourcegraphCommit      string
-	MockLiveCommit         string
-	GitHubToken            string
-	Pretend                bool
-	GuessSourcegraphCommit bool
-	Environment            string
-	SlackToken             string
-	SlackAnnounceWebhook   string
+	SourcegraphCommit         string
+	SourcegraphDeployedCommit string
+	GitHubToken               string
+	DryRun                    bool
+	InferSourcegraphCommit    bool
+	Environment               string
+	SlackToken                string
+	SlackAnnounceWebhook      string
 }
 
 func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
 	flag.StringVar(&f.SourcegraphCommit, "sourcegraph.commit", "", "Sourcegraph commit being deployed")
 	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
-	flag.StringVar(&f.MockLiveCommit, "mock.live-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
-	flag.BoolVar(&f.Pretend, "pretend", false, "Pretend to post notifications, printing to stdout instead")
-	flag.BoolVar(&f.GuessSourcegraphCommit, "sourcegraph.guess-commit", false, "Attempt at inferring the deployed commit from the changes in the diff")
+	flag.StringVar(&f.SourcegraphDeployedCommit, "sourcegraph.deployed-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
+	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
+	flag.BoolVar(&f.InferSourcegraphCommit, "sourcegraph.infer-commit", false, "Attempt at inferring the deployed commit from the changes in the diff")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.Parse()
@@ -48,11 +48,11 @@ func main() {
 	if flags.Environment == "" {
 		log.Fatalf("-enviroment must be specified: preprod or production.")
 	}
-	if flags.SourcegraphCommit == "" && !flags.GuessSourcegraphCommit {
+	if flags.SourcegraphCommit == "" && !flags.InferSourcegraphCommit {
 		log.Fatalf("-sourcegraph.commit must be specified.")
 	}
 
-	if flags.GuessSourcegraphCommit {
+	if flags.InferSourcegraphCommit {
 		commit, err := guessSourcegraphCommit()
 		if err != nil || commit == "" {
 			log.Fatalf("could not guess commit from changes, %q", err)
@@ -70,8 +70,8 @@ func main() {
 	}
 
 	var vr VersionRequester
-	if flags.MockLiveCommit != "" {
-		vr = NewMockVersionRequester(flags.MockLiveCommit, nil)
+	if flags.SourcegraphDeployedCommit != "" {
+		vr = NewMockVersionRequester(flags.SourcegraphDeployedCommit, nil)
 	} else {
 		NewAPIVersionRequester(flags.Environment)
 	}
@@ -95,7 +95,7 @@ func main() {
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
 
-	if flags.Pretend {
+	if flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
