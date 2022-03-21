@@ -94,6 +94,10 @@ table.
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
+### ARM / ARM64 support
+
+> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+
 ## About
 
 ### Kubernetes
