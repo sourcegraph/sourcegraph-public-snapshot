@@ -1,6 +1,9 @@
 package rockskip
 
-import "github.com/sourcegraph/sourcegraph/internal/vcs/git"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+)
 
 type Git interface {
 	LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(logEntry git.LogEntry) error) error
