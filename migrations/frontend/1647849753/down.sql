@@ -1,1 +1,1 @@
--- Nothing to do, actually. Even if we go backwards we aren't going to restore the backup tables.
+-- Nothing to do, actually. We have not been using these backup tables since 2018.
