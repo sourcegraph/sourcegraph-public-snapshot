@@ -33,6 +33,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { useExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -144,6 +145,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         platformContext,
     } = props
     const history = useHistory()
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -438,13 +440,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
                             <LazyMonacoQueryInput
+                                editorComponent={editorComponent}
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 caseSensitive={true}
                                 queryState={queryState}
                                 onChange={setQueryState}
-                                onSubmit={() => {}}
                                 globbing={false}
                                 preventNewLine={false}
                             />
