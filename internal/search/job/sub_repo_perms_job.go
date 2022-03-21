@@ -27,8 +27,8 @@ type subRepoPermsFilterJob struct {
 }
 
 func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, s)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
 
 	checker := authz.DefaultSubRepoPermsChecker
 

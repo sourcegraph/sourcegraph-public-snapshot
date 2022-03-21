@@ -45,8 +45,8 @@ type RepoSearch struct {
 }
 
 func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, s)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
 
 	tr.LogFields(otlog.String("pattern", s.PatternInfo.Pattern))
 
