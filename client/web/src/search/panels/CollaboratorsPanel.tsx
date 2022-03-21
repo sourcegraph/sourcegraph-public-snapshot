@@ -4,17 +4,18 @@ import classNames from 'classnames'
 import EmailCheckIcon from 'mdi-react/EmailCheckIcon'
 import EmailIcon from 'mdi-react/EmailIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { useInviteEmailToSourcegraph } from '../../auth/welcome/InviteCollaborators/useInviteEmailToSourcegraph'
 import { CopyableText } from '../../components/CopyableText'
+import { CollaboratorsFragment } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
@@ -26,20 +27,29 @@ import styles from './CollaboratorsPanel.module.scss'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
+    collaboratorsFragment: CollaboratorsFragment | null
 }
 
 const emailEnabled = window.context?.emailEnabled ?? false
 
+export const collaboratorsFragment = gql`
+    fragment CollaboratorsFragment on User {
+        collaborators: invitableCollaborators @include(if: $enableCollaborators) {
+            name
+            email
+            displayName
+            avatarURL
+        }
+    }
+`
+
 export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     className,
     authenticatedUser,
-    fetchCollaborators,
+    collaboratorsFragment,
 }) => {
     const inviteEmailToSourcegraph = useInviteEmailToSourcegraph()
-    const collaborators = useObservable(
-        useMemo(() => fetchCollaborators(authenticatedUser?.id || ''), [fetchCollaborators, authenticatedUser?.id])
-    )
+    const collaborators = collaboratorsFragment?.collaborators ?? null
     const filteredCollaborators = useMemo(() => collaborators?.slice(0, 6), [collaborators])
 
     const [inviteError, setInviteError] = useState<ErrorLike | null>(null)
@@ -149,7 +159,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
             className={classNames(className, styles.panel)}
             title="Invite your colleagues"
             insideTabPanel={true}
-            state={collaborators === undefined ? 'loading' : 'populated'}
+            state={collaborators === null ? 'loading' : 'populated'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
         />

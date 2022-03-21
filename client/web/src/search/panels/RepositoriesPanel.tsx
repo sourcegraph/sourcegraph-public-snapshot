@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+
 import { gql } from '@apollo/client'
 import classNames from 'classnames'
 
@@ -22,7 +23,7 @@ import { ShowMoreButton } from './ShowMoreButton'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    recentlySearchedRepositories: RecentlySearchedRepositoriesFragment
+    recentlySearchedRepositories: RecentlySearchedRepositoriesFragment | null
     fetchMore: HomePanelsFetchMore
 }
 
@@ -51,9 +52,12 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     recentlySearchedRepositories,
     fetchMore,
 }) => {
-    const [searchEventLogs, setSearchEventLogs] = useState(
-        recentlySearchedRepositories.recentlySearchedRepositoriesLogs
-    )
+    const [searchEventLogs, setSearchEventLogs] = useState<
+        null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
+    >(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null)
+    useEffect(() => setSearchEventLogs(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null), [
+        recentlySearchedRepositories?.recentlySearchedRepositoriesLogs,
+    ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
 

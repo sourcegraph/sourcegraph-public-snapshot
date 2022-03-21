@@ -20,7 +20,7 @@ import { PanelContainer } from './PanelContainer'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    savedSearchesFragment: SavedSearchesPanelFragment
+    savedSearchesFragment: SavedSearchesPanelFragment | null
     insideTabPanel?: boolean
 }
 
@@ -42,8 +42,6 @@ export const savedSearchesPanelFragment = gql`
     }
 `
 
-const emptyArray: SavedSearchesPanelFragment['savedSearches'] = []
-
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
     className,
@@ -51,7 +49,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     insideTabPanel,
     savedSearchesFragment,
 }) => {
-    const savedSearches = savedSearchesFragment?.savedSearches ?? emptyArray
+    const savedSearches = savedSearchesFragment?.savedSearches ?? null
 
     const [showAllSearches, setShowAllSearches] = useState(true)
 

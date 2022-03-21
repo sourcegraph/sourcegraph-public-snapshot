@@ -31,7 +31,7 @@ interface RecentSearch {
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    recentSearches: RecentSearchesPanelFragment
+    recentSearches: RecentSearchesPanelFragment | null
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date
     fetchMore: HomePanelsFetchMore
@@ -60,10 +60,18 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
     recentSearches,
     fetchMore,
 }) => {
-    const [searchEventLogs, setSearchEventLogs] = useState(recentSearches.recentSearchesLogs)
+    const [searchEventLogs, setSearchEventLogs] = useState<null | RecentSearchesPanelFragment['recentSearchesLogs']>(
+        recentSearches?.recentSearchesLogs ?? null
+    )
+    useEffect(() => setSearchEventLogs(recentSearches?.recentSearchesLogs ?? null), [
+        recentSearches?.recentSearchesLogs,
+    ])
+
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_SEARCHES_TO_LOAD)
 
-    const processedResults = useMemo(() => processRecentSearches(searchEventLogs), [searchEventLogs])
+    const processedResults = useMemo(() => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)), [
+        searchEventLogs,
+    ])
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
