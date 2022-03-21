@@ -15,7 +15,7 @@ import styles from './organizationList.module.scss'
 export interface OrganizationsListProps extends ThemeProps, FeatureFlagProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
-        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
+        'id' | 'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
 }
 
@@ -54,7 +54,19 @@ const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
                 <span className="text-muted">Admin</span>
             </div>
             <div>
-                <ButtonLink className={styles.orgSettings} variant="secondary" to={org.settingsURL as string} size="sm">
+                <ButtonLink
+                    className={styles.orgSettings}
+                    variant="secondary"
+                    to={org.settingsURL as string}
+                    size="sm"
+                    onClick={() =>
+                        eventLogger.log(
+                            'UserOrganizationSettingsClicked',
+                            { organizationId: org.id },
+                            { organizationId: org.id }
+                        )
+                    }
+                >
                     Settings
                 </ButtonLink>
             </div>
@@ -79,12 +91,21 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
     const orgs = authenticatedUser.organizations.nodes
     const hasOrgs = orgs.length > 0
 
+    useEffect(() => {
+        eventLogger.logViewEvent('YourOrganizations', { userId: authenticatedUser.id })
+    }, [authenticatedUser.id])
+
     return (
         <div className="org-list-page">
             <div className="d-flex flex-0 justify-content-end align-items-center mb-3 flex-wrap">
                 <PageHeader path={[{ text: 'Organizations' }]} headingElement="h2" className="flex-1" />
 
-                <ButtonLink variant="secondary" to="/organizations/joinopenbeta" size="sm">
+                <ButtonLink
+                    variant="secondary"
+                    to="/organizations/joinopenbeta"
+                    size="sm"
+                    onClick={() => eventLogger.log('CreateOrganizationButtonClicked')}
+                >
                     Create organization
                 </ButtonLink>
             </div>
@@ -102,8 +123,14 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
                     <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
                         <h3>Start searching with your team on Sourcegraph</h3>
                         <div>Product copy here that needs to be written still, this is a placeholder.</div>
-                        <ButtonLink variant="primary" to="/organizations/joinopenbeta" size="sm" className="mt-3">
-                            Create your organization
+                        <ButtonLink
+                            variant="primary"
+                            to="/organizations/joinopenbeta"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => eventLogger.log('CreateFirstOrganizationButtonClicked')}
+                        >
+                            Create your first organization
                         </ButtonLink>
                     </div>
                 </Container>

@@ -24,14 +24,9 @@ export interface AddInsightModalProps {
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
     const { dashboard, onClose } = props
-    const { getReachableInsights, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
+    const { getAccessibleInsightsList, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 
-    const insights = useObservable(
-        useMemo(() => getReachableInsights({ subjectId: dashboard.owner?.id || '' }), [
-            dashboard.owner,
-            getReachableInsights,
-        ])
-    )
+    const insights = useObservable(useMemo(() => getAccessibleInsightsList(), [getAccessibleInsightsList]))
 
     const initialValues = useMemo<AddInsightFormValues>(
         () => ({

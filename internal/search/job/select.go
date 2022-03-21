@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -20,11 +21,14 @@ type selectJob struct {
 	child Job
 }
 
-func (j *selectJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (*search.Alert, error) {
+func (j *selectJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx := jobutil.StartSpan(ctx, j)
+	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+
 	selectingStream := streaming.WithSelect(stream, j.path)
 	return j.child.Run(ctx, db, selectingStream)
 }
 
 func (j *selectJob) Name() string {
-	return "Select"
+	return "SelectJob"
 }

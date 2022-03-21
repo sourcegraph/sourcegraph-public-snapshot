@@ -14,6 +14,7 @@ import { AuthenticatedUser } from '../../../../../auth'
 import { InsightsDashboardsResult } from '../../../../../graphql-operations'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from '../../../core/backend/gql-api/code-insights-gql-backend'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from '../../../core/backend/gql-api/gql/GetAccessibleInsightsList'
 import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../core/backend/gql-api/gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL } from '../../../core/backend/gql-api/gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../core/backend/gql-api/gql/GetInsightsDashboards'
@@ -83,6 +84,14 @@ const mocks: MockedResponse[] = [
         },
         result: {
             data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] } },
+        },
+    },
+    {
+        request: {
+            query: GET_ACCESSIBLE_INSIGHTS_LIST,
+        },
+        result: {
+            data: { insightViews: { nodes: [] } },
         },
     },
     {

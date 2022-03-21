@@ -41,56 +41,59 @@ var (
 )
 
 var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `{{ if .IsTest }}Test: {{ end }}[{{.Priority}} event] {{.Description}}`,
+	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.NumberOfResults}} new {{.ResultPluralized}}`,
 	Text:    textTemplate,
 	HTML:    htmlTemplate,
 })
 
 type TemplateDataNewSearchResults struct {
-	Priority                  string
-	CodeMonitorURL            string
-	SearchURL                 string
-	Description               string
-	NumberOfResultsWithDetail string
-	IsTest                    bool
+	Priority         string
+	CodeMonitorURL   string
+	SearchURL        string
+	Description      string
+	NumberOfResults  int
+	ResultPluralized string
+	IsTest           bool
 }
 
 func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction) (d *TemplateDataNewSearchResults, err error) {
 	var (
-		priority                  string
-		numberOfResultsWithDetail string
+		priority         string
+		resultPluralized string
 	)
 
 	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
 	codeMonitorURL := getCodeMonitorURL(args.ExternalURL, email.Monitor, utmSourceEmail)
 
 	if email.Priority == priorityCritical {
-		priority = "Critical"
+		priority = "[Critical] "
 	} else {
-		priority = "New"
+		priority = ""
 	}
 
 	if len(args.Results) == 1 {
-		numberOfResultsWithDetail = fmt.Sprintf("There was %d new search result for your query", len(args.Results))
+		resultPluralized = "result"
 	} else {
-		numberOfResultsWithDetail = fmt.Sprintf("There were %d new search results for your query", len(args.Results))
+		resultPluralized = "results"
 	}
 
 	return &TemplateDataNewSearchResults{
-		Priority:                  priority,
-		CodeMonitorURL:            codeMonitorURL,
-		SearchURL:                 searchURL,
-		Description:               args.MonitorDescription,
-		NumberOfResultsWithDetail: numberOfResultsWithDetail,
+		Priority:         priority,
+		CodeMonitorURL:   codeMonitorURL,
+		SearchURL:        searchURL,
+		Description:      args.MonitorDescription,
+		NumberOfResults:  len(args.Results),
+		ResultPluralized: resultPluralized,
 	}, nil
 }
 
 func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
 	return &TemplateDataNewSearchResults{
-		Priority:                  "New",
-		Description:               monitorDescription,
-		NumberOfResultsWithDetail: "There was 1 new search result for your query",
-		IsTest:                    true,
+		Priority:         "",
+		Description:      monitorDescription,
+		NumberOfResults:  1,
+		IsTest:           true,
+		ResultPluralized: "result",
 	}
 }
 

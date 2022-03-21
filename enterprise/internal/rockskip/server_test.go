@@ -214,17 +214,17 @@ func NewSubprocessGit(gitDir string) (*SubprocessGit, error) {
 	}, nil
 }
 
-func (git SubprocessGit) Close() error {
-	err := git.catFileStdin.Close()
+func (g SubprocessGit) Close() error {
+	err := g.catFileStdin.Close()
 	if err != nil {
 		return err
 	}
-	return git.catFileCmd.Wait()
+	return g.catFileCmd.Wait()
 }
 
-func (git SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, onLogEntry func(entry LogEntry) error) (returnError error) {
-	log := exec.Command("git", LogReverseArgs(n, givenCommit)...)
-	log.Dir = git.gitDir
+func (g SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, onLogEntry func(entry git.LogEntry) error) (returnError error) {
+	log := exec.Command("git", git.LogReverseArgs(n, givenCommit)...)
+	log.Dir = g.gitDir
 	output, err := log.StdoutPipe()
 	if err != nil {
 		return err
@@ -241,7 +241,7 @@ func (git SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, 
 		}
 	}()
 
-	return ParseLogReverseEach(output, onLogEntry)
+	return git.ParseLogReverseEach(output, onLogEntry)
 }
 
 func (g SubprocessGit) RevListEach(repo string, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {

@@ -114,10 +114,10 @@ func extractFile(tr *tar.Reader, h *tar.Header, dir string) error {
 	mode := h.FileInfo().Mode()
 
 	// We need to be able to traverse directories and read/modify files.
-	if h.FileInfo().Mode().IsDir() {
-		mode = mode | 0700
-	} else if h.FileInfo().Mode().IsRegular() {
-		mode = mode | 0600
+	if mode.IsDir() {
+		mode |= 0700
+	} else if mode.IsRegular() {
+		mode |= 0600
 	}
 
 	switch h.Typeflag {

@@ -2,7 +2,6 @@ package job
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,7 +26,10 @@ type subRepoPermsFilterJob struct {
 	child Job
 }
 
-func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (*search.Alert, error) {
+func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx := jobutil.StartSpan(ctx, s)
+	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+
 	checker := authz.DefaultSubRepoPermsChecker
 
 	var (
@@ -45,7 +48,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 		stream.Send(event)
 	})
 
-	alert, err := s.child.Run(ctx, db, filteredStream)
+	alert, err = s.child.Run(ctx, db, filteredStream)
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}
@@ -53,7 +56,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, db database.DB, stream 
 }
 
 func (s *subRepoPermsFilterJob) Name() string {
-	return fmt.Sprintf("SubRepoPermsFilterJob{%s}", s.child.Name())
+	return "SubRepoPermsFilterJob"
 }
 
 // applySubRepoFiltering filters a set of matches using the provided

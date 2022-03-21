@@ -10,6 +10,7 @@ import Element.Border as Border
 import Element.Events
 import Element.Font as F
 import Element.Input as I
+import File.Download
 import Html exposing (Html, input, text)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode exposing (Decoder, fail, field, maybe)
@@ -85,6 +86,7 @@ type alias Model =
     , dataFilter : DataFilter
     , selectedTab : Tab
     , resultsMap : Dict String DataValue
+    , alerts : List Alert
 
     -- Debug client only
     , serverless : Bool
@@ -135,6 +137,7 @@ init json =
       , selectedTab = Chart
       , debounce = 0
       , resultsMap = Dict.empty
+      , alerts = []
       , serverless = False
       }
     , Task.perform identity (Task.succeed RunCompute)
@@ -193,6 +196,9 @@ eventDecoder event =
         Just "done" ->
             ResultStreamDone
 
+        Just "alert" ->
+            OnAlert (alertEventDecoder event.data)
+
         _ ->
             NoOp
 
@@ -202,6 +208,16 @@ resultEventDecoder input =
     case Decode.decodeString (Decode.list resultDecoder) input of
         Ok results ->
             results
+
+        Err _ ->
+            []
+
+
+alertEventDecoder : String -> List Alert
+alertEventDecoder input =
+    case Decode.decodeString alertDecoder input of
+        Ok alert ->
+            [ alert ]
 
         Err _ ->
             []
@@ -217,9 +233,11 @@ type Msg
     | OnDebounce
     | OnDataFilter DataFilterMsg
     | OnTabSelected Tab
+    | OnDownloadData
       -- Data processing
     | RunCompute
     | OnResults (List Result)
+    | OnAlert (List Alert)
     | ResultStreamDone
     | NoOp
 
@@ -267,12 +285,21 @@ update msg model =
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }, Cmd.none )
 
+        OnDownloadData ->
+            let
+                data =
+                    Dict.toList model.resultsMap
+                        |> List.map Tuple.second
+                        |> filterData model.dataFilter
+            in
+            ( model, File.Download.string "notebook-compute-data.txt" "text/plain" (String.join "\n" (List.map .name data)) )
+
         RunCompute ->
             if model.serverless then
                 ( { model | resultsMap = exampleResultsMap }, Cmd.none )
 
             else
-                ( { model | resultsMap = Dict.empty }
+                ( { model | resultsMap = Dict.empty, alerts = [] }
                 , Cmd.batch
                     [ emitInput
                         { computeQueries = [ model.query ]
@@ -298,6 +325,9 @@ update msg model =
             ( { model | resultsMap = List.foldl updateResultsMap model.resultsMap (parseResults r) }
             , Cmd.none
             )
+
+        OnAlert alert ->
+            ( { model | alerts = List.append model.alerts alert }, Cmd.none )
 
         ResultStreamDone ->
             ( model, Cmd.none )
@@ -342,17 +372,15 @@ table data =
             [ F.bold
             , F.size 12
             , F.color darkModeFontColor
-            , E.padding 5
-            , Border.widthEach { bottom = 1, top = 0, left = 0, right = 0 }
             ]
     in
-    E.el [ E.padding 100, E.centerX ]
+    E.el [ E.padding 10, E.centerX ]
         (E.table [ E.width E.fill ]
             { data = data
             , columns =
                 [ { header = E.el headerAttrs (E.text " ")
                   , width = E.fillPortion 2
-                  , view = \v -> E.el [ E.padding 5 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
+                  , view = \v -> E.el [ E.padding 10 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
                   }
                 , { header = E.el (headerAttrs ++ [ F.alignRight ]) (E.text "Count")
                   , width = E.fillPortion 1
@@ -363,7 +391,6 @@ table data =
                                 , F.size 12
                                 , F.color darkModeFontColor
                                 , F.alignRight
-                                , E.padding 5
                                 ]
                                 (E.text (String.fromFloat v.value))
                   }
@@ -397,9 +424,21 @@ histogram data =
 
 dataView : List DataValue -> E.Element Msg
 dataView data =
-    E.row []
-        [ E.el [ E.padding 10, E.alignLeft, E.width E.fill ]
+    E.row [ E.width E.fill ]
+        [ E.el [ E.padding 10, E.alignLeft ]
             (E.column [] (List.map (\d -> E.text d.name) data))
+        , E.el
+            [ E.paddingXY 0 10
+            , E.alignRight
+            , E.alignTop
+            ]
+            (I.button
+                [ Border.width 1
+                , Border.rounded 3
+                , E.padding 10
+                ]
+                { onPress = Just OnDownloadData, label = E.text "Download Data" }
+            )
         ]
 
 
@@ -534,6 +573,22 @@ tab thisTab selectedTab =
         )
 
 
+outputAlerts : List Alert -> E.Element Msg
+outputAlerts alerts =
+    E.column [ E.width E.fill, F.size 10, E.paddingEach { top = 0, left = 0, right = 0, bottom = 10 }, E.spacing 3 ]
+        (List.map
+            (\a ->
+                E.el
+                    [ Background.color alertBackgroundColor
+                    , E.paddingEach { top = 5, bottom = 5, left = 10, right = 10 }
+                    , Border.rounded 2
+                    ]
+                    (E.paragraph [] [ E.text (a.title ++ ": " ++ a.description) ])
+            )
+            alerts
+        )
+
+
 outputRow : Tab -> E.Element Msg
 outputRow selectedTab =
     E.row [ E.centerX, E.width E.fill ]
@@ -555,6 +610,7 @@ view model =
         (E.row [ E.centerX, E.width (E.fill |> E.maximum width) ]
             [ E.column [ E.centerX, E.width (E.fill |> E.maximum width), E.paddingXY 20 20 ]
                 [ inputRow model
+                , outputAlerts model.alerts
                 , outputRow model.selectedTab
                 , let
                     data =
@@ -672,6 +728,12 @@ type alias TextResult =
     }
 
 
+type alias Alert =
+    { title : String
+    , description : String
+    }
+
+
 
 -- DECODERS
 
@@ -727,6 +789,13 @@ textResultDecoder =
         |> Json.Decode.Pipeline.optional "path" (maybe Decode.string) Nothing
 
 
+alertDecoder : Decoder Alert
+alertDecoder =
+    Decode.succeed Alert
+        |> Json.Decode.Pipeline.required "title" Decode.string
+        |> Json.Decode.Pipeline.required "description" Decode.string
+
+
 
 -- STYLING
 
@@ -744,6 +813,11 @@ darkModeFontColor =
 darkModeTextInputColor : E.Color
 darkModeTextInputColor =
     E.rgb255 0x1D 0x22 0x2F
+
+
+alertBackgroundColor : E.Color
+alertBackgroundColor =
+    E.rgb255 0x9C 0x65 0x00
 
 
 

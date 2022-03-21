@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -590,7 +591,10 @@ type ZoektRepoSubsetSearch struct {
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
-func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (*search.Alert, error) {
+func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx := jobutil.StartSpan(ctx, z)
+	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+
 	if z.Repos == nil {
 		return nil, nil
 	}
@@ -606,8 +610,7 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err := zoektSearch(ctx, z.Repos, z.Query, z.Typ, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
-	return nil, err
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
 func (*ZoektRepoSubsetSearch) Name() string {
@@ -622,12 +625,9 @@ type GlobalSearch struct {
 	UserID      int32
 }
 
-func (t *GlobalSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "ZoektGlobalSearch", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (t *GlobalSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx := jobutil.StartSpan(ctx, t)
+	defer func() { jobutil.FinishSpan(tr, alert, err) }()
 
 	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, db, t.RepoOptions)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
