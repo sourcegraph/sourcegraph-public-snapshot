@@ -6,11 +6,12 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
 import { subtypeOf } from '@sourcegraph/common'
-import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { Activation } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/wildcard'
 
-import { Activation } from './Activation'
 import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
+
+import webMainStyles from '../../SourcegraphWebApp.scss'
 
 const baseActivation = (): Activation => ({
     steps: [

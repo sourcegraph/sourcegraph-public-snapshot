@@ -1,13 +1,12 @@
 import React from 'react'
 
-import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
 import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { LineChartContent } from 'sourcegraph'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -62,18 +61,16 @@ const LINE_CHART_DATA: LineChartContent<any, string> = {
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton as={Button} variant="icon" className="p-1">
+            <MenuButton variant="icon" className="p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
-            <MenuPopover>
-                <MenuItems className="d-block position-static dropdown-menu">
-                    <MenuItem onSelect={noop}>Create</MenuItem>
+            <MenuList>
+                <MenuItem onSelect={noop}>Create</MenuItem>
 
-                    <MenuItem onSelect={noop}>Update</MenuItem>
+                <MenuItem onSelect={noop}>Update</MenuItem>
 
-                    <MenuItem onSelect={noop}>Delete</MenuItem>
-                </MenuItems>
-            </MenuPopover>
+                <MenuItem onSelect={noop}>Delete</MenuItem>
+            </MenuList>
         </Menu>
     )
 }

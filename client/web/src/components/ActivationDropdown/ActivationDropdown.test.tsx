@@ -4,9 +4,9 @@ import { render } from '@testing-library/react'
 import * as H from 'history'
 import sinon from 'sinon'
 
+import { Activation } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/wildcard'
 
-import { Activation } from './Activation'
 import { ActivationDropdown } from './ActivationDropdown'
 
 const baseActivation: Activation = {

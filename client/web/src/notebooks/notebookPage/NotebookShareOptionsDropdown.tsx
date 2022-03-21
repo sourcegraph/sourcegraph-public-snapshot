@@ -1,13 +1,13 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import DomainIcon from 'mdi-react/DomainIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import WebIcon from 'mdi-react/WebIcon'
-import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { OrgAvatar } from '../../org/OrgAvatar'
@@ -61,10 +61,8 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
     selectedShareOption,
     onSelectShareOption,
 }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const toggleOpen = useCallback(() => {
+    const handleToggle = useCallback(() => {
         telemetryService.log('NotebookVisibilitySettingsDropdownToggled')
-        setIsOpen(value => !value)
     }, [telemetryService])
 
     const shareOptions: ShareOption[] = useMemo(
@@ -92,29 +90,35 @@ export const NotebookShareOptionsDropdown: React.FunctionComponent<NotebookShare
     )
 
     return (
-        <Dropdown isOpen={isOpen} toggle={toggleOpen}>
-            <DropdownToggle
-                className={styles.button}
-                outline={true}
-                data-testid="share-notebook-options-dropdown-toggle"
-            >
-                <span className="d-flex align-items-center">
-                    <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
-                </span>
-                <span className="ml-5">{isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}</span>
-            </DropdownToggle>
-            <DropdownMenu>
-                {shareOptions.map(option => (
-                    <DropdownItem
-                        key={`${option.namespaceId}-${option.isPublic}`}
-                        className="d-flex align-items-center"
-                        onClick={() => onSelectShareOption(option)}
-                        data-testid={`share-notebook-option-${option.namespaceName}-${option.isPublic}`}
+        <Menu>
+            {({ isOpen }) => (
+                <>
+                    <MenuButton
+                        onClick={handleToggle}
+                        className={styles.button}
+                        outline={true}
+                        variant="secondary"
+                        data-testid="share-notebook-options-dropdown-toggle"
                     >
-                        <ShareOptionComponent {...option} isSourcegraphDotCom={isSourcegraphDotCom} />
-                    </DropdownItem>
-                ))}
-            </DropdownMenu>
-        </Dropdown>
+                        <span className="d-flex align-items-center">
+                            <ShareOptionComponent {...selectedShareOption} isSourcegraphDotCom={isSourcegraphDotCom} />
+                        </span>
+                        <span className="ml-5">{isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}</span>
+                    </MenuButton>
+                    <MenuList>
+                        {shareOptions.map(option => (
+                            <MenuItem
+                                key={`${option.namespaceId}-${option.isPublic}`}
+                                className="d-flex align-items-center"
+                                onSelect={() => onSelectShareOption(option)}
+                                data-testid={`share-notebook-option-${option.namespaceName}-${option.isPublic}`}
+                            >
+                                <ShareOptionComponent {...option} isSourcegraphDotCom={isSourcegraphDotCom} />
+                            </MenuItem>
+                        ))}
+                    </MenuList>
+                </>
+            )}
+        </Menu>
     )
 }
