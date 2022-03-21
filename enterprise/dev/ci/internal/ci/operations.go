@@ -250,7 +250,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 // Builds and tests the VS Code extensions.
 func addVSCExt(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		fmt.Sprintf(":%s: Puppeteer tests for %s extension", "vscode", "vscode"),
+		":vscode: Puppeteer tests for VS Code extension",
 		withYarnCache(),
 		bk.Cmd("git-lfs fetch"),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),

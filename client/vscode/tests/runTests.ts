@@ -93,10 +93,10 @@ async function run(): Promise<void> {
             throw new Error('Expected page content to contain a specific string')
         }
 
-        console.log('Test successful.')
+        console.log('+++ Test successful')
     } catch (error) {
+        console.error('--- Failed to run tests')
         console.error(error)
-        console.error('Failed to run tests')
         process.exit(1)
     } finally {
         setTimeout(() => {
