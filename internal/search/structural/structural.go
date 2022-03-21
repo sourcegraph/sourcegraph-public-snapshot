@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -162,12 +162,9 @@ type StructuralSearch struct {
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "StructuralSearch", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx := jobutil.StartSpan(ctx, s)
+	defer func() { jobutil.FinishSpan(tr, alert, err) }()
 
 	repos := &searchrepos.Resolver{DB: db, Opts: s.RepoOpts}
 	return nil, repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {

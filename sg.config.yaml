@@ -871,7 +871,7 @@ commandsets:
       - enterprise-web
       - gitserver
       - searcher
-      - symbols
+      - enterprise-symbols
       - caddy
       - docsite
       - syntax-highlighter

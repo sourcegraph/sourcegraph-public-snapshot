@@ -286,9 +286,10 @@ type CreateLineChartSearchInsightArgs struct {
 }
 
 type CreateLineChartSearchInsightInput struct {
-	DataSeries []LineChartSearchInsightDataSeriesInput
-	Options    LineChartOptionsInput
-	Dashboards *[]graphql.ID
+	DataSeries   []LineChartSearchInsightDataSeriesInput
+	Options      LineChartOptionsInput
+	Dashboards   *[]graphql.ID
+	ViewControls *InsightViewControlsInput
 }
 
 type UpdateLineChartSearchInsightArgs struct {
