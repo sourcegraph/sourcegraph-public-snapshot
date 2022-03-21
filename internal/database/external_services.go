@@ -400,21 +400,21 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitHubConnection(ctx, e, gitHubValidators, opt.ExternalServiceID, &c)
+			err = validateGitHubConnection(gitHubValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindGitLab:
 			var c schema.GitLabConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitLabConnection(ctx, e, gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
+			err = validateGitLabConnection(gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
 
 		case extsvc.KindBitbucketServer:
 			var c schema.BitbucketServerConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateBitbucketServerConnection(ctx, e, bitbucketServerValidators, opt.ExternalServiceID, &c)
+			err = validateBitbucketServerConnection(bitbucketServerValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindBitbucketCloud:
 			var c schema.BitbucketCloudConnection
@@ -427,7 +427,7 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validatePerforceConnection(ctx, e, perforceValidators, opt.ExternalServiceID, &c)
+			err = validatePerforceConnection(perforceValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindOther:
 			var c schema.OtherExternalServiceConnection
@@ -470,7 +470,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGitHubConnection(_ context.Context, _ ExternalServiceStore, githubValidators []func(*types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
+func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range githubValidators {
 		err = errors.Append(err,
@@ -490,7 +490,7 @@ func validateGitHubConnection(_ context.Context, _ ExternalServiceStore, githubV
 	return err
 }
 
-func validateGitLabConnection(_ context.Context, _ ExternalServiceStore, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func validateGitLabConnection(gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	var err error
 	for _, validate := range gitLabValidators {
 		err = errors.Append(err, validate(c, ps))
@@ -498,7 +498,7 @@ func validateGitLabConnection(_ context.Context, _ ExternalServiceStore, gitLabV
 	return err
 }
 
-func validateBitbucketServerConnection(_ context.Context, _ ExternalServiceStore, bitbucketServerValidators []func(connection *schema.BitbucketServerConnection) error, _ int64, c *schema.BitbucketServerConnection) error {
+func validateBitbucketServerConnection(bitbucketServerValidators []func(connection *schema.BitbucketServerConnection) error, _ int64, c *schema.BitbucketServerConnection) error {
 	var err error
 	for _, validate := range bitbucketServerValidators {
 		err = errors.Append(err, validate(c))
@@ -510,7 +510,7 @@ func validateBitbucketServerConnection(_ context.Context, _ ExternalServiceStore
 	return err
 }
 
-func validatePerforceConnection(_ context.Context, _ ExternalServiceStore, perforceValidators []func(*schema.PerforceConnection) error, _ int64, c *schema.PerforceConnection) error {
+func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnection) error, _ int64, c *schema.PerforceConnection) error {
 	var err error
 	for _, validate := range perforceValidators {
 		err = errors.Append(err, validate(c))
