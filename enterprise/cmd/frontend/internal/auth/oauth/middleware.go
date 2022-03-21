@@ -14,8 +14,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
-	repos "github.com/sourcegraph/sourcegraph/internal/repos"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -27,6 +25,7 @@ import (
 	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -113,18 +112,17 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		// fetch list of orgs user belongs to
+		// Use the OAuth token stored in the user code host connection to fetch list of
+		// organizations the user belongs to
 		externalServices, err := db.ExternalServices().List(req.Context(), database.ExternalServicesListOptions{
 			NamespaceUserID: a.UID,
 			Kinds:           []string{extsvc.KindGitHub},
 		})
-
 		if err != nil {
 			log15.Error("Unexpected error while fetching user's external services.", "error", err)
 			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
 			return
 		}
-
 		if len(externalServices) != 1 {
 			http.Error(w, "User is supposed to have only one GitHub service connected.", http.StatusBadRequest)
 			return
@@ -134,11 +132,11 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		if err != nil {
 			log15.Error("Unexpected error while parsing external service config.", "error", err)
 			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
+			return
 		}
-		esConf := esConfg.(*schema.GitHubConnection)
 
-		auther := &eauth.OAuthBearerToken{Token: esConf.Token}
-
+		conn := esConfg.(*schema.GitHubConnection)
+		auther := &eauth.OAuthBearerToken{Token: conn.Token}
 		client := github.NewV3Client(&url.URL{Host: "github.com"}, auther, nil)
 
 		installs, err := client.GetUserInstallations(req.Context())
@@ -148,7 +146,10 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		json.NewEncoder(w).Encode(installs)
+		err = json.NewEncoder(w).Encode(installs)
+		if err != nil {
+			log15.Error("Failed to encode the list of GitHub organizations.", "error", err)
+		}
 	}))
 	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		dotcomConfig := conf.SiteConfig().Dotcom
@@ -164,18 +165,17 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		// fetch list of orgs user belongs to
+		// Use the OAuth token stored in the user code host connection to fetch list of
+		// organizations the user belongs to
 		externalServices, err := db.ExternalServices().List(req.Context(), database.ExternalServicesListOptions{
 			NamespaceUserID: a.UID,
 			Kinds:           []string{extsvc.KindGitHub},
 		})
-
 		if err != nil {
 			log15.Error("Unexpected error while fetching user's external services.", "error", err)
 			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
 			return
 		}
-
 		if len(externalServices) != 1 {
 			http.Error(w, "User is supposed to have only one GitHub service connected.", http.StatusBadRequest)
 			return
@@ -185,11 +185,11 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		if err != nil {
 			log15.Error("Unexpected error while parsing external service config.", "error", err)
 			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
+			return
 		}
-		esConf := esConfg.(*schema.GitHubConnection)
 
-		auther := &eauth.OAuthBearerToken{Token: esConf.Token}
-
+		conn := esConfg.(*schema.GitHubConnection)
+		auther := &eauth.OAuthBearerToken{Token: conn.Token}
 		client := github.NewV3Client(&url.URL{Host: "github.com"}, auther, nil)
 
 		installs, err := client.GetUserInstallations(req.Context())
@@ -200,10 +200,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 
 		state := req.URL.Query().Get("state")
-
 		if len(installs) == 0 {
 			appInstallURL := "https://github.com/apps/" + dotcomConfig.GithubAppCloud.Slug + "/installations/new?state=" + state
-
 			http.Redirect(w, req, appInstallURL, http.StatusFound)
 		} else {
 			http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
