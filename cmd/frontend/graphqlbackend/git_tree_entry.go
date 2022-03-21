@@ -127,14 +127,10 @@ func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commi
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
-	url, err := r.url(ctx)
-	if err != nil {
-		return "", err
-	}
-	return url.String(), nil
+	return r.url(ctx).String(), nil
 }
 
-func (r *GitTreeEntryResolver) url(ctx context.Context) (*url.URL, error) {
+func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
 	defer span.Finish()
 
@@ -147,11 +143,11 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) (*url.URL, error) {
 		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return &url.URL{}, nil
+			return &url.URL{}
 		}
-		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}, nil
+		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
 	}
-	return r.urlPath(r.commit.repoRevURL()), nil
+	return r.urlPath(r.commit.repoRevURL())
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() string {
