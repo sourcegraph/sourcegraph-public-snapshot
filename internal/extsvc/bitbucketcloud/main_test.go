@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -30,13 +31,28 @@ func GetenvTestBitbucketCloudUsername() string {
 	return username
 }
 
+// assertGolden wraps testutil.AssertGolden to ensure that golden fixtures are
+// read and written to a consistent location.
+//
+// Note that assertGolden can only be called once in a single test. (It's safe
+// to use from multiple sub-tests at the same level, though, provided they have
+// unique names.)
+func assertGolden(t testing.TB, expected interface{}) {
+	testutil.AssertGolden(
+		t,
+		filepath.Join("testdata/golden/", normalize(t.Name())),
+		update(t.Name()),
+		expected,
+	)
+}
+
 // newTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
 func newTestClient(t testing.TB) (*Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", normalize(t.Name()))
-	rec, err := httptestutil.NewRecorder(cassete, update(t.Name()))
+	cassette := filepath.Join("testdata/vcr/", normalize(t.Name()))
+	rec, err := httptestutil.NewRecorder(cassette, update(t.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
