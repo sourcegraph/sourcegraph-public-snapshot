@@ -113,7 +113,6 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 			}
 			if t := tracerType(tracingConfig.Type); t.isSetByUser() {
 				setTracer = t
-				println("tracer type:", t)
 			}
 			shouldLog = tracingConfig.Debug
 		}
