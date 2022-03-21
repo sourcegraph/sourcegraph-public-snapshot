@@ -2,6 +2,7 @@ package bk
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -17,6 +18,10 @@ import (
 
 // https://buildkite.com/sourcegraph
 const buildkiteOrg = "sourcegraph"
+
+func BuildkiteOrgURL() string {
+	return fmt.Sprintf("https://buildkite.com/%s", buildkiteOrg)
+}
 
 type buildkiteSecrets struct {
 	Token string `json:"token"`
