@@ -21,11 +21,11 @@ import { Event } from './graphql-operations'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
+import { instanceVersionWarnings } from './settings/displayWarnings'
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
-import { displayWarning } from './settings/versionFallback'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
 
@@ -59,7 +59,7 @@ import { focusSearchPanel, registerWebviews } from './webview/commands'
 //    It is _not_ important to understand this layer to add features to the
 //    VS Code extension (that's why it exists, after all).
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export function activate(context: vscode.ExtensionContext): void {
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
@@ -68,7 +68,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const sourcegraphSettings = initializeSourcegraphSettings({ context })
     const authenticatedUser = observeAuthenticatedUser({ context })
     const initialInstanceURL = endpointSetting()
-    const versionWarning = localStorageService.instanceVersionWarnings()
 
     // Sets global `EventSource` for Node, which is required for streaming search.
     // Used for VS Code web as well to be able to add Authorization header.
@@ -145,6 +144,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         instanceURL: initialInstanceURL,
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
-    await displayWarning(versionWarning)
+    instanceVersionWarnings(localStorageService)
     watchUninstall(eventSourceType, localStorageService)
 }
