@@ -1,13 +1,15 @@
 package query
 
 import (
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/hexops/autogold"
 )
 
-// `ComputeMatchContext` implements the `ComputeResult` interface so we should be able to use it for
-// unit tests, but because `GroupByCaptureMatch` takes a slice, the equivalence doesn't work.
+// ComputeMatchContext implements the ComputeResult interface so we should be able to use it for
+// unit tests, but because GroupByCaptureMatch takes a slice, the equivalence doesn't work.
 // This test helper makes it work.
 func mockComputeResults(cmc []ComputeMatchContext) []ComputeResult {
 	results := make([]ComputeResult, 0, len(cmc))
@@ -17,13 +19,24 @@ func mockComputeResults(cmc []ComputeMatchContext) []ComputeResult {
 	return results
 }
 
+// stringify will turn a slice of GroupedResults into a sorted slice of strings for comparison.
+func stringify(results []GroupedResults) []string {
+	stringified := make([]string, 0, len(results))
+	for _, result := range results {
+		stringified = append(stringified, fmt.Sprintf("%s: %d", result.Value, result.Count))
+	}
+	sort.Strings(stringified)
+	return stringified
+}
+
 func TestGroupByCaptureMatch(t *testing.T) {
 	defaultEnvironmentEntry := ComputeEnvironmentEntry{
 		Value: "func ()",
 	}
+
 	t.Run("no compute results returns no group", func(t *testing.T) {
-		results := mockComputeResults([]ComputeMatchContext{})
-		autogold.Want("no compute results returns no group", []GroupedResults{}).Equal(t, GroupByCaptureMatch(results))
+		got := GroupByCaptureMatch([]ComputeResult{})
+		autogold.Want("no compute results returns no group", []string{}).Equal(t, stringify(got))
 	})
 
 	t.Run("single result single match single environment returns single group", func(t *testing.T) {
@@ -36,12 +49,14 @@ func TestGroupByCaptureMatch(t *testing.T) {
 				},
 			},
 		})
-		autogold.Want("single result single match one value returns single group", []GroupedResults{
+		want := []GroupedResults{
 			{
 				Value: "func ()",
 				Count: 1,
 			},
-		}).Equal(t, GroupByCaptureMatch(results))
+		}
+		got := GroupByCaptureMatch(results)
+		autogold.Want("single result single match one value returns single group", stringify(want)).Equal(t, stringify(got))
 	})
 
 	t.Run("single result single match multiple same value returns single group", func(t *testing.T) {
@@ -57,12 +72,14 @@ func TestGroupByCaptureMatch(t *testing.T) {
 				},
 			},
 		})
-		autogold.Want("single result single match multiple same value returns single group", []GroupedResults{
+		want := []GroupedResults{
 			{
 				Value: "func ()",
 				Count: 2,
 			},
-		}).Equal(t, GroupByCaptureMatch(results))
+		}
+		got := GroupByCaptureMatch(results)
+		autogold.Want("single result single match multiple same value returns single group", stringify(want)).Equal(t, stringify(got))
 	})
 
 	t.Run("single result multiple matches same value returns single group", func(t *testing.T) {
@@ -78,12 +95,14 @@ func TestGroupByCaptureMatch(t *testing.T) {
 				},
 			},
 		})
-		autogold.Want("single result multiple matches same value returns single group", []GroupedResults{
+		want := []GroupedResults{
 			{
 				Value: "func ()",
 				Count: 2,
 			},
-		}).Equal(t, GroupByCaptureMatch(results))
+		}
+		got := GroupByCaptureMatch(results)
+		autogold.Want("single result multiple matches same value returns single group", stringify(want)).Equal(t, stringify(got))
 	})
 
 	t.Run("multiple results multiple matches multiple values returns correct groups", func(t *testing.T) {
@@ -127,7 +146,7 @@ func TestGroupByCaptureMatch(t *testing.T) {
 				},
 			},
 		})
-		autogold.Want("multiple results multiple matches multiple values returns correct groups", []GroupedResults{
+		want := []GroupedResults{
 			{
 				Value: "func ()",
 				Count: 2,
@@ -144,6 +163,8 @@ func TestGroupByCaptureMatch(t *testing.T) {
 				Value: "func sam()",
 				Count: 1,
 			},
-		}).Equal(t, GroupByCaptureMatch(results))
+		}
+		got := GroupByCaptureMatch(results)
+		autogold.Want("multiple results multiple matches multiple values returns correct groups", stringify(want)).Equal(t, stringify(got))
 	})
 }

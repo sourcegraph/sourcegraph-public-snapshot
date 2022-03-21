@@ -102,7 +102,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			sort.Slice(grouped, func(i, j int) bool {
 				return grouped[i].Value < grouped[j].Value
 			})
-			log15.Debug("grouped results", "grouped", grouped)
+			log15.Info("grouped results", "grouped", grouped)
 
 			for _, timeGroupElement := range grouped {
 				value := timeGroupElement.Value

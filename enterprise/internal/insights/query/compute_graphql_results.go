@@ -32,21 +32,30 @@ type TimeDataPoint struct {
 	Count int
 }
 
+const capturedValueMaxLength = 100
+
 func GroupByCaptureMatch(results []ComputeResult) []GroupedResults {
 	if len(results) < 1 {
 		return nil
 	}
 
-	mapped := results[0].Counts()
-	for i := 1; i < len(results); i++ {
+	mapped := map[string]int{}
+	for i := 0; i < len(results); i++ {
 		currentCounts := results[i].Counts()
 		for value, count := range currentCounts {
+			if len(value) > capturedValueMaxLength {
+				value = value[:capturedValueMaxLength]
+			}
 			mapped[value] += count
+			// log15.Info(fmt.Sprintf("%v", mapped))
 		}
 	}
 
 	grouped := make([]GroupedResults, 0, len(mapped))
 	for value, count := range mapped {
+		if len(value) > 10 {
+			// log15.Info(value)
+		}
 		grouped = append(grouped, GroupedResults{
 			Value: value,
 			Count: count,
