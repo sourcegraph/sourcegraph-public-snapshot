@@ -47,7 +47,7 @@ const (
 	ParticipantRoleParticipant ParticipantRole = "PARTICIPANT"
 	ParticipantRoleReviewer    ParticipantRole = "REVIEWER"
 
-	ParticipantStateApproved       ParticipantState = "approved"
-	ParticipantStateChangesRequest ParticipantState = "changes_request"
-	ParticipantStateNull           ParticipantState = "null"
+	ParticipantStateApproved         ParticipantState = "approved"
+	ParticipantStateChangesRequested ParticipantState = "changes_requested"
+	ParticipantStateNull             ParticipantState = "null"
 )
