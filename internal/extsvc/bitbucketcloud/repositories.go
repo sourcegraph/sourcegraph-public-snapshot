@@ -26,16 +26,25 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, accountName st
 }
 
 type Repo struct {
-	Slug        string    `json:"slug"`
-	Name        string    `json:"name"`
-	FullName    string    `json:"full_name"`
-	UUID        string    `json:"uuid"`
-	SCM         string    `json:"scm"`
-	Description string    `json:"description"`
-	Parent      *Repo     `json:"parent"`
-	IsPrivate   bool      `json:"is_private"`
-	Links       RepoLinks `json:"links"`
+	Slug        string     `json:"slug"`
+	Name        string     `json:"name"`
+	FullName    string     `json:"full_name"`
+	UUID        string     `json:"uuid"`
+	SCM         string     `json:"scm"`
+	Description string     `json:"description"`
+	Parent      *Repo      `json:"parent"`
+	IsPrivate   bool       `json:"is_private"`
+	Links       RepoLinks  `json:"links"`
+	ForkPolicy  ForkPolicy `json:"fork_policy"`
 }
+
+type ForkPolicy string
+
+const (
+	ForkPolicyAllow    ForkPolicy = "allow_forks"
+	ForkPolicyNoPublic ForkPolicy = "no_public_forks"
+	ForkPolicyNone     ForkPolicy = "no_forks"
+)
 
 type RepoLinks struct {
 	Clone CloneLinks `json:"clone"`

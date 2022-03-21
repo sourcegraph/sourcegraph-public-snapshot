@@ -1,8 +1,10 @@
 package bitbucketcloud
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -10,6 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+
+func update(name string) bool {
+	if updateRegex == nil || *updateRegex == "" {
+		return false
+	}
+	return regexp.MustCompile(*updateRegex).MatchString(name)
+}
 
 func GetenvTestBitbucketCloudUsername() string {
 	username := os.Getenv("BITBUCKET_CLOUD_USERNAME")
@@ -19,13 +30,13 @@ func GetenvTestBitbucketCloudUsername() string {
 	return username
 }
 
-// NewTestClient returns a bitbucketcloud.Client that records its interactions
+// newTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func newTestClient(t testing.TB) (*Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, update)
+	cassete := filepath.Join("testdata/vcr/", normalize(t.Name()))
+	rec, err := httptestutil.NewRecorder(cassete, update(t.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
