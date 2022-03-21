@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS gitserver_localclone_jobs (
     id                  SERIAL PRIMARY KEY,
     state               text DEFAULT 'queued',
@@ -18,5 +16,3 @@ CREATE TABLE IF NOT EXISTS gitserver_localclone_jobs (
     dest_hostname       text not null,
     delete_source       boolean not null default false
 );
-
-COMMIT;
