@@ -287,6 +287,9 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 
 func TestAddrForRepo(t *testing.T) {
 	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+	pinned := map[string]string{
+		"repo2": "gitserver-1",
+	}
 
 	testCases := []struct {
 		name string
@@ -308,11 +311,19 @@ func TestAddrForRepo(t *testing.T) {
 			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
 			want: "gitserver-2",
 		},
+		{
+			name: "pinned repo", // different server address that the hashing function would normally yield
+			repo: api.RepoName("repo2"),
+			want: "gitserver-1",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.AddrForRepo(tc.repo, addrs)
+			got := gitserver.AddrForRepo(tc.repo, &gitserver.GitServerAddresses{
+				Addresses:     addrs,
+				PinnedServers: pinned,
+			})
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
 			}
