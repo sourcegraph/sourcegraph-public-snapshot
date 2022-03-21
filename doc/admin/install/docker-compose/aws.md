@@ -30,7 +30,7 @@ set -euxo pipefail
 EBS_VOLUME_DEVICE_NAME='/dev/sdb'
 DOCKER_DATA_ROOT='/mnt/docker-data'
 
-DOCKER_COMPOSE_VERSION='1.25.3'
+DOCKER_COMPOSE_VERSION='1.29.2'
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
