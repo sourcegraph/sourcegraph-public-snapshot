@@ -6,6 +6,12 @@
 
     padding-bottom: 0 !important;
     overflow: hidden;
+
+    &[data-reach-menu-list],
+    &[data-reach-menu-items] {
+        background-color: var(--dropdown-bg);
+        border: 1px solid var(--dropdown-border-color);
+    }
 }
 
 .activation-dropdown-button {
