@@ -265,21 +265,20 @@ AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id 
 		return seconds.Float64
 	})
 
+	// Count the number of repos owned by site level external services that haven't
+	// been fetched in 8 hours.
+	//
+	// We always return zero for Sourcegraph.com because we currently have a lot of
+	// repos owned by the Starburst service in this state and until that's resolved
+	// it would just be noise.
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_stale_repos",
 		Help: "The number of repos that haven't been fetched in at least 8 hours",
 	}, func() float64 {
-		// Doesn't make sense to run this in cloud mode due to on demand syncing.
 		if sourcegraphDotCom {
 			return 0
 		}
 
-		// Count the number of repos owned by site level external services that haven't
-		// been fetched in 8 hours.
-		//
-		// We always return zero for Sourcegraph.com because we currently have a lot of
-		// repos owned by the Starburst service in this state and until that's resolved
-		// it would just be noise.
 		count, err := scanCount(`
 select count(*)
 from gitserver_repos
