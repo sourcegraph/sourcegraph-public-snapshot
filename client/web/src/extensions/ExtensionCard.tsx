@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo, memo } from 'react'
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 
+import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/client-api'
 import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -12,7 +13,6 @@ import {
     ExtensionManifest,
     EXTENSION_HEADER_COLORS,
 } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager, Link, CardBody, Card, Alert, Icon } from '@sourcegraph/wildcard'
 

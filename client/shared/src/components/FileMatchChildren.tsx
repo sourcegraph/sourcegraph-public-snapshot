@@ -6,7 +6,7 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
+import { SettingsCascadeProps, HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
@@ -21,7 +21,6 @@ import { Controller as ExtensionsController } from '../extensions/controller'
 import { HoverContext } from '../hover/HoverOverlay.types'
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
-import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { useCodeIntelViewerUpdates } from '../util/useCodeIntelViewerUpdates'

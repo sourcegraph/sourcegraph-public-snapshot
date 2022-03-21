@@ -1,6 +1,6 @@
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 /**

@@ -1,6 +1,6 @@
+import { Settings } from '@sourcegraph/client-api'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 

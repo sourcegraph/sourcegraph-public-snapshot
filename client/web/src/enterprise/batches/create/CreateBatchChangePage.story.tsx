@@ -2,11 +2,7 @@ import React from 'react'
 
 import { storiesOf } from '@storybook/react'
 
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 
 import { WebStory } from '../../../components/WebStory'
 

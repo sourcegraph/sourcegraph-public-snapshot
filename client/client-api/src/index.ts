@@ -1,3 +1,4 @@
+export * from './settings'
 export * from './hover'
 export * from './textDocument'
 export * from './reference'

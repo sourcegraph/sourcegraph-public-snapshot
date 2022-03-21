@@ -6,8 +6,8 @@ import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/client-api'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'

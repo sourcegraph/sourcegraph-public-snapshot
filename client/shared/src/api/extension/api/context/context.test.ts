@@ -1,4 +1,5 @@
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../../settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/client-api'
+
 import { CodeEditorWithPartialModel } from '../../../viewerTypes'
 
 import { computeContext } from './context'

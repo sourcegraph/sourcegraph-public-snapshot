@@ -17,7 +17,7 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
-import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
+import { ContributableMenu, Contributions, Evaluated, SettingsCascadeOrError } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
 import { Button, ButtonProps, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
@@ -30,7 +30,6 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
-import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
 import { EmptyCommandList } from './EmptyCommandList'

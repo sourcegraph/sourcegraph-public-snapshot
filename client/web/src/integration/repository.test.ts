@@ -3,11 +3,11 @@ import * as path from 'path'
 
 import type * as sourcegraph from 'sourcegraph'
 
+import { Settings } from '@sourcegraph/client-api'
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 

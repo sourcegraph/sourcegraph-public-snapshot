@@ -21,6 +21,7 @@
     { "path": "../branded" },
     { "path": "../search" },
     { "path": "../search-ui" },
+    { "path": "../client-api" },
   ],
   "include": ["**/*", ".*", "**/*.d.ts"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],

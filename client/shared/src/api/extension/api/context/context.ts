@@ -1,8 +1,8 @@
 import { basename, dirname, extname } from 'path'
 
+import { SettingsCascadeOrError, isSettingsValid } from '@sourcegraph/client-api'
 import { Context } from '@sourcegraph/template-parser'
 
-import { SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
 import { ViewerWithPartialModel } from '../../../viewerTypes'
 
 export type ContributionScope =

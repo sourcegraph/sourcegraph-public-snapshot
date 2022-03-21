@@ -1,10 +1,10 @@
 import { BehaviorSubject, EMPTY, of, Subject } from 'rxjs'
 import sinon from 'sinon'
 
+import { SettingsCascade } from '@sourcegraph/client-api'
 import { getGraphQLClient as getGraphQLClientBase, SuccessGraphQLResult } from '@sourcegraph/http-client'
 
 import { PlatformContext } from '../../platform/context'
-import { SettingsCascade } from '../../settings/settings'
 import { FlatExtensionHostAPI } from '../contract'
 import { pretendRemote } from '../util'
 

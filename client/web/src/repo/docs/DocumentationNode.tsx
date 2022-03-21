@@ -7,10 +7,10 @@ import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import { Observable } from 'rxjs'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { AnchorLink, ProductStatusBadge, Link, Icon } from '@sourcegraph/wildcard'
 

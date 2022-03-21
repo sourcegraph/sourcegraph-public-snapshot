@@ -2,11 +2,10 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer, of } from 'rxjs'
 import { Hover } from 'sourcegraph'
 
-import { HoverMerged } from '@sourcegraph/client-api'
+import { SettingsCascade, HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
-import { SettingsCascade } from '../../../settings/settings'
 import { ClientAPI } from '../../client/api/api'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 

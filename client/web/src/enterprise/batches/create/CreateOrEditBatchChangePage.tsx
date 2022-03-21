@@ -10,14 +10,10 @@ import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SettingsCascadeProps, SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import {

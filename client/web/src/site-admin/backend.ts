@@ -2,6 +2,7 @@ import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 
+import { Settings } from '@sourcegraph/client-api'
 import { createAggregateError, resetAllMemoizationCaches, repeatUntil } from '@sourcegraph/common'
 import {
     createInvalidGraphQLMutationResponseError,
@@ -10,7 +11,6 @@ import {
     gql,
 } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {

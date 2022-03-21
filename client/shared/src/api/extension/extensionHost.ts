@@ -3,8 +3,9 @@ import { isMatch } from 'lodash'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
+import { SettingsCascade } from '@sourcegraph/client-api'
+
 import { EndpointPair } from '../../platform/context'
-import { SettingsCascade } from '../../settings/settings'
 import { ClientAPI } from '../client/api/api'
 import { registerComlinkTransferHandlers } from '../util'
 

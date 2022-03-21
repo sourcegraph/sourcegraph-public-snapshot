@@ -3,9 +3,8 @@ import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
 import sourcegraph from 'sourcegraph'
 
-import { Contributions } from '@sourcegraph/client-api'
+import { Contributions, SettingsCascade } from '@sourcegraph/client-api'
 
-import { SettingsCascade } from '../../../settings/settings'
 import { MainThreadAPI } from '../../contract'
 import { pretendRemote } from '../../util'
 import { activateExtensions, ExecutableExtension } from '../activation'

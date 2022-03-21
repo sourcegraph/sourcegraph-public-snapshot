@@ -9,7 +9,13 @@ import {
     BuiltinPanelView,
     useBuiltinPanelViews,
 } from '@sourcegraph/branded/src/components/panel/Panel'
-import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import {
+    ReferenceParameters,
+    TextDocumentPositionParameters,
+    Settings,
+    SettingsCascadeOrError,
+    SettingsCascadeProps,
+} from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
@@ -18,7 +24,6 @@ import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'

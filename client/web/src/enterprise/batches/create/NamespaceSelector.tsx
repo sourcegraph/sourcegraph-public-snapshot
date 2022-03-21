@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/client-api'
 import { Select } from '@sourcegraph/wildcard'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {

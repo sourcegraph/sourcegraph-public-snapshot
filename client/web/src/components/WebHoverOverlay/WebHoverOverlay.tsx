@@ -3,11 +3,11 @@ import React, { useCallback, useEffect } from 'react'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
+import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'

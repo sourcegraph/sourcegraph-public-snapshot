@@ -2,9 +2,9 @@ import React from 'react'
 
 import LinkIcon from 'mdi-react/LinkIcon'
 
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import styles from './SearchSidebarSection.module.scss'
 

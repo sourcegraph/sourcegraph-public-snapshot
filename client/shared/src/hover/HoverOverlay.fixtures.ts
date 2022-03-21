@@ -3,11 +3,11 @@ import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
 
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/client-api'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { PlatformContext } from '../platform/context'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
 import { HoverOverlayProps } from './HoverOverlay'

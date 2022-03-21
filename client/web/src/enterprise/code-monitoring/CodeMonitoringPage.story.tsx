@@ -4,7 +4,7 @@ import { storiesOf } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/client-api'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'

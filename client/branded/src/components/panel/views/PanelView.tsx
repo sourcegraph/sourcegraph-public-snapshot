@@ -3,11 +3,11 @@ import React from 'react'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { renderMarkdown } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { PanelViewWithComponent } from '../Panel'

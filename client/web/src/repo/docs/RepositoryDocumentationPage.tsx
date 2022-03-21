@@ -8,10 +8,10 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { SettingsCascadeProps } from '@sourcegraph/client-api'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import {
     Container,

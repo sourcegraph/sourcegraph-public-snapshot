@@ -4,8 +4,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/client-api'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
