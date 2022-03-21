@@ -50,9 +50,13 @@ func renderMetadata(definition definition.Definition) ([]byte, error) {
 		Name                    string `yaml:"name"`
 		Parents                 []int  `yaml:"parents"`
 		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
+		Privileged              bool   `yaml:"privileged"`
+		NonIdempotent           bool   `yaml:"nonIdempotent"`
 	}{
 		Name:                    definition.Name,
 		Parents:                 definition.Parents,
 		CreateIndexConcurrently: definition.IsCreateIndexConcurrently,
+		Privileged:              definition.Privileged,
+		NonIdempotent:           definition.NonIdempotent,
 	})
 }
