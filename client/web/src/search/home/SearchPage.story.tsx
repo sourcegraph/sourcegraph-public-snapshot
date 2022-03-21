@@ -23,14 +23,15 @@ import { ThemePreference } from '../../stores/themeState'
 import {
     HOME_PANELS_QUERY,
     RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+    RECENT_FILES_TO_LOAD,
     RECENT_SEARCHES_TO_LOAD,
 } from '../panels/HomePanels'
 import {
-    _fetchRecentFileViews,
-    _fetchSavedSearches,
-    _fetchCollaborators,
     authUser,
+    collaboratorsPayload,
+    recentFilesPayload,
     recentSearchesPayload,
+    savedSearchesPayload,
 } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
@@ -57,9 +58,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
-    fetchSavedSearches: _fetchSavedSearches,
-    fetchRecentFileViews: _fetchRecentFileViews,
-    fetchCollaborators: _fetchCollaborators,
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
@@ -88,34 +86,53 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
         return <Story />
     })
 
-const mocks = [
-    {
-        request: {
-            query: getDocumentNode(HOME_PANELS_QUERY),
-            variables: {
-                userId: '0',
-                firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
-                firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
+function getMocks({
+    enableSavedSearches,
+    enableCollaborators,
+}: {
+    enableSavedSearches: boolean
+    enableCollaborators: boolean
+}) {
+    return [
+        {
+            request: {
+                query: getDocumentNode(HOME_PANELS_QUERY),
+                variables: {
+                    userId: '0',
+                    firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+                    firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
+                    firstRecentFiles: RECENT_FILES_TO_LOAD,
+                    enableSavedSearches,
+                    enableCollaborators,
+                },
             },
-        },
-        result: {
-            data: {
-                node: {
-                    __typename: 'User',
-                    recentlySearchedRepositoriesLogs: recentSearchesPayload(),
-                    recentSearchesLogs: recentSearchesPayload(),
+            result: {
+                data: {
+                    node: {
+                        __typename: 'User',
+                        recentlySearchedRepositoriesLogs: recentSearchesPayload(),
+                        recentSearchesLogs: recentSearchesPayload(),
+                        recentFilesLogs: recentFilesPayload(),
+                        collaborators: enableCollaborators ? collaboratorsPayload() : undefined,
+                    },
+                    savedSearches: enableSavedSearches ? savedSearchesPayload() : undefined,
                 },
             },
         },
-    },
-]
+    ]
+}
 
 add('Cloud with panels', () => (
     <WebStory>
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
             return (
-                <MockedTestProvider mocks={mocks}>
+                <MockedTestProvider
+                    mocks={getMocks({
+                        enableSavedSearches: false,
+                        enableCollaborators: false,
+                    })}
+                >
                     <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
                 </MockedTestProvider>
             )
@@ -129,7 +146,12 @@ add('Cloud with panels and collaborators', () => (
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
             useExperimentalFeatures.setState({ homepageUserInvitation: true })
             return (
-                <MockedTestProvider mocks={mocks}>
+                <MockedTestProvider
+                    mocks={getMocks({
+                        enableSavedSearches: false,
+                        enableCollaborators: true,
+                    })}
+                >
                     <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
                 </MockedTestProvider>
             )
@@ -148,7 +170,12 @@ add('Server with panels', () => (
         {webProps => {
             useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
             return (
-                <MockedTestProvider mocks={mocks}>
+                <MockedTestProvider
+                    mocks={getMocks({
+                        enableSavedSearches: true,
+                        enableCollaborators: false,
+                    })}
+                >
                     <SearchPage {...defaultProps(webProps)} />
                 </MockedTestProvider>
             )

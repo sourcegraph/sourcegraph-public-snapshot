@@ -1,12 +1,10 @@
-import { Observable, of } from 'rxjs'
-
 import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { EventLogResult } from '../backend'
 
-export const authUser: AuthenticatedUser = {
+export const authUser: AuthenticatedUser & { namespaceName: string } = {
     __typename: 'User',
     id: '0',
     email: 'alice@sourcegraph.com',
@@ -28,6 +26,7 @@ export const authUser: AuthenticatedUser = {
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
+    namespaceName: 'alice',
 }
 
 export const org: IOrg = {
@@ -74,29 +73,28 @@ export const org: IOrg = {
     },
 }
 
-export const _fetchSavedSearches = (): Observable<ISavedSearch[]> =>
-    of([
-        {
-            __typename: 'SavedSearch',
-            id: 'test',
-            description: 'test',
-            query: 'test',
-            notify: false,
-            notifySlack: false,
-            namespace: authUser as Namespace,
-            slackWebhookURL: null,
-        },
-        {
-            __typename: 'SavedSearch',
-            id: 'test-org',
-            description: 'org test',
-            query: 'org test',
-            notify: false,
-            notifySlack: false,
-            namespace: org,
-            slackWebhookURL: null,
-        },
-    ])
+export const savedSearchesPayload = (): ISavedSearch[] => [
+    {
+        __typename: 'SavedSearch',
+        id: 'test',
+        description: 'test',
+        query: 'test',
+        notify: false,
+        notifySlack: false,
+        namespace: authUser as Namespace,
+        slackWebhookURL: null,
+    },
+    {
+        __typename: 'SavedSearch',
+        id: 'test-org',
+        description: 'org test',
+        query: 'org test',
+        notify: false,
+        notifySlack: false,
+        namespace: org,
+        slackWebhookURL: null,
+    },
+]
 
 export const recentSearchesPayload = (): EventLogResult => ({
     nodes: [
@@ -235,163 +233,158 @@ export const recentSearchesPayload = (): EventLogResult => ({
     totalCount: 436,
 })
 
-export const _fetchRecentFileViews = (): Observable<EventLogResult | null> =>
-    of({
-        nodes: [
-            {
-                argument: '{"filePath": "web/src/tree/Tree.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:55Z',
-                url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/Tree.tsx',
-            },
-            {
-                argument: '{"filePath": "web/src/tree/TreeRoot.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:55Z',
-                url:
-                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/TreeRoot.tsx',
-            },
-            {
-                argument:
-                    '{"filePath": "web/src/tree/SingleChildTreeLayer.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:54Z',
-                url:
-                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/SingleChildTreeLayer.tsx',
-            },
-            {
-                argument:
-                    '{"filePath": "web/src/tree/Directory.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:54Z',
-                url:
-                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/Directory.tsx',
-            },
-            {
-                argument:
-                    '{"filePath": "web/src/site/FreeUsersExceededAlert.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:51Z',
-                url:
-                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/site/FreeUsersExceededAlert.tsx',
-            },
-            {
-                argument:
-                    '{"filePath": "web/src/site/DockerForMacAlert.scss", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:50Z',
-                url:
-                    'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/site/DockerForMacAlert.scss',
-            },
-            {
-                argument: '{"filePath": "web/jest.config.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T23:07:45Z',
-                url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/jest.config.js',
-            },
-            {
-                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T22:55:30Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
-            },
-            {
-                argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
-                timestamp: '2020-09-10T22:55:18Z',
-                url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
-            },
-            {
-                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T22:55:06Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
-            },
-            {
-                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T22:54:54Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
-            },
-            {
-                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T22:54:50Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
-            },
-            {
-                argument: '{"filePath": "AUTHORS", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:23Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/AUTHORS',
-            },
-            {
-                argument: '{"filePath": "LICENSE", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:23Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/LICENSE',
-            },
-            {
-                argument: '{"filePath": "README.md", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:22Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/README.md',
-            },
-            {
-                argument:
-                    '{"filePath": "example_authentication_middleware_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:21Z',
-                url:
-                    'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_authentication_middleware_test.go',
-            },
-            {
-                argument:
-                    '{"filePath": "example_cors_method_middleware_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:20Z',
-                url:
-                    'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_cors_method_middleware_test.go',
-            },
-            {
-                argument: '{"filePath": "example_route_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:19Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_route_test.go',
-            },
-            {
-                argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:16Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
-            },
-            {
-                argument: '{"filePath": "mux_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
-                timestamp: '2020-09-10T21:21:03Z',
-                url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/mux_test.go',
-            },
-        ],
-        totalCount: 500,
-        pageInfo: { hasNextPage: true, endCursor: null },
-    })
+export const recentFilesPayload = (): EventLogResult => ({
+    nodes: [
+        {
+            argument: '{"filePath": "web/src/tree/Tree.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:55Z',
+            url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/Tree.tsx',
+        },
+        {
+            argument: '{"filePath": "web/src/tree/TreeRoot.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:55Z',
+            url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/TreeRoot.tsx',
+        },
+        {
+            argument:
+                '{"filePath": "web/src/tree/SingleChildTreeLayer.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:54Z',
+            url:
+                'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/SingleChildTreeLayer.tsx',
+        },
+        {
+            argument: '{"filePath": "web/src/tree/Directory.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:54Z',
+            url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/tree/Directory.tsx',
+        },
+        {
+            argument:
+                '{"filePath": "web/src/site/FreeUsersExceededAlert.tsx", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:51Z',
+            url:
+                'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/site/FreeUsersExceededAlert.tsx',
+        },
+        {
+            argument:
+                '{"filePath": "web/src/site/DockerForMacAlert.scss", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:50Z',
+            url:
+                'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/src/site/DockerForMacAlert.scss',
+        },
+        {
+            argument: '{"filePath": "web/jest.config.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T23:07:45Z',
+            url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/web/jest.config.js',
+        },
+        {
+            argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T22:55:30Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+        },
+        {
+            argument: '{"filePath": ".eslintrc.js", "repoName": "github.com/sourcegraph/sourcegraph"}',
+            timestamp: '2020-09-10T22:55:18Z',
+            url: 'https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph/-/blob/.eslintrc.js',
+        },
+        {
+            argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T22:55:06Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+        },
+        {
+            argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T22:54:54Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+        },
+        {
+            argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T22:54:50Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+        },
+        {
+            argument: '{"filePath": "AUTHORS", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:23Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/AUTHORS',
+        },
+        {
+            argument: '{"filePath": "LICENSE", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:23Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/LICENSE',
+        },
+        {
+            argument: '{"filePath": "README.md", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:22Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/README.md',
+        },
+        {
+            argument:
+                '{"filePath": "example_authentication_middleware_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:21Z',
+            url:
+                'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_authentication_middleware_test.go',
+        },
+        {
+            argument:
+                '{"filePath": "example_cors_method_middleware_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:20Z',
+            url:
+                'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_cors_method_middleware_test.go',
+        },
+        {
+            argument: '{"filePath": "example_route_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:19Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/example_route_test.go',
+        },
+        {
+            argument: '{"filePath": "go.mod", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:16Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/go.mod',
+        },
+        {
+            argument: '{"filePath": "mux_test.go", "repoName": "ghe.sgdev.org/sourcegraph/gorilla-mux"}',
+            timestamp: '2020-09-10T21:21:03Z',
+            url: 'https://sourcegraph.test:3443/ghe.sgdev.org/sourcegraph/gorilla-mux/-/blob/mux_test.go',
+        },
+    ],
+    totalCount: 500,
+    pageInfo: { hasNextPage: true },
+})
 
-export const _fetchCollaborators: (_userId: string) => Observable<InvitableCollaborator[]> = () =>
-    of([
-        {
-            email: 'hello@philippspiess.com',
-            displayName: 'Philipp Spiess',
-            name: 'Philipp Spiess',
-            avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
-        },
-        {
-            email: 'hello@philippspiess.com',
-            displayName: 'Philipp Spiess',
-            name: 'Philipp Spiess',
-            avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
-        },
-        {
-            email: 'hello@philippspiess.com',
-            displayName: 'Philipp Spiess',
-            name: 'Philipp Spiess',
-            avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
-        },
-        {
-            email: 'hello@nicolasdular.com',
-            displayName: 'Nicolas Dular',
-            name: 'Nicolas Dular',
-            avatarURL: 'https://avatars.githubusercontent.com/u/890544?v=4',
-        },
-        {
-            email: 'mario.telesklav@gmx.at',
-            displayName: 'Mario Telesklav',
-            name: 'Mario Telesklav',
-            avatarURL: 'https://avatars.githubusercontent.com/u/3846403?v=4',
-        },
-        {
-            email: 'gluastoned@gmail.com',
-            displayName: 'Gregor Steiner',
-            name: 'Gregor Steiner',
-            avatarURL: 'https://avatars.githubusercontent.com/u/173158?v=4',
-        },
-    ])
+export const collaboratorsPayload: () => InvitableCollaborator[] = () => [
+    {
+        email: 'hello@philippspiess.com',
+        displayName: 'Philipp Spiess',
+        name: 'Philipp Spiess',
+        avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
+    },
+    {
+        email: 'hello@philippspiess.com',
+        displayName: 'Philipp Spiess',
+        name: 'Philipp Spiess',
+        avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
+    },
+    {
+        email: 'hello@philippspiess.com',
+        displayName: 'Philipp Spiess',
+        name: 'Philipp Spiess',
+        avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
+    },
+    {
+        email: 'hello@nicolasdular.com',
+        displayName: 'Nicolas Dular',
+        name: 'Nicolas Dular',
+        avatarURL: 'https://avatars.githubusercontent.com/u/890544?v=4',
+    },
+    {
+        email: 'mario.telesklav@gmx.at',
+        displayName: 'Mario Telesklav',
+        name: 'Mario Telesklav',
+        avatarURL: 'https://avatars.githubusercontent.com/u/3846403?v=4',
+    },
+    {
+        email: 'gluastoned@gmail.com',
+        displayName: 'Gregor Steiner',
+        name: 'Gregor Steiner',
+        avatarURL: 'https://avatars.githubusercontent.com/u/173158?v=4',
+    },
+]
