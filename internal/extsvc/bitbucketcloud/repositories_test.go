@@ -160,3 +160,62 @@ func TestRepo_Namespace(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_NewRepos(t *testing.T) {
+	ctx := context.Background()
+
+	cli, save := newTestClient(t)
+	defer save()
+
+	rs, err := cli.NewRepos("sourcegraph-testing")
+	assert.Nil(t, err)
+
+	rs = rs.WithPageLength(1)
+	have := []*Repo{}
+	for {
+		repo, err := rs.Next(ctx)
+		assert.Nil(t, err)
+		if repo == nil {
+			break
+		}
+
+		have = append(have, repo)
+	}
+
+	repos := map[string]*Repo{
+		"src-cli": {
+			Slug:      "src-cli",
+			Name:      "src-cli",
+			FullName:  "sourcegraph-testing/src-cli",
+			UUID:      "{b090a669-ac7b-44cd-9610-02d027cb39f3}",
+			SCM:       "git",
+			IsPrivate: true,
+			Links: RepoLinks{
+				Clone: CloneLinks{
+					{Href: "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/src-cli.git", Name: "https"},
+					{Href: "git@bitbucket.org:sourcegraph-testing/src-cli.git", Name: "ssh"},
+				},
+				HTML: Link{Href: "https://bitbucket.org/sourcegraph-testing/src-cli"},
+			},
+			ForkPolicy: ForkPolicyNoPublic,
+		},
+		"sourcegraph": {
+			Slug:      "sourcegraph",
+			Name:      "sourcegraph",
+			FullName:  "sourcegraph-testing/sourcegraph",
+			UUID:      "{f46afc56-15a7-4579-9429-1b9329ad4c09}",
+			SCM:       "git",
+			IsPrivate: true,
+			Links: RepoLinks{
+				Clone: CloneLinks{
+					{Href: "https://sourcegraph-testing@bitbucket.org/sourcegraph-testing/sourcegraph.git", Name: "https"},
+					{Href: "git@bitbucket.org:sourcegraph-testing/sourcegraph.git", Name: "ssh"},
+				},
+				HTML: Link{Href: "https://bitbucket.org/sourcegraph-testing/sourcegraph"},
+			},
+			ForkPolicy: ForkPolicyNoPublic,
+		},
+	}
+
+	assert.Equal(t, []*Repo{repos["src-cli"], repos["sourcegraph"]}, have)
+}

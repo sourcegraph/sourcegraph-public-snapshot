@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,6 +23,16 @@ func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*Pul
 	}
 
 	return &pr, nil
+}
+
+// GetPullRequestStatuses retrieves the statuses for a pull request.
+func (c *Client) GetPullRequestStatuses(ctx context.Context, repo *Repo, id int64) (*ResultSet[PullRequestStatus], error) {
+	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/statuses", repo.FullName, id))
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing URL")
+	}
+
+	return newResultSet[PullRequestStatus](c, u), nil
 }
 
 // PullRequest represents a single pull request, as returned by the API.
