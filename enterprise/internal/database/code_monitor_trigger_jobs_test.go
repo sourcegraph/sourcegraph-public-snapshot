@@ -1,10 +1,14 @@
 package database
 
 import (
+	"context"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 const setToCompletedFmtStr = `
@@ -63,4 +67,18 @@ func TestDeleteOldJobLogs(t *testing.T) {
 		require.NoError(t, err)
 	}
 	require.Equal(t, secondTriggerJobID, id)
+}
+
+func TestUpdateTriggerJob(t *testing.T) {
+	t.Run("handles null results", func(t *testing.T) {
+		ctx := context.Background()
+		db := NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+		_ = populateCodeMonitorFixtures(t, db)
+		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
+		require.NoError(t, err)
+		require.Len(t, jobs, 1)
+
+		err = db.CodeMonitors().UpdateTriggerJobWithResults(ctx, jobs[0].ID, "", nil)
+		require.NoError(t, err)
+	})
 }

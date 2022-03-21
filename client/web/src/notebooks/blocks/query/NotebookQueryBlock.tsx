@@ -8,12 +8,12 @@ import * as Monaco from 'monaco-editor'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -24,7 +24,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
@@ -100,7 +100,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             type: 'button',
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
-            icon: <PlayCircleOutlineIcon className="icon-inline" />,
+            icon: <Icon as={PlayCircleOutlineIcon} />,
             onClick: onRunBlock,
             keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
         }
@@ -111,7 +111,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <OpenInNewIcon className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} />,
                 url: `/search?${buildSearchURLQuery(input, SearchPatternType.literal, false)}`,
             },
         ],

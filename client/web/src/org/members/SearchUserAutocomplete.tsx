@@ -164,11 +164,18 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
         [firstResult]
     )
 
-    const onSelectUser = useCallback((user: IUserItem) => {
-        eventLogger.logViewEvent('AutocompleteUsersSearchSelected', { user: user.username })
-        setOpenResults(false)
-        setUsernameOrEmail(user.username)
-    }, [])
+    const onSelectUser = useCallback(
+        (user: IUserItem) => {
+            eventLogger.log(
+                'InviteAutocompleteUserSelected',
+                { organizationId: orgId, user: user.username },
+                { organizationId: orgId }
+            )
+            setOpenResults(false)
+            setUsernameOrEmail(user.username)
+        },
+        [orgId]
+    )
 
     const onMenuKeyDown = useCallback((event: React.KeyboardEvent): void => {
         if (event.key === 'Escape') {

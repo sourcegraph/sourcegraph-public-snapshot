@@ -71,6 +71,11 @@ WHERE id = %s
 `
 
 func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error {
+	if results == nil {
+		// appease db non-null constraint
+		results = []*result.CommitMatch{}
+	}
+
 	resultsJSON, err := json.Marshal(results)
 	if err != nil {
 		return err

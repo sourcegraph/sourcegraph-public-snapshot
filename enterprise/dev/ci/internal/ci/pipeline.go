@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.37.0"
+	const minimumUpgradeableVersion = "3.38.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -313,7 +313,7 @@ func withAgentQueueDefaults(s *bk.Step) {
 		if bk.FeatureFlags.StatelessBuild {
 			s.Agents["queue"] = bk.AgentQueueJob
 		} else {
-			s.Agents["queue"] = bk.AgentQueueStandard
+			s.Agents["queue"] = bk.AgentQueueStateful
 		}
 	}
 

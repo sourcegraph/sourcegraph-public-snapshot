@@ -1,6 +1,8 @@
 import { ApolloClient } from '@apollo/client'
-import { from, Observable, of, throwError } from 'rxjs'
+import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
+
+import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { GetInsightViewResult, InsightViewFiltersInput } from '../../../../../../../graphql-operations'
 import { BackendInsight } from '../../../../types'
@@ -19,9 +21,8 @@ export const getBackendInsightData = (
         excludeRepoRegex: insight.filters?.excludeRepoRegexp,
     }
 
-    return from(
-        // TODO: Use watchQuery instead of query when setting migration api is deprecated
-        client.query<GetInsightViewResult>({
+    return fromObservableQuery(
+        client.watchQuery<GetInsightViewResult>({
             query: GET_INSIGHT_VIEW_GQL,
             variables: { id: insight.id, filters },
         })

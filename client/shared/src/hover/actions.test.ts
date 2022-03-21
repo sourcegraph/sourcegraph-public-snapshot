@@ -6,6 +6,7 @@ import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
+import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
@@ -17,7 +18,6 @@ import { ExposedToClient } from '../api/client/mainthread-api'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { integrationTestContext } from '../api/integration-test/testHelpers'
-import { TextDocumentPositionParameters } from '../api/protocol'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import {
     FileSpec,

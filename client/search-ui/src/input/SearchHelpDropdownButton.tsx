@@ -15,6 +15,7 @@ import {
     Link,
     MenuDivider,
     MenuHeader,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHelpDropdownButton.module.scss'
@@ -47,10 +48,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                 className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
             >
-                <HelpCircleOutlineIcon
-                    className="test-search-help-dropdown-button-icon icon-inline"
-                    aria-hidden="true"
-                />
+                <Icon className="test-search-help-dropdown-button-icon" aria-hidden="true" as={HelpCircleOutlineIcon} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
                 <MenuHeader>
@@ -135,7 +133,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<SearchHelpDropdow
                     className="dropdown-item"
                     onClick={onQueryDocumentationLinkClicked}
                 >
-                    <ExternalLinkIcon className="icon-inline small" /> All search keywords
+                    <Icon className="small" as={ExternalLinkIcon} /> All search keywords
                 </Link>
                 {isSourcegraphDotCom && (
                     <Alert className="small rounded-0 mb-0 mt-1" variant="info">

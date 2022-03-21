@@ -1158,9 +1158,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 0},
 			},
 			{
-				`repo contains respects parameters that affect repo search (fork)`,
-				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
-				counts{Repo: 1},
+				name:   `repo contains respects parameters that affect repo search (fork)`,
+				query:  `repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
@@ -1178,19 +1178,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 6},
 			},
 			{
-				`repo has commit after`,
-				`repo:go-diff repo:contains.commit.after(10 years ago)`,
-				counts{Repo: 1},
+				name:   `repo has commit after`,
+				query:  `repo:go-diff repo:contains.commit.after(10 years ago)`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`repo has commit after no results`,
-				`repo:go-diff repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `repo has commit after no results`,
+				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 			{
-				`unscoped repo has commit after no results`,
-				`repo:contains.commit.after(1 second ago)`,
-				counts{Repo: 0},
+				name:   `unscoped repo has commit after no results`,
+				query:  `repo:contains.commit.after(1 second ago)`,
+				counts: counts{Repo: 0},
 			},
 		}
 
@@ -1379,13 +1379,6 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		const query = `r:deps(^npm/urql$@v2.2.0) r:core|wonka`
-
-		want := []string{
-			"/npm/urql/core@v1.9.2",
-			"/npm/wonka@v4.0.7",
-		}
-
 		for _, tc := range []struct {
 			name   string
 			client searchClient
@@ -1394,8 +1387,15 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			{"stream", streamClient},
 		} {
 			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
+			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
 				began := time.Now()
+
+				const query = `r:deps(^npm/urql$@v2.2.0) r:core|wonka`
+
+				want := []string{
+					"/npm/urql/core@v1.9.2",
+					"/npm/wonka@v4.0.7",
+				}
 
 				for {
 					results, err := tc.client.SearchRepositories(query)
@@ -1419,6 +1419,29 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 					}
 					break
 				}
+			})
+
+			t.Run(tc.name+"/"+"no-alert", func(t *testing.T) {
+				const query = `r:deps(^npm/urql$@v2.2.0) split`
+				results, err := tc.client.SearchFiles(query)
+
+				require.NoError(t, err)
+				require.NotEmpty(t, results.Results)
+				require.NotZero(t, results.MatchCount)
+				require.Nil(t, results.Alert)
+			})
+
+			t.Run(tc.name+"/"+"alert", func(t *testing.T) {
+				const query = `r:deps(^npm/urqLOL$) split`
+				results, err := tc.client.SearchFiles(query)
+
+				require.NoError(t, err)
+				require.Empty(t, results.Results)
+				require.Zero(t, results.MatchCount)
+				require.Equal(t, results.Alert, &gqltestutil.SearchAlert{
+					Title:       "No dependency repositories found",
+					Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+				})
 			})
 		}
 	}

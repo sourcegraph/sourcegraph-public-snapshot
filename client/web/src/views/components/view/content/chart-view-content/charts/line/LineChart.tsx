@@ -13,7 +13,7 @@ import styles from './LineChart.module.scss'
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {
     /**
      * Whenever it is necessary to set size limits of line chart container block.
-     * By default LineChart doesn't require
+     * By default, LineChart doesn't require
      */
     hasChartParentFixedSize?: boolean
 }
@@ -31,7 +31,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
     const isHorizontal = layout
         ? // If layout is defined explicitly in line chart setting context use its value
           layout === LineChartLayoutOrientation.Horizontal
-        : // Otherwise apply internal logic (based on how many x space and series we have)
+        : // Otherwise, apply internal logic (based on how many x space and series we have)
           hasViewManySeries && hasEnoughXSpace
 
     return (

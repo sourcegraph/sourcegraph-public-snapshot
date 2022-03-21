@@ -4,6 +4,8 @@ import classNames from 'classnames'
 
 import { Button } from '@sourcegraph/wildcard'
 
+import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { EditableDataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
@@ -74,6 +76,8 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         onLiveChange,
     } = props
 
+    const { licensed } = useUiFeatures()
+
     return (
         <ul data-testid="form-series" className="list-unstyled d-flex flex-column">
             {series.map((line, index) =>
@@ -95,6 +99,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     line && (
                         <SeriesCard
                             key={line.id}
+                            disabled={index >= 10}
                             onEdit={() => onEditSeriesRequest(line.id)}
                             onRemove={() => onSeriesRemove(line.id)}
                             className={styles.formSeriesItem}
@@ -104,11 +109,16 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 )
             )}
 
+            {!licensed && (
+                <LimitedAccessLabel message="Unlock Code Insights for unlimited data series" className="mx-auto my-3" />
+            )}
+
             <Button
                 data-testid="add-series-button"
                 type="button"
                 onClick={() => onEditSeriesRequest()}
                 variant="link"
+                disabled={!licensed ? series.length >= 10 : false}
                 className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
             >
                 + Add another data series

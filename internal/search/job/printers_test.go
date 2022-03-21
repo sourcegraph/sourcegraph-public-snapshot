@@ -250,82 +250,44 @@ func TestPrettyJSON(t *testing.T) {
       }
     },
     {
-      "Repo": {
-        "Args": {
-          "PatternInfo": {
-            "Pattern": "bar",
-            "IsNegated": false,
-            "IsRegExp": true,
-            "IsStructuralPat": false,
-            "CombyRule": "",
-            "IsWordMatch": false,
-            "IsCaseSensitive": false,
-            "FileMatchLimit": 500,
-            "Index": "yes",
-            "Select": [],
-            "IncludePatterns": null,
-            "ExcludePattern": "",
-            "FilePatternsReposMustInclude": null,
-            "FilePatternsReposMustExclude": null,
-            "PathPatternsAreCaseSensitive": false,
-            "PatternMatchesContent": true,
-            "PatternMatchesPath": true,
-            "Languages": null
-          },
-          "RepoOptions": {
-            "RepoFilters": [
-              "foo",
-              "bar"
-            ],
-            "MinusRepoFilters": null,
-            "Dependencies": null,
-            "CaseSensitiveRepoFilters": false,
-            "SearchContextSpec": "",
-            "NoForks": true,
-            "OnlyForks": false,
-            "NoArchived": true,
-            "OnlyArchived": false,
-            "CommitAfter": "",
-            "Visibility": "Any",
-            "Limit": 0,
-            "Cursors": null,
-            "Query": [
-              {
-                "Kind": 1,
-                "Operands": [
-                  {
-                    "field": "repo",
-                    "value": "foo",
-                    "negated": false
-                  },
-                  {
-                    "value": "bar",
-                    "negated": false
-                  }
-                ],
-                "Annotation": {
-                  "labels": 0,
-                  "range": {
-                    "start": {
-                      "line": 0,
-                      "column": 0
-                    },
-                    "end": {
-                      "line": 0,
-                      "column": 0
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          "Features": {
-            "ContentBasedLangFilters": false
-          },
-          "ResultTypes": 13,
-          "Timeout": 20000000000,
-          "Repos": null,
-          "Mode": 0,
+      "RepoSearch": {
+        "PatternInfo": {
+          "Pattern": "bar",
+          "IsNegated": false,
+          "IsRegExp": true,
+          "IsStructuralPat": false,
+          "CombyRule": "",
+          "IsWordMatch": false,
+          "IsCaseSensitive": false,
+          "FileMatchLimit": 500,
+          "Index": "yes",
+          "Select": [],
+          "IncludePatterns": null,
+          "ExcludePattern": "",
+          "FilePatternsReposMustInclude": null,
+          "FilePatternsReposMustExclude": null,
+          "PathPatternsAreCaseSensitive": false,
+          "PatternMatchesContent": true,
+          "PatternMatchesPath": true,
+          "Languages": null
+        },
+        "RepoOptions": {
+          "RepoFilters": [
+            "foo",
+            "bar"
+          ],
+          "MinusRepoFilters": null,
+          "Dependencies": null,
+          "CaseSensitiveRepoFilters": false,
+          "SearchContextSpec": "",
+          "NoForks": true,
+          "OnlyForks": false,
+          "NoArchived": true,
+          "OnlyArchived": false,
+          "CommitAfter": "",
+          "Visibility": "Any",
+          "Limit": 0,
+          "Cursors": null,
           "Query": [
             {
               "Kind": 1,
@@ -354,11 +316,45 @@ func TestPrettyJSON(t *testing.T) {
                 }
               }
             }
-          ],
-          "UseFullDeadline": true,
-          "Zoekt": null,
-          "SearcherURLs": null
-        }
+          ]
+        },
+        "Features": {
+          "ContentBasedLangFilters": false
+        },
+        "Repos": null,
+        "Mode": 0,
+        "Query": [
+          {
+            "Kind": 1,
+            "Operands": [
+              {
+                "field": "repo",
+                "value": "foo",
+                "negated": false
+              },
+              {
+                "value": "bar",
+                "negated": false
+              }
+            ],
+            "Annotation": {
+              "labels": 0,
+              "range": {
+                "start": {
+                  "line": 0,
+                  "column": 0
+                },
+                "end": {
+                  "line": 0,
+                  "column": 0
+                }
+              }
+            }
+          }
+        ],
+        "UseFullDeadline": true,
+        "Zoekt": null,
+        "SearcherURLs": null
       }
     },
     {

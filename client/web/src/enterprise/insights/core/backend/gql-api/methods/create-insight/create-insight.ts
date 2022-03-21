@@ -11,15 +11,12 @@ import {
     InsightViewNode,
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
+import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard } from '../../../../types'
 import {
-    CaptureGroupInsight,
-    InsightDashboard,
-    InsightExecutionType,
-    InsightType,
-    isVirtualDashboard,
-    SearchBasedInsight,
-} from '../../../../types'
-import { InsightCreateInput } from '../../../code-insights-backend-types'
+    InsightCreateInput,
+    MinimalCaptureGroupInsightData,
+    MinimalSearchBasedInsightData,
+} from '../../../code-insights-backend-types'
 import { createInsightView } from '../../deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from '../../gql/GetDashboardInsights'
 import { INSIGHT_VIEW_FRAGMENT } from '../../gql/GetInsights'
@@ -33,7 +30,7 @@ import { getInsightCreateGqlInput, getLangStatsInsightCreateInput } from './seri
 export const createInsight = (apolloClient: ApolloClient<object>, input: InsightCreateInput): Observable<unknown> => {
     const { insight, dashboard } = input
 
-    switch (insight.viewType) {
+    switch (insight.type) {
         case InsightType.CaptureGroup:
         case InsightType.SearchBased: {
             return createSearchBasedInsight(apolloClient, insight, dashboard)
@@ -58,9 +55,11 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
     }
 }
 
+type CreationSeriesInsightData = MinimalSearchBasedInsightData | MinimalCaptureGroupInsightData
+
 function createSearchBasedInsight(
     apolloClient: ApolloClient<object>,
-    insight: SearchBasedInsight | CaptureGroupInsight,
+    insight: CreationSeriesInsightData,
     dashboard: InsightDashboard | null
 ): Observable<unknown> {
     const input = getInsightCreateGqlInput(insight, dashboard)
@@ -70,7 +69,7 @@ function createSearchBasedInsight(
     // This is due to lack of gql API flexibility and should be fixed as soon as BE gql API
     // supports filters in the create insight mutation.
     // TODO: Remove this imperative logic as soon as be supports filters
-    if (insight.type === InsightExecutionType.Backend && insight.filters) {
+    if (insight.executionType === InsightExecutionType.Backend && insight.filters) {
         return from(
             apolloClient.mutate<FirstStepCreateSearchBasedInsightResult>({
                 mutation: gql`
@@ -100,7 +99,7 @@ function createSearchBasedInsight(
 
                 return updateInsight(
                     apolloClient,
-                    { oldInsight: createdInsight, newInsight: createdInsight },
+                    { insightId: createdInsight.id, nextInsightData: createdInsight },
                     (cache, result) => {
                         const { data } = result
 

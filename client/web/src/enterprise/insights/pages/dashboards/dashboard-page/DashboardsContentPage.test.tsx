@@ -10,16 +10,17 @@ import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourc
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { AuthenticatedUser } from '../../../../../../../auth'
-import { InsightsDashboardsResult } from '../../../../../../../graphql-operations'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-api/code-insights-gql-backend'
-import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../../../core/backend/gql-api/gql/GetDashboardInsights'
-import { GET_INSIGHTS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsights'
-import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsightsDashboards'
-import { GET_INSIGHTS_SUBJECTS_GQL } from '../../../../../core/backend/gql-api/gql/GetInsightSubjects'
+import { AuthenticatedUser } from '../../../../../auth'
+import { InsightsDashboardsResult } from '../../../../../graphql-operations'
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../core/backend/gql-api/code-insights-gql-backend'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from '../../../core/backend/gql-api/gql/GetAccessibleInsightsList'
+import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../core/backend/gql-api/gql/GetDashboardInsights'
+import { GET_INSIGHTS_GQL } from '../../../core/backend/gql-api/gql/GetInsights'
+import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../core/backend/gql-api/gql/GetInsightsDashboards'
+import { GET_INSIGHTS_SUBJECTS_GQL } from '../../../core/backend/gql-api/gql/GetInsightSubjects'
 
-import { DashboardsContent } from './DashboardsContent'
+import { DashboardsContentPage } from './DashboardsContentPage'
 
 type UserEvent = typeof userEvent
 
@@ -37,7 +38,7 @@ jest.mock('@sourcegraph/web/src/auth', () => ({
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('./hooks/use-copy-url-handler', () => ({
+jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
@@ -83,6 +84,14 @@ const mocks: MockedResponse[] = [
         },
         result: {
             data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] } },
+        },
+    },
+    {
+        request: {
+            query: GET_ACCESSIBLE_INSIGHTS_LIST,
+        },
+        result: {
+            data: { insightViews: { nodes: [] } },
         },
     },
     {
@@ -141,7 +150,7 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsContent dashboardID={dashboardID} telemetryService={mockTelemetryService} />
+                <DashboardsContentPage dashboardID={dashboardID} telemetryService={mockTelemetryService} />
             </Wrapper>
         </MockedTestProvider>
     ),
@@ -155,7 +164,7 @@ const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult &
     const dashboardMenuItem = screen.getByRole('menuitem', { name })
 
     // We're simulating keyboard navigation here to circumvent a bug in ReachUI
-    // ReachUI does not respond to programmatic click events on menu items
+    // does not respond to programmatic click events on menu items
     dashboardMenuItem.focus()
     user.keyboard(' ')
 }
@@ -209,7 +218,7 @@ describe('DashboardsContent', () => {
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add insights/ }))
+        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /Add or remove insights/ }))
 
         userEvent.click(addInsightsButton)
 

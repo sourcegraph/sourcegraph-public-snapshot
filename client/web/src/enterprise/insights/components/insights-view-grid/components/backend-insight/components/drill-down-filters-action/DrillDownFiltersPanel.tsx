@@ -5,7 +5,7 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
-import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
+import { InsightFilters } from '../../../../../../core/types'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
@@ -15,11 +15,11 @@ import styles from './DrillDownFiltersPanel.module.scss'
 
 interface DrillDownFiltersProps {
     isOpen: boolean
-    initialFiltersValue: SearchBasedBackendFilters
-    originalFiltersValue: SearchBasedBackendFilters
+    initialFiltersValue: InsightFilters
+    originalFiltersValue: InsightFilters
     popoverTargetRef: React.RefObject<HTMLElement>
-    onFilterChange: (filters: SearchBasedBackendFilters) => void
-    onFilterSave: (filters: SearchBasedBackendFilters) => void
+    onFilterChange: (filters: InsightFilters) => void
+    onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
 }
