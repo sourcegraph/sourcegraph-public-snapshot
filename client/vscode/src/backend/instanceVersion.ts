@@ -27,9 +27,8 @@ export function initializeInstantVersionNumber(localStorageService: LocalStorage
             console.error('Failed to get instance version from host:', error)
         })
     const versionNumber = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
-
-    // instances below 3.38.0 does not support EventSource.IDEEXTENSION
-    return versionNumber > '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
+    // instances below 3.38.0 does not support EventSource.IDEEXTENSION and should fallback to BACKEND source
+    return versionNumber >= '3380' ? EventSource.IDEEXTENSION : EventSource.BACKEND
 }
 
 const siteVersionQuery = gql`
