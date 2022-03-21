@@ -15,6 +15,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -94,6 +95,27 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 		Auth:       a,
 		rateLimit:  c.rateLimit,
 	}
+}
+
+// Ping makes a request to the API root, thereby validating that the current
+// authenticator is valid.
+func (c *Client) Ping(ctx context.Context) error {
+	// This relies on an implementation detail: Bitbucket Cloud doesn't have an
+	// API endpoint at /2.0/, but does the authentication check before returning
+	// the 404, so we can distinguish based on the response code.
+	//
+	// The reason we do this is because there literally isn't an API call
+	// available that doesn't require a specific scope.
+	req, err := http.NewRequest("GET", "/2.0/", nil)
+	if err != nil {
+		return errors.Wrap(err, "creating request")
+	}
+
+	err = c.do(ctx, req, nil)
+	if err != nil && !errcode.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 // Repos returns a list of repositories that are fetched and populated based on given account
