@@ -47,10 +47,11 @@ git pack-refs --all --prune
 git reflog expire --all
 
 # Usually run by git gc. Here with the additional option --window-memory
-# We previously set the option --geometric=2, however this turned out to be too
-# memory intensive for monorepos on some customer instances. Restricting the
-# memory consumption by setting pack.windowMemory, pack.deltaCacheSize and
-# pack.threads in addition to --geometric=2 seemed to have no effect.
+# and --write-bitmap-index. We previously set the option --geometric=2, however
+# this turned out to be too memory intensive for monorepos on some customer
+# instances. Restricting the memory consumption by setting pack.windowMemory,
+# pack.deltaCacheSize and pack.threads in addition to --geometric=2 seemed to
+# have no effect.
 git repack -d -l -A --write-bitmap-index --window-memory 100m --unpack-unreachable=2.weeks.ago
 
 # Usually run by git gc. Prune all unreachable objects form the object database.
