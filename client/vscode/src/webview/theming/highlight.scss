@@ -11,6 +11,8 @@
         color: var(--vscode-editorLineNumber-foreground);
     }
 
+    .match-highlight,
+    .match-highlight-sticky,
     .selection-highlight,
     .selection-highlight-sticky {
         background-color: var(--vscode-editor-findMatchHighlightBackground);
@@ -337,6 +339,8 @@ body[data-vscode-theme-name^='Light (Visual Studio)'].sourcegraph-extension.them
 
 // High contrast (default VS Code dark HC theme)
 body[data-vscode-theme-name='High Contrast'].sourcegraph-extension.theme-dark {
+    .match-highlight,
+    .match-highlight-sticky,
     .selection-highlight,
     .selection-highlight-sticky {
         background-color: white;

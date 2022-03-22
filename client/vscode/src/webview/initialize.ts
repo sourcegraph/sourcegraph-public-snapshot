@@ -142,9 +142,9 @@ export function initializeSearchSidebarWebview({
         </style>
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; child-src data: ${
             webviewView.webview.cspSource
-        }; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
+        }; worker-src blob: data:; img-src data: https:; script-src blob: https:; style-src 'unsafe-inline' ${
         webviewView.webview.cspSource
-    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: https:;">
+    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: blob: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
