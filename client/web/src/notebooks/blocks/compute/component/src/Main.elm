@@ -409,7 +409,17 @@ table data =
             , columns =
                 [ { header = E.el headerAttrs (E.text " ")
                   , width = E.fillPortion 2
-                  , view = \v -> E.el [ E.padding 10 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
+                  , view =
+                        \v ->
+                            E.el [ E.padding 10 ]
+                                (E.el
+                                    [ E.width E.fill
+                                    , E.padding 10
+                                    , Border.rounded 5
+                                    , Border.width 1
+                                    ]
+                                    (E.paragraph [ E.width (E.fill |> E.maximum 600) ] [ E.text v.name ])
+                                )
                   }
                 , { header = E.el (headerAttrs ++ [ F.alignRight ]) (E.text "Count")
                   , width = E.fillPortion 1
@@ -455,7 +465,23 @@ dataView : List DataValue -> E.Element Msg
 dataView data =
     E.row [ E.width E.fill ]
         [ E.el [ E.padding 10, E.alignLeft ]
-            (E.column [] (List.map (\d -> E.text d.name) data))
+            (E.column []
+                (List.map
+                    (\d ->
+                        E.paragraph
+                            [ E.paddingEach
+                                { bottom = 2
+                                , top = 0
+                                , left = 0
+                                , right = 0
+                                }
+                            , E.width (E.fill |> E.maximum 600)
+                            ]
+                            [ E.text d.name ]
+                    )
+                    data
+                )
+            )
         , E.el
             [ E.paddingXY 0 10
             , E.alignRight
