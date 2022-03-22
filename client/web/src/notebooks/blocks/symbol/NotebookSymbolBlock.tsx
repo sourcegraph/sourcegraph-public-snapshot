@@ -30,6 +30,7 @@ import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
+import { focusLastPositionInMonacoEditor } from '../useMonacoBlockInput'
 
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
@@ -70,7 +71,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
-    const [symbolQueryInput, setSymbolQueryInput] = useState('')
+    const [symbolQueryInput, setSymbolQueryInput] = useState(input.initialQueryInput ?? '')
     const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
 
     const onSymbolSelected = useCallback(
@@ -83,8 +84,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 
     const onEnterBlock = useCallback(() => {
         if (showInputs) {
-            // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
-            setTimeout(() => editor?.focus(), 0)
+            focusLastPositionInMonacoEditor(editor)
         } else if (!isReadOnly) {
             setShowInputs(true)
         }
@@ -102,7 +102,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 
     const symbolURL = useMemo(
         () =>
-            symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput)
+            isSymbolOutputLoaded(symbolOutput)
                 ? toPrettyBlobURL({
                       repoName: input.repositoryName,
                       revision: symbolOutput.effectiveRevision,
