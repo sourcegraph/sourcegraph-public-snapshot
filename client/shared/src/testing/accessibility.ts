@@ -59,7 +59,7 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
     if (formattedViolations.length > 0) {
         const errorMessage = `Accessibility audit failed, ${
             formattedViolations.length
-        } rule violations found: \n${formattedViolations.join('\n')}`
+        } rule violations found:\n${formattedViolations.join('\n')}`
 
         if (mode === 'fail') {
             throw new Error(errorMessage)
