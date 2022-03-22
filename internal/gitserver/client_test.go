@@ -326,7 +326,7 @@ func TestAddrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.AddrForRepo(tc.repo, &gitserver.GitServerAddresses{
+			got := gitserver.AddrForRepo(tc.repo, gitserver.GitServerAddresses{
 				Addresses:     addrs,
 				PinnedServers: pinned,
 			})

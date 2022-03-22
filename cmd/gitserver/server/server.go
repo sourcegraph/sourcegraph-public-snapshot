@@ -406,7 +406,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 		fullSync := currentAddrs != previousAddrs
 		previousAddrs = currentAddrs
 
-		gitServerAddrs := &gitserver.GitServerAddresses{
+		gitServerAddrs := gitserver.GitServerAddresses{
 			Addresses:     addrs,
 			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
 		}
@@ -512,7 +512,7 @@ var (
 	}, []string{"success"})
 )
 
-func (s *Server) syncRepoState(gitServerAddrs *gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
 	log15.Info("starting syncRepoState", "fullSync", fullSync)
 	addrs := gitServerAddrs.Addresses
 

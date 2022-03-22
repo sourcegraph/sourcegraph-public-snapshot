@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -227,7 +228,7 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(repo, &GitServerAddresses{
+	return AddrForRepo(repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -259,7 +260,7 @@ var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(repo api.RepoName, addresses *GitServerAddresses) string {
+func AddrForRepo(repo api.RepoName, addresses GitServerAddresses) string {
 	addForRepoInvoked.Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
