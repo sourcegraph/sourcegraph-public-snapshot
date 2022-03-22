@@ -11,10 +11,11 @@ interface ModalVideoProps {
     id: string
     title: string
     src: string
-    thumbnail: { src: string; alt: string }
+    thumbnail?: { src: string; alt: string }
     onToggle?: (isOpen: boolean) => void
     showCaption?: boolean
     className?: string
+    titleClassName?: string
     assetsRoot?: string
 }
 
@@ -26,6 +27,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
     onToggle,
     showCaption = false,
     className,
+    titleClassName,
     assetsRoot = '',
 }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -39,14 +41,14 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
         [onToggle]
     )
 
-    let thumbnailElement = (
-        <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
+    let thumbnailElement = thumbnail ? (
+        <button type="button" className={classNames('pb-2', styles.thumbnailButton)} onClick={() => toggleDialog(true)}>
             <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
             <div className={styles.playIconWrapper}>
                 <PlayIcon />
             </div>
         </button>
-    )
+    ) : null
 
     if (showCaption) {
         thumbnailElement = (
@@ -55,7 +57,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                 <figcaption>
                     <Button
                         variant="link"
-                        className="font-weight-normal p-0 pt-2 w-100"
+                        className={classNames(titleClassName, 'font-weight-normal p-0 w-100')}
                         onClick={() => toggleDialog(true)}
                     >
                         {title}
@@ -75,7 +77,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                     onDismiss={() => toggleDialog(false)}
                     aria-labelledby={id}
                 >
-                    <div className={styles.modalContent}>
+                    <div className={styles.modalContent} data-testid="modal-video">
                         <div className={styles.modalHeader}>
                             <h3 id={id}>{title}</h3>
                             <Button

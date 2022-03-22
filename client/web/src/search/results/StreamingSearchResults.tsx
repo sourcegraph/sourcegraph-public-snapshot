@@ -330,7 +330,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }, [telemetryService])
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const showGettingStartedTour = props.isSourcegraphDotCom && !props.authenticatedUser
     const { ctaToDisplay, onCtaAlertDismissed } = useCtaAlert(!!authenticatedUser, resultsFound)
 
     // Log view event when signup CTA is shown
@@ -359,9 +358,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
-                    showGettingStartedTour ? (
-                        <GettingStartedTour className="mb-1" telemetryService={props.telemetryService} />
-                    ) : undefined
+                    <GettingStartedTour
+                        className="mb-1"
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        telemetryService={props.telemetryService}
+                        isAuthenticated={!!props.authenticatedUser}
+                        featureFlags={props.featureFlags}
+                    />
                 }
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
             />
@@ -398,7 +401,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <div className={styles.streamingSearchResultsContainer}>
-                {showGettingStartedTour && <GettingStartedTourInfo className="mt-2 mr-3 mb-3" />}{' '}
+                <GettingStartedTourInfo className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}

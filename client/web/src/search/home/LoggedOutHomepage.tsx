@@ -69,9 +69,11 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
                 <GettingStartedTour
-                    isFixedHeight={true}
+                    height={7.5}
                     className={styles.gettingStartedTour}
                     telemetryService={props.telemetryService}
+                    featureFlags={props.featureFlags}
+                    isSourcegraphDotCom={true}
                 />
                 <div className={styles.videoCard}>
                     <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>

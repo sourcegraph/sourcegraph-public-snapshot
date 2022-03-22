@@ -1,19 +1,41 @@
 import React from 'react'
 
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 
-import { GettingStartedTourManager, GettingStartedTourManagerProps } from './GettingStartedTourManager'
+import {
+    authenticatedExtraTask,
+    authenticatedTasks,
+    authenticatedTasksAllUseCases,
+    visitorsTasks,
+} from './components/data'
+import { Tour, TourProps } from './components/Tour'
+import { withErrorBoundary } from './components/withErrorBoundary'
 
-export const GettingStartedTour: React.FunctionComponent<GettingStartedTourManagerProps> = props => (
-    <ErrorBoundary
-        location={null}
-        render={error => (
-            <div>
-                Getting Started Tour: Something went wrong :(.
-                <pre>{JSON.stringify(error)}</pre>
-            </div>
-        )}
-    >
-        <GettingStartedTourManager {...props} />
-    </ErrorBoundary>
+type GettingStartedTourProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> &
+    FeatureFlagProps & {
+        isAuthenticated?: boolean
+        isSourcegraphDotCom: boolean
+    }
+
+// TODO: remove old components
+
+export const GettingStartedTour = withErrorBoundary(
+    ({ isAuthenticated, featureFlags, isSourcegraphDotCom, ...props }: GettingStartedTourProps) => {
+        if (!isSourcegraphDotCom) {
+            return null
+        }
+
+        if (!isAuthenticated) {
+            return <Tour {...props} id="Tour" tasks={visitorsTasks} />
+        }
+
+        return (
+            <Tour
+                {...props}
+                id="TourAuthenticated"
+                tasks={featureFlags.get('quick-start-tour') ? authenticatedTasks : authenticatedTasksAllUseCases}
+                extraTask={authenticatedExtraTask}
+            />
+        )
+    }
 )

@@ -11,6 +11,8 @@ import { Tabs, Tab, TabList, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
 import { CollaboratorsFragment, HomePanelsQueryResult, HomePanelsQueryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -30,7 +32,7 @@ import { SavedSearchesPanel } from './SavedSearchesPanel'
 
 import styles from './HomePanels.module.scss'
 
-interface Props extends TelemetryProps, HomePanelsProps {
+interface Props extends TelemetryProps, HomePanelsProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showCollaborators: boolean
@@ -126,6 +128,16 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => {
 
     return (
         <div className={classNames('container', styles.homePanels)} data-testid="home-panels">
+            <div className="row">
+                <GettingStartedTour
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    telemetryService={props.telemetryService}
+                    featureFlags={props.featureFlags}
+                    isAuthenticated={true}
+                    className="w-100"
+                    variant="horizontal"
+                />
+            </div>
             <div className="row">
                 <RepositoriesPanel
                     {...props}

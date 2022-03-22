@@ -27,18 +27,23 @@ import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { GettingStartedTour } from '../gettingStartedTour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
+import { RepoRevisionContainerContext } from './RepoRevisionContainer'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
+interface Props
+    extends AbsoluteRepoFile,
+        ExtensionsControllerProps,
+        ThemeProps,
+        TelemetryProps,
+        RepoRevisionContainerContext {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
     history: H.History
     location: H.Location
-    showGettingStartedTour?: boolean
 }
 
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
@@ -88,9 +93,13 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     return (
         <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY}>
             <div className="d-flex flex-column h-100 w-100">
-                {props.showGettingStartedTour && (
-                    <GettingStartedTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
-                )}
+                <GettingStartedTour
+                    className="mb-1 mr-3"
+                    telemetryService={props.telemetryService}
+                    isAuthenticated={!!props.authenticatedUser}
+                    featureFlags={props.featureFlags}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
                 <Tabs
                     className="w-100 h-100 test-repo-revision-sidebar pr-3"
                     defaultIndex={persistedTabIndex}
