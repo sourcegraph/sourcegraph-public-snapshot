@@ -1,35 +1,19 @@
 import {
+    CustomInsightDashboard,
     InsightDashboard,
     isGlobalDashboard,
     isPersonalDashboard,
-    isVirtualDashboard,
-    RealInsightDashboard,
 } from '../../../../../../core/types'
-import { isBuiltInInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
  * Get formatted dashboard title for the dashboard select option.
  */
-export const getDashboardTitle = (dashboard: InsightDashboard): string => {
-    if (isVirtualDashboard(dashboard)) {
-        return dashboard.title
-    }
-
-    if (isBuiltInInsightDashboard(dashboard)) {
-        if (isGlobalDashboard(dashboard)) {
-            return 'Global Insights'
-        }
-
-        return `${dashboard.owner.name}'s Insights`
-    }
-
-    return dashboard.title
-}
+export const getDashboardTitle = (dashboard: InsightDashboard): string => dashboard.title
 
 /**
  * Get formatted dashboard owner name. Used for list option badge element.
  */
-export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string => {
+export const getDashboardOwnerName = (dashboard: CustomInsightDashboard): string => {
     if (isPersonalDashboard(dashboard)) {
         return 'Private'
     }
@@ -38,5 +22,5 @@ export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string =
         return 'Global'
     }
 
-    return dashboard.owner?.name ?? ''
+    return dashboard.owners.map(owner => owner.title).join(' ')
 }

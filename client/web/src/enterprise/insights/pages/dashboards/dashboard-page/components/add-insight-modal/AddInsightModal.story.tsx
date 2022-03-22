@@ -6,7 +6,8 @@ import { of } from 'rxjs'
 import { WebStory } from '../../../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
 import { AccessibleInsightInfo } from '../../../../../core/backend/code-insights-backend-types'
-import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
+import { CodeInsightsGqlBackend } from '../../../../../core/backend/gql-backend/code-insights-gql-backend'
+import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -20,14 +21,10 @@ const { add } = storiesOf('web/insights/AddInsightModal', module)
 
 const dashboard: CustomInsightDashboard = {
     type: InsightsDashboardType.Custom,
-    scope: InsightsDashboardScope.Personal,
     id: '001',
     title: 'Test dashboard',
     insightIds: [],
-    owner: {
-        id: 'user_test_id',
-        name: 'Emir Kusturica',
-    },
+    owners: [{ id: '001', title: 'Hieronymus Bosch', type: InsightsDashboardOwnerType.Personal }],
 }
 
 const mockInsights: AccessibleInsightInfo[] = [
@@ -54,9 +51,9 @@ const mockInsights: AccessibleInsightInfo[] = [
     },
 ]
 
-const codeInsightsBackend = {
-    getReachableInsights: () => of(mockInsights),
-    getDashboardSubjects: () => of([]),
+const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
+    getAccessibleInsightsList: () => of(mockInsights),
+    getDashboardOwners: () => of([]),
 }
 
 add('AddInsightModal', () => {

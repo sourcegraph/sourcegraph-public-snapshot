@@ -41,5 +41,8 @@ type PackageDependency interface {
 	GitTagFromVersion() string
 }
 
-var _ PackageDependency = &MavenDependency{}
-var _ PackageDependency = &NpmDependency{}
+var (
+	_ PackageDependency = (*MavenDependency)(nil)
+	_ PackageDependency = (*NpmDependency)(nil)
+	_ PackageDependency = (*GoDependency)(nil)
+)

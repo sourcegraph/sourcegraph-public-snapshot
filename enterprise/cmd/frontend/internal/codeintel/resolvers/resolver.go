@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -61,6 +61,7 @@ type Resolver interface {
 }
 
 type resolver struct {
+	db               database.DB
 	dbStore          DBStore
 	lsifStore        LSIFStore
 	gitserverClient  GitserverClient
@@ -82,7 +83,7 @@ func NewResolver(
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
-	dbConn dbutil.DB,
+	dbConn database.DB,
 ) Resolver {
 	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, observationContext, dbConn)
 }
@@ -96,9 +97,10 @@ func newResolver(
 	hunkCache HunkCache,
 	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
-	dbConn dbutil.DB,
+	dbConn database.DB,
 ) *resolver {
 	return &resolver{
+		db:               dbConn,
 		dbStore:          dbStore,
 		lsifStore:        lsifStore,
 		gitserverClient:  gitserverClient,
@@ -196,6 +198,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	}
 
 	return NewQueryResolver(
+		r.db,
 		r.dbStore,
 		r.lsifStore,
 		cachedCommitChecker,
