@@ -12,8 +12,11 @@ import { Observable } from 'rxjs'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { IUser } from '@sourcegraph/shared/src/schema'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
+
+import { isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
@@ -42,10 +45,12 @@ export interface OptionsPageProps {
 
     initialShowAdvancedSettings?: boolean
     isFullPage: boolean
-    manageRepositoriesURL?: string
     showSourcegraphCloudAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
+
+    hasPrivateCloudError?: boolean
+    currentUser?: Pick<IUser, 'settingsURL' | 'siteAdmin'>
 }
 
 // "Error code" constants for Sourcegraph URL validation
@@ -65,7 +70,6 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onToggleActivated,
     initialShowAdvancedSettings = false,
     isFullPage,
-    manageRepositoriesURL,
     showSourcegraphCloudAlert,
     permissionAlert,
     requestPermissionsHandler,
@@ -73,6 +77,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onChangeOptionFlag,
     onChangeSourcegraphUrl,
     suggestedSourcegraphUrls,
+    hasPrivateCloudError,
+    currentUser,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
 
@@ -122,7 +128,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {manageRepositoriesURL && <PrivateRepositoryAlert manageRepositoriesURL={manageRepositoriesURL} />}
+            {hasPrivateCloudError && (
+                <PrivateRepositoryAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />
+            )}
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
@@ -187,23 +195,39 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent<{ manageRepositoriesURL: string }> = ({
-    manageRepositoriesURL,
-}) => (
-    <section className={classNames('bg-2', styles.section)}>
-        <h4>
-            <Icon className="mr-2" as={LockIcon} />
-            Private repository
-        </h4>
-        <p>
-            To use the browser extension with your private repositories, you need to enable sync in{' '}
-            <a href={manageRepositoriesURL} {...NEW_TAB_LINK_PROPS}>
-                manage repositories settings
-            </a>
-            .
-        </p>
-    </section>
-)
+const PrivateRepositoryAlert: React.FunctionComponent<Pick<OptionsPageProps, 'sourcegraphUrl' | 'currentUser'>> = ({
+    sourcegraphUrl,
+    currentUser,
+}) => {
+    if (!currentUser || (isDefaultSourcegraphUrl(sourcegraphUrl) && !currentUser.settingsURL)) {
+        return null
+    }
+
+    return (
+        <section className={classNames('bg-2', styles.section)}>
+            <h4>
+                <Icon className="mr-2" as={LockIcon} />
+                Private repository
+            </h4>
+            {isDefaultSourcegraphUrl(sourcegraphUrl) ? (
+                <p>
+                    To use the browser extension with your private repositories, you need to enable sync in{' '}
+                    <Link
+                        to={new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl).href}
+                        {...NEW_TAB_LINK_PROPS}
+                    >
+                        manage repositories settings
+                    </Link>
+                    .
+                </p>
+            ) : currentUser.siteAdmin ? (
+                <p>You're admin</p>
+            ) : (
+                <p>Contact your admin</p>
+            )}
+        </section>
+    )
+}
 
 const SourcegraphCloudAlert: React.FunctionComponent = () => (
     <section className={classNames('bg-2', styles.section)}>

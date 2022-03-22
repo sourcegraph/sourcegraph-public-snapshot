@@ -9,7 +9,7 @@ import { from, noop, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
-import { asError } from '@sourcegraph/common'
+import { asError, isDefined } from '@sourcegraph/common'
 import { gql, GraphQLResult } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -141,22 +141,23 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
-const fetchUserSettingsURL = (sourcegraphURL: string): Observable<string> => {
+const fetchCurrentUser = (sourcegraphURL: string): Observable<Pick<GQL.IUser, 'settingsURL' | 'siteAdmin'>> => {
     const requestGraphQL = createRequestGraphQL(sourcegraphURL)
 
     return requestGraphQL<GQL.IQuery>({
         request: gql`
-            query UserSettingsURL {
+            query CurrentUser {
                 currentUser {
                     settingsURL
+                    siteAdmin
                 }
             }
         `,
         variables: {},
     }).pipe(
-        map(({ data }) => data?.currentUser?.settingsURL),
-        filter(Boolean),
-        map(url => new URL(`${url as string}/repositories/manage`, sourcegraphURL).href)
+        map(({ data }) => data?.currentUser),
+        filter(isDefined),
+        map(({ settingsURL, siteAdmin }) => ({ settingsURL, siteAdmin }))
     )
 }
 
@@ -176,12 +177,10 @@ const Options: React.FunctionComponent = () => {
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
-    const manageRepositoriesURL = useObservable(
+
+    const currentUser = useObservable(
         useMemo(
-            () =>
-                currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
-                    ? fetchUserSettingsURL(sourcegraphUrl!)
-                    : of(undefined),
+            () => (currentTabStatus?.status.hasPrivateCloudError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)),
             [currentTabStatus, sourcegraphUrl]
         )
     )
@@ -261,7 +260,8 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    manageRepositoriesURL={manageRepositoriesURL}
+                    hasPrivateCloudError={currentTabStatus?.status.hasPrivateCloudError}
+                    currentUser={currentUser}
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}
