@@ -329,7 +329,7 @@ update msg model =
             else
                 let
                     alerts =
-                        if String.contains "type:commit" model.query || String.contains "type:diff" model.query && not (String.contains "count:all" model.query) then
+                        if (String.contains "type:commit" model.query || String.contains "type:diff" model.query) && not (String.contains "count:all" model.query) then
                             [ { title = "Heads up"
                               , description = "This data may be incomplete! Add `count:all` to this query? Avoid doing this all the time though... 🤣"
                               }
