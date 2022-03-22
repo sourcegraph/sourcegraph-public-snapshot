@@ -61,7 +61,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                         </>
                     )}
                     {result.type === 'repo' && (
-                        <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                        <Link data-tooltip={displayRepoName(getRepoMatchLabel(result))} to={getRepoMatchUrl(result)}>
+                            {displayRepoName(getRepoMatchLabel(result))}
+                        </Link>
                     )}
                 </span>
                 <span className={styles.spacer} />

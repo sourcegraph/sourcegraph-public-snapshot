@@ -11,7 +11,8 @@ exports[`RepoFileLink renders 1`] = `
     </a>
      › 
     <a
-      class="anchorLink"
+      class="anchorLink text-truncate"
+      data-tooltip="my/file"
       href="/file?subtree=true"
     >
       my/

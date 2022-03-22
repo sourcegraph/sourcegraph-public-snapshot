@@ -66,7 +66,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </a>
                    › 
                   <a
-                    class="anchorLink"
+                    class="anchorLink text-truncate"
+                    data-tooltip=""
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong />
@@ -288,7 +289,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </a>
                    › 
                   <a
-                    class="anchorLink"
+                    class="anchorLink text-truncate"
+                    data-tooltip="file1.txt"
                     href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                   >
                     <strong>
@@ -466,7 +468,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </a>
                    › 
                   <a
-                    class="anchorLink"
+                    class="anchorLink text-truncate"
+                    data-tooltip=""
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong />
