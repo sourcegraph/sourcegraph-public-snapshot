@@ -174,8 +174,8 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
-	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
-		return snapshotHook(ctx, db, gs, args, doSearch, monitorID)
+	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, _ commit.DoSearchFunc) error {
+		return snapshotHook(ctx, db, gs, args, monitorID)
 	}
 	planJob, err = addCodeMonitorHook(planJob, hook)
 	if err != nil {
@@ -255,7 +255,6 @@ func snapshotHook(
 	db database.DB,
 	gs commit.GitserverClient,
 	args *gitprotocol.SearchRequest,
-	doSearch commit.DoSearchFunc,
 	monitorID int64,
 ) error {
 	cm := edb.NewEnterpriseDB(db).CodeMonitors()
