@@ -36,6 +36,7 @@ export interface UserAddCodeHostsPageProps
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
+    onOrgGetStartedRefresh?: () => void
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
@@ -43,6 +44,17 @@ type Status = undefined | 'loading' | ServicesByKind | ErrorLike
 
 const isServicesByKind = (status: Status): status is ServicesByKind =>
     typeof status === 'object' && Object.keys(status).every(key => keyExistsIn(key, ExternalServiceKind))
+
+export const updateGitHubApp = (event?: { preventDefault(): void }): void => {
+    if (event) {
+        event.preventDefault()
+    }
+    window.location.assign(
+        `/.auth/github/login?pc=${encodeURIComponent(
+            `https://github.com/::${window.context.githubAppCloudClientID}`
+        )}&op=createCodeHostConnection&redirect=${window.location.href}`
+    )
+}
 
 export const ifNotNavigated = (callback: () => void, waitMS: number = 2000): void => {
     let timeoutID = 0
@@ -77,6 +89,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     context,
     onUserExternalServicesOrRepositoriesUpdate,
     telemetryService,
+    onOrgGetStartedRefresh,
 }) => {
     if (window.opener) {
         const parentWindow: ParentWindow = window.opener as ParentWindow
@@ -184,6 +197,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         fetchExternalServices().catch(error => {
             setStatusOrError(asError(error))
         })
+
+        if (onOrgGetStartedRefresh) {
+            onOrgGetStartedRefresh()
+        }
     }
 
     useEffect(() => {
@@ -329,9 +346,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         (service: ListExternalServiceFields): void => {
             if (isServicesByKind(statusOrError)) {
                 setStatusOrError({ ...statusOrError, [service.kind]: service })
+                if (onOrgGetStartedRefresh) {
+                    onOrgGetStartedRefresh()
+                }
             }
         },
-        [statusOrError]
+        [statusOrError, onOrgGetStartedRefresh]
     )
 
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
@@ -413,11 +433,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         }
                     }, 500)
                 } else {
-                    window.location.assign(
-                        `/.auth/github/login?pc=${encodeURIComponent(
-                            `https://github.com/::${window.context.githubAppCloudClientID}`
-                        )}&op=createCodeHostConnection&redirect=${window.location.href}`
-                    )
+                    updateGitHubApp()
                 }
             }
         },

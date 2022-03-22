@@ -24,7 +24,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
@@ -100,7 +100,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             type: 'button',
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
-            icon: <PlayCircleOutlineIcon className="icon-inline" />,
+            icon: <Icon as={PlayCircleOutlineIcon} />,
             onClick: onRunBlock,
             keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
         }
@@ -111,7 +111,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <OpenInNewIcon className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} />,
                 url: `/search?${buildSearchURLQuery(input, SearchPatternType.literal, false)}`,
             },
         ],

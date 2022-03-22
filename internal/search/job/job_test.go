@@ -5,6 +5,7 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -23,7 +24,7 @@ func TestToSearchInputs(t *testing.T) {
 			},
 		}
 
-		j, _ := ToSearchJob(args, q)
+		j, _ := ToSearchJob(args, q, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -34,21 +35,21 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       ZoektRepoSubset
       Searcher))
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test(`foo context:@userA`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search context", `
 (PARALLEL
   ZoektGlobalSearch
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test(`foo context:global`, search.Streaming, query.ParseLiteral))
 
 	autogold.Want("universal (AKA global) search", `
 (PARALLEL
   ZoektGlobalSearch
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test(`foo`, search.Streaming, query.ParseLiteral))
 
@@ -58,7 +59,7 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       ZoektRepoSubset
       Searcher))
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test(`foo repo:sourcegraph/sourcegraph`, search.Streaming, query.ParseLiteral))
 
@@ -68,7 +69,7 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       ZoektRepoSubset
       Searcher))
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test(`foo repo:contains(bar)`, search.Streaming, query.ParseLiteral))
 
@@ -76,14 +77,14 @@ func TestToSearchInputs(t *testing.T) {
 	autogold.Want("supported Repo job", `
 (PARALLEL
   ZoektGlobalSearch
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test("ok ok", search.Streaming, query.ParseRegexp))
 
 	autogold.Want("supportedRepo job literal", `
 (PARALLEL
   ZoektGlobalSearch
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test("ok @thing", search.Streaming, query.ParseLiteral))
 
@@ -102,7 +103,7 @@ func TestToSearchInputs(t *testing.T) {
 	// Job generation for other types of search
 	autogold.Want("symbol", `
 (PARALLEL
-  RepoUniverseSymbol
+  RepoUniverseSymbolSearch
   ComputeExcludedRepos)
 `).Equal(t, test("type:symbol test", search.Streaming, query.ParseRegexp))
 
@@ -136,7 +137,7 @@ func TestToSearchInputs(t *testing.T) {
       ZoektSymbolSearch
       SymbolSearcher))
   Commit
-  Repo
+  RepoSearch
   ComputeExcludedRepos)
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Streaming, query.ParseRegexp))
 
@@ -159,7 +160,7 @@ func TestToSearchInputs(t *testing.T) {
         (PARALLEL
           ZoektRepoSubset
           Searcher))
-      Repo
+      RepoSearch
       ComputeExcludedRepos))
   (OPTIONAL
     (PARALLEL
@@ -184,7 +185,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := ToEvaluateJob(args, b)
+		j, _ := ToEvaluateJob(args, b, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -195,7 +196,7 @@ func TestToEvaluateJob(t *testing.T) {
     500
     (PARALLEL
       ZoektGlobalSearch
-      Repo
+      RepoSearch
       ComputeExcludedRepos)))
 `).Equal(t, test("foo", search.Streaming))
 
@@ -206,7 +207,7 @@ func TestToEvaluateJob(t *testing.T) {
     30
     (PARALLEL
       ZoektGlobalSearch
-      Repo
+      RepoSearch
       ComputeExcludedRepos)))
 `).Equal(t, test("foo", search.Batch))
 }

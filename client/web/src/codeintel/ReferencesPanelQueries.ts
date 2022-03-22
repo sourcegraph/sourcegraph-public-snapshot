@@ -95,8 +95,8 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
         }
     }
 
-    ${codeIntelFragments}
     ${gitBlobLsifDataQueryFragment}
+    ${codeIntelFragments}
 `
 
 export const LOAD_ADDITIONAL_REFERENCES_QUERY = gql`

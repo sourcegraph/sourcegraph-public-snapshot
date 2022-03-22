@@ -1,11 +1,8 @@
 
 
-Code monitoring triggered a new event:
+Your Sourcegraph code monitor, My test monitor, detected 1 new result.
 
-My test monitor
-There was 1 new search result for your query
-
-View search on Sourcegraph https://sourcegraph.com/search
+View search on Sourcegraph: https://sourcegraph.com/search
 
 __
 You are receiving this notification because you are a recipient on a code monitor.

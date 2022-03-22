@@ -46,7 +46,7 @@ func InitBackgroundJobs(
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, bstore, cf, observationContext)
 
-	routines := background.Routines(ctx, bstore, cf, observationContext)
+	routines := background.Routines(ctx, bstore, cf, observationContext, db)
 
 	routines = append(routines, syncRegistry)
 
