@@ -25,6 +25,7 @@ describe('Organizations', () => {
         viewerCanAdminister: true,
         viewerIsMember: false,
         viewerPendingInvitation: null,
+        viewerNeedsCodeHostUpdate: false,
     })
 
     let driver: Driver

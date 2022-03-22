@@ -57,6 +57,7 @@ export const org: IOrg = {
     viewerPendingInvitation: null,
     viewerCanAdminister: true,
     viewerIsMember: true,
+    viewerNeedsCodeHostUpdate: false,
     url: '/organizations/test-org',
     settingsURL: '/organizations/test-org/settings',
     namespaceName: 'test-org',
