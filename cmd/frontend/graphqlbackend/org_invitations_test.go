@@ -659,7 +659,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		invitationID := int64(3)
 		orgID := int32(3)
 		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: strings.ToUpper(email)}, nil)
 
 		userEmails := database.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
