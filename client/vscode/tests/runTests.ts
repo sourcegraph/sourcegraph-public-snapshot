@@ -38,7 +38,6 @@ async function run(): Promise<void> {
         vscodeProccess = launchVSC(vscodeExecutablePath, userDataDirectory, extensionsDirectory, PORT)
 
         const browserURL = `http://127.0.0.1:${PORT}`
-        await delay(2000)
         console.log(`VSCode started in debug mode on ${browserURL}`)
 
         const browser = await puppeteer.connect({
