@@ -28,7 +28,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-rendezvous"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -110,7 +109,7 @@ type ClientImplementor struct {
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(api.RepoName) string
+	AddrForRepo(context.Context, api.RepoName) string
 
 	Addrs() []string
 
@@ -119,7 +118,7 @@ type Client interface {
 
 	// ArchiveURL returns a URL from which an archive of the given Git repository can
 	// be downloaded from.
-	ArchiveURL(api.RepoName, ArchiveOptions) *url.URL
+	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) *url.URL
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
@@ -198,7 +197,7 @@ func (c *ClientImplementor) Addrs() []string {
 	return c.addrs()
 }
 
-func (c *ClientImplementor) AddrForRepo(repo api.RepoName) string {
+func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
@@ -290,7 +289,7 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -303,7 +302,7 @@ func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *u
 
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.AddrForRepo(repo),
+		Host:     c.AddrForRepo(ctx, repo),
 		Path:     "/archive",
 		RawQuery: q.Encode(),
 	}
@@ -327,7 +326,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u := c.ArchiveURL(repo, opt)
+	u := c.ArchiveURL(ctx, repo, opt)
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -441,7 +440,7 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		return false, err
 	}
 
-	uri := "http://" + c.AddrForRepo(repoName) + "/search"
+	uri := "http://" + c.AddrForRepo(ctx, repoName) + "/search"
 	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
 	if err != nil {
 		return false, err
@@ -732,7 +731,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: c.AddrForRepo(repo),
+		CloneFromShard: c.AddrForRepo(ctx, repo),
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -842,7 +841,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(r)
+		addr := c.AddrForRepo(ctx, r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -912,7 +911,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(r)
+		addr := c.AddrForRepo(ctx, r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -1038,7 +1037,7 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 
-	uri := "http://" + c.AddrForRepo(repo) + "/" + op
+	uri := "http://" + c.AddrForRepo(ctx, repo) + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
