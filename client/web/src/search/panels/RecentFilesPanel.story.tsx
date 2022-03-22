@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -31,7 +32,8 @@ const emptyRecentFiles = {
 const props = {
     authenticatedUser: null,
     recentFilesFragment: { recentFilesLogs: recentFilesPayload() },
-    loadMore: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+    fetchMore: noop as any,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
@@ -46,16 +48,7 @@ add('RecentFilesPanel', () => (
                 <RecentFilesPanel {...props} recentFilesFragment={null} />
 
                 <h2>Empty</h2>
-                <RecentFilesPanel
-                    {...props}
-                    recentFilesFragment={{
-                        recentFilesLogs: {
-                            nodes: [],
-                            totalCount: 0,
-                            pageInfo: { hasNextPage: false },
-                        },
-                    }}
-                />
+                <RecentFilesPanel {...props} recentFilesFragment={{ recentFilesLogs: emptyRecentFiles }} />
             </div>
         )}
     </WebStory>
