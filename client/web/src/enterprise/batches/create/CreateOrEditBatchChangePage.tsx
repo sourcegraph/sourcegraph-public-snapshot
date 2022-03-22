@@ -45,6 +45,7 @@ import {
 } from '../../../graphql-operations'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
+import { DownloadSpecModal } from './DownloadSpecModal'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { ExecutionOptions, ExecutionOptionsDropdown } from './ExecutionOptions'
@@ -270,9 +271,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     )
 
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
+    const [modal, setModal] = useState(false)
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
     const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
-    // const [modal, setModal] = useState(false)
 
     // When we successfully submit the latest batch spec code to the backend for a new
     // workspaces preview, we follow up by refetching the batch change to get the latest
@@ -371,9 +372,11 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         resolutionState,
     ])
 
-    // const openDownloadModal() {
-    //     setModal(true)
-    // }
+    const openDownloadModal = () => {
+        setModal(true)
+    }
+
+    modal && <DownloadSpecModal name={batchChange.name} />
 
     const actionButtons = (
         <>
@@ -387,14 +390,9 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
             {/* <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                 or download for src-cli
             </BatchSpecDownloadLink> */}
-
-            {/* <Button onClick={openDownloadModal}>Download for src-cli</Button> */}
+            <Button onClick={openDownloadModal}> or download for src-cli</Button>
         </>
     )
-
-    // if (modal) {
-    //     return ( <DownloadSpecModal />)
-    // }
 
     return (
         <BatchChangePage

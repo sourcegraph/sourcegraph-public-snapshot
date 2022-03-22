@@ -1,3 +1,19 @@
+.modal {
+    width: 60%;
+    font-size: smaller;
+}
+
+.left {
+    width: 70%;
+    padding-top: 10px;
+    padding-right: 10px;
+}
+
+.right {
+    width: 30%;
+    padding-left: 10px;
+}
+
 .close {
     display: flex;
     position: absolute;
@@ -17,13 +33,22 @@
 .container {
     display: flex;
     justify-content: space-around;
+    padding-bottom: 25px;
 }
 
-.test {
+.rightContent {
     background-color: var(--body-bg);
     border: 1px solid var(--border-color);
+    padding: 8px;
 }
 
-.test2 {
+.codeSnippet {
     background-color: var(--color-bg-2);
+}
+
+.button {
+    border: none;
+    padding: 0;
+    color: var(--blue);
+    font-weight: normal;
 }

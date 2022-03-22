@@ -2,9 +2,10 @@ import React from 'react'
 
 import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Modal } from '@sourcegraph/wildcard'
+import { Button, Link, Modal } from '@sourcegraph/wildcard'
 
 import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
+import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'
 
@@ -14,11 +15,11 @@ export interface DownloadSpecModalProps {
 }
 
 export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> = ({ onCancel, onConfirm }) => (
-    <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID}>
+    <Modal onDismiss={onCancel} aria-labelledby={MODAL_LABEL_ID} className={styles.modal}>
         <>
             <div>
                 <div>
-                    <h3 id={MODAL_LABEL_ID}>Download specification for src-cli</h3>
+                    <h4 id={MODAL_LABEL_ID}>Download specification for src-cli</h4>
                     <Button className={styles.close} onClick={onCancel}>
                         <CloseIcon className={styles.icon} />
                     </Button>
@@ -26,32 +27,43 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
 
                 <div className={styles.container}>
                     <div className={styles.left}>
-                        <p className="mb-4">
-                            Use the Sourcegraph CLI (src) to preview the commits and changesets that your batch change
-                            will make:
+                        <p>
+                            Use the{' '}
+                            <Link
+                                to="https://docs.sourcegraph.com/cli
+"
+                            >
+                                Sourcegraph CLI (src){' '}
+                            </Link>
+                            to run this batch change locally.
                         </p>
 
-                        <CodeSnippet code="src batch preview -f Hello world" language="bash" className={styles.test2} />
+                        <CodeSnippet
+                            code="src batch preview -f Hello world"
+                            language="bash"
+                            className={styles.codeSnippet}
+                        />
 
-                        <p className="mb-4">
+                        <span>
                             Follow the URL printed in your terminal to see the preview and (when you're ready) create
                             the batch change.
-                        </p>
+                        </span>
                     </div>
                     <div className={styles.right}>
-                        <p className="mb-4">About src-cli </p>
-                        <p className={styles.test}>
-                            src cli is a command line interface to Sourcegraph. Its batch command allows to run batch
-                            specification files locally.
-                        </p>
-                        <p className="mb-4">Download src-cli</p>
+                        <div className={styles.rightContent}>
+                            <p>About src-cli </p>
+                            <p>
+                                src cli is a command line interface to Sourcegraph. Its batch command allows to run
+                                batch specification files using Docker.
+                            </p>
+                            <Link to="/">Download src-cli</Link>
+                        </div>
                     </div>
                 </div>
                 <div className="d-flex justify-content-between">
                     <div>
-                        {/* <div className="d-flex justify-content-start"> */}
                         <Button
-                            className="border-0 ml-2"
+                            className={styles.button}
                             // onClick={onDismissClick}
                             outline={true}
                             variant="secondary"
@@ -60,17 +72,15 @@ export const DownloadSpecModal: React.FunctionComponent<DownloadSpecModalProps> 
                             Don't show this again
                         </Button>
                     </div>
-                    {/* <div> */}
                     <div>
-                        {/* <div className="d-flex justify-content-end"> */}
-                        <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">
+                        <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary" size="sm">
                             Cancel
                         </Button>
-                        {/* <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}> */}
-                        <Button onClick={onConfirm} variant="primary">
-                            Download Spec
-                        </Button>
-                        {/* </BatchSpecDownloadLink> */}
+                        <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+                            <Button onClick={onConfirm} variant="primary" size="sm">
+                                Download Spec
+                            </Button>
+                        </BatchSpecDownloadLink>
                     </div>
                 </div>
             </div>
