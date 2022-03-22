@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -91,9 +92,6 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 		return errors.Wrapf(err, "converting external ID %q", cs.ExternalID)
 	}
 
-	// We need to get both the pull request proper, plus the pull request commit
-	// statuses so we can use that to calculate check states.
-
 	pr, err := s.client.GetPullRequest(ctx, repo, int64(number))
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -102,36 +100,55 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 		return errors.Wrap(err, "getting pull request")
 	}
 
-	srs, err := s.client.GetPullRequestStatuses(repo, int64(number))
-	if err != nil {
-		return errors.Wrap(err, "getting pull request statuses")
-	}
-	statuses, err := srs.All(ctx)
-	if err != nil {
-		return errors.Wrap(err, "getting pull request statuses as slice")
-	}
-
-	if err := cs.SetMetadata(&bbcs.AnnotatedPullRequest{
-		PullRequest: pr,
-		Statuses:    statuses,
-	}); err != nil {
-		return errors.Wrap(err, "setting metadata")
-	}
-
-	return nil
+	return s.setChangesetMetadata(ctx, repo, pr, cs)
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
-func (s BitbucketCloudSource) CreateChangeset(context.Context, *Changeset) (bool, error) {
-	panic("not implemented") // TODO: Implement
+func (s BitbucketCloudSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	destBranch := git.AbbreviateRef(cs.BaseRef)
+	opts := bitbucketcloud.CreatePullRequestOpts{
+		Title:             cs.Title,
+		Description:       cs.Body,
+		SourceBranch:      git.AbbreviateRef(cs.HeadRef),
+		DestinationBranch: &destBranch,
+	}
+
+	// If we're forking, then we need to set the source repository as well.
+	if cs.RemoteRepo != cs.TargetRepo {
+		opts.SourceRepo = cs.RemoteRepo.Metadata.(*bitbucketcloud.Repo)
+	}
+
+	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	pr, err := s.client.CreatePullRequest(ctx, targetRepo, opts)
+	if err != nil {
+		return false, errors.Wrap(err, "creating pull request")
+	}
+
+	if err := s.setChangesetMetadata(ctx, targetRepo, pr, cs); err != nil {
+		return false, err
+	}
+
+	// Fun fact: Bitbucket Cloud will silently update an existing pull request
+	// if one already exists, rather than returning some sort of error. We don't
+	// really have a way to tell if the PR existed or not, so we'll simply say
+	// it did, and we can go through the IsOutdated check after regardless.
+	return true, nil
 }
 
 // CloseChangeset will close the Changeset on the source, where "close"
 // means the appropriate final state on the codehost (e.g. "declined" on
 // Bitbucket Server).
-func (s BitbucketCloudSource) CloseChangeset(_ context.Context, _ *Changeset) error {
-	panic("not implemented") // TODO: Implement
+func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
+	repo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
+	pr := cs.Metadata.(*bitbucketcloud.PullRequest)
+	pr, err := s.client.DeclinePullRequest(ctx, repo, pr.ID)
+	if err != nil {
+		return errors.Wrap(err, "declining pull request")
+	}
+
+	return s.setChangesetMetadata(ctx, repo, pr, cs)
 }
 
 // UpdateChangeset can update Changesets.
@@ -170,4 +187,33 @@ func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *
 // currently authenticated user's namespace.
 func (s BitbucketCloudSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	panic("not implemented") // TODO: Implement
+}
+
+func (s BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest) (*bbcs.AnnotatedPullRequest, error) {
+	srs, err := s.client.GetPullRequestStatuses(repo, pr.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting pull request statuses")
+	}
+	statuses, err := srs.All(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting pull request statuses as slice")
+	}
+
+	return &bbcs.AnnotatedPullRequest{
+		PullRequest: pr,
+		Statuses:    statuses,
+	}, nil
+}
+
+func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest, cs *Changeset) error {
+	apr, err := s.annotatePullRequest(ctx, repo, pr)
+	if err != nil {
+		return errors.Wrap(err, "annotating pull request")
+	}
+
+	if err := cs.SetMetadata(apr); err != nil {
+		return errors.Wrap(err, "setting changeset metadata")
+	}
+
+	return nil
 }
