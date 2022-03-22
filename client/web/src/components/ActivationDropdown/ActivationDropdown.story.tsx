@@ -66,12 +66,6 @@ export default config
 
 export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
 
-Loading.parameters = {
-    chromatic: {
-        disableSnapshot: true,
-    },
-}
-
 export const _04Completed: Story = () => (
     <ActivationDropdown
         {...commonProps}
