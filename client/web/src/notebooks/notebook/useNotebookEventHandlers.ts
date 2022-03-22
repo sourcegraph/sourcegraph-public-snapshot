@@ -38,6 +38,8 @@ export function useNotebookEventHandlers({
             if (blockId) {
                 setSelectedBlockId(blockId)
                 focusBlock(blockId)
+            } else if (!blockId && direction === 'down') {
+                document.querySelector<HTMLInputElement>('[data-command-palette-input]')?.focus()
             }
         },
         [notebook, setSelectedBlockId]
