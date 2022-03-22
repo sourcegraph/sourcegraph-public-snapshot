@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -90,6 +91,9 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 		return errors.Wrapf(err, "converting external ID %q", cs.ExternalID)
 	}
 
+	// We need to get both the pull request proper, plus the pull request commit
+	// statuses so we can use that to calculate check states.
+
 	pr, err := s.client.GetPullRequest(ctx, repo, int64(number))
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -98,10 +102,19 @@ func (s BitbucketCloudSource) LoadChangeset(ctx context.Context, cs *Changeset) 
 		return errors.Wrap(err, "getting pull request")
 	}
 
-	// TODO: an equivalent of the loadPullRequestData call to get comments,
-	// build statuses, and approvals.
+	srs, err := s.client.GetPullRequestStatuses(repo, int64(number))
+	if err != nil {
+		return errors.Wrap(err, "getting pull request statuses")
+	}
+	statuses, err := srs.All(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting pull request statuses as slice")
+	}
 
-	if err := cs.SetMetadata(pr); err != nil {
+	if err := cs.SetMetadata(&bbcs.AnnotatedPullRequest{
+		PullRequest: pr,
+		Statuses:    statuses,
+	}); err != nil {
 		return errors.Wrap(err, "setting metadata")
 	}
 
