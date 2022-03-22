@@ -41,7 +41,8 @@ import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
-import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
+import { NotebookBlockSeparator } from './NotebookBlockSeparator'
+import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
@@ -214,7 +215,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 return
             }
             const addedBlock = notebook.insertBlockAtIndex(index, blockInput)
-            if (addedBlock.type === 'md') {
+            if (
+                addedBlock.type === 'md' ||
+                (addedBlock.type === 'file' && addedBlock.input.repositoryName && addedBlock.input.filePath)
+            ) {
                 notebook.runBlockById(addedBlock.id)
             }
             setSelectedBlockId(addedBlock.id)
@@ -289,6 +293,14 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
+    const onFocusLastBlock = useCallback(() => {
+        const lastBlockId = notebook.getLastBlockId()
+        if (lastBlockId) {
+            setSelectedBlockId(lastBlockId)
+            focusBlock(lastBlockId)
+        }
+    }, [notebook, setSelectedBlockId])
+
     const notebookEventHandlersProps = useMemo(
         () => ({
             notebook,
@@ -337,9 +349,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
     // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
     // reposition hover overlay if needed when `SearchNotebook` rerenders
     const rerenders = useMemo(() => new ReplaySubject(1), [])
-    useEffect(() => {
-        rerenders.next()
-    })
+    useEffect(() => rerenders.next())
 
     // Create hoverifier.
     const hoverifier = useMemo(
@@ -501,20 +511,15 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
-                    {!isReadOnly ? (
-                        <NotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
-                    ) : (
-                        <div className="mb-2" />
-                    )}
+                    <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
                     {renderBlock(block)}
                 </div>
             ))}
             {!isReadOnly && (
-                <NotebookAddBlockButtons
-                    onAddBlock={onAddBlock}
+                <NotebookCommandPaletteInput
                     index={blocks.length}
-                    className="mt-2"
-                    alwaysVisible={true}
+                    onAddBlock={onAddBlock}
+                    onFocusPreviousBlock={onFocusLastBlock}
                 />
             )}
             {hoverState.hoverOverlayProps && (
