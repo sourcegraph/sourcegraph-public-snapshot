@@ -1,6 +1,7 @@
 package inference
 
 import (
+	"path/filepath"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -20,15 +21,31 @@ func InferJavaIndexJobs(gitserver GitClient, paths []string) (indexes []config.I
 			Steps:   []config.DockerStep{},
 		})
 	}
-	return indexes
+	return
+}
+
+func InferJavaIndexJobHints(gitserver GitClient, paths []string) (hints []config.IndexJobHint) {
+	for _, path := range paths {
+		if filepath.Base(path) == "pom.xml" || filepath.Base(path) == "build.gradle" || filepath.Base(path) == "build.gradle.kts" {
+			hints = append(hints, config.IndexJobHint{
+				Root:           filepath.Dir(path),
+				Indexer:        "sourcegraph/lsif-java",
+				HintConfidence: config.ProjectStructureSupported,
+			})
+		}
+	}
+
+	return
 }
 
 func JavaPatterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
-		suffixPattern(rawPattern("lsif-java.json")),
+		suffixPattern(pathPattern(rawPattern("lsif-java.json"))),
 		suffixPattern(rawPattern(".java")),
 		suffixPattern(rawPattern(".scala")),
 		suffixPattern(rawPattern(".kt")),
+		suffixPattern(pathPattern(rawPattern("pom.xml"))),
+		suffixPattern(pathPattern(rawPattern("build.gradle(.kts)?"))),
 	}
 }
 

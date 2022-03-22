@@ -19,3 +19,16 @@ type DockerStep struct {
 	Image    string   `json:"image" yaml:"image"`
 	Commands []string `json:"commands" yaml:"commands"`
 }
+
+type HintConfidence int
+
+const (
+	LanguageSupport HintConfidence = iota
+	ProjectStructureSupported
+)
+
+type IndexJobHint struct {
+	Root           string
+	Indexer        string
+	HintConfidence HintConfidence
+}
