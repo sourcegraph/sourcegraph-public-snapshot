@@ -77,7 +77,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 		for _, j := range erroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(j, 0)
+				_, err := addCodeMonitorHook(j, nil)
 				require.Error(t, err)
 			})
 		}
@@ -93,7 +93,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 		for _, j := range nonErroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(j, 0)
+				_, err := addCodeMonitorHook(j, nil)
 				require.NoError(t, err)
 			})
 		}
