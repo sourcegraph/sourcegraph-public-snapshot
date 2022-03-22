@@ -1,25 +1,55 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, HTMLAttributes } from 'react'
 
+import classNames from 'classnames'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { Button } from 'reactstrap'
 
-import { Card, CardBody, PageHeader } from '@sourcegraph/wildcard'
+import { Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 
+import styles from './GHOrgListItem.module.scss'
+
 const connectOrg = (installation_id: string) => () => {
     const queryString = window.location.search
     const urlParameters = new URLSearchParams(queryString)
     const state = urlParameters.get('state')
-    window.location.assign(
-        '/setup/github/app/cloud?setup_action=install&installation_id=' + installation_id + '&state=' + state
-    )
+    if (state !== null) {
+        window.location.assign(
+            `/setup/github/app/cloud?setup_action=install&installation_id=${installation_id}&state=${state}`
+        )
+    } else {
+        window.location.assign('/install-github-app-success')
+    }
 }
 
+interface GitHubAppInstallation {
+    id: number
+    account: {
+        login: string
+        avatar_url: string
+    }
+}
+
+type GHOrgListItemProps = HTMLAttributes<HTMLLIElement>
+
+export const GHOrgListItem: React.FunctionComponent<GHOrgListItemProps> = ({ children, ...rest }) => (
+    <li className={classNames('list-group-item', styles.ghOrgItem)} {...rest}>
+        {children}
+    </li>
+)
+
 export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
-    const [data, setData] = useState([])
+    const [data, setData] = useState<GitHubAppInstallation[]>([])
+
+    const queryString = window.location.search
+    const urlParameters = new URLSearchParams(queryString)
+    let state = urlParameters.get('state')
+    if (state === null) {
+        state = ''
+    }
 
     useEffect(() => {
         fetch('/.auth/github/get-user-orgs', {
@@ -27,10 +57,11 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
         })
             .then(response => response.json())
             .then(response => {
-                if (response.length === 0) {
+                const githubAppInstallations = response as GitHubAppInstallation[]
+                if (githubAppInstallations.length === 0) {
                     console.log('redirect')
                 } else {
-                    setData(response)
+                    setData(githubAppInstallations)
                 }
             })
             .catch(console.log)
@@ -50,23 +81,39 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
             />
             <Card>
                 <CardBody>
-                    {data.map(install => (
-                        <>
-                            <Button onClick={connectOrg(install.id)}>
+                    <ul className="list-group">
+                        {data.map(install => (
+                            <GHOrgListItem onClick={connectOrg(install.id.toString())} key={install.id}>
                                 <div className="d-flex align-items-start">
                                     <div className="align-self-center">
                                         <UserAvatar
                                             className="icon-inline mb-0 mr-1"
-                                            user={{ avatarURL: install.account.avatar_url }}
+                                            user={{ avatarURL: install.account.avatar_url, displayName: '' }}
                                         />
                                     </div>
                                     <div className="flex-1 align-self-center">
                                         <h3 className="m-0">{install.account.login}</h3>
                                     </div>
+                                    <div className="align-self-center ml-3">
+                                        <ChevronRightIcon />
+                                    </div>
                                 </div>
-                            </Button>
-                        </>
-                    ))}
+                            </GHOrgListItem>
+                        ))}
+                        <GHOrgListItem key={-1}>
+                            <div className="d-flex align-items-start">
+                                <Link
+                                    className="flex-1 align-self-center"
+                                    to={`https://github.com/apps/sourcegraph-cloud-petri-local/installations/new?state=${state}`}
+                                >
+                                    Connect with a different organization
+                                </Link>
+                                <div className="align-self-center ml-3">
+                                    <ChevronRightIcon />
+                                </div>
+                            </div>
+                        </GHOrgListItem>
+                    </ul>
                 </CardBody>
             </Card>
         </Page>
