@@ -48,12 +48,20 @@ type DashboardQueryArgs struct {
 	Deleted bool
 	Limit   int
 	After   int
+
+	// This field will disable user level authorization checks on the insight views. This should only be used
+	// when fetching insights from a container that also has authorization checks, such as a dashboard.
+	WithoutAuthorization bool
 }
 
 func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error) {
 	preds := make([]*sqlf.Query, 0, 1)
 	if len(args.ID) > 0 {
-		preds = append(preds, sqlf.Sprintf("db.id in (%s)", args.ID))
+		elems := make([]*sqlf.Query, 0, len(args.ID))
+		for _, id := range args.ID {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("db.id in (%s)", sqlf.Join(elems, ",")))
 	}
 	if args.Deleted {
 		preds = append(preds, sqlf.Sprintf("db.deleted_at is not null"))
@@ -64,7 +72,9 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
 	}
 
-	preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
+	if !args.WithoutAuthorization {
+		preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
+	}
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}

@@ -425,7 +425,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			return nil, errors.New("Cannot create more than 2 global insights in Limited Access Mode.")
 		}
 		if len(dashboardIds) > 0 {
-			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{ID: dashboardIds})
+			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{ID: dashboardIds, WithoutAuthorization: true})
 			if err != nil {
 				return nil, errors.Wrap(err, "GetDashboards")
 			}
