@@ -11,9 +11,6 @@ type ServiceConnections struct {
 	// talked to.
 	GitServers []string `json:"gitServers"`
 
-	// PinnedServers  holds a map of repositories pinned to a particular gitserver instance.
-	PinnedServers map[string]string `json:"pinnedServers"`
-
 	// PostgresDSN is the PostgreSQL DB data source name.
 	// eg: "postgres://sg@pgsql/sourcegraph?sslmode=false"
 	PostgresDSN string `json:"postgresDSN"`

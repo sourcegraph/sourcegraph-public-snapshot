@@ -398,8 +398,8 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	for {
-		serviceConn := conf.Get().ServiceConnections()
-		addrs := serviceConn.GitServers
+		cfg := conf.Get()
+		addrs := cfg.ServiceConnectionConfig.GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
@@ -408,7 +408,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 
 		gitServerAddrs := &gitserver.GitServerAddresses{
 			Addresses:     addrs,
-			PinnedServers: serviceConn.PinnedServers,
+			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
 		}
 		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)

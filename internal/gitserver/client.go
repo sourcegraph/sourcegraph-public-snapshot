@@ -68,7 +68,7 @@ func NewClient(cli httpcli.Doer) *ClientImplementor {
 		},
 		pinned: func() map[string]string {
 			//TODO how do I test this?
-			return conf.Get().ServiceConnections().PinnedServers
+			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: defaultLimiter,
@@ -86,7 +86,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
 		},
 		pinned: func() map[string]string {
 			// nothing needs to be pinned for the tests
-			return map[string]string{}
+			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
@@ -110,7 +110,9 @@ type ClientImplementor struct {
 	// concurrent use. It may return different results at different times.
 	addrs func() []string
 
-	// pinned holds a map of repositories(key) pinned to a particular gitserver instance(value).
+	// pinned holds a map of repositories(key) pinned to a particular gitserver instance(value). This function
+	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
+	// and sync the pinned map.
 	pinned func() map[string]string
 
 	// UserAgent is a string identifying who the client is. It will be logged in
@@ -221,7 +223,6 @@ func (c *ClientImplementor) AddrForRepo(repo api.RepoName) string {
 }
 
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	//TODO support pinning?
 	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")

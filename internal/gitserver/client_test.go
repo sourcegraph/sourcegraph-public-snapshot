@@ -6,6 +6,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -519,4 +521,30 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
+}
+
+func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
+	client := gitserver.NewTestClient(&http.Client{}, []string{"gitserver1", "gitserver2"})
+	setPinnedRepos(map[string]string{
+		"repo1": "gitserver2",
+	})
+
+	addr := client.AddrForRepo("repo1")
+	require.Equal(t, "gitserver2", addr)
+
+	// simulate config change - site admin manually changes the pinned repo config
+	setPinnedRepos(map[string]string{
+		"repo1": "gitserver1",
+	})
+
+	addr = client.AddrForRepo("repo1")
+	require.Equal(t, "gitserver1", addr)
+}
+
+func setPinnedRepos(pinned map[string]string) {
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			GitServerPinnedRepos: pinned,
+		},
+	}})
 }

@@ -581,6 +581,8 @@ type ExperimentalFeatures struct {
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories don't get re-cloned elsewhere on scaling the gitserver cluster.
+	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm packages code host connections

@@ -175,6 +175,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go syncScheduler(ctx, updateScheduler, store)
 
+	go watchForPinned()
+
 	if envvar.SourcegraphDotComMode() {
 		rateLimiter := rate.NewLimiter(.05, 1)
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
@@ -271,6 +273,15 @@ func createDebugServerRoutine(ready chan struct{}, debugserverEndpoints *LazyDeb
 			}),
 		},
 	)
+}
+
+func watchForPinned() {
+	conf.Watch(func() {
+		pinned := conf.Get().ExperimentalFeatures.GitServerPinnedRepos
+		//TODO diff pinned with gitserver_repos table
+		//TODO schedule RequestRepoMigrate if needed
+		log15.Debug("pinned repos changed", pinned)
+	})
 }
 
 func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
