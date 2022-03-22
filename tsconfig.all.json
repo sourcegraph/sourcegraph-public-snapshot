@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false
+  },
   "references": [
     { "path": "client/template-parser" },
     { "path": "client/build-config" },
