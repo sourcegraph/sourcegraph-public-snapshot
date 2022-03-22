@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/go-rendezvous"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -45,7 +46,10 @@ var (
 	defaultLimiter = parallel.NewRun(500)
 
 	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-	DefaultClient Client = NewClient(defaultDoer)
+	// For now this DefaultClient has a nil DB connection because it is not used.
+	// In a following commit DefaultClient will be removed and there will be no such absurd thing as NewClient(nil)
+	// Contact sashaostrikov for questions and clarifications if you see this, and it irritates you
+	DefaultClient Client = NewClient(nil)
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -60,12 +64,13 @@ func ResetClientMocks() {
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
-func NewClient(cli httpcli.Doer) *ClientImplementor {
+func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		HTTPClient:  cli,
+		db:          db,
+		HTTPClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -74,7 +79,7 @@ func NewClient(cli httpcli.Doer) *ClientImplementor {
 	}
 }
 
-func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
+func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return addrs
@@ -85,6 +90,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
 		UserAgent: filepath.Base(os.Args[0]),
+		db:        db,
 	}
 }
 
@@ -104,6 +110,9 @@ type ClientImplementor struct {
 	// UserAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
 	UserAgent string
+
+	// db is a connection to the database
+	db database.DB
 }
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go

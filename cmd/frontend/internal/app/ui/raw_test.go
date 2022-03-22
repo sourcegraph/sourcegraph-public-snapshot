@@ -53,6 +53,7 @@ func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
 
 	gitserver.DefaultClient = gitserver.NewTestClient(
 		httpcli.InternalDoer,
+		database.NewMockDB(),
 		[]string{strings.TrimPrefix(s.URL, "http://")},
 	)
 }
