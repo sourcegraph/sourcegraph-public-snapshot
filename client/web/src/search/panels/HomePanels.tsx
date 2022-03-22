@@ -70,12 +70,12 @@ const CollaboratorsTabPanel: React.FunctionComponent<Props> = (props: Props) => 
 
     return (
         <div className={classNames('col-lg-5', styles.panel)}>
-            <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex} className={styles.tabPanel}>
+            <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex} className={styles.tabs}>
                 <TabList>
                     <Tab>{props.isSourcegraphDotCom ? 'Community search contexts' : 'Saved searches'}</Tab>
                     <Tab>Invite colleagues</Tab>
                 </TabList>
-                <TabPanels className="h-100">
+                <TabPanels className={classNames('h-100', styles.tabPanels)}>
                     <TabPanel className="h-100">
                         {props.isSourcegraphDotCom ? (
                             <CommunitySearchContextsPanel {...props} insideTabPanel={true} />
