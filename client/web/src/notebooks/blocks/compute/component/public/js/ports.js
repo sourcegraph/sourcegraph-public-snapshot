@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 function initElmPorts(app) {
   // Compute streaming
   var sources = {}
