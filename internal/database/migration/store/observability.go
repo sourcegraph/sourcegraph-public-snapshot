@@ -8,6 +8,7 @@ import (
 )
 
 type Operations struct {
+	describe          *observation.Operation
 	down              *observation.Operation
 	ensureSchemaTable *observation.Operation
 	indexStatus       *observation.Operation
@@ -34,6 +35,7 @@ func NewOperations(observationContext *observation.Context) *Operations {
 	}
 
 	return &Operations{
+		describe:          op("Describe"),
 		down:              op("Down"),
 		ensureSchemaTable: op("EnsureSchemaTable"),
 		indexStatus:       op("IndexStatus"),
