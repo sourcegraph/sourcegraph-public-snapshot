@@ -512,7 +512,7 @@ func newStore(files map[string]struct {
 		return nil, nil, err
 	}
 	return &store.Store{
-		FetchTar: func(ctx context.Context, _ database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,
