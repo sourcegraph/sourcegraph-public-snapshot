@@ -1,7 +1,9 @@
 package bitbucketcloud
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,6 +11,53 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type CreatePullRequestOpts struct {
+	Title        string
+	Description  string
+	SourceBranch string
+
+	// The following fields are optional.
+	//
+	// If SourceRepo is provided, only FullName is actually used.
+	SourceRepo        *Repo
+	DestinationBranch *string
+}
+
+// CreatePullRequest opens a new pull request.
+func (c *Client) CreatePullRequest(ctx context.Context, repo *Repo, opts CreatePullRequestOpts) (*PullRequest, error) {
+	data, err := json.Marshal(opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling request")
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests", repo.FullName), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request")
+	}
+
+	var pr PullRequest
+	if err := c.do(ctx, req, &pr); err != nil {
+		return nil, errors.Wrap(err, "sending request")
+	}
+
+	return &pr, nil
+}
+
+// DeclinePullRequest declines (closes without merging) a pull request.
+func (c *Client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/decline", repo.FullName, id), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request")
+	}
+
+	var pr PullRequest
+	if err := c.do(ctx, req, &pr); err != nil {
+		return nil, errors.Wrap(err, "sending request")
+	}
+
+	return &pr, nil
+}
 
 // GetPullRequest retrieves a single pull request.
 func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
@@ -118,3 +167,45 @@ const (
 	PullRequestStatusStateInProgress PullRequestStatusState = "INPROGRESS"
 	PullRequestStatusStateStopped    PullRequestStatusState = "STOPPED"
 )
+
+func (opts *CreatePullRequestOpts) MarshalJSON() ([]byte, error) {
+	type branch struct {
+		Name string `json:"name"`
+	}
+
+	type repository struct {
+		FullName string `json:"full_name"`
+	}
+
+	type source struct {
+		Branch     branch      `json:"branch"`
+		Repository *repository `json:"repository"`
+	}
+
+	type request struct {
+		Title       string  `json:"title"`
+		Description string  `json:"description,omitempty"`
+		Source      source  `json:"source"`
+		Destination *source `json:"destination,omitempty"`
+	}
+
+	req := request{
+		Title:       opts.Title,
+		Description: opts.Description,
+		Source: source{
+			Branch: branch{Name: opts.SourceBranch},
+		},
+	}
+	if opts.SourceRepo != nil {
+		req.Source.Repository = &repository{
+			FullName: opts.SourceRepo.FullName,
+		}
+	}
+	if opts.DestinationBranch != nil {
+		req.Destination = &source{
+			Branch: branch{Name: *opts.DestinationBranch},
+		}
+	}
+
+	return json.Marshal(req)
+}
