@@ -67,7 +67,11 @@ func NewClient(cli httpcli.Doer) *ClientImplementor {
 			return conf.Get().ServiceConnections().GitServers
 		},
 		pinned: func() map[string]string {
-			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
+			cfg := conf.Get()
+			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+				return cfg.ExperimentalFeatures.GitServerPinnedRepos
+			}
+			return map[string]string{}
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: defaultLimiter,
@@ -246,7 +250,7 @@ var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-// It should never be called with an empty slice.
+// It should never be called with a nil addresses pointer.
 func AddrForRepo(repo api.RepoName, addresses *GitServerAddresses) string {
 	addForRepoInvoked.Inc()
 
