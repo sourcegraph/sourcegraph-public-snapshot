@@ -394,6 +394,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         </>
     )
 
+    //import the temp setting here, if the temp setting is false when download button is clicked, modal pop up .. if the temp setting is true.. DOWNLOAD
+
     return (
         <BatchChangePage
             namespace={batchChange.namespace}
