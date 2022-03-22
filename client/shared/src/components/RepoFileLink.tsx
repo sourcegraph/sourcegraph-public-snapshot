@@ -47,7 +47,11 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     return (
         <div className={className}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
-            <Link to={appendSubtreeQueryParameter(fileURL)}>
+            <Link
+                className="text-truncate"
+                data-tooltip={fileBase ? `${fileBase}/${fileName}` : fileName}
+                to={appendSubtreeQueryParameter(fileURL)}
+            >
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
             </Link>

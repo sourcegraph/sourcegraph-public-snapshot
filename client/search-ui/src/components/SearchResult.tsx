@@ -55,7 +55,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                             {' › '}
                             <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                             {': '}
-                            <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
+                            <Link to={getCommitMatchUrl(result)} data-tooltip={result.message.split('\n', 1)[0]}>
+                                {result.message.split('\n', 1)[0]}
+                            </Link>
                         </>
                     )}
                     {result.type === 'repo' && (
