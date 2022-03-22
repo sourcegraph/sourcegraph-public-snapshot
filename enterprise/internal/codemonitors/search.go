@@ -1,4 +1,4 @@
-package background
+package codemonitors
 
 import (
 	"bytes"
@@ -47,8 +47,8 @@ type gqlSettingsResponse struct {
 	Errors []gqlerrors.FormattedError
 }
 
-// settings queries for the computed settings for the current actor
-func settings(ctx context.Context) (_ *schema.Settings, err error) {
+// Settings queries for the computed Settings for the current actor
+func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
 	defer func() {
 		span.LogFields(log.Error(err))
@@ -105,7 +105,7 @@ func settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func doSearch(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+func Search(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
