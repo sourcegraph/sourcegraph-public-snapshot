@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -33,6 +34,7 @@ func TestHover(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	resolver := newQueryResolver(
+		database.NewMockDB(),
 		mockDBStore,
 		mockLSIFStore,
 		newCachedCommitChecker(mockGitserverClient),
@@ -116,6 +118,7 @@ func TestHoverRemote(t *testing.T) {
 		{ID: 50, Commit: "deadbeef"},
 	}
 	resolver := newQueryResolver(
+		database.NewMockDB(),
 		mockDBStore,
 		mockLSIFStore,
 		newCachedCommitChecker(mockGitserverClient),

@@ -1,1 +1,1 @@
-export { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
+export * from './ActivationDropdown'

@@ -17,7 +17,7 @@ import {
     CodeInsightsBackendContext,
     FakeDefaultCodeInsightsBackend,
 } from '../core/backend/code-insights-backend-context'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
+import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
@@ -100,7 +100,7 @@ describe('CodeInsightsRootPage', () => {
             }
         )
 
-        expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`)
+        expect(testLocation.pathname).toEqual(`${url}/${ALL_INSIGHTS_DASHBOARD.id}`)
     })
 
     it('should render dashboard not found page when id is not found', () => {

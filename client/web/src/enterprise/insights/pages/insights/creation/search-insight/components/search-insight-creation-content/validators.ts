@@ -5,7 +5,7 @@ import { getSanitizedRepositories } from '../../../../../../components/creation-
 import { Validator } from '../../../../../../components/form/hooks/useField'
 import { AsyncValidator } from '../../../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { fetchRepositories } from '../../../../../../core/backend/core/requests/fetch-repositories'
+import { fetchRepositories } from '../../../../../../core/backend/gql-backend/methods/get-built-in-insight-data/utils/fetch-repositories'
 import { EditableDataSeries } from '../../types'
 
 export const repositoriesFieldValidator: Validator<string> = value => {
