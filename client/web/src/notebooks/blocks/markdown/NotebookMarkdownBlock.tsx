@@ -17,7 +17,11 @@ import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
+import {
+    focusLastPositionInMonacoEditor,
+    MONACO_BLOCK_INPUT_OPTIONS,
+    useMonacoBlockInput,
+} from '../useMonacoBlockInput'
 
 import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookMarkdownBlock.module.scss'
@@ -35,7 +39,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     onRunBlock,
     ...props
 }) => {
-    const [isEditing, setIsEditing] = useState(!isReadOnly && input.length === 0)
+    const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     const runBlock = useCallback(
@@ -46,7 +50,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         [onRunBlock, setIsEditing]
     )
 
-    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'md', input }), [
+    const onInputChange = useCallback((text: string) => onBlockInputChange(id, { type: 'md', input: { text } }), [
         id,
         onBlockInputChange,
     ])
@@ -69,17 +73,16 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
     }, [isReadOnly, isEditing, setIsEditing])
 
-    // setTimeout turns on editing mode in a separate run-loop which prevents adding a newline at the start of the input
     const onEnterBlock = useCallback(() => {
         if (isReadOnly) {
             return
         }
-        setTimeout(() => setIsEditing(true), 0)
+        setIsEditing(true)
     }, [isReadOnly, setIsEditing])
 
     useEffect(() => {
-        if (isEditing) {
-            editor?.focus()
+        if (isEditing && editor) {
+            focusLastPositionInMonacoEditor(editor)
         }
     }, [isEditing, editor])
 
@@ -142,7 +145,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
             <div className={blockStyles.monacoWrapper}>
                 <MonacoEditor
                     language="markdown"
-                    value={input}
+                    value={input.text}
                     height="auto"
                     isLightTheme={isLightTheme}
                     editorWillMount={noop}
