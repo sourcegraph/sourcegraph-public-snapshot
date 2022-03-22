@@ -376,7 +376,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         setModal(true)
     }
 
-    modal && <DownloadSpecModal name={batchChange.name} />
+    modal && <DownloadSpecModal name={batchChange.name} originalInput={code} isLightTheme={isLightTheme} />
 
     const actionButtons = (
         <>
@@ -394,7 +394,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         </>
     )
 
-    //import the temp setting here, if the temp setting is false when download button is clicked, modal pop up .. if the temp setting is true.. DOWNLOAD
+    // import the temp setting here, if the temp setting is false when download button is clicked, modal pop up .. if the temp setting is true.. DOWNLOAD
 
     return (
         <BatchChangePage
