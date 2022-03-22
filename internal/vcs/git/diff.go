@@ -22,19 +22,25 @@ type DiffOptions struct {
 	// These fields must be valid <commit> inputs as defined by gitrevisions(7).
 	Base string
 	Head string
+
+	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
+	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
+	RangeType string
 }
 
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
 func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
-	rangeType := "..."
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
-		rangeType = ".."
+		opts.RangeType = ".."
+	} else if opts.RangeType != ".." {
+		opts.RangeType = "..."
 	}
-	rangeSpec := opts.Base + rangeType + opts.Head
+
+	rangeSpec := opts.Base + opts.RangeType + opts.Head
 	if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
 		// We don't want to allow user input to add `git diff` command line
 		// flags or refer to a file.
