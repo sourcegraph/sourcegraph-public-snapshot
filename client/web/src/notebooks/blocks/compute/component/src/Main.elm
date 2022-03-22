@@ -697,7 +697,7 @@ view : Model -> Html Msg
 view model =
     E.layout
         [ E.width E.fill
-        , F.family [ F.typeface "Fira Code" ]
+        , F.family [ F.typeface "Fira Code", F.typeface "Monaco" ]
         , F.size 12
         , F.color darkModeFontColor
         , Background.color darkModeBackgroundColor
