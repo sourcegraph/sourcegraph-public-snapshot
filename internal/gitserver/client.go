@@ -67,7 +67,6 @@ func NewClient(cli httpcli.Doer) *ClientImplementor {
 			return conf.Get().ServiceConnections().GitServers
 		},
 		pinned: func() map[string]string {
-			//TODO how do I test this?
 			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
 		HTTPClient:  cli,
