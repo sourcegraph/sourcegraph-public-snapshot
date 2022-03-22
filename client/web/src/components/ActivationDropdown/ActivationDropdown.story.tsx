@@ -54,17 +54,12 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
 })
 
 const decorator: DecoratorFn = story => (
-    <WebStory>{() => <div className="container w-100 h-100">{story()}</div>}</WebStory>
+    <WebStory>{() => <div className="container h-100 web-content">{story()}</div>}</WebStory>
 )
 
 const config: Meta = {
     title: 'shared/ActivationDropdown',
     decorators: [decorator],
-    parameters: {
-        enableDarkMode: true,
-        disableSnapshot: false,
-        chromatic: { viewports: [480] },
-    },
 }
 
 export default config
@@ -93,6 +88,13 @@ export const _04Completed: Story = () => (
 )
 
 _04Completed.storyName = 'Progress 0/4 completed'
+_04Completed.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+        chromatic: { viewports: [480] },
+    },
+}
 
 export const _14Completed: Story = () => (
     <ActivationDropdown
@@ -110,3 +112,10 @@ export const _14Completed: Story = () => (
 )
 
 _14Completed.storyName = 'Progress 1/4 completed'
+_14Completed.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+        chromatic: { viewports: [480] },
+    },
+}
