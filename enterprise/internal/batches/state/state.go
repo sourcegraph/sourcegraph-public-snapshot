@@ -104,7 +104,7 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
 
 	case *bitbucketserver.PullRequest:
-		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
+		return computeBitbucketServerBuildStatus(c.UpdatedAt, m, events)
 
 	case *gitlab.MergeRequest:
 		return computeGitLabCheckState(c.UpdatedAt, m, events)
@@ -149,7 +149,7 @@ func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (b
 	return newestDataPoint.reviewState, nil
 }
 
-func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeBitbucketServerBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	var latestCommit bitbucketserver.Commit
 	for _, c := range pr.Commits {
 		if latestCommit.CommitterTimestamp <= c.CommitterTimestamp {
@@ -161,7 +161,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 
 	// States from last sync
 	for _, status := range pr.CommitStatus {
-		stateMap[status.Key()] = parseBitbucketBuildState(status.Status.State)
+		stateMap[status.Key()] = parseBitbucketServerBuildState(status.Status.State)
 	}
 
 	// Add any events we've received since our last sync
@@ -175,7 +175,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 			if dateAdded.Before(lastSynced) {
 				continue
 			}
-			stateMap[m.Key()] = parseBitbucketBuildState(m.Status.State)
+			stateMap[m.Key()] = parseBitbucketServerBuildState(m.Status.State)
 		}
 	}
 
@@ -187,7 +187,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 	return combineCheckStates(states)
 }
 
-func parseBitbucketBuildState(s string) btypes.ChangesetCheckState {
+func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	switch s {
 	case "FAILED":
 		return btypes.ChangesetCheckStateFailed
