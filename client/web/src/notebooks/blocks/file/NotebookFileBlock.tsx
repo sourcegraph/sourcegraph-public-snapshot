@@ -6,6 +6,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
+import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -29,6 +30,7 @@ import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
+import { focusLastPositionInMonacoEditor } from '../useMonacoBlockInput'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
@@ -60,8 +62,9 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     onBlockInputChange,
     ...props
 }) => {
+    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
-    const [fileQueryInput, setFileQueryInput] = useState('')
+    const [fileQueryInput, setFileQueryInput] = useState(input.initialQueryInput ?? '')
     const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
 
     const onFileSelected = useCallback(
@@ -85,10 +88,12 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     )
 
     const onEnterBlock = useCallback(() => {
-        if (!isReadOnly) {
+        if (showInputs) {
+            focusLastPositionInMonacoEditor(editor)
+        } else if (!isReadOnly) {
             setShowInputs(true)
         }
-    }, [isReadOnly, setShowInputs])
+    }, [showInputs, isReadOnly, editor])
 
     const hideInputs = useCallback(() => {
         setShowInputs(false)
@@ -190,6 +195,8 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {showInputs && (
                 <NotebookFileBlockInputs
                     id={id}
+                    editor={editor}
+                    setEditor={setEditor}
                     lineRange={input.lineRange}
                     onLineRangeChange={onLineRangeChange}
                     queryInput={fileQueryInput}
