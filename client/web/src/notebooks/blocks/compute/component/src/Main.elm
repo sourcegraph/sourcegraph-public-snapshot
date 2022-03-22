@@ -38,7 +38,7 @@ debounceQueryInputMillis =
 
 placeholderQuery : String
 placeholderQuery =
-    "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit"
+    "repo:github\\.com/sourcegraph/sourcegraph$ content:output((.|\\n)* -> $author) type:commit after:\"1 month ago\" count:all"
 
 
 type alias Flags =
@@ -327,7 +327,18 @@ update msg model =
                 ( { model | resultsMap = exampleResultsMap }, Cmd.none )
 
             else
-                ( { model | resultsMap = Dict.empty, alerts = [] }
+                let
+                    alerts =
+                        if String.contains "type:commit" model.query || String.contains "type:diff" model.query && not (String.contains "count:all" model.query) then
+                            [ { title = "Heads up"
+                              , description = "This data may be incomplete! Add `count:all` to this query? Avoid doing this all the time though... 🤣"
+                              }
+                            ]
+
+                        else
+                            []
+                in
+                ( { model | resultsMap = Dict.empty, alerts = alerts }
                 , Cmd.batch
                     [ emitInput
                         { computeQueries = [ model.query ]
