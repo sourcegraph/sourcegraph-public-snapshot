@@ -43,7 +43,6 @@ import {
     Scalars,
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
-import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { EditorFeedbackPanel } from './editor/EditorFeedbackPanel'
@@ -273,6 +272,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
     const [filters, setFilters] = useState<WorkspacePreviewFilters>()
     const workspacesConnection = useWorkspaces(batchSpec.id, filters)
     const importingChangesetsConnection = useImportingChangesets(batchSpec.id)
+    // const [modal, setModal] = useState(false)
 
     // When we successfully submit the latest batch spec code to the backend for a new
     // workspaces preview, we follow up by refetching the batch change to get the latest
@@ -371,6 +371,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
         resolutionState,
     ])
 
+    // const openDownloadModal() {
+    //     setModal(true)
+    // }
+
     const actionButtons = (
         <>
             <ExecutionOptionsDropdown
@@ -380,11 +384,17 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, refetch
                 options={executionOptions}
                 onChangeOptions={setExecutionOptions}
             />
-            <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
+            {/* <BatchSpecDownloadLink name={batchChange.name} originalInput={code} isLightTheme={isLightTheme}>
                 or download for src-cli
-            </BatchSpecDownloadLink>
+            </BatchSpecDownloadLink> */}
+
+            {/* <Button onClick={openDownloadModal}>Download for src-cli</Button> */}
         </>
     )
+
+    // if (modal) {
+    //     return ( <DownloadSpecModal />)
+    // }
 
     return (
         <BatchChangePage

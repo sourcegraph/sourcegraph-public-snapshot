@@ -1,0 +1,29 @@
+.close {
+    display: flex;
+    position: absolute;
+    padding: 0;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: transparent;
+}
+
+.icon {
+    height: 1.125rem;
+    width: 1.125rem;
+    color: var(--icon-color);
+}
+
+.container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.test {
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+}
+
+.test2 {
+    background-color: var(--color-bg-2);
+}
