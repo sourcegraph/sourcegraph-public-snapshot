@@ -36,7 +36,7 @@ For next steps and further configuration options, visit the [site administration
 
 <span class="virtual-br"></span>
 
-> NOTE: On a macOS machine with an Apple M1 chip, you’ll need to add an extra ` --platform linux/amd64 ` argument to your Docker command so that the platform does not interfere with the installation and running of Sourcegraph. 
+> NOTE: On Mac computers with Apple silicon, you’ll need to add an extra `--platform linux/amd64` argument to your Docker command for correctly running and installing Sourcegraph. 
 
 <span class="virtual-br"></span>
 
