@@ -109,15 +109,15 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 !loading && (
                     <>
                         <PageHeader
-                            className="mb-3"
+                            className="mb-5"
                             path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
                             description={
-                                <p className="text-muted">
+                                <span className="text-muted">
                                     Search-based code insights analyze your code based on any search query.{' '}
                                     <Link to="/help/code_insights" target="_blank" rel="noopener">
                                         Learn more.
                                     </Link>
-                                </p>
+                                </span>
                             }
                         />
 

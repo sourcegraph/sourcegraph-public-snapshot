@@ -101,15 +101,15 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <PageTitle title="Create new code insight" />
 
             <PageHeader
-                className="mb-3"
+                className="mb-5"
                 path={[{ icon: CodeInsightsIcon }, { text: 'Set up new language usage insight' }]}
                 description={
-                    <p className="text-muted">
+                    <span className="text-muted">
                         Shows language usage in your repository based on number of lines of code.{' '}
                         <Link to="/help/code_insights" target="_blank" rel="noopener">
                             Learn more.
                         </Link>
-                    </p>
+                    </span>
                 }
             />
 

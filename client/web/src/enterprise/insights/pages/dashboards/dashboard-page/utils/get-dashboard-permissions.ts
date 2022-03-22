@@ -1,4 +1,4 @@
-import { InsightDashboard, isVirtualDashboard } from '../../../../core/types'
+import { InsightDashboard, isCustomDashboard, isVirtualDashboard } from '../../../../core/types'
 
 enum DashboardReasonDenied {
     AllVirtualDashboard,
@@ -17,23 +17,14 @@ interface DashboardGrantedPermissions {
 
 export type DashboardPermissions = DashboardDeniedPermissions | DashboardGrantedPermissions
 
-const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
+const UNKNOWN_DASHBOARD_PERMISSIONS: DashboardPermissions = {
     isConfigurable: false,
     reason: DashboardReasonDenied.UnknownDashboard,
 }
 
 export function getDashboardPermissions(dashboard: InsightDashboard | undefined): DashboardPermissions {
-    if (dashboard && 'grants' in dashboard) {
-        // This means we're using the graphql api.
-        // Since the api only returns info the user can see
-        // We can safely assume the user has permission to edit the dashboard
-        return {
-            isConfigurable: true,
-        }
-    }
-
     if (!dashboard) {
-        return DEFAULT_DASHBOARD_PERMISSIONS
+        return UNKNOWN_DASHBOARD_PERMISSIONS
     }
 
     if (isVirtualDashboard(dashboard)) {
@@ -43,7 +34,13 @@ export function getDashboardPermissions(dashboard: InsightDashboard | undefined)
         }
     }
 
-    return DEFAULT_DASHBOARD_PERMISSIONS
+    if (isCustomDashboard(dashboard)) {
+        return {
+            isConfigurable: true,
+        }
+    }
+
+    return UNKNOWN_DASHBOARD_PERMISSIONS
 }
 
 export function getTooltipMessage(permissions: DashboardPermissions): string | undefined {

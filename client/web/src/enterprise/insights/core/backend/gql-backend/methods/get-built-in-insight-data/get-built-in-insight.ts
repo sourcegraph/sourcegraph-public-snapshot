@@ -4,11 +4,11 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { asError } from '@sourcegraph/common'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { isSearchBasedInsight } from '../../../types'
-import { GetBuiltInsightInput } from '../../code-insights-backend-types'
+import { isSearchBasedInsight } from '../../../../types'
+import { GetBuiltInsightInput } from '../../../code-insights-backend-types'
 
 import { getLangStatsInsightContent } from './get-lang-stats-insight-content'
-import { getSearchInsightContent } from './get-search-insight-content/get-search-insight-content'
+import { getSearchInsightContent } from './get-search-insight-content'
 
 export function getBuiltInInsight(input: GetBuiltInsightInput): Observable<ViewProviderResult> {
     const { insight } = input

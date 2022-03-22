@@ -25,13 +25,7 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
     const history = useHistory()
 
     const handleDeleteSuccess = (): void => {
-        if (!dashboard.owner) {
-            history.push('/insights/dashboards')
-            onClose()
-            return
-        }
-
-        history.push(`/insights/dashboards/${dashboard.owner.id}`)
+        history.push('/insights/dashboards')
         onClose()
     }
 

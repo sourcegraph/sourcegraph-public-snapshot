@@ -26,16 +26,22 @@ interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDashboardCreationPageProps> = props => {
     const { telemetryService } = props
-
     const history = useHistory()
-    const { createDashboard, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
     const { dashboard } = useUiFeatures()
 
-    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
+    const { createDashboard, getDashboardOwners } = useContext(CodeInsightsBackendContext)
+
+    const owners = useObservable(useMemo(() => getDashboardOwners(), [getDashboardOwners]))
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<SubmissionErrors> => {
         try {
-            const createdDashboard = await createDashboard(values).toPromise()
+            const { name, owner } = values
+
+            if (!owner) {
+                throw new Error('You have to specify a dashboard visibility')
+            }
+
+            const createdDashboard = await createDashboard({ name, owners: [owner] }).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
@@ -51,7 +57,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const handleCancel = (): void => history.goBack()
 
     // Loading state
-    if (subjects === undefined) {
+    if (owners === undefined) {
         return <LoadingSpinner />
     }
 
@@ -69,7 +75,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             </span>
 
             <Container className="mt-4">
-                <InsightsDashboardCreationContent subjects={subjects} onSubmit={handleSubmit}>
+                <InsightsDashboardCreationContent owners={owners} onSubmit={handleSubmit}>
                     {formAPI => (
                         <>
                             <Button

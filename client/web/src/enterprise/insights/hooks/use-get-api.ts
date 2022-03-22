@@ -4,8 +4,8 @@ import { gql, useApolloClient } from '@apollo/client'
 
 import { IsCodeInsightsLicensedResult } from '../../../graphql-operations'
 import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-api/code-insights-gql-backend'
-import { CodeInsightsGqlBackendLimited } from '../core/backend/gql-api/code-insights-gql-backend-limited'
+import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
+import { CodeInsightsGqlBackendLimited } from '../core/backend/lam-backend/code-insights-gql-backend-limited'
 
 /**
  * Returns the full or limited version of the API based on

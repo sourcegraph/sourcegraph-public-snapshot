@@ -10,31 +10,24 @@ import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourc
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { AuthenticatedUser } from '../../../../../auth'
-import { InsightsDashboardsResult } from '../../../../../graphql-operations'
+import {
+    GetAccessibleInsightsListResult,
+    GetDashboardInsightsResult,
+    GetInsightsResult,
+    InsightsDashboardsResult,
+    InsightSubjectsResult,
+} from '../../../../../graphql-operations'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../core/backend/gql-api/code-insights-gql-backend'
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from '../../../core/backend/gql-api/gql/GetAccessibleInsightsList'
-import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../core/backend/gql-api/gql/GetDashboardInsights'
-import { GET_INSIGHTS_GQL } from '../../../core/backend/gql-api/gql/GetInsights'
-import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../core/backend/gql-api/gql/GetInsightsDashboards'
-import { GET_INSIGHTS_SUBJECTS_GQL } from '../../../core/backend/gql-api/gql/GetInsightSubjects'
+import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from '../../../core/backend/gql-backend/gql/GetAccessibleInsightsList'
+import { GET_DASHBOARD_INSIGHTS_GQL } from '../../../core/backend/gql-backend/gql/GetDashboardInsights'
+import { GET_INSIGHTS_GQL } from '../../../core/backend/gql-backend/gql/GetInsights'
+import { GET_INSIGHTS_DASHBOARDS_GQL } from '../../../core/backend/gql-backend/gql/GetInsightsDashboards'
+import { GET_INSIGHTS_DASHBOARD_OWNERS_GQL } from '../../../core/backend/gql-backend/gql/GetInsightSubjects'
 
 import { DashboardsContentPage } from './DashboardsContentPage'
 
 type UserEvent = typeof userEvent
-
-// This mocked user is used internally to display DashboardSelect
-const mockUser: Partial<AuthenticatedUser> = { id: 'user-foo', username: 'userfoo', organizations: { nodes: [] } }
-
-jest.mock('@sourcegraph/web/src/auth', () => ({
-    authenticatedUser: {
-        subscribe: ({ next }: { next: (args: unknown) => unknown }) => {
-            next(mockUser)
-            return { unsubscribe: () => null }
-        },
-    },
-}))
 
 const mockCopyURL = sinon.spy()
 
@@ -55,10 +48,12 @@ const Wrapper: React.FunctionComponent = ({ children }) => {
 }
 
 const mockDashboard: InsightsDashboardsResult['insightsDashboards']['nodes'][0] = {
+    __typename: 'InsightsDashboard',
     id: 'foo',
     title: 'Global Dashboard',
     views: null,
     grants: {
+        __typename: 'InsightsPermissionGrants',
         users: [],
         organizations: [],
         global: true,
@@ -66,13 +61,23 @@ const mockDashboard: InsightsDashboardsResult['insightsDashboards']['nodes'][0] 
 }
 
 const mockDashboard2: InsightsDashboardsResult['insightsDashboards']['nodes'][0] = {
+    __typename: 'InsightsDashboard',
     id: 'bar',
     title: 'Global Dashboard 2',
     views: null,
     grants: {
+        __typename: 'InsightsPermissionGrants',
         users: [],
         organizations: [],
         global: true,
+    },
+}
+
+const userMock = {
+    __typename: 'User',
+    id: '001',
+    organizations: {
+        nodes: [],
     },
 }
 
@@ -80,12 +85,21 @@ const mocks: MockedResponse[] = [
     {
         request: {
             query: GET_INSIGHTS_DASHBOARDS_GQL,
-            variables: { id: undefined },
+            // variables: { id: undefined },
         },
         result: {
-            data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] } },
+            data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] }, currentUser: userMock },
         },
-    },
+    } as MockedResponse<InsightsDashboardsResult>,
+    {
+        request: {
+            query: GET_INSIGHTS_DASHBOARDS_GQL,
+            variables: { id: 'foo' },
+        },
+        result: {
+            data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] }, currentUser: userMock },
+        },
+    } as MockedResponse<InsightsDashboardsResult>,
     {
         request: {
             query: GET_ACCESSIBLE_INSIGHTS_LIST,
@@ -93,27 +107,18 @@ const mocks: MockedResponse[] = [
         result: {
             data: { insightViews: { nodes: [] } },
         },
-    },
+    } as MockedResponse<GetAccessibleInsightsListResult>,
     {
         request: {
-            query: GET_INSIGHTS_DASHBOARDS_GQL,
-            variables: { id: 'foo' },
-        },
-        result: {
-            data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] } },
-        },
-    },
-    {
-        request: {
-            query: GET_INSIGHTS_SUBJECTS_GQL,
+            query: GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
         },
         result: {
             data: {
-                currentUser: null,
-                site: null,
+                currentUser: userMock,
+                site: { id: 'global_instance_id' },
             },
         },
-    },
+    } as MockedResponse<InsightSubjectsResult>,
     {
         request: {
             query: GET_DASHBOARD_INSIGHTS_GQL,
@@ -131,7 +136,7 @@ const mocks: MockedResponse[] = [
                 },
             },
         },
-    },
+    } as MockedResponse<GetDashboardInsightsResult>,
     {
         request: {
             query: GET_INSIGHTS_GQL,
@@ -140,7 +145,7 @@ const mocks: MockedResponse[] = [
         result: {
             data: { insightViews: { nodes: [] } },
         },
-    },
+    } as MockedResponse<GetInsightsResult>,
 ]
 
 const renderDashboardsContent = (

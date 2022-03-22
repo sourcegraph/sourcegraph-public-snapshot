@@ -3,7 +3,7 @@ import React from 'react'
 import { ListboxOption } from '@reach/listbox'
 import classNames from 'classnames'
 
-import { RealInsightDashboard } from '../../../../../../../core/types'
+import { CustomInsightDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { InsightsBadge } from '../insights-badge/InsightsBadge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
@@ -40,7 +40,7 @@ export const SelectOption: React.FunctionComponent<SelectOptionProps> = props =>
 }
 
 interface SelectDashboardOptionProps {
-    dashboard: RealInsightDashboard
+    dashboard: CustomInsightDashboard
     className?: string
 }
 
