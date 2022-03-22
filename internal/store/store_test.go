@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,7 +30,7 @@ func TestPrepareZip(t *testing.T) {
 	var gotRepo api.RepoName
 	var gotCommit api.CommitID
 	var fetchZipCalled int64
-	s.FetchTar = func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		<-returnFetch
 		atomic.AddInt64(&fetchZipCalled, 1)
 		gotRepo = repo
@@ -89,7 +88,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s, cleanup := tmpStore(t)
 	defer cleanup()
-	s.FetchTar = func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
 	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
@@ -101,7 +100,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 func TestPrepareZip_errHeader(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
-	s.FetchTar = func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		buf := new(bytes.Buffer)
 		w := tar.NewWriter(buf)
 		w.Flush()

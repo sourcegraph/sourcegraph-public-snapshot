@@ -17,7 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
@@ -398,7 +397,7 @@ var githubStore = &store.Store{
 	Path:     "/tmp/search_test/store",
 }
 
-func FetchTarFromGithub(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 	r, err := testutil.FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
 	return r, err
 }

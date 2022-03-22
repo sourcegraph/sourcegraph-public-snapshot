@@ -46,6 +46,17 @@ var (
 
 const port = "3181"
 
+func ensureFrontendDB() database.DB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
+	if err != nil {
+		log.Fatalf("Failed to connect to frontend database: %s", err)
+	}
+	return database.NewDB(sqlDB)
+}
+
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
@@ -72,18 +83,11 @@ func main() {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
-	if err != nil {
-		log.Fatalf("Failed to connect to frontend database: %s", err)
-	}
-	db := database.NewDB(sqlDB)
+	db := ensureFrontendDB()
 
 	service := &search.Service{
 		Store: &store.Store{
-			FetchTar: func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				return git.ArchiveReader(ctx, db, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
 			},
 			FilterTar:         search.NewFilter,

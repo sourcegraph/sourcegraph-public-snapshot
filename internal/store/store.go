@@ -57,7 +57,7 @@ type Store struct {
 	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
 	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
+	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
 
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
 	FilterTar func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
@@ -234,16 +234,14 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}()
 
-	db := s.DB
-
-	r, err := s.FetchTar(ctx, db, repo, commit)
+	r, err := s.FetchTar(ctx, repo, commit)
 	if err != nil {
 		return nil, err
 	}
 
 	filter := func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter, err = s.FilterTar(ctx, db, repo, commit)
+		filter, err = s.FilterTar(ctx, s.DB, repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
