@@ -2,7 +2,7 @@ import React from 'react'
 
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
-import { Meta, Story } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
 import { subtypeOf } from '@sourcegraph/common'
@@ -53,16 +53,29 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     portal: false,
 })
 
+const decorator: DecoratorFn = story => (
+    <WebStory>{() => <div className="container w-100 h-100">{story()}</div>}</WebStory>
+)
+
 const config: Meta = {
     title: 'shared/ActivationDropdown',
-    decorators: [story => <WebStory>{() => <div className="p-3 container h-100">{story()}</div>}</WebStory>],
+    decorators: [decorator],
     parameters: {
+        enableDarkMode: true,
+        disableSnapshot: false,
         chromatic: { viewports: [480] },
     },
 }
+
 export default config
 
 export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
+
+Loading.parameters = {
+    chromatic: {
+        disableSnapshot: true,
+    },
+}
 
 export const _04Completed: Story = () => (
     <ActivationDropdown
@@ -97,9 +110,3 @@ export const _14Completed: Story = () => (
 )
 
 _14Completed.storyName = 'Progress 1/4 completed'
-_14Completed.parameters = {
-    chromatic: {
-        enableDarkMode: true,
-        chromatic: { viewports: [480] },
-    },
-}
