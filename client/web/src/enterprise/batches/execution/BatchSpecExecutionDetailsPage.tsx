@@ -10,7 +10,6 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -24,6 +23,7 @@ import {
     CardBody,
     Card,
     Icon,
+    Panel,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -389,25 +389,18 @@ const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPagePr
     <>
         {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
         <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
-            <Resizable
-                defaultSize={500}
-                minSize={405}
-                maxSize={1400}
-                handlePosition="right"
-                storageKey={WORKSPACES_LIST_SIZE}
-                element={
-                    <div className="w-100 d-flex flex-column">
-                        <h3 className="mb-2">Workspaces</h3>
-                        <div className={styles.workspacesList}>
-                            <WorkspacesList
-                                batchSpecID={batchSpec.id}
-                                selectedNode={selectedWorkspaceID}
-                                executionURL={executionURL}
-                            />
-                        </div>
+            <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
+                <div className="w-100 d-flex flex-column">
+                    <h3 className="mb-2">Workspaces</h3>
+                    <div className={styles.workspacesList}>
+                        <WorkspacesList
+                            batchSpecID={batchSpec.id}
+                            selectedNode={selectedWorkspaceID}
+                            executionURL={executionURL}
+                        />
                     </div>
-                }
-            />
+                </div>
+            </Panel>
             <div className="d-flex flex-grow-1">
                 <div className="d-flex overflow-auto w-100">
                     <SelectedWorkspace workspace={selectedWorkspaceID ?? null} isLightTheme={isLightTheme} />

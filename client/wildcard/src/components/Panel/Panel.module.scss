@@ -2,10 +2,7 @@
     --panel-handle-size: 0.35rem;
     --panel-handle-bg-color: var(--border-color-2);
     --panel-handle-resizing-bg-color: var(--border-color);
-    --panel-bg-color: var(--color-bg-1);
     overflow: visible;
-
-    background-color: var(--panel-bg-color);
 
     bottom: 0;
 
@@ -43,7 +40,6 @@
     opacity: 0;
     user-select: none;
     z-index: 1;
-    transition: opacity 150ms;
     flex-shrink: 0;
 
     &--right,

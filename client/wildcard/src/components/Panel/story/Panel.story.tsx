@@ -7,7 +7,7 @@ import { upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanel.fixtures'
+import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent.fixtures'
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
@@ -98,7 +98,13 @@ export const Simple: Story = () => {
                 <div />
                 <div />
             </Grid>
-            <Panel position={position} defaultSize={200} storageKey={`size-cache-${position}`}>
+            <Panel
+                isFloating={true}
+                position={position}
+                defaultSize={200}
+                storageKey={`size-cache-${position}`}
+                className={styles.panel}
+            >
                 <PanelBodyContent position={position}>
                     <b>{position}</b> panel content
                 </PanelBodyContent>

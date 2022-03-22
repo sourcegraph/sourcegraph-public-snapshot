@@ -31,9 +31,9 @@ import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
 
-import styles from './TabbedPanel.module.scss'
+import styles from './TabbedPanelContent.module.scss'
 
-interface TabbedPanelProps
+interface TabbedPanelContentProps
     extends ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
@@ -136,7 +136,7 @@ export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefi
  *
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
-export const TabbedPanel = React.memo<TabbedPanelProps>(props => {
+export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])

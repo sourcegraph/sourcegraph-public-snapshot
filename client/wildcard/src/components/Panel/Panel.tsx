@@ -3,15 +3,16 @@ import React, { useRef } from 'react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { PANEL_POSITIONS } from './constants'
-import { useResizablePanel } from './useResizablePanel'
+import { useResizablePanel, UseResizablePanelParameters } from './useResizablePanel'
 import { getDisplayStyle, getPositionStyle } from './utils'
 
 import styles from './Panel.module.scss'
 
-export interface PanelProps {
+export interface PanelProps extends Omit<UseResizablePanelParameters, 'panelRef' | 'handleRef'> {
     /**
-     * If true, panel moves over elements on resize, defaults to true
+     * If true, panel moves over elements on resize
+     *
+     * @default false
      */
     isFloating?: boolean
     /**
@@ -19,9 +20,6 @@ export interface PanelProps {
      */
     handleClassName?: string
     className?: string
-    storageKey?: string
-    defaultSize?: number
-    position?: typeof PANEL_POSITIONS[number]
 }
 
 export const Panel: React.FunctionComponent<PanelProps> = ({
@@ -30,8 +28,10 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
     defaultSize = 200,
     storageKey,
     position = 'bottom',
-    isFloating = true,
+    isFloating = false,
     handleClassName,
+    minSize,
+    maxSize,
 }) => {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
@@ -42,6 +42,8 @@ export const Panel: React.FunctionComponent<PanelProps> = ({
         handleRef: handleReference,
         storageKey,
         defaultSize,
+        minSize,
+        maxSize,
     })
 
     return (

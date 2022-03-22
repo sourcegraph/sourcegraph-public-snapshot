@@ -3,7 +3,7 @@ import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { TabbedPanel } from '@sourcegraph/branded/src/components/panel/TabbedPanel'
+import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -271,14 +271,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel
-                        className={styles.resizablePanel}
-                        isFloating={false}
-                        position="bottom"
-                        defaultSize={350}
-                        storageKey="panel-size"
-                    >
-                        <TabbedPanel
+                    <Panel className={styles.panel} position="bottom" defaultSize={350} storageKey="panel-size">
+                        <TabbedPanelContent
                             {...props}
                             {...themeProps}
                             repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}

@@ -4,8 +4,8 @@ import { cleanup, fireEvent } from '@testing-library/react'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
-import { TabbedPanel } from './TabbedPanel'
-import { panels, panelProps } from './TabbedPanel.fixtures'
+import { TabbedPanelContent } from './TabbedPanelContent'
+import { panels, panelProps } from './TabbedPanelContent.fixtures'
 
 describe('TabbedPanel', () => {
     const location = {
@@ -18,7 +18,7 @@ describe('TabbedPanel', () => {
     afterEach(cleanup)
 
     it('preserves `location.pathname` and `location.hash` on tab change', async () => {
-        const renderResult = renderWithBrandedContext(<TabbedPanel {...panelProps} />, { route })
+        const renderResult = renderWithBrandedContext(<TabbedPanelContent {...panelProps} />, { route })
 
         const panelToSelect = panels[2]
         const panelButton = await renderResult.findByRole('tab', { name: panelToSelect.title })

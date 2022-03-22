@@ -8,7 +8,7 @@ import {
     BuiltinTabbedPanelDefinition,
     BuiltinTabbedPanelView,
     useBuiltinTabbedPanelViews,
-} from '@sourcegraph/branded/src/components/panel/TabbedPanel'
+} from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'

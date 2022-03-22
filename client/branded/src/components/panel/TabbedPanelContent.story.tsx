@@ -11,8 +11,8 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BrandedStory } from '../BrandedStory'
 
-import { TabbedPanel } from './TabbedPanel'
-import { panels, panelProps, panelActions, panelMenus, CODE_EDITOR_FIXTURE } from './TabbedPanel.fixtures'
+import { TabbedPanelContent } from './TabbedPanelContent'
+import { panels, panelProps, panelActions, panelMenus, CODE_EDITOR_FIXTURE } from './TabbedPanelContent.fixtures'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles} initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
@@ -20,7 +20,7 @@ const decorator: DecoratorFn = story => (
     </BrandedStory>
 )
 const config: Meta = {
-    title: 'branded/TabbedPanel',
+    title: 'branded/TabbedPanelContent',
     decorators: [decorator],
     parameters: {
         chromatic: {
@@ -31,10 +31,10 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => <TabbedPanel {...panelProps} />
+export const Simple: Story = () => <TabbedPanelContent {...panelProps} />
 
 export const WithActions: Story = () => (
-    <TabbedPanel
+    <TabbedPanelContent
         {...panelProps}
         extensionsController={{
             ...extensionsController,
