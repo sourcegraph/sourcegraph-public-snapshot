@@ -47,7 +47,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className={styles.title}>
-                <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
+                <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
                     {result.type === 'commit' && (
                         <>
