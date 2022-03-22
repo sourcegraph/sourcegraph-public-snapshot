@@ -44,7 +44,7 @@ func (s *DBDashboardStore) Transact(ctx context.Context) (*DBDashboardStore, err
 type DashboardQueryArgs struct {
 	UserID  []int
 	OrgID   []int
-	ID      int
+	ID      []int
 	Deleted bool
 	Limit   int
 	After   int
@@ -52,8 +52,8 @@ type DashboardQueryArgs struct {
 
 func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error) {
 	preds := make([]*sqlf.Query, 0, 1)
-	if args.ID > 0 {
-		preds = append(preds, sqlf.Sprintf("db.id = %s", args.ID))
+	if len(args.ID) > 0 {
+		preds = append(preds, sqlf.Sprintf("db.id in (%s)", args.ID))
 	}
 	if args.Deleted {
 		preds = append(preds, sqlf.Sprintf("db.deleted_at is not null"))
@@ -191,7 +191,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashb
 		return nil, errors.Wrap(err, "AddDashboardGrants")
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: dashboardId, UserID: args.UserID, OrgID: args.OrgID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: []int{dashboardId}, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
@@ -237,7 +237,7 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashb
 			return nil, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: args.ID, UserID: args.UserID, OrgID: args.OrgID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: []int{args.ID}, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
@@ -320,6 +320,35 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	return nil
 }
 
+func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (int, error) {
+	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getLimitedAccessModeDashboardSql)))
+	if err != nil {
+		return 0, err
+	}
+	if id == 0 {
+		id, _, err = basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(insertLimitedAccessModeDashboardSql)))
+		if err != nil {
+			return 0, err
+		}
+		global := true
+		err = s.AddDashboardGrants(ctx, id, []DashboardGrant{{Global: &global}})
+		if err != nil {
+			return 0, err
+		}
+	}
+	return id, nil
+}
+
+const getLimitedAccessModeDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:EnsureLimitedAccessModeDashboard
+SELECT id FROM dashboard WHERE type = 'limited access mode dashboard';
+`
+
+const insertLimitedAccessModeDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:EnsureLimitedAccessModeDashboard
+INSERT INTO dashboard (title, type) VALUES ('Limited Access Mode Dashboard', 'limited access mode dashboard') RETURNING id;
+`
+
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
 INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
@@ -336,7 +365,6 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     WHERE unique_id = ANY(%s)
 	ORDER BY ids.ordering
 ) ON CONFLICT DO NOTHING;
-
 `
 const updateDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
