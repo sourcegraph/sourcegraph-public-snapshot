@@ -16,12 +16,12 @@ import (
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Search(ctx context.Context, args types.SearchArgs) (symbols []result.Symbol, err error) {
+func (s *Service) Search(ctx context.Context, args types.SearchArgs) (result.Symbols, error) {
 	repo := string(args.Repo)
 	commitHash := string(args.CommitID)
 
@@ -86,7 +86,7 @@ func (s *Service) Search(ctx context.Context, args types.SearchArgs) (symbols []
 	}
 
 	// Finally search.
-	symbols, err = s.querySymbols(ctx, args, repoId, commit, threadStatus)
+	symbols, err := s.querySymbols(ctx, args, repoId, commit, threadStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -164,8 +164,9 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) ([]result.Symbol, error) {
-	hops, err := getHops(ctx, s.db, commit, threadStatus.Tasklog)
+func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
+	db := database.NewDB(s.db)
+	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +277,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	}
 
 	if s.logQueries {
-		err = logQuery(ctx, s.db, args, q, duration, len(symbols))
+		err = logQuery(ctx, db, args, q, duration, len(symbols))
 		if err != nil {
 			return nil, errors.Wrap(err, "logQuery")
 		}
@@ -285,7 +286,7 @@ func (s *Service) querySymbols(ctx context.Context, args types.SearchArgs, repoI
 	return symbols, nil
 }
 
-func logQuery(ctx context.Context, db dbutil.DB, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
+func logQuery(ctx context.Context, db database.DB, args types.SearchArgs, q *sqlf.Query, duration time.Duration, symbols int) error {
 	sb := &strings.Builder{}
 
 	fmt.Fprintf(sb, "Search args: %+v\n", args)

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 
@@ -622,7 +623,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
-			scheduler := repos.NewUpdateScheduler()
+			scheduler := repos.NewUpdateScheduler(database.NewMockDB())
 
 			s := &Server{
 				Syncer:    syncer,

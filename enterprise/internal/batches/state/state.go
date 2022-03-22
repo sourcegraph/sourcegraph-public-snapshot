@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -74,7 +75,8 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// and new states for the duration of this function, although we'll update
 	// c.SyncState as soon as we can.
 	oldState := c.SyncState
-	newState, err := computeSyncState(ctx, c, repo)
+	db := database.NewDBWith(repoStore)
+	newState, err := computeSyncState(ctx, db, c, repo)
 	if err != nil {
 		log15.Warn("Computing sync state", "err", err)
 		return
@@ -84,7 +86,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// Now we can update fields that are invalidated when the sync state
 	// changes.
 	if !oldState.Equals(newState) {
-		if stat, err := computeDiffStat(ctx, c, repo); err != nil {
+		if stat, err := computeDiffStat(ctx, db, c, repo); err != nil {
 			log15.Warn("Computing diffstat", "err", err)
 		} else {
 			c.SetDiffStat(stat)
@@ -536,8 +538,8 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
-func computeDiffStat(ctx context.Context, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
-	iter, err := git.Diff(ctx, git.DiffOptions{
+func computeDiffStat(ctx context.Context, db database.DB, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
+	iter, err := git.Diff(ctx, db, git.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
@@ -567,16 +569,16 @@ func computeDiffStat(ctx context.Context, c *btypes.Changeset, repo api.RepoName
 
 // computeSyncState computes the up to date sync state based on the changeset as
 // it currently exists on the external provider.
-func computeSyncState(ctx context.Context, c *btypes.Changeset, repo api.RepoName) (*btypes.ChangesetSyncState, error) {
+func computeSyncState(ctx context.Context, db database.DB, c *btypes.Changeset, repo api.RepoName) (*btypes.ChangesetSyncState, error) {
 	// We compute the revision by first trying to get the OID, then the Ref. //
 	// We then call out to gitserver to ensure that the one we use is available on
 	// gitserver.
-	base, err := computeRev(ctx, repo, c.BaseRefOid, c.BaseRef)
+	base, err := computeRev(ctx, db, repo, c.BaseRefOid, c.BaseRef)
 	if err != nil {
 		return nil, err
 	}
 
-	head, err := computeRev(ctx, repo, c.HeadRefOid, c.HeadRef)
+	head, err := computeRev(ctx, db, repo, c.HeadRefOid, c.HeadRef)
 	if err != nil {
 		return nil, err
 	}
@@ -588,7 +590,7 @@ func computeSyncState(ctx context.Context, c *btypes.Changeset, repo api.RepoNam
 	}, nil
 }
 
-func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (string, error)) (string, error) {
+func computeRev(ctx context.Context, db database.DB, repo api.RepoName, getOid, getRef func() (string, error)) (string, error) {
 	// Try to get the OID first
 	rev, err := getOid()
 	if err != nil {
@@ -605,7 +607,7 @@ func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (s
 
 	// Resolve the revision to make sure it's on gitserver and, in case we did
 	// the fallback to ref, to get the specific revision.
-	gitRev, err := git.ResolveRevision(ctx, repo, rev, git.ResolveRevisionOptions{})
+	gitRev, err := git.ResolveRevision(ctx, db, repo, rev, git.ResolveRevisionOptions{})
 	return string(gitRev), err
 }
 
