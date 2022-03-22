@@ -41,7 +41,8 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                         >
                             <div className="d-flex flex-column align-items-center mr-3">
                                 <UserAvatar
-                                    className="icon-inline mb-1"
+                                    inline={true}
+                                    className="mb-1"
                                     user={previousCommit.author}
                                     data-tooltip={formatPersonName(previousCommit.author)}
                                 />{' '}
@@ -62,7 +63,8 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
                 )}
             <div className="d-flex flex-column align-items-center mr-3">
                 <UserAvatar
-                    className="icon-inline mb-1"
+                    inline={true}
+                    className="mb-1"
                     user={commit.author}
                     data-tooltip={formatPersonName(commit.author)}
                 />{' '}

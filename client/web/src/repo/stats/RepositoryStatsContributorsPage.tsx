@@ -62,7 +62,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     return (
         <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
             <div className={styles.person}>
-                <UserAvatar className="icon-inline mr-2" user={node.person} />
+                <UserAvatar inline={true} className="mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className={styles.commits}>
