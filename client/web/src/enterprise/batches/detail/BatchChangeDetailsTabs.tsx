@@ -93,6 +93,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
         false
 
+    const executingCount = useMemo(
+        () =>
+            batchChange.batchSpecs.nodes.filter(node => node.state === 'PROCESSING' || node.state === 'QUEUED').length,
+        [batchChange.batchSpecs.nodes]
+    )
+
     return (
         <BatchChangeTabs history={history} location={location} initialTab={initialTab}>
             <BatchChangeTabList>
@@ -132,12 +138,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                             <span className="text-content" data-tab-content="Executions">
                                 Executions
                             </span>{' '}
-                            <Badge variant="warning" pill={true} className="ml-1">
-                                {batchChange.batchSpecs
-                                    ? batchChange.batchSpecs.nodes?.filter(
-                                          node => node.state === 'PROCESSING' || 'QUEUED'
-                                      ).length
-                                    : 0}
+                            <Badge
+                                variant={executingCount === 0 ? 'secondary' : 'warning'}
+                                pill={true}
+                                className="ml-1"
+                            >
+                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <> + </>}
                             </Badge>
                         </span>
                     </BatchChangeTab>
