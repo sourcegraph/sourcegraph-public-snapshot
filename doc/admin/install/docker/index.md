@@ -45,6 +45,18 @@ For next steps and further configuration options, visit the [site administration
 
 > `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
+# Docker Resources
+Minimum requirements:
+
+**CPUs:** NUMBER
+
+**Memory:** NUMBER
+
+**Swap:** NUMBER
+
+**Disk image size:** Number
+
+
 ### Cloud installation guides
 
 Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital Ocean.
