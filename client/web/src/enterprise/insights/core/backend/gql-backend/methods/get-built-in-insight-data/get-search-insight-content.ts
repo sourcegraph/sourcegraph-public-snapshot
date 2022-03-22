@@ -6,9 +6,9 @@ import type { LineChartContent } from 'sourcegraph'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../../../../views'
 import { SearchInsightSettings } from '../../../code-insights-backend-types'
-import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
 
-import { queryHasCountFilter } from './query-has-count-filter'
+import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from './utils/fetch-search-insight'
+import { queryHasCountFilter } from './utils/query-has-count-filter'
 
 interface RepoCommit {
     date: Date

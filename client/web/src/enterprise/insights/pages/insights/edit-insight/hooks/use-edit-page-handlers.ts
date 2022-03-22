@@ -9,7 +9,7 @@ import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { CreationInsightInput } from '../../../../core/backend/code-insights-backend-types'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../core/types/dashboard/virtual-dashboard'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/constants'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 
@@ -46,7 +46,7 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
 
             if (!dashboard) {
                 // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD_ID}`)
+                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
 
                 return
             }
@@ -61,7 +61,7 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
 
     const handleCancel = (): void => {
         if (!dashboard) {
-            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD_ID}`)
+            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
             return
         }
 

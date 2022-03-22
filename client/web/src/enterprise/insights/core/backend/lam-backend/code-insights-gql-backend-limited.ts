@@ -2,10 +2,14 @@ import { ApolloClient } from '@apollo/client'
 import { map } from 'rxjs/operators'
 
 import { UiFeaturesConfig } from '../code-insights-backend'
-
-import { CodeInsightsGqlBackend } from './code-insights-gql-backend'
+import { CodeInsightsGqlBackend } from '../gql-backend/code-insights-gql-backend'
 
 export class CodeInsightsGqlBackendLimited extends CodeInsightsGqlBackend {
+    public readonly UIFeatures: UiFeaturesConfig = {
+        licensed: false,
+        insightsLimit: 2,
+    }
+
     constructor(apolloClient: ApolloClient<object>) {
         super(apolloClient)
 
@@ -20,10 +24,5 @@ export class CodeInsightsGqlBackendLimited extends CodeInsightsGqlBackend {
                     }))
                 )
             )
-    }
-
-    public readonly UIFeatures: UiFeaturesConfig = {
-        licensed: false,
-        insightsLimit: 2,
     }
 }

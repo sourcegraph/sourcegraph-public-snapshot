@@ -1,6 +1,6 @@
 import { Duration } from 'date-fns'
 
-import { InsightExecutionType, InsightFilters, InsightType } from './common'
+import { InsightExecutionType, InsightFilters, InsightType } from '../common'
 
 export type SearchBasedInsight = SearchRuntimeBasedInsight | SearchBackendBasedInsight
 
@@ -34,6 +34,3 @@ export interface SearchBasedInsightSeries {
     query: string
     stroke?: string
 }
-
-export const isSearchBackendBasedInsight = (insight: SearchBasedInsight): insight is SearchBackendBasedInsight =>
-    insight.executionType === InsightExecutionType.Backend
