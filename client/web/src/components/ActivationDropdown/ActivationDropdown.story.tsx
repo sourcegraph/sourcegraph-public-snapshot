@@ -2,16 +2,16 @@ import React from 'react'
 
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
 import { subtypeOf } from '@sourcegraph/common'
 import { Activation } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/wildcard'
 
-import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
+import { WebStory } from '../WebStory'
 
-import webMainStyles from '../../SourcegraphWebApp.scss'
+import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
 
 const baseActivation = (): Activation => ({
     steps: [
@@ -53,20 +53,15 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     portal: false,
 })
 
-const decorator: DecoratorFn = story => (
-    <>
-        <style>{webMainStyles}</style>
-        <div>{story()}</div>
-    </>
-)
 const config: Meta = {
     title: 'shared/ActivationDropdown',
-    decorators: [decorator],
+    decorators: [story => <WebStory>{() => <div className="p-3 container h-100">{story()}</div>}</WebStory>],
     parameters: {
         chromatic: { viewports: [480] },
     },
 }
 export default config
+
 export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
 
 export const _04Completed: Story = () => (
@@ -105,6 +100,6 @@ _14Completed.storyName = 'Progress 1/4 completed'
 _14Completed.parameters = {
     chromatic: {
         enableDarkMode: true,
-        disableSnapshot: false,
+        chromatic: { viewports: [480] },
     },
 }
