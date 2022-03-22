@@ -399,6 +399,15 @@ test('Repositories list', async function () {
 })
 ```
 
+If, for whatever reason, we have to ignore some elements from an accessibility audit, we can use the `a11y-ignore` CSS class:
+
+```JSX
+  {/* Some explanation as to why we need to ignore this element */}
+  <h3 className="a11y-ignore">Heading</h3>
+```
+
+**Tip:** Don't forget you'll need to rebuild the code if you want to see the tests pass locally after making this change.
+
 ### Lighthouse tests
 
 We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:

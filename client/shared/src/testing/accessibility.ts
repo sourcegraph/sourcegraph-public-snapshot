@@ -16,29 +16,17 @@ ${failureSummary}
         .join('')
 
 /**
- * Filters any nodes that should be explicitly ignored from our Axe violations.
- */
-const filterIgnoredNodes = (nodes: NodeResult[]): NodeResult[] =>
-    nodes.filter(({ target }) => !target.includes('a11y-ignore'))
-
-/**
  * Takes a list of Axe violation and formats them into readable strings.
  */
 const formatRuleViolations = (violations: Result[]): string[] =>
-    violations
-        .map(violation => ({
-            ...violation,
-            nodes: filterIgnoredNodes(violation.nodes),
-        }))
-        .filter(({ nodes }) => nodes.length > 0)
-        .map(
-            ({ id, help, helpUrl, nodes }) => `
+    violations.map(
+        ({ id, help, helpUrl, nodes }) => `
 Rule: "${id}" (${help})
 Further information: ${helpUrl}
 How to manually audit: https://docs.sourcegraph.com/dev/background-information/web/accessibility/how-to-audit#auditing-a-user-journey
 Required changes: ${formatViolationProblems(nodes)}
 `
-        )
+    )
 
 interface AccessibilityAuditConfiguration {
     options?: RunOptions
@@ -47,7 +35,7 @@ interface AccessibilityAuditConfiguration {
 
 export async function accessibilityAudit(page: Page, config: AccessibilityAuditConfiguration = {}): Promise<void> {
     const { options, mode = 'fail' } = config
-    const axe = new AxePuppeteer(page)
+    const axe = new AxePuppeteer(page).exclude('.a11y-ignore')
 
     if (options) {
         axe.options(options)
