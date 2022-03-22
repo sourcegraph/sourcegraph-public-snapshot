@@ -45,7 +45,10 @@ type Status = undefined | 'loading' | ServicesByKind | ErrorLike
 const isServicesByKind = (status: Status): status is ServicesByKind =>
     typeof status === 'object' && Object.keys(status).every(key => keyExistsIn(key, ExternalServiceKind))
 
-export const updateGitHubApp = (): void => {
+export const updateGitHubApp = (event?: { preventDefault(): void }): void => {
+    if (event) {
+        event.preventDefault()
+    }
     window.location.assign(
         `/.auth/github/login?pc=${encodeURIComponent(
             `https://github.com/::${window.context.githubAppCloudClientID}`
