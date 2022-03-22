@@ -62,8 +62,8 @@ async function run(): Promise<void> {
             throw new Error('Could not find VS Code frontend page')
         }
 
+        await page.waitForSelector('[aria-label="Sourcegraph"]')
         await page.click('[aria-label="Sourcegraph"]')
-        await delay(3000)
 
         // The VSCode extension currently opens two web views, one is the sidebar content and the other the search page.
         // We want to run assertions on the search page.
