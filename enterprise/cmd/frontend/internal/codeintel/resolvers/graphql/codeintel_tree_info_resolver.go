@@ -2,11 +2,21 @@ package graphql
 
 import (
 	"context"
+	"strings"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+)
+
+type preciseSupportInferenceConfidence string
+
+const (
+	languageSupport           preciseSupportInferenceConfidence = "LANGUAGE_SUPPORTED"
+	projectStructureSupported preciseSupportInferenceConfidence = "PROJECT_STRUCTURE_SUPPORTED"
+	indexJobInferred          preciseSupportInferenceConfidence = "INDEX_JOB_INFERRED"
 )
 
 type codeIntelTreeInfoResolver struct {
@@ -61,21 +71,63 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) ([]g
 }
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.GitTreePreciseCoverage, error) {
-	return nil, nil
+	configurations, ok, err := r.resolver.InferredIndexConfiguration(ctx, int(r.repo.ID), r.commit)
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvers []gql.GitTreePreciseCoverage
+
+	if ok {
+		for _, job := range configurations.IndexJobs {
+			if job.Root == r.path {
+				resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
+					confidence: indexJobInferred,
+					// drop the tag if it exists
+					indexer: imageToIndexer[strings.Split(job.Indexer, ":")[0]],
+				})
+			}
+		}
+	}
+
+	hints, err := r.resolver.InferredIndexConfigurationHints(ctx, int(r.repo.ID), r.commit)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, hint := range hints {
+		var confidence preciseSupportInferenceConfidence
+		if hint.HintConfidence == config.LanguageSupport {
+			confidence = languageSupport
+		} else {
+			confidence = projectStructureSupported
+		}
+		resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
+			confidence: confidence,
+			// expected that job hints don't include a tag in the indexer name
+			indexer: imageToIndexer[hint.Indexer],
+		})
+	}
+
+	return resolvers, nil
 }
 
-type codeIntelTreePreciseCoverageResolver struct{}
+type codeIntelTreePreciseCoverageResolver struct {
+	confidence preciseSupportInferenceConfidence
+	indexer    gql.CodeIntelIndexerResolver
+}
 
 func (r *codeIntelTreePreciseCoverageResolver) CoveredPaths() []string {
+	// TODO: maybe? maybe we won't include it. Not currently supported by the data access methods we have
 	return nil
 }
 
 func (r *codeIntelTreePreciseCoverageResolver) Support() gql.PreciseSupportResolver {
-	return nil
+	return NewPreciseCodeIntelSupportResolverFromIndexers([]gql.CodeIntelIndexerResolver{r.indexer})
 }
 
 func (r *codeIntelTreePreciseCoverageResolver) Confidence() string {
-	return ""
+	return string(r.confidence)
 }
 
 type codeIntelTreeSearchBasedCoverageResolver struct {

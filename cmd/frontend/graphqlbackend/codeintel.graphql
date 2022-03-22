@@ -1450,6 +1450,7 @@ type GitTreePreciseCoverage {
 enum InferredPreciseSupportLevel {
     LANGUAGE_SUPPORTED
     PROJECT_STRUCTURE_SUPPORTED
+    INDEX_JOB_INFERRED
 }
 
 """

@@ -51,6 +51,12 @@ func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseSupportResol
 	}
 }
 
+func NewPreciseCodeIntelSupportResolverFromIndexers(indexers []gql.CodeIntelIndexerResolver) gql.PreciseSupportResolver {
+	return &preciseCodeIntelSupportResolver{
+		indexers: indexers,
+	}
+}
+
 func (r *preciseCodeIntelSupportResolver) SupportLevel() string {
 	// if the first indexer in a list is from us, consider native support
 	nativeRecommendation := len(r.indexers) > 0 &&
