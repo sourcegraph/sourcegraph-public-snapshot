@@ -201,7 +201,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, id)
+	repo, err := backend.NewRepos(r.db).Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -221,7 +221,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	commitID, err := git.ResolveRevision(ctx, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := git.ResolveRevision(ctx, r.db, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil

@@ -47,7 +47,7 @@ type Searcher struct {
 }
 
 // Run calls the searcher service on a set of repositories.
-func (s *Searcher) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
+func (s *Searcher) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "searcher.Run", fmt.Sprintf("query: %s", s.PatternInfo.Pattern))
 	defer func() {
 		tr.SetError(err)
@@ -95,7 +95,7 @@ func (s *Searcher) Run(ctx context.Context, _ database.DB, stream streaming.Send
 				continue
 			}
 
-			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
+			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, db)
 			if err != nil {
 				return err
 			}
@@ -112,7 +112,7 @@ func (s *Searcher) Run(ctx context.Context, _ database.DB, stream streaming.Send
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := searchFilesInRepo(ctx, s.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := searchFilesInRepo(ctx, db, s.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -152,6 +152,7 @@ var MockSearchFilesInRepo func(
 
 func searchFilesInRepo(
 	ctx context.Context,
+	db database.DB,
 	searcherURLs *endpoint.Map,
 	repo types.MinimalRepo,
 	gitserverRepo api.RepoName,
@@ -169,7 +170,7 @@ func searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := git.ResolveRevision(ctx, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := git.ResolveRevision(ctx, db, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}

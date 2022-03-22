@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"reflect"
 	"sort"
@@ -15,6 +16,8 @@ import (
 	"github.com/grafana/regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
@@ -391,8 +394,13 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &store.Store{
-	FetchTar: testutil.FetchTarFromGithub,
+	FetchTar: FetchTarFromGithub,
 	Path:     "/tmp/search_test/store",
+}
+
+func FetchTarFromGithub(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	r, err := testutil.FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+	return r, err
 }
 
 func init() {

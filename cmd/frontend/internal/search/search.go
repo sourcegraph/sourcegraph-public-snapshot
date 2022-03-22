@@ -189,7 +189,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			eventMatch := fromMatch(match, repoMetadata)
 			if args.DecorationLimit == -1 || args.DecorationLimit > i {
-				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
+				eventMatch = withDecoration(ctx, h.db, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
 			}
 			_ = matchesBuf.Append(eventMatch)
 		}
@@ -391,7 +391,7 @@ func strPtr(s string) *string {
 }
 
 // withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
+func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
 	// FIXME: Use contextLines to constrain hunks.
 	_ = contextLines
 	if _, ok := internalResult.(*result.FileMatch); !ok {
@@ -404,7 +404,7 @@ func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, inter
 	}
 
 	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, internalResult.(*result.FileMatch))
+		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
 	}
 
 	// TODO(team/search-product): support additional decoration for terminal clients #24617.

@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,7 +31,7 @@ type DiffOptions struct {
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
-func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
+func Diff(ctx context.Context, db database.DB, opts DiffOptions) (*DiffFileIterator, error) {
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
@@ -47,7 +47,7 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
 	}
 
-	rdr, err := execReader(ctx, opts.Repo, []string{
+	rdr, err := execReader(ctx, db, opts.Repo, []string{
 		"diff",
 		"--find-renames",
 		// TODO(eseliger): Enable once we have support for copy detection in go-diff
@@ -72,14 +72,14 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 
 // DiffPath returns a position-ordered slice of changes (additions or deletions)
 // of the given path between the given source and target commits.
-func DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
+func DiffPath(ctx context.Context, db database.DB, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
 		return nil, err
 	} else if !hasAccess {
 		return nil, os.ErrNotExist
 	}
-	reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+	reader, err := execReader(ctx, db, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit
 }
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+func DiffSymbols(ctx context.Context, db database.DB, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
 	command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	command.Repo = repo
 	return command.Output(ctx)

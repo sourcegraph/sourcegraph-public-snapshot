@@ -252,7 +252,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches[0]
-	hunks, err := git.BlameFile(ctx, fm.Repo.Name, fm.Path, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber),
 		EndLine:      int(lm.LineNumber),
@@ -595,7 +595,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		j, err := job.ToSearchJob(args, r.SearchInputs.Query)
+		j, err := job.ToSearchJob(args, r.SearchInputs.Query, r.db)
 		if err != nil {
 			return nil, err
 		}

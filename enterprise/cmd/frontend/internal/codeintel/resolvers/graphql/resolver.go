@@ -561,7 +561,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 
 	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}

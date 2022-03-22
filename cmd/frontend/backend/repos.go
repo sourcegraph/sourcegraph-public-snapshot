@@ -45,14 +45,17 @@ func (e ErrRepoSeeOther) Error() string {
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(repoStore database.RepoStore) *repos {
+func NewRepos(db database.DB) *repos {
+	repoStore := db.Repos()
 	return &repos{
+		db:    db,
 		store: repoStore,
 		cache: dbcache.NewIndexableReposLister(repoStore),
 	}
 }
 
 type repos struct {
+	db    database.DB
 	store database.RepoStore
 	cache *dbcache.IndexableReposLister
 }
@@ -205,12 +208,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(repo.Name, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := git.Stat(ctx, s.db, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}

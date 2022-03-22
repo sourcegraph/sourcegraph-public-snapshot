@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -48,6 +49,6 @@ func TestGitServiceHandlers(t *testing.T) {
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
+func (mockAddrForRepo) AddrForRepo(context context.Context, name api.RepoName) string {
 	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
 }

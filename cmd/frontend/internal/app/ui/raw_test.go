@@ -23,7 +23,7 @@ import (
 // by httpStatusCode and a body as set by resp. It also ensures that the server is closed during
 // test cleanup, thus ensuring that the caller does not have to remember to close the server.
 //
-// Finally, initHTTPTestGitServer patches the gitserver.DefaultClient.Addrs to the URL of the test
+// Finally, initHTTPTestGitServer patches the gitserver.Client.Addrs to the URL of the test
 // HTTP server, so that API calls to the gitserver are received by the test HTTP server.
 //
 // TL;DR: This function helps us to mock the gitserver without having to define mock functions for
@@ -72,7 +72,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 	}()
 
 	t.Run("success response for HEAD request", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return
 		// an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
@@ -90,7 +90,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 	})
 
 	t.Run("failure response for HEAD request", func(t *testing.T) {
-		// httptest server will return a 404 Not Found, so gitserver.DefaultClient.RepoInfo will
+		// httptest server will return a 404 Not Found, so gitserver.Client.RepoInfo will
 		// return an error.
 		initHTTPTestGitServer(t, http.StatusNotFound, "{}")
 
@@ -124,7 +124,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 	mockGitServerResponse := "this is a gitserver archive response"
 
 	t.Run("success response for format=zip", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 
 		initHTTPTestGitServer(t, http.StatusOK, mockGitServerResponse)
 
@@ -163,7 +163,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 	})
 
 	t.Run("success response for format=tar", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 
 		initHTTPTestGitServer(t, http.StatusOK, mockGitServerResponse)
 
@@ -236,7 +236,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 	}
 
 	t.Run("404 Not Found for non existent directory", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
@@ -260,7 +260,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 	})
 
 	t.Run("success response for existing directory", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
@@ -301,7 +301,7 @@ c.go`
 	})
 
 	t.Run("success response for existing file", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
@@ -338,7 +338,7 @@ c.go`
 
 	// Ensure that anything apart from tar/zip/text is still handled with a text/plain content type.
 	t.Run("success response for existing file with format=exe", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
+		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {

@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
@@ -43,7 +44,7 @@ func NewStore(files map[string]string) (*store.Store, func(), error) {
 		return nil, nil, err
 	}
 	return &store.Store{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,

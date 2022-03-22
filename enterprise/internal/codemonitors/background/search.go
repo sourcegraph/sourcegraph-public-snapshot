@@ -34,7 +34,7 @@ import (
 
 const gqlSettingsQuery = `query CodeMonitorSettings{
 	viewerSettings {
-		final	
+		final
 	}
 }`
 
@@ -119,7 +119,7 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 		return nil, err
 	}
 
-	planJob, err := job.FromExpandedPlan(jobArgs, plan)
+	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
 	if err != nil {
 		return nil, err
 	}

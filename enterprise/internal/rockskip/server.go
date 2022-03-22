@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -71,15 +72,15 @@ func NewService(
 	go service.startCleanupLoop()
 
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		go service.startIndexingLoop(service.indexRequestQueues[i])
+		go service.startIndexingLoop(database.NewDB(service.db), service.indexRequestQueues[i])
 	}
 
 	return service, nil
 }
 
-func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
+func (s *Service) startIndexingLoop(db database.DB, indexRequestQueue chan indexRequest) {
 	for indexRequest := range indexRequestQueue {
-		err := s.Index(context.Background(), indexRequest.repo, indexRequest.commit)
+		err := s.Index(context.Background(), db, indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
 			log15.Error("indexing error", "repo", indexRequest.repo, "commit", indexRequest.commit, "err", err)

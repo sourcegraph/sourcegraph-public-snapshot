@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -222,7 +223,7 @@ func (g SubprocessGit) Close() error {
 	return g.catFileCmd.Wait()
 }
 
-func (g SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, onLogEntry func(entry git.LogEntry) error) (returnError error) {
+func (g SubprocessGit) LogReverseEach(repo string, db database.DB, givenCommit string, n int, onLogEntry func(entry git.LogEntry) error) (returnError error) {
 	log := exec.Command("git", git.LogReverseArgs(n, givenCommit)...)
 	log.Dir = g.gitDir
 	output, err := log.StdoutPipe()
@@ -244,7 +245,7 @@ func (g SubprocessGit) LogReverseEach(repo string, givenCommit string, n int, on
 	return git.ParseLogReverseEach(output, onLogEntry)
 }
 
-func (g SubprocessGit) RevListEach(repo string, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
+func (g SubprocessGit) RevListEach(repo string, db database.DB, givenCommit string, onCommit func(commit string) (shouldContinue bool, err error)) (returnError error) {
 	revList := exec.Command("git", git.RevListArgs(givenCommit)...)
 	revList.Dir = g.gitDir
 	output, err := revList.StdoutPipe()

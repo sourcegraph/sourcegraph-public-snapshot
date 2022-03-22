@@ -3949,6 +3949,33 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## searcher: mean_blocked_seconds_per_conn_request
+
+<p class="subtitle">mean blocked seconds per conn request</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> searcher: 0.05s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> searcher: 0.1s+ mean blocked seconds per conn request for 15m0s
+
+**Possible solutions**
+
+- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
+- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-mean-blocked-seconds-per-conn-request).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_searcher_mean_blocked_seconds_per_conn_request",
+  "critical_searcher_mean_blocked_seconds_per_conn_request"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
+
+<br />
+
 ## searcher: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>

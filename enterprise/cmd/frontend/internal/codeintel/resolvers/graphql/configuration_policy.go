@@ -49,7 +49,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}

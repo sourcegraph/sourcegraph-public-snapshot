@@ -129,7 +129,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		src = repos.NewSourcer(database.NewDB(db), cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
 	}
 
-	updateScheduler := repos.NewUpdateScheduler()
+	updateScheduler := repos.NewUpdateScheduler(db)
 	server := &repoupdater.Server{
 		Store:                 store,
 		Scheduler:             updateScheduler,

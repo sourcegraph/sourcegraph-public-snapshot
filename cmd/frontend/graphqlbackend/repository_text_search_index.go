@@ -110,7 +110,8 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	// We assume that the default branch for enabled repositories is always configured to be indexed.
 	//
 	// TODO(sqs): support configuring which branches should be indexed (add'l branches, not default branch, etc.).
-	defaultBranchRef, err := r.repo.DefaultBranch(ctx)
+	repoResolver := r.repo
+	defaultBranchRef, err := repoResolver.DefaultBranch(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +122,12 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 
 	refs := make([]*repositoryTextSearchIndexedRef, len(refNames))
 	for i, refName := range refNames {
-		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
+		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: repoResolver}}
 	}
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := git.ResolveRevision(ctx, r.repo.RepoName(), ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := git.ResolveRevision(ctx, repoResolver.db, repoResolver.RepoName(), ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
 				break
 			}
@@ -138,7 +139,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 		}
 
 		// If Zoekt reports it has another indexed branch, include that.
-		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: name, repo: r.repo}}
+		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: name, repo: repoResolver}}
 		refs = append(refs, newRef)
 		return newRef
 	}

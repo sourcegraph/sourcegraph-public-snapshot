@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
@@ -55,7 +56,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	}
 
 	// todo(insights) add setting to disable this indexer
-	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, insightsDB, observationContext))
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, database.NewDB(mainAppDB), insightsDB, observationContext))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.

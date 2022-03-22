@@ -8,6 +8,7 @@ import (
 	"github.com/google/zoekt/ignore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,7 +19,7 @@ func TestNewIgnoreMatcher(t *testing.T) {
 	}
 	defer func() { git.Mocks.ReadFile = nil }()
 
-	ig, err := newIgnoreMatcher(context.Background(), "", "")
+	ig, err := newIgnoreMatcher(context.Background(), database.NewMockDB(), "", "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -33,7 +34,7 @@ func TestMissingIgnoreFile(t *testing.T) {
 	}
 	defer func() { git.Mocks.ReadFile = nil }()
 
-	ig, err := newIgnoreMatcher(context.Background(), "", "")
+	ig, err := newIgnoreMatcher(context.Background(), database.NewMockDB(), "", "")
 	if err != nil {
 		t.Error(err)
 	}

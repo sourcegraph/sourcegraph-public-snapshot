@@ -47,7 +47,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		_, providers, seriousProblems, warnings :=
-			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore)
+			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
 		// Add connection validation issue
@@ -72,7 +72,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore)
+		_, providers, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -182,7 +182,7 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore)
+				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

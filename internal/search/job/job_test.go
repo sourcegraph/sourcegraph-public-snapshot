@@ -5,6 +5,7 @@ import (
 
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -23,7 +24,7 @@ func TestToSearchInputs(t *testing.T) {
 			},
 		}
 
-		j, _ := ToSearchJob(args, q)
+		j, _ := ToSearchJob(args, q, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 
@@ -184,7 +185,7 @@ func TestToEvaluateJob(t *testing.T) {
 		}
 
 		b, _ := query.ToBasicQuery(q)
-		j, _ := ToEvaluateJob(args, b)
+		j, _ := ToEvaluateJob(args, b, database.NewMockDB())
 		return "\n" + PrettySexp(j) + "\n"
 	}
 

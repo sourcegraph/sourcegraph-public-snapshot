@@ -2,8 +2,10 @@ package graphqlbackend
 
 import (
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -25,7 +27,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		callsMu sync.Mutex
 		calls   []args
 	)
-	gitCommitsFunc := func(ctx context.Context, repoName api.RepoName, opt git.CommitsOptions, perms authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	gitCommitsFunc := func(ctx context.Context, db database.DB, repoName api.RepoName, opt git.CommitsOptions, perms authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 		callsMu.Lock()
 		calls = append(calls, args{repoName, opt})
 		callsMu.Unlock()
@@ -54,7 +56,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		{Name: "golang/go"},
 		{Name: "sourcegraph/sourcegraph"},
 	}
-	recentCommitters := gitserverParallelRecentCommitters(ctx, repos, gitCommitsFunc)
+	recentCommitters := gitserverParallelRecentCommitters(ctx, database.NewMockDB(), repos, gitCommitsFunc)
 
 	sort.Slice(calls, func(i, j int) bool {
 		return calls[i].repoName < calls[j].repoName

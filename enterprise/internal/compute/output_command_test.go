@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -71,7 +72,7 @@ func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
 		defer git.ResetMocks()
 		computeQuery, _ := Parse(q)
-		res, err := computeQuery.Command.Run(context.Background(), m)
+		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {
 			return err.Error()
 		}

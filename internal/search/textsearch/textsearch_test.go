@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -267,7 +268,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 
 	repos := makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")
-	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
+	repos[0].ListRefs = func(context.Context, database.DB, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 

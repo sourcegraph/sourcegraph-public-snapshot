@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-func toComputeResultStream(ctx context.Context, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
+func toComputeResultStream(ctx context.Context, db database.DB, cmd compute.Command, matches []result.Match, f func(compute.Result)) error {
 	for _, m := range matches {
-		result, err := cmd.Run(ctx, m)
+		result, err := cmd.Run(ctx, db, m)
 		if err != nil {
 			return err
 		}
@@ -41,7 +41,7 @@ func NewComputeStream(ctx context.Context, db database.DB, query string) (<-chan
 			callback := func(result compute.Result) {
 				eventsC <- Event{Results: []compute.Result{result}}
 			}
-			_ = toComputeResultStream(ctx, computeQuery.Command, event.Results, callback)
+			_ = toComputeResultStream(ctx, db, computeQuery.Command, event.Results, callback)
 			// TODO(rvantonder): compute err is currently ignored. Process it and send alerts/errors as needed.
 		}
 	})

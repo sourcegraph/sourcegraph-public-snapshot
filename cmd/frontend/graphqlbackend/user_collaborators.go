@@ -2,12 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-
-	"github.com/inconshreveable/log15"
-
 	"crypto/md5"
 	"fmt"
 	"sync"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -29,7 +28,8 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 
 	// We'll search for collaborators in 25 of the user's most-starred repositories.
 	const maxReposToScan = 25
-	pickedRepos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
+	db := r.db
+	pickedRepos, err := backend.NewRepos(db).List(ctx, database.ReposListOptions{
 		// SECURITY: This must be the authenticated user's ID.
 		UserID:                 a.UID,
 		IncludeUserPublicRepos: false,
@@ -46,9 +46,9 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, git.Commits)
+	recentCommitters := gitserverParallelRecentCommitters(ctx, db, pickedRepos, git.Commits)
 
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	authUserEmails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
 	})
 	if err != nil {
@@ -62,19 +62,19 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 		if username == "" {
 			return false
 		}
-		_, err := r.db.Users().GetByUsername(ctx, username)
+		_, err := db.Users().GetByUsername(ctx, username)
 		return err == nil
 	}
 	userExistsByEmail := func(email string) bool {
-		_, err := r.db.Users().GetByVerifiedEmail(ctx, email)
+		_, err := db.Users().GetByVerifiedEmail(ctx, email)
 		return err == nil
 	}
 	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExistsByUsername, userExistsByEmail), nil
 }
 
-type GitCommitsFunc func(context.Context, api.RepoName, git.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+type GitCommitsFunc func(context.Context, database.DB, api.RepoName, git.CommitsOptions, authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
 
-func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
+func gitserverParallelRecentCommitters(ctx context.Context, db database.DB, repos []*types.Repo, gitCommits GitCommitsFunc) (allRecentCommitters []*invitableCollaboratorResolver) {
 	var (
 		wg sync.WaitGroup
 		mu sync.Mutex
@@ -85,7 +85,7 @@ func gitserverParallelRecentCommitters(ctx context.Context, repos []*types.Repo,
 		goroutine.Go(func() {
 			defer wg.Done()
 
-			recentCommits, err := gitCommits(ctx, repo.Name, git.CommitsOptions{
+			recentCommits, err := gitCommits(ctx, db, repo.Name, git.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true, // Don't try to fetch missing commits.
 				NameOnly:         true, // Don't fetch detailed info like commit diffs.

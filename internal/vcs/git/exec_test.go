@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestExecSafe(t *testing.T) {
@@ -55,7 +57,7 @@ func TestExecSafe(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
-			stdout, stderr, exitCode, err := execSafe(context.Background(), repo, test.args)
+			stdout, stderr, exitCode, err := execSafe(context.Background(), database.NewMockDB(), repo, test.args)
 			if err == nil && test.wantError {
 				t.Errorf("got error %v, want error %v", err, test.wantError)
 			}

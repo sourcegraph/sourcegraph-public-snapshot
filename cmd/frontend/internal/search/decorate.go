@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	stream "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -85,19 +86,11 @@ func groupLineMatches(lineMatches []*result.LineMatch) []group {
 	return groups
 }
 
-func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
-	content, err = git.ReadFile(ctx, repo, commit, path, 0, authz.DefaultSubRepoPermsChecker)
-	if err != nil {
-		return nil, err
-	}
-	return content, nil
-}
-
 // DecorateFileHTML returns decorated HTML rendering of file content. If
 // successful and within bounds of timeout and line size, it returns HTML marked
 // up with highlight classes. In other cases, it returns plaintext HTML.
-func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightedCode, error) {
-	content, err := fetchContent(ctx, repo, commit, path)
+func DecorateFileHTML(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string) (*highlight.HighlightedCode, error) {
+	content, err := fetchContent(ctx, db, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -126,10 +119,10 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
-func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
+func DecorateFileHunksHTML(ctx context.Context, db database.DB, fm *result.FileMatch) []stream.DecoratedHunk {
 	fmt.Println("==> DecorateFileHunksHTML")
 
-	response, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
+	response, err := DecorateFileHTML(ctx, db, fm.Repo.Name, fm.CommitID, fm.Path)
 	if err != nil {
 		log15.Warn("stream result decoration could not highlight file", "error", err)
 		return nil
@@ -172,4 +165,12 @@ func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.D
 		})
 	}
 	return hunks
+}
+
+func fetchContent(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
+	content, err = git.ReadFile(ctx, db, repo, commit, path, 0, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
 }

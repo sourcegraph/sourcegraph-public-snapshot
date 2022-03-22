@@ -133,7 +133,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
-		ListIndexable: backend.NewRepos(db.Repos()).ListIndexable,
+		db:            db,
+		ListIndexable: backend.NewRepos(db).ListIndexable,
 		RepoStore:     database.Repos(db),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
@@ -155,8 +156,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	m.Get(apirouter.GitExec).Handler(trace.Route(handler(serveGitExec(db))))
-	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision)))
-	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar)))
+	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision(db))))
+	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar(db))))
 	gitService := &gitServiceHandler{
 		Gitserver: gitserver.DefaultClient,
 	}
