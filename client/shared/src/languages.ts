@@ -397,6 +397,10 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'scala':
             return 'scala'
 
+        // Strato
+        case 'strato':
+            return 'strato'
+
         // Scheme
         case 'scm':
         case 'sch':

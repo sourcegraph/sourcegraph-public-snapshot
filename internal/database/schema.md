@@ -989,6 +989,30 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.gitserver_localclone_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                        Default                        
+-------------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id                | integer                  |           | not null | nextval('gitserver_localclone_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ repo_id           | integer                  |           | not null | 
+ source_hostname   | text                     |           | not null | 
+ dest_hostname     | text                     |           | not null | 
+ delete_source     | boolean                  |           | not null | false
+Indexes:
+    "gitserver_localclone_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.gitserver_repos"
 ```
      Column      |           Type           | Collation | Nullable |      Default       
@@ -1723,19 +1747,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.org_members_bkup_1514536731"
-```
-   Column    |           Type           | Collation | Nullable | Default 
--------------+--------------------------+-----------+----------+---------
- id          | integer                  |           |          | 
- org_id      | integer                  |           |          | 
- user_id_old | text                     |           |          | 
- created_at  | timestamp with time zone |           |          | 
- updated_at  | timestamp with time zone |           |          | 
- user_id     | integer                  |           |          | 
-
-```
-
 # Table "public.org_stats"
 ```
         Column        |           Type           | Collation | Nullable | Default 
@@ -2230,20 +2241,6 @@ Foreign-key constraints:
     "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
-
-```
-
-# Table "public.settings_bkup_1514702776"
-```
-       Column       |           Type           | Collation | Nullable | Default 
---------------------+--------------------------+-----------+----------+---------
- id                 | integer                  |           |          | 
- org_id             | integer                  |           |          | 
- author_user_id_old | text                     |           |          | 
- contents           | text                     |           |          | 
- created_at         | timestamp with time zone |           |          | 
- user_id            | integer                  |           |          | 
- author_user_id     | integer                  |           |          | 
 
 ```
 

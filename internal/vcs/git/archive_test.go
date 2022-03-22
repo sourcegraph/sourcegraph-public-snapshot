@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -34,7 +35,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish: commitID,
 		Paths:   []string{"."},
 	}
-	if _, err := ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
+	if _, err := ArchiveReader(context.Background(), database.NewMockDB(), checker, repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
 }
@@ -63,7 +64,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Treeish: commitID,
 		Paths:   []string{"."},
 	}
-	readCloser, err := ArchiveReader(context.Background(), checker, repo.Name, opts)
+	readCloser, err := ArchiveReader(context.Background(), database.NewMockDB(), checker, repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,6 +22,7 @@ const (
 // ArchiveReader streams back the file contents of an archived git repo.
 func ArchiveReader(
 	ctx context.Context,
+	db database.DB,
 	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	options gitserver.ArchiveOptions,
