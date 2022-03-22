@@ -4,8 +4,8 @@ import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../core/constants'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../../../../core/types/dashboard/virtual-dashboard'
 import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
@@ -37,7 +37,7 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
             <PlusIcon size="2rem" />
             <span>Create an insight</span>
         </Card>
-        {props.dashboard.id !== ALL_INSIGHTS_DASHBOARD_ID && (
+        {props.dashboard.id !== ALL_INSIGHTS_DASHBOARD.id && (
             <span className="d-flex justify-content-center mt-3">
                 <span>
                     or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>

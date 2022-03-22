@@ -10,6 +10,7 @@ import { DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui/src/input/MonacoQ
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../../../stores'
 import { ThemePreference } from '../../../../../stores/themeState'
 import { useTheme } from '../../../../../theme'
 
@@ -84,10 +85,12 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
     return (
         <LazyMonacoQueryInput
+            editorComponent={editorComponent}
             queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
@@ -98,7 +101,6 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             globbing={true}
             height="auto"
             placeholder={placeholder}
-            onSubmit={noop}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,
                 [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,

@@ -110,6 +110,24 @@ init json =
                             , experimentalOptions = Nothing
                             }
                     }
+
+        experimentalOptions =
+            case Maybe.andThen .experimentalOptions flags.computeInput of
+                Just { dataPoints, sortByCount, reverse, excludeStopWords, activeTab } ->
+                    { dataPoints = Maybe.withDefault 30 dataPoints
+                    , sortByCount = Maybe.withDefault True sortByCount
+                    , reverse = Maybe.withDefault False reverse
+                    , excludeStopWords = Maybe.withDefault False excludeStopWords
+                    , activeTab = Maybe.withDefault Chart (Maybe.map (tabFromString << .name) activeTab)
+                    }
+
+                Nothing ->
+                    { dataPoints = 30
+                    , sortByCount = True
+                    , reverse = False
+                    , excludeStopWords = False
+                    , activeTab = Chart
+                    }
     in
     ( { sourcegraphURL = flags.sourcegraphURL
       , query =
@@ -120,21 +138,12 @@ init json =
                 _ ->
                     placeholderQuery
       , dataFilter =
-            case Maybe.andThen .experimentalOptions flags.computeInput of
-                Just { dataPoints, sortByCount, reverse, excludeStopWords } ->
-                    { dataPoints = Maybe.withDefault 30 dataPoints
-                    , sortByCount = Maybe.withDefault True sortByCount
-                    , reverse = Maybe.withDefault False reverse
-                    , excludeStopWords = Maybe.withDefault False excludeStopWords
-                    }
-
-                Nothing ->
-                    { dataPoints = 30
-                    , sortByCount = True
-                    , reverse = False
-                    , excludeStopWords = False
-                    }
-      , selectedTab = Chart
+            { dataPoints = experimentalOptions.dataPoints
+            , sortByCount = experimentalOptions.sortByCount
+            , reverse = experimentalOptions.reverse
+            , excludeStopWords = experimentalOptions.excludeStopWords
+            }
+      , selectedTab = experimentalOptions.activeTab
       , debounce = 0
       , resultsMap = Dict.empty
       , alerts = []
@@ -155,11 +164,17 @@ type alias RawEvent =
     }
 
 
+type alias ActiveTab =
+    { name : String
+    }
+
+
 type alias ExperimentalOptions =
     { dataPoints : Maybe Int
     , sortByCount : Maybe Bool
     , reverse : Maybe Bool
     , excludeStopWords : Maybe Bool
+    , activeTab : Maybe ActiveTab
     }
 
 
@@ -278,12 +293,25 @@ update msg model =
                         , sortByCount = Just newDataFilter.sortByCount
                         , reverse = Just newDataFilter.reverse
                         , excludeStopWords = Just newDataFilter.excludeStopWords
+                        , activeTab = Just { name = stringFromTab model.selectedTab }
                         }
                 }
             )
 
         OnTabSelected selectedTab ->
-            ( { model | selectedTab = selectedTab }, Cmd.none )
+            ( { model | selectedTab = selectedTab }
+            , emitInput
+                { computeQueries = [ model.query ]
+                , experimentalOptions =
+                    Just
+                        { dataPoints = Just model.dataFilter.dataPoints
+                        , sortByCount = Just model.dataFilter.sortByCount
+                        , reverse = Just model.dataFilter.reverse
+                        , excludeStopWords = Just model.dataFilter.excludeStopWords
+                        , activeTab = Just { name = stringFromTab selectedTab }
+                        }
+                }
+            )
 
         OnDownloadData ->
             let
@@ -309,6 +337,7 @@ update msg model =
                                 , sortByCount = Just model.dataFilter.sortByCount
                                 , reverse = Just model.dataFilter.reverse
                                 , excludeStopWords = Just model.dataFilter.excludeStopWords
+                                , activeTab = Just { name = stringFromTab model.selectedTab }
                                 }
                         }
                     , openStream
@@ -380,7 +409,17 @@ table data =
             , columns =
                 [ { header = E.el headerAttrs (E.text " ")
                   , width = E.fillPortion 2
-                  , view = \v -> E.el [ E.padding 10 ] (E.el [ E.width E.fill, E.padding 10, Border.rounded 5, Border.width 1 ] (E.text v.name))
+                  , view =
+                        \v ->
+                            E.el [ E.padding 10 ]
+                                (E.el
+                                    [ E.width E.fill
+                                    , E.padding 10
+                                    , Border.rounded 5
+                                    , Border.width 1
+                                    ]
+                                    (E.paragraph [ E.width (E.fill |> E.maximum 600) ] [ E.text v.name ])
+                                )
                   }
                 , { header = E.el (headerAttrs ++ [ F.alignRight ]) (E.text "Count")
                   , width = E.fillPortion 1
@@ -426,7 +465,23 @@ dataView : List DataValue -> E.Element Msg
 dataView data =
     E.row [ E.width E.fill ]
         [ E.el [ E.padding 10, E.alignLeft ]
-            (E.column [] (List.map (\d -> E.text d.name) data))
+            (E.column []
+                (List.map
+                    (\d ->
+                        E.paragraph
+                            [ E.paddingEach
+                                { bottom = 2
+                                , top = 0
+                                , left = 0
+                                , right = 0
+                                }
+                            , E.width (E.fill |> E.maximum 600)
+                            ]
+                            [ E.text d.name ]
+                    )
+                    data
+                )
+            )
         , E.el
             [ E.paddingXY 0 10
             , E.alignRight
@@ -497,6 +552,35 @@ type Tab
     = Chart
     | Table
     | Data
+
+
+tabFromString : String -> Tab
+tabFromString s =
+    case s of
+        "chart" ->
+            Chart
+
+        "table" ->
+            Table
+
+        "data" ->
+            Data
+
+        _ ->
+            Chart
+
+
+stringFromTab : Tab -> String
+stringFromTab t =
+    case t of
+        Chart ->
+            "chart"
+
+        Table ->
+            "table"
+
+        Data ->
+            "data"
 
 
 color =
@@ -752,6 +836,12 @@ computeInputDecoder =
         |> Json.Decode.Pipeline.optional "experimentalOptions" (Decode.maybe experimentalOptionsDecoder) Nothing
 
 
+activeTabDecoder : Decoder ActiveTab
+activeTabDecoder =
+    Decode.succeed ActiveTab
+        |> Json.Decode.Pipeline.required "name" Decode.string
+
+
 experimentalOptionsDecoder : Decoder ExperimentalOptions
 experimentalOptionsDecoder =
     Decode.succeed ExperimentalOptions
@@ -759,6 +849,7 @@ experimentalOptionsDecoder =
         |> Json.Decode.Pipeline.optional "sortByCount" (Decode.maybe Decode.bool) Nothing
         |> Json.Decode.Pipeline.optional "reverse" (Decode.maybe Decode.bool) Nothing
         |> Json.Decode.Pipeline.optional "excludeStopWords" (Decode.maybe Decode.bool) Nothing
+        |> Json.Decode.Pipeline.optional "activeTab" (Decode.maybe activeTabDecoder) Nothing
 
 
 resultDecoder : Decoder Result
