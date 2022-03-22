@@ -21,14 +21,14 @@ func TestParseGoModDependency(t *testing.T) {
 		wantVersion  string
 	}{
 		{
-			name:         "cloud.google.com/go v0.16.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=",
-			wantRepoName: "gomod/cloud.google.com/go",
-			wantVersion:  "0.16.0",
+			name:         "cloud.google.com/go@v0.16.0",
+			wantRepoName: "go/cloud.google.com/go",
+			wantVersion:  "v0.16.0",
 		},
 		{
-			name:         "cloud.google.com/go v0.44.1/go.mod",
-			wantRepoName: "gomod/cloud.google.com/go",
-			wantVersion:  "0.44.1",
+			name:         "cloud.google.com/go@v0.0.0-20180822173158-c12b1e7919c1",
+			wantRepoName: "go/cloud.google.com/go",
+			wantVersion:  "v0.0.0-20180822173158-c12b1e7919c1",
 		},
 	}
 	for _, test := range tests {
@@ -36,7 +36,7 @@ func TestParseGoModDependency(t *testing.T) {
 			dep, err := ParseGoModDependency(test.name)
 			require.NoError(t, err)
 			assert.Equal(t, api.RepoName(test.wantRepoName), dep.RepoName())
-			assert.Equal(t, test.wantVersion, dep.Version)
+			assert.Equal(t, test.wantVersion, dep.PackageVersion())
 		})
 	}
 }

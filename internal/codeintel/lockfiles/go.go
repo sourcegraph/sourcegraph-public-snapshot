@@ -18,31 +18,31 @@ func parseGoSumFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		errs errors.MultiError
 
 		// In some cases, two checksums occur for both the package itself and the go.mod
-		// file of the same version.
-		deps = make(map[string]reposource.PackageDependency)
+		// file of the same version, as well as merging multiple go.sum files, thus we
+		// need to do deduplication.
+		deps  []reposource.PackageDependency
+		added = make(map[string]struct{})
 	)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		s := strings.Fields(line)
-		if len(s) < 3 {
+		fields := strings.Fields(line)
+		if len(fields) < 2 { // We do not consume the checksum so not required to be presented for now
 			continue
 		}
+		name := fields[0]
+		version := strings.TrimSuffix(fields[1], "/go.mod")
 
-		dep, err := reposource.ParseGoModDependency(line)
+		dep, err := reposource.ParseGoModDependency(name + "@" + version)
 		if err != nil {
 			errs = errors.Append(errs, err)
-		} else {
-			deps[dep.PackageManagerSyntax()] = dep
+		} else if _, ok := added[dep.PackageManagerSyntax()]; !ok {
+			deps = append(deps, dep)
+			added[dep.PackageManagerSyntax()] = struct{}{}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, errors.Wrap(err, "scan")
 	}
-
-	out := make([]reposource.PackageDependency, 0, len(deps))
-	for _, dep := range deps {
-		out = append(out, dep)
-	}
-	return out, nil
+	return deps, nil
 }
