@@ -6,8 +6,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +15,9 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
