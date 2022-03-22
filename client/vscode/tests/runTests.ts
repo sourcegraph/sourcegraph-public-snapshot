@@ -12,6 +12,8 @@ import rimraf from 'rimraf'
 
 import { installExtension } from './installExtension'
 
+const verbose = process.argv.includes('-v') || process.argv.includes('--verbose')
+
 const PORT = 29378
 
 async function run(): Promise<void> {
@@ -22,7 +24,7 @@ async function run(): Promise<void> {
     try {
         const vscodeExecutablePath = await downloadAndUnzipVSCode()
 
-        console.log('Starting VS Code', { vscodeExecutablePath, userDataDirectory, extensionsDirectory })
+        console.log('Starting VS Code', { verbose, vscodeExecutablePath, userDataDirectory, extensionsDirectory })
 
         const extensionVersion: string = JSON.parse(readFileSync('package.json').toString()).version
         if (typeof extensionVersion !== 'string' || extensionVersion === '') {
@@ -133,7 +135,7 @@ function launchVSC(executablePath: string, userDataDirectory: string, extensions
         ],
         {
             env: process.env,
-            stdio: 'inherit',
+            stdio: verbose ? 'inherit' : ['pipe', 'pipe', 'pipe'],
         }
     )
 }
