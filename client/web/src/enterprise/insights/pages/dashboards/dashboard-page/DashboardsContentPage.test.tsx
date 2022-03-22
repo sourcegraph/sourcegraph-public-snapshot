@@ -11,9 +11,11 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import {
-    GetAccessibleInsightsListResult, GetDashboardInsightsResult, GetInsightsResult,
+    GetAccessibleInsightsListResult,
+    GetDashboardInsightsResult,
+    GetInsightsResult,
     InsightsDashboardsResult,
-    InsightSubjectsResult
+    InsightSubjectsResult,
 } from '../../../../../graphql-operations'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
@@ -75,8 +77,8 @@ const userMock = {
     __typename: 'User',
     id: '001',
     organizations: {
-        nodes: []
-    }
+        nodes: [],
+    },
 }
 
 const mocks: MockedResponse[] = [
@@ -97,7 +99,7 @@ const mocks: MockedResponse[] = [
         result: {
             data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] }, currentUser: userMock },
         },
-    }  as MockedResponse<InsightsDashboardsResult>,
+    } as MockedResponse<InsightsDashboardsResult>,
     {
         request: {
             query: GET_ACCESSIBLE_INSIGHTS_LIST,
