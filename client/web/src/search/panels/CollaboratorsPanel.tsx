@@ -7,7 +7,6 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -31,17 +30,6 @@ interface Props extends TelemetryProps {
 }
 
 const emailEnabled = window.context?.emailEnabled ?? false
-
-export const collaboratorsFragment = gql`
-    fragment CollaboratorsFragment on User {
-        collaborators: invitableCollaborators @include(if: $enableCollaborators) {
-            name
-            email
-            displayName
-            avatarURL
-        }
-    }
-`
 
 export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
     className,

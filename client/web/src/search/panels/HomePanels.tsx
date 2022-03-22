@@ -14,12 +14,19 @@ import { AuthenticatedUser } from '../../auth'
 import { CollaboratorsFragment, HomePanelsQueryResult, HomePanelsQueryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { collaboratorsFragment, CollaboratorsPanel } from './CollaboratorsPanel'
+import { CollaboratorsPanel } from './CollaboratorsPanel'
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
-import { recentFilesFragment, RecentFilesPanel } from './RecentFilesPanel'
-import { recentSearchesPanelFragment, RecentSearchesPanel } from './RecentSearchesPanel'
-import { recentlySearchedRepositoriesFragment, RepositoriesPanel } from './RepositoriesPanel'
-import { SavedSearchesPanel, savedSearchesPanelFragment } from './SavedSearchesPanel'
+import {
+    collaboratorsFragment,
+    recentlySearchedRepositoriesFragment,
+    recentFilesFragment,
+    recentSearchesPanelFragment,
+    savedSearchesPanelFragment,
+} from './PanelFragments'
+import { RecentFilesPanel } from './RecentFilesPanel'
+import { RecentSearchesPanel } from './RecentSearchesPanel'
+import { RepositoriesPanel } from './RepositoriesPanel'
+import { SavedSearchesPanel } from './SavedSearchesPanel'
 
 import styles from './HomePanels.module.scss'
 
