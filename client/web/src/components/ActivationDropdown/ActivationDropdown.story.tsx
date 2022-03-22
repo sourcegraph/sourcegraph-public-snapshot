@@ -62,6 +62,9 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'shared/ActivationDropdown',
     decorators: [decorator],
+    parameters: {
+        chromatic: { viewports: [480] },
+    },
 }
 export default config
 export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
