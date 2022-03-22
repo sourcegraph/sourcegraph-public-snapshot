@@ -266,7 +266,7 @@ func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, erro
 	for _, os := range orgServices {
 		for _, us := range userServices {
 			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
-				if os.UpdatedAt.After(us.UpdatedAt) {
+				if os.CreatedAt.After(us.UpdatedAt) {
 					return true, nil
 				}
 			}

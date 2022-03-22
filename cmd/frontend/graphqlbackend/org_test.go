@@ -606,14 +606,14 @@ func TestOrganization_viewerNeedsCodeHostUpdate(t *testing.T) {
 			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
 			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
 		},
-		"member with service, org with older service": {
-			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now().Add(-1 * time.Hour)}},
+		"member with service, org with service created earlier": {
+			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, CreatedAt: time.Now().Add(-1 * time.Hour)}},
 			UserServices: []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now()}},
 			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
 			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":false}}`,
 		},
-		"member with service, org with newer service": {
-			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now().Add(-1 * time.Hour)}},
+		"member with service, org with service created later": {
+			OrgServices:  []*types.ExternalService{{Kind: extsvc.KindGitHub, CreatedAt: time.Now().Add(-1 * time.Hour)}},
 			UserServices: []*types.ExternalService{{Kind: extsvc.KindGitHub, UpdatedAt: time.Now().Add(-2 * time.Hour)}},
 			OrgMembers:   &types.OrgMembership{OrgID: 1, UserID: 1},
 			Expected:     `{"organization":{"viewerNeedsCodeHostUpdate":true}}`,
