@@ -330,6 +330,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 		}, nil
 	}
 
+	// When one code host fails, return its errors and also the nodes from the other code host.
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
@@ -339,6 +340,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 				affiliatedRepositories(
 					namespace: "VXNlcjox"
 				) {
+					codeHostErrors
 					nodes {
 						name,
 						private,
@@ -352,6 +354,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `
 				{
 					"affiliatedRepositories": {
+						"codeHostErrors": ["Error from gitlab: unexpected response from GitLab API (/api/v4/projects?archived=no&membership=true&per_page=40): HTTP error status 401"],
 						"nodes": [
 							{
 								"name": "test-user/test",
@@ -395,6 +398,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 				affiliatedRepositories(
 					namespace: "VXNlcjox"
 				) {
+					codeHostErrors
 					nodes {
 						name,
 						private,
@@ -408,7 +412,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"affiliatedRepositories", "nodes"},
+					Path:          []interface{}{"affiliatedRepositories", "codeHostErrors"},
 					Message:       "failed to fetch from any code host",
 					ResolverError: errors.New("failed to fetch from any code host"),
 				},

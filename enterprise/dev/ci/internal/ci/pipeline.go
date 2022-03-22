@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.37.0"
+	const minimumUpgradeableVersion = "3.38.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -102,8 +102,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
 			backendIntegrationTests(c.candidateImageTag()))
 
-		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
+		// always include very backend-oriented changes in this set of tests
+		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
+		ops.Merge(CoreTestOperations(
+			testDiff,
+			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
+		))
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -312,12 +316,8 @@ func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		if bk.FeatureFlags.StatelessBuild {
 			s.Agents["queue"] = bk.AgentQueueJob
-		} else if os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" {
-			// Always process retries on stateless agents.
-			// TODO: remove when we switch over entirely to stateless agents
-			s.Agents["queue"] = bk.AgentQueueJob
 		} else {
-			s.Agents["queue"] = bk.AgentQueueStandard
+			s.Agents["queue"] = bk.AgentQueueStateful
 		}
 	}
 

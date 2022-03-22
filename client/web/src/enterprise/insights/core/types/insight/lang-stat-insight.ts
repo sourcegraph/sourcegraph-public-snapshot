@@ -1,4 +1,4 @@
-import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightFields } from './common'
+import { InsightExecutionType, InsightType } from './common'
 
 /**
  * Extended Lang Stats Insight.
@@ -8,24 +8,12 @@ import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightF
  * Note: Lang stats insight works only via Extension API and doesn't have a be version
  * (like search based insight has)
  */
-export interface LangStatsInsight extends LangStatsInsightConfiguration, SyntheticInsightFields {
-    type: InsightExecutionType.Runtime
-    viewType: InsightType.LangStats
-}
-
-/**
- * Lang stats insight as it is presented in user/org settings cascade.
- * See public API of code stats extension
- * https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/package.json#L27
- */
-export interface LangStatsInsightConfiguration {
+export interface LangStatsInsight {
+    id: string
+    executionType: InsightExecutionType.Runtime
+    type: InsightType.LangStats
     title: string
     repository: string
     otherThreshold: number
+    dashboardReferenceCount: number
 }
-
-/**
- * Since we use insight name conventions to distinguish between insight types.
- * Example id for the lang stats insight: "codeStatsInsights.insight.myFirstLangStatInsight"
- */
-export const isLangStatsdInsightId = (id: string): boolean => id.startsWith(InsightTypePrefix.langStats)

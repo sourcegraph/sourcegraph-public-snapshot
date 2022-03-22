@@ -7,7 +7,7 @@ import { CodeInsightsBackendContext } from '../core/backend/code-insights-backen
 import { Insight } from '../core/types'
 import { getTrackingTypeByInsightType } from '../pings'
 
-type DeletionInsight = Pick<Insight, 'id' | 'title' | 'viewType'>
+type DeletionInsight = Pick<Insight, 'id' | 'title' | 'type'>
 
 export interface UseDeleteInsightAPI {
     delete: (insight: DeletionInsight) => Promise<void>
@@ -39,7 +39,7 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
 
             try {
                 await deleteInsight(insight.id).toPromise()
-                const insightType = getTrackingTypeByInsightType(insight.viewType)
+                const insightType = getTrackingTypeByInsightType(insight.type)
 
                 eventLogger.log('InsightRemoval', { insightType }, { insightType })
             } catch (error) {

@@ -4,4 +4,5 @@ const (
 	AgentQueueStandard  = "standard"
 	AgentQueueBaremetal = "baremetal"
 	AgentQueueJob       = "job"
+	AgentQueueStateful  = "stateful"
 )

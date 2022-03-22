@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
-import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
@@ -21,7 +21,7 @@ import {
     GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
-    ReachableInsight,
+    AccessibleInsightInfo,
     RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
 } from './code-insights-backend-types'
@@ -64,7 +64,7 @@ export interface CodeInsightsBackend {
     /**
      * Return all accessible for a user insights that are filtered by ids param.
      * If ids is nullable value then returns all insights. Insights in this case
-     * present only insight configurations and meta data without actual data about
+     * present only insight configurations and metadata without actual data about
      * data series or pie chart data.
      *
      * @param ids - list of insight ids
@@ -77,7 +77,7 @@ export interface CodeInsightsBackend {
      * User subject has access to all insights from all organizations and global site settings.
      * Organization subject has access to only its insights.
      */
-    getReachableInsights: (input: { subjectId: string }) => Observable<ReachableInsight[]>
+    getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
 
     /**
      * Return insight (meta and presentation data) by insight id.
@@ -106,23 +106,17 @@ export interface CodeInsightsBackend {
      * Returns extension like built-in insight that is fetched via frontend
      * network requests to Sourcegraph search API.
      */
-    getBuiltInInsightData: <D extends keyof ViewContexts>(
-        input: GetBuiltInsightInput<D>
-    ) => Observable<ViewProviderResult>
+    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<ViewProviderResult>
 
     /**
      * Returns content for the search based insight live preview chart.
      */
-    getSearchInsightContent: <D extends keyof ViewContexts>(
-        input: GetSearchInsightContentInput<D>
-    ) => Promise<LineChartContent<any, string>>
+    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<LineChartContent<any, string>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      */
-    getLangStatsInsightContent: <D extends keyof ViewContexts>(
-        input: GetLangStatsInsightContentInput<D>
-    ) => Promise<PieChartContent<any>>
+    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<PieChartContent<any>>
 
     getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
 
