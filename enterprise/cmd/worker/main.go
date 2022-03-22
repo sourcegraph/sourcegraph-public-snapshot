@@ -67,7 +67,7 @@ func setAuthzProviders() {
 	ctx := context.Background()
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db))
+		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db), database.NewDB(db))
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

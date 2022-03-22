@@ -5,14 +5,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { authenticatedUser } from '@sourcegraph/web/src/auth'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../core/constants'
 import { InsightDashboard, isVirtualDashboard } from '../../../../../core/types'
-import { isCustomInsightDashboard } from '../../../../../core/types/dashboard/real-dashboard'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../../../core/types/dashboard/virtual-dashboard'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -54,8 +52,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
-    const user = useObservable(authenticatedUser)
-
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
     }, [telemetryService, dashboardID])
@@ -63,11 +59,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (
-                    currentDashboard &&
-                    !isVirtualDashboard(currentDashboard) &&
-                    isCustomInsightDashboard(currentDashboard)
-                ) {
+                if (currentDashboard && !isVirtualDashboard(currentDashboard)) {
                     history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
@@ -109,9 +101,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <DashboardSelect
                     value={currentDashboard?.id}
                     dashboards={dashboards}
-                    onSelect={handleDashboardSelect}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
-                    user={user}
+                    onSelect={handleDashboardSelect}
                 />
 
                 <DashboardMenu
@@ -138,7 +129,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
                     message={
-                        dashboardID === ALL_INSIGHTS_DASHBOARD_ID
+                        dashboardID === ALL_INSIGHTS_DASHBOARD.id
                             ? 'Create up to two global insights'
                             : 'Unlock Code Insights for full access to custom dashboards'
                     }

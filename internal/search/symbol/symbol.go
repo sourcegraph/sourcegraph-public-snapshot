@@ -241,8 +241,8 @@ type RepoUniverseSymbolSearch struct {
 }
 
 func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, s)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
+	defer func() { finish(alert, err) }()
 
 	userPrivateRepos := repos.PrivateReposForActor(ctx, db, s.RepoOptions)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)

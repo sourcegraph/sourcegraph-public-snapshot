@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // TestZipCacheDelete ensures that zip cache deletion is correctly hooked up to cache eviction.
@@ -15,7 +16,7 @@ func TestZipCacheDelete(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
 
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTar = func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		return emptyTar(t), nil
 	}
 

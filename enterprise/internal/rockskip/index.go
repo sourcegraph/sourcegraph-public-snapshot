@@ -7,11 +7,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"k8s.io/utils/lru"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err error) {
+func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit string) (err error) {
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
 	defer threadStatus.End()
 
@@ -44,7 +45,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 
 	missingCount := 0
 	tasklog.Start("RevList")
-	err = s.git.RevListEach(repo, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
+	err = s.git.RevListEach(repo, db, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
 		defer tasklog.Continue("RevList")
 
 		tasklog.Start("GetCommitByHash")
@@ -77,7 +78,7 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = s.git.LogReverseEach(repo, givenCommit, missingCount, func(entry git.LogEntry) error {
+	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry git.LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		threadStatus.SetProgress(entriesIndexed, missingCount)
