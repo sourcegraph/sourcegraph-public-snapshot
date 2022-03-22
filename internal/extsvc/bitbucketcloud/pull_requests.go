@@ -26,7 +26,7 @@ func (c *Client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*Pul
 }
 
 // GetPullRequestStatuses retrieves the statuses for a pull request.
-func (c *Client) GetPullRequestStatuses(ctx context.Context, repo *Repo, id int64) (*ResultSet[PullRequestStatus], error) {
+func (c *Client) GetPullRequestStatuses(repo *Repo, id int64) (*ResultSet[PullRequestStatus], error) {
 	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/statuses", repo.FullName, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing URL")
