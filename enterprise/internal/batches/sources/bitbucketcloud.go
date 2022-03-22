@@ -21,7 +21,6 @@ type BitbucketCloudSource struct {
 }
 
 var (
-	_ DraftChangesetSource    = BitbucketCloudSource{}
 	_ ForkableChangesetSource = BitbucketCloudSource{}
 )
 
@@ -144,18 +143,6 @@ func (s BitbucketCloudSource) CreateComment(_ context.Context, _ *Changeset, _ s
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
 func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error {
-	panic("not implemented") // TODO: Implement
-}
-
-// CreateDraftChangeset will create the Changeset on the source. If it already
-// exists, *Changeset will be populated and the return value will be
-// true.
-func (s BitbucketCloudSource) CreateDraftChangeset(_ context.Context, _ *Changeset) (bool, error) {
-	panic("not implemented") // TODO: Implement
-}
-
-// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s BitbucketCloudSource) UndraftChangeset(_ context.Context, _ *Changeset) error {
 	panic("not implemented") // TODO: Implement
 }
 
