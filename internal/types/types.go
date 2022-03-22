@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -483,9 +482,6 @@ type ExternalService struct {
 	CloudDefault    bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
-
-	urnOnce sync.Once
-	urn     string
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service
@@ -504,10 +500,7 @@ type ExternalServiceSyncJob struct {
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
-	e.urnOnce.Do(func() {
-		e.urn = extsvc.URN(e.Kind, e.ID)
-	})
-	return e.urn
+	return extsvc.URN(e.Kind, e.ID)
 }
 
 // IsDeleted returns true if the external service is deleted.
