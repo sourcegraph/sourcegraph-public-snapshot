@@ -25,8 +25,8 @@ type ZoektSymbolSearch struct {
 
 // Run calls the zoekt backend to search symbols
 func (z *ZoektSymbolSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, z)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, z)
+	defer func() { finish(alert, err) }()
 
 	if z.Repos == nil {
 		return nil, nil
