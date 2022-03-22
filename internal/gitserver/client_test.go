@@ -528,12 +528,13 @@ func TestClient_ResolveRevisions(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := gitserver.NewTestClient(&http.Client{}, []string{"gitserver1", "gitserver2"})
+	ctx := context.Background()
+	client := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), []string{"gitserver1", "gitserver2"})
 	setPinnedRepos(map[string]string{
 		"repo1": "gitserver2",
 	})
 
-	addr := client.AddrForRepo("repo1")
+	addr := client.AddrForRepo(ctx, "repo1")
 	require.Equal(t, "gitserver2", addr)
 
 	// simulate config change - site admin manually changes the pinned repo config
@@ -541,7 +542,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		"repo1": "gitserver1",
 	})
 
-	addr = client.AddrForRepo("repo1")
+	addr = client.AddrForRepo(ctx, "repo1")
 	require.Equal(t, "gitserver1", addr)
 }
 
