@@ -25,7 +25,7 @@ import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookMarkdownBlock.module.scss'
 
-const markdownExtension: Extension[] = [
+const staticExtensions: Extension[] = [
     keymap.of([
         {
             // TODO: Maybe be smart about this an indent the line if it's the start
@@ -36,6 +36,7 @@ const markdownExtension: Extension[] = [
             run: insertTab,
         },
     ]),
+    EditorView.lineWrapping,
     markdown({ base: markdownLanguage }),
     classHighlightStyle,
     HighlightStyle.define([
@@ -77,7 +78,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
                     onInputChange(update.state.sliceDoc())
                 }
             }),
-            markdownExtension,
+            staticExtensions,
         ],
         [runBlock, onInputChange]
     )
