@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-abusive-eslint-disable */
 /* eslint-disable */
 
 function initElmPorts(app) {
