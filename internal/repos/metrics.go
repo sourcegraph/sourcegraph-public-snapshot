@@ -283,7 +283,7 @@ AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id 
 select count(*)
 from gitserver_repos
 where last_fetched < now() - interval '8 hours'
-  and last_error <> ''
+  and last_error != ''
   and exists(select
              from external_service_repos
                       join external_services es on external_service_repos.external_service_id = es.id
