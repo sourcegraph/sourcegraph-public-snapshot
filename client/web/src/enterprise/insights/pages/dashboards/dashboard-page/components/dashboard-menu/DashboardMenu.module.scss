@@ -6,13 +6,6 @@
     font-size: inherit;
     overflow: hidden;
     padding: 0.25rem 0;
-
-    // The .dropdown-menu class adds absolute position to the element
-    // that makes parent of this element wrong width/height settled
-    // Therefore this breaks popover position of reach-ui popover
-    position: static;
-    // The .dropdown-menu is hidden by default
-    display: block;
 }
 
 .menu-item[data-reach-menu-item] {

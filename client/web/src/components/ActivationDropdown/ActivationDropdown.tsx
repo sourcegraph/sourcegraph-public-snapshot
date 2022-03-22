@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { Menu, MenuButton, MenuPopover, MenuPopoverProps } from '@reach/menu-button'
 import classNames from 'classnames'
 import * as H from 'history'
 import { CircularProgressbar } from 'react-circular-progressbar'
@@ -8,12 +7,13 @@ import Confetti from 'react-dom-confetti'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 
-import { Activation, percentageDone } from './Activation'
-import { ActivationChecklist } from './ActivationChecklist'
+import { Activation, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
+import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
+import { Menu, MenuButton, MenuList } from '@sourcegraph/wildcard'
 
 import styles from './ActivationDropdown.module.scss'
 
-export interface ActivationDropdownProps extends Pick<MenuPopoverProps, 'portal'> {
+export interface ActivationDropdownProps {
     history: H.History
     activation: Activation
     /**
@@ -90,7 +90,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
         }
         return (
             <Menu>
-                {({ isExpanded }) => (
+                {({ isOpen }) => (
                     <>
                         <MenuButton
                             className={classNames(
@@ -126,13 +126,10 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                                 />
                             </span>
                         </MenuButton>
-                        <MenuPopover
-                            className={classNames('dropdown-menu', styles.activationDropdown, {
-                                show: isExpanded || this.props.alwaysShow,
-                            })}
-                            hidden={!(isExpanded || this.props.alwaysShow)}
-                            portal={this.props.portal}
+                        <MenuList
+                            className={styles.activationDropdown}
                             data-testid="activation-dropdown"
+                            isOpen={isOpen || this.props.alwaysShow}
                         >
                             <div className={classNames('dropdown-item-text', styles.activationDropdownHeader)}>
                                 <h3 className="mb-0">
@@ -148,7 +145,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
                                 completed={this.props.activation.completed}
                                 className={styles.checklist}
                             />
-                        </MenuPopover>
+                        </MenuList>
                     </>
                 )}
             </Menu>

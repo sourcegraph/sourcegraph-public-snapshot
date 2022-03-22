@@ -3,7 +3,7 @@
 exports[`ActivationDropdown renders the activation dropdown 1`] = `
 <DocumentFragment>
   <button
-    aria-controls="menu--1"
+    aria-controls="menu--2"
     aria-haspopup="true"
     class="bg-transparent align-items-center test-activation-nav-item-toggle activationDropdownButton"
     data-reach-menu-button=""
