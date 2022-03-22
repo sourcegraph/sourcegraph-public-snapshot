@@ -64,4 +64,9 @@ export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
         render: props => <CncfCommunitySearchContextPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
+    {
+        path: '/julia',
+        render: props => <JuliaCommunitySearchContextPage {...props} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
 ]
