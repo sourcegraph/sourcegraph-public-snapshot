@@ -3214,6 +3214,31 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## repo-updater: src_repoupdater_stale_repos
+
+<p class="subtitle">repos that haven't been fetched in more than 8 hours</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> repo-updater: 1+ repos that haven't been fetched in more than 8 hours for 25m0s
+
+**Possible solutions**
+
+- 							Check repo-updater logs for errors.
+							Check for rows in gitserver_repos where LastError is not an empty string.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-stale-repos).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_stale_repos"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<br />
+
 ## repo-updater: sched_error
 
 <p class="subtitle">repositories schedule error rate</p>
