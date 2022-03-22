@@ -629,7 +629,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 			}
 		}
 		for _, dashboardId := range dashboardIds {
-			log15.Warn("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
 			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
 			if err != nil {
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
