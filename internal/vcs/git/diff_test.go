@@ -10,11 +10,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestDiff(t *testing.T) {
 	ctx := context.Background()
+	db := database.NewMockDB()
 
 	t.Run("invalid bases", func(t *testing.T) {
 		for _, input := range []string{
@@ -23,7 +25,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := Diff(ctx, DiffOptions{Base: input})
+				i, err := Diff(ctx, db, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -49,7 +51,7 @@ func TestDiff(t *testing.T) {
 					}
 					return nil, nil
 				}
-				_, _ = Diff(ctx, tc.opts)
+				_, _ = Diff(ctx, db, tc.opts)
 			})
 		}
 	})
@@ -60,7 +62,7 @@ func TestDiff(t *testing.T) {
 		}
 		defer ResetMocks()
 
-		i, err := Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+		i, err := Diff(ctx, db, DiffOptions{Base: "foo", Head: "bar"})
 		if i != nil {
 			t.Errorf("unexpected non-nil iterator: %+v", i)
 		}
@@ -140,7 +142,7 @@ index 9bd8209..d2acfa9 100644
 		}
 		defer ResetMocks()
 
-		i, err := Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+		i, err := Diff(ctx, db, DiffOptions{Base: "foo", Head: "bar"})
 		if i == nil {
 			t.Error("unexpected nil iterator")
 		}
@@ -179,6 +181,7 @@ index 51a59ef1c..493090958 100644
 -this is my file content
 +this is my file contnent
 `
+	db := database.NewMockDB()
 	t.Run("basic", func(t *testing.T) {
 		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
@@ -188,7 +191,7 @@ index 51a59ef1c..493090958 100644
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
-		hunks, err := DiffPath(ctx, "", "sourceCommit", "", "file", checker)
+		hunks, err := DiffPath(ctx, db, "", "sourceCommit", "", "file", checker)
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -216,7 +219,7 @@ index 51a59ef1c..493090958 100644
 			}
 			return authz.Read, nil
 		})
-		hunks, err := DiffPath(ctx, "", "sourceCommit", "", fileName, checker)
+		hunks, err := DiffPath(ctx, db, "", "sourceCommit", "", fileName, checker)
 		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
