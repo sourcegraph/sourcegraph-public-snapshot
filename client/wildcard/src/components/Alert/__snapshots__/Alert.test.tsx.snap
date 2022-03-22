@@ -77,6 +77,17 @@ exports[`Alert renders variant 'success' correctly 1`] = `
 </div>
 `;
 
+exports[`Alert renders variant 'waiting' correctly 1`] = `
+<div
+  class=""
+>
+  <h4>
+    Too many matching repositories
+  </h4>
+  Use a 'repo:' or 'repogroup:' filter to narrow your search.
+</div>
+`;
+
 exports[`Alert renders variant 'warning' correctly 1`] = `
 <div
   class=""
