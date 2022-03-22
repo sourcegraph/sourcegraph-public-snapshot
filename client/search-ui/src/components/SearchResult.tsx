@@ -43,25 +43,43 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
 }) => {
+    const [isTruncated, setIsTruncated] = React.useState<boolean>(false)
+    const titleReference = React.useRef<HTMLAnchorElement>(null)
+
+    function showTooltip(): void {
+        if (titleReference.current) {
+            setIsTruncated(titleReference.current.clientWidth < titleReference.current.scrollWidth)
+        }
+    }
+
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
-            <div className={styles.title}>
+            <div className={styles.title} onMouseEnter={showTooltip}>
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
-                <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
+                <span
+                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                    ref={titleReference}
+                >
                     {result.type === 'commit' && (
                         <>
                             <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                             {' › '}
                             <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                             {': '}
-                            <Link to={getCommitMatchUrl(result)} data-tooltip={result.message.split('\n', 1)[0]}>
+                            <Link
+                                to={getCommitMatchUrl(result)}
+                                data-tooltip={isTruncated ? result.message.split('\n', 1)[0] : null}
+                            >
                                 {result.message.split('\n', 1)[0]}
                             </Link>
                         </>
                     )}
                     {result.type === 'repo' && (
-                        <Link data-tooltip={displayRepoName(getRepoMatchLabel(result))} to={getRepoMatchUrl(result)}>
+                        <Link
+                            to={getRepoMatchUrl(result)}
+                            data-tooltip={isTruncated ? displayRepoName(getRepoMatchLabel(result)) : null}
+                        >
                             {displayRepoName(getRepoMatchLabel(result))}
                         </Link>
                     )}

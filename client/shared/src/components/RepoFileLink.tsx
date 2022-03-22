@@ -44,13 +44,24 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     className,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
+    const [isTruncated, setIsTruncated] = React.useState<boolean>(false)
+    const titleReference = React.useRef<HTMLAnchorElement>(null)
+
+    function showTooltip(): void {
+        if (titleReference.current) {
+            setIsTruncated(titleReference.current.clientWidth < titleReference.current.scrollWidth)
+        }
+    }
+
     return (
         <div className={className}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link
+                onMouseEnter={showTooltip}
                 className="text-truncate"
-                data-tooltip={fileBase ? `${fileBase}/${fileName}` : fileName}
+                data-tooltip={isTruncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
                 to={appendSubtreeQueryParameter(fileURL)}
+                ref={titleReference}
             >
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>

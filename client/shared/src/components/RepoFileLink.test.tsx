@@ -12,7 +12,6 @@ describe('RepoFileLink', () => {
                 repoURL="https://example.com"
                 filePath="my/file"
                 fileURL="https://example.com/file"
-                data-tooltip="my/file"
             />
         )
         expect(component.asFragment()).toMatchSnapshot()
