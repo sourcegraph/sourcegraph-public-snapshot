@@ -143,7 +143,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                                 pill={true}
                                 className="ml-1"
                             >
-                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <> + </>}
+                                {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
                             </Badge>
                         </span>
                     </BatchChangeTab>
