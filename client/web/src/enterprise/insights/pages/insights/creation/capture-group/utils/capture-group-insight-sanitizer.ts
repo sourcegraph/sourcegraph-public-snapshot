@@ -3,19 +3,23 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
 import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
-import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../../core/types'
+import { MinimalCaptureGroupInsightData } from '../../../../../core/backend/code-insights-backend-types'
+import { InsightExecutionType, InsightType } from '../../../../../core/types'
 import { CaptureGroupFormFields } from '../types'
 
-export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): CaptureGroupInsight {
+export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): MinimalCaptureGroupInsightData {
     return {
         title: values.title.trim(),
         query: getSanitizedCaptureQuery(values.groupSearchQuery.trim()),
-        viewType: InsightType.CaptureGroup,
-        type: InsightExecutionType.Backend,
-        id: '',
+        type: InsightType.CaptureGroup,
+        executionType: InsightExecutionType.Backend,
         step: { [values.step]: +values.stepValue },
         repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
-        dashboardReferenceCount: values.dashboardReferenceCount,
+        filters: {
+            includeRepoRegexp: '',
+            excludeRepoRegexp: '',
+            repositories: [],
+        },
     }
 }
 

@@ -1,19 +1,13 @@
 import React, { forwardRef } from 'react'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Insight, isBackendInsight } from '../../../../core/types'
 import { BackendInsightView } from '../backend-insight/BackendInsight'
 import { BuiltInInsight } from '../built-in-insight/BuiltInInsight'
 
-export interface SmartInsightProps<D extends keyof ViewContexts>
-    extends TelemetryProps,
-        React.HTMLAttributes<HTMLElement> {
+export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: Insight
-
-    where: D
-    context: ViewContexts[D]
     resizing?: boolean
 }
 
@@ -21,8 +15,8 @@ export interface SmartInsightProps<D extends keyof ViewContexts>
  * Render smart insight with (gql or extension api) fetcher and independent mutation
  * actions.
  */
-export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof ViewContexts>>((props, reference) => {
-    const { insight, resizing = false, telemetryService, where, context, ...otherProps } = props
+export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
+    const { insight, resizing = false, telemetryService, ...otherProps } = props
 
     if (isBackendInsight(insight)) {
         return (
@@ -42,8 +36,6 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof View
             insight={insight}
             resizing={resizing}
             telemetryService={telemetryService}
-            where={where}
-            context={context}
             innerRef={reference}
             {...otherProps}
         />

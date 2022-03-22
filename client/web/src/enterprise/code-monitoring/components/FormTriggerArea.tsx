@@ -15,6 +15,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
+import { useExperimentalFeatures } from '../../../stores'
 
 import styles from './FormTriggerArea.module.scss'
 
@@ -99,6 +100,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
+
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
 
     useEffect(() => {
         const value = queryState.query
@@ -207,6 +210,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 data-testid="trigger-query-edit"
                             >
                                 <LazyMonacoQueryInput
+                                    editorComponent={editorComponent}
                                     isLightTheme={isLightTheme}
                                     patternType={SearchPatternType.literal}
                                     isSourcegraphDotCom={isSourcegraphDotCom}

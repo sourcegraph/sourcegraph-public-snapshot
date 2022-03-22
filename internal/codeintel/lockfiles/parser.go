@@ -12,6 +12,7 @@ type parser func(io.Reader) ([]reposource.PackageDependency, error)
 var parsers = map[string]parser{
 	"package-lock.json": parsePackageLockFile,
 	"yarn.lock":         parseYarnLockFile,
+	"go.sum":            parseGoSumFile,
 }
 
 var lockfilePaths = func() []string {

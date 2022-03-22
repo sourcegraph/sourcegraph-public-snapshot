@@ -10,7 +10,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { LangStatsInsight } from '../../../../core/types'
+import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -23,7 +23,7 @@ import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 import styles from './LangStatsInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
-    insight: LangStatsInsight
+    insight: MinimalLangStatsInsightData
 }
 
 export interface LangStatsInsightCreationPageProps extends TelemetryProps {
@@ -38,7 +38,7 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: LangStatsInsight) => void
+    onSuccessfulCreation: (insight: MinimalLangStatsInsightData) => void
 
     /**
      * Whenever the user click on cancel button
@@ -101,15 +101,15 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <PageTitle title="Create new code insight" />
 
             <PageHeader
-                className="mb-3"
+                className="mb-5"
                 path={[{ icon: CodeInsightsIcon }, { text: 'Set up new language usage insight' }]}
                 description={
-                    <p className="text-muted">
+                    <span className="text-muted">
                         Shows language usage in your repository based on number of lines of code.{' '}
                         <Link to="/help/code_insights" target="_blank" rel="noopener">
                             Learn more.
                         </Link>
-                    </p>
+                    </span>
                 }
             />
 

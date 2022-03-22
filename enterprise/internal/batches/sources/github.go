@@ -47,15 +47,11 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 		cf = httpcli.ExternalClientFactory
 	}
 
-	opts := []httpcli.Opt{
+	opts := httpClientCertificateOptions([]httpcli.Opt{
 		// Use a 30s timeout to avoid running into EOF errors, because GitHub
 		// closes idle connections after 60s
 		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
-	}
-
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
-	}
+	}, c.Certificate)
 
 	cli, err := cf.Doer(opts...)
 	if err != nil {

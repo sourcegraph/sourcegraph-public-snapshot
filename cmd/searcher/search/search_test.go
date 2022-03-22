@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -237,7 +238,7 @@ abc.txt
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.FilterTar = func(_ context.Context, _ api.RepoName, _ api.CommitID) (store.FilterFunc, error) {
+	s.FilterTar = func(_ context.Context, _ database.DB, _ api.RepoName, _ api.CommitID) (store.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
 			return hdr.Name == "ignore.me"
 		}, nil
