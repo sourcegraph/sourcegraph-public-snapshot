@@ -74,6 +74,10 @@ func (rs *ResultSet[T]) Next(ctx context.Context) (*T, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 
+	return rs.next(ctx)
+}
+
+func (rs *ResultSet[T]) next(ctx context.Context) (*T, error) {
 	// Check if we need to request the next page.
 	if len(rs.nodes) == 0 {
 		if err := rs.reqPage(ctx, nil); err != nil {
@@ -90,4 +94,24 @@ func (rs *ResultSet[T]) Next(ctx context.Context) (*T, error) {
 	node := rs.nodes[0]
 	rs.nodes = rs.nodes[1:]
 	return &node, nil
+}
+
+// All walks the result set, returning all entries as a single slice.
+//
+// Note that this essentially consumes the result set.
+func (rs *ResultSet[T]) All(ctx context.Context) ([]*T, error) {
+	rs.mu.Lock()
+	defer rs.mu.Unlock()
+
+	var nodes []*T
+	for {
+		node, err := rs.next(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if node == nil {
+			return nodes, nil
+		}
+		nodes = append(nodes, node)
+	}
 }
