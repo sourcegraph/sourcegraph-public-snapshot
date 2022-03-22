@@ -385,6 +385,20 @@ Flakiness in snapshot tests can be caused by the search response time, order of 
 
 This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` (to apply `visibility: hidden`) or `percy-display-none` (to apply `display: none`) CSS classes to the problematic element and it will be hidden from Percy.
 
+#### Accessibility tests
+
+We use [axe-core](https://github.com/dequelabs/axe-core) to run accessibility audits through our integration tests. It ensures we can quickly assess entire pages and raise any errors before they become problems in production.
+
+You can run an audit in any test by calling `accessibilityAudit()`:
+
+```TypeScript
+test('Repositories list', async function () {
+    await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
+    await page.waitForSelector('[test-repository-name="/github.com/gorilla/mux"]', { visible: true })
+    await accessibilityAudit(page)
+})
+```
+
 ### Lighthouse tests
 
 We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
