@@ -125,7 +125,10 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
-		planJob, err = addCodeMonitorHook(planJob, monitorID)
+		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
+			return hookWithID(ctx, db, gs, args, doSearch, monitorID)
+		}
+		planJob, err = addCodeMonitorHook(planJob, hook)
 		if err != nil {
 			return nil, err
 		}
@@ -150,14 +153,12 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 	return results, nil
 }
 
-func addCodeMonitorHook(in job.Job, monitorID int64) (_ job.Job, err error) {
+func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	return job.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearch:
 			jobCopy := *typedAtom
-			jobCopy.CodeMonitorSearchWrapper = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
-				return hookWithID(ctx, db, gs, args, doSearch, monitorID)
-			}
+			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
 		case *repos.ComputeExcludedRepos:
 			// ComputeExcludedRepos is fine for code monitor jobs
