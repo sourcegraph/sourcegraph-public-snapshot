@@ -28,6 +28,8 @@ of your deployment environment.
 
 ## Getting started
 
+> NOTE: Are you using our [Helm chart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph)? You should follow the [configuration guide](./helm.md) for helm.
+
 We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference repository](./index.md#reference-repository) to track your configuration changes in Git.
 **This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 

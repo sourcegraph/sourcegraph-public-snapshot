@@ -29,9 +29,11 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
-Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
+Once you are all set up, [install Sourcegraph directly](#direct), [install Sourcegraph with Helm](#helm), or [deploy Sourcegraph to a cloud of your choice](#cloud).
 
-### Direct installation
+### Direct
+
+Direct installation supports deploying from Kubernetes manifests and applying customization with [Kustomize](#kustomize).
 
 - After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) with `kubectl`.
 - `cd` to the forked local copy of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository previously set up during [configuration](./configure.md#getting-started).
@@ -62,7 +64,11 @@ Once you are all set up, either [install Sourcegraph directly](#direct-installat
 
 > NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
 
-### Cloud installation
+### Helm
+
+We support the use of [Helm](https://helm.sh) to deploy Sourcegraph. The Helm chart allows users to deploy Sourcegraph with ease. Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts. Follow our [installation guide](./helm.md) for Helm.
+
+### Cloud
 
 > WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
@@ -155,4 +161,6 @@ To learn about our available overlays and how to use them, please refer to our [
 
 ### Reference repository
 
-Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegraph` reference repository](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [spin up](#installation) and [configure](./configure.md) a Sourcegraph deployment on Kubernetes.
+Sourcegraph for Kubernetes (Kustomize) is configured using our [`sourcegraph/deploy-sourcegraph` reference repository](https://github.com/sourcegraph/deploy-sourcegraph/). This repository contains everything you need to [spin up](#installation) and [configure](./configure.md) a Sourcegraph deployment on Kubernetes.
+
+The Sourcegraph Helm chart is available in our [`sourcegraph/deploy-sourcegraph-helm`](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph) repository.
