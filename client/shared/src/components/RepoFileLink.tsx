@@ -50,10 +50,9 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     const { isTruncated, elementReference: titleReference, onMouseEnter } = useIsTruncated<HTMLAnchorElement>()
 
     return (
-        <div className={classNames(className, styles.repoFileLink)}>
+        <div onMouseEnter={onMouseEnter} className={classNames(className, styles.container)}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link
-                onMouseEnter={onMouseEnter}
                 className="text-truncate"
                 data-tooltip={isTruncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
                 to={appendSubtreeQueryParameter(fileURL)}

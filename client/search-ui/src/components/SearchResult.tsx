@@ -53,6 +53,11 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                 <span
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
                     ref={titleReference}
+                    data-tooltip={
+                        isTruncated
+                            ? result.type === 'commit' && `${result.authorName}: ${result.message.split('\n', 1)[0]}`
+                            : result.type === 'repo' && displayRepoName(getRepoMatchLabel(result))
+                    }
                 >
                     {result.type === 'commit' && (
                         <>
@@ -60,21 +65,11 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                             {' › '}
                             <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                             {': '}
-                            <Link
-                                to={getCommitMatchUrl(result)}
-                                data-tooltip={isTruncated ? result.message.split('\n', 1)[0] : null}
-                            >
-                                {result.message.split('\n', 1)[0]}
-                            </Link>
+                            <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
                         </>
                     )}
                     {result.type === 'repo' && (
-                        <Link
-                            to={getRepoMatchUrl(result)}
-                            data-tooltip={isTruncated ? displayRepoName(getRepoMatchLabel(result)) : null}
-                        >
-                            {displayRepoName(getRepoMatchLabel(result))}
-                        </Link>
+                        <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
                     )}
                 </span>
                 <span className={styles.spacer} />
