@@ -45,17 +45,20 @@ var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
 	defaultLimiter = parallel.NewRun(500)
-
-	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-	// For now this DefaultClient has a nil DB connection because it is not used.
-	// In a following commit DefaultClient will be removed and there will be no such absurd thing as NewClient(nil)
-	// Contact sashaostrikov for questions and clarifications if you see this, and it irritates you
-	DefaultClient Client = NewClient(nil)
 )
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo  func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive   func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 }
+
+// AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
+// because it is not intended to be cleared when other mocks should be.
+// This mock should be initialized during tests initialization so that
+// gitserver client always contain address of a local machine during tests
+// and tests which use gitserver client can pass successfully
+var AddrsMock func() []string
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
@@ -220,11 +223,14 @@ type Client interface {
 }
 
 func (c *ClientImplementor) Addrs() []string {
+	if AddrsMock != nil {
+		return AddrsMock()
+	}
 	return c.addrs()
 }
 
 func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -235,7 +241,7 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 }
 
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -246,7 +252,7 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *ClientImplementor) addrForKey(key string) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
@@ -347,6 +353,9 @@ func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, o
 }
 
 func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
+	if ClientMocks.Archive != nil {
+		return ClientMocks.Archive(ctx, repo, opt)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
@@ -697,7 +706,7 @@ func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	for _, addr := range addrs {
 		wg.Add(1)
 		go func(addr string) {
@@ -875,7 +884,7 @@ func (c *ClientImplementor) IsRepoCloned(ctx context.Context, repo api.RepoName)
 }
 
 func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	numPossibleShards := len(c.addrs())
+	numPossibleShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
@@ -945,7 +954,11 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 }
 
 func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	numPossibleShards := len(c.addrs())
+	if ClientMocks.RepoInfo != nil {
+		return ClientMocks.RepoInfo(ctx, repos...)
+	}
+
+	numPossibleShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
@@ -1017,7 +1030,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
-	for _, addr := range c.addrs() {
+	for _, addr := range c.Addrs() {
 		stat, err := c.doReposStats(ctx, addr)
 		if err != nil {
 			allErr = errors.Append(allErr, err)

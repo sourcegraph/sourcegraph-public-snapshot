@@ -102,7 +102,7 @@ func DiffPath(ctx context.Context, db database.DB, repo api.RepoName, sourceComm
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 func DiffSymbols(ctx context.Context, db database.DB, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-	command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+	command := gitserver.NewClient(db).Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	command.Repo = repo
 	return command.Output(ctx)
 }
