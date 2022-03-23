@@ -184,7 +184,7 @@ WHERE user_id = %s
 func (s *subRepoPermsStore) RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT EXISTS(
-SELECT 1
+SELECT
 FROM repo
 WHERE id = %s
 AND private = TRUE
@@ -192,15 +192,9 @@ AND external_service_type IN (%s)
 )
 `, repoId, sqlf.Join(supportedTypesQuery, ","))
 
-	row := s.QueryRow(ctx, q)
-	var exists *bool
-
-	if err := row.Scan(&exists); err != nil {
-		return false, errors.Wrap(err, "scanning row")
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	if err != nil {
+		return false, errors.Wrap(err, "querying database")
 	}
-
-	if exists == nil {
-		return false, nil
-	}
-	return *exists, nil
+	return exists, nil
 }
