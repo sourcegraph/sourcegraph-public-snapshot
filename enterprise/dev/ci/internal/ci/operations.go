@@ -72,6 +72,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addWebApp,     // ~5.5m
 			// Broken: https://github.com/sourcegraph/sourcegraph/issues/33484
 			// addBrowserExt,     // ~4.5m
+			addVSCExt,         // ~4.5m
 			addClientLinters)) // ~9m
 	}
 
@@ -242,6 +243,20 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			},
 		}),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+}
+
+// Builds and tests the VS Code extensions.
+func addVSCExt(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode: Puppeteer tests for VS Code extension",
+		withYarnCache(),
+		bk.Cmd("git-lfs fetch"),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s build"),
+		bk.Cmd("yarn --cwd client/vscode -s package"),
+		bk.Cmd("yarn --cwd client/vscode -s test --verbose"),
+	)
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {

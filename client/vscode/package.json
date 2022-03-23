@@ -123,7 +123,12 @@
             "object"
           ],
           "default": {},
-          "examples": [{"github": "gitlab", "master": "main"}],
+          "examples": [
+            {
+              "github": "gitlab",
+              "master": "main"
+            }
+          ],
           "description": "For each item in this object, replace key with value in the remote url."
         },
         "sourcegraph.defaultBranch": {
@@ -138,7 +143,12 @@
             "object"
           ],
           "default": {},
-          "examples": [{"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"}],
+          "examples": [
+            {
+              "Cache-Control": "no-cache",
+              "Proxy-Authenticate": "Basic"
+            }
+          ],
           "description": "Each value pair will be added to the request headers made to your instance."
         }
       }
@@ -198,8 +208,8 @@
   },
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "test": "echo \"No tests exist yet\" && exit 1",
-    "package": "echo \"package script not implemented yet\" && exit 1",
+    "test": "ts-node ./tests/runTests.ts",
+    "package": "ts-node ./scripts/package.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build": "yarn task:gulp webpack",
     "build:node": "TARGET_TYPE=node yarn task:gulp webpack",
