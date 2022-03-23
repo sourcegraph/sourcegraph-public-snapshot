@@ -50,6 +50,7 @@ const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
+
     currentSpec: {
         id: 'test-spec',
     },
@@ -241,6 +242,8 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                             baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        pageInfo: { hasNextPage: false },
+
                         forkTarget: null,
                     },
                 },
