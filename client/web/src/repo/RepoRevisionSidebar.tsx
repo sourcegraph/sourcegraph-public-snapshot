@@ -87,7 +87,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     return (
         <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY}>
-            <div className="d-flex flex-column h-100 overflow-hidden w-100">
+            <div className="d-flex flex-column h-100 w-100">
                 {props.showGettingStartedTour && (
                     <GettingStartedTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
                 )}
