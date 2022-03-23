@@ -1,4 +1,4 @@
-package background
+package codemonitors
 
 import (
 	"bytes"
@@ -47,8 +47,8 @@ type gqlSettingsResponse struct {
 	Errors []gqlerrors.FormattedError
 }
 
-// settings queries for the computed settings for the current actor
-func settings(ctx context.Context) (_ *schema.Settings, err error) {
+// Settings queries for the computed Settings for the current actor
+func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
 	defer func() {
 		span.LogFields(log.Error(err))
@@ -105,7 +105,7 @@ func settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func doSearch(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+func Search(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
@@ -125,7 +125,10 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
-		planJob, err = addCodeMonitorHook(planJob, monitorID)
+		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
+			return hookWithID(ctx, db, gs, args, doSearch, monitorID)
+		}
+		planJob, err = addCodeMonitorHook(planJob, hook)
 		if err != nil {
 			return nil, err
 		}
@@ -150,14 +153,45 @@ func doSearch(ctx context.Context, db database.DB, query string, monitorID int64
 	return results, nil
 }
 
-func addCodeMonitorHook(in job.Job, monitorID int64) (_ job.Job, err error) {
+// Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
+// On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
+// be searched from the beginning.
+func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
+	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	if err != nil {
+		return err
+	}
+
+	jobArgs := searchClient.JobArgs(inputs)
+	plan, err := predicate.Expand(ctx, db, jobArgs, inputs.Plan)
+	if err != nil {
+		return err
+	}
+
+	planJob, err := job.FromExpandedPlan(jobArgs, plan, db)
+	if err != nil {
+		return err
+	}
+
+	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, _ commit.DoSearchFunc) error {
+		return snapshotHook(ctx, db, gs, args, monitorID)
+	}
+	planJob, err = addCodeMonitorHook(planJob, hook)
+	if err != nil {
+		return err
+	}
+
+	_, err = planJob.Run(ctx, db, streaming.NewNullStream())
+	return err
+}
+
+func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	return job.MapAtom(in, func(atom job.Job) job.Job {
 		switch typedAtom := atom.(type) {
 		case *commit.CommitSearch:
 			jobCopy := *typedAtom
-			jobCopy.CodeMonitorSearchWrapper = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, doSearch commit.DoSearchFunc) error {
-				return hookWithID(ctx, db, gs, args, doSearch, monitorID)
-			}
+			jobCopy.CodeMonitorSearchWrapper = hook
 			return &jobCopy
 		case *repos.ComputeExcludedRepos:
 			// ComputeExcludedRepos is fine for code monitor jobs
@@ -191,10 +225,6 @@ func hookWithID(
 	if err != nil {
 		return err
 	}
-	if len(lastSearched) == 0 {
-		// We've never run this monitor before. Do not run, but start here next time.
-		return cm.UpsertLastSearched(ctx, monitorID, argsHash, commitHashes)
-	}
 
 	// Merge requested hashes and excluded hashes
 	newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
@@ -217,6 +247,25 @@ func hookWithID(
 
 	// If the search was successful, store the resolved hashes
 	// as the new "last searched" hashes
+	return cm.UpsertLastSearched(ctx, monitorID, argsHash, commitHashes)
+}
+
+func snapshotHook(
+	ctx context.Context,
+	db database.DB,
+	gs commit.GitserverClient,
+	args *gitprotocol.SearchRequest,
+	monitorID int64,
+) error {
+	cm := edb.NewEnterpriseDB(db).CodeMonitors()
+
+	// Resolve the requested revisions into a static set of commit hashes
+	commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
+	if err != nil {
+		return err
+	}
+
+	argsHash := hashArgs(args)
 	return cm.UpsertLastSearched(ctx, monitorID, argsHash, commitHashes)
 }
 

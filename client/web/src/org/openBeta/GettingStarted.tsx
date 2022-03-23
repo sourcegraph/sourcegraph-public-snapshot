@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Icon } from '@sourcegraph/wildcard'
 
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
@@ -125,10 +125,7 @@ const Step: React.FunctionComponent<{
 }> = ({ complete, label, textMuted, to, onClick }) => (
     <li className={styles.entryItem}>
         <div className={styles.iconContainer}>
-            <CheckCircleIcon
-                className={classNames('icon-inline', complete ? 'text-success' : styles.iconMuted)}
-                size="1rem"
-            />
+            <Icon className={classNames(complete ? 'text-success' : styles.iconMuted)} as={CheckCircleIcon} />
         </div>
         <h3
             className={classNames({

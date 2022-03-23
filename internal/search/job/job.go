@@ -57,7 +57,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
 
 	patternInfo := search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
-	if patternInfo.Pattern == "" {
+	if b.PatternString() == "" {
 		// Fallback to basic search for searching repos and files if
 		// the structural search pattern is empty.
 		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
@@ -66,6 +66,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
+
+	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 
 	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
@@ -112,7 +114,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					Query:          nil,
 					Typ:            typ,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
 
@@ -136,7 +138,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					Query:          nil,
 					Typ:            typ,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
 
@@ -163,7 +165,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					Query:          zoektQuery,
 					Typ:            typ,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
 			}
@@ -184,7 +186,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			})
 		}
 
-		if resultTypes.Has(result.TypeSymbol) && patternInfo.Pattern != "" && !skipRepoSubsetSearch {
+		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
 			var symbolSearchJobs []Job
 			typ := search.SymbolRequest
 
@@ -196,7 +198,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
 					Query:          zoektQuery,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
 			}
@@ -233,11 +235,11 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
 				Limit:                int(patternInfo.FileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-				Gitserver:            gitserver.DefaultClient,
+				Gitserver:            gitserver.NewClient(db),
 			})
 		}
 
-		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && patternInfo.Pattern != "" {
+		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && b.PatternString() != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
 			if err != nil {
@@ -247,7 +249,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				Query:          zoektQuery,
 				Typ:            typ,
 				FileMatchLimit: patternInfo.FileMatchLimit,
-				Select:         patternInfo.Select,
+				Select:         selector,
 				Zoekt:          jargs.Zoekt,
 			}
 
@@ -343,7 +345,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			if valid() {
-				if repoOptions, ok := addPatternAsRepoFilter(patternInfo.Pattern, repoOptions); ok {
+				if repoOptions, ok := addPatternAsRepoFilter(b.PatternString(), repoOptions); ok {
 					var mode search.GlobalSearchMode
 					if repoUniverseSearch {
 						mode = search.ZoektGlobalSearch

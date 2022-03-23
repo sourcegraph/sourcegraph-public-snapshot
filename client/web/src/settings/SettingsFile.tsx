@@ -190,7 +190,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         ))}
                     </div>
                 </div>
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
+                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
                         jsonSchema={this.props.jsonSchema}

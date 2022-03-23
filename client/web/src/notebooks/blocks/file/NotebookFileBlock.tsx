@@ -240,7 +240,7 @@ const NotebookFileBlockHeader: React.FunctionComponent<FileBlockInput & { fileUR
 }) => (
     <>
         <div className="mr-2">
-            <Icon as={FileDocumentIcon} className="icon-inline" />
+            <Icon as={FileDocumentIcon} />
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">

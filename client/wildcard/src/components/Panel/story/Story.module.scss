@@ -1,0 +1,21 @@
+.panel {
+    background-color: var(--color-bg-1);
+}
+
+.panel-body {
+    border: 0 solid var(--border-color);
+    height: 100%;
+
+    &--right {
+        border-left-width: 1px;
+    }
+    &--left {
+        border-right-width: 1px;
+    }
+    &--bottom {
+        border-top-width: 1px;
+    }
+    &--top {
+        border-bottom-width: 1px;
+    }
+}
