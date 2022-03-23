@@ -5,7 +5,6 @@ import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { Event } from '@sourcegraph/web/src/graphql-operations'
 
 import { observeAuthenticatedUser } from './backend/authenticatedUser'
 import { logEvent } from './backend/eventLogger'
@@ -18,9 +17,11 @@ import { ExtensionCoreAPI } from './contract'
 import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
+import { Event } from './graphql-operations'
 import { initializeCodeSharingCommands } from './link-commands/initialize'
 import polyfillEventSource from './polyfills/eventSource'
 import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessTokenSetting'
+import { displayInstanceVersionWarnings } from './settings/displayWarnings'
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
@@ -143,5 +144,6 @@ export function activate(context: vscode.ExtensionContext): void {
         instanceURL: initialInstanceURL,
     })
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
+    displayInstanceVersionWarnings(localStorageService)
     watchUninstall(eventSourceType, localStorageService)
 }

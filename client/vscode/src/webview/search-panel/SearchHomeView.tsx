@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
@@ -113,7 +114,6 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
             },
             `https://${hostname}/search?q=${encodeURIComponent(queryString)}&patternType=${patternType}`
         )
-        platformContext.telemetryService.log('IDESearchSubmitted')
     }, [
         extensionCoreAPI,
         userQueryState.query,

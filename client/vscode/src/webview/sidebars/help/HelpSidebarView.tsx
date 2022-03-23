@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -20,6 +20,8 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
     instanceURL,
 }) => {
     const [hasAccount, setHasAccount] = useState(false)
+
+    const hostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
 
     const onHelpItemClick = async (url: string, item: string): Promise<void> => {
         platformContext.telemetryService.log(`VSCEHelpSidebar${item}Click`)
@@ -103,7 +105,9 @@ export const HelpSidebarView: React.FunctionComponent<HelpSidebarViewProps> = ({
                             authenticatedUser={authenticatedUser}
                         />
                     ) : (
-                        <p className="ml-2">Logged in as {authenticatedUser.displayName}</p>
+                        <p className="ml-2">
+                            Connected to {hostname} as {authenticatedUser.displayName}
+                        </p>
                     )}
                 </div>
             )}
