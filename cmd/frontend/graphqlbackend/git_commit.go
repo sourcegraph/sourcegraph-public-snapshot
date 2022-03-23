@@ -114,7 +114,7 @@ func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoReso
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
 func (r *GitCommitResolver) PreferredCanonicalCommitish(ctx context.Context) string {
-	if tag := r.currentTag(ctx); tag != "" {
+	if tag := r.packageRepoVersionTag(ctx); tag != "" {
 		return tag
 	}
 	return string(r.oid)
@@ -331,8 +331,8 @@ type behindAheadCountsResolver struct{ behind, ahead int32 }
 func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
 func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
-// currentTag returns the tag corresponding the current commit for a package repo.
-func (r *GitCommitResolver) currentTag(ctx context.Context) string {
+// packageRepoVersionTag returns the git tag corresponding the current commit for a package repo.
+func (r *GitCommitResolver) packageRepoVersionTag(ctx context.Context) string {
 	if !r.repoResolver.IsPackageRepo() {
 		return ""
 	}
