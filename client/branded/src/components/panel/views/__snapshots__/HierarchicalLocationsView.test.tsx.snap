@@ -160,9 +160,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       data-testid="hierarchical-locations-view"
     >
       <div
-        class="resizable"
+        class="panel panelLeft panelRelative"
         style="width: 200px;"
       >
+        <div
+          class="handle handleLeft"
+          role="presentation"
+        />
         <div
           class="groupList"
           data-testid="hierarchical-locations-view-list"
@@ -224,10 +228,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </button>
         </div>
-        <div
-          class="handle handleRight"
-          role="presentation"
-        />
       </div>
       <div
         class="fileLocations fileLocations"
