@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.38.0
+
+### Added
+
 - Added new "Getting started onboarding tour" for not authenticated users on Sourcegraph.com instead of "Search onboarding tour" [#32263](https://github.com/sourcegraph/sourcegraph/pull/32263)
 - Pings now include code host integration usage metrics [#31379](https://github.com/sourcegraph/sourcegraph/pull/31379)
 - Added `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS` environment variable to enable EC2 metadata API authentication to an external S3 bucket storing precise code intelligence uploads. [#31820](https://github.com/sourcegraph/sourcegraph/pull/31820)
@@ -44,6 +62,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Viewing or previewing a batch change is now more resilient when transient network or server errors occur. [#29859](https://github.com/sourcegraph/sourcegraph/issues/29859)
 - Search: `select:file` and `select:file.directory` now properly deduplicates results. [#32469](https://github.com/sourcegraph/sourcegraph/pull/32469)
 - Security: Patch container images against CVE 2022-0778 [#32679](https://github.com/sourcegraph/sourcegraph/issues/32679)
+- When closing a batch change, draft changesets that will be closed are now also shown. [#32481](https://github.com/sourcegraph/sourcegraph/pull/32481)
 
 ### Removed
 

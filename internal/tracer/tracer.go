@@ -48,14 +48,16 @@ type options struct {
 type tracerType string
 
 const (
-	None    tracerType = ""
+	None    tracerType = "none"
 	Datadog tracerType = "datadog"
 	Ot      tracerType = "opentracing"
 )
 
-func (t tracerType) isValid() bool {
+// isSetByUser returns true if the tracerType is one supported by the schema
+// should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
+func (t tracerType) isSetByUser() bool {
 	switch t {
-	case None, Datadog, Ot:
+	case Datadog, Ot:
 		return true
 	}
 	return false
@@ -109,7 +111,7 @@ func initTracer(opts *options, c conftypes.WatchableSiteConfig) {
 				samplingStrategy = ot.TraceSelective
 				setTracer = Ot
 			}
-			if t := tracerType(tracingConfig.Type); t.isValid() {
+			if t := tracerType(tracingConfig.Type); t.isSetByUser() {
 				setTracer = t
 			}
 			shouldLog = tracingConfig.Debug

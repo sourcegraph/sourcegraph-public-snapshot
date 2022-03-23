@@ -176,10 +176,10 @@ func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ jso
 	return json.Marshal(homepagePanels)
 }
 
-func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
-	repos, err := usagestats.GetRepositories(ctx)
+	repos, err := usagestats.GetRepositories(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +480,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalSearchOnboardingJSON failed", "error", err)
 		}
 
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
@@ -563,7 +563,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 
 		wg.Wait()
 	} else {
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}

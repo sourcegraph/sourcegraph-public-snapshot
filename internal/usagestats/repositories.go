@@ -5,6 +5,8 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -34,7 +36,7 @@ type Repositories struct {
 	OtherBranchesNewLinesCount uint64
 }
 
-func GetRepositories(ctx context.Context) (*Repositories, error) {
+func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
 	var total Repositories
 
 	stats, err := gitserver.DefaultClient.ReposStats(ctx)

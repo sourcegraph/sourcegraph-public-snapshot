@@ -294,7 +294,7 @@ func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId i
 func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardIds []int, userIds []int, orgIds []int) (bool, error) {
 	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, pq.Array(dashboardIds), visibleDashboardsQuery(userIds, orgIds))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
-	return count == 0, err
+	return count == len(dashboardIds), err
 }
 
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId int, grants []DashboardGrant) error {
@@ -374,7 +374,7 @@ const getDashboardGrantsByPermissionsSql = `
 SELECT count(*)
 FROM dashboard
 WHERE id = ANY (%s)
-AND id NOT IN (%s);
+AND id IN (%s);
 `
 
 const addDashboardGrantsSql = `
