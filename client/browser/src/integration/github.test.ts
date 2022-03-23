@@ -929,7 +929,7 @@ describe('GitHub', () => {
                 }
             })
 
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper type and search query from search input', async () => {
+            it.skip('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper type and search query from search input', async () => {
                 const initialQuery = 'hello'
 
                 for (const page of pages) {
