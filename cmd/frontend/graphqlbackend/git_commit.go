@@ -113,11 +113,15 @@ func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoReso
 
 func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
-func (r *GitCommitResolver) PreferredCanonicalCommitish(ctx context.Context) string {
-	if tag := r.packageRepoVersionTag(ctx); tag != "" {
-		return tag
+func (r *GitCommitResolver) PreferredCanonicalCommitish(ctx context.Context) (string, error) {
+	tag, err := r.packageRepoVersionTag(ctx)
+	if err != nil {
+		return "", err
 	}
-	return string(r.oid)
+	if tag != "" {
+		return tag, nil
+	}
+	return string(r.oid), nil
 }
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
@@ -191,16 +195,24 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *GitCommitResolver) URL(ctx context.Context) string {
+func (r *GitCommitResolver) URL(ctx context.Context) (string, error) {
+	commitish, err := r.preferredCommitish(ctx)
+	if err != nil {
+		return "", err
+	}
 	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + r.preferredCommitish(ctx)
-	return url.String()
+	url.Path += "/-/commit/" + commitish
+	return url.String(), nil
 }
 
-func (r *GitCommitResolver) CanonicalURL(ctx context.Context) string {
+func (r *GitCommitResolver) CanonicalURL(ctx context.Context) (string, error) {
+	commitish, err := r.PreferredCanonicalCommitish(ctx)
+	if err != nil {
+		return "", err
+	}
 	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + r.PreferredCanonicalCommitish(ctx)
-	return url.String()
+	url.Path += "/-/commit/" + commitish
+	return url.String(), nil
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -336,30 +348,33 @@ func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
 func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
 // packageRepoVersionTag returns the git tag corresponding the current commit for a package repo.
-func (r *GitCommitResolver) packageRepoVersionTag(ctx context.Context) string {
+func (r *GitCommitResolver) packageRepoVersionTag(ctx context.Context) (string, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	if !repo.IsPackageRepo() {
-		return ""
+		return "", nil
 	}
 	tags, err := r.tags(ctx)
-	if err != nil || len(tags) == 0 {
-		return ""
+	if err != nil {
+		return "", err
+	}
+	if len(tags) == 0 {
+		return "", nil
 	}
 	sort.Slice(tags, func(i, j int) bool {
 		// tags for package repos are formatted as 'v<version>'
 		return reposource.VersionGreaterThan(tags[i], tags[j])
 	})
-	return tags[0]
+	return tags[0], nil
 }
 
 // preferredCommitish returns the preferred commit-ish suitable for use in
 // (not necessarily canonical) user-facing URLs, such as for navigation.
-func (r *GitCommitResolver) preferredCommitish(ctx context.Context) string {
+func (r *GitCommitResolver) preferredCommitish(ctx context.Context) (string, error) {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return *r.inputRev
+		return *r.inputRev, nil
 	}
 	return r.PreferredCanonicalCommitish(ctx)
 }
@@ -369,26 +384,31 @@ func (r *GitCommitResolver) preferredCommitish(ctx context.Context) string {
 // given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
-func (r *GitCommitResolver) repoRevURL(ctx context.Context) *url.URL {
+func (r *GitCommitResolver) repoRevURL(ctx context.Context) (*url.URL, error) {
 	// Dereference to copy to avoid mutation
 	url := *r.repoResolver.RepoMatch.URL()
 	var rev string
+	var err error
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
-	} else {
-		rev = r.PreferredCanonicalCommitish(ctx)
+	} else if rev, err = r.PreferredCanonicalCommitish(ctx); err != nil {
+		return nil, err
 	}
 	if rev != "" {
 		url.Path += "@" + rev
 	}
-	return &url
+	return &url, nil
 }
 
-func (r *GitCommitResolver) canonicalRepoRevURL(ctx context.Context) *url.URL {
+func (r *GitCommitResolver) canonicalRepoRevURL(ctx context.Context) (*url.URL, error) {
 	// Dereference to copy the URL to avoid mutation
+	commitish, err := r.PreferredCanonicalCommitish(ctx)
+	if err != nil {
+		return nil, err
+	}
 	url := *r.repoResolver.RepoMatch.URL()
-	url.Path += "@" + r.PreferredCanonicalCommitish(ctx)
-	return &url
+	url.Path += "@" + commitish
+	return &url, nil
 }
 
 func (r *GitCommitResolver) tags(ctx context.Context) ([]string, error) {

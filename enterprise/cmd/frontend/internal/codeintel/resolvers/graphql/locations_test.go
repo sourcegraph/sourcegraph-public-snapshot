@@ -272,13 +272,13 @@ func TestResolveLocations(t *testing.T) {
 		t.Fatalf("unexpected length. want=%d have=%d", 3, len(locations))
 	}
 	ctx := context.Background()
-	if url := locations[0].CanonicalURL(ctx); url != "/repo50@deadbeef1/-/blob/p1?L12:13-14:15" {
+	if url, _ := locations[0].CanonicalURL(ctx); url != "/repo50@deadbeef1/-/blob/p1?L12:13-14:15" {
 		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/blob/p1?L12:13-14:15", url)
 	}
-	if url := locations[1].CanonicalURL(ctx); url != "/repo51@deadbeef2/-/blob/p2?L22:23-24:25" {
+	if url, _ := locations[1].CanonicalURL(ctx); url != "/repo51@deadbeef2/-/blob/p2?L22:23-24:25" {
 		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/blob/p2?L22:23-24:25", url)
 	}
-	if url := locations[2].CanonicalURL(ctx); url != "/repo53@deadbeef4/-/blob/p4?L42:43-44:45" {
+	if url, _ := locations[2].CanonicalURL(ctx); url != "/repo53@deadbeef4/-/blob/p4?L42:43-44:45" {
 		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/blob/p4?L42:43-44:45", url)
 	}
 }

@@ -126,7 +126,7 @@ func (r symbolResolver) Location() *locationResolver {
 
 func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Location().URL(ctx) }
 
-func (r symbolResolver) CanonicalURL(ctx context.Context) string {
+func (r symbolResolver) CanonicalURL(ctx context.Context) (string, error) {
 	return r.Location().CanonicalURL(ctx)
 }
 

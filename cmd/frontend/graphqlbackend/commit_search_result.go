@@ -79,15 +79,19 @@ func (r *CommitSearchResultResolver) Detail() Markdown {
 	return Markdown(r.CommitMatch.Detail())
 }
 
-func (r *CommitSearchResultResolver) Matches(ctx context.Context) []*searchResultMatchResolver {
+func (r *CommitSearchResultResolver) Matches(ctx context.Context) ([]*searchResultMatchResolver, error) {
 	hls := r.CommitMatch.Body().ToHighlightedString()
+	url, err := r.Commit().URL(ctx)
+	if err != nil {
+		return nil, err
+	}
 	match := &searchResultMatchResolver{
 		body:       hls.Value,
 		highlights: hls.Highlights,
-		url:        r.Commit().URL(ctx),
+		url:        url,
 	}
 	matches := []*searchResultMatchResolver{match}
-	return matches
+	return matches, nil
 }
 
 func (r *CommitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }

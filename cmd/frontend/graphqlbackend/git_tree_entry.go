@@ -128,10 +128,14 @@ func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commi
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
-	return r.url(ctx).String(), nil
+	url, err := r.url(ctx)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
 }
 
-func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
+func (r *GitTreeEntryResolver) url(ctx context.Context) (*url.URL, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
 	defer span.Finish()
 
@@ -144,16 +148,23 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
-			return &url.URL{}
+			return &url.URL{}, nil
 		}
-		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
+		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}, nil
 	}
-	return r.urlPath(r.commit.repoRevURL(ctx))
+	repoRevURL, err := r.commit.repoRevURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return r.urlPath(repoRevURL), nil
 }
 
-func (r *GitTreeEntryResolver) CanonicalURL(ctx context.Context) string {
-	url := r.commit.canonicalRepoRevURL(ctx)
-	return r.urlPath(url).String()
+func (r *GitTreeEntryResolver) CanonicalURL(ctx context.Context) (string, error) {
+	url, err := r.commit.canonicalRepoRevURL(ctx)
+	if err != nil {
+		return "", err
+	}
+	return r.urlPath(url).String(), nil
 }
 
 func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
@@ -179,7 +190,12 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, repo, r.commit.preferredCommitish(ctx), r.Path(), r.stat.Mode().IsDir())
+	var commitish string
+	commitish, err = r.commit.preferredCommitish(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return externallink.FileOrDir(ctx, r.db, repo, commitish, r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
