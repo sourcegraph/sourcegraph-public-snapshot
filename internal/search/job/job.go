@@ -57,7 +57,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
 
 	patternInfo := search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
-	if patternInfo.Pattern == "" {
+	if b.PatternString() == "" {
 		// Fallback to basic search for searching repos and files if
 		// the structural search pattern is empty.
 		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
@@ -184,7 +184,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			})
 		}
 
-		if resultTypes.Has(result.TypeSymbol) && patternInfo.Pattern != "" && !skipRepoSubsetSearch {
+		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
 			var symbolSearchJobs []Job
 			typ := search.SymbolRequest
 
@@ -237,7 +237,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			})
 		}
 
-		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && patternInfo.Pattern != "" {
+		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && b.PatternString() != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
 			if err != nil {
@@ -343,7 +343,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			if valid() {
-				if repoOptions, ok := addPatternAsRepoFilter(patternInfo.Pattern, repoOptions); ok {
+				if repoOptions, ok := addPatternAsRepoFilter(b.PatternString(), repoOptions); ok {
 					var mode search.GlobalSearchMode
 					if repoUniverseSearch {
 						mode = search.ZoektGlobalSearch
