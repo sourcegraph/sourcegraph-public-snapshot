@@ -46,6 +46,7 @@ const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
     closedAt: null,
     description: null,
     state: BatchChangeState.OPEN,
+
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
