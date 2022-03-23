@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -463,7 +464,7 @@ func TestListOrganizations(t *testing.T) {
 		// Simplest way to initialise a client with no cache.
 		cli.orgsCache = nil
 
-		orgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
+		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -476,8 +477,8 @@ func TestListOrganizations(t *testing.T) {
 			t.Fatalf("expected 100 orgs but got %d", len(orgs))
 		}
 
-		if !hasNextPage {
-			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		if nextSince < 1 {
+			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
 		}
 	})
 
@@ -491,8 +492,8 @@ func TestListOrganizations(t *testing.T) {
 		}
 
 		hash := cli.auth.Hash()
-		expectedEtagKey := hash + "-orgs-etag-1"
-		expectedOrgsKey := hash + "-orgs-1"
+		expectedEtagKey := hash + "-orgs-etag-0"
+		expectedOrgsKey := hash + "-orgs-0"
 
 		// When starting from scratch, the cache should be empty.
 		if val, ok := cli.orgsCache.Get(expectedEtagKey); ok {
@@ -504,7 +505,7 @@ func TestListOrganizations(t *testing.T) {
 		}
 
 		// Make the API call. This should also populate the cache.
-		orgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
+		orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -517,8 +518,8 @@ func TestListOrganizations(t *testing.T) {
 			t.Fatalf("expected 100 orgs but got %d", len(orgs))
 		}
 
-		if !hasNextPage {
-			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		if nextSince < 1 {
+			t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
 		}
 
 		rawEtag, ok := cli.orgsCache.Get(expectedEtagKey)
@@ -526,11 +527,13 @@ func TestListOrganizations(t *testing.T) {
 			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedEtagKey)
 		}
 
+		// Get the orgs stored in cache.
 		rawOrgs, ok := cli.orgsCache.Get(expectedOrgsKey)
 		if !ok {
 			t.Fatalf("expected key %q to be populated in cache, but found empty", expectedOrgsKey)
 		}
 
+		// Expected orgs.
 		expectedOrgs, err := json.Marshal(orgs)
 		if err != nil {
 			t.Fatal(err)
@@ -544,7 +547,7 @@ func TestListOrganizations(t *testing.T) {
 
 		// Make another API call. This should read from the cache since the resource has not been
 		// modified upstream.
-		refetchedOrgs, hasNextPage, err := cli.ListOrganizations(context.Background(), 1)
+		refetchedOrgs, refetchedNextSince, err := cli.ListOrganizations(context.Background(), 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -553,8 +556,8 @@ func TestListOrganizations(t *testing.T) {
 			t.Fatalf("mismatch in refetched orgs: (-want +got):\n%s", diff)
 		}
 
-		if !hasNextPage {
-			t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+		if nextSince != refetchedNextSince {
+			t.Fatalf("expected refetched nextSince: %d, but got %d", nextSince, refetchedNextSince)
 		}
 
 		// We want to verify that for a cached request, the correct header name and its value is
@@ -573,7 +576,7 @@ func TestListOrganizations(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(uri, gheToken, testServer.Client())
-		testCli.ListOrganizations(context.Background(), 1)
+		testCli.ListOrganizations(context.Background(), 0)
 	})
 
 	t.Run("enterprise-cache-behaviour", func(t *testing.T) {
@@ -583,7 +586,10 @@ func TestListOrganizations(t *testing.T) {
 
 		// Existing list of orgs.
 		mockOldOrgs, err := json.Marshal([]*Org{
-			{Login: "foo"},
+			{
+				ID:    1,
+				Login: "foo",
+			},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -591,8 +597,15 @@ func TestListOrganizations(t *testing.T) {
 
 		// Updated list of orgs after an initial request is already made, used to verify that the
 		// cache was updated correctly.
+		//
+		// We simulate an existing org being deleted and a new one being created. So the list still
+		// contains one item, but the ID has increased. Using the older value of ID in the "since"
+		// argument should still work.
 		mockNewOrgs, err := json.Marshal([]*Org{
-			{Login: "bar"},
+			{
+				ID:    2,
+				Login: "bar",
+			},
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -624,14 +637,15 @@ func TestListOrganizations(t *testing.T) {
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(uri, gheToken, testServer.Client())
 
-		runTest := func(expectedOrgs []byte) {
-			orgs, hasNextPage, err := testCli.ListOrganizations(context.Background(), 1)
+		runTest := func(since int, expectedOrgs []byte) {
+			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !hasNextPage {
-				t.Fatalf("expected hasNextPage to be true but got %v", hasNextPage)
+			// nextSince must always be greater than "since" which was passed as the argument to ListOrganizations.
+			if nextSince <= since {
+				t.Fatalf("expected nextSince greater than since (%d), but got %d", since, nextSince)
 			}
 
 			gotOrgs, err := json.Marshal(orgs)
@@ -643,7 +657,7 @@ func TestListOrganizations(t *testing.T) {
 				t.Fatalf("mismatch in expected orgs and orgs returned from API: (-want +got):\n%s", diff)
 			}
 
-			key := testCli.auth.Hash() + "-orgs-1"
+			key := fmt.Sprintf("%s-orgs-%d", testCli.auth.Hash(), since)
 			gotCachedOrgs, ok := testCli.orgsCache.Get(key)
 			if !ok {
 				t.Fatal(err)
@@ -655,10 +669,84 @@ func TestListOrganizations(t *testing.T) {
 		}
 
 		// Initial request.
-		runTest(mockOldOrgs)
+		t.Run("initial orgs list", func(t *testing.T) {
+			runTest(0, mockOldOrgs)
+		})
 
-		// New request but with orgs modified.
-		runTest(mockNewOrgs)
+		t.Run("modified orgs list", func(t *testing.T) {
+			// New request but with orgs modified.
+			runTest(1, mockNewOrgs)
+		})
+	})
+
+	t.Run("enterprise-pagination", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		mockOrgs := make([]*Org, 200)
+
+		for i := 0; i < 200; i++ {
+			mockOrgs[i] = &Org{
+				ID:    i + 1,
+				Login: fmt.Sprint("foo-", i+1),
+			}
+		}
+
+		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			val, ok := r.URL.Query()["since"]
+			if !ok {
+				t.Fatal(`unexpected test scenario, no query parameter "since"`)
+			}
+
+			writeJson := func(orgs []*Org) {
+				data, err := json.Marshal(orgs)
+				if err != nil {
+					t.Fatalf("failed to marshal orgs into json: %v", err)
+				}
+
+				_, err = w.Write(data)
+				if err != nil {
+					t.Fatalf("failed to write response: %v", err)
+				}
+			}
+
+			switch val[0] {
+			case "0":
+				writeJson(mockOrgs[0:100])
+			case "100":
+				writeJson(mockOrgs[100:])
+			case "200":
+				writeJson([]*Org{})
+			}
+		}))
+
+		uri, _ := url.Parse(testServer.URL)
+		testCli := NewV3Client(uri, gheToken, testServer.Client())
+
+		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
+			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if nextSince != expectedNextSince {
+				t.Fatalf("expected nextSince: %d but got %d", nextSince, expectedNextSince)
+			}
+
+			if diff := cmp.Diff(expectedOrgs, orgs); diff != "" {
+				t.Fatalf("mismatch in expected orgs and orgs received in response: (-want +got):\n%s", diff)
+			}
+		}
+
+		t.Run("orgs 0 to 100", func(t *testing.T) {
+			runTest(0, 100, mockOrgs[:100])
+		})
+
+		t.Run("orgs 100 to 200", func(t *testing.T) {
+			runTest(100, 200, mockOrgs[100:])
+		})
+
+		t.Run("orgs out of bounds", func(t *testing.T) {
+			runTest(200, -1, []*Org{})
+		})
 	})
 }
 
