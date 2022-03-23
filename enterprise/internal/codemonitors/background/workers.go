@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -172,7 +173,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 	ctx = featureflag.WithFlags(ctx, r.db.FeatureFlags())
 
-	settings, err := settings(ctx)
+	settings, err := codemonitors.Settings(ctx)
 	if err != nil {
 		return errors.Wrap(err, "query settings")
 	}
@@ -182,7 +183,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		// Only add an after filter when repo-aware monitors is disabled
 		query = newQueryWithAfterFilter(q)
 	}
-	results, searchErr := doSearch(ctx, r.db, query, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, r.db, query, m.ID, settings)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
