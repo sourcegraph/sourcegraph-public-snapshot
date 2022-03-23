@@ -273,7 +273,7 @@ func (r *GitTreeEntryResolver) CodeIntelInfo(ctx context.Context) (GitTreeCodeIn
 
 	return EnterpriseResolvers.codeIntelResolver.GitTreeCodeIntelInfo(ctx, &GitTreeEntryCodeIntelInfoArgs{
 		Repo:   repo,
-		Commit: *r.Commit().InputRev(),
+		Commit: string(r.Commit().OID()),
 		Path:   r.Path(),
 	})
 }
