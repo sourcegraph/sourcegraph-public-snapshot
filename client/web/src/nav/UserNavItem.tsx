@@ -170,19 +170,27 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         )}
                     </MenuButton>
                     <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
-                        <MenuHeader>
+                        <MenuHeader className={styles.dropdownHeader}>
                             Signed in as <strong>@{props.authenticatedUser.username}</strong>
                         </MenuHeader>
-                        <MenuDivider />
-                        <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
+                        <MenuDivider className={styles.dropdownDivider} />
+                        <MenuLink className={styles.dropdownItem} as={Link} to={props.authenticatedUser.settingsURL!}>
                             Settings
                         </MenuLink>
                         {props.showRepositorySection && (
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/settings/repositories`}>
+                            <MenuLink
+                                className={styles.dropdownItem}
+                                as={Link}
+                                to={`/users/${props.authenticatedUser.username}/settings/repositories`}
+                            >
                                 Your repositories
                             </MenuLink>
                         )}
-                        <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                        <MenuLink
+                            className={styles.dropdownItem}
+                            as={Link}
+                            to={`/users/${props.authenticatedUser.username}/searches`}
+                        >
                             Saved searches
                         </MenuLink>
                         {openBetaEnabled && (
@@ -231,39 +239,51 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         </div>
                         {!openBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                             <>
-                                <MenuDivider />
-                                <MenuHeader>Your organizations</MenuHeader>
+                                <MenuDivider className={styles.dropdownDivider} />
+                                <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
                                 {props.authenticatedUser.organizations.nodes.map(org => (
-                                    <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
+                                    <MenuLink
+                                        className={styles.dropdownItem}
+                                        as={Link}
+                                        key={org.id}
+                                        to={org.settingsURL || org.url}
+                                    >
                                         {org.displayName || org.name}
                                     </MenuLink>
                                 ))}
                             </>
                         )}
-                        <MenuDivider />
+                        <MenuDivider className={styles.dropdownDivider} />
                         {props.authenticatedUser.siteAdmin && (
-                            <MenuLink as={Link} to="/site-admin">
+                            <MenuLink className={styles.dropdownItem} as={Link} to="/site-admin">
                                 Site admin
                             </MenuLink>
                         )}
-                        <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
+                        <MenuLink className={styles.dropdownItem} as={Link} to="/help" target="_blank" rel="noopener">
                             Help <Icon as={OpenInNewIcon} />
                         </MenuLink>
                         <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                         {props.authenticatedUser.session?.canSignOut && (
-                            <MenuLink as={AnchorLink} to="/-/sign-out">
+                            <MenuLink className={styles.dropdownItem} as={AnchorLink} to="/-/sign-out">
                                 Sign out
                             </MenuLink>
                         )}
-                        <MenuDivider />
+                        <MenuDivider className={styles.dropdownDivider} />
                         {props.showDotComMarketing && (
-                            <MenuLink as={AnchorLink} to="https://about.sourcegraph.com" target="_blank" rel="noopener">
+                            <MenuLink
+                                className={styles.dropdownItem}
+                                as={AnchorLink}
+                                to="https://about.sourcegraph.com"
+                                target="_blank"
+                                rel="noopener"
+                            >
                                 About Sourcegraph <Icon as={OpenInNewIcon} />
                             </MenuLink>
                         )}
                         {codeHostIntegrationMessaging === 'browser-extension' && (
                             <MenuLink
+                                className={styles.dropdownItem}
                                 as={AnchorLink}
                                 to="https://docs.sourcegraph.com/integration/browser_extension"
                                 target="_blank"

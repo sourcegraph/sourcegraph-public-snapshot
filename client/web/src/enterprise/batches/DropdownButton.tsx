@@ -12,6 +12,7 @@ import {
     MenuList,
     Position,
     MenuItem,
+    MenuDivider,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -150,7 +151,7 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>
