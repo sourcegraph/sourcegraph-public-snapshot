@@ -172,7 +172,7 @@ func NewGitserver(repositoryFetcher fetcher.RepositoryFetcher) Gitserver {
 }
 
 func (g Gitserver) LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(entry git.LogEntry) error) error {
-	return git.LogReverseEach(repo, commit, n, onLogEntry)
+	return git.LogReverseEach(repo, db, commit, n, onLogEntry)
 }
 
 func (g Gitserver) RevListEach(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {

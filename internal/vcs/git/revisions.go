@@ -93,7 +93,7 @@ func ResolveRevision(ctx context.Context, db database.DB, repo api.RepoName, spe
 		spec = spec + "^0"
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec)
+	cmd := gitserver.NewClient(db).Command("git", "rev-parse", spec)
 	cmd.Repo = repo
 	cmd.EnsureRevision = spec
 

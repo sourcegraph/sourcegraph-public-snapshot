@@ -59,7 +59,7 @@ func NewProvider(urn, host, user, password string, depots []extsvc.RepoID, db da
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.DefaultClient,
+		p4Execer:           gitserver.NewClient(db),
 		cachedGroupMembers: make(map[string][]string),
 	}
 }

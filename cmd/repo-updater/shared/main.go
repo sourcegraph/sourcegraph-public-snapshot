@@ -133,7 +133,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	server := &repoupdater.Server{
 		Store:                 store,
 		Scheduler:             updateScheduler,
-		GitserverClient:       gitserver.DefaultClient,
+		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 

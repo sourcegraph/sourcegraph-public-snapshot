@@ -55,7 +55,7 @@ func ShortLog(ctx context.Context, db database.DB, repo api.RepoName, opt ShortL
 	if opt.Path != "" {
 		args = append(args, opt.Path)
 	}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {

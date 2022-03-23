@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"context"
+	"errors"
 	"io"
 	"io/fs"
 	"mime"
@@ -13,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -43,19 +45,26 @@ func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
 		}
 	}))
 
-	t.Cleanup(func() { s.Close() })
+	t.Cleanup(func() {
+		s.Close()
+		gitserver.ResetClientMocks()
+	})
 
-	// Strip the protocol from the URI while patching the gitserver client's
-	// addresses, since the gitserver implementation does not want the protocol in
-	// the address.
-	original := gitserver.DefaultClient
-	t.Cleanup(func() { gitserver.DefaultClient = original })
-
-	gitserver.DefaultClient = gitserver.NewTestClient(
-		httpcli.InternalDoer,
-		database.NewMockDB(),
-		[]string{strings.TrimPrefix(s.URL, "http://")},
-	)
+	gitserver.ClientMocks.RepoInfo = func(ctx context.Context, repos ...api.RepoName) (resp *protocol.RepoInfoResponse, err error) {
+		if httpStatusCode != http.StatusOK {
+			err = errors.New("error")
+		}
+		return nil, err
+	}
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (reader io.ReadCloser, err error) {
+		if httpStatusCode != http.StatusOK {
+			err = errors.New("error")
+		} else {
+			stringReader := strings.NewReader(resp)
+			reader = io.NopCloser(stringReader)
+		}
+		return reader, err
+	}
 }
 
 func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {

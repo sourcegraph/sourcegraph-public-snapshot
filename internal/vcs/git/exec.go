@@ -22,7 +22,7 @@ import (
 //
 // execSafe should NOT be exported. We want to limit direct git calls to this
 // package.
-func execSafe(ctx context.Context, _ database.DB, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
+func execSafe(ctx context.Context, db database.DB, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
 	if Mocks.ExecSafe != nil {
 		return Mocks.ExecSafe(params)
 	}
@@ -38,7 +38,7 @@ func execSafe(ctx context.Context, _ database.DB, repo api.RepoName, params []st
 		return nil, nil, 0, errors.Errorf("command failed: %q is not a allowed git command", params)
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", params...)
+	cmd := gitserver.NewClient(db).Command("git", params...)
 	cmd.Repo = repo
 	stdout, stderr, err = cmd.DividedOutput(ctx)
 	exitCode = cmd.ExitStatus
@@ -53,7 +53,7 @@ func execSafe(ctx context.Context, _ database.DB, repo api.RepoName, params []st
 //
 // execReader should NOT be exported. We want to limit direct git calls to this
 // package.
-func execReader(ctx context.Context, _ database.DB, repo api.RepoName, args []string) (io.ReadCloser, error) {
+func execReader(ctx context.Context, db database.DB, repo api.RepoName, args []string) (io.ReadCloser, error) {
 	if Mocks.ExecReader != nil {
 		return Mocks.ExecReader(args)
 	}
@@ -65,7 +65,7 @@ func execReader(ctx context.Context, _ database.DB, repo api.RepoName, args []st
 	if !gitdomain.IsAllowedGitCmd(args) {
 		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
 	}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	return gitserver.StdoutReader(ctx, cmd)
 }
@@ -79,9 +79,9 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-func gitserverCmdFunc(repo api.RepoName, _ database.DB) cmdFunc {
+func gitserverCmdFunc(repo api.RepoName, db database.DB) cmdFunc {
 	return func(args []string) cmd {
-		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd := gitserver.NewClient(db).Command("git", args...)
 		cmd.Repo = repo
 		return cmd
 	}

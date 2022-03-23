@@ -41,7 +41,7 @@ type repositoryMirrorInfoResolver struct {
 
 func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.RepoName())
+		resp, err := gitserver.NewClient(r.db).RepoInfo(ctx, r.repository.RepoName())
 		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.RepoName()], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
@@ -231,7 +231,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	}
 
 	var result checkMirrorRepositoryConnectionResult
-	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, repo.Name); err != nil {
+	if err := gitserver.NewClient(r.db).IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil
