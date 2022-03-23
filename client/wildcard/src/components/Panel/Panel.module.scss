@@ -1,37 +1,46 @@
 .panel {
-    --panel-handle-size: 2px;
+    --panel-handle-size: 0.35rem;
     --panel-handle-bg-color: var(--border-color-2);
-    --panel-bg-color: var(--color-bg-1);
+    --panel-handle-resizing-bg-color: var(--border-color);
+    overflow: visible;
 
-    position: fixed;
-    background-color: var(--panel-bg-color);
-    overflow-x: hidden;
     bottom: 0;
 
     &--bottom {
         left: 0;
         right: 0;
-        padding-top: var(--panel-handle-size);
+    }
+
+    &--right,
+    &--left {
+        height: 100%;
+        top: 0;
     }
 
     &--left {
-        top: 0;
         left: 0;
-        padding-right: var(--panel-handle-size);
     }
 
     &--right {
-        top: 0;
         right: 0;
-        padding-left: var(--panel-handle-size);
+    }
+
+    &--fixed {
+        position: fixed;
+    }
+
+    &--relative {
+        position: relative;
+        flex: 0 0 auto;
     }
 }
 
 .handle {
-    background-color: var(--panel-handle-bg-color);
     position: absolute;
+    opacity: 0;
     user-select: none;
     z-index: 1;
+    flex-shrink: 0;
 
     &--right,
     &--left {
@@ -42,22 +51,29 @@
     }
 
     &--right {
-        left: 0;
+        left: calc(-0.5 * var(--panel-handle-size));
     }
 
     &--left {
-        right: 0;
+        right: calc(-0.5 * var(--panel-handle-size));
     }
 
     &--bottom {
         height: var(--panel-handle-size);
+        top: calc(-0.5 * var(--panel-handle-size));
         cursor: ns-resize;
         left: 0;
         right: 0;
-        top: 0;
     }
 
-    &--resizing {
-        --panel-handle-bg-color: var(--border-color);
+    &:hover {
+        opacity: 0.5;
+        background-color: var(--border-color-2);
+    }
+
+    &--resizing,
+    &--resizing:hover {
+        opacity: 1;
+        background-color: var(--panel-handle-resizing-bg-color);
     }
 }
