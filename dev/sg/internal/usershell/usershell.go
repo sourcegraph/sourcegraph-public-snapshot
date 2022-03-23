@@ -106,6 +106,11 @@ func Cmd(ctx context.Context, cmd string) *exec.Cmd {
 		command := fmt.Sprintf("fish || true; %s", cmd)
 		return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
 	}
+	if os.Getenv("USER") == "keegan" {
+		// Here be dragons. The "-i" below breaks stuff for me. I use direnv
+		// to setup my environment, I don't mutate my .bashrc.
+		return exec.CommandContext(ctx, ShellPath(ctx), "-c", cmd)
+	}
 	if runtime.GOOS == "linux" {
 		// The default Ubuntu bashrc comes with a caveat that prevents the bashrc to be
 		// reloaded unless the shell is interactive. Therefore, we need to request for an
