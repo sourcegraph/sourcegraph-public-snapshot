@@ -177,7 +177,7 @@ func lookupMatcher(language string) string {
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
+func filteredStructuralSearch(ctx context.Context, zipPath string, zf *zipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
@@ -188,7 +188,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *ZipF
 		return err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, rg, zipFile, p.Limit, true, false, false)
+	fileMatches, _, err := regexSearchBatch(ctx, rg, zf, p.Limit, true, false, false)
 	if err != nil {
 		return err
 	}
@@ -203,7 +203,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *ZipF
 		extensionHint = filepath.Ext(matchedPaths[0])
 	}
 
-	return structuralSearch(ctx, zipPath, Subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
+	return structuralSearch(ctx, zipPath, subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
@@ -228,18 +228,18 @@ func toMatcher(languages []string, extensionHint string) string {
 }
 
 // A variant type that represents whether to search all files in a Zip file
-// (type UniversalSet), or just a subset (type Subset).
+// (type universalSet), or just a subset (type Subset).
 type filePatterns interface {
 	Value()
 }
 
-func (UniversalSet) Value() {}
-func (Subset) Value()       {}
+func (universalSet) Value() {}
+func (subset) Value()       {}
 
-type UniversalSet struct{}
-type Subset []string
+type universalSet struct{}
+type subset []string
 
-var All UniversalSet = struct{}{}
+var all universalSet = struct{}{}
 
 func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error {
 	log15.Info("structural search", "repo", string(repo))
@@ -250,7 +250,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	matcher := toMatcher(languages, extensionHint)
 
 	var filePatterns []string
-	if v, ok := paths.(Subset); ok {
+	if v, ok := paths.(subset); ok {
 		filePatterns = []string(v)
 	}
 
@@ -327,7 +327,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		extensionHint = filepath.Ext(filename)
 	}
 
-	return structuralSearch(ctx, zipFile.Name(), All, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
+	return structuralSearch(ctx, zipFile.Name(), all, extensionHint, p.Pattern, p.CombyRule, p.Languages, p.Repo, sender)
 }
 
 var requestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

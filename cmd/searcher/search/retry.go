@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// GetZipFileWithRetry retries getting a zip file if the zip is for some reason
+// getZipFileWithRetry retries getting a zip file if the zip is for some reason
 // invalid.
-func GetZipFileWithRetry(get func() (string, *ZipFile, error)) (validPath string, zf *ZipFile, err error) {
+func getZipFileWithRetry(get func() (string, *zipFile, error)) (validPath string, zf *zipFile, err error) {
 	var path string
 	tries := 0
 	for zf == nil {

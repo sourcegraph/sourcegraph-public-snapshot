@@ -32,14 +32,14 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Load into zip cache.
-	zf, err := s.ZipCache.Get(path)
+	zf, err := s.zipCache.Get(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zf.Close() // don't block eviction of this zipFile
 
 	// Make sure it's there.
-	if n := s.ZipCache.count(); n != 1 {
+	if n := s.zipCache.count(); n != 1 {
 		t.Fatalf("expected 1 item in cache, got %d", n)
 	}
 
@@ -50,7 +50,7 @@ func TestZipCacheDelete(t *testing.T) {
 	}
 
 	// Make sure the zipFile is gone from the zip cache, too.
-	if n := s.ZipCache.count(); n != 0 {
+	if n := s.zipCache.count(); n != 0 {
 		t.Fatalf("expected 0 items in cache, got %d", n)
 	}
 
