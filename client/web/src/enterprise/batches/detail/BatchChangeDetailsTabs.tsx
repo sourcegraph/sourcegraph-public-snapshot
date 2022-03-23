@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
