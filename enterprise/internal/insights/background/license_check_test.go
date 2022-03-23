@@ -38,7 +38,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}
 
 	getNumFrozenInsights := func() (int, error) {
-		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) from insight_view where is_frozen = TRUE`))
+		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
 	}
 
 	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
