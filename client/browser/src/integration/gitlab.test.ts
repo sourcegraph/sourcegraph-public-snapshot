@@ -115,7 +115,7 @@ describe('GitLab', () => {
         })
     })
 
-    it.skip('shows hover tooltips when hovering a token', async () => {
+    it('shows hover tooltips when hovering a token', async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({
             pollyServer: testContext.server,
             sourcegraphBaseUrl: driver.sourcegraphBaseUrl,
