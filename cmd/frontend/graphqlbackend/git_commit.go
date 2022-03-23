@@ -340,7 +340,7 @@ func (r *GitCommitResolver) currentTag(ctx context.Context) string {
 	if !r.repoResolver.IsPackageRepo() {
 		return ""
 	}
-	tags, err := r.resolveTags(ctx)
+	tags, err := r.tags(ctx)
 	if err != nil || len(tags) == 0 {
 		return ""
 	}
@@ -387,7 +387,7 @@ func (r *GitCommitResolver) canonicalRepoRevURL(ctx context.Context) *url.URL {
 	return &url
 }
 
-func (r *GitCommitResolver) resolveTags(ctx context.Context) ([]string, error) {
+func (r *GitCommitResolver) tags(ctx context.Context) ([]string, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
