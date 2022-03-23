@@ -64,12 +64,14 @@ type Column struct {
 }
 
 type Index struct {
-	Name            string `json:"name"`
-	IsPrimaryKey    bool   `json:"isPrimaryKey"`
-	IsUnique        bool   `json:"isUnique"`
-	IsExclusion     bool   `json:"isExclusion"`
-	IsDeferrable    bool   `json:"isDeferrable"`
-	IndexDefinition string `json:"indexDefinition"`
+	Name                 string `json:"name"`
+	IsPrimaryKey         bool   `json:"isPrimaryKey"`
+	IsUnique             bool   `json:"isUnique"`
+	IsExclusion          bool   `json:"isExclusion"`
+	IsDeferrable         bool   `json:"isDeferrable"`
+	IndexDefinition      string `json:"indexDefinition"`
+	ConstraintType       string `json:"constraintType"`
+	ConstraintDefinition string `json:"constraintDefinition"`
 }
 
 type Constraint struct {
@@ -224,12 +226,14 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 	for _, index := range indexes {
 		updateTableMap(index.SchemaName, index.TableName, func(table *Table) {
 			table.Indexes = append(table.Indexes, Index{
-				Name:            index.IndexName,
-				IsPrimaryKey:    index.IsPrimaryKey,
-				IsUnique:        index.IsUnique,
-				IsExclusion:     index.IsExclusion,
-				IsDeferrable:    index.IsDeferrable,
-				IndexDefinition: index.IndexDefinition,
+				Name:                 index.IndexName,
+				IsPrimaryKey:         index.IsPrimaryKey,
+				IsUnique:             index.IsUnique,
+				IsExclusion:          index.IsExclusion,
+				IsDeferrable:         index.IsDeferrable,
+				IndexDefinition:      index.IndexDefinition,
+				ConstraintType:       index.ConstraintType,
+				ConstraintDefinition: index.ConstraintDefinition,
 			})
 		})
 	}
@@ -465,8 +469,8 @@ SELECT
 	i.indisexclusion AS isExclusion,
 	con.condeferrable AS isDeferrable,
 	pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) AS indexDefinition,
-	pg_catalog.pg_get_constraintdef(con.oid, true) AS constraintDefinition,
-	con.contype AS constraintType
+	con.contype AS constraintType,
+	pg_catalog.pg_get_constraintdef(con.oid, true) AS constraintDefinition
 FROM pg_catalog.pg_index i
 JOIN pg_catalog.pg_class table_class ON table_class.oid = i.indrelid
 JOIN pg_catalog.pg_class index_class ON index_class.oid = i.indexrelid
