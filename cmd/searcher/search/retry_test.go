@@ -47,7 +47,7 @@ func TestGetZipFileWithRetry(t *testing.T) {
 			}()
 
 			tries := 0
-			get := func() (string, *ZipFile, error) {
+			get := func() (string, *zipFile, error) {
 				var err error
 				tmp, err = os.CreateTemp("", "")
 				if err != nil {
@@ -55,15 +55,15 @@ func TestGetZipFileWithRetry(t *testing.T) {
 				}
 
 				err = test.errs[tries]
-				var zf *ZipFile
+				var zf *zipFile
 				if err == nil {
-					zf = &ZipFile{}
+					zf = &zipFile{}
 				}
 				tries++
 				return tmp.Name(), zf, err
 			}
 
-			_, zf, err := GetZipFileWithRetry(get)
+			_, zf, err := getZipFileWithRetry(get)
 			if test.succeeds && err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

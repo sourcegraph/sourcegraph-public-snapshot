@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// A ZipCache is a shared data structure that provides efficient access to a collection of zip files.
+// A zipCache is a shared data structure that provides efficient access to a collection of zip files.
 // The zero value is usable.
-type ZipCache struct {
+type zipCache struct {
 	// Split the cache into many parts, to minimize lock contention.
 	// This matters because, for simplicity,
 	// we sometimes hold the lock for long-running operations,
@@ -33,10 +33,10 @@ type ZipCache struct {
 
 type zipCacheShard struct {
 	mu sync.Mutex
-	m  map[string]*ZipFile // path -> zipFile
+	m  map[string]*zipFile // path -> zipFile
 }
 
-func (c *ZipCache) shardFor(path string) *zipCacheShard {
+func (c *zipCache) shardFor(path string) *zipCacheShard {
 	h := fnv.New32()
 	_, _ = io.WriteString(h, path)
 	return &c.shards[h.Sum32()%uint32(len(c.shards))]
@@ -44,12 +44,12 @@ func (c *ZipCache) shardFor(path string) *zipCacheShard {
 
 // Get returns a zipFile for the file on disk at path.
 // The file MUST be Closed when it is no longer needed.
-func (c *ZipCache) Get(path string) (*ZipFile, error) {
+func (c *zipCache) Get(path string) (*zipFile, error) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
 	if shard.m == nil {
-		shard.m = make(map[string]*ZipFile)
+		shard.m = make(map[string]*zipFile)
 	}
 	zf, ok := shard.m[path]
 	if ok {
@@ -68,7 +68,7 @@ func (c *ZipCache) Get(path string) (*ZipFile, error) {
 	return zf, nil
 }
 
-func (c *ZipCache) delete(path string, trace observation.TraceLogger) {
+func (c *zipCache) delete(path string, trace observation.TraceLogger) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
@@ -94,18 +94,18 @@ func (c *ZipCache) delete(path string, trace observation.TraceLogger) {
 	delete(shard.m, path)
 }
 
-// ZipFile provides efficient access to a single zip file.
-type ZipFile struct {
+// zipFile provides efficient access to a single zip file.
+type zipFile struct {
 	// Take care with the size of this struct.
 	// There are many zipFiles present during typical usage.
-	Files  []SrcFile
+	Files  []srcFile
 	MaxLen int
 	Data   []byte
 	f      *os.File
 	wg     sync.WaitGroup // ensures underlying file is not munmap'd or closed while in use
 }
 
-func readZipFile(path string) (*ZipFile, error) {
+func readZipFile(path string) (*zipFile, error) {
 	// Open zip file at path, prepare to read it.
 	f, err := os.Open(path)
 	if err != nil {
@@ -121,7 +121,7 @@ func readZipFile(path string) (*ZipFile, error) {
 	}
 
 	// Create at populate ZipFile from contents.
-	zf := &ZipFile{f: f}
+	zf := &zipFile{f: f}
 	if err := zf.PopulateFiles(r); err != nil {
 		return nil, err
 	}
@@ -139,8 +139,8 @@ func readZipFile(path string) (*ZipFile, error) {
 	return zf, nil
 }
 
-func (f *ZipFile) PopulateFiles(r *zip.Reader) error {
-	f.Files = make([]SrcFile, len(r.File))
+func (f *zipFile) PopulateFiles(r *zip.Reader) error {
+	f.Files = make([]srcFile, len(r.File))
 	for i, file := range r.File {
 		if file.Method != zip.Store {
 			return errors.Errorf("file %s stored with compression %v, want %v", file.Name, file.Method, zip.Store)
@@ -153,7 +153,7 @@ func (f *ZipFile) PopulateFiles(r *zip.Reader) error {
 		if uint64(size) != file.UncompressedSize64 {
 			return errors.Errorf("file %s has size > 2gb: %v", file.Name, size)
 		}
-		f.Files[i] = SrcFile{Name: file.Name, Off: off, Len: int32(size)}
+		f.Files[i] = srcFile{Name: file.Name, Off: off, Len: int32(size)}
 		if size > f.MaxLen {
 			f.MaxLen = size
 		}
@@ -171,12 +171,12 @@ func (f *ZipFile) PopulateFiles(r *zip.Reader) error {
 // It MUST be called exactly once for every file retrieved using get.
 // Contents from any SrcFile from within f MUST NOT be used after
 // Close has been called.
-func (f *ZipFile) Close() {
+func (f *zipFile) Close() {
 	f.wg.Done()
 }
 
-// A SrcFile is a single file inside a ZipFile.
-type SrcFile struct {
+// A srcFile is a single file inside a ZipFile.
+type srcFile struct {
 	// Take care with the size of this struct.
 	// There will be *lots* of these in memory.
 	// This is why Len is a 32 bit int.
@@ -190,17 +190,17 @@ type SrcFile struct {
 // Data returns the contents of s, which is a SrcFile in f.
 // The contents MUST NOT be modified.
 // It is not safe to use the contents after f has been Closed.
-func (f *ZipFile) DataFor(s *SrcFile) []byte {
+func (f *zipFile) DataFor(s *srcFile) []byte {
 	return f.Data[s.Off : s.Off+int64(s.Len)]
 }
 
-func (f *SrcFile) String() string {
+func (f *srcFile) String() string {
 	return fmt.Sprintf("<%s: %d+%d bytes>", f.Name, f.Off, f.Len)
 }
 
 // count returns the number of elements in c, assuming c is otherwise unused during the call to c.
 // It is intended only for testing.
-func (c *ZipCache) count() int {
+func (c *zipCache) count() int {
 	var n int
 	for i := range c.shards {
 		shard := &c.shards[i]

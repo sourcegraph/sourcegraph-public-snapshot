@@ -44,6 +44,7 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 // do not want to search.
 //
 // We use an LRU to do cache eviction:
+//
 // * When to evict is based on the total size of *.zip on disk.
 // * What to evict uses the LRU algorithm.
 // * We touch files when opening them, so can do LRU based on file
@@ -80,8 +81,8 @@ type Store struct {
 	// fetchLimiter limits concurrent calls to FetchTar.
 	fetchLimiter *mutablelimiter.Limiter
 
-	// ZipCache provides efficient access to repo zip files.
-	ZipCache ZipCache
+	// zipCache provides efficient access to repo zip files.
+	zipCache zipCache
 
 	// DB is a connection to frontend database
 	DB database.DB
@@ -100,7 +101,7 @@ func (s *Store) Start() {
 		s.fetchLimiter = mutablelimiter.New(15)
 		s.cache = diskcache.NewStore(s.Path, "store",
 			diskcache.WithBackgroundTimeout(10*time.Minute),
-			diskcache.WithBeforeEvict(s.ZipCache.delete),
+			diskcache.WithBeforeEvict(s.zipCache.delete),
 		)
 		_ = os.MkdirAll(s.Path, 0700)
 		metrics.MustRegisterDiskMonitor(s.Path)
