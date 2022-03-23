@@ -6,7 +6,7 @@ export async function displayWarning(warning: string): Promise<void> {
     await vscode.window.showErrorMessage(warning)
 }
 
-export function instanceVersionWarnings(localStorageService: LocalStorageService): void {
+export function displayInstanceVersionWarnings(localStorageService: LocalStorageService): void {
     const versionNumber = localStorageService.getValue(INSTANCE_VERSION_NUMBER_KEY)
     if (!versionNumber) {
         displayWarning('Cannot determine instance version number').catch(() => {})
