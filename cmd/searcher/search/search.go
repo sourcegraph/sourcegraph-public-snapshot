@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,7 +45,7 @@ const (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *store.Store
+	Store *Store
 	Log   log15.Logger
 }
 
@@ -196,7 +195,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 
-	getZf := func() (string, *store.ZipFile, error) {
+	getZf := func() (string, *ZipFile, error) {
 		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
 		if err != nil {
 			return "", nil, err
@@ -205,7 +204,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return path, zf, err
 	}
 
-	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
+	zipPath, zf, err := GetZipFileWithRetry(getZf)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
 	}

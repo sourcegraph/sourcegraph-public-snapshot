@@ -1,4 +1,4 @@
-package store
+package search
 
 import (
 	"archive/tar"
@@ -35,7 +35,7 @@ import (
 
 // maxFileSize is the limit on file size in bytes. Only files smaller
 // than this are searched.
-const maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
+const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
 
 // Store manages the fetching and storing of git archives. Its main purpose is
 // keeping a local disk cache of the fetched archives to help speed up future

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -178,7 +177,7 @@ func lookupMatcher(language string) string {
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *store.ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
+func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)

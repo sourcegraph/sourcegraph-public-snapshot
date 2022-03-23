@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,7 +33,7 @@ import (
 // features in ripgrep. Our implementation gives high performance via pruning
 // aggressively which files to consider (non-binary under a limit) and
 // optimizing for assuming most lines will not contain a match. The pruning of
-// files is done by the store.
+// files is done by the
 //
 // If there is no more low-hanging fruit and perf is not acceptable, we could
 // consider using ripgrep directly (modify it to search zip archives).
@@ -156,7 +155,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile, limit int) (matches []protocol.LineMatch, err error) {
+func (rg *readerGrep) Find(zf *ZipFile, f *SrcFile, limit int) (matches []protocol.LineMatch, err error) {
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -286,7 +285,7 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile, limit int) (protocol.FileMatch, error) {
+func (rg *readerGrep) FindZip(zf *ZipFile, f *SrcFile, limit int) (protocol.FileMatch, error) {
 	lm, err := rg.Find(zf, f, limit)
 	return protocol.FileMatch{
 		Path:        f.Name,
@@ -296,7 +295,7 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile, limit int) (p
 	}, err
 }
 
-func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
 	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
@@ -304,7 +303,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, li
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *ZipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")

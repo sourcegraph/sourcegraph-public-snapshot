@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -238,7 +237,7 @@ abc.txt
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.FilterTar = func(_ context.Context, _ database.DB, _ api.RepoName, _ api.CommitID) (store.FilterFunc, error) {
+	s.FilterTar = func(_ context.Context, _ database.DB, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
 			return hdr.Name == "ignore.me"
 		}, nil
@@ -466,7 +465,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 func newStore(files map[string]struct {
 	body string
 	typ  fileType
-}) (*store.Store, func(), error) {
+}) (*search.Store, func(), error) {
 	buf := new(bytes.Buffer)
 	w := tar.NewWriter(buf)
 	for name, file := range files {
@@ -511,7 +510,7 @@ func newStore(files map[string]struct {
 	if err != nil {
 		return nil, nil, err
 	}
-	return &store.Store{
+	return &search.Store{
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},

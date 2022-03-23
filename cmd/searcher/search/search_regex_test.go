@@ -18,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
-	"github.com/sourcegraph/sourcegraph/internal/store"
-	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -182,7 +180,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		b.Fatal(err)
 	}
 
-	var zc store.ZipCache
+	var zc ZipCache
 	zf, err := zc.Get(path)
 	if err != nil {
 		b.Fatal(err)
@@ -317,7 +315,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := storetest.MockZipFile(buf.Bytes())
+	zf, err := MockZipFile(buf.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,7 +348,7 @@ func TestMaxMatches(t *testing.T) {
 // - A path must match all (not any) of the IncludePatterns
 // - An empty pattern is allowed
 func TestPathMatches(t *testing.T) {
-	zipData, err := storetest.CreateZip(map[string]string{
+	zipData, err := CreateZip(map[string]string{
 		"a":   "",
 		"a/b": "",
 		"a/c": "",
@@ -362,7 +360,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := storetest.MockZipFile(zipData)
+	zf, err := MockZipFile(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,7 +390,7 @@ func TestPathMatches(t *testing.T) {
 }
 
 // githubStore fetches from github and caches across test runs.
-var githubStore = &store.Store{
+var githubStore = &Store{
 	FetchTar: FetchTarFromGithub,
 	Path:     "/tmp/search_test/store",
 }
@@ -415,7 +413,7 @@ func TestRegexSearch(t *testing.T) {
 	type args struct {
 		ctx                   context.Context
 		rg                    *readerGrep
-		zf                    *store.ZipFile
+		zf                    *ZipFile
 		limit                 int
 		patternMatchesContent bool
 		patternMatchesPaths   bool
@@ -436,8 +434,8 @@ func TestRegexSearch(t *testing.T) {
 					re:        nil,
 					matchPath: match,
 				},
-				zf: &store.ZipFile{
-					Files: []store.SrcFile{
+				zf: &ZipFile{
+					Files: []SrcFile{
 						{
 							Name: "a.go",
 						},
