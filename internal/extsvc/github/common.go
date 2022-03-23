@@ -1561,7 +1561,7 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
 
-		if resp.StatusCode == 200 && outageChecker != nil {
+		if resp.StatusCode >= 500 && outageChecker != nil {
 			down, _ := outageChecker.IsServiceDown(ctx) // TODO: is it safe to ignore this error?
 			if down {
 				err.Message = fmt.Sprintf("Github is experiencing an outage. Status code: %v", resp.StatusCode)
