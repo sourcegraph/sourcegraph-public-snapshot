@@ -155,7 +155,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *ZipFile, f *SrcFile, limit int) (matches []protocol.LineMatch, err error) {
+func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protocol.LineMatch, err error) {
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -285,7 +285,7 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 }
 
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *ZipFile, f *SrcFile, limit int) (protocol.FileMatch, error) {
+func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
 	lm, err := rg.Find(zf, f, limit)
 	return protocol.FileMatch{
 		Path:        f.Name,
@@ -295,7 +295,7 @@ func (rg *readerGrep) FindZip(zf *ZipFile, f *SrcFile, limit int) (protocol.File
 	}, err
 }
 
-func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *ZipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
 	defer cancel()
 	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
@@ -303,7 +303,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *ZipFile, limit in
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *ZipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
 	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")

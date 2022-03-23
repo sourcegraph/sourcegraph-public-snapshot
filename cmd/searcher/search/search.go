@@ -195,16 +195,16 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
 
-	getZf := func() (string, *ZipFile, error) {
+	getZf := func() (string, *zipFile, error) {
 		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
 		if err != nil {
 			return "", nil, err
 		}
-		zf, err := s.Store.ZipCache.Get(path)
+		zf, err := s.Store.zipCache.Get(path)
 		return path, zf, err
 	}
 
-	zipPath, zf, err := GetZipFileWithRetry(getZf)
+	zipPath, zf, err := getZipFileWithRetry(getZf)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
 	}

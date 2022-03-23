@@ -44,7 +44,7 @@ func getZoektClient(indexerEndpoints []string) zoekt.Streamer {
 	return zoektClient
 }
 
-func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
+func handleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	// Zoekt uses regular expressions for file paths.
@@ -165,7 +165,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 		defer cancel()
 	}
 
-	filePathPatterns, err := HandleFilePathPatterns(args)
+	filePathPatterns, err := handleFilePathPatterns(args)
 	if err != nil {
 		return nil, false, nil, err
 	}

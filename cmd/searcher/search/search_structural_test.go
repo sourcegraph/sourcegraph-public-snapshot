@@ -53,11 +53,11 @@ func foo(go string) {}
 		},
 	}
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := TempZipFileOnDisk(zipData)
+	zf, cleanup, err := tempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func foo(go string) {}
 
 				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
 				defer cancel()
-				err := structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+				err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -119,11 +119,11 @@ func foo(go.txt) {}
 `,
 	}
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := TempZipFileOnDisk(zipData)
+	zf, cleanup, err := tempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func foo(go.txt) {}
 		extensionHint := filepath.Ext(filename)
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, zf, All, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
+		err := structuralSearch(ctx, zf, all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
@@ -211,17 +211,17 @@ func foo(real string) {}
 	pattern := "foo(:[args])"
 	want := "foo(real string)"
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zPath, cleanup, err := TempZipFileOnDisk(zipData)
+	zPath, cleanup, err := tempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cleanup()
 
-	zFile, _ := MockZipFile(zipData)
+	zFile, _ := mockZipFile(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,11 +323,11 @@ func TestIncludePatterns(t *testing.T) {
 
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := TempZipFileOnDisk(zipData)
+	zf, cleanup, err := tempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +339,7 @@ func TestIncludePatterns(t *testing.T) {
 	}
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
+	err = structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,11 +365,11 @@ func TestRule(t *testing.T) {
 		"file.go": "func foo(success) {} func bar(fail) {}",
 	}
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := TempZipFileOnDisk(zipData)
+	zf, cleanup, err := tempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,7 +383,7 @@ func TestRule(t *testing.T) {
 
 	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 	defer cancel()
-	err = structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
+	err = structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -436,10 +436,10 @@ func bar() {
 `,
 	}
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	require.NoError(t, err)
 
-	zf, cleanup, err := TempZipFileOnDisk(zipData)
+	zf, cleanup, err := tempZipFileOnDisk(zipData)
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -455,7 +455,7 @@ func bar() {
 		return func(t *testing.T) {
 			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
 			defer cancel()
-			err := structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+			err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 			require.NoError(t, err)
 
 			require.Equal(t, wantCount, count(sender.collected))
@@ -585,11 +585,11 @@ func bar() {
 
 	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
 
-	zipData, err := CreateZip(input)
+	zipData, err := createZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := TempZipFileOnDisk(zipData)
+	zf, cleanup, err := tempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -598,7 +598,7 @@ func bar() {
 	t.Run("Strutural search match count", func(t *testing.T) {
 		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
 		defer cancel()
-		err := structuralSearch(ctx, zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+		err := structuralSearch(ctx, zf, subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}
