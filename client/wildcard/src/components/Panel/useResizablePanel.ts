@@ -65,17 +65,17 @@ export interface UseResizablePanelParameters {
     /**
      * Where the panel is (which also determines the axis along which the panel can be resized).
      */
-    position: typeof PANEL_POSITIONS[number]
+    position?: typeof PANEL_POSITIONS[number]
 
     /**
      * Persist and restore the size of the panel using this key.
      */
-    storageKey: string | undefined | null
+    storageKey?: string | null
 
     /**
      * The default size for the panel.
      */
-    defaultSize: number
+    defaultSize?: number
 
     /**
      * The minimum size for the panel.
@@ -93,7 +93,7 @@ export interface UseResizablePanelParameters {
 }
 
 export const useResizablePanel = ({
-    defaultSize,
+    defaultSize = 250,
     handleRef,
     panelRef,
     position,
