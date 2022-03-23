@@ -161,11 +161,12 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe((error: any) => {
-            if (!currentTest) {
-                throw new Error(error)
+            // if (!currentTest) {
+            //     throw new Error(error)
+            // }
+            if (currentTest) {
+                currentTest.emit('error', error)
             }
-
-            currentTest.emit('error', error)
         })
     )
 
