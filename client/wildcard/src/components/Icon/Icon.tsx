@@ -17,9 +17,6 @@ export interface IconProps extends Omit<MdiReactIconProps, 'children'> {
     size?: typeof ICON_SIZES[number]
 }
 
-/**
- * Use this component as the replacement for `icon-inline` class
- */
 export const Icon = React.forwardRef((props, reference) => {
     const { children, inline = true, className, size, as: Component = 'svg', ...attributes } = props
 

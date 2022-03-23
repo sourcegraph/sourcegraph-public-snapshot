@@ -9,10 +9,12 @@ set -e
 # - BUILDKITE_PULL_REQUEST_REPO (optional)
 # - BUILDKITE_PULL_REQUEST (optional)
 # - GITHUB_TOKEN (optional)
-# - GITHUB_CHECK_RUN_ID (optional)
 
 print_usage() {
-  echo "Usage: $0 [ -b BRANCH_NAME ] [ -r REPO_URL ] [ -d ]" 1>&2
+  echo "Usage: [ -b BRANCH_NAME ] [ -r REPO_URL ] [ -d ]" 1>&2
+  echo "-b: GitHub branch name" 1>&2
+  echo "-r: GitHub repository url" 1>&2
+  echo "-d: Use this flag to delete preview apps" 1>&2
 }
 
 urlencode() {
@@ -48,6 +50,7 @@ while getopts 'b:r:d' flag; do
   esac
 done
 
+# Get `{owner}/{repo}` part from GitHub repository url
 if [[ "$repo_url" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
   owner_and_repo="${BASH_REMATCH[2]//\.git/}"
 else
@@ -65,13 +68,17 @@ if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   exit 1
 fi
 
+# App name to show on render.com dashboard and use to create
+# default url: https://<app_name_slug>.onrender.com
 pr_preview_app_name="sg-web-${branch_name}"
 
+# Get service id of preview app on render.com with app name (if exists)
 renderServiceId=$(curl -sS --request GET \
   --url "https://api.render.com/v1/services?limit=1&type=web_service&name=$(urlencode "$pr_preview_app_name")" \
   --header 'Accept: application/json' \
   --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].service.id')
 
+# Delete preview app with `-d` flag set
 if [ "${is_deleting}" = "true" ]; then
   if [ -z "${renderServiceId}" ]; then
     echo "Render app not found"
@@ -89,7 +96,16 @@ if [ "${is_deleting}" = "true" ]; then
   exit 0
 fi
 
+# Create PR app if it hasn't existed yet and get the app url
 if [ -z "${renderServiceId}" ]; then
+  # New app is created with following envs
+  # - ENTERPRISE=1
+  # - NODE_ENV=production
+  # - PORT=3080 // render.com uses this env for mapping default https port
+  # - ENTERPRISE=1
+  # - SOURCEGRAPH_API_URL=https://k8s.sgdev.org
+  # - WEBPACK_SERVE_INDEX=true
+
   pr_preview_url=$(curl -sSf --request POST \
     --url https://api.render.com/v1/services \
     --header 'Accept: application/json' \
@@ -116,10 +132,6 @@ if [ -z "${renderServiceId}" ]; then
                 \"value\": \"https://k8s.sgdev.org\"
             },
             {
-                \"key\": \"SOURCEGRAPHDOTCOM_MODE\",
-                \"value\": \"false\"
-            },
-            {
                 \"key\": \"WEBPACK_SERVE_INDEX\",
                 \"value\": \"true\"
             }
@@ -127,7 +139,7 @@ if [ -z "${renderServiceId}" ]; then
         \"serviceDetails\": {
             \"pullRequestPreviewsEnabled\": \"no\",
             \"envSpecificDetails\": {
-                \"buildCommand\": \"yarn install && dev/ci/yarn-build.sh client/web\",
+                \"buildCommand\": \"dev/ci/yarn-build.sh client/web\",
                 \"startCommand\": \"yarn workspace @sourcegraph/web serve:prod\"
             },
             \"numInstances\": 1,
@@ -151,7 +163,8 @@ else
 fi
 
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-  # GitHub Pull Request Number is set => Appending `App Preview` section into PR description
+  # GitHub pull request number and GitHub api token are set
+  # Appending `App Preview` section into PR description if it hasn't existed yet
 
   github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
 
