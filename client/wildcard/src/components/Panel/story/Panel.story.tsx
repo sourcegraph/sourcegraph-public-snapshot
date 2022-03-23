@@ -13,6 +13,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
+import { Icon } from '../../Icon'
 import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../../Tabs'
 import { PANEL_POSITIONS } from '../constants'
 import { Panel } from '../Panel'
@@ -145,7 +146,7 @@ export const WithChildren: Story = props => {
                             data-placement="left"
                             variant="icon"
                         >
-                            <CloseIcon className="icon-inline" />
+                            <Icon as={CloseIcon} />
                         </Button>
                     </div>
                 </div>
