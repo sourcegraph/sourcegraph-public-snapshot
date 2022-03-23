@@ -73,7 +73,7 @@ import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
-import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -728,6 +728,22 @@ const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string,
     return url.href
 }
 
+const observeUserSettingsURL = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<string> =>
+    requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query UserSettingsURL {
+                currentUser {
+                    settingsURL
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(({ data }) => data?.currentUser?.settingsURL),
+        filter(isDefined)
+    )
+
 /**
  * @returns boolean indicating whether it is safe to continue initialization
  *
@@ -798,19 +814,7 @@ const isSafeToContinueCodeIntel = async ({
             // Show "Configure Sourcegraph" button
             console.warn('Repository is not cloned.', error)
 
-            const settingsURL = await requestGraphQL<GQL.IQuery>({
-                request: gql`
-                    query UserSettingsURL {
-                        currentUser {
-                            settingsURL
-                        }
-                    }
-                `,
-                variables: {},
-                mightContainPrivateInfo: true,
-            })
-                .pipe(map(({ data }) => data?.currentUser?.settingsURL))
-                .toPromise()
+            const settingsURL = await observeUserSettingsURL(requestGraphQL).toPromise()
 
             if (rawRepoName && settingsURL) {
                 render(
@@ -1022,7 +1026,8 @@ export async function handleCodeHost({
                     distinctUntilChanged()
                 ),
                 from(getContext()),
-            ]).subscribe(([repoExistsOrError, mount, showSignInButton, context]) => {
+                observeUserSettingsURL(requestGraphQL),
+            ]).subscribe(([repoExistsOrError, mount, showSignInButton, context, userSettingsURL]) => {
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
@@ -1030,6 +1035,11 @@ export async function handleCodeHost({
                         context={context}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
+                        userSettingsURL={buildManageRepositoriesURL(
+                            sourcegraphURL,
+                            userSettingsURL,
+                            context.rawRepoName
+                        )}
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         // The bound function is constant
