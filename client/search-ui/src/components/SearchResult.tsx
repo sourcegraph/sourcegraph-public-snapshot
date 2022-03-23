@@ -43,12 +43,17 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
 }) => {
-    const { isTruncated, elementReference: titleReference, onMouseEnter } = useIsTruncated()
+    /**
+     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * We want to do it on mouse enter as browser window size might change after the element has been
+     * loaded initially
+     */
+    const { isTruncated, elementReference: titleReference, checkIsTruncated } = useIsTruncated()
 
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
-            <div className={styles.title} onMouseEnter={onMouseEnter}>
+            <div className={styles.title} onMouseEnter={checkIsTruncated}>
                 <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"

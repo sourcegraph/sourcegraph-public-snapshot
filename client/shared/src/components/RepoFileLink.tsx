@@ -47,10 +47,15 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     className,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
-    const { isTruncated, elementReference: titleReference, onMouseEnter } = useIsTruncated<HTMLAnchorElement>()
+    /**
+     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
+     * We want to do it on mouse enter as browser window size might change after the element has been
+     * loaded initially
+     */
+    const { isTruncated, elementReference: titleReference, checkIsTruncated } = useIsTruncated<HTMLAnchorElement>()
 
     return (
-        <div onMouseEnter={onMouseEnter} className={classNames(className, styles.container)}>
+        <div onMouseEnter={checkIsTruncated} className={classNames(className, styles.container)}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link
                 className="text-truncate"
