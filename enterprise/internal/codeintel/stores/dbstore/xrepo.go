@@ -3,7 +3,6 @@ package dbstore
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -165,14 +164,8 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	}
 	trace.Log(log.Int("totalCount", totalCount))
 
-	query := referenceIDsAndFiltersQuery
-	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_BLOOM_FILTER_BAIL_OUT") != "" {
-		// Do not select filter payloads, we won't test them later on
-		query = referenceIDsQuery
-	}
-
 	rows, err := s.Query(ctx, sqlf.Sprintf(
-		query,
+		referenceIDsAndFiltersQuery,
 		visibleUploadsQuery,
 		repositoryID,
 		sqlf.Join(qs, ", "),
@@ -210,14 +203,6 @@ WHERE
 const referenceIDsAndFiltersQuery = referenceIDsAndFiltersCTEDefinitions + `
 -- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:ReferenceIDsAndFilters
 SELECT r.dump_id, r.scheme, r.name, r.version, r.filter
-` + referenceIDsAndFiltersBaseQuery + `
-ORDER BY dump_id
-LIMIT %s OFFSET %s
-`
-
-const referenceIDsQuery = referenceIDsAndFiltersCTEDefinitions + `
--- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:ReferenceIDsAndFilters
-SELECT r.dump_id, r.scheme, r.name, r.version, NULL AS filter
 ` + referenceIDsAndFiltersBaseQuery + `
 ORDER BY dump_id
 LIMIT %s OFFSET %s
