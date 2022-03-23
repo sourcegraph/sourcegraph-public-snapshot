@@ -1,11 +1,9 @@
-package testutil
+package search
 
 import (
 	"archive/zip"
 	"bytes"
 	"os"
-
-	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 func CreateZip(files map[string]string) ([]byte, error) {
@@ -29,12 +27,12 @@ func CreateZip(files map[string]string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func MockZipFile(data []byte) (*store.ZipFile, error) {
+func MockZipFile(data []byte) (*ZipFile, error) {
 	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
 	}
-	zf := new(store.ZipFile)
+	zf := new(ZipFile)
 	if err := zf.PopulateFiles(r); err != nil {
 		return nil, err
 	}
