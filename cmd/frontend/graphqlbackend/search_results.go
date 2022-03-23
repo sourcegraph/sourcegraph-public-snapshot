@@ -507,7 +507,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
-	logBatch(ctx, r.SearchInputs, srr, err)
+	logBatch(ctx, r.db, r.SearchInputs, srr, err)
 	return srr, err
 }
 
