@@ -24,6 +24,7 @@ type DB interface {
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	GitserverRepos() GitserverRepoStore
+	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -115,6 +116,10 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 
 func (d *db) GitserverRepos() GitserverRepoStore {
 	return NewGitserverReposWith(d.Store)
+}
+
+func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
+	return NewGitserverLocalCloneStoreWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {

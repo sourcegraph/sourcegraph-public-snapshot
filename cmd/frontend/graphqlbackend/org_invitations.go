@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -88,7 +89,7 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 
 	containsEmail := func(userEmails []*database.UserEmail, email string) *database.UserEmail {
 		for _, userEmail := range userEmails {
-			if email == userEmail.Email {
+			if strings.EqualFold(email, userEmail.Email) {
 				return userEmail
 			}
 		}

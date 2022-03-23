@@ -38,10 +38,11 @@ type CommitSearch struct {
 	Gitserver            GitserverClient `json:"-"`
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
-	CodeMonitorSearchWrapper func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, DoSearchFunc) error `json:"-"`
+	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
 }
 
 type DoSearchFunc func(*gitprotocol.SearchRequest) error
+type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, DoSearchFunc) error
 
 type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
@@ -49,8 +50,8 @@ type GitserverClient interface {
 }
 
 func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, j)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	defer func() { finish(alert, err) }()
 	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, db); err != nil {

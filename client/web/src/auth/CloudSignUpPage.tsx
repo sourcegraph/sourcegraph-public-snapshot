@@ -149,7 +149,8 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         {invitedByUser ? (
                             <>
                                 <UserAvatar
-                                    className={classNames('icon-inline', 'mr-3', styles.avatar)}
+                                    inline={true}
+                                    className={classNames('mr-3', styles.avatar)}
                                     user={invitedByUser}
                                 />
                                 <strong className="mr-1">{invitedBy}</strong> has invited you to join Sourcegraph

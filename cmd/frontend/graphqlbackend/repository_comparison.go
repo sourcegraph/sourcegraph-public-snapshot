@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -84,7 +85,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
-		commitID, err := git.ResolveRevision(ctx, repo, revspec, opt)
+		commitID, err := git.ResolveRevision(ctx, db, repo, revspec, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -99,14 +100,18 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 
 	// Find the common merge-base for the diff. That's the revision the diff applies to,
 	// not the baseRevspec.
-	mergeBaseCommit, err := git.MergeBase(ctx, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
-	if err != nil {
-		return nil, err
-	}
+	mergeBaseCommit, err := git.MergeBase(ctx, db, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
 
-	// We use the merge-base as the base commit here, as the diff will only be guaranteed to be
+	// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
 	// applicable to the file from that revision.
 	commitString := strings.TrimSpace(string(mergeBaseCommit))
+	rangeType := "..."
+	if err != nil {
+		// Fallback option which should work even if there is no merge base.
+		commitString = baseRevspec
+		rangeType = ".."
+	}
+
 	base, err := getCommit(ctx, r.RepoName(), commitString)
 	if err != nil {
 		return nil, err
@@ -119,6 +124,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryR
 		base:        base,
 		head:        head,
 		repo:        r,
+		rangeType:   rangeType,
 	}, nil
 }
 
@@ -130,6 +136,7 @@ type RepositoryComparisonResolver struct {
 	db                       database.DB
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
+	rangeType                string
 	repo                     *RepositoryResolver
 }
 
@@ -218,10 +225,11 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			}
 
 			var iter *git.DiffFileIterator
-			iter, err = git.Diff(ctx, git.DiffOptions{
-				Repo: cmp.repo.RepoName(),
-				Base: base,
-				Head: string(cmp.head.OID()),
+			iter, err = git.Diff(ctx, cmp.db, git.DiffOptions{
+				Repo:      cmp.repo.RepoName(),
+				Base:      base,
+				Head:      string(cmp.head.OID()),
+				RangeType: cmp.rangeType,
 			})
 			if err != nil {
 				return

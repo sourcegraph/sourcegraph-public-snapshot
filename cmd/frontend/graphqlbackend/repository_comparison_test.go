@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -22,6 +23,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(nil)
+
+	wantBaseRevision := "ba5e"
+	wantHeadRevision := "1ead"
+
+	repo := &types.Repo{
+		ID:        api.RepoID(1),
+		Name:      api.RepoName("test"),
+		CreatedAt: time.Now(),
+	}
+
+	t.Cleanup(git.ResetMocks)
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != wantBaseRevision && spec != wantHeadRevision {
+			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	}
+	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+		return "", errors.Errorf("merge base doesn't exist!")
+	}
+
+	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
+	repoResolver := NewRepositoryResolver(db, repo)
+
+	// There shouldn't be any error even when there is no merge base.
+	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	require.Nil(t, err)
+	require.Equal(t, wantBaseRevision, comp.baseRevspec)
+	require.Equal(t, wantHeadRevision, comp.headRevspec)
+	require.Equal(t, "..", comp.rangeType)
+}
 
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
