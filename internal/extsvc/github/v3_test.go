@@ -720,7 +720,7 @@ func TestListOrganizations(t *testing.T) {
 		}))
 
 		uri, _ := url.Parse(testServer.URL)
-		testCli := NewV3Client(uri, gheToken, testServer.Client())
+		testCli := NewV3Client("Test", uri, gheToken, testServer.Client())
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
