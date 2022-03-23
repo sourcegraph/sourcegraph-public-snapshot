@@ -70,7 +70,7 @@ func Init(
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(apiURL, auther, nil)
+	client := github.NewV3Client(extsvc.URNGitHubAppCloud, apiURL, auther, nil)
 
 	enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 		return newGitHubAppCloudSetupHandler(db, apiURL, client)

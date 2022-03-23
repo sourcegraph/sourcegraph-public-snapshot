@@ -16,12 +16,16 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -46,6 +50,7 @@ func TestClient_ListCloned(t *testing.T) {
 				return nil, errors.Errorf("unexpected url: %s", r.URL.String())
 			}
 		}),
+		database.NewMockDB(),
 		addrs,
 	)
 
@@ -82,6 +87,7 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
+		database.NewMockDB(),
 		addrs,
 	)
 
@@ -137,7 +143,7 @@ func TestClient_Archive(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), addrs)
 
 	ctx := context.Background()
 	for name, test := range tests {
@@ -287,6 +293,9 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 
 func TestAddrForRepo(t *testing.T) {
 	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+	pinned := map[string]string{
+		"repo2": "gitserver-1",
+	}
 
 	testCases := []struct {
 		name string
@@ -308,11 +317,19 @@ func TestAddrForRepo(t *testing.T) {
 			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
 			want: "gitserver-2",
 		},
+		{
+			name: "pinned repo", // different server address that the hashing function would normally yield
+			repo: api.RepoName("repo2"),
+			want: "gitserver-1",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.AddrForRepo(tc.repo, addrs)
+			got := gitserver.AddrForRepo(tc.repo, gitserver.GitServerAddresses{
+				Addresses:     addrs,
+				PinnedServers: pinned,
+			})
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
 			}
@@ -418,7 +435,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(server.URL)
 			addrs := []string{u.Host}
-			cli := gitserver.NewTestClient(&http.Client{}, addrs)
+			cli := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), addrs)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -490,7 +507,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), addrs)
 
 	ctx := context.Background()
 	for _, test := range tests {
@@ -508,4 +525,31 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
+}
+
+func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
+	ctx := context.Background()
+	client := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), []string{"gitserver1", "gitserver2"})
+	setPinnedRepos(map[string]string{
+		"repo1": "gitserver2",
+	})
+
+	addr := client.AddrForRepo(ctx, "repo1")
+	require.Equal(t, "gitserver2", addr)
+
+	// simulate config change - site admin manually changes the pinned repo config
+	setPinnedRepos(map[string]string{
+		"repo1": "gitserver1",
+	})
+
+	addr = client.AddrForRepo(ctx, "repo1")
+	require.Equal(t, "gitserver1", addr)
+}
+
+func setPinnedRepos(pinned map[string]string) {
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			GitServerPinnedRepos: pinned,
+		},
+	}})
 }

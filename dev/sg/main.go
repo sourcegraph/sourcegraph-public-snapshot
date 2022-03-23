@@ -47,25 +47,34 @@ var (
 			return flag.ErrHelp
 		},
 		Subcommands: []*ffcli.Command{
+			// Common dev tasks
 			runCommand,
 			startCommand,
 			testCommand,
-			doctorCommand,
-			liveCommand,
-			migrationCommand,
-			rfcCommand,
-			funkyLogoCommand,
-			teammateCommand,
-			ciCommand,
-			installCommand,
-			versionCommand,
-			secretCommand,
-			setupCommand,
-			opsCommand,
 			lintCommand,
 			dbCommand,
+			migrationCommand,
+			ciCommand,
+
+			// Dev environment
+			doctorCommand,
+			secretCommand,
+			setupCommand,
+
+			// sg commands
+			versionCommand,
 			updateCommand,
+			installCommand,
+
+			// Company
+			liveCommand,
+			teammateCommand,
+			rfcCommand,
+
+			// Misc.
+			opsCommand,
 			auditCommand,
+			funkyLogoCommand,
 		},
 	}
 )

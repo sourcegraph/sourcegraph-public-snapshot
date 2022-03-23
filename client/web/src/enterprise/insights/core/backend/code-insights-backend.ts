@@ -3,8 +3,7 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { BackendInsight, Insight, InsightDashboard } from '../types'
-import { SupportedInsightSubject } from '../types/subjects'
+import { BackendInsight, Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
 
 import {
     AssignInsightsToDashboardInput,
@@ -49,7 +48,7 @@ export interface CodeInsightsBackend {
      * Returns all possible visibility options for dashboard. Dashboard can be stored
      * as private (user subject), org level (organization subject) or global (site subject)
      */
-    getDashboardSubjects: () => Observable<SupportedInsightSubject[]>
+    getDashboardOwners: () => Observable<InsightsDashboardOwner[]>
 
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
@@ -71,12 +70,6 @@ export interface CodeInsightsBackend {
      */
     getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
 
-    /**
-     * Returns all reachable subject's insights from subject with subjectId.
-     *
-     * User subject has access to all insights from all organizations and global site settings.
-     * Organization subject has access to only its insights.
-     */
     getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
 
     /**
@@ -104,7 +97,7 @@ export interface CodeInsightsBackend {
 
     /**
      * Returns extension like built-in insight that is fetched via frontend
-     * network requests to Sourcegraph search API.
+     * network utils to Sourcegraph search API.
      */
     getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<ViewProviderResult>
 

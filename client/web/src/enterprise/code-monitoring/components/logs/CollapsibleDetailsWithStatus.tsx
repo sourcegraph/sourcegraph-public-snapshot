@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
 import { EventStatus } from '../../../../graphql-operations'
 
@@ -49,11 +49,7 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<{
     return (
         <div className={styles.wrapper}>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                {expanded ? (
-                    <ChevronDownIcon className="icon-inline mr-2" />
-                ) : (
-                    <ChevronRightIcon className="icon-inline mr-2" />
-                )}
+                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                 <span>{title}</span>
                 <Badge variant={statusBadge} className="ml-2 text-uppercase">
                     {statusText}

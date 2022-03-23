@@ -31,6 +31,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -46,7 +47,10 @@ var (
 	defaultLimiter = parallel.NewRun(500)
 
 	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-	DefaultClient Client = NewClient(defaultDoer)
+	// For now this DefaultClient has a nil DB connection because it is not used.
+	// In a following commit DefaultClient will be removed and there will be no such absurd thing as NewClient(nil)
+	// Contact sashaostrikov for questions and clarifications if you see this, and it irritates you
+	DefaultClient Client = NewClient(nil)
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -61,12 +65,20 @@ func ResetClientMocks() {
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
-func NewClient(cli httpcli.Doer) *ClientImplementor {
+func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		HTTPClient:  cli,
+		pinned: func() map[string]string {
+			cfg := conf.Get()
+			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+				return cfg.ExperimentalFeatures.GitServerPinnedRepos
+			}
+			return map[string]string{}
+		},
+		db:          db,
+		HTTPClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -75,10 +87,14 @@ func NewClient(cli httpcli.Doer) *ClientImplementor {
 	}
 }
 
-func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
+func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
 		addrs: func() []string {
 			return addrs
+		},
+		pinned: func() map[string]string {
+			// nothing needs to be pinned for the tests
+			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
@@ -86,6 +102,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) *ClientImplementor {
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
 		UserAgent: filepath.Base(os.Args[0]),
+		db:        db,
 	}
 }
 
@@ -102,15 +119,23 @@ type ClientImplementor struct {
 	// concurrent use. It may return different results at different times.
 	addrs func() []string
 
+	// pinned holds a map of repositories(key) pinned to a particular gitserver instance(value). This function
+	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
+	// and sync the pinned map.
+	pinned func() map[string]string
+
 	// UserAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
 	UserAgent string
+
+	// db is a connection to the database
+	db database.DB
 }
 
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(api.RepoName) string
+	AddrForRepo(context.Context, api.RepoName) string
 
 	Addrs() []string
 
@@ -119,7 +144,7 @@ type Client interface {
 
 	// ArchiveURL returns a URL from which an archive of the given Git repository can
 	// be downloaded from.
-	ArchiveURL(api.RepoName, ArchiveOptions) *url.URL
+	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) *url.URL
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
@@ -198,12 +223,15 @@ func (c *ClientImplementor) Addrs() []string {
 	return c.addrs()
 }
 
-func (c *ClientImplementor) AddrForRepo(repo api.RepoName) string {
+func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
 	addrs := c.addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(repo, addrs)
+	return AddrForRepo(repo, GitServerAddresses{
+		Addresses:     addrs,
+		PinnedServers: c.pinned(),
+	})
 }
 
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
@@ -231,12 +259,21 @@ var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-// It should never be called with an empty slice.
-func AddrForRepo(repo api.RepoName, addrs []string) string {
+// It should never be called with a nil addresses pointer.
+func AddrForRepo(repo api.RepoName, addresses GitServerAddresses) string {
 	addForRepoInvoked.Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	return addrForKey(string(repo), addrs)
+	rs := string(repo)
+	if pinned, found := addresses.PinnedServers[rs]; found {
+		return pinned
+	}
+	return addrForKey(rs, addresses.Addresses)
+}
+
+type GitServerAddresses struct {
+	Addresses     []string
+	PinnedServers map[string]string
 }
 
 // RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
@@ -290,7 +327,7 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -303,7 +340,7 @@ func (c *ClientImplementor) ArchiveURL(repo api.RepoName, opt ArchiveOptions) *u
 
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.AddrForRepo(repo),
+		Host:     c.AddrForRepo(ctx, repo),
 		Path:     "/archive",
 		RawQuery: q.Encode(),
 	}
@@ -327,7 +364,7 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u := c.ArchiveURL(repo, opt)
+	u := c.ArchiveURL(ctx, repo, opt)
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -441,7 +478,7 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		return false, err
 	}
 
-	uri := "http://" + c.AddrForRepo(repoName) + "/search"
+	uri := "http://" + c.AddrForRepo(ctx, repoName) + "/search"
 	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
 	if err != nil {
 		return false, err
@@ -732,7 +769,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: c.AddrForRepo(repo),
+		CloneFromShard: c.AddrForRepo(ctx, repo),
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -842,7 +879,7 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(r)
+		addr := c.AddrForRepo(ctx, r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -912,7 +949,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(r)
+		addr := c.AddrForRepo(ctx, r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -1038,7 +1075,7 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 
-	uri := "http://" + c.AddrForRepo(repo) + "/" + op
+	uri := "http://" + c.AddrForRepo(ctx, repo) + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
 

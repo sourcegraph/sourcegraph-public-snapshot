@@ -23,7 +23,7 @@ import (
 )
 
 type featureFlags struct {
-	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateles
+	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateless
 	// agents and forces a MainDryRun type build to avoid impacting normal builds.
 	//
 	// It is meant to test the stateless builds without any side effects.
@@ -36,7 +36,7 @@ var FeatureFlags = featureFlags{
 		// Always process retries on stateless agents.
 		// TODO: remove when we switch over entirely to stateless agents
 		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" ||
-		// Roll out to 75% of builds
+		// Roll out to 10% of builds
 		rand.NewSource(time.Now().UnixNano()).Int63()%100 < 10,
 }
 

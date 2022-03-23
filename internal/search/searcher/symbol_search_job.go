@@ -7,6 +7,7 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,7 +29,7 @@ type SymbolSearcher struct {
 }
 
 // Run calls the searcher service to search symbols.
-func (s *SymbolSearcher) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SymbolSearcher) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
@@ -49,7 +50,7 @@ func (s *SymbolSearcher) Run(ctx context.Context, _ database.DB, stream streamin
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
+			matches, err := searchInRepo(ctx, db, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -76,7 +77,7 @@ func (s *SymbolSearcher) Name() string {
 	return "SymbolSearcher"
 }
 
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -93,7 +94,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
+	commitID, err := git.ResolveRevision(ctx, db, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

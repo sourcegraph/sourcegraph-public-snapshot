@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,6 +33,7 @@ type Changes struct {
 }
 
 type gitserverClient struct {
+	db         database.DB
 	operations *operations
 }
 
@@ -55,7 +57,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 		Paths:   paths,
 	}
 
-	return git.ArchiveReader(ctx, repo, opts)
+	return git.ArchiveReader(ctx, c.db, repo, opts)
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
@@ -66,7 +68,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	output, err := git.DiffSymbols(ctx, repo, commitA, commitB)
+	output, err := git.DiffSymbols(ctx, c.db, repo, commitA, commitB)
 
 	changes, err := parseGitDiffOutput(output)
 	if err != nil {
