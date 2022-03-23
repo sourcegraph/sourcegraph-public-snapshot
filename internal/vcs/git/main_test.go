@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -76,7 +77,7 @@ func init() {
 		}
 	}()
 
-	gitserver.DefaultClient = gitserver.NewTestClient(httpcli.InternalDoer, []string{l.Addr().String()})
+	gitserver.DefaultClient = gitserver.NewTestClient(httpcli.InternalDoer, database.NewMockDB(), []string{l.Addr().String()})
 }
 
 func AsJSON(v interface{}) string {

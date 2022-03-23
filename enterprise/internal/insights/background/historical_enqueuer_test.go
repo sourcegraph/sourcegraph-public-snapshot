@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -116,7 +117,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return nil
 	}
 
-	gitFirstEverCommit := func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
+	gitFirstEverCommit := func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
 		if repoName == "repo/1" {
 			daysAgo := clock().Add(-3 * 24 * time.Hour)
 			return &gitdomain.Commit{Committer: &gitdomain.Signature{Date: daysAgo}}, nil

@@ -8,6 +8,7 @@ TMPFILE=$(mktemp)
 echo "0" >"$TMPFILE"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+base="$(pwd)"
 
 export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
@@ -30,7 +31,7 @@ run() {
     # We want to return after running all tests, we don't want to fail fast, so
     # we store the EXIT_CODE (in a tmp file as this is running in a sub-shell).
     echo "$EXIT_CODE" >"$TMPFILE"
-    echo -e "$OUT" >./annotations/go-lint
+    echo -e "$OUT" > "$base/annotations/go-lint"
     echo "^^^ +++"
   fi
 }

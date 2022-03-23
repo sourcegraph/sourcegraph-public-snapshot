@@ -12,7 +12,7 @@ import {
 
 import { WebStory } from '../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
 import { DashboardPermissions } from '../pages/dashboards/dashboard-page/utils/get-dashboard-permissions'
 
 import { GaConfirmationModal } from './GaConfirmationModal'

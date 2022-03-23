@@ -26,7 +26,7 @@ func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev s
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(db.Repos())
+	repos := backend.NewRepos(db)
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
