@@ -2,7 +2,7 @@ import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
 import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
-import { Insight, InsightExecutionType, InsightType } from '../../../types'
+import { BaseInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
 
 /**
  * Transforms/casts gql api insight model to FE insight model. We still
@@ -11,6 +11,11 @@ import { Insight, InsightExecutionType, InsightType } from '../../../types'
  * api for insights.
  */
 export const createInsightView = (insight: InsightViewNode): Insight => {
+    const baseInsight: Omit<BaseInsight, 'title' | 'type' | 'executionType'> = {
+        id: insight.id,
+        isFrozen: insight.isFrozen,
+        dashboardReferenceCount: insight.dashboardReferenceCount,
+    }
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(series => series.isCalculated)
@@ -28,7 +33,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 const { query } = insight.dataSeriesDefinitions[0] ?? {}
 
                 return {
-                    id: insight.id,
+                    ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
                     title: insight.presentation.title,
@@ -39,7 +44,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
                     },
-                    dashboardReferenceCount: insight.dashboardReferenceCount,
                 }
             }
 
@@ -59,7 +63,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
             if (isBackendInsight) {
                 return {
-                    id: insight.id,
+                    ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.SearchBased,
                     title: insight.presentation.title,
@@ -69,19 +73,17 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
                     },
-                    dashboardReferenceCount: insight.dashboardReferenceCount,
                 }
             }
 
             return {
-                id: insight.id,
+                ...baseInsight,
                 executionType: InsightExecutionType.Runtime,
                 type: InsightType.SearchBased,
                 title: insight.presentation.title,
                 step,
                 repositories,
                 series,
-                dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
 
@@ -92,13 +94,12 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             const repository = insight.dataSeriesDefinitions[0].repositoryScope.repositories[0] ?? ''
 
             return {
-                id: insight.id,
+                ...baseInsight,
                 executionType: InsightExecutionType.Runtime,
                 type: InsightType.LangStats,
                 title: insight.presentation.title,
                 otherThreshold: insight.presentation.otherThreshold,
                 repository,
-                dashboardReferenceCount: insight.dashboardReferenceCount,
             }
         }
     }

@@ -29,4 +29,5 @@ export interface BaseInsight {
     executionType: InsightExecutionType
     type: InsightType
     dashboardReferenceCount: number
+    isFrozen: boolean
 }
