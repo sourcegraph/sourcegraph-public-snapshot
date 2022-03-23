@@ -329,7 +329,7 @@ func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *gql.GitTreeEn
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	filesRegex, err := regexp.Compile("^" + args.Path + "[^.]{1}[^/]*$")
+	filesRegex, err := regexp.Compile("^" + regexp.QuoteMeta(args.Path) + "[^.]{1}[^/]*$")
 	if err != nil {
 		return nil, errors.Wrapf(err, "path '%s' caused invalid regex", args.Path)
 	}
