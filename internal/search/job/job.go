@@ -183,7 +183,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			addJob(true, &repoPagerJob{
 				child:            NewParallelJob(textSearchJobs...),
 				repoOptions:      repoOptions,
-				useIndex:         patternInfo.Index,
+				useIndex:         b.Index(),
 				containsRefGlobs: query.ContainsRefGlobs(q),
 				zoekt:            jargs.Zoekt,
 			})
@@ -215,7 +215,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			addJob(required, &repoPagerJob{
 				child:            NewParallelJob(symbolSearchJobs...),
 				repoOptions:      repoOptions,
-				useIndex:         patternInfo.Index,
+				useIndex:         b.Index(),
 				containsRefGlobs: query.ContainsRefGlobs(q),
 				zoekt:            jargs.Zoekt,
 			})
@@ -267,7 +267,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				SearcherArgs: searcherArgs,
 
 				NotSearcherOnly:  !onlyRunSearcher,
-				UseIndex:         patternInfo.Index,
+				UseIndex:         b.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
 				RepoOpts:         repoOptions,
 			})
