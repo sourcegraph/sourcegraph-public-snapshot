@@ -17,7 +17,7 @@ import (
 //
 // The returned DB handle is initialized with a unique database just for the specified test, with
 // all migrations applied.
-func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
+func CodeInsightsDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -31,8 +31,8 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		username = user.Username
 	}
 
-	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, err := connections.NewTestDB(timescaleDSN)
+	insightsDSN := postgresdsn.New("codeinsights", username, os.Getenv)
+	initConn, err := connections.NewTestDB(insightsDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -61,13 +61,13 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	// Connect to the new DB.
-	u, err := url.Parse(timescaleDSN)
+	u, err := url.Parse(insightsDSN)
 	if err != nil {
 		t.Fatal("parsing Timescale DSN", err)
 	}
 	u.Path = dbname
-	timescaleDSN = u.String()
-	db, err = connections.NewTestDB(timescaleDSN, schemas.CodeInsights)
+	insightsDSN = u.String()
+	db, err = connections.NewTestDB(insightsDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
