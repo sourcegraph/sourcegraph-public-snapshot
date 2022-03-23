@@ -7,7 +7,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // GitserverLocalCloneStore is used to migrate repos from one gitserver to another asynchronously.
@@ -17,14 +16,12 @@ type GitserverLocalCloneStore interface {
 	Enqueue(ctx context.Context, repoID int, sourceHostname, destHostname string, deleteSource bool) (int, error)
 }
 
-var _ GitserverLocalCloneStore = (*gitserverLocalCloneStore)(nil)
-
 type gitserverLocalCloneStore struct {
 	*basestore.Store
 }
 
 // GitserverLocalClone instantiates and returns a new gitserverRepoStore.
-func GitserverLocalClone(db dbutil.DB) GitserverLocalCloneStore {
+func GitserverLocalClone(db DB) GitserverLocalCloneStore {
 	return &gitserverLocalCloneStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
