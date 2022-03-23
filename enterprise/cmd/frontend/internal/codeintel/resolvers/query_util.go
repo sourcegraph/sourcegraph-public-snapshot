@@ -224,18 +224,23 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
 // slice. The slice is filtered in-place and returned (to update the slice length).
 func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCommitChecker, uploads []store.Dump) ([]store.Dump, error) {
+	rcs := make([]RepositoryCommit, 0, len(uploads))
+	for _, upload := range uploads {
+		rcs = append(rcs, RepositoryCommit{
+			RepositoryID: upload.ID,
+			Commit:       upload.Commit,
+		})
+	}
+	exists, err := cachedCommitChecker.existsBatch(ctx, rcs)
+	if err != nil {
+		return nil, err
+	}
+
 	filtered := uploads[:0]
-
 	for i := range uploads {
-		commitExists, err := cachedCommitChecker.exists(ctx, uploads[i].RepositoryID, uploads[i].Commit)
-		if err != nil {
-			return nil, err
+		if exists[i] {
+			filtered = append(filtered, uploads[i])
 		}
-		if !commitExists {
-			continue
-		}
-
-		filtered = append(filtered, uploads[i])
 	}
 
 	return filtered, nil

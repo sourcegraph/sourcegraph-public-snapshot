@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,21 +26,47 @@ func (c *cachedCommitChecker) set(repositoryID int, commit string) {
 	c.setInternal(repositoryID, commit, true)
 }
 
-// exists determines if the given commit is resolvable for the given repository. If
-// we do not know the answer from a previous call to set or exists, we ask gitserver
-// to resolve the commit and store the result for a subsequent call.
-func (c *cachedCommitChecker) exists(ctx context.Context, repositoryID int, commit string) (bool, error) {
-	if exists, ok := c.getInternal(repositoryID, commit); ok {
-		return exists, nil
+type RepositoryCommit struct {
+	RepositoryID int
+	Commit       string
+}
+
+// existsBatch determines if the given commits are resolvable for the given repositories.
+// If we do not know the answer from a previous call to set or exists, we ask gitserver
+// to resolve the remaining commits and store the results for subsequent calls. This method
+// returns a slice of the same size as the input slice, true indicating that the commit at
+// the symmetric index exists.
+func (c *cachedCommitChecker) existsBatch(ctx context.Context, commits []RepositoryCommit) ([]bool, error) {
+	exists := make([]bool, len(commits))
+	rcIndexMap := make([]int, 0, len(commits))
+	rcs := make([]gitserver.RepositoryCommit, 0, len(commits))
+
+	for i, rc := range commits {
+		if e, ok := c.getInternal(rc.RepositoryID, rc.Commit); ok {
+			exists[i] = e
+		} else {
+			rcIndexMap = append(rcIndexMap, i)
+			rcs = append(rcs, gitserver.RepositoryCommit{
+				RepositoryID: rc.RepositoryID,
+				Commit:       rc.Commit,
+			})
+		}
 	}
 
 	// Perform heavy work outside of critical section
-	exists, err := c.gitserverClient.CommitExists(ctx, repositoryID, commit)
+	e, err := c.gitserverClient.CommitsExist(ctx, rcs)
 	if err != nil {
-		return false, errors.Wrap(err, "gitserverClient.CommitExists")
+		return nil, errors.Wrap(err, "gitserverClient.CommitsExist")
+	}
+	if len(e) != len(rcs) {
+		panic("Unexpected result from CommitsExist")
 	}
 
-	c.setInternal(repositoryID, commit, exists)
+	for i, rc := range rcs {
+		exists[rcIndexMap[i]] = e[i]
+		c.setInternal(rc.RepositoryID, rc.Commit, e[i])
+	}
+
 	return exists, nil
 }
 
