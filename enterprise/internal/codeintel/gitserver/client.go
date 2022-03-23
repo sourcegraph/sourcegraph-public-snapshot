@@ -446,7 +446,7 @@ func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.
 	return api.RepoName(repoName), nil
 }
 
-// repositoryIDsToRepo creates a map from repository identifiers to api.RepoNames.
+// repositoryIDsToRepos creates a map from repository identifiers to api.RepoNames.
 func (c *Client) repositoryIDsToRepos(ctx context.Context, repositoryIDs ...int) (map[int]api.RepoName, error) {
 	names, err := c.dbStore.RepoNames(ctx, repositoryIDs...)
 	if err != nil {
