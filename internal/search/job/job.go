@@ -1,6 +1,7 @@
 package job
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/google/zoekt"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -67,6 +69,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
 
+	fileMatchLimit := int32(computeFileMatchLimit(b, jargs.SearchInputs.Protocol))
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 
 	features := toFeatures(jargs.SearchInputs.Features)
@@ -113,7 +116,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					// searches at all, and will be removed once jobs are fully migrated.
 					Query:          nil,
 					Typ:            typ,
-					FileMatchLimit: patternInfo.FileMatchLimit,
+					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
@@ -137,7 +140,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				zoektArgs := &search.ZoektParameters{
 					Query:          nil,
 					Typ:            typ,
-					FileMatchLimit: patternInfo.FileMatchLimit,
+					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
@@ -164,7 +167,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
 					Query:          zoektQuery,
 					Typ:            typ,
-					FileMatchLimit: patternInfo.FileMatchLimit,
+					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
@@ -197,7 +200,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				}
 				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
 					Query:          zoektQuery,
-					FileMatchLimit: patternInfo.FileMatchLimit,
+					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
@@ -233,7 +236,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
-				Limit:                int(patternInfo.FileMatchLimit),
+				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
 				Gitserver:            gitserver.NewClient(db),
 			})
@@ -248,7 +251,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			zoektArgs := &search.ZoektParameters{
 				Query:          zoektQuery,
 				Typ:            typ,
-				FileMatchLimit: patternInfo.FileMatchLimit,
+				FileMatchLimit: fileMatchLimit,
 				Select:         selector,
 				Zoekt:          jargs.Zoekt,
 			}
@@ -612,3 +615,22 @@ var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_featureflag_unavailable",
 	Help: "temporary counter to check if we have feature flag available in practice.",
 })
+
+func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
+	if count := q.GetCount(); count != "" {
+		v, _ := strconv.Atoi(count) // Invariant: count is validated.
+		return v
+	}
+
+	if q.IsStructural() {
+		return limits.DefaultMaxSearchResults
+	}
+
+	switch p {
+	case search.Batch:
+		return limits.DefaultMaxSearchResults
+	case search.Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	}
+	panic("unreachable")
+}
