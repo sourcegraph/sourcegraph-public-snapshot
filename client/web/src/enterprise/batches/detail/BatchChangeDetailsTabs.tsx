@@ -95,7 +95,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
 
     const executingCount = useMemo(
         () =>
-            batchChange.batchSpecs.nodes.filter(node => node.state === 'PROCESSING' || node.state === 'QUEUED').length,
+            batchChange.batchSpecs.nodes.filter(node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED).length,
         [batchChange.batchSpecs.nodes]
     )
 
