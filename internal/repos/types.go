@@ -35,21 +35,19 @@ func NewRateLimitSyncer(registry *ratelimit.Registry, serviceLister externalServ
 	return r
 }
 
-// SyncRateLimiters syncs all rate limiters using current config.
-// We sync them all as we need to pick the most restrictive configured limit per code host
-// and rate limits can be defined in multiple external services for the same host.
-func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
-	byURL := make(map[string]extsvc.RateLimitConfig)
-
+// SyncRateLimiters syncs rate limiters for external services, the sync will
+// happen for all external services if no IDs are given.
+func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context, ids ...int64) error {
 	cursor := database.LimitOffset{
 		Limit: int(r.limit),
 	}
-
 	for {
-		services, err := r.serviceLister.List(ctx, database.ExternalServicesListOptions{
-			NoNamespace: true,
-			LimitOffset: &cursor,
-		})
+		services, err := r.serviceLister.List(ctx,
+			database.ExternalServicesListOptions{
+				IDs:         ids,
+				LimitOffset: &cursor,
+			},
+		)
 		if err != nil {
 			return errors.Wrap(err, "listing external services")
 		}
@@ -57,7 +55,6 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 		if len(services) == 0 {
 			break
 		}
-
 		cursor.Offset += len(services)
 
 		for _, svc := range services {
@@ -69,28 +66,14 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 				return errors.Wrap(err, "getting rate limit configuration")
 			}
 
-			current, ok := byURL[rlc.BaseURL]
-			if !ok || (ok && current.IsDefault) {
-				byURL[rlc.BaseURL] = rlc
-				continue
-			}
-			// Use the lower limit, but a default value should not override
-			// a limit that has been configured
-			if rlc.Limit < current.Limit && !rlc.IsDefault {
-				byURL[rlc.BaseURL] = rlc
-			}
+			l := r.registry.Get(svc.URN())
+			l.SetLimit(rlc.Limit)
 		}
 
 		if len(services) < int(r.limit) {
 			break
 		}
 	}
-
-	for u, rl := range byURL {
-		l := r.registry.Get(u)
-		l.SetLimit(rl.Limit)
-	}
-
 	return nil
 }
 

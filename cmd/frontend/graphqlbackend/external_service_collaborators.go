@@ -57,7 +57,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	githubUrl, _ := github.APIRoot(baseURL)
-	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
+	client := github.NewV4Client(r.externalService.URN(), githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
 
 	possibleRepos := githubCfg.Repos
 	if len(possibleRepos) == 0 {
