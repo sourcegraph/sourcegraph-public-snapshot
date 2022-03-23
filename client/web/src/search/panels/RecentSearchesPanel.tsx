@@ -1,19 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { gql } from '@apollo/client'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
-import { SearchPatternType } from '../../graphql-operations'
+import { RecentSearchesPanelFragment, SearchPatternType } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { HomePanelsFetchMore, RECENT_SEARCHES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -30,42 +31,51 @@ interface RecentSearch {
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
-
+    recentSearches: RecentSearchesPanelFragment | null
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date
+    fetchMore: HomePanelsFetchMore
 }
+
+export const recentSearchesPanelFragment = gql`
+    fragment RecentSearchesPanelFragment on User {
+        recentSearchesLogs: eventLogs(first: $firstRecentSearches, eventName: "SearchResultsQueried") {
+            nodes {
+                argument
+                timestamp
+                url
+            }
+            pageInfo {
+                hasNextPage
+            }
+            totalCount
+        }
+    }
+`
 
 export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
     className,
-    authenticatedUser,
-    fetchRecentSearches,
     now,
     telemetryService,
+    recentSearches,
+    fetchMore,
 }) => {
-    const pageSize = 20
-
-    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
-    const recentSearches = useObservable(
-        useMemo(() => fetchRecentSearches(authenticatedUser?.id || '', itemsToLoad), [
-            authenticatedUser?.id,
-            fetchRecentSearches,
-            itemsToLoad,
-        ])
+    const [searchEventLogs, setSearchEventLogs] = useState<null | RecentSearchesPanelFragment['recentSearchesLogs']>(
+        recentSearches?.recentSearchesLogs ?? null
     )
-    const [processedResults, setProcessedResults] = useState<RecentSearch[] | null>(null)
+    useEffect(() => setSearchEventLogs(recentSearches?.recentSearchesLogs ?? null), [
+        recentSearches?.recentSearchesLogs,
+    ])
 
-    // Only update processed results when results are valid to prevent
-    // flashing loading screen when "Show more" button is clicked
-    useEffect(() => {
-        if (recentSearches) {
-            setProcessedResults(processRecentSearches(recentSearches))
-        }
-    }, [recentSearches])
+    const [itemsToLoad, setItemsToLoad] = useState(RECENT_SEARCHES_TO_LOAD)
+
+    const processedResults = useMemo(() => (searchEventLogs === null ? null : processRecentSearches(searchEventLogs)), [
+        searchEventLogs,
+    ])
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
-        if (processedResults && itemsToLoad === pageSize) {
+        if (processedResults && itemsToLoad === RECENT_SEARCHES_TO_LOAD) {
             telemetryService.log(
                 'RecentSearchesPanelLoaded',
                 { empty: processedResults.length === 0 },
@@ -134,9 +144,23 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
         </EmptyPanelContainer>
     )
 
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + pageSize)
+    async function loadMoreItems(): Promise<void> {
         telemetryService.log('RecentSearchesPanelShowMoreClicked')
+        const newItemsToLoad = itemsToLoad + RECENT_SEARCHES_TO_LOAD
+        setItemsToLoad(newItemsToLoad)
+
+        const { data } = await fetchMore({
+            firstRecentSearches: newItemsToLoad,
+        })
+
+        if (data === undefined) {
+            return
+        }
+        const node = data.node
+        if (node === null || node.__typename !== 'User') {
+            return
+        }
+        setSearchEventLogs(node.recentSearchesLogs)
     }
 
     const contentDisplay = (
@@ -169,7 +193,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
                 </tbody>
             </table>
-            {recentSearches?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
+            {searchEventLogs?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
         </>
     )
 

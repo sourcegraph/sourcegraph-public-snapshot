@@ -2,10 +2,11 @@ import React from 'react'
 
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { of } from 'rxjs'
+import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'
 
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 
@@ -41,11 +42,19 @@ describe('RecentSearchesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
             telemetryService: NOOP_TELEMETRY_SERVICE,
+            recentSearches: { recentSearchesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
         }
 
-        expect(renderWithBrandedContext(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
+        expect(
+            renderWithBrandedContext(
+                <MockedTestProvider>
+                    <RecentSearchesPanel {...props} />
+                </MockedTestProvider>
+            ).asFragment()
+        ).toMatchSnapshot()
     })
 
     test('searches with no argument are skipped', () => {
@@ -78,7 +87,9 @@ describe('RecentSearchesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
+            recentSearches: { recentSearchesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -116,7 +127,9 @@ describe('RecentSearchesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
+            recentSearches: { recentSearchesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -201,8 +214,9 @@ describe('RecentSearchesPanel', () => {
         const props = {
             className: '',
             authenticatedUser: null,
-            fetchRecentSearches: (_userId: string, first: number) =>
-                first === 20 ? of(recentSearches1) : of(recentSearches2),
+            recentSearches: { recentSearchesLogs: recentSearches1 },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: (() => ({ recentSearchesLogs: recentSearches2 })) as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 

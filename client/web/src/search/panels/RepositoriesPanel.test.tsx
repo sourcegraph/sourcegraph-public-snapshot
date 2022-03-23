@@ -2,7 +2,7 @@ import React from 'react'
 
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { of } from 'rxjs'
+import { noop } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
@@ -35,8 +35,10 @@ describe('RepositoriesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
             telemetryService: NOOP_TELEMETRY_SERVICE,
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
         }
 
         expect(renderWithBrandedContext(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
@@ -73,7 +75,9 @@ describe('RepositoriesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -111,7 +115,9 @@ describe('RepositoriesPanel', () => {
 
         const props = {
             authenticatedUser: null,
-            fetchRecentSearches: () => of(recentSearches),
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: noop as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
@@ -196,8 +202,9 @@ describe('RepositoriesPanel', () => {
         const props = {
             className: '',
             authenticatedUser: null,
-            fetchRecentSearches: (_userId: string, first: number) =>
-                first === 50 ? of(recentSearches1) : of(recentSearches2),
+            recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearches1 },
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+            fetchMore: (() => ({ recentSearchesLogs: recentSearches2 })) as any,
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 

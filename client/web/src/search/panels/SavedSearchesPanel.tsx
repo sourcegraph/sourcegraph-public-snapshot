@@ -1,25 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
+import { gql } from '@apollo/client'
 import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { Observable } from 'rxjs'
 
-import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Button,
-    ButtonGroup,
-    useObservable,
-    Link,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuItem,
-    Icon,
-} from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, Menu, MenuButton, MenuList, MenuItem, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { SavedSearchesPanelFragment } from '../../graphql-operations'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -30,18 +20,37 @@ import { PanelContainer } from './PanelContainer'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchSavedSearches: () => Observable<ISavedSearch[]>
+    savedSearchesFragment: SavedSearchesPanelFragment | null
     insideTabPanel?: boolean
 }
 
+export const savedSearchesPanelFragment = gql`
+    fragment SavedSearchesPanelFragment on Query {
+        savedSearches @include(if: $enableSavedSearches) {
+            id
+            description
+            notify
+            notifySlack
+            query
+            namespace {
+                __typename
+                id
+                namespaceName
+            }
+            slackWebhookURL
+        }
+    }
+`
+
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     authenticatedUser,
-    fetchSavedSearches,
     className,
     telemetryService,
     insideTabPanel,
+    savedSearchesFragment,
 }) => {
-    const savedSearches = useObservable(useMemo(() => fetchSavedSearches(), [fetchSavedSearches]))
+    const savedSearches = savedSearchesFragment?.savedSearches ?? null
+
     const [showAllSearches, setShowAllSearches] = useState(true)
 
     useEffect(() => {

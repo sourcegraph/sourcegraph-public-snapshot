@@ -114,7 +114,6 @@ export interface LayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
-    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
 

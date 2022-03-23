@@ -2,10 +2,11 @@ import React from 'react'
 
 import { cleanup } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import { of } from 'rxjs'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -17,7 +18,19 @@ import { FeatureFlagName } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
-import { authUser } from '../panels/utils'
+import {
+    HOME_PANELS_QUERY,
+    RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+    RECENT_FILES_TO_LOAD,
+    RECENT_SEARCHES_TO_LOAD,
+} from '../panels/HomePanels'
+import {
+    authUser,
+    collaboratorsPayload,
+    recentFilesPayload,
+    recentSearchesPayload,
+    savedSearchesPayload,
+} from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
@@ -32,6 +45,42 @@ jest.mock('./LoggedOutHomepage.constants', () => ({
     fonts: [],
     exampleTripsAndTricks: [],
 }))
+
+function getMocks({
+    enableSavedSearches,
+    enableCollaborators,
+}: {
+    enableSavedSearches: boolean
+    enableCollaborators: boolean
+}) {
+    return [
+        {
+            request: {
+                query: getDocumentNode(HOME_PANELS_QUERY),
+                variables: {
+                    userId: '0',
+                    firstRecentlySearchedRepositories: RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
+                    firstRecentSearches: RECENT_SEARCHES_TO_LOAD,
+                    firstRecentFiles: RECENT_FILES_TO_LOAD,
+                    enableSavedSearches,
+                    enableCollaborators,
+                },
+            },
+            result: {
+                data: {
+                    node: {
+                        __typename: 'User',
+                        recentlySearchedRepositoriesLogs: recentSearchesPayload(),
+                        recentSearchesLogs: recentSearchesPayload(),
+                        recentFilesLogs: recentFilesPayload(),
+                        collaborators: enableCollaborators ? collaboratorsPayload() : undefined,
+                    },
+                    savedSearches: enableSavedSearches ? savedSearchesPayload() : undefined,
+                },
+            },
+        },
+    ]
+}
 
 describe('SearchPage', () => {
     afterAll(cleanup)
@@ -65,10 +114,6 @@ describe('SearchPage', () => {
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',
         isLightTheme: true,
-        fetchSavedSearches: () => of([]),
-        fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
-        fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
-        fetchCollaborators: () => of([]),
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,
@@ -78,7 +123,16 @@ describe('SearchPage', () => {
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
-        container = renderWithBrandedContext(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
+        container = renderWithBrandedContext(
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps} isSourcegraphDotCom={true} />
+            </MockedTestProvider>
+        ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
@@ -86,7 +140,16 @@ describe('SearchPage', () => {
     it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
-        container = renderWithBrandedContext(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
+        container = renderWithBrandedContext(
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps} isSourcegraphDotCom={true} />
+            </MockedTestProvider>
+        ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })
@@ -95,14 +158,30 @@ describe('SearchPage', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
         container = renderWithBrandedContext(
-            <SearchPage {...defaultProps} isSourcegraphDotCom={true} authenticatedUser={null} />
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps} isSourcegraphDotCom={true} authenticatedUser={null} />
+            </MockedTestProvider>
         ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should not show home panels if showEnterpriseHomePanels disabled', () => {
-        container = renderWithBrandedContext(<SearchPage {...defaultProps} />).container
+        container = renderWithBrandedContext(
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps} />
+            </MockedTestProvider>
+        ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
@@ -110,7 +189,16 @@ describe('SearchPage', () => {
     it('should show home panels if showEnterpriseHomePanels enabled and not on Sourcegraph.com', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
-        container = renderWithBrandedContext(<SearchPage {...defaultProps} />).container
+        container = renderWithBrandedContext(
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps} />
+            </MockedTestProvider>
+        ).container
         const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })
