@@ -12,6 +12,8 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## 3.37 -> 3.38
 
+**Minimum version of 1.29 for docker compose is required for this update**
+
 This release adds the requirement that the environment variables `SRC_GIT_SERVERS`, `SEARCHER_URL`, `SYMBOLS_URL`, and `INDEXED_SEARCH_SERVERS` are set for the worker process.
 
 Follow the [standard upgrade procedure](../install/docker-compose/operations.md#upgrade) to upgrade your deployment.
