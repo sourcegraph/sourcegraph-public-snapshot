@@ -85,6 +85,7 @@ Snapshot diffs should be reviewed in pull request reviews the same way any other
 ### Behavior
 
 The most effective way we can test our React components is through our behavior tests. These tests should all follow the same core guiding principle:
+
 > The more our tests resemble the way our software is used, the more confidence they will give us.
 
 This means that our behavior tests should be designed to simulate a typical user journey **as closely as possible**.
