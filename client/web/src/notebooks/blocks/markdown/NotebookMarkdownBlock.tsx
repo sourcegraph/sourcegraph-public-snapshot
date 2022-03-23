@@ -53,7 +53,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
     const runBlock = useCallback(() => {
-        console.log('runBlock')
         onRunBlock(id)
         setIsEditing(false)
         return true
@@ -74,7 +73,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
             ]),
             EditorView.updateListener.of(update => {
                 if (update.docChanged) {
-                    console.log(update.state.sliceDoc())
                     onInputChange(update.state.sliceDoc())
                 }
             }),
