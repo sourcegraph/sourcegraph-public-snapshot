@@ -14,6 +14,7 @@ import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon } from '@sourcegraph/wildcard'
+import { BatchSpecState } from '../../../graphql-operations'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 import {
@@ -95,7 +96,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
 
     const executingCount = useMemo(
         () =>
-            batchChange.batchSpecs.nodes.filter(node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED).length,
+            batchChange.batchSpecs.nodes.filter(
+                node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED
+            ).length,
         [batchChange.batchSpecs.nodes]
     )
 
