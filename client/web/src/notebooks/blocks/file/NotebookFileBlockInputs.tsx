@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 
 import classNames from 'classnames'
 import { debounce } from 'lodash'
@@ -15,7 +15,7 @@ import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
-import { focusLastPositionInMonacoEditor } from '../useMonacoBlockInput'
+import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
@@ -45,7 +45,7 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
     onLineRangeChange,
     ...props
 }) => {
-    useEffect(() => focusLastPositionInMonacoEditor(editor), [editor])
+    useFocusMonacoEditorOnMount({ editor, isEditing: true })
 
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])

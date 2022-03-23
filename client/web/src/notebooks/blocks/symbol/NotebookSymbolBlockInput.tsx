@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 
 import * as Monaco from 'monaco-editor'
 
@@ -11,7 +11,7 @@ import { Button } from '@sourcegraph/wildcard'
 import { BlockProps, SymbolBlockInput } from '../..'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
-import { focusLastPositionInMonacoEditor } from '../useMonacoBlockInput'
+import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookSymbolBlockInput.module.scss'
 
@@ -35,7 +35,7 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlo
     onSymbolSelected,
     ...props
 }) => {
-    useEffect(() => focusLastPositionInMonacoEditor(editor), [editor])
+    useFocusMonacoEditorOnMount({ editor, isEditing: true })
 
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>

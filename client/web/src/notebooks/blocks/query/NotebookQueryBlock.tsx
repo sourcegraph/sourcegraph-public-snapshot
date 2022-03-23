@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -33,12 +33,9 @@ import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUse
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor, useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
-import {
-    focusLastPositionInMonacoEditor,
-    MONACO_BLOCK_INPUT_OPTIONS,
-    useMonacoBlockInput,
-} from '../useMonacoBlockInput'
+import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
 import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookQueryBlock.module.scss'
@@ -92,8 +89,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         ...props,
     })
 
-    const onEnterBlock = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
-
     const modifierKeyLabel = useModifierKeyLabel()
     const mainMenuAction: BlockMenuAction = useMemo(() => {
         const isLoading = searchResults && searchResults.state === 'loading'
@@ -123,23 +118,19 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
-    // Focus the query input when a new query block is added (the input is empty).
-    useEffect(() => {
-        if (editor && input.initialFocusInput) {
-            focusLastPositionInMonacoEditor(editor)
-        }
-        // Only run this hook for the initial input.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editor])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+
+    useFocusMonacoEditorOnMount({ editor, isEditing: input.initialFocusInput })
 
     return (
         <NotebookBlock
             className={styles.block}
             id={id}
             aria-label="Notebook query block"
-            onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
+            showInput={true}
+            focusInput={focusInput}
             mainAction={mainMenuAction}
             actions={isSelected ? commonMenuActions : linkMenuActions}
             {...props}

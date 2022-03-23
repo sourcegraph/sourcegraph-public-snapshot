@@ -29,8 +29,8 @@ import { parseFileBlockInput, serializeLineRange } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
-import { focusLastPositionInMonacoEditor } from '../useMonacoBlockInput'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
@@ -87,17 +87,9 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         [input.filePath, input.repositoryName, input.revision, onFileSelected]
     )
 
-    const onEnterBlock = useCallback(() => {
-        if (showInputs) {
-            focusLastPositionInMonacoEditor(editor)
-        } else if (!isReadOnly) {
-            setShowInputs(true)
-        }
-    }, [showInputs, isReadOnly, editor])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
 
-    const hideInputs = useCallback(() => {
-        setShowInputs(false)
-    }, [setShowInputs])
+    const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
     const isFileSelected = input.repositoryName.length > 0 && input.filePath.length > 0
     const blobLines = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
@@ -182,10 +174,12 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             className={styles.block}
             id={id}
             aria-label="Notebook file block"
-            onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onHideInput={hideInputs}
+            isReadOnly={isReadOnly}
+            showInput={showInputs}
+            setShowInput={setShowInputs}
+            focusInput={focusInput}
             actions={isSelected ? menuActions : linkMenuAction}
             {...props}
         >

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -16,8 +16,10 @@ interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlo
     className?: string
     'aria-label': string
     onDoubleClick?: () => void
-    onEnterBlock: () => void
-    onHideInput?: () => void
+    isReadOnly: boolean
+    showInput?: boolean
+    focusInput?: () => void
+    setShowInput?: (value: boolean) => void
 }
 
 export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
@@ -30,16 +32,27 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
     actions,
     'aria-label': ariaLabel,
     onDoubleClick,
-    onEnterBlock,
-    onHideInput,
+    isReadOnly,
+    showInput,
+    focusInput,
+    setShowInput,
 }) => {
     const isInputFocused = useIsBlockInputFocused(id)
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+
+    const onEnterBlock = useCallback(() => {
+        if (showInput) {
+            focusInput?.()
+        } else if (!isReadOnly) {
+            setShowInput?.(true)
+        }
+    }, [showInput, isReadOnly, focusInput, setShowInput])
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
             if (isSelected && event.key === 'Enter') {
                 if (isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)) {
-                    onHideInput?.()
+                    setShowInput?.(false)
                 } else {
                     onEnterBlock()
                 }
@@ -50,7 +63,7 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
         }
-    }, [isMacPlatform, isSelected, onEnterBlock, onHideInput])
+    }, [isMacPlatform, isSelected, onEnterBlock, setShowInput])
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>

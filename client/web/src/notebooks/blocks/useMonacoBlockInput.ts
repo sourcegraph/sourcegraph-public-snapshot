@@ -49,19 +49,6 @@ interface UseMonacoBlockEditorOptions extends Pick<BlockProps, 'onRunBlock'> {
 
 const REPLACE_NEW_LINE_REGEX = /[\n\r↵]/g
 
-export function focusLastPositionInMonacoEditor(editor: Monaco.editor.IStandaloneCodeEditor | undefined): void {
-    if (!editor) {
-        return
-    }
-    // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input,
-    // if Enter key was used to show the editor.
-    setTimeout(() => {
-        const lines = editor.getValue().split('\n')
-        editor.setPosition({ column: lines[lines.length - 1].length + 2, lineNumber: lines.length })
-        editor.focus()
-    }, 0)
-}
-
 export const useMonacoBlockInput = ({
     editor,
     id,

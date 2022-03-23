@@ -29,8 +29,8 @@ import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '..
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
-import { focusLastPositionInMonacoEditor } from '../useMonacoBlockInput'
 
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
 
@@ -82,13 +82,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         [id, onBlockInputChange, onRunBlock]
     )
 
-    const onEnterBlock = useCallback(() => {
-        if (showInputs) {
-            focusLastPositionInMonacoEditor(editor)
-        } else if (!isReadOnly) {
-            setShowInputs(true)
-        }
-    }, [editor, showInputs, isReadOnly, setShowInputs])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
 
     const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
@@ -165,8 +159,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             className={styles.block}
             id={id}
             aria-label="Notebook symbol block"
-            onEnterBlock={onEnterBlock}
-            onHideInput={hideInputs}
+            showInput={showInputs}
+            setShowInput={setShowInputs}
+            focusInput={focusInput}
+            isReadOnly={isReadOnly}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
             actions={isSelected ? menuActions : linkMenuAction}
