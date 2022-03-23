@@ -36,6 +36,10 @@ For next steps and further configuration options, visit the [site administration
 
 <span class="virtual-br"></span>
 
+> NOTE: On Mac computers with Apple silicon, you’ll need to add an extra `--platform linux/amd64` argument to your Docker command for correctly running and installing Sourcegraph. 
+
+<span class="virtual-br"></span>
+
 > NOTE: If you run Docker on an OS such as RHEL, Fedora, or CentOS with SELinux enabled, sVirt doesn't allow the Docker process
 > to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you will see the following message:
 
