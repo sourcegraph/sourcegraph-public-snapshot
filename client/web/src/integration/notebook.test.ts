@@ -620,9 +620,9 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
         // Focus the input and use the slash command to filter available options
-        await driver.page.click('[data-command-palette-input]')
+        await driver.page.click('[data-testid="command-palette-input"]')
         await driver.replaceText({
-            selector: '[data-command-palette-input]',
+            selector: '[data-testid="command-palette-input"]',
             newText: '/markdown',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -642,9 +642,9 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
         // Focus the input and enter the markdown text
-        await driver.page.click('[data-command-palette-input]')
+        await driver.page.click('[data-testid="command-palette-input"]')
         await driver.replaceText({
-            selector: '[data-command-palette-input]',
+            selector: '[data-testid="command-palette-input"]',
             newText: 'Markdown Text',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -670,9 +670,9 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
         // Focus the input and paste the file URL
-        await driver.page.click('[data-command-palette-input]')
+        await driver.page.click('[data-testid="command-palette-input"]')
         await driver.replaceText({
-            selector: '[data-command-palette-input]',
+            selector: '[data-testid="command-palette-input"]',
             newText:
                 'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32',
             selectMethod: 'keyboard',

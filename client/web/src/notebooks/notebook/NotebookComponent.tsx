@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
@@ -117,6 +117,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
+    const commandPaletteInputReference = useRef<HTMLInputElement>(null)
 
     const updateBlocks = useCallback(
         (serialize = true) => {
@@ -305,6 +306,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         () => ({
             notebook,
             selectedBlockId,
+            commandPaletteInputReference,
             setSelectedBlockId,
             onMoveBlock,
             onRunBlock,
@@ -517,6 +519,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             ))}
             {!isReadOnly && (
                 <NotebookCommandPaletteInput
+                    ref={commandPaletteInputReference}
                     index={blocks.length}
                     onAddBlock={onAddBlock}
                     onFocusPreviousBlock={onFocusLastBlock}

@@ -10,6 +10,7 @@ interface UseNotebookEventHandlersProps
     extends Pick<BlockProps, 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
     notebook: Notebook
     selectedBlockId: string | null
+    commandPaletteInputReference: React.RefObject<HTMLInputElement>
     setSelectedBlockId: (blockId: string | null) => void
 }
 
@@ -26,6 +27,7 @@ export const isMonacoEditorDescendant = (element: HTMLElement): boolean => eleme
 export function useNotebookEventHandlers({
     notebook,
     selectedBlockId,
+    commandPaletteInputReference,
     setSelectedBlockId,
     onMoveBlock,
     onRunBlock,
@@ -39,10 +41,10 @@ export function useNotebookEventHandlers({
                 setSelectedBlockId(blockId)
                 focusBlock(blockId)
             } else if (!blockId && direction === 'down') {
-                document.querySelector<HTMLInputElement>('[data-command-palette-input]')?.focus()
+                commandPaletteInputReference.current?.focus()
             }
         },
-        [notebook, setSelectedBlockId]
+        [notebook, commandPaletteInputReference, setSelectedBlockId]
     )
 
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
