@@ -12,10 +12,10 @@ export default {
 } as Meta
 
 interface LanguageUsageDatum {
-    name: string,
-    value: number,
-    fill: string,
-    linkURL: string,
+    name: string
+    value: number
+    fill: string
+    linkURL: string
 }
 
 const LANGUAGE_USAGE_DATA: LanguageUsageDatum[] = [
