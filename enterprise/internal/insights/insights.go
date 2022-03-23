@@ -63,7 +63,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.CodeInsightsTimescaleDSN
+		return serviceConnections.CodeInsightsDSN
 	})
 	db, err := connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
 	if err != nil {
