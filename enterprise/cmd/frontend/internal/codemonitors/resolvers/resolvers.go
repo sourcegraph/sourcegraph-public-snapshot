@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -278,6 +279,9 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 				return err
 			}
 		case a.SlackWebhook != nil:
+			if err := validateSlackURL(a.SlackWebhook.URL); err != nil {
+				return err
+			}
 			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.IncludeResults, a.SlackWebhook.URL)
 			if err != nil {
 				return err
@@ -567,6 +571,9 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		case action.Webhook != nil:
 			err = r.updateWebhookAction(ctx, *action.Webhook)
 		case action.SlackWebhook != nil:
+			if err := validateSlackURL(action.SlackWebhook.Update.URL); err != nil {
+				return nil, err
+			}
 			err = r.updateSlackWebhookAction(ctx, *action.SlackWebhook)
 		default:
 			err = errors.New("action must be one of email, webhook, or slack webhook")
@@ -1352,4 +1359,17 @@ func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
 		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}
 	}
 	return graphqlbackend.DateTime{Time: *m.FinishedAt}
+}
+
+func validateSlackURL(urlString string) error {
+	u, err := url.Parse(urlString)
+	if err != nil {
+		return err
+	}
+
+	// Restrict slack webhooks to only canonical host and HTTPS
+	if u.Host != "hooks.slack.com" || u.Scheme != "https" {
+		return errors.New("slack webhook URL must begin with 'https://hooks.slack.com/")
+	}
+	return nil
 }

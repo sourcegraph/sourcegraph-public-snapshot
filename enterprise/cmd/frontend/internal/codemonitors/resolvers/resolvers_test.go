@@ -62,6 +62,20 @@ func TestCreateCodeMonitor(t *testing.T) {
 	require.NoError(t, err)
 	_, err = r.db.CodeMonitors().GetMonitor(ctx, got.(*monitor).Monitor.ID)
 	require.Error(t, err, "monitor should have been deleted")
+
+	t.Run("invalid slack webhook", func(t *testing.T) {
+		namespace := relay.MarshalID("User", user.ID)
+		_, err := r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
+			Monitor: &graphqlbackend.CreateMonitorArgs{Namespace: namespace},
+			Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:."},
+			Actions: []*graphqlbackend.CreateActionArgs{{
+				SlackWebhook: &graphqlbackend.CreateActionSlackWebhookArgs{
+					URL: "https://internal:3443",
+				},
+			}},
+		})
+		require.Error(t, err)
+	})
 }
 
 func TestListCodeMonitors(t *testing.T) {
@@ -1251,5 +1265,26 @@ func TestMonitorKindEqualsResolvers(t *testing.T) {
 
 	if got != want {
 		t.Fatal("email.MonitorKind should match resolvers.MonitorKind")
+	}
+}
+
+func TestValidateSlackURL(t *testing.T) {
+	valid := []string{
+		"https://hooks.slack.com/services/8d8d8/8dd88d/838383",
+		"https://hooks.slack.com",
+	}
+
+	for _, url := range valid {
+		require.NoError(t, validateSlackURL(url))
+	}
+
+	invalid := []string{
+		"http://hooks.slack.com/services",
+		"https://hooks.slack.com:3443/services",
+		"https://internal:8989",
+	}
+
+	for _, url := range invalid {
+		require.Error(t, validateSlackURL(url))
 	}
 }
