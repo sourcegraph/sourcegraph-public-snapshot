@@ -42,8 +42,8 @@ type Resolver interface {
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
 
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
-	InferredIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error)
-	InferredIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error)
+	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error)
+	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
@@ -242,7 +242,7 @@ func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]
 	return configuration.Data, true, nil
 }
 
-func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error) {
+func (r *resolver) InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error) {
 	maybeConfig, _, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit)
 	if err != nil || maybeConfig == nil {
 		return nil, false, err
@@ -251,7 +251,7 @@ func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID 
 	return maybeConfig, true, nil
 }
 
-func (r *resolver) InferredIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+func (r *resolver) InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
 	_, hints, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit)
 	if err != nil {
 		return nil, err

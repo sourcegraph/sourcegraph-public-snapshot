@@ -61,7 +61,7 @@ extend type Mutation {
     If a configuration is supplied, that configuration is used to determine what jobs to
     schedule. If no configuration is supplied, it will go through the regular index scheduling
     rules: first read any in-repo configuration (e.g., sourcegraph.yaml), then look for any
-    existing in-database configuration, finally falling back to the automatically inferred
+    existing in-database configuration, finally falling back to the automatically infered
     connfiguration based on the repo contents at the target commit.
     """
     queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [LSIFIndex!]!
@@ -1423,34 +1423,82 @@ type IndexConfiguration {
     configuration: String
 
     """
-    The raw JSON-encoded index configuration as inferred by the auto-indexer.
+    The raw JSON-encoded index configuration as infered by the auto-indexer.
     """
-    inferredConfiguration: String
+    inferedConfiguration: String
 }
 
 """
 Details code-intel support for a group of files rooted at a tree.
 """
 type GitTreeCodeIntelInfo {
-    searchBasedSupport: [GitTreeSearchBasedCoverage!]!
-    preciseSupport: [GitTreePreciseCoverage!]!
+    """
+    Search-based coverage grouped by language.
+    """
+    searchBasedSupport: [GitTreeSearchBasedCoverage!]
+    """
+    Precise coverage based on inference derived from the directory
+    structure and its files.
+    """
+    preciseSupport: [GitTreePreciseCoverage!]
 }
 
+"""
+Search-based code-intel support coverage grouped by related files.
+"""
 type GitTreeSearchBasedCoverage {
+    """
+    The files comprising this grouping of search-based support.
+    """
     coveredPaths: [String!]!
+    """
+    Overview of the level of support for this group of files.
+    """
     support: SearchBasedCodeIntelSupport!
 }
 
+"""
+Precise code-intel support coverage grouped by LSIF indexer language
+support for a group of files.
+"""
 type GitTreePreciseCoverage {
+    """
+    The files comprising this grouping of precise support.
+    """
     coveredPaths: [String!]!
+    """
+    Overview of the level of support for this group of files.
+    """
     support: PreciseCodeIntelSupport!
-    confidence: InferredPreciseSupportLevel!
+    """
+    Level of confidence in the inference of an indexing target suggestion.
+    """
+    confidence: InferedPreciseSupportLevel!
 }
 
-enum InferredPreciseSupportLevel {
+"""
+Denotes the confidence in the correctness of the proposed index target.
+"""
+enum InferedPreciseSupportLevel {
+    """
+    The language is known to have an LSIF indexer associated with it
+    but this may not be the directory from which it should be invoked.
+    Relevant build tool configuration may be available at a parent directory.
+    """
     LANGUAGE_SUPPORTED
+    """
+    Relevant build tool configuration files were located that indicate
+    a good possibility of this directory being where an LSIF indexer
+    could be invoked, however we have or can not infer a potentially complete
+    auto indexing job configuration.
+    """
     PROJECT_STRUCTURE_SUPPORTED
-    INDEX_JOB_INFERRED
+    """
+    An auto-indexing job configuration was able to be infered for this
+    directory that has a high likelyhood of being complete enough to result
+    in an LSIF index.
+    """
+    INDEX_JOB_INFERED
 }
 
 """
@@ -1528,7 +1576,7 @@ type SearchBasedCodeIntelSupport {
     """
     supportLevel: SearchBasedSupportLevel!
     """
-    The inferred language the underlying tool inferred when building an index for
+    The infered language the underlying tool infered when building an index for
     search-based code-intel.
     """
     language: String

@@ -16,7 +16,7 @@ type preciseSupportInferenceConfidence string
 const (
 	languageSupport           preciseSupportInferenceConfidence = "LANGUAGE_SUPPORTED"
 	projectStructureSupported preciseSupportInferenceConfidence = "PROJECT_STRUCTURE_SUPPORTED"
-	indexJobInferred          preciseSupportInferenceConfidence = "INDEX_JOB_INFERRED"
+	indexJobInfered           preciseSupportInferenceConfidence = "INDEX_JOB_INFERED"
 )
 
 type codeIntelTreeInfoResolver struct {
@@ -71,7 +71,7 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) ([]g
 }
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.GitTreePreciseCoverage, error) {
-	configurations, ok, err := r.resolver.InferredIndexConfiguration(ctx, int(r.repo.ID), r.commit)
+	configurations, ok, err := r.resolver.InferedIndexConfiguration(ctx, int(r.repo.ID), r.commit)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.G
 		for _, job := range configurations.IndexJobs {
 			if job.Root == r.path {
 				resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
-					confidence: indexJobInferred,
+					confidence: indexJobInfered,
 					// drop the tag if it exists
 					indexer: imageToIndexer[strings.Split(job.Indexer, ":")[0]],
 				})
@@ -90,7 +90,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.G
 		}
 	}
 
-	hints, err := r.resolver.InferredIndexConfigurationHints(ctx, int(r.repo.ID), r.commit)
+	hints, err := r.resolver.InferedIndexConfigurationHints(ctx, int(r.repo.ID), r.commit)
 	if err != nil {
 		return nil, err
 	}

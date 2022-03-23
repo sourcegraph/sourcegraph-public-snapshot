@@ -36,7 +36,7 @@ func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ gq
 	defer func() {
 		r.errTracer.Collect(&err,
 			log.String("codeIntelSupportResolver.field", "searchBasedSupport"),
-			log.String("inferredLanguage", language),
+			log.String("inferedLanguage", language),
 			log.Bool("ctagsSupported", ctagsSupported))
 	}()
 
