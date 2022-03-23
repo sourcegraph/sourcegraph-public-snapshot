@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
@@ -462,6 +463,10 @@ func (r *queryResolver) uploadIDsWithReferences(
 // testFilter returns true if the set underlying the given encoded bloom filter probably includes any of
 // the given monikers.
 func testFilter(filter []byte, orderedMonikers []precise.QualifiedMonikerData) (bool, error) {
+	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_BLOOM_FILTER_BAIL_OUT") != "" {
+		return true, nil
+	}
+
 	includesIdentifier, err := bloomfilter.Decode(filter)
 	if err != nil {
 		return false, errors.Wrap(err, "bloomfilter.Decode")

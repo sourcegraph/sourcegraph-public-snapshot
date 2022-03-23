@@ -740,7 +740,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 				Query:    tc.query,
 				First:    tc.first,
 				Limit:    tc.limit,
-				Searcher: github.NewV4Client(apiURL, token, cli),
+				Searcher: github.NewV4Client("Test", apiURL, token, cli),
 			}
 
 			results := make(chan *githubResult)
@@ -821,7 +821,7 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 			}, nil
 		},
 	}
-	client := github.NewV3Client(baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
+	client := github.NewV3Client("Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
 
 	tests := []struct {
 		name           string

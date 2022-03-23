@@ -106,7 +106,7 @@ func newBlobReader(ctx context.Context, db database.DB, repo api.RepoName, commi
 		return nil, err
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
+	cmd := gitserver.NewClient(db).Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = repo
 	stdout, err := gitserver.StdoutReader(ctx, cmd)
 	if err != nil {

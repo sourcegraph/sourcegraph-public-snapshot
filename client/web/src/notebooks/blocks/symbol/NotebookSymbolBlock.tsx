@@ -118,7 +118,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <Icon as={OpenInNewIcon} className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} />,
                 url: symbolURL,
                 isDisabled: symbolURL.length === 0,
             },
@@ -132,11 +132,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             {
                 type: 'button',
                 label: showInputs ? 'Save' : 'Edit',
-                icon: showInputs ? (
-                    <Icon as={CheckIcon} className="icon-inline" />
-                ) : (
-                    <Icon as={PencilIcon} className="icon-inline" />
-                ),
+                icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
                 onClick: () => setShowInputs(!showInputs),
                 keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
             },
@@ -250,7 +246,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHead
 }) => (
     <>
         <div className="mr-2">
-            <SymbolIcon className="icon-inline" kind={symbolKind} />
+            <SymbolIcon kind={symbolKind} />
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">
@@ -263,7 +259,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHead
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
                         as={InformationOutlineIcon}
-                        className="icon-inline ml-1"
+                        className="ml-1"
                         data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                     />
                 )}

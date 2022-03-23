@@ -34,5 +34,5 @@ func ArchiveReader(
 			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
 		}
 	}
-	return gitserver.DefaultClient.Archive(ctx, repo, options)
+	return gitserver.NewClient(db).Archive(ctx, repo, options)
 }
