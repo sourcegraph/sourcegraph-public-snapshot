@@ -174,7 +174,7 @@ func newRouter() *muxtrace.Router {
 
 	// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
 	if envvar.SourcegraphDotComMode() {
-		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui"}
+		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui", "julia"}
 		r.Path("/{Path:(?:" + strings.Join(communitySearchContexts, "|") + ")}").Methods("GET").Name(routeCommunitySearchContexts)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
