@@ -1,8 +1,8 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
@@ -86,7 +86,7 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     </Link>{' '}
                     and{' '}
                     <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
-                        server-side Batch Changes
+                        running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
                     <Link to="/help/admin/deploy_executors" rel="noopener">
