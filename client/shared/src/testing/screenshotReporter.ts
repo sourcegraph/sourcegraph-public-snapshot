@@ -11,16 +11,15 @@ import * as puppeteer from 'puppeteer'
  */
 export function afterEachSaveScreenshotIfFailedWithJest(getPage: () => puppeteer.Page): void {
     jest.afterEach(async () => {
-        if (hasTestFailures) {
-            await takeScreenshot({
-                page: getPage(),
-                repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
-                screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
-                testName: jest.expect.getState().currentTestName ?? '',
-            })
-
-            hasTestFailures = false
-        }
+        // if (hasTestFailures) {
+        //     await takeScreenshot({
+        //         page: getPage(),
+        //         repoRootDir: path.resolve(__dirname, '..', '..', '..', '..'),
+        //         screenshotDir: path.resolve(__dirname, '..', '..', '..', '..', 'puppeteer'),
+        //         testName: jest.expect.getState().currentTestName ?? '',
+        //     })
+        //     hasTestFailures = false
+        // }
     })
 }
 

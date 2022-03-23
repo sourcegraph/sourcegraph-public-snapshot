@@ -1,4 +1,4 @@
-import PollyAdapter from '@pollyjs/adapter'
+import Adapter from '@pollyjs/adapter'
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
 import Protocol from 'devtools-protocol'
 import { ProtocolMapping } from 'devtools-protocol/types/protocol-mapping'
@@ -49,7 +49,7 @@ interface PollyPromise extends Promise<PollyResponse> {
  * protocol to intercept and fulfill requests.
  *
  */
-export class CdpAdapter extends PollyAdapter {
+export class CdpAdapter extends Adapter {
     /**
      * The adapter's ID, used to reference it in the Polly constructor.
      */

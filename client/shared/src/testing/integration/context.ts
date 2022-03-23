@@ -4,14 +4,14 @@ import * as util from 'util'
 import { MODE, Polly, PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
 import { GraphQLError } from 'graphql'
-import { snakeCase } from 'lodash'
 import * as mime from 'mime-types'
 import { Test } from 'mocha'
-import { readFile, mkdir } from 'mz/fs'
+import { readFile } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
+import { Context, setupPolly } from 'setup-polly-jest'
 
 import { asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
@@ -26,9 +26,6 @@ import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
 util.inspect.defaultOptions.maxStringLength = 80
-
-Polly.register(CdpAdapter as any)
-Polly.register(FSPersister)
 
 const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
@@ -78,6 +75,38 @@ export interface IntegrationTestContext<
     dispose: () => Promise<void>
 }
 
+export const setupPollyServer = <
+    TGraphQlOperations extends Record<TGraphQlOperationNames, (variables: any) => any>,
+    TGraphQlOperationNames extends string
+>(): Context => {
+    // const cdpAdapterOptions: CdpAdapterOptions = {
+    //     browser: driver.browser,
+    // }
+
+    const pollyServer = setupPolly({
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        persister: require('@pollyjs/persister-fs'),
+        persisterOptions: {
+            [FSPersister.id]: {},
+        },
+        expiryStrategy: 'warn',
+        recordIfMissing: pollyMode === 'record',
+        matchRequestsBy: {
+            method: true,
+            body: true,
+            order: true,
+            // Origin header will change when running against a test instance
+            headers: false,
+        },
+        mode: pollyMode,
+        logging: false,
+    })
+
+    return pollyServer
+}
+
 export interface IntegrationTestOptions {
     /**
      * The test driver created in a `before()` hook.
@@ -103,6 +132,8 @@ export interface IntegrationTestOptions {
      * standard JSContext object for some particulars test.
      */
     customContext?: Partial<SourcegraphContext>
+
+    pollyServer: Polly
 }
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000
@@ -117,98 +148,62 @@ export const createSharedIntegrationTestContext = async <
     driver,
     currentTest,
     directory,
+    pollyServer,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
-    const recordingsDirectory = path.join(
-        directory,
-        '__fixtures__',
-        snakeCase(currentTest ? currentTest.title : expect.getState().currentTestName)
-    )
-    if (pollyMode === 'record') {
-        await mkdir(recordingsDirectory, { recursive: true })
-    }
     const subscriptions = new Subscription()
+
     const cdpAdapterOptions: CdpAdapterOptions = {
         browser: driver.browser,
     }
-    const polly = new Polly(snakeCase(currentTest ? currentTest.title : expect.getState().currentTestName), {
-        adapters: [CdpAdapter.id],
+    pollyServer.configure({
+        adapters: [CdpAdapter as any],
         adapterOptions: {
             [CdpAdapter.id]: cdpAdapterOptions,
         },
-        persister: FSPersister.id,
-        persisterOptions: {
-            [FSPersister.id]: {
-                recordingsDir: recordingsDirectory,
-            },
-        },
-        expiryStrategy: 'warn',
-        recordIfMissing: pollyMode === 'record',
-        matchRequestsBy: {
-            method: true,
-            body: true,
-            order: true,
-            // Origin header will change when running against a test instance
-            headers: false,
-        },
-        mode: pollyMode,
-        logging: false,
     })
-    const { server } = polly
-
-    // Fail the test in the case a request handler threw an error,
-    // e.g. because a request had no mock defined.
-    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
-    subscriptions.add(
-        cdpAdapter.errors.subscribe((error: any) => {
-            // if (!currentTest) {
-            //     throw new Error(error)
-            // }
-            if (currentTest) {
-                currentTest.emit('error', error)
-            }
-        })
-    )
 
     // Let browser handle data: URIs
-    server.get('data:*rest').passthrough()
+    pollyServer.server.get('data:*rest').passthrough()
 
     // Special URL: The browser redirects to chrome-extension://invalid
     // when requesting an extension resource that does not exist.
-    server.get('chrome-extension://invalid/').passthrough()
+    pollyServer.server.get('chrome-extension://invalid/').passthrough()
 
     // Avoid 404 error logs from missing favicon
-    server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+    pollyServer.server.get(new URL('/favicon.ico', 'https://sourcegraph.com').href).intercept((request, response) => {
         response
             .status(302)
-            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', driver.sourcegraphBaseUrl).href)
+            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', 'https://sourcegraph.com').href)
             .send('')
     })
 
     // Serve assets from disk
-    server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
-        const asset = request.params.path
-        // Cache all responses for the entire lifetime of the test run
-        response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-        try {
-            const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
-                // Polly doesn't support Buffers or streams at the moment
-                encoding: 'utf-8',
-            })
-            const contentType = mime.contentType(path.basename(asset))
-            if (contentType) {
-                response.type(contentType)
+    pollyServer.server
+        .get(new URL('/.assets/*path', 'https://sourcegraph.com').href)
+        .intercept(async (request, response) => {
+            const asset = request.params.path
+            // Cache all responses for the entire lifetime of the test run
+            response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+            try {
+                const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
+                    // pollyServer doesn't support Buffers or streams at the moment
+                    encoding: 'utf-8',
+                })
+                const contentType = mime.contentType(path.basename(asset))
+                if (contentType) {
+                    response.type(contentType)
+                }
+                response.send(content)
+            } catch (error) {
+                if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
+                    response.sendStatus(404)
+                } else {
+                    console.error(error)
+                    response.status(500).send(asError(error).message)
+                }
             }
-            response.send(content)
-        } catch (error) {
-            if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
-                response.sendStatus(404)
-            } else {
-                console.error(error)
-                response.status(500).send(asError(error).message)
-            }
-        }
-    })
+        })
 
     // GraphQL requests are not handled by HARs, but configured per-test.
     interface GraphQLRequestEvent<O extends TGraphQlOperationNames> {
@@ -217,7 +212,7 @@ export const createSharedIntegrationTestContext = async <
     }
     let graphQlOverrides: Partial<TGraphQlOperations> = {}
     const graphQlRequests = new Subject<GraphQLRequestEvent<TGraphQlOperationNames>>()
-    server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
+    pollyServer.server.post(new URL('/.api/graphql', 'https://sourcegraph.com').href).intercept((request, response) => {
         const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
         const { variables, query } = request.jsonBody() as {
             query: string
@@ -257,7 +252,7 @@ export const createSharedIntegrationTestContext = async <
 
     // Filter out 'server' header filled in by Caddy before persisting responses,
     // otherwise tests will hang when replayed from recordings.
-    server
+    pollyServer.server
         .any()
         .on('beforePersist', (request, recording: { response: { headers: { name: string; value: string }[] } }) => {
             recording.response.headers = recording.response.headers.filter(({ name }) => name !== 'server')
@@ -265,7 +260,7 @@ export const createSharedIntegrationTestContext = async <
 
     return {
         driver,
-        server,
+        server: pollyServer.server,
         overrideGraphQL: overrides => {
             graphQlOverrides = { ...graphQlOverrides, ...overrides }
         },
@@ -309,7 +304,7 @@ export const createSharedIntegrationTestContext = async <
             }
 
             await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
-            await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
+            await pTimeout(pollyServer.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
         },
     }
 }
