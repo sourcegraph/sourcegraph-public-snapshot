@@ -233,16 +233,12 @@ abc.txt
 `},
 	}
 
-	s, cleanup, err := newStore(files)
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := newStore(t, files)
 	s.FilterTar = func(_ context.Context, _ database.DB, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
 			return hdr.Name == "ignore.me"
 		}, nil
 	}
-	defer cleanup()
 	ts := httptest.NewServer(&search.Service{Store: s})
 	defer ts.Close()
 
@@ -403,11 +399,7 @@ func TestSearch_badrequest(t *testing.T) {
 		},
 	}
 
-	store, cleanup, err := newStore(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
+	store := newStore(t, nil)
 	ts := httptest.NewServer(&search.Service{Store: store})
 	defer ts.Close()
 
@@ -462,10 +454,10 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	return matches, err
 }
 
-func newStore(files map[string]struct {
+func newStore(t *testing.T, files map[string]struct {
 	body string
 	typ  fileType
-}) (*search.Store, func(), error) {
+}) *search.Store {
 	writeTar := func(w io.Writer) error {
 		tarW := tar.NewWriter(w)
 		for name, file := range files {
@@ -505,10 +497,6 @@ func newStore(files map[string]struct {
 		return tarW.Close()
 	}
 
-	d, err := os.MkdirTemp("", "search_test")
-	if err != nil {
-		return nil, nil, err
-	}
 	return &search.Store{
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
@@ -518,8 +506,8 @@ func newStore(files map[string]struct {
 			}()
 			return r, nil
 		},
-		Path: d,
-	}, func() { os.RemoveAll(d) }, nil
+		Path: t.TempDir(),
+	}
 }
 
 func toString(m []protocol.FileMatch) string {
