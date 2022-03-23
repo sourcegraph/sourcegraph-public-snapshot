@@ -665,13 +665,12 @@ func parseCommitTags(opt CommitsOptions, parts [][]byte) []string {
 		return tags
 	}
 	// Assuming that refs don't have commas in them.
-	refs := bytes.Split(parts[tagsIndex], []byte{','})
+	refs := bytes.Split(parts[tagsIndex], []byte(", "))
 	for _, ref := range refs {
-		ref = bytes.TrimSpace(ref)
-		if !bytes.HasPrefix(ref, []byte("tag:")) {
+		if !bytes.HasPrefix(ref, []byte("tag: ")) {
 			continue
 		}
-		tags = append(tags, string(bytes.TrimSpace(ref[4:])))
+		tags = append(tags, string(ref[5:]))
 	}
 	return tags
 }
