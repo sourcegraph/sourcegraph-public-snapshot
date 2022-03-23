@@ -67,6 +67,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
 
+	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
+
 	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
 	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
@@ -112,7 +114,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					Query:          nil,
 					Typ:            typ,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
 
@@ -136,7 +138,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					Query:          nil,
 					Typ:            typ,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
 
@@ -163,7 +165,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					Query:          zoektQuery,
 					Typ:            typ,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
 			}
@@ -196,7 +198,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
 					Query:          zoektQuery,
 					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
 			}
@@ -247,7 +249,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				Query:          zoektQuery,
 				Typ:            typ,
 				FileMatchLimit: patternInfo.FileMatchLimit,
-				Select:         patternInfo.Select,
+				Select:         selector,
 				Zoekt:          jargs.Zoekt,
 			}
 
