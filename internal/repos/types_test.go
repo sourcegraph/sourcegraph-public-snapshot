@@ -2,12 +2,12 @@ package repos
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestReposNamesSummary(t *testing.T) {
@@ -55,186 +54,104 @@ func TestReposNamesSummary(t *testing.T) {
 }
 
 func TestSyncRateLimiters(t *testing.T) {
-	now := time.Now()
 	ctx := context.Background()
-
-	baseURL := "http://gitlab.com/"
-
-	type limitOptions struct {
-		includeLimit bool
-		enabled      bool
-		perHour      float64
+	svcs := []*types.ExternalService{
+		{
+			ID:     1,
+			Kind:   extsvc.KindGitHub,
+			Config: `{}`, // Use default
+		},
+		{
+			ID:     2,
+			Kind:   extsvc.KindGitLab,
+			Config: `{ "rateLimit": {"enabled": true, "requestsPerHour": 10} }`,
+		},
 	}
 
-	makeLister := func(options ...limitOptions) *MockExternalServicesLister {
-		services := make([]*types.ExternalService, 0, len(options))
-		for i, o := range options {
-			svc := &types.ExternalService{
-				ID:          int64(i) + 1,
-				Kind:        "GitLab",
-				DisplayName: "GitLab",
-				CreatedAt:   now,
-				UpdatedAt:   now,
-				DeletedAt:   time.Time{},
-			}
-			config := schema.GitLabConnection{
-				Url: baseURL,
-			}
-			if o.includeLimit {
-				config.RateLimit = &schema.GitLabRateLimit{
-					RequestsPerHour: o.perHour,
-					Enabled:         o.enabled,
-				}
-			}
-			data, err := json.Marshal(config)
-			if err != nil {
-				t.Fatal(err)
-			}
-			svc.Config = string(data)
-			services = append(services, svc)
-		}
-		return &MockExternalServicesLister{
-			list: func(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return services, nil
+	t.Run("sync for all external services", func(t *testing.T) {
+		listCalled := 0
+
+		reg := ratelimit.NewRegistry()
+		r := &RateLimitSyncer{
+			registry: reg,
+			serviceLister: &MockExternalServicesLister{
+				list: func(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					assert.Empty(t, args.IDs)
+
+					listCalled++
+					if listCalled > 1 {
+						return nil, nil
+					}
+					return svcs, nil
+				},
 			},
 		}
-	}
 
-	for _, tc := range []struct {
-		name    string
-		options []limitOptions
-		want    rate.Limit
-	}{
-		{
-			name:    "No limiters defined",
-			options: []limitOptions{},
-			want:    rate.Inf,
-		},
-		{
-			name: "One limit, enabled",
-			options: []limitOptions{
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      3600,
-				},
-			},
-			want: rate.Limit(1),
-		},
-		{
-			name: "Two limits, enabled",
-			options: []limitOptions{
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      3600,
-				},
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      7200,
-				},
-			},
-			want: rate.Limit(1),
-		},
-		{
-			name: "One limit, disabled",
-			options: []limitOptions{
-				{
-					includeLimit: true,
-					enabled:      false,
-					perHour:      3600,
-				},
-			},
-			want: rate.Inf,
-		},
-		{
-			name: "One limit, zero",
-			options: []limitOptions{
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      0,
-				},
-			},
-			want: rate.Limit(0),
-		},
-		{
-			name: "No limit",
-			options: []limitOptions{
-				{
-					includeLimit: false,
-				},
-			},
-			want: rate.Limit(10),
-		},
-		{
-			name: "Two limits, one default",
-			options: []limitOptions{
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      3600,
-				},
-				{
-					includeLimit: false,
-				},
-			},
-			want: rate.Limit(1),
-		},
-		// Default for GitLab is 10 per second
-		{
-			name: "Default, Higher than default",
-			options: []limitOptions{
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      20 * 3600,
-				},
-				{
-					includeLimit: false,
-				},
-			},
-			want: rate.Limit(20),
-		},
-		{
-			name: "Higher than default, Default",
-			options: []limitOptions{
-				{
-					includeLimit: false,
-				},
-				{
-					includeLimit: true,
-					enabled:      true,
-					perHour:      20 * 3600,
-				},
-			},
-			want: rate.Limit(20),
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			reg := ratelimit.NewRegistry()
-			r := &RateLimitSyncer{
-				registry:      reg,
-				serviceLister: makeLister(tc.options...),
-				limit:         10,
-			}
+		err := r.SyncRateLimiters(ctx)
+		require.NoError(t, err)
 
-			err := r.SyncRateLimiters(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
+		gh := reg.Get(svcs[0].URN())
+		assert.Equal(t, rate.Limit(5000.0/3600.0), gh.Limit())
 
-			// We should have the lower limit
-			l := reg.Get(baseURL)
-			if l == nil {
-				t.Fatalf("expected a limiter")
-			}
-			if l.Limit() != tc.want {
-				t.Fatalf("Expected limit %f, got %f", tc.want, l.Limit())
-			}
-		})
-	}
+		gl := reg.Get(svcs[1].URN())
+		assert.Equal(t, rate.Limit(10.0/3600.0), gl.Limit())
+	})
+
+	t.Run("sync for selected external services", func(t *testing.T) {
+		listCalled := 0
+
+		reg := ratelimit.NewRegistry()
+		r := &RateLimitSyncer{
+			registry: reg,
+			serviceLister: &MockExternalServicesLister{
+				list: func(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					assert.Len(t, args.IDs, 1)
+
+					listCalled++
+					if listCalled > 1 {
+						return nil, nil
+					}
+					return svcs[:1], nil
+				},
+			},
+		}
+
+		err := r.SyncRateLimiters(ctx, 1)
+		require.NoError(t, err)
+
+		gh := reg.Get(svcs[0].URN())
+		assert.Equal(t, rate.Limit(5000.0/3600.0), gh.Limit())
+
+		// GitLab should have the infinite
+		gl := reg.Get(svcs[1].URN())
+		assert.Equal(t, rate.Inf, gl.Limit())
+	})
+
+	t.Run("limit offset", func(t *testing.T) {
+		listCalled := 0
+
+		reg := ratelimit.NewRegistry()
+		r := &RateLimitSyncer{
+			registry: reg,
+			serviceLister: &MockExternalServicesLister{
+				list: func(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					assert.Equal(t, 1, args.Limit)
+					assert.Equal(t, listCalled, args.Offset)
+
+					listCalled++
+					if listCalled > 2 {
+						return nil, nil
+					}
+					return svcs[listCalled-1 : listCalled], nil
+				},
+			},
+			limit: 1,
+		}
+
+		err := r.SyncRateLimiters(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, 3, listCalled)
+	})
 }
 
 type MockExternalServicesLister struct {

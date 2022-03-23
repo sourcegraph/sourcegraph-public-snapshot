@@ -224,7 +224,7 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src Source
-		src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -248,7 +248,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src Source
-				src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}

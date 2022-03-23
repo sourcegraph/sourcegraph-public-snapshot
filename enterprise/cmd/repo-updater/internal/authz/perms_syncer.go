@@ -318,7 +318,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1, "user"); err != nil {
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
@@ -493,7 +493,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			return nil, errors.Errorf("empty token from external service %d", svc.ID)
 		}
 
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1, "user"); err != nil {
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
 			return nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
@@ -720,7 +720,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	pendingAccountIDsSet := make(map[string]struct{})
 	accountIDsToUserIDs := make(map[string]int32) // Account ID -> User ID
 	if provider != nil {
-		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1, "repo"); err != nil {
+		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "repo"); err != nil {
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
@@ -846,12 +846,12 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 // an error if n exceeds the limiter's burst size, the context is canceled, or the
 // expected wait time exceeds the context's deadline. The burst limit is ignored if
 // the rate limit is Inf.
-func (s *PermsSyncer) waitForRateLimit(ctx context.Context, serviceID string, n int, syncType string) error {
+func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, syncType string) error {
 	if s.rateLimiterRegistry == nil {
 		return nil
 	}
 
-	rl := s.rateLimiterRegistry.Get(serviceID)
+	rl := s.rateLimiterRegistry.Get(urn)
 	began := time.Now()
 	if err := rl.WaitN(ctx, n); err != nil {
 		metricsRateLimiterWaitDuration.WithLabelValues(syncType, strconv.FormatBool(false)).Observe(time.Since(began).Seconds())

@@ -69,7 +69,7 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 	rcache.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(apiURL, auth, cli)
+	return NewV3Client("Test", apiURL, auth, cli)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.
@@ -340,7 +340,7 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	c := NewV4Client(apiURL, nil, &mock)
+	c := NewV4Client("Test", apiURL, nil, &mock)
 	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
 	if err != nil {
 		t.Fatal(err)
@@ -502,7 +502,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
 			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-			c := NewV4Client(apiURL, nil, &mock)
+			c := NewV4Client("Test", apiURL, nil, &mock)
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {

@@ -868,7 +868,7 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
-	prov := gitlab.NewClientProvider(&url.URL{}, &panicDoer{})
+	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{})
 	repo := &types.Repo{Metadata: &gitlab.Project{}}
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
@@ -1102,7 +1102,7 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src ChangesetSource
-		src, err := newGitLabSource(&schema.GitLabConnection{}, nil)
+		src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -1126,7 +1126,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src ChangesetSource
-				src, err := newGitLabSource(&schema.GitLabConnection{}, nil)
+				src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
@@ -1153,10 +1153,14 @@ func TestDecorateMergeRequestData(t *testing.T) {
 		cf, save := newClientFactory(t, t.Name())
 		t.Cleanup(func() { save(t) })
 
-		src, err := newGitLabSource(&schema.GitLabConnection{
-			Url:   "https://gitlab.com",
-			Token: os.Getenv("GITLAB_TOKEN"),
-		}, cf)
+		src, err := newGitLabSource(
+			"Test",
+			&schema.GitLabConnection{
+				Url:   "https://gitlab.com",
+				Token: os.Getenv("GITLAB_TOKEN"),
+			},
+			cf,
+		)
 
 		assert.Nil(t, err)
 		return src

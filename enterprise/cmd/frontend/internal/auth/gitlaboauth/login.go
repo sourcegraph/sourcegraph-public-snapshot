@@ -8,6 +8,7 @@ import (
 	oauth2Login "github.com/dghubble/gologin/oauth2"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -79,5 +80,5 @@ func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error)
 	baseURL.Path = ""
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
-	return gitlab.NewClientProvider(baseURL, nil).GetOAuthClient(oauthToken), nil
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil).GetOAuthClient(oauthToken), nil
 }

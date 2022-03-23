@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -193,8 +194,12 @@ func TestNewAuthzProviders(t *testing.T) {
 				database.NewMockExternalServiceStore(),
 				[]*ExternalConnection{
 					{
+						ExternalService: &types.ExternalService{
+							ID:   1,
+							Kind: extsvc.KindGitHub,
+						},
 						GitHubConnection: &types.GitHubConnection{
-							URN: "",
+							URN: "extsvc:github:1",
 							GitHubConnection: &schema.GitHubConnection{
 								Url: schema.DefaultGitHubURL,
 								Authorization: &schema.GitHubAuthorization{

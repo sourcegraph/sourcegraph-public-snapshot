@@ -43,7 +43,7 @@ type Server struct {
 	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
 		// our internal rate limiters are kept in sync
-		SyncRateLimiters(ctx context.Context) error
+		SyncRateLimiters(ctx context.Context, ids ...int64) error
 	}
 	PermsSyncer interface {
 		// ScheduleUsers schedules new permissions syncing requests for given users.
@@ -236,9 +236,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx)
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalService.ID)
 		if err != nil {
-			log15.Warn("Handling rate limiter sync", "err", err)
+			log15.Warn("Handling rate limiter sync", "err", err, "id", req.ExternalService.ID)
 		}
 	}
 

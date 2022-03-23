@@ -246,7 +246,7 @@ func derefInt64(i *int64) int64 {
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewV3Client(apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
+	return githubsvc.NewV3Client(extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 
 // getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,

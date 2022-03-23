@@ -474,6 +474,13 @@ func (e ErrRateLimitUnsupported) Error() string {
 	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }
 
+const (
+	URNGitHubAppCloud = "GitHubAppCloud"
+	URNGitHubOAuth    = "GitHubOAuth"
+	URNGitLabOAuth    = "GitLabOAuth"
+	URNCodeIntel      = "CodeIntel"
+)
+
 // URN returns a unique resource identifier of an external service by given kind and ID.
 func URN(kind string, id int64) string {
 	return "extsvc:" + strings.ToLower(kind) + ":" + strconv.FormatInt(id, 10)
