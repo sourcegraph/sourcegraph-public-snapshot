@@ -466,53 +466,57 @@ func newStore(files map[string]struct {
 	body string
 	typ  fileType
 }) (*search.Store, func(), error) {
-	buf := new(bytes.Buffer)
-	w := tar.NewWriter(buf)
-	for name, file := range files {
-		var hdr *tar.Header
-		switch file.typ {
-		case typeFile:
-			hdr = &tar.Header{
-				Name: name,
-				Mode: 0600,
-				Size: int64(len(file.body)),
-			}
-			if err := w.WriteHeader(hdr); err != nil {
-				return nil, nil, err
-			}
-			if _, err := w.Write([]byte(file.body)); err != nil {
-				return nil, nil, err
-			}
-		case typeSymlink:
-			hdr = &tar.Header{
-				Typeflag: tar.TypeSymlink,
-				Name:     name,
-				Mode:     int64(os.ModePerm | os.ModeSymlink),
-				Linkname: file.body,
-			}
-			if err := w.WriteHeader(hdr); err != nil {
-				return nil, nil, err
+	writeTar := func(w io.Writer) error {
+		tarW := tar.NewWriter(w)
+		for name, file := range files {
+			var hdr *tar.Header
+			switch file.typ {
+			case typeFile:
+				hdr = &tar.Header{
+					Name: name,
+					Mode: 0600,
+					Size: int64(len(file.body)),
+				}
+				if err := tarW.WriteHeader(hdr); err != nil {
+					return err
+				}
+				if _, err := tarW.Write([]byte(file.body)); err != nil {
+					return err
+				}
+			case typeSymlink:
+				hdr = &tar.Header{
+					Typeflag: tar.TypeSymlink,
+					Name:     name,
+					Mode:     int64(os.ModePerm | os.ModeSymlink),
+					Linkname: file.body,
+				}
+				if err := tarW.WriteHeader(hdr); err != nil {
+					return err
+				}
 			}
 		}
-	}
-	// git-archive usually includes a pax header we should ignore.
-	// use a body which matches a test case. Ensures we don't return this
-	// false entry as a result.
-	if err := addpaxheader(w, "Hello world\n"); err != nil {
-		return nil, nil, err
+		// git-archive usually includes a pax header we should ignore.
+		// use a body which matches a test case. Ensures we don't return this
+		// false entry as a result.
+		if err := addpaxheader(tarW, "Hello world\n"); err != nil {
+			return err
+		}
+
+		return tarW.Close()
 	}
 
-	err := w.Close()
-	if err != nil {
-		return nil, nil, err
-	}
 	d, err := os.MkdirTemp("", "search_test")
 	if err != nil {
 		return nil, nil, err
 	}
 	return &search.Store{
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
+			r, w := io.Pipe()
+			go func() {
+				err := writeTar(w)
+				w.CloseWithError(err)
+			}()
+			return r, nil
 		},
 		Path: d,
 	}, func() { os.RemoveAll(d) }, nil
