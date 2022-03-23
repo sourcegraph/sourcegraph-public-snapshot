@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
@@ -29,8 +30,9 @@ import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchPageCta } from './components/SearchCta'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
-import styles from './index.module.scss'
 import { RepoView } from './RepoView'
+
+import styles from './index.module.scss'
 
 export interface SearchResultsViewProps extends WebviewPageProps {
     context: SearchResultsState['context']
@@ -151,12 +153,10 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     console.error('Error updating sidebar query state from panel', error)
                 })
 
-            platformContext.telemetryService.log('IDESearchSubmitted')
-
             // Clear repo view
             setRepoToShow(null)
         },
-        [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI, platformContext]
+        [userQueryState.query, context.submittedSearchQueryState, extensionCoreAPI]
     )
 
     // Submit new search on change
