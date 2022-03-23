@@ -510,16 +510,27 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // ListOrganizations lists all orgs from GitHub. This is intended to be used for GitHub enterprise
 // server instances only. Callers should be careful not to use this for github.com or GitHub
 // enterprise cloud.
-func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org, hasNextPage bool, err error) {
+//
+// The argument "since" is the ID of the org and the API call will only return orgs with ID greater
+// than this value. To list all orgs in a GitHub instance, invoke this initially with:
+//
+// orgs, nextSince, err := ListOrganizations(ctx, 0)
+//
+// And the next call with:
+//
+// orgs, nextSince, err := ListOrganizations(ctx, nextSince)
+//
+// Repeat this in a for-loop until nextSince is a non-positive integer.
+func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
 	hash := strings.ToLower(c.auth.Hash())
 
 	// Each specific page will return a different list of organizations, so each page specific
 	// request will also have its own etag. We need to be able to identify each etag by page as well
 	// as each list of orgs by page.
-	orgsKey := fmt.Sprintf("%s-orgs-%d", hash, page)
-	etagKey := fmt.Sprintf("%s-orgs-etag-%d", hash, page)
+	orgsKey := fmt.Sprintf("%s-orgs-%d", hash, since)
+	etagKey := fmt.Sprintf("%s-orgs-etag-%d", hash, since)
 
-	path := fmt.Sprintf("/organizations?page=%d&per_page=100", page)
+	path := fmt.Sprintf("/organizations?since=%d&per_page=100", since)
 	updateOrgsCache := func(r *httpResponseState) error {
 		if c.orgsCache == nil {
 			return nil
@@ -547,38 +558,47 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		return updateOrgsCache(respState)
 	}
 
+	getNextSince := func() int {
+		total := len(orgs)
+		if total == 0 {
+			return -1
+		}
+
+		return orgs[total-1].ID
+	}
+
 	if c.orgsCache == nil {
 		log15.Warn("ListOrganizations invoked with a nil orgsCache (client probably has no authenticator) and this could be bad for API rate limits")
 
 		if err := getOrgsFromAPI(); err != nil {
-			return nil, false, err
+			return nil, -1, err
 		}
 
-		return orgs, len(orgs) > 0, nil
+		return orgs, getNextSince(), nil
 	}
 
 	etag, cacheHit := c.orgsCache.Get(etagKey)
 	if !cacheHit {
 		if err := getOrgsFromAPI(); err != nil {
-			return nil, false, err
+			return nil, -1, err
 		}
 
-		return orgs, len(orgs) > 0, nil
+		return orgs, getNextSince(), nil
 	}
 
 	respState, err := c.getConditional(ctx, path, string(etag), &orgs)
 	if err != nil {
-		return nil, false, err
+		return nil, -1, err
 	}
 
 	// If the resource was modified since the last time this resource was accessed, the response
 	// body will have a new response and we should return the new result now populated in orgs.
 	if respState.statusCode == 200 {
 		if err := updateOrgsCache(respState); err != nil {
-			return nil, false, err
+			return nil, -1, err
 		}
 
-		return orgs, len(orgs) > 0, nil
+		return orgs, getNextSince(), nil
 	}
 
 	rawOrgs, ok := c.orgsCache.Get(orgsKey)
@@ -587,17 +607,17 @@ func (c *V3Client) ListOrganizations(ctx context.Context, page int) (orgs []*Org
 		// isn't ideal and is our fault. Treat this as a cache miss and make a regular API call
 		// anyway.
 		if err := getOrgsFromAPI(); err != nil {
-			return nil, false, err
+			return nil, -1, err
 		}
 
-		return orgs, len(orgs) > 0, nil
+		return orgs, getNextSince(), nil
 	}
 
 	if err := json.Unmarshal(rawOrgs, &orgs); err != nil {
-		return nil, false, err
+		return nil, -1, err
 	}
 
-	return orgs, len(orgs) > 0, nil
+	return orgs, getNextSince(), nil
 }
 
 // ListOrganizationMembers retrieves collaborators in the given organization.

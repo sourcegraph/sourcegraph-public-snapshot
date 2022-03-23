@@ -5,6 +5,7 @@
    "URL": "https://api.github.com/organizations/65169595/team/3878345",
    "ReposCount": 1,
    "Organization": {
+    "id": 65169595,
     "login": "sourcegraph-vcr-repos"
    }
   },
@@ -12,7 +13,9 @@
    "Name": "all_read_only",
    "Slug": "all_read_only",
    "URL": "https://api.github.com/organizations/65169595/team/5058995",
+   "ReposCount": 2,
    "Organization": {
+    "id": 65169595,
     "login": "sourcegraph-vcr-repos"
    }
   }

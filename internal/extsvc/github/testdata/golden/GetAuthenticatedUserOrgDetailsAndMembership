@@ -1,5 +1,6 @@
 [
   {
+   "id": 65169595,
    "login": "sourcegraph-vcr-repos",
    "default_repository_permission": "none",
    "state": "active",
