@@ -104,7 +104,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
                             <div className="d-flex align-items-start">
                                 <Link
                                     className="flex-1 align-self-center"
-                                    to={`https://github.com/apps/sourcegraph-cloud-petri-local/installations/new?state=${state}`}
+                                    to={`https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${state}`}
                                 >
                                     Connect with a different organization
                                 </Link>
