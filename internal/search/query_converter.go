@@ -271,7 +271,7 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 	return q, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+func QueryToZoektQuery(b query.Basic, p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
 	labels := query.Literal
 	if p.IsRegExp {
 		labels = query.Regexp
@@ -285,10 +285,19 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 	if err != nil {
 		return nil, err
 	}
-	return WithZoektParameters(q, p, feat, typ)
+	return WithZoektParameters(b, q, feat, typ)
 }
 
-func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+func WithZoektParameters(b query.Basic, q zoekt.Q, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+	isCaseSensitive := b.IsCaseSensitive()
+	// Handle file: and -file: filters.
+	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
+	// Handle lang: and -lang: filters.
+	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
+	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
+	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+
 	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
@@ -302,15 +311,15 @@ func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ Inde
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
-	for _, i := range p.IncludePatterns {
-		q, err := fileRe(i, p.IsCaseSensitive)
+	for _, i := range filesInclude {
+		q, err := fileRe(i, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
-	if p.ExcludePattern != "" {
-		q, err := fileRe(p.ExcludePattern, p.IsCaseSensitive)
+	if len(filesExclude) > 0 {
+		q, err := fileRe(UnionRegExps(filesExclude), isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -323,15 +332,15 @@ func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ Inde
 	//
 	// Note: (type:repo file:foo file:bar) will only find repos with a
 	// filename containing both "foo" and "bar".
-	for _, i := range p.FilePatternsReposMustInclude {
-		q, err := fileRe(i, p.IsCaseSensitive)
+	for _, i := range filesReposMustInclude {
+		q, err := fileRe(i, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, &zoekt.Type{Type: zoekt.TypeRepo, Child: q})
 	}
-	for _, i := range p.FilePatternsReposMustExclude {
-		q, err := fileRe(i, p.IsCaseSensitive)
+	for _, i := range filesReposMustExclude {
+		q, err := fileRe(i, isCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -346,9 +355,9 @@ func WithZoektParameters(q zoekt.Q, p *TextPatternInfo, feat *Features, typ Inde
 	// corrected by the more precise language metadata. If this is a problem, indexed search
 	// queries should have a special query converter that produces *only* Language predicates
 	// instead of filepatterns.
-	if len(p.Languages) > 0 && feat.ContentBasedLangFilters {
+	if len(langInclude) > 0 && feat.ContentBasedLangFilters {
 		or := &zoekt.Or{}
-		for _, lang := range p.Languages {
+		for _, lang := range langInclude {
 			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
 			or.Children = append(or.Children, &zoekt.Language{Language: lang})
 		}
