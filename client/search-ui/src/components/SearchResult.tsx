@@ -21,7 +21,7 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
@@ -43,19 +43,12 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     onSelect,
     openInNewTab,
 }) => {
-    const [isTruncated, setIsTruncated] = React.useState<boolean>(false)
-    const titleReference = React.useRef<HTMLAnchorElement>(null)
-
-    function showTooltip(): void {
-        if (titleReference.current) {
-            setIsTruncated(titleReference.current.clientWidth < titleReference.current.scrollWidth)
-        }
-    }
+    const { isTruncated, elementReference: titleReference, onMouseEnter } = useIsTruncated()
 
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
-            <div className={styles.title} onMouseEnter={showTooltip}>
+            <div className={styles.title} onMouseEnter={onMouseEnter}>
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
                 <span
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"

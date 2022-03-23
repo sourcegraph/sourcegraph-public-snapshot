@@ -1,8 +1,11 @@
 import * as React from 'react'
 
-import { appendSubtreeQueryParameter } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
 
+import { appendSubtreeQueryParameter } from '@sourcegraph/common'
+import { useIsTruncated, Link } from '@sourcegraph/wildcard'
+
+import styles from './RepoFileLink.module.scss'
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").
  */
@@ -44,20 +47,13 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     className,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
-    const [isTruncated, setIsTruncated] = React.useState<boolean>(false)
-    const titleReference = React.useRef<HTMLAnchorElement>(null)
-
-    function showTooltip(): void {
-        if (titleReference.current) {
-            setIsTruncated(titleReference.current.clientWidth < titleReference.current.scrollWidth)
-        }
-    }
+    const { isTruncated, elementReference: titleReference, onMouseEnter } = useIsTruncated<HTMLAnchorElement>()
 
     return (
-        <div className={className}>
+        <div className={classNames(className, styles.repoFileLink)}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link
-                onMouseEnter={showTooltip}
+                onMouseEnter={onMouseEnter}
                 className="text-truncate"
                 data-tooltip={isTruncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
                 to={appendSubtreeQueryParameter(fileURL)}
