@@ -48,6 +48,16 @@ export const REPO_MATCH_RESULTS_WITH_METADATA: RepositoryMatch[] = [
         fork: true,
         archived: true,
     },
+    {
+        type: 'repo',
+        repository: 'npm/types/lodash',
+        description: 'Type definitions for Lo-Dash',
+    },
+    {
+        type: 'repo',
+        repository: 'maven/org.apache.logging.log4j/log4j-core',
+        description: 'The Apache Log4j Implementation',
+    }
 ]
 
 export const MULTIPLE_MATCH_RESULT: ContentMatch = {
