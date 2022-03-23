@@ -92,10 +92,22 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
-    const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
-    const toggleUpdateModal = useCallback(() => {
-        setIssUpdateModalOpen(!isUpdateModalOpen)
-    }, [isUpdateModalOpen])
+    const [isGithubUpdateModalOpen, setIsGithubUpdateModalOpen] = useState(false)
+    const toggleGithubUpdateModal = useCallback(() => {
+        setIsGithubUpdateModalOpen(!isGithubUpdateModalOpen)
+    }, [isGithubUpdateModalOpen])
+    const [isGitlabUpdateModalOpen, setIsGitlabUpdateModalOpen] = useState(false)
+    const toggleGitlabUpdateModal = useCallback(() => {
+        setIsGitlabUpdateModalOpen(!isGitlabUpdateModalOpen)
+    }, [isGitlabUpdateModalOpen])
+    const toggleUpdateModal: Record<string, () => void> = {
+        GITHUB: toggleGithubUpdateModal,
+        GITLAB: toggleGitlabUpdateModal,
+    }
+    const isUpdateModalOpen: Record<string, boolean> = {
+        GITHUB: isGithubUpdateModalOpen,
+        GITLAB: isGitlabUpdateModalOpen,
+    }
 
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
@@ -275,6 +287,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     interface serviceProblem {
         id: string
+        kind: string
         displayName: string
         problem: string
     }
@@ -291,7 +304,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 const problem = service.warning || service.lastSyncError
                 // if service has warnings or errors
                 if (problem) {
-                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
+                    servicesWithProblems.push({
+                        id: service.id,
+                        kind: service.kind,
+                        displayName: service.displayName,
+                        problem,
+                    })
                     continue
                 }
 
@@ -353,7 +371,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 {owner.type === 'org' ? (
                     <Button
                         className="font-weight-normal shadow-none p-0 border-0"
-                        onClick={toggleUpdateModal}
+                        onClick={toggleUpdateModal[service.kind]}
                         variant="link"
                     >
                         updating the code host connection
@@ -476,8 +494,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
-                                        isUpdateModalOpen={isUpdateModalOpen}
-                                        toggleUpdateModal={toggleUpdateModal}
+                                        isUpdateModalOpen={isUpdateModalOpen[kind]}
+                                        toggleUpdateModal={toggleUpdateModal[kind]}
                                         onDidUpsert={handleServiceUpsert}
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
