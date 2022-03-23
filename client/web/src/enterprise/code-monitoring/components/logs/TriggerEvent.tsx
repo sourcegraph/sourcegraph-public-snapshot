@@ -8,7 +8,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
@@ -59,13 +59,9 @@ export const TriggerEvent: React.FunctionComponent<{
     return (
         <>
             <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                {expanded ? (
-                    <ChevronDownIcon className="icon-inline mr-2" />
-                ) : (
-                    <ChevronRightIcon className="icon-inline mr-2" />
-                )}
+                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
 
-                {hasError ? <AlertCircleIcon className={classNames(styles.errorIcon, 'icon-inline mr-2')} /> : <span />}
+                {hasError ? <Icon className={classNames(styles.errorIcon, 'mr-2')} as={AlertCircleIcon} /> : <span />}
 
                 <span>
                     Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
@@ -77,7 +73,7 @@ export const TriggerEvent: React.FunctionComponent<{
                             className="font-weight-normal ml-2"
                         >
                             {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
-                            <OpenInNewIcon className="icon-inline" />
+                            <Icon as={OpenInNewIcon} />
                         </Link>
                     )}
                 </span>

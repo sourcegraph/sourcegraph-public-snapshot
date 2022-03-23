@@ -73,7 +73,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                         aria-label="Copy Docker command to clipboard"
                         variant="link"
                     >
-                        <ContentCopyIcon className="icon-inline" />
+                        <Icon as={ContentCopyIcon} />
                     </Button>
                     <code className={styles.codeBlock}>{dockerCommand}</code>
                 </MarketingBlock>

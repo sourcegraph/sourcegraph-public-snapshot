@@ -102,7 +102,7 @@ const UpdateLoaderIcon: React.FunctionComponent<{
     }
 
     if (viewerCanAdminister) {
-        return <SyncIcon className="icon-inline cursor-pointer" onClick={onEnqueueChangeset} role="button" />
+        return <Icon className="cursor-pointer" onClick={onEnqueueChangeset} role="button" as={SyncIcon} />
     }
 
     return <Icon as={InfoCircleOutlineIcon} />

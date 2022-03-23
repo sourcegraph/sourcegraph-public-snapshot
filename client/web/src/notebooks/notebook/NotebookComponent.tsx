@@ -494,7 +494,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         data-testid="copy-notebook-button"
                         disabled={copiedNotebookOrError === LOADING}
                     >
-                        <ContentCopyIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={ContentCopyIcon} />
                         <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                     </Button>
                 )}

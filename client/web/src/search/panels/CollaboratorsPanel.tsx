@@ -9,7 +9,7 @@ import { Observable } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { InvitableCollaborator } from '../../auth/welcome/InviteCollaborators/InviteCollaborators'
@@ -117,12 +117,12 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                                 <div className={styles.inviteButton}>
                                     {loadingInvites.has(person.email) ? (
                                         <span className=" ml-auto mr-3">
-                                            <LoadingSpinner inline={true} className="icon-inline mr-1" />
+                                            <LoadingSpinner className="mr-1" />
                                             Inviting...
                                         </span>
                                     ) : successfulInvites.has(person.email) ? (
                                         <span className="text-success ml-auto mr-3">
-                                            <EmailCheckIcon className="icon-inline mr-1" />
+                                            <Icon className="mr-1" as={EmailCheckIcon} />
                                             Invited
                                         </span>
                                     ) : (
@@ -131,7 +131,7 @@ export const CollaboratorsPanel: React.FunctionComponent<Props> = ({
                                                 {person.email}
                                             </div>
                                             <div className={classNames('text-primary', styles.inviteButtonOverlay)}>
-                                                <EmailIcon className="icon-inline mr-1" />
+                                                <Icon className="mr-1" as={EmailIcon} />
                                                 Invite to Sourcegraph
                                             </div>
                                         </>
@@ -212,7 +212,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
                     <CardBody>
                         <div className={classNames('d-flex', 'align-content-start', 'mb-2')}>
                             <h2 className={classNames(styles.infoBox, 'mb-0')}>
-                                <InformationOutlineIcon className="icon-inline mr-2 text-muted" />
+                                <Icon className="mr-2 text-muted" as={InformationOutlineIcon} />
                                 What is this?
                             </h2>
                             <div className="flex-grow-1" />
@@ -253,7 +253,7 @@ const CollaboratorsPanelInfo: React.FunctionComponent<{ isSiteAdmin: boolean }> 
             <div className={classNames('text-muted', styles.info)}>Collaborators from your repositories</div>
             <div className="flex-grow-1" />
             <div>
-                <InformationOutlineIcon className="icon-inline mr-1 text-muted" />
+                <Icon className="mr-1 text-muted" as={InformationOutlineIcon} />
                 <Button
                     variant="link"
                     className={classNames(styles.info, 'p-0')}

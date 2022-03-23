@@ -10,6 +10,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Button } from '../Button'
 import { Input } from '../Form'
+import { Icon } from '../Icon'
 
 import { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 
@@ -39,11 +40,7 @@ export const Simple: Story = () => {
             <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                 <CollapseHeader as={Button} outline={true} focusLocked={true} variant="secondary" className="w-50">
                     Collapsable
-                    {!isOpened ? (
-                        <ChevronLeftIcon className="icon-inline mr-1" />
-                    ) : (
-                        <ChevronDownIcon className="icon-inline mr-1" />
-                    )}
+                    <Icon as={isOpened ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
                 </CollapseHeader>
                 <CollapsePanel className="w-50">
                     <Input placeholder="testing this one" />
@@ -62,11 +59,7 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            {isOpen ? (
-                                <ChevronDownIcon className="icon-inline mr-1" />
-                            ) : (
-                                <ChevronLeftIcon className="icon-inline mr-1" />
-                            )}
+                            <Icon as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />
@@ -87,11 +80,7 @@ export const Simple: Story = () => {
                             className="w-50"
                         >
                             Collapsable
-                            {isOpen ? (
-                                <ChevronDownIcon className="icon-inline mr-1" />
-                            ) : (
-                                <ChevronLeftIcon className="icon-inline mr-1" />
-                            )}
+                            <Icon as={isOpen ? ChevronDownIcon : ChevronLeftIcon} className="mr-1" />
                         </CollapseHeader>
                         <CollapsePanel className="w-50">
                             <Input placeholder="testing this one" />

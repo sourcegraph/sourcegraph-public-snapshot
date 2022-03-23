@@ -12,7 +12,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 
@@ -179,7 +179,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                         </>
                     ) : (
                         <>
-                            <DeleteIcon className="icon-inline" /> Delete
+                            <Icon as={DeleteIcon} /> Delete
                         </>
                     )}
                 </Button>
