@@ -337,7 +337,11 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
 // packageRepoVersionTag returns the git tag corresponding the current commit for a package repo.
 func (r *GitCommitResolver) packageRepoVersionTag(ctx context.Context) string {
-	if !r.repoResolver.IsPackageRepo() {
+	repo, err := r.repoResolver.repo(ctx)
+	if err != nil {
+		panic(err)
+	}
+	if !repo.IsPackageRepo() {
 		return ""
 	}
 	tags, err := r.tags(ctx)

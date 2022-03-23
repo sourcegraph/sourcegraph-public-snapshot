@@ -259,6 +259,11 @@ func (r *Repo) String() string {
 	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
 }
 
+func (r *Repo) IsPackageRepo() bool {
+	name := string(r.Name)
+	return strings.HasPrefix(name, "maven/") || strings.HasPrefix(name, "npm/")
+}
+
 func sourcesKeys(m map[string]*SourceInfo) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
