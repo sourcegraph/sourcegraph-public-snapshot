@@ -27,7 +27,7 @@ export function useIsTruncated<Element extends HTMLElement>(): {
      * As the scroll width tells us the original width of the element
      * while the client width tells us the current viewpoint's width
      * of the element
-     *  */
+     **/
     function checkIsTruncated(): void {
         if (elementReference.current) {
             setIsTruncated(elementReference.current.clientWidth < elementReference.current.scrollWidth)
