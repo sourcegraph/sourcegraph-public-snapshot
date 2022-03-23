@@ -352,6 +352,7 @@ function mockCommonGraphQLResponses(
                 },
                 batchSpecs: {
                     nodes: [{ state: BatchSpecState.COMPLETED }],
+                    pageInfo: { hasNextPage: false },
                 },
                 bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
