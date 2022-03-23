@@ -150,6 +150,7 @@ export const NotebookCommandPaletteInput: React.FunctionComponent<NotebookComman
                             onMouseOver={() => setSelectedOptionId(option.id)}
                             onFocus={() => focusOption(option.id)}
                             data-option-id={option.id}
+                            role="menuitem"
                         >
                             <span className="mr-2">{option.icon}</span>
                             {option.label}
