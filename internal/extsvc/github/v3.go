@@ -510,6 +510,17 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // ListOrganizations lists all orgs from GitHub. This is intended to be used for GitHub enterprise
 // server instances only. Callers should be careful not to use this for github.com or GitHub
 // enterprise cloud.
+//
+// The argument "since" is the ID of the org and the API call will only return orgs with ID greater
+// than this value. To list all orgs in a GitHub instance, invoke this initially with:
+//
+// orgs, nextSince, err := ListOrganizations(ctx, 0)
+//
+// And the next call with:
+//
+// orgs, nextSince, err := ListOrganizations(ctx, nextSince)
+//
+// Repeat this in a for-loop until nextSince is a non-positive integer.
 func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
 	hash := strings.ToLower(c.auth.Hash())
 
