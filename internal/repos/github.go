@@ -209,7 +209,7 @@ func newGithubSource(
 	token := &auth.OAuthBearerToken{Token: c.Token}
 
 	var (
-		v3Client     = github.NewV3Client(apiURL, token, cli)
+		v3Client     = github.NewV3Client(apiURL, token, cli, nil)
 		v4Client     = github.NewV4Client(apiURL, token, cli)
 		searchClient = github.NewV3SearchClient(apiURL, token, cli)
 	)
@@ -233,7 +233,7 @@ func newGithubSource(
 		if err != nil {
 			return nil, errors.Wrap(err, "parse api.github.com")
 		}
-		client := github.NewV3Client(apiURL, auther, nil)
+		client := github.NewV3Client(apiURL, auther, nil, nil)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
@@ -245,8 +245,9 @@ func newGithubSource(
 			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 		}
 
+		githubStatusClient := github.NewGithubStatusClient()
 		auther = &auth.OAuthBearerToken{Token: token}
-		v3Client = github.NewV3Client(apiURL, auther, cli)
+		v3Client = github.NewV3Client(apiURL, auther, cli, githubStatusClient)
 		v4Client = github.NewV4Client(apiURL, auther, cli)
 
 		useGitHubApp = true
@@ -299,9 +300,9 @@ func (s GithubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	}
 
 	sc := s
-	sc.v3Client = sc.v3Client.WithAuthenticator(a)
+	sc.v3Client = sc.v3Client.WithAuthenticator(a, nil)
 	sc.v4Client = sc.v4Client.WithAuthenticator(a)
-	sc.searchClient = sc.searchClient.WithAuthenticator(a)
+	sc.searchClient = sc.searchClient.WithAuthenticator(a, nil)
 
 	return &sc, nil
 }

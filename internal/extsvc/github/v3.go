@@ -63,6 +63,8 @@ type V3Client struct {
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
 	resource string
+
+	outageChecker *GithubStatusClient
 }
 
 // NewV3Client creates a new GitHub API client with an optional default
@@ -70,8 +72,8 @@ type V3Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(apiURL, a, "rest", cli)
+func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer, outageChecker *GithubStatusClient) *V3Client {
+	return newV3Client(apiURL, a, "rest", cli, outageChecker)
 }
 
 // NewV3SearchClient creates a new GitHub API client intended for use with the
@@ -80,10 +82,10 @@ func NewV3Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Cli
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
 func NewV3SearchClient(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(apiURL, a, "search", cli)
+	return newV3Client(apiURL, a, "search", cli, nil)
 }
 
-func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
+func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer, outageChecker *GithubStatusClient) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -121,14 +123,15 @@ func newV3Client(apiURL *url.URL, a auth.Authenticator, resource string, cli htt
 		orgsCache:        newOrgsCache(a),
 		repoCache:        newRepoCache(apiURL, a),
 		resource:         resource,
+		outageChecker:    outageChecker,
 	}
 }
 
 // WithAuthenticator returns a new V3Client that uses the same configuration as
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
-func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.apiURL, a, c.resource, c.httpClient)
+func (c *V3Client) WithAuthenticator(a auth.Authenticator, outageChecker *GithubStatusClient) *V3Client {
+	return newV3Client(c.apiURL, a, c.resource, c.httpClient, outageChecker)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -214,7 +217,7 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
+	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result, c.outageChecker)
 }
 
 func newOrgsCache(a auth.Authenticator) *rcache.Cache {

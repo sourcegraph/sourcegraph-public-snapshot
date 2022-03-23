@@ -1515,7 +1515,7 @@ var (
 	headerIfModifiedSince = "If-Modified-Since"
 )
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}, outageChecker *GithubStatusClient) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1561,8 +1561,11 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
 
-		if resp.StatusCode == 500 && GithubOutage(ctx) {
-			err.Message = fmt.Sprintf("Github is experiencing an outage. Status code: %v", resp.StatusCode)
+		if resp.StatusCode == 200 && outageChecker != nil {
+			down, _ := outageChecker.IsServiceDown(ctx) // TODO: is it safe to ignore this error?
+			if down {
+				err.Message = fmt.Sprintf("Github is experiencing an outage. Status code: %v", resp.StatusCode)
+			}
 		}
 
 		err.URL = req.URL.String()
@@ -2017,9 +2020,4 @@ func normalizeURL(rawURL string) string {
 		parsed.Path += "/"
 	}
 	return parsed.String()
-}
-
-func GithubOutage(ctx context.Context) bool {
-	c := NewGithubStatusClient()
-	return c.IsServiceDown(ctx)
 }

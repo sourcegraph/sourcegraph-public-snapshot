@@ -288,6 +288,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         id: string
         displayName: string
         problem: string
+        outage: boolean
     }
 
     const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
@@ -300,9 +301,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             for (const service of services) {
                 const problem = service.warning || service.lastSyncError
-                // if service has warnings or errors
-                if (problem) {
-                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
+
+                // if service is unavailable
+                const outage = service.lastSyncError?.includes('500') || service.lastSyncError?.includes('503')
+                if (problem && outage) {
+                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem, outage: true })
+                    continue
+                }
+
+                // if service has warnings and other errors
+                if (problem && !outage) {
+                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem, outage: false })
                     continue
                 }
 
@@ -358,22 +367,47 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <Alert className="my-3" key={service.id} variant="warning">
-            <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
-            <p className="align-middle mb-0">
-                <span className="align-middle">Please try</span>{' '}
-                {owner.type === 'org' ? (
-                    <Button
-                        className="font-weight-normal shadow-none p-0 border-0"
-                        onClick={toggleUpdateModal}
-                        variant="link"
-                    >
-                        updating the code host connection
-                    </Button>
-                ) : (
-                    <span className="align-middle">reconnecting the code host connection</span>
-                )}{' '}
-                <span className="align-middle">with {service.displayName} to restore access.</span>
-            </p>
+            {service.outage ? (
+                <div>
+                    <h4 className="align-middle mb-1">We're having trouble connecting to {service.displayName}</h4>
+                    <p className="align-middle mb-0">
+                        <span className="align-middle">Before continuing, verify that</span>{' '}
+                                {service.displayName}
+                            <span className="align-middle"> is available by visiting{' '}
+                            {service.displayName === 'GitHub' ? (
+                                <Link to="https://githubstatus.com" target="_blank" rel="noopener">
+                                githubstatus.com
+                                </Link>
+                            ):(
+                                <Link to="https://status.gitlab.com/" target="_blank" rel="noopener">
+                                status.gitlab.com
+                                </Link>
+                            )}
+                            </span>
+                        {' '}
+                    </p>
+                </div>
+            ) : (
+                <div>
+                    <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
+                    <p className="align-middle mb-0">
+                        <span className="align-middle">Please try</span>{' '}
+                        {owner.type === 'org' ? (
+                            <Button
+                                className="font-weight-normal shadow-none p-0 border-0"
+                                onClick={toggleUpdateModal}
+                                variant="link"
+                            >
+                                updating the code host connection
+                            </Button>
+                        ) : (
+                            <span className="align-middle">reconnecting the code host connection</span>
+                        )}{' '}
+                        <span className="align-middle">with {service.displayName} to restore access.</span>
+                    </p>
+                </div>
+            )
+        }
         </Alert>
     )
 

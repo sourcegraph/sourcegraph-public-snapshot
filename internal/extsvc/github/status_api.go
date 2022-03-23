@@ -62,14 +62,14 @@ func (c *GithubStatusClient) request(ctx context.Context) (*status, error) {
 	return &s, nil
 }
 
-func (c *GithubStatusClient) IsServiceDown(ctx context.Context) bool {
+func (c *GithubStatusClient) IsServiceDown(ctx context.Context) (bool, error) {
 	res, err := c.request(ctx)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if res.Indicator == "critical" || res.Indicator == "major" {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
 }

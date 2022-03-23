@@ -53,7 +53,7 @@ type ClientAdapter struct {
 
 func (c *ClientAdapter) WithToken(token string) client {
 	return &ClientAdapter{
-		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}),
+		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}, nil),
 	}
 }
 

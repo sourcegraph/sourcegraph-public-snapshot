@@ -149,7 +149,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	if _, err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
+	if _, err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody, nil); err != nil {
 		return err
 	}
 
@@ -337,7 +337,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	}
 
 	// Initiate a v3Client since this requires a V3 API request.
-	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient)
+	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient, nil)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
 		log15.Warn("Failed to fetch GitHub enterprise version",
@@ -586,7 +586,7 @@ fragment RepositoryFields on Repository {
 func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
-	return NewV3Client(c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	return NewV3Client(c.apiURL, c.auth, c.httpClient, nil).Fork(ctx, owner, repo, org)
 }
 
 type RecentCommittersParams struct {
