@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -69,6 +70,13 @@ func NewClient(db database.DB) *ClientImplementor {
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
+		pinned: func() map[string]string {
+			cfg := conf.Get()
+			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+				return cfg.ExperimentalFeatures.GitServerPinnedRepos
+			}
+			return map[string]string{}
+		},
 		db:          db,
 		HTTPClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -83,6 +91,10 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 	return &ClientImplementor{
 		addrs: func() []string {
 			return addrs
+		},
+		pinned: func() map[string]string {
+			// nothing needs to be pinned for the tests
+			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
@@ -106,6 +118,11 @@ type ClientImplementor struct {
 	// is called each time a request is made. The function must be safe for
 	// concurrent use. It may return different results at different times.
 	addrs func() []string
+
+	// pinned holds a map of repositories(key) pinned to a particular gitserver instance(value). This function
+	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
+	// and sync the pinned map.
+	pinned func() map[string]string
 
 	// UserAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
@@ -211,7 +228,10 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(repo, addrs)
+	return AddrForRepo(repo, GitServerAddresses{
+		Addresses:     addrs,
+		PinnedServers: c.pinned(),
+	})
 }
 
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
@@ -239,12 +259,21 @@ var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-// It should never be called with an empty slice.
-func AddrForRepo(repo api.RepoName, addrs []string) string {
+// It should never be called with a nil addresses pointer.
+func AddrForRepo(repo api.RepoName, addresses GitServerAddresses) string {
 	addForRepoInvoked.Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	return addrForKey(string(repo), addrs)
+	rs := string(repo)
+	if pinned, found := addresses.PinnedServers[rs]; found {
+		return pinned
+	}
+	return addrForKey(rs, addresses.Addresses)
+}
+
+type GitServerAddresses struct {
+	Addresses     []string
+	PinnedServers map[string]string
 }
 
 // RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
