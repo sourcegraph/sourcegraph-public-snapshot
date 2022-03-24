@@ -27,10 +27,15 @@ export interface TourTaskType {
 export interface TourTaskStepType {
     id: string
     label: string
-    action: {
-        type: 'video' | 'link' | 'restart'
-        value: string | Record<TourLanguage, string>
-    }
+    action:
+        | {
+              type: 'video' | 'link' | 'new-tab-link'
+              value: string | Record<TourLanguage, string>
+          }
+        | {
+              type: 'restart'
+              value: string
+          }
     /**
      * HTML string, which will be displayed in info box when navigating to a step link.
      */

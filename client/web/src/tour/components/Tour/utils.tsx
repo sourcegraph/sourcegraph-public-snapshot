@@ -1,7 +1,6 @@
 import isAbsoluteURL from 'is-absolute-url'
 
-
-import { TourLanguage, TourTaskStepType } from './components/types'
+import { TourLanguage, TourTaskStepType } from './types'
 
 /**
  * Returns a new URL w/ tour state tracking query parameters. This is used to show/hide tour task info box.

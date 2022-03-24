@@ -110,13 +110,17 @@ describe('Tour.tsx', () => {
 
     test('handles "type=video" step and triggers event log', () => {
         const [{ getByTestId, getByText }, { result }] = renderTour()
+        // clicking video step will open a video modal
         fireEvent.click(getByText(StepVideo.label))
+        expect(getByTestId('modal-video')).toBeTruthy()
+
+        // click somewhere outside to close video modal
+        fireEvent.click(getByTestId('modal-video-close'))
         expect(
             mockLog.withArgs(TourId + StepVideo.id + 'Clicked', { language: undefined }, { language: undefined })
                 .calledOnce
         ).toBeTruthy()
 
-        expect(getByTestId('modal-video')).toBeTruthy()
         expect(result.current.tours[TourId].completedStepIds?.includes(StepVideo.id)).toBeTruthy()
     })
 

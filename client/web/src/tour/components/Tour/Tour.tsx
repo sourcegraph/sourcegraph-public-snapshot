@@ -48,12 +48,6 @@ export const Tour: React.FunctionComponent<TourProps> = ({
     const onLogEvent = useCallback(
         (eventName: string, eventProperties?: any, publicArgument?: any) => {
             telemetryService.log(tourId + eventName, { language, ...eventProperties }, { language, ...publicArgument })
-            console.debug(
-                'DEBUG TOUR EVENT:',
-                eventName,
-                { language, ...eventProperties },
-                { language, ...publicArgument }
-            )
         },
         [language, telemetryService, tourId]
     )
@@ -70,9 +64,6 @@ export const Tour: React.FunctionComponent<TourProps> = ({
     const onStepComplete = useCallback(
         (step: TourTaskStepType) => {
             const newCompletedStepIds = uniq([...completedStepIds, step.id])
-            // if (completedStepIds.length === tasks.flatMap(task => task.steps).length && status !== 'closed') {
-            //     setStatus('completed')
-            // }
             setCompletedStepIds(tourId, newCompletedStepIds)
         },
         [completedStepIds, setCompletedStepIds, tourId]

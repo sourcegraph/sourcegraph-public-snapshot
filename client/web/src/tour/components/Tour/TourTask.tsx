@@ -7,10 +7,9 @@ import { useHistory } from 'react-router-dom'
 
 import { isExternalLink } from '@sourcegraph/common'
 import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
-import { LinkOrAnchor } from '../LinkOrAnchor'
 
 import { TourContext } from './context'
 import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
@@ -44,7 +43,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
 
     const handleVideoToggle = useCallback(
         (isOpen: boolean, step: TourTaskStepType) => {
-            if (isOpen) {
+            if (!isOpen) {
                 onStepClick(step, language)
             }
         },
@@ -86,7 +85,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                 <div className="d-flex justify-content-between position-relative">
                     {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
                     <p className={styles.title}>{title}</p>
-                    {completed === 100 && <CheckCircleIcon className="icon-inline text-success" size="1rem" />}
+                    {completed === 100 && <Icon as={CheckCircleIcon} size="sm" className="text-success" />}
                     {typeof completed === 'number' && completed < 100 && (
                         <CircularProgressbar className={styles.progressBar} strokeWidth={10} value={completed || 0} />
                     )}
@@ -95,13 +94,24 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                     {steps.map(step => (
                         <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-center')}>
                             {step.action.type === 'link' && (
-                                <LinkOrAnchor
+                                <Link
                                     className="flex-grow-1"
-                                    href={getTourTaskStepActionValue(step, language)}
+                                    to={getTourTaskStepActionValue(step, language)}
                                     onClick={event => handleLinkClick(event, step)}
                                 >
                                     {step.label}
-                                </LinkOrAnchor>
+                                </Link>
+                            )}
+                            {step.action.type === 'new-tab-link' && (
+                                <Link
+                                    className="flex-grow-1"
+                                    to={getTourTaskStepActionValue(step, language)}
+                                    onClick={event => handleLinkClick(event, step)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {step.label}
+                                </Link>
                             )}
                             {step.action.type === 'restart' && (
                                 <div className="flex-grow">
@@ -129,7 +139,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                                 />
                             )}
                             {isMultiStep && step.isCompleted && (
-                                <CheckCircleIcon className={classNames('icon-inline', 'text-success')} size="1rem" />
+                                <Icon as={CheckCircleIcon} size="md" className="text-success" />
                             )}
                         </li>
                     ))}

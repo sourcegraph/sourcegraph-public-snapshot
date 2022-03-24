@@ -5,6 +5,8 @@ import { chunk, upperFirst } from 'lodash'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 
+import { Button, Icon } from '@sourcegraph/wildcard'
+
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
 import { TourTask } from './TourTask'
@@ -21,11 +23,11 @@ interface TourContentProps {
 }
 
 const Header: React.FunctionComponent<{ onClose: () => void }> = ({ children, onClose }) => (
-    <div className="d-flex justify-content-between">
+    <div className="d-flex justify-content-between align-items-start">
         <p className={styles.title}>Quick start</p>
-        <span className="cursor-pointer" role="button" data-testid="tour-close-btn" onClick={onClose}>
-            <CloseIcon size="1rem" /> {children}
-        </span>
+        <Button variant="icon" data-testid="tour-close-btn" onClick={onClose}>
+            <Icon as={CloseIcon} /> {children}
+        </Button>
     </div>
 )
 
@@ -36,12 +38,14 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
     className,
     height = 18,
 }) => {
-    const { completedTaskChunks, completedTasks, ongoingTasks } = useMemo(() => {
+    const { completedCount, totalCount, completedTaskChunks, completedTasks, ongoingTasks } = useMemo(() => {
         const completedTasks = tasks.filter(task => task.completed === 100)
         return {
-            completedTaskChunks: chunk(completedTasks, 3),
             completedTasks,
             ongoingTasks: tasks.filter(task => task.completed !== 100),
+            completedTaskChunks: chunk(completedTasks, 3),
+            totalCount: tasks.filter(task => typeof task.completed === 'number').length,
+            completedCount: completedTasks.length,
         }
     }, [tasks])
 
@@ -54,7 +58,10 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
             >
                 {variant !== 'horizontal' && <Header onClose={onClose} />}
                 <div
-                    className={classNames(styles.taskList, variant && styles[`is${upperFirst(variant)}`])}
+                    className={classNames(
+                        styles.taskList,
+                        variant && styles[`is${upperFirst(variant)}` as keyof typeof styles]
+                    )}
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{ maxHeight: `${height}rem` }}
                 >
@@ -64,7 +71,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                                 {variant === 'horizontal' && index === 0 && <p className={styles.title}>Completed</p>}
                                 {completedTaskChunk.map(completedTask => (
                                     <div key={completedTask.title}>
-                                        <CheckCircleIcon className="icon-inline text-success" size="1rem" />
+                                        <Icon as={CheckCircleIcon} size="sm" className="text-success" />
                                         <span className="ml-1">{completedTask.title}</span>
                                     </div>
                                 ))}
@@ -77,7 +84,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                         <div>
                             {completedTasks.map(completedTask => (
                                 <div key={completedTask.title}>
-                                    <CheckCircleIcon className="icon-inline text-success" size="1rem" />
+                                    <Icon as={CheckCircleIcon} size="sm" className="text-success" />
                                     <span className="ml-1">{completedTask.title}</span>
                                 </div>
                             ))}
@@ -86,8 +93,8 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                 </div>
             </MarketingBlock>
             <p className="text-right mt-2 mb-0">
-                <CheckCircleIcon className="icon-inline text-success" size="1rem" /> {completedTasks.length} of{' '}
-                {tasks.length} completed
+                <Icon as={CheckCircleIcon} className="text-success" />
+                {completedCount} of {totalCount} completed
             </p>
         </div>
     )

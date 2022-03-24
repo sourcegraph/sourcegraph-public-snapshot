@@ -47,7 +47,7 @@
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
 
-        & > * {
+        > * {
             flex: 1 0 19rem;
             scroll-snap-align: start;
 
@@ -64,7 +64,7 @@
         flex-grow: 1;
         padding-right: 0.25rem;
 
-        & > :not(:last-child)::after {
+        > :not(:last-child)::after {
             content: ' ';
             display: block;
             border-bottom: 1px solid var(--border-color);

@@ -1,15 +1,14 @@
 import React from 'react'
 
-import { TourLanguage, TourTaskType } from '../components/Tour/types'
+import AccountGroupIcon from 'mdi-react/AccountGroupIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import CursorPointerIcon from 'mdi-react/CursorPointerIcon'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import NotebookIcon from 'mdi-react/NotebookIcon'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import ShieldSearchIcon from 'mdi-react/ShieldSearchIcon'
 
-import {
-    IconAllDone,
-    IconCreateTeam,
-    IconFindCodeReference,
-    IconInstallIDEExtension,
-    IconPowerfulCodeNavigation,
-    IconResolveIncidentsFaster,
-} from './icons'
+import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
 /**
  * Tour tasks for non-authenticated users
@@ -154,12 +153,12 @@ export const visitorsTasks: TourTaskType[] = [
             {
                 id: 'TourEditorExtensions',
                 label: 'IDE extensions',
-                action: { type: 'link', value: 'https://docs.sourcegraph.com/integration/editor' },
+                action: { type: 'new-tab-link', value: 'https://docs.sourcegraph.com/integration/editor' },
             },
             {
                 id: 'TourBrowserExtensions',
                 label: 'Browser extensions',
-                action: { type: 'link', value: 'https://docs.sourcegraph.com/integration/browser_extension' },
+                action: { type: 'new-tab-link', value: 'https://docs.sourcegraph.com/integration/browser_extension' },
             },
         ],
     },
@@ -170,7 +169,7 @@ export const visitorsTasks: TourTaskType[] = [
                 id: 'InstallOrSignUp',
                 label: 'Get powerful code search and other features on your private code.',
                 action: {
-                    type: 'link',
+                    type: 'new-tab-link',
                     value:
                         'https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=getting-started-tour&utm_campaign=inproduct-cta&_ga=2.130711115.51352124.1647511547-1994718421.1647511547',
                 },
@@ -186,79 +185,68 @@ export const visitorsTasks: TourTaskType[] = [
  */
 export const authenticatedTasks: TourTaskType[] = [
     {
-        title: 'Find code to reference',
-        icon: <IconFindCodeReference />,
+        title: 'Reuse existing code',
+        icon: <MagnifyIcon size="2rem" />,
         steps: [
             {
-                id: 'FindCodeRef',
-                label: 'Search for code in a user or org’s repos while excluding test files.',
+                id: 'ReuseExistingCode',
+                label: 'Discover and learn how to use existing libraries.',
                 action: {
                     type: 'link',
                     value: {
-                        [TourLanguage.C]:
-                            '/search?q=context:global+repo:torvalds/.*+lang:c+-file:.*/testing+magic&patternType=literal',
+                        [TourLanguage.C]: '/search?q=context:global+memcpy(+-file:test+lang:c+&patternType=regexp',
                         [TourLanguage.Go]:
-                            '/search?q=context:global+r:google/+lang:go+-file:test+//+TODO&patternType=literal',
+                            '/search?q=context:global+repo:^github.com/golang/go%24+ReadResponse(+-file:test.go&patternType=regexp',
                         [TourLanguage.Java]:
-                            '/search?q=context:global+r:github.com/square/+lang:java+-file:test+GiftCard&patternType=literal',
+                            '/search?q=context:global+repo:github.com/square/+lang:java+-file:test+GiftCard&patternType=literal',
                         [TourLanguage.Javascript]:
-                            '/search?q=context:global+r:react+lang:JavaScript+-file:test+createPortal&patternType=literal',
+                            '/search?q=context:global+repo:react+lang:JavaScript+-file:test+createPortal&patternType=literal',
                         [TourLanguage.Php]:
                             '/search?q=context:global+repo:laravel+lang:php+-file:test+login%28&patternType=regexp&case=yes',
                         [TourLanguage.Python]:
-                            '/search?q=context:global+r:aws/+lang:python+file:mock+def+test_patch&patternType=regexp&case=yes',
+                            '/search?q=context:global+repo:^github.com/pandas-dev/pandas%24++lang:python+-file:test+pd.DataFrame(&patternType=literal&case=yes',
                         [TourLanguage.Typescript]:
-                            '/search?q=context:global+r:react+lang:typescript+-file:test+createPortal%28&patternType=regexp&case=yes',
+                            '/search?q=context:global+repo:react+lang:typescript+-file:test+createPortal%28&patternType=regexp&case=yes',
                     },
                 },
-                info: `<strong>Reference code in multiple repositories</strong><br/>
-            The repo: query allows searching in multiple repositories matching a term. Use it to reference all of your projects or find open source examples.`,
+                info: `<strong>Discover code across multiple repositories</strong><br/>
+                    The <code>repo:</code> keyword allows searching in multiple repositories matching a term. Use it to reference all of your projects or find open source examples.
+                `,
             },
         ],
     },
     {
-        title: 'Resolve incidents faster',
-        icon: <IconResolveIncidentsFaster />,
+        title: 'Find and fix vulnerabilities',
+        icon: <ShieldSearchIcon size="2rem" />,
         steps: [
             {
                 id: 'WatchVideo',
-                label: 'Watch the 60 second video',
-                action: { type: 'video', value: 'https://www.youtube-nocookie.com/embed/XLfE2YuRwvw' },
-            },
-            {
-                id: 'DiffSearch',
-                label: 'Run a diff search',
-                action: {
-                    type: 'link',
-                    value: {
-                        [TourLanguage.C]:
-                            '/search?q=context:global+repo:chref/doh+type:diff+select:commit.diff.removed+mode&patternType=literal',
-                        [TourLanguage.Go]:
-                            '/search?q=context:global+repo:%5Egitlab%5C.com/sourcegraph/sourcegraph%24+type:diff+lang:go+select:commit.diff.removed+NameSpaceOrgId&patternType=literal',
-                        [TourLanguage.Java]:
-                            '/search?q=context:global+repo:sourcegraph-testing/sg-hadoop+lang:java+type:diff+select:commit.diff.removed+getConf&patternType=literal',
-                        [TourLanguage.Javascript]:
-                            '/search?q=context:global+repo:sourcegraph/sourcegraph%24+lang:javascript+-file:test+type:diff+select:commit.diff.removed+promise&patternType=literal',
-                        [TourLanguage.Php]:
-                            '/search?q=context:global+repo:laravel/laravel.*+lang:php++type:diff+select:commit.diff.removed+password&patternType=regexp&case=yes',
-                        [TourLanguage.Python]:
-                            '/search?q=context:global+repo:pallets/+lang:python+type:diff+select:commit.diff.removed+password&patternType=regexp&case=yes',
-                        [TourLanguage.Typescript]:
-                            '/search?q=context:global+repo:sourcegraph/sourcegraph%24+lang:typescript+type:diff+select:commit.diff.removed+authenticatedUser&patternType=regexp&case=yes',
-                    },
-                },
-                info:
-                    '<strong>Searching diffs for removed code</strong><br/>Find removed code without browsing through history or trying to remember which file it was in.',
+                label: 'Learn how to find and fix vulnerabilities faster',
+                action: { type: 'video', value: 'https://www.youtube.com/embed/13OqKPXqZXo' },
             },
         ],
     },
     {
-        title: 'Powerful code navigation',
-        icon: <IconPowerfulCodeNavigation />,
+        title: 'Respond to incidents',
+        icon: <NotebookIcon size="2rem" />,
+        steps: [
+            {
+                id: 'Notebook',
+                label: 'Document post mortems using search notebooks',
+                action: {
+                    type: 'new-tab-link',
+                    value: 'https://sourcegraph.com/notebooks',
+                },
+            },
+        ],
+    },
+    {
+        title: 'Quickly understand a new codebase',
+        icon: <CursorPointerIcon size="2rem" />,
         steps: [
             {
                 id: 'PowerCodeNav',
-                label: 'Get IDE like go to definition and find references across many repositories',
+                label: 'Get IDE-like code navigation features across many repositories',
                 action: {
                     type: 'link',
                     value: {
@@ -277,33 +265,37 @@ export const authenticatedTasks: TourTaskType[] = [
                     },
                 },
                 info:
-                    '<strong>FIND REFERENCES</strong><br/>Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to locate all calls of this code.',
+                    '<strong>Find References</strong><br/>Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to locate all calls of this code.',
                 completeAfterEvents: ['findReferences'],
             },
         ],
     },
     {
         title: 'Install an IDE extension',
-        icon: <IconInstallIDEExtension />,
+        icon: <PuzzleOutlineIcon size="2rem" />,
         steps: [
             {
                 id: 'InstallIDEExtension',
-                label: 'Integrate Sourcegraph with VSCode, Jetbrains, Sublime, and Atom.',
-                action: { type: 'link', value: 'https://docs.sourcegraph.com/integration/editor' },
+                label: 'Integrate Sourcegraph with your favorite IDE',
+                action: {
+                    type: 'new-tab-link',
+                    value:
+                        'https://docs.sourcegraph.com/integration/editor?utm_medium=direct-traffic&utm_source=in-product&utm_content=getting-started',
+                },
             },
         ],
     },
     {
         title: 'Create a team',
-        icon: <IconCreateTeam />,
+        icon: <AccountGroupIcon size="2rem" />,
         steps: [
             {
                 id: 'CreateTeam',
                 label: 'Sourcegraph helps teams from 2 to any size collaborate.',
                 action: {
-                    type: 'link',
+                    type: 'new-tab-link',
                     value:
-                        'https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=in-product&utm_term=in-product-banner&utm_content=cloud-product-beta-teams',
+                        'https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=in-product&utm_content=getting-started',
                 },
             },
         ],
@@ -315,7 +307,7 @@ export const authenticatedTasks: TourTaskType[] = [
  */
 export const authenticatedExtraTask: TourTaskType = {
     title: 'All done!',
-    icon: <IconAllDone />,
+    icon: <CheckCircleIcon size="2rem" className="text-success" />,
     steps: [
         {
             id: 'RestartTour',
