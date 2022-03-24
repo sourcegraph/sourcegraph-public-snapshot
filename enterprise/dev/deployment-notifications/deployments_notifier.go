@@ -56,7 +56,7 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 		}
 		groupPrs, err := dn.getNewPullRequests(ctx, diff.Old, diff.New)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to get pull requests")
 		}
 		for _, pr := range groupPrs {
 			prSet[pr.GetID()] = pr
