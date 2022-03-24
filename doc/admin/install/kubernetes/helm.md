@@ -41,7 +41,13 @@ __TODO__
 
 ### Using external Redis instances
 
-__TODO__
+To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis).
+
+<!-- 
+  If we copy the entire README.md over here the page will be too clutterd.
+  When the docsite V2 is ready, this should potentially have its own page
+-->
+Follow [using your own Redis](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-redis) to configure your override file.
 
 ### Using external Object Storage
 
