@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 
 import * as Monaco from 'monaco-editor'
 
@@ -11,6 +11,7 @@ import { Button } from '@sourcegraph/wildcard'
 import { BlockProps, SymbolBlockInput } from '../..'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
+import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookSymbolBlockInput.module.scss'
 
@@ -34,11 +35,7 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlo
     onSymbolSelected,
     ...props
 }) => {
-    useEffect(() => {
-        // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input,
-        // if Enter key was used to show the inputs.
-        setTimeout(() => editor?.focus(), 0)
-    }, [editor])
+    useFocusMonacoEditorOnMount({ editor, isEditing: true })
 
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>

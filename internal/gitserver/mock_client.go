@@ -90,8 +90,8 @@ type MockClient struct {
 func NewMockClient() *MockClient {
 	return &MockClient{
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
-			defaultHook: func(context.Context, api.RepoName) string {
-				return ""
+			defaultHook: func(context.Context, api.RepoName) (string, error) {
+				return "", nil
 			},
 		},
 		AddrsFunc: &ClientAddrsFunc{
@@ -105,8 +105,8 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) *url.URL {
-				return nil
+			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
+				return nil, nil
 			},
 		},
 		CommandFunc: &ClientCommandFunc{
@@ -202,7 +202,7 @@ func NewMockClient() *MockClient {
 func NewStrictMockClient() *MockClient {
 	return &MockClient{
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
-			defaultHook: func(context.Context, api.RepoName) string {
+			defaultHook: func(context.Context, api.RepoName) (string, error) {
 				panic("unexpected invocation of MockClient.AddrForRepo")
 			},
 		},
@@ -217,7 +217,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ArchiveURLFunc: &ClientArchiveURLFunc{
-			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) *url.URL {
+			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
 				panic("unexpected invocation of MockClient.ArchiveURL")
 			},
 		},
@@ -382,23 +382,23 @@ func NewMockClientFrom(i Client) *MockClient {
 // ClientAddrForRepoFunc describes the behavior when the AddrForRepo method
 // of the parent MockClient instance is invoked.
 type ClientAddrForRepoFunc struct {
-	defaultHook func(context.Context, api.RepoName) string
-	hooks       []func(context.Context, api.RepoName) string
+	defaultHook func(context.Context, api.RepoName) (string, error)
+	hooks       []func(context.Context, api.RepoName) (string, error)
 	history     []ClientAddrForRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // AddrForRepo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) AddrForRepo(v0 context.Context, v1 api.RepoName) string {
-	r0 := m.AddrForRepoFunc.nextHook()(v0, v1)
-	m.AddrForRepoFunc.appendCall(ClientAddrForRepoFuncCall{v0, v1, r0})
-	return r0
+func (m *MockClient) AddrForRepo(v0 context.Context, v1 api.RepoName) (string, error) {
+	r0, r1 := m.AddrForRepoFunc.nextHook()(v0, v1)
+	m.AddrForRepoFunc.appendCall(ClientAddrForRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the AddrForRepo method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientAddrForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) string) {
+func (f *ClientAddrForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -406,7 +406,7 @@ func (f *ClientAddrForRepoFunc) SetDefaultHook(hook func(context.Context, api.Re
 // AddrForRepo method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientAddrForRepoFunc) PushHook(hook func(context.Context, api.RepoName) string) {
+func (f *ClientAddrForRepoFunc) PushHook(hook func(context.Context, api.RepoName) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -414,20 +414,20 @@ func (f *ClientAddrForRepoFunc) PushHook(hook func(context.Context, api.RepoName
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientAddrForRepoFunc) SetDefaultReturn(r0 string) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) string {
-		return r0
+func (f *ClientAddrForRepoFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (string, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientAddrForRepoFunc) PushReturn(r0 string) {
-	f.PushHook(func(context.Context, api.RepoName) string {
-		return r0
+func (f *ClientAddrForRepoFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (string, error) {
+		return r0, r1
 	})
 }
 
-func (f *ClientAddrForRepoFunc) nextHook() func(context.Context, api.RepoName) string {
+func (f *ClientAddrForRepoFunc) nextHook() func(context.Context, api.RepoName) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -469,6 +469,9 @@ type ClientAddrForRepoFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -480,7 +483,7 @@ func (c ClientAddrForRepoFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientAddrForRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientAddrsFunc describes the behavior when the Addrs method of the
@@ -694,23 +697,23 @@ func (c ClientArchiveFuncCall) Results() []interface{} {
 // ClientArchiveURLFunc describes the behavior when the ArchiveURL method of
 // the parent MockClient instance is invoked.
 type ClientArchiveURLFunc struct {
-	defaultHook func(context.Context, api.RepoName, ArchiveOptions) *url.URL
-	hooks       []func(context.Context, api.RepoName, ArchiveOptions) *url.URL
+	defaultHook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
+	hooks       []func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
 	history     []ClientArchiveURLFuncCall
 	mutex       sync.Mutex
 }
 
 // ArchiveURL delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) ArchiveURL(v0 context.Context, v1 api.RepoName, v2 ArchiveOptions) *url.URL {
-	r0 := m.ArchiveURLFunc.nextHook()(v0, v1, v2)
-	m.ArchiveURLFunc.appendCall(ClientArchiveURLFuncCall{v0, v1, v2, r0})
-	return r0
+func (m *MockClient) ArchiveURL(v0 context.Context, v1 api.RepoName, v2 ArchiveOptions) (*url.URL, error) {
+	r0, r1 := m.ArchiveURLFunc.nextHook()(v0, v1, v2)
+	m.ArchiveURLFunc.appendCall(ClientArchiveURLFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ArchiveURL method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ArchiveOptions) *url.URL) {
+func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)) {
 	f.defaultHook = hook
 }
 
@@ -718,7 +721,7 @@ func (f *ClientArchiveURLFunc) SetDefaultHook(hook func(context.Context, api.Rep
 // ArchiveURL method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientArchiveURLFunc) PushHook(hook func(context.Context, api.RepoName, ArchiveOptions) *url.URL) {
+func (f *ClientArchiveURLFunc) PushHook(hook func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -726,20 +729,20 @@ func (f *ClientArchiveURLFunc) PushHook(hook func(context.Context, api.RepoName,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, ArchiveOptions) *url.URL {
-		return r0
+func (f *ClientArchiveURLFunc) SetDefaultReturn(r0 *url.URL, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientArchiveURLFunc) PushReturn(r0 *url.URL) {
-	f.PushHook(func(context.Context, api.RepoName, ArchiveOptions) *url.URL {
-		return r0
+func (f *ClientArchiveURLFunc) PushReturn(r0 *url.URL, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
+		return r0, r1
 	})
 }
 
-func (f *ClientArchiveURLFunc) nextHook() func(context.Context, api.RepoName, ArchiveOptions) *url.URL {
+func (f *ClientArchiveURLFunc) nextHook() func(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -784,6 +787,9 @@ type ClientArchiveURLFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *url.URL
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -795,7 +801,7 @@ func (c ClientArchiveURLFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientArchiveURLFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientCommandFunc describes the behavior when the Command method of the

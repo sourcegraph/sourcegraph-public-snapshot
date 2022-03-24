@@ -1,14 +1,12 @@
-package testutil
+package search
 
 import (
 	"archive/zip"
 	"bytes"
 	"os"
-
-	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
-func CreateZip(files map[string]string) ([]byte, error) {
+func createZip(files map[string]string) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
 	for name, body := range files {
@@ -29,12 +27,12 @@ func CreateZip(files map[string]string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func MockZipFile(data []byte) (*store.ZipFile, error) {
+func mockZipFile(data []byte) (*zipFile, error) {
 	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
 	}
-	zf := new(store.ZipFile)
+	zf := new(zipFile)
 	if err := zf.PopulateFiles(r); err != nil {
 		return nil, err
 	}
@@ -47,8 +45,8 @@ func MockZipFile(data []byte) (*store.ZipFile, error) {
 	return zf, nil
 }
 
-func TempZipFileOnDisk(data []byte) (string, func(), error) {
-	z, err := MockZipFile(data)
+func tempZipFileOnDisk(data []byte) (string, func(), error) {
+	z, err := mockZipFile(data)
 	if err != nil {
 		return "", nil, err
 	}
