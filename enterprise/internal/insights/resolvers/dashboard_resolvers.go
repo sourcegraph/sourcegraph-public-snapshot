@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -358,6 +359,17 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 	}
 	if dashboardID.isVirtualized() {
 		return emptyResponse, nil
+	}
+
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		lamDashboardId, err := r.dashboardStore.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		if lamDashboardId == int(dashboardID.Arg) {
+			return nil, errors.New("Cannot delete this dashboard in Limited Access Mode")
+		}
 	}
 
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
