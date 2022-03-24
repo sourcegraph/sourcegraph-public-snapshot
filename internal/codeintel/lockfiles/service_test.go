@@ -21,7 +21,7 @@ func TestListDependencies(t *testing.T) {
 
 	t.Run("empty ls-files return", func(t *testing.T) {
 		gitSvc := NewMockGitService()
-		gitSvc.ArchiveFunc.SetDefaultHook(zipArchive(t, map[string]io.Reader{}))
+		gitSvc.LsFilesFunc.SetDefaultReturn([]string{}, nil)
 
 		got, err := TestService(gitSvc).ListDependencies(ctx, "foo", "")
 		if err != nil {
@@ -35,6 +35,11 @@ func TestListDependencies(t *testing.T) {
 
 	t.Run("npm", func(t *testing.T) {
 		gitSvc := NewMockGitService()
+		gitSvc.LsFilesFunc.SetDefaultReturn([]string{
+			"client/package-lock.json",
+			"package-lock.json",
+			"yarn.lock",
+		}, nil)
 
 		yarnLock, err := os.Open("testdata/parse/yarn.lock/yarn_normal.lock")
 		if err != nil {
