@@ -73,7 +73,7 @@ add('with status indicator', () => (
             <>
                 {STATUS_INDICATORS.map(([key, Component], index) => (
                     <ListItem {...props} key={key}>
-                        <Descriptor workspace={mockWorkspace(index)} statusIndicator={<Component />} />
+                        <Descriptor workspace={mockWorkspace(index + 1)} statusIndicator={<Component />} />
                     </ListItem>
                 ))}
             </>
@@ -85,11 +85,11 @@ add('with click handler', () => (
     <WebStory>
         {props => (
             <>
-                <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(1)} onClick={() => alert('Clicked repo 1!')} />
+                <ListItem {...props} onClick={() => alert('Clicked workspace 1!')}>
+                    <Descriptor workspace={mockWorkspace(1)} />
                 </ListItem>
-                <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(2)} onClick={() => alert('Clicked repo 2!')} />
+                <ListItem {...props} onClick={() => alert('Clicked workspace 2!')}>
+                    <Descriptor workspace={mockWorkspace(2)} />
                 </ListItem>
             </>
         )}

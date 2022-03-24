@@ -7,6 +7,8 @@ import { useWorkspacesListConnection } from '../backend'
 import { WorkspaceFilterRow, WorkspaceFilters } from './WorkspacesFilterRow'
 import { WorkspacesList } from './WorkspacesList'
 
+import styles from './Workspaces.module.scss'
+
 export interface WorkspacesProps {
     batchSpecID: Scalars['ID']
     /** The currently selected workspace node id. Will be highlighted. */
@@ -27,7 +29,7 @@ export const Workspaces: React.FunctionComponent<WorkspacesProps> = ({ batchSpec
         <div className="d-flex flex-column w-100 h-100 pr-3">
             <WorkspacesListHeader>Workspaces</WorkspacesListHeader>
             <WorkspaceFilterRow onFiltersChange={setFilters} />
-            <div className="overflow-auto w-100">
+            <div className={styles.listContainer}>
                 <WorkspacesList
                     workspacesConnection={workspacesConnection}
                     selectedNode={selectedNode}

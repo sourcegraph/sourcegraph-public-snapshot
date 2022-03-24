@@ -34,7 +34,7 @@ export const WorkspacesList: React.FunctionComponent<WorkspacesListProps> = ({
     return (
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
-            <ConnectionList as="ul" className="list-group list-group-flush">
+            <ConnectionList as="ul">
                 {connection?.nodes?.map(node => (
                     <WorkspacesListItem
                         key={node.id}
