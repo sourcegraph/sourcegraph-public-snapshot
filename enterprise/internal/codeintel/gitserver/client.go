@@ -75,7 +75,7 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		return nil, err
 	}
 
-	exists := make([]bool, 0, len(commits))
+	exists := make([]bool, len(commits))
 	for i, rc := range commits {
 		name, ok := repositoryNames[rc.RepositoryID]
 		if !ok {
