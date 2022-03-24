@@ -5,6 +5,7 @@ import (
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 )
 
 func init() {
@@ -37,6 +38,26 @@ func init() {
 		var keep []*registry.Extension
 		for _, x := range extensions {
 			if _, ok := allow[x.ExtensionID]; ok {
+				keep = append(keep, x)
+			}
+		}
+		return keep
+	}
+
+	settings.FilterRemoteExtensions = func(extensions []string) []string {
+		allowedExtensions := getAllowedExtensionsFromSiteConfig()
+		if allowedExtensions == nil {
+			// Default is to allow all extensions.
+			return extensions
+		}
+
+		allow := make(map[string]interface{})
+		for _, id := range allowedExtensions {
+			allow[id] = struct{}{}
+		}
+		var keep []string
+		for _, x := range extensions {
+			if _, ok := allow[x]; ok {
 				keep = append(keep, x)
 			}
 		}

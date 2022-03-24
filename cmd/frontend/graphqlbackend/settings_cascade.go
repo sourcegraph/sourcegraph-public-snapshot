@@ -72,6 +72,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
+	// settings, err := settings.ForActor(ctx, r.db)
 	settings, err := r.finalTyped(ctx)
 	if err != nil {
 		return "", err
