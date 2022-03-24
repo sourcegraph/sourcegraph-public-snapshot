@@ -1,5 +1,14 @@
 import { escapeRegExp, find, filter } from 'lodash'
-import { load, Kind as YAMLKind, YamlMap as YAMLMap, YAMLNode, YAMLSequence, YAMLScalar } from 'yaml-ast-parser'
+import {
+    load,
+    Kind as YAMLKind,
+    YamlMap as YAMLMap,
+    YAMLNode,
+    YAMLSequence,
+    YAMLScalar,
+    determineScalarType,
+    ScalarType,
+} from 'yaml-ast-parser'
 
 const isYAMLMap = (node: YAMLNode): node is YAMLMap => node.kind === YAMLKind.MAP
 const isYAMLSequence = (node: YAMLNode): node is YAMLSequence => node.kind === YAMLKind.SEQ
@@ -336,6 +345,44 @@ export const isMinimalBatchSpec = (spec: string): boolean => {
 }
 
 /**
+ * Inspects a given string value and determines if it needs to be quoted to produce valid yaml.
+ *
+ * @param value the string value to inspect
+ */
+function quoteYAMLString(value: string): string {
+    let needsQuotes = false
+    // First we need to craft an AST where the value is the value to a key in an object.
+    let ast = load('name: ' + value + '\n')
+    // If that is not parseable, we might need quotes. Try that.
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        ast = load('name: "' + value + '"\n')
+        needsQuotes = true
+        // If this is still happening, bail out, we don't know what to do here.
+        if (!isYAMLMap(ast) || ast.errors.length > 0) {
+            return value
+        }
+    }
+
+    // Then we traverse the AST to find the name key, so we can get the YAMLValue.
+    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
+    if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
+        return value
+    }
+
+    // For that value, we let the parser determine the type. If the type is not string,
+    // we also want to quote the value.
+    const type = determineScalarType(nameMapping.value)
+    if (type !== ScalarType.string) {
+        needsQuotes = true
+    }
+
+    if (needsQuotes) {
+        return `"${value}"`
+    }
+    return value
+}
+
+/**
  * Replaces the "name" value of the provided `librarySpec` with the provided `name`. If
  * `librarySpec` or its "name" is not properly parsable, just returns the original
  * `librarySpec`.
@@ -350,16 +397,18 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
         return librarySpec
     }
 
-    // Find the `YAMLMapping` node with the key "name"
+    // Find the `YAMLMapping` node with the key "name".
     const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
 
     if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
         return librarySpec
     }
 
-    // Stitch the new "name" value into the spec
+    // Stitch the new "name" value into the spec.
     return (
-        librarySpec.slice(0, nameMapping.value.startPosition) + name + librarySpec.slice(nameMapping.value.endPosition)
+        librarySpec.slice(0, nameMapping.value.startPosition) +
+        quoteYAMLString(name) +
+        librarySpec.slice(nameMapping.value.endPosition)
     )
 }
 
