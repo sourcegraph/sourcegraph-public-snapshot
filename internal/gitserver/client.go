@@ -205,9 +205,9 @@ type Client interface {
 	// UpdatedAt field will be zero. This can happen for new gitservers.
 	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
 
-	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to aid our
-	// migration of gitserver repos to the rendezvous hashing scheme.
-	RequestRepoMigrate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to make
+	// gitserver instances clone a repo from one instance to another
+	RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -797,17 +797,13 @@ func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	return info, err
 }
 
-func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error) {
 	// We do not need to set a value for the attribute "Since" because the repo is not expected to
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
 	// ignored.
-	addrForRepo, err := c.AddrForRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: addrForRepo,
+		CloneFromShard: from,
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -815,7 +811,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
 	// the repo from the URL set in CloneFromShard - the gitserver instance that owns this repo based
 	// on the existing hashing scheme.
-	uri := "http://" + c.RendezvousAddrForRepo(repo) + "/repo-update"
+	uri := "http://" + to + "/repo-update"
 	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
 	if err != nil {
 		return nil, err
