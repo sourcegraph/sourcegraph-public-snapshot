@@ -1,6 +1,9 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
@@ -56,6 +59,7 @@ async function clearAndType(driver: Driver, selector: string, value: string): Pr
 
 describe('Code insight edit insight page', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: WebIntegrationTestContext
 
     beforeAll(async () => {
@@ -70,6 +74,7 @@ describe('Code insight edit insight page', () => {
                 // Enforces a new GQL backend for the creation UI
                 codeInsightsGqlApiEnabled: true,
             },
+            pollyServer: pollyServer.polly,
         })
     })
 

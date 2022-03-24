@@ -177,16 +177,16 @@ export const createSharedIntegrationTestContext = async <
     pollyServer.server.get('chrome-extension://invalid/').passthrough()
 
     // Avoid 404 error logs from missing favicon
-    pollyServer.server.get(new URL('/favicon.ico', 'https://sourcegraph.com').href).intercept((request, response) => {
+    pollyServer.server.get(new URL('/favicon.ico', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
         response
             .status(302)
-            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', 'https://sourcegraph.com').href)
+            .setHeader('Location', new URL('/.assets/img/sourcegraph-mark.svg', driver.sourcegraphBaseUrl).href)
             .send('')
     })
 
     // Serve assets from disk
     pollyServer.server
-        .get(new URL('/.assets/*path', 'https://sourcegraph.com').href)
+        .get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href)
         .intercept(async (request, response) => {
             const asset = request.params.path
             // Cache all responses for the entire lifetime of the test run
@@ -218,7 +218,7 @@ export const createSharedIntegrationTestContext = async <
     }
     let graphQlOverrides: Partial<TGraphQlOperations> = {}
     const graphQlRequests = new Subject<GraphQLRequestEvent<TGraphQlOperationNames>>()
-    pollyServer.server.post(new URL('/.api/graphql', 'https://sourcegraph.com').href).intercept((request, response) => {
+    pollyServer.server.post(new URL('/.api/graphql', driver.sourcegraphBaseUrl).href).intercept((request, response) => {
         const operationName = new URL(request.absoluteUrl).search.slice(1) as TGraphQlOperationNames
         const { variables, query } = request.jsonBody() as {
             query: string

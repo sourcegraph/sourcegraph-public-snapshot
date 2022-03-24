@@ -1,9 +1,12 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { InsightViewNode } from '../../graphql-operations'
@@ -15,6 +18,7 @@ import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-ap
 
 describe('Backend insight drill down filters', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: WebIntegrationTestContext
 
     beforeAll(async () => {
@@ -29,6 +33,7 @@ describe('Backend insight drill down filters', () => {
                 // Enforce using a new gql API for code insights pages
                 codeInsightsGqlApiEnabled: true,
             },
+            pollyServer: pollyServer.polly,
         })
     })
 
