@@ -488,10 +488,10 @@ const FeatureFlagOverrideItem: FunctionComponent<{
                 className="mr-1"
                 aria-describedby="feature-flag-override-toggle-description"
             />
-            <span className="text-capitalize aaa">{Boolean(value).toString()}</span>
+            <span className="text-capitalize">{Boolean(value).toString()}</span>
             {/*
                 TODO: querying for namespace of orgId does not work on Cloud,
-                so just present the ID for now.
+                so just present the decoded contents of the ID for now.
                 https://github.com/sourcegraph/sourcegraph/issues/32238
             */}
             <strong className="ml-4">{nsLabel}:</strong>
