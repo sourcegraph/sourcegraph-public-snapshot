@@ -96,6 +96,7 @@
   },
   "devDependencies": {
     "@atlassian/aui": "^7.10.1",
+    "@axe-core/puppeteer": "^4.4.2",
     "@babel/core": "^7.14.2",
     "@babel/plugin-proposal-decorators": "^7.14.2",
     "@babel/plugin-transform-typescript": "^7.13.0",
@@ -224,6 +225,7 @@
     "@types/webpack-manifest-plugin": "3.0.5",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.2.1",
+    "axe-core": "^4.4.1",
     "babel-jest": "^25.5.1",
     "babel-loader": "^8.2.2",
     "babel-plugin-lodash": "^3.3.4",
