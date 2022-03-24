@@ -39,14 +39,14 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
         )
 
     return (
-        <div className={styles.descriptor}>
+        <div className="d-flex flex-1 align-items-center pt-3 pb-3 pl-2 pr-2">
             <div className={styles.status}>{statusIndicator}</div>
-            <div className={styles.name}>{repositoryName}</div>
-            <div className={styles.pathAndBranch}>
+            <div className="flex-1">
+                <div className={styles.name}>{repositoryName}</div>
                 {workspace.path !== '' && workspace.path !== '/' ? (
                     <span className={styles.path}>{workspace.path}</span>
                 ) : null}
-                <div className="d-flex align-items-center text-muted text-monospace">
+                <div className="d-flex align-items-center text-muted text-monospace pt-1">
                     <Icon className="mr-1" as={SourceBranchIcon} />
                     <small>{workspace.branch.displayName}</small>
                 </div>
