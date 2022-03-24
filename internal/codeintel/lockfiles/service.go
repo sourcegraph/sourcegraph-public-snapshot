@@ -52,10 +52,29 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	}})
 	defer endObservation(1, observation.Args{})
 
+	// First call ls-files to find matching lockfiles, then pass those literal paths to archive.
+	//
+	// This ls-files call might appear redundant with the subsequent archive call, but it turns out
+	// ls-files handles pathspecs that match 0 files whereas archive throws an error. The ls-files
+	// behavior is desirable because we don't know ahead of time which lockfiles a repo has.
+	paths, err := s.gitSvc.LsFiles(ctx, repo, api.CommitID(rev), lockfilePathspecs...)
+	if err != nil {
+		return err
+	}
+
+	if len(paths) == 0 {
+		return nil
+	}
+
+	pathspecs := []gitserver.Pathspec{}
+	for _, p := range paths {
+		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+	}
+
 	opts := gitserver.ArchiveOptions{
 		Treeish:   rev,
 		Format:    "zip",
-		Pathspecs: lockfilePathspecs,
+		Pathspecs: pathspecs,
 	}
 
 	rc, err := s.gitSvc.Archive(ctx, repo, opts)
