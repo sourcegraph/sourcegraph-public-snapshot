@@ -50,6 +50,10 @@ func (c *cachedCommitChecker) existsBatch(ctx context.Context, commits []gitserv
 		}
 	}
 
+	if len(rcs) == 0 {
+		return exists, nil
+	}
+
 	// Perform heavy work outside of critical section
 	e, err := c.gitserverClient.CommitsExist(ctx, rcs)
 	if err != nil {
