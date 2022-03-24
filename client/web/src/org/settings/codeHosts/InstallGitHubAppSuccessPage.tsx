@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
+import GithubIcon from 'mdi-react/GithubIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Media } from 'reactstrap'
 
@@ -14,25 +15,27 @@ import { GitHubAppInstallation } from './ConnectGitHubAppPage'
 import styles from './AppLogo.module.scss'
 
 export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
-    const [data, setData] = useState<GitHubAppInstallation>()
+    const [data, setData] = useState<GitHubAppInstallation | null>()
 
     useEffect(() => {
         const queryString = window.location.search
         const urlParameters = new URLSearchParams(queryString)
-        let installationID = urlParameters.get('installation_id')
-        if (installationID === null) {
-            installationID = ''
-        }
-        fetch(`/.auth/github/get-github-app-installation?installation_id=${installationID}`, {
-            method: 'GET',
-        })
-            .then(response => response.json())
-            .then(response => {
-                const githubAppInstallation = response as GitHubAppInstallation
+        const installationID = urlParameters.get('installation_id')
 
-                setData(githubAppInstallation)
+        if (installationID !== null) {
+            fetch(`/.auth/github/get-github-app-installation?installation_id=${installationID}`, {
+                method: 'GET',
             })
-            .catch(console.log)
+                .then(response => response.json())
+                .then(response => {
+                    const githubAppInstallation = response as GitHubAppInstallation
+
+                    setData(githubAppInstallation)
+                })
+                .catch(() => setData(null))
+        } else {
+            setData(null)
+        }
     }, [])
 
     return (
@@ -44,7 +47,11 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
                     <div className="d-flex justify-content-center align-items-center">
                         <SourcegraphIcon className={classNames(styles.appLogo)} />
                         <PlusIcon />
-                        <Media src={data?.account.avatar_url} className={classNames(styles.appLogo)} />
+                        {data ? (
+                            <Media src={data?.account.avatar_url} className={classNames(styles.appLogo)} />
+                        ) : (
+                            <GithubIcon className={classNames(styles.appLogo)} />
+                        )}
                     </div>
                     <h2 className="text-center">Sourcegraph Cloud for GitHub installed on {data?.account.login}</h2>
                     <br />

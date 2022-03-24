@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 
-import { Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Card, CardBody, Link, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -43,6 +43,8 @@ export const GHOrgListItem: React.FunctionComponent<GHOrgListItemProps> = ({ chi
 
 export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
     const [data, setData] = useState<GitHubAppInstallation[]>([])
+    const [error, setError] = useState<boolean>(false)
+    const [loading, setLoading] = useState<boolean>(true)
 
     const queryString = window.location.search
     const urlParameters = new URLSearchParams(queryString)
@@ -59,13 +61,19 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
             .then(response => {
                 const githubAppInstallations = response as GitHubAppInstallation[]
                 if (githubAppInstallations.length === 0) {
-                    console.log('redirect')
+                    window.location.assign(
+                        `https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${state}`
+                    )
                 } else {
                     setData(githubAppInstallations)
+                    setLoading(false)
                 }
             })
-            .catch(console.log)
-    }, [])
+            .catch(() => {
+                setError(true)
+                setLoading(false)
+            })
+    }, [state])
 
     return (
         <Page>
@@ -81,39 +89,45 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
             />
             <Card>
                 <CardBody>
-                    <ul className="list-group">
-                        {data.map(install => (
-                            <GHOrgListItem onClick={connectOrg(install.id.toString())} key={install.id}>
+                    {loading ? (
+                        <LoadingSpinner />
+                    ) : !error ? (
+                        <ul className="list-group">
+                            {data.map(install => (
+                                <GHOrgListItem onClick={connectOrg(install.id.toString())} key={install.id}>
+                                    <div className="d-flex align-items-start">
+                                        <div className="align-self-center">
+                                            <UserAvatar
+                                                className="icon-inline mb-0 mr-1"
+                                                user={{ avatarURL: install.account.avatar_url, displayName: '' }}
+                                            />
+                                        </div>
+                                        <div className="flex-1 align-self-center">
+                                            <h3 className="m-0">{install.account.login}</h3>
+                                        </div>
+                                        <div className="align-self-center ml-3">
+                                            <ChevronRightIcon />
+                                        </div>
+                                    </div>
+                                </GHOrgListItem>
+                            ))}
+                            <GHOrgListItem key={-1}>
                                 <div className="d-flex align-items-start">
-                                    <div className="align-self-center">
-                                        <UserAvatar
-                                            className="icon-inline mb-0 mr-1"
-                                            user={{ avatarURL: install.account.avatar_url, displayName: '' }}
-                                        />
-                                    </div>
-                                    <div className="flex-1 align-self-center">
-                                        <h3 className="m-0">{install.account.login}</h3>
-                                    </div>
+                                    <Link
+                                        className="flex-1 align-self-center"
+                                        to={`https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${state}`}
+                                    >
+                                        Connect with a different organization
+                                    </Link>
                                     <div className="align-self-center ml-3">
                                         <ChevronRightIcon />
                                     </div>
                                 </div>
                             </GHOrgListItem>
-                        ))}
-                        <GHOrgListItem key={-1}>
-                            <div className="d-flex align-items-start">
-                                <Link
-                                    className="flex-1 align-self-center"
-                                    to={`https://github.com/apps/${window.context.githubAppCloudSlug}/installations/new?state=${state}`}
-                                >
-                                    Connect with a different organization
-                                </Link>
-                                <div className="align-self-center ml-3">
-                                    <ChevronRightIcon />
-                                </div>
-                            </div>
-                        </GHOrgListItem>
-                    </ul>
+                        </ul>
+                    ) : (
+                        <p>Something went wrong.</p>
+                    )}
                 </CardBody>
             </Card>
         </Page>
