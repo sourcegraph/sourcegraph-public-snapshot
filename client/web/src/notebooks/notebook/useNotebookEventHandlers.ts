@@ -73,6 +73,10 @@ export function useNotebookEventHandlers({
 
         const handleKeyDown = (event: KeyboardEvent): void => {
             const target = event.target as HTMLElement
+            if (isMonacoEditorDescendant(target)) {
+                return
+            }
+
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
             } else if (
