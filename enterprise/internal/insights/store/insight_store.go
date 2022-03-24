@@ -806,21 +806,7 @@ func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globalCount
 }
 
 func (s *InsightStore) GetUnfrozenInsightUniqueIds(ctx context.Context) ([]string, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(getUnfrozenInsightUniqueIdsSql))
-	if err != nil {
-		return nil, err
-	}
-	uniqueIds := make([]string, 0)
-	for rows.Next() {
-		var tempId string
-		if err := rows.Scan(
-			&tempId,
-		); err != nil {
-			return nil, err
-		}
-		uniqueIds = append(uniqueIds, tempId)
-	}
-	return uniqueIds, nil
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getUnfrozenInsightUniqueIdsSql)))
 }
 
 func (s *InsightStore) FreezeAllInsights(ctx context.Context) error {
