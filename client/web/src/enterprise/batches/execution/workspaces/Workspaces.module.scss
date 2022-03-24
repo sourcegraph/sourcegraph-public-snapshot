@@ -4,6 +4,8 @@
     // each other out so that overflow-y: auto doesn't cut off outline and box shadow on
     // focused elements within the list.
     min-width: 100%;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin: -2px;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     padding: 2px;
 }
