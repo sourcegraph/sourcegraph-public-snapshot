@@ -25,17 +25,18 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 		return slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", s, false, false), nil, nil)
 	}
 
+	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
+
 	blocks := []slack.Block{
 		newMarkdownSection(fmt.Sprintf(
 			"%s's Sourcegraph Code monitor, *%s*, detected *%d* new matches.",
 			args.MonitorOwnerName,
 			args.MonitorDescription,
-			len(args.Results),
+			totalCount,
 		)),
 	}
 
 	if args.IncludeResults {
-		truncatedResults, truncatedCount := truncateResults(args.Results, 5)
 		for _, result := range truncatedResults {
 			resultType := "Message"
 			if result.DiffPreview != nil {
@@ -89,14 +90,14 @@ func truncateString(input string, lines int) string {
 	return strings.Join(splitLines, "")
 }
 
-func truncateResults(results []*result.CommitMatch, maxResults int) ([]*result.CommitMatch, int) {
+func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result.CommitMatch, totalCount, truncatedCount int) {
 	// Convert to type result.Matches
 	matches := make(result.Matches, len(results))
 	for i, res := range results {
 		matches[i] = res
 	}
 
-	totalCount := matches.ResultCount()
+	totalCount = matches.ResultCount()
 	matches.Limit(maxResults)
 	outputCount := matches.ResultCount()
 
@@ -106,7 +107,7 @@ func truncateResults(results []*result.CommitMatch, maxResults int) ([]*result.C
 		output[i] = match.(*result.CommitMatch)
 	}
 
-	return output, totalCount - outputCount
+	return output, totalCount, totalCount - outputCount
 }
 
 // adapted from slack.PostWebhookCustomHTTPContext
