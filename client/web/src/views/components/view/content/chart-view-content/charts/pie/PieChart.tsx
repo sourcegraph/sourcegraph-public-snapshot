@@ -69,7 +69,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
     )
 
     if (locked) {
-        return <LockedChart />
+        return <LockedChart className={styles.lockedChart} />
     }
 
     // Potential problem, we use title/name of pie arc as key, that's not 100% unique value
