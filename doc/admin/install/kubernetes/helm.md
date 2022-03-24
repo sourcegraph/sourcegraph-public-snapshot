@@ -189,6 +189,8 @@ storageClass:
 
 ### Advanced configuration
 
+#### Integrate Kustomize with Helm chart
+
 The Helm chart is new and still under active development, and we may not cover all of your use cases. 
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss your specific need.
@@ -196,6 +198,10 @@ Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your
 For advanced users who are looking for a temporary workaround, we __recommend__ applying [Kustomize](https://kustomize.io) on the rendered manifests from our chart. Please __do not__ maintain your own fork of our chart, this may impact our ability to support you if you run into issues.
 
 You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
+
+#### Sub-chart
+
+__TODO__
 
 ## Upgrading Sourcegraph
 
