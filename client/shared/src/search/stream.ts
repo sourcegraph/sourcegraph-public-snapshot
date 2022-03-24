@@ -8,18 +8,6 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
-// TODO: move to search. remove dependency on UI here (so we can load it in node)
-/**
- * Returns the friendly display form of the repository name (e.g., removing "github.com/").
- */
-export function displayRepoName(repoName: string): string {
-    let parts = repoName.split('/')
-    if (parts.length >= 3 && parts[0].includes('.')) {
-        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
-    }
-    return parts.join('/')
-}
-
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
 // The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
 // and will therefore default to V1.

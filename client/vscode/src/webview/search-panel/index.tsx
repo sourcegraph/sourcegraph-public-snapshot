@@ -1,13 +1,22 @@
 import '../platform/polyfills'
 
+import React, { useMemo } from 'react'
+
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import React, { useMemo } from 'react'
 import { render } from 'react-dom'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
+import {
+    AnchorLink,
+    setLinkComponent,
+    useObservable,
+    WildcardThemeContext,
+    // This is the root Tooltip usage
+    // eslint-disable-next-line no-restricted-imports
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'

@@ -19,7 +19,6 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { SourcegraphUri } from '../../file-system/SourcegraphUri'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -30,6 +29,7 @@ import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchPageCta } from './components/SearchCta'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
+import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
 import { RepoView } from './RepoView'
 
 import styles from './index.module.scss'
@@ -48,7 +48,10 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     instanceURL,
 }) => {
     const [userQueryState, setUserQueryState] = useState<QueryState>(context.submittedSearchQueryState.queryState)
-    const [repoToShow, setRepoToShow] = useState<RepositoryMatch | null>(null)
+    const [repoToShow, setRepoToShow] = useState<Pick<
+        RepositoryMatch,
+        'repository' | 'branches' | 'description'
+    > | null>(null)
 
     // Editor focus.
     const editorReference = useRef<SearchBoxEditor>()
@@ -255,119 +258,13 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [platformContext.telemetryService]
     )
 
-    const onResultSelect = useCallback(
-        (result: SearchMatch, matchIndex?: number) => {
-            const host = new URL(instanceURL).host
-            switch (result.type) {
-                case 'commit': {
-                    const commitURL = new URL(result.url, instanceURL)
-                    extensionCoreAPI.openLink(commitURL.href).catch(error => {
-                        console.error('Error opening commit in browser', error)
-                    })
-                    break
-                }
-                case 'path': {
-                    const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
-                        revision: result.commit,
-                        path: result.path,
-                    })
-                    extensionCoreAPI.openSourcegraphFile(sourcegraphUri.uri).catch(error => {
-                        console.error('Error opening Sourcegraph file', error)
-                    })
-                    // Log View Event to sync search history
-                    const repoName = result.repository
-                    const filePath = result.path
-                    platformContext.telemetryService.logViewEvent(
-                        'Blob',
-                        { repoName, filePath },
-                        authenticatedUser !== null,
-                        sourcegraphUri.uri.replace('sourcegraph://', 'https://')
-                    )
-                    break
-                }
-                case 'repo': {
-                    setRepoToShow(result)
-
-                    extensionCoreAPI.openSourcegraphFile(`sourcegraph://${host}/${result.repository}`).catch(error => {
-                        console.error('Error opening Sourcegraph repository', error)
-                    })
-                    // Log View Event to sync search history
-                    // URL must be provided to render Recent Searches on Web
-                    platformContext.telemetryService.logViewEvent(
-                        'Repository',
-                        null,
-                        authenticatedUser !== null,
-                        `https://${host}/${result.repository}`
-                    )
-                    break
-                }
-                case 'symbol': {
-                    // Debt: this event handler is called for a file match (w/ index)
-                    // and bubbles up to its container (w/o index).
-                    // We can't just stop propogation, so may want to introduce a separate callback.
-                    if (typeof matchIndex === 'number') {
-                        const commit = result.commit ?? 'HEAD'
-                        // Fall back to first line match if matchIndex is somehow out of range
-                        const url = result.symbols[matchIndex].url
-
-                        const { path, position } = SourcegraphUri.parse(`https:/${url}`, window.URL)
-                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
-                            revision: commit,
-                            path,
-                            position: position
-                                ? {
-                                      line: position.line - 1, // Convert to 1-based
-                                      character: position.character,
-                                  }
-                                : undefined,
-                        })
-
-                        const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
-                        extensionCoreAPI.openSourcegraphFile(uri).catch(error => {
-                            console.error('Error opening Sourcegraph file', error)
-                        })
-                    }
-
-                    break
-                }
-                case 'content': {
-                    // Debt: this event handler is called for a file match (w/ index)
-                    // and bubbles up to its container (w/o index).
-                    // We can't just stop propogation, so may want to introduce a separate callback.
-                    const index = matchIndex || 0
-                    if (typeof index === 'number') {
-                        const { lineNumber, offsetAndLengths } = result.lineMatches[index]
-                        const [start] = offsetAndLengths[0]
-
-                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
-                            revision: result.commit,
-                            path: result.path,
-                            position: {
-                                line: lineNumber,
-                                character: start,
-                            },
-                        })
-
-                        const uri = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
-
-                        // Log View Event to sync search history
-                        platformContext.telemetryService.logViewEvent(
-                            'Blob',
-                            null,
-                            authenticatedUser !== null,
-                            sourcegraphUri.uri.replace('sourcegraph://', 'https://')
-                        )
-
-                        extensionCoreAPI.openSourcegraphFile(uri).catch(error => {
-                            console.error('Error opening Sourcegraph file', error)
-                        })
-                    }
-                    break
-                }
-            }
-        },
-        [authenticatedUser, extensionCoreAPI, instanceURL, platformContext.telemetryService]
-    )
+    const matchHandlers = useMatchHandlers({
+        platformContext,
+        extensionCoreAPI,
+        authenticatedUser,
+        onRepoSelected: setRepoToShow,
+        instanceURL,
+    })
 
     const clearRepositoryToShow = (): void => setRepoToShow(null)
 
@@ -461,28 +358,29 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                             instanceURL={instanceURL}
                         />
                     )}
-                    <StreamingSearchResultsList
-                        isLightTheme={theme === 'theme-light'}
-                        settingsCascade={settingsCascade}
-                        telemetryService={platformContext.telemetryService}
-                        allExpanded={allExpanded}
-                        // Debt: dotcom prop used only for "run search" link
-                        // for search examples. Fix on VSCE.
-                        isSourcegraphDotCom={false}
-                        searchContextsEnabled={true}
-                        showSearchContext={true}
-                        platformContext={platformContext}
-                        results={context.searchResults ?? undefined}
-                        authenticatedUser={authenticatedUser}
-                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
-                        executedQuery={context.submittedSearchQueryState.queryState.query}
-                        resultClassName="mr-0"
-                        // TODO "no results" video thumbnail assets
-                        // In build, copy ui/assets/img folder to dist/
-                        assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
-                        ModalVideo={ModalVideo}
-                        onResultSelect={onResultSelect}
-                    />
+                    <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
+                        <StreamingSearchResultsList
+                            isLightTheme={theme === 'theme-light'}
+                            settingsCascade={settingsCascade}
+                            telemetryService={platformContext.telemetryService}
+                            allExpanded={allExpanded}
+                            // Debt: dotcom prop used only for "run search" link
+                            // for search examples. Fix on VSCE.
+                            isSourcegraphDotCom={false}
+                            searchContextsEnabled={true}
+                            showSearchContext={true}
+                            platformContext={platformContext}
+                            results={context.searchResults ?? undefined}
+                            authenticatedUser={authenticatedUser}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
+                            executedQuery={context.submittedSearchQueryState.queryState.query}
+                            resultClassName="mr-0"
+                            // TODO "no results" video thumbnail assets
+                            // In build, copy ui/assets/img folder to dist/
+                            assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                            ModalVideo={ModalVideo}
+                        />
+                    </MatchHandlersContext.Provider>
                 </div>
             ) : (
                 <div className={styles.resultsViewScrollContainer}>

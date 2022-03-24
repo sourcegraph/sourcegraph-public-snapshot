@@ -1,10 +1,12 @@
+import React, { useMemo, useState } from 'react'
+
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useMemo, useState } from 'react'
+import { catchError } from 'rxjs/operators'
 
 import { QueryState } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
@@ -18,7 +20,9 @@ import styles from './RepoView.module.scss'
 
 interface RepoViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'platformContext' | 'instanceURL'> {
     onBackToSearchResults: () => void
-    repositoryMatch: RepositoryMatch
+    // Debt: just use repository name and make GraphQL Repository query to get metadata.
+    // This will enable more info (like description) when navigating here from file matches.
+    repositoryMatch: Pick<RepositoryMatch, 'repository' | 'branches' | 'description'>
     setQueryState: (query: QueryState) => void
 }
 
@@ -42,7 +46,13 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                     revision: repositoryMatch.branches?.[0] ?? 'HEAD',
                     filePath: directoryStack.length > 0 ? directoryStack[directoryStack.length - 1] : '',
                     requestGraphQL: platformContext.requestGraphQL,
-                }),
+                }).pipe(
+                    catchError(error => {
+                        console.error(error, { repositoryMatch })
+                        // TODO: remove and add error boundary in searchresultsview
+                        return []
+                    })
+                ),
             [platformContext, repositoryMatch, directoryStack]
         )
     )
