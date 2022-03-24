@@ -238,9 +238,9 @@ func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCo
 	}
 
 	filtered := uploads[:0]
-	for i := range uploads {
+	for i, upload := range uploads {
 		if exists[i] {
-			filtered = append(filtered, uploads[i])
+			filtered = append(filtered, upload)
 		}
 	}
 

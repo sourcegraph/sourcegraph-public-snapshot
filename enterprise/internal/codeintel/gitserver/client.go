@@ -62,8 +62,8 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 	defer endObservation(1, observation.Args{})
 
 	repositoryIDMap := map[int]struct{}{}
-	for repositoryID := range commits {
-		repositoryIDMap[repositoryID] = struct{}{}
+	for _, rc := range commits {
+		repositoryIDMap[rc.RepositoryID] = struct{}{}
 	}
 	repositoryIDs := make([]int, 0, len(repositoryIDMap))
 	for repositoryID := range repositoryIDMap {
