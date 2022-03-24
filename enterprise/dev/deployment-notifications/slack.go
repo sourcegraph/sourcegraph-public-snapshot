@@ -18,7 +18,7 @@ import (
 var slackTemplate = `:truck: *{{.Environment}}* deployment (<{{.BuildURL}}|build>)
 
 - Applications:
-{{- range .Apps }}
+{{- range .Services }}
     - _{{ . }}_
 {{- end }} 
 
@@ -30,7 +30,7 @@ var slackTemplate = `:truck: *{{.Environment}}* deployment (<{{.BuildURL}}|build
 type slackSummaryPresenter struct {
 	Environment  string
 	BuildURL     string
-	Apps         []string
+	Services     []string
 	PullRequests []pullRequestPresenter
 }
 
@@ -44,7 +44,7 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 	presenter := &slackSummaryPresenter{
 		Environment: report.Environment,
 		BuildURL:    report.BuildkiteBuildURL,
-		Apps:        report.Apps,
+		Services:    report.Services,
 	}
 
 	for _, pr := range report.PullRequests {

@@ -22,7 +22,7 @@ var (
 )
 
 var (
-	ErrNoRelevantChanges = errors.New("no apps changed, nothing to notify")
+	ErrNoRelevantChanges = errors.New("no services changed, nothing to notify")
 )
 
 type DeploymentNotifier struct {
@@ -40,7 +40,7 @@ func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment 
 }
 
 func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
-	apps, err := dn.dd.Applications()
+	services, err := dn.dd.Services()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to infer changes")
 	}
@@ -48,7 +48,7 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 	// Use a map so we avoid duplicate PRs.
 	prSet := map[int64]*github.PullRequest{}
 
-	groups := groupByDiff(apps)
+	groups := groupByDiff(services)
 	for diff := range groups {
 		if diff.Old == diff.New {
 			// If nothing changed, just skip.
@@ -73,13 +73,13 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 		return prs[i].GetMergedAt().After(prs[j].GetMergedAt())
 	})
 
-	var deployedApps []string
-	for app := range apps {
-		deployedApps = append(deployedApps, app)
+	var deployedServices []string
+	for app := range services {
+		deployedServices = append(deployedServices, app)
 	}
 
-	// Sort the Apps so the tests are stable.
-	sort.Strings(deployedApps)
+	// Sort the Services so the tests are stable.
+	sort.Strings(deployedServices)
 
 	if len(prs) == 0 {
 		return nil, ErrNoRelevantChanges
@@ -89,7 +89,7 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 		Environment:       dn.environment,
 		PullRequests:      prs,
 		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
-		Apps:              deployedApps,
+		Services:          deployedServices,
 		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
 	}
 
@@ -167,9 +167,9 @@ func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, oldCommit 
 	return pullsSinceLastCommit, nil
 }
 
-type deploymentGroups map[ApplicationVersionDiff][]string
+type deploymentGroups map[ServiceVersionDiff][]string
 
-func groupByDiff(diffs map[string]*ApplicationVersionDiff) deploymentGroups {
+func groupByDiff(diffs map[string]*ServiceVersionDiff) deploymentGroups {
 	groups := deploymentGroups{}
 	for appName, diff := range diffs {
 		groups[*diff] = append(groups[*diff], appName)
@@ -194,7 +194,7 @@ type report struct {
 	Environment       string
 	PullRequests      []*github.PullRequest
 	DeployedAt        string
-	Apps              []string
+	Services          []string
 	BuildkiteBuildURL string
 }
 
@@ -202,7 +202,7 @@ var commentTemplate = `### Deployment status
 
 [Deployed at {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
 
-{{- range .Apps }}
+{{- range .Services }}
 - ` + "`" + `{{ . }}` + "`" + `
 {{- end }}
 `

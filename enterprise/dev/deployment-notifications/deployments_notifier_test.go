@@ -43,7 +43,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		defer stop()
 
 		expectedPRs := []int{32996, 32871, 32767}
-		expectedApps := []string{
+		expectedServices := []string{
 			"frontend",
 			"gitserver",
 			"searcher",
@@ -55,13 +55,13 @@ func TestDeploymentNotifier(t *testing.T) {
 		oldCommit := "54d527f7f7b5770e0dfd1f56398bf8a2f30b935d"
 		olderCommit := "99db56d45299161d3bf62677ba3d3ab701910bb0"
 
-		m := map[string]*ApplicationVersionDiff{
-			"frontend": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
-			"worker":   &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
-			"searcher": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
-			"symbols":  &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+		m := map[string]*ServiceVersionDiff{
+			"frontend": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"worker":   &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"searcher": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"symbols":  &ServiceVersionDiff{Old: oldCommit, New: newCommit},
 			// This one is older by one PR.
-			"gitserver": &ApplicationVersionDiff{Old: olderCommit, New: newCommit},
+			"gitserver": &ServiceVersionDiff{Old: olderCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
@@ -79,14 +79,14 @@ func TestDeploymentNotifier(t *testing.T) {
 			prNumbers = append(prNumbers, pr.GetNumber())
 		}
 		assert.EqualValues(t, expectedPRs, prNumbers)
-		assert.EqualValues(t, expectedApps, report.Apps)
+		assert.EqualValues(t, expectedServices, report.Services)
 	})
 
 	t.Run("OK no relevant changed files", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
 
-		m := map[string]*ApplicationVersionDiff{}
+		m := map[string]*ServiceVersionDiff{}
 
 		dn := NewDeploymentNotifier(
 			ghc,
@@ -104,7 +104,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		defer stop()
 
 		expectedPRs := []int{32996}
-		expectedApps := []string{
+		expectedServices := []string{
 			"frontend",
 			"searcher",
 			"symbols",
@@ -114,11 +114,11 @@ func TestDeploymentNotifier(t *testing.T) {
 		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
 		oldCommit := "68374f229042704f1663ca2fd19401ba0772c828"
 
-		m := map[string]*ApplicationVersionDiff{
-			"frontend": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
-			"worker":   &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
-			"searcher": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
-			"symbols":  &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+		m := map[string]*ServiceVersionDiff{
+			"frontend": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"worker":   &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"searcher": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"symbols":  &ServiceVersionDiff{Old: oldCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
@@ -137,7 +137,7 @@ func TestDeploymentNotifier(t *testing.T) {
 			prNumbers = append(prNumbers, pr.GetNumber())
 		}
 		assert.EqualValues(t, expectedPRs, prNumbers)
-		assert.EqualValues(t, expectedApps, report.Apps)
+		assert.EqualValues(t, expectedServices, report.Services)
 	})
 
 	t.Run("NOK deploying twice", func(t *testing.T) {
@@ -146,11 +146,11 @@ func TestDeploymentNotifier(t *testing.T) {
 
 		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
 
-		m := map[string]*ApplicationVersionDiff{
-			"frontend": &ApplicationVersionDiff{Old: newCommit, New: newCommit},
-			"worker":   &ApplicationVersionDiff{Old: newCommit, New: newCommit},
-			"searcher": &ApplicationVersionDiff{Old: newCommit, New: newCommit},
-			"symbols":  &ApplicationVersionDiff{Old: newCommit, New: newCommit},
+		m := map[string]*ServiceVersionDiff{
+			"frontend": &ServiceVersionDiff{Old: newCommit, New: newCommit},
+			"worker":   &ServiceVersionDiff{Old: newCommit, New: newCommit},
+			"searcher": &ServiceVersionDiff{Old: newCommit, New: newCommit},
+			"symbols":  &ServiceVersionDiff{Old: newCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(

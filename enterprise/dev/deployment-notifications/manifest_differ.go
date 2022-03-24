@@ -15,9 +15,17 @@ import (
 // -         image: index.docker.io/sourcegraph/migrator:137540_2022-03-17_XXXXXXXXXXXX@sha256:2b6efe8f447b22f9396544f885f2f326d21325d652f9b36961f3d105723789df
 var imageCommitRegexp = `(?m)^DIFF_OP\s+image:\s[^/]+\/sourcegraph\/[^:]+:\d{6}_\d{4}-\d{2}-\d{2}_([^@]+)@sha256.*$` // (?m) stands for multiline.
 
+type ServiceVersionDiff struct {
+	Old string
+	New string
+}
+
+type DeploymentDiffer interface {
+	Services() (map[string]*ServiceVersionDiff, error)
+}
 type manifestDeploymentDiffer struct {
 	changedFiles []string
-	diffs        map[string]*ApplicationVersionDiff
+	diffs        map[string]*ServiceVersionDiff
 }
 
 func NewManifestDeploymentDiffer(changedFiles []string) DeploymentDiffer {
@@ -26,7 +34,7 @@ func NewManifestDeploymentDiffer(changedFiles []string) DeploymentDiffer {
 	}
 }
 
-func (m *manifestDeploymentDiffer) Applications() (map[string]*ApplicationVersionDiff, error) {
+func (m *manifestDeploymentDiffer) Services() (map[string]*ServiceVersionDiff, error) {
 	err := m.parseManifests()
 	if err != nil {
 		return nil, err
@@ -35,7 +43,7 @@ func (m *manifestDeploymentDiffer) Applications() (map[string]*ApplicationVersio
 }
 
 func (m *manifestDeploymentDiffer) parseManifests() error {
-	apps := map[string]*ApplicationVersionDiff{}
+	services := map[string]*ServiceVersionDiff{}
 	for _, path := range m.changedFiles {
 		fmt.Println(path)
 		info, err := os.Stat(path)
@@ -69,11 +77,11 @@ func (m *manifestDeploymentDiffer) parseManifests() error {
 				// It's possible that we find changes that are not bumping the image, when
 				// updating environment vars for example. In that case, we don't want to
 				// include them.
-				apps[appName] = appDiff
+				services[appName] = appDiff
 			}
 		}
 	}
-	m.diffs = apps
+	m.diffs = services
 	return nil
 }
 
@@ -95,8 +103,8 @@ func imageDiffRegexp(addition bool) *regexp.Regexp {
 
 // parseSourcegraphCommitFromDeploymentManifestsDiff parses the diff output, returning
 // the new and old commits that were used to build this specific image.
-func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte, appname string) (*ApplicationVersionDiff, error) {
-	var diff ApplicationVersionDiff
+func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte, appname string) (*ServiceVersionDiff, error) {
+	var diff ServiceVersionDiff
 	addRegexp := imageDiffRegexp(true)
 	delRegexp := imageDiffRegexp(false)
 
@@ -117,7 +125,7 @@ func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte, appname st
 	return &diff, nil
 }
 
-func diffDeploymentManifest(path string, appName string) (*ApplicationVersionDiff, error) {
+func diffDeploymentManifest(path string, appName string) (*ServiceVersionDiff, error) {
 	diffCommand := []string{"diff", "@^", path}
 	output, err := exec.Command("git", diffCommand...).Output()
 	if err != nil {
@@ -131,14 +139,14 @@ func diffDeploymentManifest(path string, appName string) (*ApplicationVersionDif
 }
 
 type mockDeploymentDiffer struct {
-	diffs map[string]*ApplicationVersionDiff
+	diffs map[string]*ServiceVersionDiff
 }
 
-func (m *mockDeploymentDiffer) Applications() (map[string]*ApplicationVersionDiff, error) {
+func (m *mockDeploymentDiffer) Services() (map[string]*ServiceVersionDiff, error) {
 	return m.diffs, nil
 }
 
-func NewMockManifestDeployementsDiffer(m map[string]*ApplicationVersionDiff) DeploymentDiffer {
+func NewMockManifestDeployementsDiffer(m map[string]*ServiceVersionDiff) DeploymentDiffer {
 	return &mockDeploymentDiffer{
 		diffs: m,
 	}
