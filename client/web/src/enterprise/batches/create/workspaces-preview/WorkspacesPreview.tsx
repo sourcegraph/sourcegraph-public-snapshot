@@ -1,7 +1,8 @@
+import React, { useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
-import React, { useEffect, useMemo, useState } from 'react'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -18,9 +19,10 @@ import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
 import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacePreviewFilters } from './useWorkspaces'
-import styles from './WorkspacesPreview.module.scss'
 import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
+
+import styles from './WorkspacesPreview.module.scss'
 
 /** Example snippet show in preview prompt if user has not yet added an on: statement. */
 const ON_STATEMENT = `on:
@@ -209,7 +211,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 Workspaces preview{' '}
                 {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
                     <Icon
-                        className={classNames('icon-inline text-muted ml-1', styles.warningIcon)}
+                        className={classNames('text-muted ml-1', styles.warningIcon)}
                         data-tooltip="The workspaces previewed below may not be up-to-date."
                         as={WarningIcon}
                     />

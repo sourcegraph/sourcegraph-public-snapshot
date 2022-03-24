@@ -175,7 +175,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return p, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 		eauthz.MockProviderFromExternalService = nil
 	}()
@@ -275,7 +274,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -372,7 +370,6 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -481,7 +478,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -561,7 +557,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	defer func() {
-		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
@@ -889,14 +884,14 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 
 	t.Run("not enough quota available", func(t *testing.T) {
 		rateLimiterRegistry := ratelimit.NewRegistry()
-		l := rateLimiterRegistry.Get("https://github.com/")
+		l := rateLimiterRegistry.Get("extsvc:github:1")
 		l.SetLimit(1)
 		l.SetBurst(1)
 		s := NewPermsSyncer(nil, nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err := s.waitForRateLimit(ctx, "https://github.com/", 10, "user")
+		err := s.waitForRateLimit(ctx, "extsvc:github:1", 10, "user")
 		if err == nil {
 			t.Fatalf("err: want %v but got nil", context.Canceled)
 		}

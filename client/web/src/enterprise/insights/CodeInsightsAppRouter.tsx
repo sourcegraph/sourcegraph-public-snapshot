@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
+
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -114,7 +115,7 @@ const CodeInsightsRedirect: React.FunctionComponent = () => {
     const { hasInsights } = useContext(CodeInsightsBackendContext)
 
     const match = useRouteMatch()
-    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(), [hasInsights]))
+    const isThereAvailableInsights = useObservable(useMemo(() => hasInsights(1), [hasInsights]))
 
     if (isThereAvailableInsights === undefined) {
         return <LoadingSpinner />

@@ -1,9 +1,10 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import { upperFirst, toLower } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -11,7 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, useLocalStorage, Popover, PopoverTrigger, PopoverOpenEvent } from '@sourcegraph/wildcard'
+import { useObservable, useLocalStorage, Popover, PopoverTrigger, PopoverOpenEvent, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -188,7 +189,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     const externalURL = externalURLs[0]
 
     const { displayName, icon } = serviceKindDisplayNameAndIcon(externalURL.serviceKind)
-    const Icon = icon || ExportIcon
+    const exportIcon = icon || ExportIcon
 
     // Extract url to add branch, line numbers or commit range.
     let url = externalURL.url
@@ -231,7 +232,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 onClick={onClick}
                 onAuxClick={onClick}
             >
-                <Icon className="icon-inline" />
+                <Icon as={exportIcon} />
                 <span>{descriptiveText}</span>
             </RepoHeaderActionAnchor>
         )
@@ -253,7 +254,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
         return (
             <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
                 <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
-                    <Icon className="icon-inline" />
+                    <Icon as={exportIcon} />
                 </PopoverTrigger>
                 <InstallBrowserExtensionPopover
                     url={url}
@@ -268,7 +269,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
 
     return (
         <RepoHeaderActionAnchor {...commonProps}>
-            <Icon className="icon-inline" />
+            <Icon as={exportIcon} />
         </RepoHeaderActionAnchor>
     )
 }

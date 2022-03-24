@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -28,7 +29,7 @@ import (
 func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		repoName := api.RepoName(mux.Vars(r)["RepoName"])
-		repo, err := backend.NewRepos(db.Repos()).GetByName(r.Context(), repoName)
+		repo, err := backend.NewRepos(db).GetByName(r.Context(), repoName)
 		if err != nil {
 			return err
 		}
@@ -273,47 +274,55 @@ func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
 	return txemail.Send(r.Context(), msg)
 }
 
-func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
-	// used by zoekt-sourcegraph-mirror
-	vars := mux.Vars(r)
-	name := api.RepoName(vars["RepoName"])
-	spec := vars["Spec"]
+func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// used by zoekt-sourcegraph-mirror
+		vars := mux.Vars(r)
+		name := api.RepoName(vars["RepoName"])
+		spec := vars["Spec"]
 
-	// Do not to trigger a repo-updater lookup since this is a batch job.
-	commitID, err := git.ResolveRevision(r.Context(), name, spec, git.ResolveRevisionOptions{})
-	if err != nil {
-		return err
+		// Do not to trigger a repo-updater lookup since this is a batch job.
+		commitID, err := git.ResolveRevision(r.Context(), db, name, spec, git.ResolveRevisionOptions{})
+		if err != nil {
+			return err
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(commitID))
+		return nil
 	}
-
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(commitID))
-	return nil
 }
 
-func serveGitTar(w http.ResponseWriter, r *http.Request) error {
-	// used by zoekt-sourcegraph-mirror
-	vars := mux.Vars(r)
-	name := vars["RepoName"]
-	spec := vars["Commit"]
+func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// used by zoekt-sourcegraph-mirror
+		vars := mux.Vars(r)
+		name := vars["RepoName"]
+		spec := vars["Commit"]
 
-	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
-	repo := api.RepoName(name)
-	commit, err := git.ResolveRevision(r.Context(), repo, spec, git.ResolveRevisionOptions{})
-	if err != nil {
-		return err
+		// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
+		repo := api.RepoName(name)
+		ctx := r.Context()
+		commit, err := git.ResolveRevision(ctx, db, repo, spec, git.ResolveRevisionOptions{})
+		if err != nil {
+			return err
+		}
+
+		opts := gitserver.ArchiveOptions{
+			Treeish: string(commit),
+			Format:  "tar",
+		}
+
+		location, err := gitserver.NewClient(db).ArchiveURL(ctx, repo, opts)
+		if err != nil {
+			return err
+		}
+
+		w.Header().Set("Location", location.String())
+		w.WriteHeader(http.StatusFound)
+
+		return nil
 	}
-
-	opts := gitserver.ArchiveOptions{
-		Treeish: string(commit),
-		Format:  "tar",
-	}
-
-	location := gitserver.DefaultClient.ArchiveURL(repo, opts)
-
-	w.Header().Set("Location", location.String())
-	w.WriteHeader(http.StatusFound)
-
-	return nil
 }
 
 func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
@@ -331,7 +340,8 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 			return nil
 		}
 
-		repo, err := database.Repos(db).Get(r.Context(), api.RepoID(repoID))
+		ctx := r.Context()
+		repo, err := database.Repos(db).Get(ctx, api.RepoID(repoID))
 		if err != nil {
 			return err
 		}
@@ -345,7 +355,10 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 		}
 
 		// Find the correct shard to query
-		addr := gitserver.DefaultClient.AddrForRepo(repo.Name)
+		addr, err := gitserver.NewClient(db).AddrForRepo(ctx, repo.Name)
+		if err != nil {
+			return err
+		}
 
 		director := func(req *http.Request) {
 			req.URL.Scheme = "http"
@@ -364,29 +377,38 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 // gitserver for the repo.
 type gitServiceHandler struct {
 	Gitserver interface {
-		AddrForRepo(api.RepoName) string
+		AddrForRepo(context.Context, api.RepoName) (string, error)
 	}
 }
 
-func (s *gitServiceHandler) serveInfoRefs(w http.ResponseWriter, r *http.Request) {
-	s.redirectToGitServer(w, r, "/info/refs")
+func (s *gitServiceHandler) serveInfoRefs() func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return s.redirectToGitServer(w, r, "/info/refs")
+	}
 }
 
-func (s *gitServiceHandler) serveGitUploadPack(w http.ResponseWriter, r *http.Request) {
-	s.redirectToGitServer(w, r, "/git-upload-pack")
+func (s *gitServiceHandler) serveGitUploadPack() func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return s.redirectToGitServer(w, r, "/git-upload-pack")
+	}
 }
 
-func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) {
+func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) error {
 	repo := mux.Vars(r)["RepoName"]
 
+	addrForRepo, err := s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo))
+	if err != nil {
+		return err
+	}
 	u := &url.URL{
 		Scheme:   "http",
-		Host:     s.Gitserver.AddrForRepo(api.RepoName(repo)),
+		Host:     addrForRepo,
 		Path:     path.Join("/git", repo, gitPath),
 		RawQuery: r.URL.RawQuery,
 	}
 
 	http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+	return nil
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

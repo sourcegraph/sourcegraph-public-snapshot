@@ -1,6 +1,7 @@
+import React, { MouseEvent, useContext, useState } from 'react'
+
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { MouseEvent, useContext, useMemo, useState } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -31,8 +32,9 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import styles from './CodeInsightsTemplates.module.scss'
 import { Template, TEMPLATE_SECTIONS } from './constants'
+
+import styles from './CodeInsightsTemplates.module.scss'
 
 function getTemplateURL(template: Template): string {
     switch (template.type) {
@@ -136,8 +138,9 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
-    const { getUiFeatures } = useContext(CodeInsightsBackendContext)
-    const features = useMemo(() => getUiFeatures(), [getUiFeatures])
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const series =
         template.type === InsightType.SearchBased
@@ -171,7 +174,7 @@ const TemplateCard: React.FunctionComponent<TemplateCardProps> = props => {
                     className="mr-auto"
                     onClick={handleUseTemplateLinkClick}
                 >
-                    {features?.licensed ? 'Use this template' : 'Explore template'}
+                    {licensed ? 'Use this template' : 'Explore template'}
                 </Button>
             )}
         </Card>

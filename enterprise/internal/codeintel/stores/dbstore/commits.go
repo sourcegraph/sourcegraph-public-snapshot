@@ -141,11 +141,40 @@ func (s *Store) DirtyRepositories(ctx context.Context) (_ map[int]int, err error
 
 const dirtyRepositoriesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:DirtyRepositories
-SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_token
-  FROM lsif_dirty_repositories
-    INNER JOIN repo ON repo.id = lsif_dirty_repositories.repository_id
-  WHERE dirty_token > update_token
+SELECT ldr.repository_id, ldr.dirty_token
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
     AND repo.deleted_at IS NULL
+`
+
+// MaxStaleAge returns the longest duration that a repository has been (currently) stale for. This method considers
+// only repositories that would be returned by DirtyRepositories. This method returns a duration of zero if there
+// are no stale repositories.
+func (s *Store) MaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	ctx, endObservation := s.operations.maxStaleAge.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	ageSeconds, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(maxStaleAgeQuery)))
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, nil
+	}
+
+	return time.Duration(ageSeconds) * time.Second, nil
+}
+
+const maxStaleAgeQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:MaxStaleAge
+SELECT EXTRACT(EPOCH FROM NOW() - ldr.updated_at)::integer AS age
+  FROM lsif_dirty_repositories ldr
+    INNER JOIN repo ON repo.id = ldr.repository_id
+  WHERE ldr.dirty_token > ldr.update_token
+    AND repo.deleted_at IS NULL
+  ORDER BY age DESC
+  LIMIT 1
 `
 
 // CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.

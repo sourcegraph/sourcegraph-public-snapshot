@@ -2,8 +2,10 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -79,6 +81,48 @@ func TestOrgRepositories(t *testing.T) {
 				}
 			`,
 			Context: ctx,
+		},
+	})
+}
+
+func TestAddOrgsOpenBetaStats(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	mockedID, err := uuid.NewV4()
+	if err != nil {
+		t.Fatal(err)
+	}
+	orgs := database.NewMockOrgStore()
+	orgs.AddOrgsOpenBetaStatsFunc.SetDefaultReturn(mockedID.String(), nil)
+
+	db := database.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
+		{
+			Schema:  schema,
+			Context: ctx,
+			Query: `
+			mutation AddOrgsOpenBetaStats($stats: JSONCString!) {
+				addOrgsOpenBetaStats(stats: $stats) {}
+			}
+			`,
+			Variables: map[string]interface{}{
+				"stats": `{"foo": "bar"}`,
+			},
+			ExpectedResult: fmt.Sprintf(`
+			{
+				"addOrgsOpenBetaStats": "%s"
+			}
+			`, mockedID),
 		},
 	})
 }

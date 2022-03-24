@@ -5,11 +5,12 @@ import * as uuid from 'uuid'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { background } from '../../browser-extension/web-extension-api/runtime'
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
 import { logUserEvent, logEvent } from '../backend/userEvents'
-import { isInPage } from '../context'
-import { getExtensionVersion, getPlatformName } from '../util/context'
+import { isBackground, isInPage } from '../context'
+import { getExtensionVersion, getPlatformName, isDefaultSourcegraphUrl } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 
@@ -123,11 +124,22 @@ export class EventLogger implements TelemetryService {
         if (userEvent) {
             logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
         }
+
+        const firstSourceURL = isDefaultSourcegraphUrl(this.sourcegraphURL)
+            ? (
+                  await (isBackground ? browser.cookies.get : background.getCookie)({
+                      url: this.sourcegraphURL,
+                      name: 'sourcegraphSourceUrl',
+                  })
+              )?.value
+            : undefined
+
         logEvent(
             {
                 name: event,
                 userCookieID: anonUserId,
                 url: this.sourcegraphURL,
+                firstSourceURL,
                 argument: { platform: this.platform, version: this.version, ...eventProperties },
                 publicArgument: { platform: this.platform, version: this.version, ...publicArgument },
             },

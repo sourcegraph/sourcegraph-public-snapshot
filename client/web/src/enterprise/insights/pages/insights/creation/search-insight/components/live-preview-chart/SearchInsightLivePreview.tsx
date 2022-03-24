@@ -1,4 +1,5 @@
 import React, { ReactNode, useContext, useEffect, useState } from 'react'
+
 import type { LineChartContent, ChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
@@ -94,7 +95,6 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
 
         getSearchInsightContent({
             insight: liveDebouncedSettings,
-            options: { where: 'insightsPage', context: {} },
         })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))

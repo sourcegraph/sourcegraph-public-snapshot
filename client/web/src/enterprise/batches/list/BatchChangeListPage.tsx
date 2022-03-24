@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { pluralize } from '@sourcegraph/common'
@@ -8,7 +9,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, CardBody, Card, Link, MultiSelectState, Container } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -26,7 +27,6 @@ import {
 import {
     ListBatchChange,
     Scalars,
-    BatchChangeState,
     BatchChangesVariables,
     BatchChangesResult,
     BatchChangesByNamespaceResult,
@@ -36,12 +36,14 @@ import {
 } from '../../../graphql-operations'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
-import { BatchChangeListFilters, DRAFT_STATUS, OPEN_STATUS } from './BatchChangeListFilters'
-import styles from './BatchChangeListPage.module.scss'
+import { BatchChangeListFilters } from './BatchChangeListFilters'
 import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
+import { useBatchChangeListFilters } from './useBatchChangeListFilters'
+
+import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps
     extends TelemetryProps,
@@ -57,11 +59,6 @@ export interface BatchChangeListPageProps
 type SelectedTab = 'batchChanges' | 'gettingStarted'
 
 const BATCH_CHANGES_PER_PAGE_COUNT = 15
-
-// Drafts are a new feature of severside execution that for now should not be shown if
-// execution is not enabled.
-const getInitialFilters = (isExecutionEnabled: boolean): MultiSelectState<BatchChangeState> =>
-    isExecutionEnabled ? [OPEN_STATUS, DRAFT_STATUS] : [OPEN_STATUS]
 
 /**
  * A list of all batch changes on the Sourcegraph instance.
@@ -80,10 +77,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
+    const { selectedFilters, setSelectedFilters, selectedStates } = useBatchChangeListFilters()
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
-    const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>(
-        getInitialFilters(isExecutionEnabled)
-    )
+
     // We keep state to track to the last total count of batch changes in the connection
     // to avoid the display flickering as the connection is loading more data or a
     // different set of filtered data.
@@ -106,10 +102,6 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
         { onCompleted: onUsageCheckCompleted }
     )
 
-    const filterStates = useMemo<BatchChangeState[]>(() => selectedFilters.map(filter => filter.value), [
-        selectedFilters,
-    ])
-
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         BatchChangesByNamespaceResult | BatchChangesResult,
         BatchChangesByNamespaceVariables | BatchChangesVariables,
@@ -118,7 +110,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
         query: namespaceID ? BATCH_CHANGES_BY_NAMESPACE : BATCH_CHANGES,
         variables: {
             namespaceID,
-            states: filterStates,
+            states: selectedStates,
             first: BATCH_CHANGES_PER_PAGE_COUNT,
             after: null,
             viewerCanAdminister: null,
@@ -174,7 +166,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
-                                defaultValue={selectedFilters}
+                                value={selectedFilters}
                                 onChange={setSelectedFilters}
                             />
                         </div>

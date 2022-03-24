@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React, { useEffect, useState, useRef } from 'react'
+
+import * as H from 'history'
 import { useHistory } from 'react-router'
 
 import { Button, Modal } from '@sourcegraph/wildcard'

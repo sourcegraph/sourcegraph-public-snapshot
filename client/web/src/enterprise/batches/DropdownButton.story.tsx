@@ -1,6 +1,7 @@
+import React from 'react'
+
 import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 
 import { WebStory } from '../../components/WebStory'
 

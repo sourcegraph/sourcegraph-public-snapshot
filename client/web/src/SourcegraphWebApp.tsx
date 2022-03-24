@@ -1,10 +1,11 @@
 import 'focus-visible'
 
+import * as React from 'react'
+
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
@@ -87,14 +88,12 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews, fetchCollaborators } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import styles from './SourcegraphWebApp.module.scss'
 import {
     setQueryStateFromSettings,
     setQueryStateFromURL,
@@ -113,6 +112,8 @@ import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
+
+import styles from './SourcegraphWebApp.module.scss'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -462,10 +463,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                     this.state.defaultSearchContextSpec
                                                                 }
                                                                 globbing={this.state.globbing}
-                                                                fetchSavedSearches={fetchSavedSearches}
-                                                                fetchRecentSearches={fetchRecentSearches}
-                                                                fetchCollaborators={fetchCollaborators}
-                                                                fetchRecentFileViews={fetchRecentFileViews}
                                                                 streamSearch={aggregateStreamingSearch}
                                                                 onUserExternalServicesOrRepositoriesUpdate={
                                                                     this.onUserExternalServicesOrRepositoriesUpdate

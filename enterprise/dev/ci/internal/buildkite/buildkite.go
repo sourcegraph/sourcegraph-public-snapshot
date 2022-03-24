@@ -10,9 +10,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/grafana/regexp"
@@ -21,7 +23,7 @@ import (
 )
 
 type featureFlags struct {
-	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateles
+	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateless
 	// agents and forces a MainDryRun type build to avoid impacting normal builds.
 	//
 	// It is meant to test the stateless builds without any side effects.
@@ -30,7 +32,12 @@ type featureFlags struct {
 
 // FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
 var FeatureFlags = featureFlags{
-	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
+	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true" ||
+		// Always process retries on stateless agents.
+		// TODO: remove when we switch over entirely to stateless agents
+		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" ||
+		// Roll out to 10% of builds
+		rand.NewSource(time.Now().UnixNano()).Int63()%100 < 10,
 }
 
 type Pipeline struct {

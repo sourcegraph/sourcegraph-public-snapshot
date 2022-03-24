@@ -208,3 +208,27 @@ func (m *Mapper) Map(job Job) Job {
 		panic(fmt.Sprintf("unsupported job %T for job.Mapper", job))
 	}
 }
+
+func MapAtom(j Job, f func(Job) Job) Job {
+	mapper := Mapper{
+		MapJob: func(currentJob Job) Job {
+			switch typedJob := currentJob.(type) {
+			case
+				*zoekt.ZoektRepoSubsetSearch,
+				*zoekt.ZoektSymbolSearch,
+				*searcher.Searcher,
+				*searcher.SymbolSearcher,
+				*run.RepoSearch,
+				*structural.StructuralSearch,
+				*commit.CommitSearch,
+				*symbol.RepoUniverseSymbolSearch,
+				*repos.ComputeExcludedRepos,
+				*noopJob:
+				return f(typedJob)
+			default:
+				return currentJob
+			}
+		},
+	}
+	return mapper.Map(j)
+}

@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
@@ -5,7 +7,6 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import OpenInAppIcon from 'mdi-react/OpenInAppIcon'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 import { Collapse } from 'reactstrap'
 
@@ -39,6 +40,7 @@ import {
     useDebounce,
     Button,
     Input,
+    Icon,
     Badge,
     useObservable,
 } from '@sourcegraph/wildcard'
@@ -53,9 +55,10 @@ import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
-import styles from './ReferencesPanel.module.scss'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+
+import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
@@ -405,7 +408,7 @@ export const ReferencesList: React.FunctionComponent<
                                         props.externalHistory.push(activeLocation.url)
                                     }}
                                 >
-                                    <OpenInAppIcon className="icon-inline" />
+                                    <Icon as={OpenInAppIcon} />
                                 </Link>
                             </h4>
 
@@ -416,7 +419,7 @@ export const ReferencesList: React.FunctionComponent<
                                 data-tooltip="Close panel"
                                 data-placement="left"
                             >
-                                <CloseIcon className="icon-inline" />
+                                <Icon as={CloseIcon} />
                             </Button>
                         </CardHeader>
                         <SideBlob
@@ -460,9 +463,9 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
                     <h4 className="px-1 py-0 mb-0">
                         {' '}
                         {isOpen ? (
-                            <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                            <Icon aria-label="Close" as={ChevronDownIcon} />
                         ) : (
-                            <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                            <Icon aria-label="Expand" as={ChevronRightIcon} />
                         )}{' '}
                         {capitalize(props.name)}
                         <Badge pill={true} variant="secondary" className="ml-2">
@@ -689,9 +692,9 @@ const RepoLocationGroup: React.FunctionComponent<{
             >
                 <span className="p-0 mb-0">
                     {isOpen ? (
-                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
 
                     <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
@@ -739,9 +742,9 @@ const ReferenceGroup: React.FunctionComponent<{
             >
                 <span className={styles.referenceFilename}>
                     {isOpen ? (
-                        <ChevronDownIcon className="icon-inline" aria-label="Close" />
+                        <Icon aria-label="Close" as={ChevronDownIcon} />
                     ) : (
-                        <ChevronRightIcon className="icon-inline" aria-label="Expand" />
+                        <Icon aria-label="Expand" as={ChevronRightIcon} />
                     )}
                     {highlighted.length === 2 ? (
                         <span>

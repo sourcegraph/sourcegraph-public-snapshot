@@ -1,7 +1,8 @@
+import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
+
 import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -11,13 +12,14 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable } from '@sourcegraph/wildcard'
+import { Button, Container, Link, LoadingSpinner, PageHeader, Select, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
-import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
 import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
+
+import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
 
 export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentProps<{ name: string }>, TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
@@ -177,7 +179,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<SiteAdminF
                         </>
                     ) : (
                         <>
-                            <DeleteIcon className="icon-inline" /> Delete
+                            <Icon as={DeleteIcon} /> Delete
                         </>
                     )}
                 </Button>

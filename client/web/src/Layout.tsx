@@ -1,8 +1,9 @@
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
+import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -20,7 +21,7 @@ import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/que
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
@@ -38,7 +39,6 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
@@ -63,6 +63,8 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
+
+import styles from './Layout.module.scss'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -112,7 +114,6 @@ export interface LayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
-    fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
 
@@ -269,12 +270,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
-                    <ResizablePanel
-                        {...props}
-                        {...themeProps}
-                        repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                    />
+                    <Panel className={styles.panel} position="bottom" defaultSize={350} storageKey="panel-size">
+                        <TabbedPanelContent
+                            {...props}
+                            {...themeProps}
+                            repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                        />
+                    </Panel>
                 )}
             <GlobalContributions
                 key={3}

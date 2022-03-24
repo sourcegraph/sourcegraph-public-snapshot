@@ -1,5 +1,6 @@
-import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
+
+import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -16,6 +17,7 @@ import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
+
 import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {

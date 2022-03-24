@@ -2,8 +2,9 @@ jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
     DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
 }))
 
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { noop } from 'rxjs'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'

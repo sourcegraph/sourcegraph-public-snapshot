@@ -1,9 +1,10 @@
-import * as H from 'history'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { Form } from 'reactstrap'
+
+import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,
@@ -76,6 +77,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })
     }, [props.queryPrefix])
@@ -141,6 +144,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
+                        editorComponent={editorComponent}
                         showSearchContext={showSearchContext}
                         showSearchContextManagement={showSearchContextManagement}
                         caseSensitive={caseSensitive}

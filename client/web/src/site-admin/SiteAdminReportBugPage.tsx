@@ -1,5 +1,6 @@
-import { mapValues, values } from 'lodash'
 import React, { useMemo } from 'react'
+
+import { mapValues, values } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'

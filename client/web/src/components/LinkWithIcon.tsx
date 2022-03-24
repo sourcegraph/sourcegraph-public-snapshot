@@ -1,6 +1,7 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { kebabCase } from 'lodash'
-import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
 import { Button, Icon } from '@sourcegraph/wildcard'

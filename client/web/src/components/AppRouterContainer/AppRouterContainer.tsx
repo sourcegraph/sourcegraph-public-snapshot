@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { HTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 import { ElementScroller } from 'react-scroll-manager'
 
 import styles from './AppRouterContainer.module.scss'

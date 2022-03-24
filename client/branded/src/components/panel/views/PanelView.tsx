@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -9,10 +10,11 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { PanelViewWithComponent } from '../Panel'
+import { PanelViewWithComponent } from '../TabbedPanelContent'
 
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
+
 import styles from './PanelView.module.scss'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps, TelemetryProps {

@@ -1,9 +1,10 @@
-import { AxisScale } from '@visx/axis/lib/types'
-import { PatternLines } from '@visx/pattern'
 import React, { ReactElement, useMemo } from 'react'
 
+import { AxisScale } from '@visx/axis/lib/types'
+import { PatternLines } from '@visx/pattern'
+
 import { LineChartSeries } from '../types'
-import { isValidNumber } from '../utils/data-guards'
+import { isValidNumber } from '../utils'
 
 const PATTERN_ID = 'xy-chart-pattern'
 

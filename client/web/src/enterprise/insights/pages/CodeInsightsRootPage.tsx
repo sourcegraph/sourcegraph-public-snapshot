@@ -1,5 +1,6 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useEffect } from 'react'
+
+import PlusIcon from 'mdi-react/PlusIcon'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
@@ -10,7 +11,7 @@ import { Button, Link, PageHeader, Tabs, TabList, Tab, Icon } from '@sourcegraph
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
+import { ALL_INSIGHTS_DASHBOARD } from '../core/constants'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -52,8 +53,8 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
 
     const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
 
-    const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD_ID
-    const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD_ID
+    const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD.id
+    const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD.id
 
     const handleTabNavigationChange = (selectedTab: CodeInsightsRootPageTab): void => {
         switch (selectedTab) {
@@ -73,7 +74,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
     return (
         <CodeInsightsPage>
             <PageHeader
-                path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
+                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <>
                         <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">

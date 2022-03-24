@@ -398,14 +398,19 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	for {
-		addrs := conf.Get().ServiceConnections().GitServers
+		cfg := conf.Get()
+		addrs := cfg.ServiceConnectionConfig.GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
 		fullSync := currentAddrs != previousAddrs
 		previousAddrs = currentAddrs
 
-		if err := s.syncRepoState(addrs, batchSize, perSecond, fullSync); err != nil {
+		gitServerAddrs := gitserver.GitServerAddresses{
+			Addresses:     addrs,
+			PinnedServers: cfg.ExperimentalFeatures.GitServerPinnedRepos,
+		}
+		if err := s.syncRepoState(gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
 
@@ -507,8 +512,9 @@ var (
 	}, []string{"success"})
 )
 
-func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
 	log15.Info("starting syncRepoState", "fullSync", fullSync)
+	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set
 	// their clone state and assign any that belong to this shard with the correct
@@ -576,7 +582,11 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSyn
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
+		addr, err := gitserver.AddrForRepo(ctx, s.DB, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
+		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -1660,8 +1670,18 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	// We may be attempting to clone a private repo so we need an internal actor.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	var remoteURL *vcs.URL
+	if opts != nil && opts.CloneFromShard != "" {
+		// are we cloning from the same gitserver instance?
+		if s.hostnameMatch(strings.TrimPrefix(opts.CloneFromShard, "http://")) {
+			return "", errors.Errorf("cannot clone from the same gitserver instance")
+		}
+
+		remoteURL, err = vcs.ParseURL(filepath.Join(opts.CloneFromShard, "git", string(repo)))
+	} else {
+		// We may be attempting to clone a private repo so we need an internal actor.
+		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	}
 	if err != nil {
 		return "", err
 	}

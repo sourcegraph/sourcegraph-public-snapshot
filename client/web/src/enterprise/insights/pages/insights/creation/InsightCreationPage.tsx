@@ -1,11 +1,12 @@
 import React, { useContext, useMemo } from 'react'
+
 import { useHistory } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { Insight } from '../../../core/types'
+import { CreationInsightInput } from '../../../core/backend/code-insights-backend-types'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
 import { CaptureGroupCreationPage } from './capture-group'
@@ -19,7 +20,7 @@ export enum InsightCreationPageType {
 }
 
 interface InsightCreateEvent {
-    insight: Insight
+    insight: CreationInsightInput
 }
 
 interface InsightCreationPageProps extends TelemetryProps {

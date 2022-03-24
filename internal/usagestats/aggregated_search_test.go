@@ -103,6 +103,7 @@ func newSearchUsagePeriod(t time.Time, structuralEvent, commitEvent *types.Searc
 			RepoContainsFile:        newSearchCountStatistics(),
 			RepoContainsContent:     newSearchCountStatistics(),
 			RepoContainsCommitAfter: newSearchCountStatistics(),
+			RepoDependencies:        newSearchCountStatistics(),
 			CountAll:                newSearchCountStatistics(),
 			NonGlobalContext:        newSearchCountStatistics(),
 			OnlyPatterns:            newSearchCountStatistics(),

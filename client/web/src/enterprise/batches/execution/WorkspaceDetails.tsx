@@ -1,3 +1,5 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -9,7 +11,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { delay, repeatWhen } from 'rxjs/operators'
 
@@ -51,8 +52,9 @@ import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFi
 
 import { fetchBatchSpecWorkspace, queryBatchSpecWorkspaceStepFileDiffs, retryWorkspaceExecution } from './backend'
 import { TimelineModal } from './TimelineModal'
-import styles from './WorkspaceDetails.module.scss'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
+
+import styles from './WorkspaceDetails.module.scss'
 
 export interface WorkspaceDetailsProps extends ThemeProps {
     id: Scalars['ID']
@@ -116,6 +118,15 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                 </Button>
             </div>
             <div className="text-muted">
+                {typeof workspace.placeInQueue === 'number' && (
+                    <>
+                        <Icon as={SyncIcon} />{' '}
+                        <strong>
+                            <NumberInQueue number={workspace.placeInQueue} />
+                        </strong>{' '}
+                        in queue |{' '}
+                    </>
+                )}
                 {workspace.path && <>{workspace.path} | </>}
                 <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.abbrevName}</strong>
                 {workspace.startedAt && (
@@ -125,16 +136,6 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <strong>
                             <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                         </strong>
-                    </>
-                )}
-                {typeof workspace.placeInQueue === 'number' && (
-                    <>
-                        {' '}
-                        | <Icon as={SyncIcon} />{' '}
-                        <strong>
-                            <NumberInQueue number={workspace.placeInQueue} />
-                        </strong>{' '}
-                        in queue
                     </>
                 )}
                 {!workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
@@ -187,15 +188,10 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
                     )}
                     {workspace.changesetSpecs.map((changesetSpec, index) => (
-                        <>
-                            <ChangesetSpecNode
-                                key={changesetSpec.id}
-                                node={changesetSpec}
-                                index={index}
-                                isLightTheme={isLightTheme}
-                            />
+                        <React.Fragment key={changesetSpec.id}>
+                            <ChangesetSpecNode node={changesetSpec} index={index} isLightTheme={isLightTheme} />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
             )}

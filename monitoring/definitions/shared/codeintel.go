@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -49,6 +50,7 @@ func (codeIntelligence) NewResolversGroup(containerName string) monitoring.Group
 
 // src_codeintel_upload_total
 // src_codeintel_upload_processor_total
+// src_codeintel_upload_queued_duration_seconds_total
 func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -62,6 +64,11 @@ func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Gro
 		},
 
 		QueueSize: NoAlertsOption("none"),
+		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual((time.Hour * 5).Seconds()), `
+			An alert here could be indicative of a few things: an upload surfacing a pathological performance characteristic,
+			precise-code-intel-worker being underprovisioned for the required upload processing throughput, or a higher replica
+			count being required for the volume of uploads.
+		`),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -100,6 +107,7 @@ func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring
 
 // src_codeintel_commit_graph_total
 // src_codeintel_commit_graph_processor_total
+// src_codeintel_commit_graph_queued_duration_seconds_total
 func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -114,6 +122,10 @@ func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitorin
 		},
 
 		QueueSize: NoAlertsOption("none"),
+		QueueMaxAge: CriticalOption(monitoring.Alert().GreaterOrEqual(time.Hour.Seconds()), `
+			An alert here is generally indicative of either underprovisioned worker instance(s) and/or
+			an underprovisioned main postgres instance.
+		`),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -183,6 +195,7 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 
 // src_codeintel_dependency_index_total
 // src_codeintel_dependency_index_processor_total
+// src_codeintel_dependency_index_queued_duration_seconds_total
 func (codeIntelligence) NewDependencyIndexQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -196,7 +209,8 @@ func (codeIntelligence) NewDependencyIndexQueueGroup(containerName string) monit
 			},
 		},
 
-		QueueSize: NoAlertsOption("none"),
+		QueueSize:   NoAlertsOption("none"),
+		QueueMaxAge: NoAlertsOption("none"),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs.
 
@@ -236,6 +250,7 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 
 // src_executor_total
 // src_executor_processor_total
+// src_executor_queued_duration_seconds_total
 func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -249,7 +264,8 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 			},
 		},
 
-		QueueSize: NoAlertsOption("none"),
+		QueueSize:   NoAlertsOption("none"),
+		QueueMaxAge: NoAlertsOption("none"),
 		QueueGrowthRate: NoAlertsOption(`
 			This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
 
@@ -846,7 +862,6 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				`).Observable(),
 			},
 			{
-
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background",
 					MetricDescriptionRoot: "janitor",

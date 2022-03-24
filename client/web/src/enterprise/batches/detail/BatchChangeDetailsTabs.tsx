@@ -1,10 +1,11 @@
+import React from 'react'
+
 import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -31,9 +32,10 @@ import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
-import styles from './BatchChangeDetailsTabs.module.scss'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
+
+import styles from './BatchChangeDetailsTabs.module.scss'
 
 export enum TabName {
     Changesets = 'changesets',
@@ -85,7 +87,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     refetchBatchChange,
     telemetryService,
 }) => {
-    const executionEnabled =
+    const isExecutionEnabled =
         (settingsCascade.final &&
             !isErrorLike(settingsCascade.final) &&
             settingsCascade.final.experimentalFeatures?.batchChangesExecution) ??
@@ -113,7 +115,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         </span>
                     </span>
                 </BatchChangeTab>
-                {!executionEnabled && (
+                {!isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Spec}>
                         <span>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
@@ -123,7 +125,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         </span>
                     </BatchChangeTab>
                 )}
-                {executionEnabled && (
+                {isExecutionEnabled && (
                     <BatchChangeTab index={2} name={TabName.Executions} customPath="/executions">
                         <span>
                             <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
@@ -160,6 +162,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         refetchBatchChange={refetchBatchChange}
                         history={history}
@@ -172,6 +175,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
                         settingsCascade={settingsCascade}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
@@ -182,7 +186,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>
-                    {!executionEnabled ? (
+                    {!isExecutionEnabled ? (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -220,6 +224,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeTabPanel>
                     <BatchChangeChangesets
                         batchChangeID={batchChange.id}
+                        batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         history={history}
                         location={location}
@@ -231,6 +236,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}
                         settingsCascade={settingsCascade}
+                        isExecutionEnabled={isExecutionEnabled}
                     />
                 </BatchChangeTabPanel>
                 <BatchChangeTabPanel>

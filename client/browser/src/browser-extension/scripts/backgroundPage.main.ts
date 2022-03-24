@@ -233,6 +233,10 @@ async function main(): Promise<void> {
         },
 
         fetchCache,
+
+        getCookie(details) {
+            return browser.cookies.get(details)
+        },
     }
 
     // Handle calls from other scripts

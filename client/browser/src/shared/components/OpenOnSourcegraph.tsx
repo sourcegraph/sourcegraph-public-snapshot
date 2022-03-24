@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'

@@ -1,11 +1,12 @@
-import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-backend/code-insights-gql-backend'
 
 import { IntroCreationPage } from './IntroCreationPage'
 

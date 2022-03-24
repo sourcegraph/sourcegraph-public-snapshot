@@ -1,9 +1,10 @@
-import { renderHook } from '@testing-library/react-hooks'
 import React from 'react'
+
+import { renderHook } from '@testing-library/react-hooks'
 
 import { CodeInsightsBackend } from '../core/backend/code-insights-backend'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsGqlBackend } from '../core/backend/gql-backend/code-insights-gql-backend'
 
 import { useUiFeatures } from './use-ui-features'
 
@@ -22,7 +23,7 @@ const UiFeatureWrapper: React.FunctionComponent<UiFeatureWrapperProps> = ({ mock
 describe('useUiFeatures', () => {
     test.each([true, false])('should return licensed: %s', licensed => {
         const mockApi: Partial<CodeInsightsBackend> = {
-            getUiFeatures: () => ({ licensed }),
+            UIFeatures: { licensed, insightsLimit: 2 },
         }
         const wrapper: React.FunctionComponent = ({ children }) => (
             <UiFeatureWrapper mockApi={mockApi}>{children}</UiFeatureWrapper>

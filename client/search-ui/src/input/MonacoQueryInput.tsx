@@ -1,7 +1,8 @@
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+
 import classNames from 'classnames'
 import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 import { observeResize, hasProperty } from '@sourcegraph/common'
 import {
@@ -20,6 +21,8 @@ import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { IEditor } from './LazyMonacoQueryInput'
 
 import styles from './MonacoQueryInput.module.scss'
 
@@ -61,15 +64,15 @@ export interface MonacoQueryInputProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         SearchPatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    isSourcegraphDotCom: boolean // significant for query suggestions
+    isSourcegraphDotCom: boolean // Needed for query suggestions to give different options on dotcom; see SOURCEGRAPH_DOT_COM_REPO_COMPLETION
     queryState: QueryState
     onChange: (newState: QueryState) => void
-    onSubmit: () => void
+    onSubmit?: () => void
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
-    onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
+    onEditorCreated?: (editor: IEditor) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
@@ -154,7 +157,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onFocus,
     onBlur,
     onChange,
-    onSubmit,
+    onSubmit = noop,
     onSuggestionsInitialized,
     onCompletionItemSelected,
     autoFocus,
@@ -170,8 +173,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     editorOptions,
     onHandleFuzzyFinder,
     editorClassName,
-    caseSensitive,
-    keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
     placeholder,
 }) => {
@@ -262,7 +263,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
         const disposable = editor.onDidFocusEditorText(() => {
-            editor.createContextKey('editorTabMovesFocus', true)
+            // Use a small non-zero timeout to avoid being overridden by Monaco defaults when editor is shown/hidden quickly
+            setTimeout(() => editor.createContextKey('editorTabMovesFocus', true), 50)
         })
         return () => disposable.dispose()
     }, [editor])

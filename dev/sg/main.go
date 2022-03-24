@@ -38,6 +38,7 @@ var (
 	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
 	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
+	skipAutoUpdatesFlag = rootFlagSet.Bool("skip-auto-update", false, "prevent sg from automatically updating itself")
 
 	rootCommand = &ffcli.Command{
 		ShortUsage: "sg [flags] <subcommand>",
@@ -46,25 +47,34 @@ var (
 			return flag.ErrHelp
 		},
 		Subcommands: []*ffcli.Command{
+			// Common dev tasks
 			runCommand,
 			startCommand,
 			testCommand,
-			doctorCommand,
-			liveCommand,
-			migrationCommand,
-			rfcCommand,
-			funkyLogoCommand,
-			teammateCommand,
-			ciCommand,
-			installCommand,
-			versionCommand,
-			secretCommand,
-			setupCommand,
-			opsCommand,
 			lintCommand,
 			dbCommand,
+			migrationCommand,
+			ciCommand,
+
+			// Dev environment
+			doctorCommand,
+			secretCommand,
+			setupCommand,
+
+			// sg commands
+			versionCommand,
 			updateCommand,
+			installCommand,
+
+			// Company
+			liveCommand,
+			teammateCommand,
+			rfcCommand,
+
+			// Misc.
+			opsCommand,
 			auditCommand,
+			funkyLogoCommand,
 		},
 	}
 )
@@ -92,22 +102,21 @@ func setMaxOpenFiles() error {
 	return nil
 }
 
-func checkSgVersion() {
+func checkSgVersion(ctx context.Context) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		// Ignore the error, because we only want to check the version if we're
 		// in sourcegraph/sourcegraph
-		return
+		return nil
 	}
 
 	if BuildCommit == "dev" {
 		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
 		// and we don't need to display this message.
-		return
+		return nil
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
-
 	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
 		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
@@ -116,12 +125,29 @@ func checkSgVersion() {
 	}
 
 	out = strings.TrimSpace(out)
-	if out != "" {
+	if out == "" {
+		// No newer commits found. sg is up to date.
+		return nil
+	}
+
+	if *skipAutoUpdatesFlag {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "       HEY! New version of sg available. Run 'sg update' to install it.       "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "             To see what's new, run 'sg version changelog -next'.             "))
 		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "------------------------------------------------------------------------------"))
+		return nil
 	}
+
+	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	err = updateCommand.Exec(ctx, nil)
+	if err != nil {
+		return err
+	}
+	sgPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	return syscall.Exec(sgPath, os.Args, os.Environ())
 }
 
 func loadSecrets() error {
@@ -144,7 +170,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	checkSgVersion()
+	isUpdateCmd := len(os.Args) >= 2 && os.Args[1] == "update"
+	if !isUpdateCmd {
+		// If we're not running "sg update ...", we want to check the version first
+		err := checkSgVersion(ctx)
+		if err != nil {
+			fmt.Printf("checking sg version failed: %s\n", err)
+			os.Exit(1)
+		}
+	}
+
 	if *verboseFlag {
 		stdout.Out.SetVerbose()
 	}

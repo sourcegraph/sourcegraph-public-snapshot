@@ -73,11 +73,6 @@ func FetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit 
 	return openGzipReader(path)
 }
 
-func FetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-	r, err := FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
-	return r, err
-}
-
 func openGzipReader(name string) (io.ReadCloser, error) {
 	f, err := os.Open(name)
 	if err != nil {

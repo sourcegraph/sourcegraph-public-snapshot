@@ -15,7 +15,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -27,7 +27,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         </svg>
         Filters
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -59,7 +59,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             tabindex="0"
           >
             <svg
-              class="mdi-icon icon-inline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -88,7 +88,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -121,7 +121,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -133,7 +133,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </svg>
         Filters
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -164,7 +164,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             tabindex="0"
           >
             <svg
-              class="icon-inline mr-1"
+              class="iconInline mr-1"
               fill="currentColor"
               height="20"
               viewBox="0 0 20 20"
@@ -190,7 +190,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             tabindex="0"
           >
             <svg
-              class="mdi-icon icon-inline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -219,7 +219,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -252,7 +252,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -264,7 +264,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </svg>
         Filters
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -294,7 +294,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             type="button"
           >
             <svg
-              class="icon-inline mr-1"
+              class="iconInline mr-1"
               fill="currentColor"
               height="20"
               viewBox="0 0 20 20"
@@ -318,7 +318,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -347,7 +347,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -380,7 +380,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -392,7 +392,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         </svg>
         Filters
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -426,7 +426,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             tabindex="-1"
           >
             <svg
-              class="icon-inline mr-1"
+              class="iconInline mr-1"
               fill="currentColor"
               height="20"
               viewBox="0 0 20 20"
@@ -452,7 +452,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             tabindex="0"
           >
             <svg
-              class="mdi-icon icon-inline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -481,7 +481,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -514,7 +514,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         type="button"
       >
         <svg
-          class="mdi-icon icon-inline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -526,7 +526,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         </svg>
         Filters
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           viewBox="0 0 24 24"
@@ -556,7 +556,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             type="button"
           >
             <svg
-              class="icon-inline mr-1"
+              class="iconInline mr-1"
               fill="currentColor"
               height="20"
               viewBox="0 0 20 20"
@@ -580,7 +580,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"
@@ -609,7 +609,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             type="button"
           >
             <svg
-              class="mdi-icon icon-inline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               viewBox="0 0 24 24"

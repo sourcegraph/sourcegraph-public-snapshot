@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { AnchorHTMLAttributes, HTMLAttributes } from 'react'
+
+import classNames from 'classnames'
 
 import { Link } from '@sourcegraph/wildcard'
 

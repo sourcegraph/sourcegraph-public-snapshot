@@ -1,3 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
@@ -5,7 +7,6 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -30,6 +31,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import {
+    Icon,
     Button,
     ButtonGroup,
     useLocalStorage,
@@ -60,7 +62,6 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
-import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -70,6 +71,8 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import { redirectToExternalHost } from '.'
+
+import styles from './RepoContainer.module.scss'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -245,7 +248,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 size="sm"
                                 as={Link}
                             >
-                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
+                                <Icon as={SourceRepositoryIcon} /> {displayRepoName(repoOrError.name)}
                             </Button>
                             <PopoverTrigger
                                 as={Button}
@@ -255,7 +258,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 variant="secondary"
                                 size="sm"
                             >
-                                <ChevronDownIcon className="icon-inline" />
+                                <Icon as={ChevronDownIcon} />
                             </PopoverTrigger>
                         </ButtonGroup>
                         <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
