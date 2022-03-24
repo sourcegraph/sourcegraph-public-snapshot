@@ -55,6 +55,8 @@ export function useCodeMirror(
     return view
 }
 
-export function eventOriginatesInInput(): boolean {
-    return (document.activeElement as any)?.contentEditable === 'true'
+export function elementIsInput(element: HTMLElement): boolean {
+    return (
+        element.nodeName === 'INPUT' || element.nodeName === 'TEXTAREA' || !!element.closest('[contenteditable=true]')
+    )
 }

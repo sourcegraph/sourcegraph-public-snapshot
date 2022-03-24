@@ -60,6 +60,13 @@ const staticExtensions: Extension[] = [
                 return true
             },
         },
+        {
+            key: 'Escape',
+            run: view => {
+                view.contentDOM.blur()
+                return true
+            },
+        },
         indentWithTab,
     ]),
     keymap.of(defaultKeymap),
@@ -189,7 +196,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
             className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
             {...notebookBlockProps}
         >
-            <div ref={setContainer} className={blockStyles.monacoWrapper} />
+            <div ref={setContainer} />
         </NotebookBlock>
     )
 })
