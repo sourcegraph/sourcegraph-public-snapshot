@@ -246,7 +246,7 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 				}
 			} else {
 				q = &zoekt.Substring{
-					Pattern:       n.Value,
+					Pattern:       regexp.QuoteMeta(n.Value),
 					CaseSensitive: isCaseSensitive,
 
 					FileName: true,
@@ -271,25 +271,21 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 	return q, nil
 }
 
-func QueryToZoektQuery(b query.Basic, p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
-	labels := query.Literal
-	if p.IsRegExp {
-		labels = query.Regexp
-	}
-	pattern := query.Pattern{
-		Value:      p.Pattern,
-		Negated:    p.IsNegated,
-		Annotation: query.Annotation{Labels: labels},
-	}
-	q, err := toZoektPattern(pattern, p.IsCaseSensitive, p.PatternMatchesContent, p.PatternMatchesPath)
-	if err != nil {
-		return nil, err
-	}
-	return WithZoektParameters(b, q, feat, typ)
-}
-
-func WithZoektParameters(b query.Basic, q zoekt.Q, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, typ IndexedRequestType) (q zoekt.Q, err error) {
 	isCaseSensitive := b.IsCaseSensitive()
+
+	if b.Pattern != nil {
+		q, err = toZoektPattern(
+			b.Pattern,
+			isCaseSensitive,
+			resultTypes.Has(result.TypeFile),
+			resultTypes.Has(result.TypePath),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.

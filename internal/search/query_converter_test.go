@@ -8,6 +8,7 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
 	zoekt "github.com/google/zoekt/query"
 )
@@ -197,7 +198,8 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := QueryToZoektQuery(tt.Pattern, &tt.Features, tt.Type)
+			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+			got, err := QueryToZoektQuery("" /*FIXME*/, resultTypes, &tt.Features, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}

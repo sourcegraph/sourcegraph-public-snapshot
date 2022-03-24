@@ -410,5 +410,5 @@ func TestPrettyJSON(t *testing.T) {
       }
     }
   ]
-}`).Equal(t, fmt.Sprintf("\n%s", test("repo:foo bar")))
+}`).Equal(t, fmt.Sprintf("\n%s", test("repo:foo ba.*r")))
 }
