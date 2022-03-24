@@ -67,7 +67,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 		h.ServeHTTP(resp, req)
 
 		assert.Equal(t, http.StatusFound, resp.Code)
-		assert.Equal(t, "/install-github-app-success", resp.Header().Get("Location"))
+		assert.Equal(t, "/install-github-app-success?installation_id=21994992", resp.Header().Get("Location"))
 	})
 
 	t.Run("invalid setup action", func(t *testing.T) {
