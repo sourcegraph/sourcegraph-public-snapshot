@@ -25,12 +25,30 @@ func InferJavaIndexJobs(gitserver GitClient, paths []string) (indexes []config.I
 }
 
 func InferJavaIndexJobHints(gitserver GitClient, paths []string) (hints []config.IndexJobHint) {
+	inferredDir := make(map[string]bool)
 	for _, path := range paths {
-		if filepath.Base(path) == "pom.xml" || filepath.Base(path) == "build.gradle" || filepath.Base(path) == "build.gradle.kts" {
+		dir := filepath.Dir(path)
+		if inferredDir[dir] {
+			continue
+		}
+		base := filepath.Base(path)
+		if base == "pom.xml" || base == "build.gradle" || base == "build.gradle.kts" {
 			hints = append(hints, config.IndexJobHint{
-				Root:           filepath.Dir(path),
+				Root:           dir,
 				Indexer:        "sourcegraph/lsif-java",
-				HintConfidence: config.ProjectStructureSupported,
+				HintConfidence: config.HintConfidenceProjectStructureSupported,
+			})
+			inferredDir[dir] = true
+			continue
+		}
+		// if we get here, then build config hasnt been found in this directory
+		// so we will attempt to see if any known languages reside here.
+		ext := filepath.Ext(path)
+		if ext == ".java" || ext == ".scala" || ext == ".kt" {
+			hints = append(hints, config.IndexJobHint{
+				Root:           dir,
+				Indexer:        "sourcegraph/lsif-java",
+				HintConfidence: config.HintConfidenceLanguageSupport,
 			})
 		}
 	}

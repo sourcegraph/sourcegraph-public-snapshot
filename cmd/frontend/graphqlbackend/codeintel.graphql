@@ -1449,6 +1449,8 @@ Search-based code-intel support coverage grouped by related files.
 type GitTreeSearchBasedCoverage {
     """
     The files comprising this grouping of search-based support.
+    Each grouping consists of all the files of the same langauge e.g.
+    all .go files in one group, all .kt and .kts files in another.
     """
     coveredPaths: [String!]!
     """
@@ -1462,10 +1464,6 @@ Precise code-intel support coverage grouped by LSIF indexer language
 support for a group of files.
 """
 type GitTreePreciseCoverage {
-    """
-    The files comprising this grouping of precise support.
-    """
-    coveredPaths: [String!]!
     """
     Overview of the level of support for this group of files.
     """

@@ -23,8 +23,9 @@ type DockerStep struct {
 type HintConfidence int
 
 const (
-	LanguageSupport HintConfidence = iota
-	ProjectStructureSupported
+	HintConfidenceUnknown HintConfidence = iota
+	HintConfidenceLanguageSupport
+	HintConfidenceProjectStructureSupported
 )
 
 type IndexJobHint struct {

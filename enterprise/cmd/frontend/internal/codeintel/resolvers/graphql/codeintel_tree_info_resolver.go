@@ -97,10 +97,13 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.G
 
 	for _, hint := range hints {
 		var confidence preciseSupportInferenceConfidence
-		if hint.HintConfidence == config.LanguageSupport {
+		switch hint.HintConfidence {
+		case config.HintConfidenceLanguageSupport:
 			confidence = languageSupport
-		} else {
+		case config.HintConfidenceProjectStructureSupported:
 			confidence = projectStructureSupported
+		default:
+			continue
 		}
 		resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 			confidence: confidence,
@@ -115,11 +118,6 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.G
 type codeIntelTreePreciseCoverageResolver struct {
 	confidence preciseSupportInferenceConfidence
 	indexer    gql.CodeIntelIndexerResolver
-}
-
-func (r *codeIntelTreePreciseCoverageResolver) CoveredPaths() []string {
-	// TODO: maybe? maybe we won't include it. Not currently supported by the data access methods we have
-	return nil
 }
 
 func (r *codeIntelTreePreciseCoverageResolver) Support() gql.PreciseSupportResolver {

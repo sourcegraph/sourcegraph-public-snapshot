@@ -381,7 +381,6 @@ type GitTreeSearchBasedCoverage interface {
 }
 
 type GitTreePreciseCoverage interface {
-	CoveredPaths() []string
 	Support() PreciseSupportResolver
 	Confidence() string
 }
