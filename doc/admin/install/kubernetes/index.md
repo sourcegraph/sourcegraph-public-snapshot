@@ -29,9 +29,11 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
 
-Once you are all set up, either [install Sourcegraph directly](#direct-installation) or [deploy Sourcegraph to a cloud of your choice](#cloud-installation).
+Once you are all set up, [install Sourcegraph directly](#direct), [install Sourcegraph with Helm](#helm), or [deploy Sourcegraph to a cloud of your choice](#cloud).
 
-### Direct installation
+### Direct
+
+Direct installation supports deploying from Kubernetes manifests and applying customization with [Kustomize](#kustomize).
 
   > NOTE: We recently launched support for deploying Sourcegraph with Helm chart. [Give it a try](./helm.md)! 🎉
 
@@ -64,7 +66,11 @@ Once you are all set up, either [install Sourcegraph directly](#direct-installat
 
 > NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
 
-### Cloud installation
+### Helm
+
+We support the use of [Helm](https://helm.sh) to deploy Sourcegraph. The Helm chart allows users to deploy Sourcegraph with ease. Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts. Follow our [installation guide](./helm.md) for Helm.
+
+### Cloud
 
 > WARNING: If you intend to set this up as a production instance, we recommend you create the cluster in a VPC
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
