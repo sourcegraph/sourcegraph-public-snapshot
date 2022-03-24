@@ -230,8 +230,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					NodeID: &githubRepo.ExternalRepo.ID,
 				},
 				Action: &action,
-			}); err == nil {
-				t.Error("unexpected nil error")
+			}); err != nil {
+				t.Errorf("unexpected non-nil error: %v", err)
 			}
 		})
 	}

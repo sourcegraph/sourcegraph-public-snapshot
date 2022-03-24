@@ -62,6 +62,13 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 
 	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
 
+	if ev == nil {
+		// We don't recognize this event type, we don't need to do any more work.
+		// This happens when the action in the body is of no type we understand.
+		// Since we don't care about those events, we can just early return here.
+		return nil
+	}
+
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			continue
@@ -95,9 +102,16 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 			return
 		}
 		repoExternalID := repo.GetNodeID()
+
+		if e.Number == nil {
+			return
+		}
 		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 
+		if e.Action == nil {
+			return
+		}
 		switch *e.Action {
 		case "ready_for_review":
 			ours = h.readyForReviewEvent(e)

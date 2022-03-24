@@ -62,7 +62,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// parse event
 	eventType := gh.WebHookType(r)
-	e, err := gh.ParseWebHook(gh.WebHookType(r), body)
+	e, err := gh.ParseWebHook(eventType, body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
