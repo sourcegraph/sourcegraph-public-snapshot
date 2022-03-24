@@ -247,7 +247,6 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
-	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
 	// TODO check with Valery about this. Because we're running stateless agents,
 	// this runs on a fresh instance and the hooks are not present at all, which
@@ -263,21 +262,20 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
-	// Chunk web integration tests to save time via parallel execution.
-	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
 	// Percy finalize step should be executed after all integration tests.
-	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+	puppeteerFinalizeDependencies := make([]bk.StepOpt, 1)
+
+	stepKey := fmt.Sprintf("puppeteer:chunk1")
+	puppeteerFinalizeDependencies[0] = bk.DependsOn(stepKey)
 
 	pipeline.AddStep("puppeteer test",
 		withYarnCache(),
-		bk.Key("puppeteer:test"),
+		bk.Key(stepKey),
 		bk.DependsOn(prepStepKey),
 		bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
 		bk.Env("PERCY_ON", "true"),
-		bk.Cmd(`dev/ci/yarn-web-integration.sh`),
+		bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh`)),
 		bk.ArtifactPaths("./puppeteer/*.png"))
-
-	puppeteerFinalizeDependencies[0] = bk.DependsOn("puppeteer:test")
 
 	finalizeSteps := []bk.StepOpt{
 		// Allow to teardown the Percy build even if there was a failure in the earlier Percy steps.
