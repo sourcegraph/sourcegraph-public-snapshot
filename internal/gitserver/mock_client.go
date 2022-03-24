@@ -175,7 +175,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RequestRepoMigrateFunc: &ClientRequestRepoMigrateFunc{
-			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 				return nil, nil
 			},
 		},
@@ -287,7 +287,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RequestRepoMigrateFunc: &ClientRequestRepoMigrateFunc{
-			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+			defaultHook: func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 				panic("unexpected invocation of MockClient.RequestRepoMigrate")
 			},
 		},
@@ -2226,24 +2226,24 @@ func (c ClientReposStatsFuncCall) Results() []interface{} {
 // ClientRequestRepoMigrateFunc describes the behavior when the
 // RequestRepoMigrate method of the parent MockClient instance is invoked.
 type ClientRequestRepoMigrateFunc struct {
-	defaultHook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
-	hooks       []func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	defaultHook func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)
 	history     []ClientRequestRepoMigrateFuncCall
 	mutex       sync.Mutex
 }
 
 // RequestRepoMigrate delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) RequestRepoMigrate(v0 context.Context, v1 api.RepoName) (*protocol.RepoUpdateResponse, error) {
-	r0, r1 := m.RequestRepoMigrateFunc.nextHook()(v0, v1)
-	m.RequestRepoMigrateFunc.appendCall(ClientRequestRepoMigrateFuncCall{v0, v1, r0, r1})
+func (m *MockClient) RequestRepoMigrate(v0 context.Context, v1 api.RepoName, v2 string, v3 string) (*protocol.RepoUpdateResponse, error) {
+	r0, r1 := m.RequestRepoMigrateFunc.nextHook()(v0, v1, v2, v3)
+	m.RequestRepoMigrateFunc.appendCall(ClientRequestRepoMigrateFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the RequestRepoMigrate
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientRequestRepoMigrateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+func (f *ClientRequestRepoMigrateFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -2251,7 +2251,7 @@ func (f *ClientRequestRepoMigrateFunc) SetDefaultHook(hook func(context.Context,
 // RequestRepoMigrate method of the parent MockClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ClientRequestRepoMigrateFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+func (f *ClientRequestRepoMigrateFunc) PushHook(hook func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2260,19 +2260,19 @@ func (f *ClientRequestRepoMigrateFunc) PushHook(hook func(context.Context, api.R
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientRequestRepoMigrateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientRequestRepoMigrateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	f.PushHook(func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientRequestRepoMigrateFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (f *ClientRequestRepoMigrateFunc) nextHook() func(context.Context, api.RepoName, string, string) (*protocol.RepoUpdateResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2311,6 +2311,12 @@ type ClientRequestRepoMigrateFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *protocol.RepoUpdateResponse
@@ -2322,7 +2328,7 @@ type ClientRequestRepoMigrateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientRequestRepoMigrateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
