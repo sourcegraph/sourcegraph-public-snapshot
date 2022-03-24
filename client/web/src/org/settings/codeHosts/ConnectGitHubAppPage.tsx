@@ -25,7 +25,7 @@ const connectOrg = (installation_id: string) => () => {
     }
 }
 
-interface GitHubAppInstallation {
+export interface GitHubAppInstallation {
     id: number
     account: {
         login: string

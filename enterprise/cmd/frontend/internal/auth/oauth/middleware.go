@@ -3,6 +3,7 @@ package oauth
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"log"
@@ -205,6 +206,46 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Redirect(w, req, appInstallURL, http.StatusFound)
 		} else {
 			http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
+		}
+	}))
+	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		installationIDParam := req.URL.Query().Get("installation_id")
+
+		installationID, err := strconv.ParseInt(installationIDParam, 10, 64)
+		if err != nil {
+			log15.Error("Unexpected error while creating parsing installation ID.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		dotcomConfig := conf.SiteConfig().Dotcom
+
+		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+		if err != nil {
+			log15.Error("Unexpected error while decoding GitHub App private key.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
+		if err != nil {
+			log15.Error("Unexpected error while creating Auth token.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		client := github.NewV3Client(&url.URL{Host: "github.com"}, auther, nil)
+
+		installation, err := client.GetAppInstallation(req.Context(), installationID)
+		if err != nil {
+			log15.Error("Unexpected error while fetching installation.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(installation)
+		if err != nil {
+			log15.Error("Failed to encode installation data.", "error", err)
 		}
 	}))
 	return mux
