@@ -20,7 +20,7 @@ Sourcegraph Cloud is a Software-as-a-Service version of Sourcegraph. This means 
 
 - **Adding repositories**: You can add a maximum of 2,000 repositories hosted on Github.com or Gitlab.com to Sourcegraph Cloud. To add more than 2,000 repositories or to search code hosted in environments other than GitHub.com or GitLab.com, [run your own Sourcegraph instance](../../../admin/install/index.md).
 - **Searching code**: You can search across a maximum of 50 repositories at once with a `type:diff` or `type:commit` search using Sourcegraph Cloud. To search across more than 50 repositories at once, [run your own Sourcegraph instance](../../../admin/install/index.md).
-- **Organizations and collaboration**: Sourcegraph Cloud currently only supports individual use of Sourcegraph Cloud. To create and manage an organization with Sourcegraph with team-oriented functionality, get started with the [self-hosted deployment](../../../admin/install/index.md) in less than a minute.
+- **Organizations and collaboration**: [Sourcegraph Cloud for Teams](../../cloud/index.md#sourcegraph-cloud-for-teams) is currently in Private Beta.
 
 ### Who is Sourcegraph Cloud for / why should I use this over Sourcegraph self-hosted?
 
