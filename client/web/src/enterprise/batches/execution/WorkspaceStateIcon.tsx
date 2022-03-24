@@ -30,7 +30,6 @@ export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps
             )
         case BatchSpecWorkspaceState.PROCESSING:
             return (
-                // TODO: Tooltip doesn't work for this icon.
                 <Icon
                     className="text-muted"
                     data-tooltip="This workspace is currently executing."
