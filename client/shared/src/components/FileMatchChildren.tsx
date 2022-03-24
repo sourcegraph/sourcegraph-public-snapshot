@@ -43,12 +43,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
-    /**
-     * Called when the file's search result is selected.
-     * If it is a line match, it is called
-     * with the index of the selected match.
-     */
-    onSelect: (index?: number) => void
 }
 
 /**
@@ -169,7 +163,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         telemetryService,
         onFirstResultLoad,
         extensionsController,
-        onSelect,
     } = props
 
     const fetchHighlightedFileRangeLines = React.useCallback(
@@ -250,7 +243,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
      * text to be different from what is in the file/search result.
      */
     const navigateToFile = useCallback(
-        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>, index: number): void => {
+        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
             // Testing for text selection is only necessary for mouse/click
             // events. Middle-click (event.button === 1) is already handled in the `onMouseUp` callback.
             if (
@@ -262,7 +255,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 const href = event.currentTarget.getAttribute('data-href')
                 if (!event.defaultPrevented && href) {
                     event.preventDefault()
-                    onSelect(index)
                     if (props.openInNewTab || event.ctrlKey || event.metaKey || event.shiftKey) {
                         openLinkInNewTab(href, event, 'primary')
                     } else {
@@ -271,7 +263,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 }
             }
         },
-        [props.openInNewTab, onSelect, history]
+        [props.openInNewTab, history]
     )
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
@@ -287,14 +279,13 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             )}
 
             {/* Symbols */}
-            {((result.type === 'symbol' && result.symbols) || []).map((symbol, index) => (
+            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <Link
                     to={symbol.url}
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
                     {...openInNewTabProps}
-                    onClick={() => props.onSelect(index)}
                 >
                     <SymbolIcon kind={symbol.kind} className="mr-1" />
                     <code>
@@ -321,9 +312,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     styles.item,
                                     styles.itemClickable
                                 )}
-                                onClick={event => navigateToFile(event, index)}
+                                onClick={navigateToFile}
                                 onMouseUp={navigateToFileOnMiddleMouseButtonClick}
-                                onKeyDown={event => navigateToFile(event, index)}
+                                onKeyDown={navigateToFile}
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"
