@@ -2343,7 +2343,7 @@ Foreign-key constraints:
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
     "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
-    "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
+    "user_emails_unique_verified_email" EXCLUDE USING btree (email) WHERE verified_at IS NOT NULL
 Foreign-key constraints:
     "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
@@ -2548,21 +2548,6 @@ Foreign-key constraints:
 ```
 
 # View "public.branch_changeset_specs_and_changesets"
-```
-        Column         |  Type   | Collation | Nullable | Default 
------------------------+---------+-----------+----------+---------
- changeset_spec_id     | bigint  |           |          | 
- changeset_id          | bigint  |           |          | 
- repo_id               | integer |           |          | 
- batch_spec_id         | bigint  |           |          | 
- owner_batch_change_id | bigint  |           |          | 
- repo_name             | citext  |           |          | 
- changeset_name        | text    |           |          | 
- external_state        | text    |           |          | 
- publication_state     | text    |           |          | 
- reconciler_state      | text    |           |          | 
-
-```
 
 ## View query:
 
@@ -2586,23 +2571,6 @@ Foreign-key constraints:
 ```
 
 # View "public.external_service_sync_jobs_with_next_sync_at"
-```
-       Column        |           Type           | Collation | Nullable | Default 
----------------------+--------------------------+-----------+----------+---------
- id                  | integer                  |           |          | 
- state               | text                     |           |          | 
- failure_message     | text                     |           |          | 
- queued_at           | timestamp with time zone |           |          | 
- started_at          | timestamp with time zone |           |          | 
- finished_at         | timestamp with time zone |           |          | 
- process_after       | timestamp with time zone |           |          | 
- num_resets          | integer                  |           |          | 
- num_failures        | integer                  |           |          | 
- execution_logs      | json[]                   |           |          | 
- external_service_id | bigint                   |           |          | 
- next_sync_at        | timestamp with time zone |           |          | 
-
-```
 
 ## View query:
 
@@ -2624,33 +2592,6 @@ Foreign-key constraints:
 ```
 
 # View "public.lsif_dumps"
-```
-         Column         |           Type           | Collation | Nullable | Default 
-------------------------+--------------------------+-----------+----------+---------
- id                     | integer                  |           |          | 
- commit                 | text                     |           |          | 
- root                   | text                     |           |          | 
- queued_at              | timestamp with time zone |           |          | 
- uploaded_at            | timestamp with time zone |           |          | 
- state                  | text                     |           |          | 
- failure_message        | text                     |           |          | 
- started_at             | timestamp with time zone |           |          | 
- finished_at            | timestamp with time zone |           |          | 
- repository_id          | integer                  |           |          | 
- indexer                | text                     |           |          | 
- indexer_version        | text                     |           |          | 
- num_parts              | integer                  |           |          | 
- uploaded_parts         | integer[]                |           |          | 
- process_after          | timestamp with time zone |           |          | 
- num_resets             | integer                  |           |          | 
- upload_size            | bigint                   |           |          | 
- num_failures           | integer                  |           |          | 
- associated_index_id    | bigint                   |           |          | 
- expired                | boolean                  |           |          | 
- last_retention_scan_at | timestamp with time zone |           |          | 
- processed_at           | timestamp with time zone |           |          | 
-
-```
 
 ## View query:
 
@@ -2682,34 +2623,6 @@ Foreign-key constraints:
 ```
 
 # View "public.lsif_dumps_with_repository_name"
-```
-         Column         |           Type           | Collation | Nullable | Default 
-------------------------+--------------------------+-----------+----------+---------
- id                     | integer                  |           |          | 
- commit                 | text                     |           |          | 
- root                   | text                     |           |          | 
- queued_at              | timestamp with time zone |           |          | 
- uploaded_at            | timestamp with time zone |           |          | 
- state                  | text                     |           |          | 
- failure_message        | text                     |           |          | 
- started_at             | timestamp with time zone |           |          | 
- finished_at            | timestamp with time zone |           |          | 
- repository_id          | integer                  |           |          | 
- indexer                | text                     |           |          | 
- indexer_version        | text                     |           |          | 
- num_parts              | integer                  |           |          | 
- uploaded_parts         | integer[]                |           |          | 
- process_after          | timestamp with time zone |           |          | 
- num_resets             | integer                  |           |          | 
- upload_size            | bigint                   |           |          | 
- num_failures           | integer                  |           |          | 
- associated_index_id    | bigint                   |           |          | 
- expired                | boolean                  |           |          | 
- last_retention_scan_at | timestamp with time zone |           |          | 
- processed_at           | timestamp with time zone |           |          | 
- repository_name        | citext                   |           |          | 
-
-```
 
 ## View query:
 
@@ -2743,31 +2656,6 @@ Foreign-key constraints:
 ```
 
 # View "public.lsif_indexes_with_repository_name"
-```
-     Column      |           Type           | Collation | Nullable | Default 
------------------+--------------------------+-----------+----------+---------
- id              | bigint                   |           |          | 
- commit          | text                     |           |          | 
- queued_at       | timestamp with time zone |           |          | 
- state           | text                     |           |          | 
- failure_message | text                     |           |          | 
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- repository_id   | integer                  |           |          | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           |          | 
- num_failures    | integer                  |           |          | 
- docker_steps    | jsonb[]                  |           |          | 
- root            | text                     |           |          | 
- indexer         | text                     |           |          | 
- indexer_args    | text[]                   |           |          | 
- outfile         | text                     |           |          | 
- log_contents    | text                     |           |          | 
- execution_logs  | json[]                   |           |          | 
- local_steps     | text[]                   |           |          | 
- repository_name | citext                   |           |          | 
-
-```
 
 ## View query:
 
@@ -2798,33 +2686,6 @@ Foreign-key constraints:
 ```
 
 # View "public.lsif_uploads_with_repository_name"
-```
-         Column         |           Type           | Collation | Nullable | Default 
-------------------------+--------------------------+-----------+----------+---------
- id                     | integer                  |           |          | 
- commit                 | text                     |           |          | 
- root                   | text                     |           |          | 
- queued_at              | timestamp with time zone |           |          | 
- uploaded_at            | timestamp with time zone |           |          | 
- state                  | text                     |           |          | 
- failure_message        | text                     |           |          | 
- started_at             | timestamp with time zone |           |          | 
- finished_at            | timestamp with time zone |           |          | 
- repository_id          | integer                  |           |          | 
- indexer                | text                     |           |          | 
- indexer_version        | text                     |           |          | 
- num_parts              | integer                  |           |          | 
- uploaded_parts         | integer[]                |           |          | 
- process_after          | timestamp with time zone |           |          | 
- num_resets             | integer                  |           |          | 
- upload_size            | bigint                   |           |          | 
- num_failures           | integer                  |           |          | 
- associated_index_id    | bigint                   |           |          | 
- expired                | boolean                  |           |          | 
- last_retention_scan_at | timestamp with time zone |           |          | 
- repository_name        | citext                   |           |          | 
-
-```
 
 ## View query:
 
@@ -2857,50 +2718,6 @@ Foreign-key constraints:
 ```
 
 # View "public.reconciler_changesets"
-```
-          Column          |                     Type                     | Collation | Nullable | Default 
---------------------------+----------------------------------------------+-----------+----------+---------
- id                       | bigint                                       |           |          | 
- batch_change_ids         | jsonb                                        |           |          | 
- repo_id                  | integer                                      |           |          | 
- queued_at                | timestamp with time zone                     |           |          | 
- created_at               | timestamp with time zone                     |           |          | 
- updated_at               | timestamp with time zone                     |           |          | 
- metadata                 | jsonb                                        |           |          | 
- external_id              | text                                         |           |          | 
- external_service_type    | text                                         |           |          | 
- external_deleted_at      | timestamp with time zone                     |           |          | 
- external_branch          | text                                         |           |          | 
- external_updated_at      | timestamp with time zone                     |           |          | 
- external_state           | text                                         |           |          | 
- external_review_state    | text                                         |           |          | 
- external_check_state     | text                                         |           |          | 
- diff_stat_added          | integer                                      |           |          | 
- diff_stat_changed        | integer                                      |           |          | 
- diff_stat_deleted        | integer                                      |           |          | 
- sync_state               | jsonb                                        |           |          | 
- current_spec_id          | bigint                                       |           |          | 
- previous_spec_id         | bigint                                       |           |          | 
- publication_state        | text                                         |           |          | 
- owned_by_batch_change_id | bigint                                       |           |          | 
- reconciler_state         | text                                         |           |          | 
- failure_message          | text                                         |           |          | 
- started_at               | timestamp with time zone                     |           |          | 
- finished_at              | timestamp with time zone                     |           |          | 
- process_after            | timestamp with time zone                     |           |          | 
- num_resets               | integer                                      |           |          | 
- closing                  | boolean                                      |           |          | 
- num_failures             | integer                                      |           |          | 
- log_contents             | text                                         |           |          | 
- execution_logs           | json[]                                       |           |          | 
- syncer_error             | text                                         |           |          | 
- external_title           | text                                         |           |          | 
- worker_hostname          | text                                         |           |          | 
- ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
- last_heartbeat_at        | timestamp with time zone                     |           |          | 
- external_fork_namespace  | citext                                       |           |          | 
-
-```
 
 ## View query:
 
@@ -2954,13 +2771,6 @@ Foreign-key constraints:
 ```
 
 # View "public.site_config"
-```
-   Column    |  Type   | Collation | Nullable | Default 
--------------+---------+-----------+----------+---------
- site_id     | uuid    |           |          | 
- initialized | boolean |           |          | 
-
-```
 
 ## View query:
 
@@ -2971,20 +2781,6 @@ Foreign-key constraints:
 ```
 
 # View "public.tracking_changeset_specs_and_changesets"
-```
-      Column       |  Type   | Collation | Nullable | Default 
--------------------+---------+-----------+----------+---------
- changeset_spec_id | bigint  |           |          | 
- changeset_id      | bigint  |           |          | 
- repo_id           | integer |           |          | 
- batch_spec_id     | bigint  |           |          | 
- repo_name         | citext  |           |          | 
- changeset_name    | text    |           |          | 
- external_state    | text    |           |          | 
- publication_state | text    |           |          | 
- reconciler_state  | text    |           |          | 
-
-```
 
 ## View query:
 
@@ -3047,4 +2843,3 @@ Foreign-key constraints:
 
 - record
 - snapshot
-

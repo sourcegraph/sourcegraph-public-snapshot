@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +23,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -119,7 +122,7 @@ func generateAndWrite(name string, factory databaseFactory, dataSource string, c
 	}
 	defer db.Close()
 
-	out, err := generateInternal(db, name, run)
+	out, err := generateInternalNew(db, name, run)
 	if err != nil {
 		return err
 	}
@@ -169,7 +172,7 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
 }
 
-func generateInternal(db *sql.DB, name string, run runFunc) (_ string, err error) {
+func generateInternalOld(db *sql.DB, name string, run runFunc) (_ string, err error) {
 	tables, err := getTables(db)
 	if err != nil {
 		return "", err
@@ -472,4 +475,279 @@ func runWithPrefix(prefix []string) runFunc {
 		out, err := c.Output()
 		return string(out), err
 	}
+}
+
+func generateInternalNew(db *sql.DB, name string, run runFunc) (_ string, err error) {
+	store := migrationstore.NewWithDB(db, "schema_migrations", migrationstore.NewOperations(&observation.TestContext))
+	schemas, err := store.Describe(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	docs := []string{}
+	for schemaName, schema := range schemas {
+		sortTables(schema.Tables)
+		for _, table := range schema.Tables {
+			docs = append(docs, formatTable(schemaName, schema, table)...)
+		}
+	}
+
+	for schemaName, schema := range schemas {
+		sortViews(schema.Views)
+		for _, view := range schema.Views {
+			docs = append(docs, formatView(schemaName, schema, view)...)
+		}
+	}
+
+	types := map[string][]string{}
+	for _, schema := range schemas {
+		for _, enum := range schema.Enums {
+			types[enum.Name] = enum.Labels
+		}
+	}
+	if len(types) > 0 {
+		docs = append(docs, formatTypes(types)...)
+	}
+
+	return strings.Join(docs, "\n"), nil
+}
+
+func formatTable(schemaName string, schema migrationstore.Schema, table migrationstore.Table) []string {
+	docs := []string{}
+	docs = append(docs, fmt.Sprintf("# Table \"%s.%s\"", schemaName, table.Name))
+	docs = append(docs, "```")
+
+	headers := []string{"Column", "Type", "Collation", "Nullable", "Default"}
+	rows := [][]string{}
+	sortColumns(table.Columns)
+	for _, column := range table.Columns {
+		nullConstraint := "not null"
+		if column.IsNullable {
+			nullConstraint = ""
+		}
+
+		defaultValue := column.Default
+		if column.IsGenerated == "ALWAYS" {
+			defaultValue = "generated always as (" + column.GenerationExpression + ") stored"
+		}
+
+		rows = append(rows, []string{
+			column.Name,
+			column.TypeName,
+			"",
+			nullConstraint,
+			defaultValue,
+		})
+	}
+	docs = append(docs, formatColumns(headers, rows)...)
+
+	if len(table.Indexes) > 0 {
+		docs = append(docs, "Indexes:")
+		sortIndexes(table.Indexes)
+		for _, index := range table.Indexes {
+			if index.IsPrimaryKey {
+				def := strings.TrimSpace(strings.Split(index.IndexDefinition, "USING")[1])
+				docs = append(docs, fmt.Sprintf("    %q PRIMARY KEY, %s", index.Name, def))
+			}
+		}
+		for _, index := range table.Indexes {
+			if !index.IsPrimaryKey {
+				uq := ""
+				if index.IsUnique {
+					c := ""
+					if index.ConstraintType == "u" {
+						c = " CONSTRAINT"
+					}
+					uq = " UNIQUE" + c + ","
+				}
+				deferrable := ""
+				if index.IsDeferrable {
+					deferrable = " DEFERRABLE"
+				}
+				def := strings.TrimSpace(strings.Split(index.IndexDefinition, "USING")[1])
+				if index.IsExclusion {
+					def = "EXCLUDE USING " + def
+				}
+				docs = append(docs, fmt.Sprintf("    %q%s %s%s", index.Name, uq, def, deferrable))
+			}
+		}
+	}
+
+	numCheckConstraints := 0
+	numForeignKeyConstraints := 0
+	for _, constraint := range table.Constraints {
+		switch constraint.ConstraintType {
+		case "c":
+			numCheckConstraints++
+		case "f":
+			numForeignKeyConstraints++
+		}
+	}
+
+	if numCheckConstraints > 0 {
+		docs = append(docs, "Check constraints:")
+		for _, constraint := range table.Constraints {
+			if constraint.ConstraintType == "c" {
+				docs = append(docs, fmt.Sprintf("    %q %s", constraint.Name, constraint.ConstraintDefinition))
+			}
+		}
+	}
+	if numForeignKeyConstraints > 0 {
+		docs = append(docs, "Foreign-key constraints:")
+		for _, constraint := range table.Constraints {
+			if constraint.ConstraintType == "f" {
+				docs = append(docs, fmt.Sprintf("    %q %s", constraint.Name, constraint.ConstraintDefinition))
+			}
+		}
+	}
+
+	type tableAndConstraint struct {
+		migrationstore.Table
+		migrationstore.Constraint
+	}
+	tableAndConstraints := []tableAndConstraint{}
+	for _, otherTable := range schema.Tables {
+		for _, constraint := range otherTable.Constraints {
+			if constraint.RefTableName == table.Name {
+				tableAndConstraints = append(tableAndConstraints, tableAndConstraint{otherTable, constraint})
+			}
+		}
+	}
+	sort.Slice(tableAndConstraints, func(i, j int) bool {
+		return tableAndConstraints[i].Constraint.Name < tableAndConstraints[j].Constraint.Name
+	})
+	if len(tableAndConstraints) > 0 {
+		docs = append(docs, "Referenced by:")
+
+		for _, tableAndConstraint := range tableAndConstraints {
+			docs = append(docs, fmt.Sprintf("    TABLE %q CONSTRAINT %q %s", tableAndConstraint.Table.Name, tableAndConstraint.Constraint.Name, tableAndConstraint.Constraint.ConstraintDefinition))
+		}
+	}
+
+	if len(table.Triggers) > 0 {
+		docs = append(docs, "Triggers:")
+		for _, trigger := range table.Triggers {
+			def := strings.TrimSpace(strings.SplitN(trigger.Definition, trigger.Name, 2)[1])
+			docs = append(docs, fmt.Sprintf("    %s %s", trigger.Name, def))
+		}
+	}
+
+	docs = append(docs, "\n```\n")
+
+	if table.Comment != "" {
+		docs = append(docs, table.Comment+"\n")
+	}
+
+	sortColumnsByName(table.Columns)
+	for _, column := range table.Columns {
+		if column.Comment != "" {
+			docs = append(docs, fmt.Sprintf("**%s**: %s\n", column.Name, column.Comment))
+		}
+	}
+
+	return docs
+}
+
+func formatView(schemaName string, schema migrationstore.Schema, view migrationstore.View) []string {
+	docs := []string{}
+	docs = append(docs, fmt.Sprintf("# View \"public.%s\"\n", view.Name))
+	docs = append(docs, fmt.Sprintf("## View query:\n\n```sql\n%s\n```\n", view.Definition))
+	return docs
+}
+
+func sortTables(tables []migrationstore.Table) {
+	sort.Slice(tables, func(i, j int) bool { return tables[i].Name < tables[j].Name })
+}
+
+func sortViews(views []migrationstore.View) {
+	sort.Slice(views, func(i, j int) bool { return views[i].Name < views[j].Name })
+}
+
+func sortColumns(columns []migrationstore.Column) {
+	sort.Slice(columns, func(i, j int) bool { return columns[i].Index < columns[j].Index })
+}
+
+func sortColumnsByName(columns []migrationstore.Column) {
+	sort.Slice(columns, func(i, j int) bool { return columns[i].Name < columns[j].Name })
+}
+
+func sortIndexes(indexes []migrationstore.Index) {
+	sort.Slice(indexes, func(i, j int) bool {
+		if indexes[i].IsUnique && !indexes[j].IsUnique {
+			return true
+		}
+		if !indexes[i].IsUnique && indexes[j].IsUnique {
+			return false
+		}
+		return indexes[i].Name < indexes[j].Name
+	})
+}
+
+func formatTypes(types map[string][]string) []string {
+	typeNames := make([]string, 0, len(types))
+	for typeName := range types {
+		typeNames = append(typeNames, typeName)
+	}
+	sort.Strings(typeNames)
+
+	docs := make([]string, 0, len(typeNames)*4)
+	for _, name := range typeNames {
+		docs = append(docs, fmt.Sprintf("# Type %s", name))
+		docs = append(docs, "")
+		docs = append(docs, "- "+strings.Join(types[name], "\n- "))
+		docs = append(docs, "")
+	}
+
+	return docs
+}
+
+func formatColumns(headers []string, rows [][]string) []string {
+	sizes := make([]int, len(headers))
+	headerValues := make([]string, len(headers))
+	sepValues := make([]string, len(headers))
+	for i, header := range headers {
+		sizes[i] = len(header)
+
+		for _, row := range rows {
+			if n := len(row[i]); n > sizes[i] {
+				sizes[i] = n
+			}
+		}
+
+		headerValues[i] = centerString(headers[i], sizes[i]+2)
+		sepValues[i] = strings.Repeat("-", sizes[i]+2)
+	}
+
+	docs := make([]string, 0, len(rows)+2)
+	docs = append(docs, strings.Join(headerValues, "|"))
+	docs = append(docs, strings.Join(sepValues, "+"))
+
+	for _, row := range rows {
+		rowValues := make([]string, 0, len(headers))
+		for i := range headers {
+			if i == len(headers)-1 {
+				rowValues = append(rowValues, row[i])
+			} else {
+				rowValues = append(rowValues, fmt.Sprintf("%-"+strconv.Itoa(sizes[i])+"s", row[i]))
+			}
+		}
+
+		docs = append(docs, " "+strings.Join(rowValues, " | "))
+	}
+
+	return docs
+}
+
+func centerString(s string, n int) string {
+	x := float64(n - len(s))
+	i := int(math.Floor(x / 2))
+	if i <= 0 {
+		i = 1
+	}
+	j := int(math.Ceil(x / 2))
+	if j <= 0 {
+		j = 1
+	}
+
+	return strings.Repeat(" ", i) + s + strings.Repeat(" ", j)
 }
