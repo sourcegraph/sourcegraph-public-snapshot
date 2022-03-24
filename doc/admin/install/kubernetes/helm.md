@@ -37,7 +37,66 @@ helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sour
 
 ### Using external PostgreSQL databases
 
-__TODO__
+To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations). Then you may come back to add the following values to your override file.
+
+Prior installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-pgsql-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  PGPASSWORD: ""
+```
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-codeintel-db-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  CODEINTEL_PGPASSWORD: ""
+```
+
+```yaml
+frontend:
+  env:
+    PGHOST:
+      value: pgsql.database.company.com # external pgsql host
+    PGPORT:
+      value: "5432" # external pgsql port
+    PGDATABASE:
+      value: sg # external pgsql database name
+    PGUSER:
+      value: sg # external pgsql user
+    PGPASSWORD:
+      valueFrom:
+        secretKeyRef: # Pre-existing secret, not created by this chart
+          name: sourcegraph-pgsql-credentials
+          key: PGPASSWORD
+    CODEINTEL_PGHOST:
+      value: codeintel-db.database.company.com # external codeintel-db host
+    CODEINTEL_PGPORT:
+      value: "5432" # external codeintel-db port
+    CODEINTEL_PGDATABASE:
+      value: sg # external codeintel-db database name
+    CODEINTEL_PGUSER:
+      value: sg # external codeintel-db user
+    CODEINTEL_PGPASSWORD:
+      valueFrom:
+        secretKeyRef: # Pre-existing secret, not created by this chart
+          name: sourcegraph-codeintel-db-credentials
+          key: CODEINTEL_PGPASSWORD
+
+pgsql:
+  enabled: false # disable internal pgsql database
+
+codeIntelDB:
+  enabled: false # disable internal codeintel-db database
+```
 
 ### Using external Redis instances
 
