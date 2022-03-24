@@ -9,7 +9,7 @@ import { Card, Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
+import { GettingStartedTour } from '../../tour/GettingStartedTour'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'

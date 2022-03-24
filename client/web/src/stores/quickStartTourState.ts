@@ -1,7 +1,7 @@
 import create, { GetState, SetState } from 'zustand'
 import { persist, StoreApiWithPersist } from 'zustand/middleware'
 
-import { TourLanguage } from '../gettingStartedTour/components/types'
+import { TourLanguage } from '../tour/components/types'
 
 interface QuickStartTourState {
     completedStepIds?: string[]

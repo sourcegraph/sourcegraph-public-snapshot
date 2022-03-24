@@ -5,7 +5,6 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CursorPointerIcon from 'mdi-react/CursorPointerIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-// import NotebookIcon from 'mdi-react/NotebookIcon'
 
 export const IconResolveIncidentsFaster: React.FunctionComponent = () => (
     <span className="mr-2">

@@ -146,17 +146,3 @@
     color: var(--icon-color);
     margin-right: 0.25rem;
 }
-
-.language {
-    padding: 0.125rem 0.25rem;
-    &,
-    &:active,
-    &:focus,
-    &:hover {
-        background-color: var(--getting-started-tour-oc-blue-bg);
-    }
-
-    &:hover {
-        text-decoration: underline;
-    }
-}

@@ -9,7 +9,7 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GettingStartedTourInfo } from '../gettingStartedTour/GettingStartedTourInfo'
+import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
@@ -103,12 +103,13 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
                 defaultBranch={defaultBranch || 'HEAD'}
+                featureFlags={featureFlags}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the
                 // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                 <BlobStatusBarContainer>
-                    <GettingStartedTourInfo isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
+                    <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
                             <>

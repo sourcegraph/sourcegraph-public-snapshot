@@ -24,26 +24,24 @@ import {
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
-import { GettingStartedTour } from '../gettingStartedTour/GettingStartedTour'
+import { AuthenticatedUser } from '../auth'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
-import { RepoRevisionContainerContext } from './RepoRevisionContainer'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface Props
-    extends AbsoluteRepoFile,
-        ExtensionsControllerProps,
-        ThemeProps,
-        TelemetryProps,
-        RepoRevisionContainerContext {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps, FeatureFlagProps {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
     history: H.History
     location: H.Location
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'

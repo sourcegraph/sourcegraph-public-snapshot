@@ -7,7 +7,7 @@ import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { QuickStartTourListState, useQuickStartTourListState } from '../../stores/quickStartTourState'
+import { QuickStartTourListState, useQuickStartTourListState } from '../../../stores/quickStartTourState'
 
 import { Tour } from './Tour'
 import { TourLanguage, TourTaskStepType, TourTaskType } from './types'

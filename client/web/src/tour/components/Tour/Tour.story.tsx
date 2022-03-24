@@ -1,11 +1,12 @@
 import React from 'react'
+
 import { Meta, DecoratorFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { WebStory } from '../../components/WebStory'
+import { WebStory } from '../../../components/WebStory'
+import { authenticatedTasks, visitorsTasks } from '../../data'
 
-import { authenticatedTasksAllUseCases, visitorsTasks } from './data'
 import { Tour } from './Tour'
 
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
@@ -32,7 +33,7 @@ export const AuthenticatedDefault: React.FunctionComponent = () => (
     <Tour
         telemetryService={NOOP_TELEMETRY_SERVICE}
         id="TourStorybook"
-        tasks={authenticatedTasksAllUseCases}
+        tasks={authenticatedTasks}
         variant="horizontal"
     />
 )

@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { TourLanguage, TourTaskType } from '../components/Tour/types'
+
 import {
     IconAllDone,
     IconCreateTeam,
@@ -8,8 +10,10 @@ import {
     IconPowerfulCodeNavigation,
     IconResolveIncidentsFaster,
 } from './icons'
-import { TourLanguage, TourTaskType } from './types'
 
+/**
+ * Tour tasks for non-authenticated users
+ */
 export const visitorsTasks: TourTaskType[] = [
     {
         title: 'Code search use cases',
@@ -177,7 +181,10 @@ export const visitorsTasks: TourTaskType[] = [
     },
 ]
 
-export const authenticatedTasksAllUseCases: TourTaskType[] = [
+/**
+ * Tour tasks for authenticated users. Extended/all use-cases.
+ */
+export const authenticatedTasks: TourTaskType[] = [
     {
         title: 'Find code to reference',
         icon: <IconFindCodeReference />,
@@ -303,6 +310,9 @@ export const authenticatedTasksAllUseCases: TourTaskType[] = [
     },
 ]
 
+/**
+ * Tour extra tasks for authenticated users.
+ */
 export const authenticatedExtraTask: TourTaskType = {
     title: 'All done!',
     icon: <IconAllDone />,
@@ -314,52 +324,3 @@ export const authenticatedExtraTask: TourTaskType = {
         },
     ],
 }
-
-export const authenticatedTasks: TourTaskType[] = [
-    {
-        title: 'Find code to reference',
-        icon: <IconFindCodeReference />,
-        steps: [
-            {
-                id: 'FindCodeRef',
-                label: 'Search for code in a user or org’s repos while excluding test files.',
-                action: {
-                    type: 'link',
-                    value: {
-                        [TourLanguage.C]:
-                            '/search?q=context:global+repo:torvalds/.*+lang:c+-file:.*/testing+magic&patternType=literal',
-                        [TourLanguage.Go]:
-                            '/search?q=context:global+r:google/+lang:go+-file:test+//+TODO&patternType=literal',
-                        [TourLanguage.Java]:
-                            '/search?q=context:global+r:github.com/square/+lang:java+-file:test+GiftCard&patternType=literal',
-                        [TourLanguage.Javascript]:
-                            '/search?q=context:global+r:react+lang:JavaScript+-file:test+createPortal&patternType=literal',
-                        [TourLanguage.Php]:
-                            '/search?q=context:global+repo:laravel+lang:php+-file:test+login%28&patternType=regexp&case=yes',
-                        [TourLanguage.Python]:
-                            '/search?q=context:global+r:aws/+lang:python+file:mock+def+test_patch&patternType=regexp&case=yes',
-                        [TourLanguage.Typescript]:
-                            '/search?q=context:global+r:react+lang:typescript+-file:test+createPortal%28&patternType=regexp&case=yes',
-                    },
-                },
-                info: `<strong>Reference code in multiple repositories</strong><br/>
-            The repo: query allows searching in multiple repositories matching a term. Use it to reference all of your projects or find open source examples.`,
-            },
-        ],
-    },
-    {
-        title: 'Create a team',
-        icon: <IconCreateTeam />,
-        steps: [
-            {
-                id: 'CreateTeam',
-                label: 'Sourcegraph helps teams from 2 to any size collaborate.',
-                action: {
-                    type: 'link',
-                    value:
-                        'https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku?utm_medium=direct-traffic&utm_source=in-product&utm_term=in-product-banner&utm_content=cloud-product-beta-teams',
-                },
-            },
-        ],
-    },
-]

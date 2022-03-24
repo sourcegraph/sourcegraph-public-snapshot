@@ -4,15 +4,12 @@ import classNames from 'classnames'
 
 export const GETTING_STARTED_TOUR_MARKER = 'getting-started-tour-info-marker'
 
-interface GettingStartedTourInfoProps {
+export interface TourInfoProps {
     className?: string
     isSourcegraphDotCom: boolean
 }
 
-export const GettingStartedTourInfo: React.FunctionComponent<GettingStartedTourInfoProps> = ({
-    className,
-    isSourcegraphDotCom,
-}) => {
+export const TourInfo: React.FunctionComponent<TourInfoProps> = ({ className, isSourcegraphDotCom }) => {
     if (!isSourcegraphDotCom) {
         return null
     }
