@@ -182,7 +182,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// caching locally is not useful. Additionally we transfer the output over the
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
-			f, err := git.ArchiveReaderWithSubRepo(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo,
+			f, err := git.ArchiveReader(r.Context(), db, authz.DefaultSubRepoPermsChecker, common.Repo.Name,
 				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Paths: []string{relativePath}})
 			if err != nil {
 				return err

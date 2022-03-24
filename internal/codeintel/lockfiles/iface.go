@@ -37,5 +37,6 @@ func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-	return git.ArchiveReader(ctx, s.db, repo, opts)
+	// Note: the sub-repo perms checker is nil here because sub-repo filtering is applied when LsFiles is called
+	return git.ArchiveReader(ctx, s.db, nil, repo, opts)
 }
