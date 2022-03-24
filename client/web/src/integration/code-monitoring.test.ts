@@ -1,6 +1,9 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
@@ -10,6 +13,8 @@ import { percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -19,6 +24,7 @@ describe('Code monitoring', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,

@@ -69,7 +69,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Merge(operations.NewNamedSet("Client checks",
-			// clientIntegrationTests,
+			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,     // ~4.5m
 			addWebApp,         // ~5.5m

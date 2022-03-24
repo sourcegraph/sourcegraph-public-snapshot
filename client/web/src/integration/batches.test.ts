@@ -1,3 +1,5 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import { subDays, addDays } from 'date-fns'
@@ -9,6 +11,7 @@ import {
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -398,6 +401,7 @@ function mockCommonGraphQLResponses(
 
 describe('Batches', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -407,6 +411,7 @@ describe('Batches', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
     })
     afterEachSaveScreenshotIfFailedWithJest(() => driver.page)

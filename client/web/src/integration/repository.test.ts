@@ -1,3 +1,5 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 import * as path from 'path'
 
@@ -9,6 +11,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
@@ -47,6 +50,8 @@ export const getCommonRepositoryGraphQlResults = (
 
 describe('Repository', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -56,6 +61,7 @@ describe('Repository', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
     })
     afterEachSaveScreenshotIfFailedWithJest(() => driver.page)

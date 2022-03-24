@@ -1,9 +1,12 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import { subDays } from 'date-fns'
 import { range } from 'lodash'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
@@ -22,6 +25,8 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search contexts', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -31,6 +36,7 @@ describe('Search contexts', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
         testContext.overrideGraphQL(testContextForSearchContexts)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)

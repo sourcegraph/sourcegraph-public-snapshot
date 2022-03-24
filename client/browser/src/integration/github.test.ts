@@ -985,7 +985,7 @@ describe('GitHub', () => {
                 }
             })
 
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type and language', async () => {
+            it.skip('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type and language', async () => {
                 const searchTerm = 'hello'
 
                 for (const page of pages) {
