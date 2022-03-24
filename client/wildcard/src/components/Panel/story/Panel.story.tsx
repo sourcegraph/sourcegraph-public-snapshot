@@ -3,20 +3,22 @@ import React from 'react'
 import { useState } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { panels } from '@sourcegraph/branded/src/components/panel/Panel.fixtures'
+import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent.fixtures'
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { Button } from '../Button'
-import { Grid } from '../Grid'
-import { Icon } from '../Icon'
-import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../Tabs'
+import { Button } from '../../Button'
+import { Grid } from '../../Grid'
+import { Icon } from '../../Icon'
+import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../../Tabs'
+import { PANEL_POSITIONS } from '../constants'
+import { Panel } from '../Panel'
 
-import { PANEL_POSITIONS } from './constants'
-import { Panel } from './Panel'
+import styles from './Story.module.scss'
 
 const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
 
@@ -48,6 +50,21 @@ const config: Meta = {
 }
 
 export default config
+
+const PanelBodyContent: React.FunctionComponent<{ position: typeof PANEL_POSITIONS[number] }> = ({
+    position,
+    children,
+}) => (
+    <div
+        className={classNames(
+            'p-2',
+            styles.panelBody,
+            styles[`panelBody${upperFirst(position)}` as keyof typeof styles]
+        )}
+    >
+        {children}
+    </div>
+)
 
 export const Simple: Story = () => {
     const [position, setPosition] = useState<typeof PANEL_POSITIONS[number]>('left')
@@ -82,10 +99,16 @@ export const Simple: Story = () => {
                 <div />
                 <div />
             </Grid>
-            <Panel position={position} defaultSize={200} storageKey={`size-cache-${position}`}>
-                <div className="p-2">
+            <Panel
+                isFloating={true}
+                position={position}
+                defaultSize={200}
+                storageKey={`size-cache-${position}`}
+                className={styles.panel}
+            >
+                <PanelBodyContent position={position}>
                     <b>{position}</b> panel content
-                </div>
+                </PanelBodyContent>
             </Panel>
         </>
     )

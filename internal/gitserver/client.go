@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -45,17 +46,20 @@ var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
 	defaultLimiter = parallel.NewRun(500)
-
-	// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-	// For now this DefaultClient has a nil DB connection because it is not used.
-	// In a following commit DefaultClient will be removed and there will be no such absurd thing as NewClient(nil)
-	// Contact sashaostrikov for questions and clarifications if you see this, and it irritates you
-	DefaultClient Client = NewClient(nil)
 )
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	RepoInfo  func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
+	Archive   func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 }
+
+// AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
+// because it is not intended to be cleared when other mocks should be.
+// This mock should be initialized during tests initialization so that
+// gitserver client always contain address of a local machine during tests
+// and tests which use gitserver client can pass successfully
+var AddrsMock func() []string
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
@@ -135,7 +139,7 @@ type ClientImplementor struct {
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/gitserver -i Client -o mock_client.go
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(context.Context, api.RepoName) string
+	AddrForRepo(context.Context, api.RepoName) (string, error)
 
 	Addrs() []string
 
@@ -144,7 +148,7 @@ type Client interface {
 
 	// ArchiveURL returns a URL from which an archive of the given Git repository can
 	// be downloaded from.
-	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) *url.URL
+	ArchiveURL(context.Context, api.RepoName, ArchiveOptions) (*url.URL, error)
 
 	// Command creates a new Cmd. Command name must be 'git', otherwise it panics.
 	Command(name string, args ...string) *Cmd
@@ -201,9 +205,9 @@ type Client interface {
 	// UpdatedAt field will be zero. This can happen for new gitservers.
 	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
 
-	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to aid our
-	// migration of gitserver repos to the rendezvous hashing scheme.
-	RequestRepoMigrate(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to make
+	// gitserver instances clone a repo from one instance to another
+	RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -220,55 +224,69 @@ type Client interface {
 }
 
 func (c *ClientImplementor) Addrs() []string {
+	if AddrsMock != nil {
+		return AddrsMock()
+	}
 	return c.addrs()
 }
 
-func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) string {
-	addrs := c.addrs()
+func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) (string, error) {
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.db, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
 }
 
 func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-
+	if repoPinned, addr := getPinnedRepoAddr(string(repo), c.pinned()); repoPinned {
+		return addr
+	}
 	return RendezvousAddrForRepo(repo, addrs)
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *ClientImplementor) addrForKey(key string) string {
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
 	return addrForKey(key, addrs)
 }
 
-var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
+var addrForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
 	Help: "Number of times gitserver.AddrForRepo was invoked",
 })
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(repo api.RepoName, addresses GitServerAddresses) string {
-	addForRepoInvoked.Inc()
+func AddrForRepo(ctx context.Context, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+	addrForRepoInvoked.Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
-	if pinned, found := addresses.PinnedServers[rs]; found {
-		return pinned
+	if repoPinned, addr := getPinnedRepoAddr(string(repo), addresses.PinnedServers); repoPinned {
+		return addr, nil
 	}
-	return addrForKey(rs, addresses.Addresses)
+
+	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
+	if err != nil {
+		return "", err
+	}
+	if useRendezvous {
+		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
+	}
+
+	return addrForKey(rs, addresses.Addresses), nil
 }
 
 type GitServerAddresses struct {
@@ -327,7 +345,7 @@ func (a *archiveReader) Close() error {
 
 // ArchiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) *url.URL {
+func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -338,15 +356,22 @@ func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, o
 		q.Add("path", path)
 	}
 
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
 	return &url.URL{
 		Scheme:   "http",
-		Host:     c.AddrForRepo(ctx, repo),
+		Host:     addrForRepo,
 		Path:     "/archive",
 		RawQuery: q.Encode(),
-	}
+	}, nil
 }
 
 func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
+	if ClientMocks.Archive != nil {
+		return ClientMocks.Archive(ctx, repo, opt)
+	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
@@ -364,7 +389,11 @@ func (c *ClientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 		return nil, err
 	}
 
-	u := c.ArchiveURL(ctx, repo, opt)
+	u, err := c.ArchiveURL(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
 		return nil, err
@@ -478,7 +507,12 @@ func (c *ClientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		return false, err
 	}
 
-	uri := "http://" + c.AddrForRepo(ctx, repoName) + "/search"
+	addrForRepo, err := c.AddrForRepo(ctx, repoName)
+	if err != nil {
+		return false, err
+	}
+
+	uri := "http://" + addrForRepo + "/search"
 	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
 	if err != nil {
 		return false, err
@@ -697,7 +731,7 @@ func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	addrs := c.addrs()
+	addrs := c.Addrs()
 	for _, addr := range addrs {
 		wg.Add(1)
 		go func(addr string) {
@@ -763,13 +797,13 @@ func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	return info, err
 }
 
-func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error) {
 	// We do not need to set a value for the attribute "Since" because the repo is not expected to
 	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: c.AddrForRepo(ctx, repo),
+		CloneFromShard: from,
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -777,7 +811,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
 	// the repo from the URL set in CloneFromShard - the gitserver instance that owns this repo based
 	// on the existing hashing scheme.
-	uri := "http://" + c.RendezvousAddrForRepo(repo) + "/repo-update"
+	uri := "http://" + to + "/repo-update"
 	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
 	if err != nil {
 		return nil, err
@@ -875,11 +909,14 @@ func (c *ClientImplementor) IsRepoCloned(ctx context.Context, repo api.RepoName)
 }
 
 func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	numPossibleShards := len(c.addrs())
+	numPossibleShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(ctx, r)
+		addr, err := c.AddrForRepo(ctx, r)
+		if err != nil {
+			return nil, err
+		}
 		shard := shards[addr]
 
 		if shard == nil {
@@ -945,11 +982,18 @@ func (c *ClientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 }
 
 func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	numPossibleShards := len(c.addrs())
+	if ClientMocks.RepoInfo != nil {
+		return ClientMocks.RepoInfo(ctx, repos...)
+	}
+
+	numPossibleShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr := c.AddrForRepo(ctx, r)
+		addr, err := c.AddrForRepo(ctx, r)
+		if err != nil {
+			return nil, err
+		}
 		shard := shards[addr]
 
 		if shard == nil {
@@ -1017,7 +1061,7 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 func (c *ClientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
-	for _, addr := range c.addrs() {
+	for _, addr := range c.Addrs() {
 		stat, err := c.doReposStats(ctx, addr)
 		if err != nil {
 			allErr = errors.Append(allErr, err)
@@ -1075,7 +1119,11 @@ func (c *ClientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 
-	uri := "http://" + c.AddrForRepo(ctx, repo) + "/" + op
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	uri := "http://" + addrForRepo + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
@@ -1229,4 +1277,29 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 		args = append(args, "HEAD")
 	}
 	return args
+}
+
+// shouldUseRendezvousHashing returns true if rendezvous hashing is to be used to find
+// an address of gitserver instance for a given repo
+func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string) (bool, error) {
+	cursor, err := migration.GetCursor(ctx, db)
+	if err != nil {
+		return false, err
+	}
+	if cursor == "" {
+		return false, nil
+	}
+
+	// Migration is in progress or finished, if the name is less than or equal to cursor -- use rendezvous
+	return repo <= cursor, nil
+}
+
+// getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
+// Otherwise, if repo is not pinned -- false and empty string are returned
+func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
+	if pinned, found := pinnedServers[repo]; found {
+		return true, pinned
+	} else {
+		return false, ""
+	}
 }

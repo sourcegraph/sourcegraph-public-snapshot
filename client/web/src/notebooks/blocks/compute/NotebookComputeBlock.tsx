@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { noop } from 'lodash'
 import ElmComponent from 'react-elm-components'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -111,8 +110,8 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
             className={styles.input}
             id={id}
             aria-label="Notebook compute block"
-            onEnterBlock={noop}
             isSelected={isSelected}
+            isReadOnly={isReadOnly}
             actions={isSelected ? commonMenuActions : []}
             {...props}
         >

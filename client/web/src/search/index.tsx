@@ -3,14 +3,9 @@ import { Observable } from 'rxjs'
 
 import { replaceRange } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { ISavedSearch } from '@sourcegraph/shared/src/schema'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-
-import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
-
-import { EventLogResult } from './backend'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -133,11 +128,6 @@ export function quoteIfNeeded(string: string): string {
 }
 
 export interface HomePanelsProps {
-    fetchSavedSearches: () => Observable<ISavedSearch[]>
-    fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
-    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
-    fetchCollaborators: (userId: string) => Observable<InvitableCollaborator[]>
-
     /** Function that returns current time (for stability in visual tests). */
     now?: () => Date
 }

@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -86,7 +85,7 @@ func main() {
 	db := ensureFrontendDB()
 
 	service := &search.Service{
-		Store: &store.Store{
+		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				return git.ArchiveReader(ctx, db, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: git.ArchiveFormatTar})
 			},

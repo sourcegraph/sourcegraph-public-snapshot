@@ -13,11 +13,12 @@ import { isDefined, combineLatestOrDefault, isErrorLike } from '@sourcegraph/com
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
+import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -25,17 +26,14 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
-import { match } from '../../../../shared/src/api/client/types/textDocument'
-import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
-
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
 import { PanelView } from './views/PanelView'
 
-import styles from './Panel.module.scss'
+import styles from './TabbedPanelContent.module.scss'
 
-interface Props
+interface TabbedPanelContentProps
     extends ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
@@ -72,7 +70,7 @@ export interface PanelViewWithComponent extends PanelViewData {
 /**
  * A tab and corresponding content to display in the panel.
  */
-interface PanelItem {
+interface TabbedPanelItem {
     id: string
 
     label: React.ReactFragment
@@ -99,35 +97,35 @@ interface PanelItem {
     matchesTabID?: (id: string) => boolean
 }
 
-export type BuiltinPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
+export type BuiltinTabbedPanelView = Omit<PanelViewWithComponent, 'component' | 'id'>
 
-const builtinPanelViewProviders = new BehaviorSubject<
-    Map<string, { id: string; provider: Observable<BuiltinPanelView | null> }>
+const builtinTabbedPanelViewProviders = new BehaviorSubject<
+    Map<string, { id: string; provider: Observable<BuiltinTabbedPanelView | null> }>
 >(new Map())
 
 /**
- * BuiltinPanelDefinition defines which BuiltinPanelViews will be available.
+ * BuiltinTabbedPanelView defines which BuiltinTabbedPanelViews will be available.
  */
-export interface BuiltinPanelDefinition {
+export interface BuiltinTabbedPanelDefinition {
     id: string
-    provider: Observable<BuiltinPanelView | null>
+    provider: Observable<BuiltinTabbedPanelView | null>
 }
 /**
  * React hook to add panel views from other components (panel views are typically
  * contributed by Sourcegraph extensions)
  */
-export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): void {
+export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefinition[]): void {
     useEffect(() => {
         for (const builtinPanel of builtinPanels) {
-            builtinPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
+            builtinTabbedPanelViewProviders.value.set(builtinPanel.id, builtinPanel)
         }
-        builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
+        builtinTabbedPanelViewProviders.next(new Map([...builtinTabbedPanelViewProviders.value]))
 
         return () => {
             for (const builtinPanel of builtinPanels) {
-                builtinPanelViewProviders.value.delete(builtinPanel.id)
+                builtinTabbedPanelViewProviders.value.delete(builtinPanel.id)
             }
-            builtinPanelViewProviders.next(new Map([...builtinPanelViewProviders.value]))
+            builtinTabbedPanelViewProviders.next(new Map([...builtinTabbedPanelViewProviders.value]))
         }
     }, [builtinPanels])
 }
@@ -138,7 +136,7 @@ export function useBuiltinPanelViews(builtinPanels: BuiltinPanelDefinition[]): v
  *
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
-export const Panel = React.memo<Props>(props => {
+export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
     const areExtensionsReady = useObservable(
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
@@ -155,10 +153,10 @@ export const Panel = React.memo<Props>(props => {
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
-    const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
+    const builtinTabbedPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
             () =>
-                builtinPanelViewProviders.pipe(
+                builtinTabbedPanelViewProviders.pipe(
                     switchMap(providers =>
                         combineLatestOrDefault(
                             [...providers].map(([id, { provider }]) =>
@@ -236,8 +234,8 @@ export const Panel = React.memo<Props>(props => {
         )
     )
 
-    const panelViews = useMemo(() => [...(builtinPanels || []), ...(extensionPanels || [])], [
-        builtinPanels,
+    const panelViews = useMemo(() => [...(builtinTabbedPanels || []), ...(extensionPanels || [])], [
+        builtinTabbedPanels,
         extensionPanels,
     ])
 
@@ -250,7 +248,7 @@ export const Panel = React.memo<Props>(props => {
             panelViews
                 ? panelViews
                       .map(
-                          (panelView): PanelItem => ({
+                          (panelView): TabbedPanelItem => ({
                               label: panelView.title,
                               id: panelView.id,
                               priority: panelView.priority,
@@ -291,7 +289,7 @@ export const Panel = React.memo<Props>(props => {
         return <EmptyPanelView className={styles.panel} />
     }
 
-    const activeTab: PanelItem | undefined = items[tabIndex]
+    const activeTab: TabbedPanelItem | undefined = items[tabIndex]
 
     return (
         <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
@@ -359,17 +357,6 @@ export const Panel = React.memo<Props>(props => {
         </Tabs>
     )
 })
-
-/** A wrapper around Panel that makes it resizable. */
-export const ResizablePanel: React.FunctionComponent<Props> = props => (
-    <Resizable
-        className={styles.resizablePanel}
-        handlePosition="top"
-        defaultSize={350}
-        storageKey="panel-size"
-        element={<Panel {...props} />}
-    />
-)
 
 /**
  * Temporary solution to code intel extensions all contributing the same panel actions.
