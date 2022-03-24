@@ -313,7 +313,10 @@ func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) er
 			Format:  "tar",
 		}
 
-		location := gitserver.NewClient(db).ArchiveURL(ctx, repo, opts)
+		location, err := gitserver.NewClient(db).ArchiveURL(ctx, repo, opts)
+		if err != nil {
+			return err
+		}
 
 		w.Header().Set("Location", location.String())
 		w.WriteHeader(http.StatusFound)
@@ -352,7 +355,10 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 		}
 
 		// Find the correct shard to query
-		addr := gitserver.NewClient(db).AddrForRepo(ctx, repo.Name)
+		addr, err := gitserver.NewClient(db).AddrForRepo(ctx, repo.Name)
+		if err != nil {
+			return err
+		}
 
 		director := func(req *http.Request) {
 			req.URL.Scheme = "http"
@@ -371,29 +377,38 @@ func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error
 // gitserver for the repo.
 type gitServiceHandler struct {
 	Gitserver interface {
-		AddrForRepo(context.Context, api.RepoName) string
+		AddrForRepo(context.Context, api.RepoName) (string, error)
 	}
 }
 
-func (s *gitServiceHandler) serveInfoRefs(w http.ResponseWriter, r *http.Request) {
-	s.redirectToGitServer(w, r, "/info/refs")
+func (s *gitServiceHandler) serveInfoRefs() func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return s.redirectToGitServer(w, r, "/info/refs")
+	}
 }
 
-func (s *gitServiceHandler) serveGitUploadPack(w http.ResponseWriter, r *http.Request) {
-	s.redirectToGitServer(w, r, "/git-upload-pack")
+func (s *gitServiceHandler) serveGitUploadPack() func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return s.redirectToGitServer(w, r, "/git-upload-pack")
+	}
 }
 
-func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) {
+func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) error {
 	repo := mux.Vars(r)["RepoName"]
 
+	addrForRepo, err := s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo))
+	if err != nil {
+		return err
+	}
 	u := &url.URL{
 		Scheme:   "http",
-		Host:     s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo)),
+		Host:     addrForRepo,
 		Path:     path.Join("/git", repo, gitPath),
 		RawQuery: r.URL.RawQuery,
 	}
 
 	http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+	return nil
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

@@ -20,8 +20,12 @@ func TestGitServiceHandlers(t *testing.T) {
 	gitService := &gitServiceHandler{
 		Gitserver: mockAddrForRepo{},
 	}
-	m.Get(apirouter.GitInfoRefs).Handler(http.HandlerFunc(gitService.serveInfoRefs))
-	m.Get(apirouter.GitUploadPack).Handler(http.HandlerFunc(gitService.serveGitUploadPack))
+	handler := jsonMiddleware(&errorHandler{
+		// Internal endpoints can expose sensitive errors
+		WriteErrBody: true,
+	})
+	m.Get(apirouter.GitInfoRefs).Handler(handler(gitService.serveInfoRefs()))
+	m.Get(apirouter.GitUploadPack).Handler(handler(gitService.serveGitUploadPack()))
 
 	cases := map[string]string{
 		"/git/foo/bar/info/refs?service=git-upload-pack": "http://foo.bar.gitserver/git/foo/bar/info/refs?service=git-upload-pack",
@@ -49,6 +53,6 @@ func TestGitServiceHandlers(t *testing.T) {
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(context context.Context, name api.RepoName) string {
-	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
+func (mockAddrForRepo) AddrForRepo(_ context.Context, name api.RepoName) (string, error) {
+	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver", nil
 }
