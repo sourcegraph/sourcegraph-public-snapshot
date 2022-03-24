@@ -6,6 +6,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
+import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -28,6 +29,7 @@ import { parseFileBlockInput, serializeLineRange } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
@@ -60,8 +62,9 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
     onBlockInputChange,
     ...props
 }) => {
+    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
-    const [fileQueryInput, setFileQueryInput] = useState('')
+    const [fileQueryInput, setFileQueryInput] = useState(input.initialQueryInput ?? '')
     const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
 
     const onFileSelected = useCallback(
@@ -84,15 +87,9 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
         [input.filePath, input.repositoryName, input.revision, onFileSelected]
     )
 
-    const onEnterBlock = useCallback(() => {
-        if (!isReadOnly) {
-            setShowInputs(true)
-        }
-    }, [isReadOnly, setShowInputs])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
 
-    const hideInputs = useCallback(() => {
-        setShowInputs(false)
-    }, [setShowInputs])
+    const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
     const isFileSelected = input.repositoryName.length > 0 && input.filePath.length > 0
     const blobLines = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
@@ -177,10 +174,12 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             className={styles.block}
             id={id}
             aria-label="Notebook file block"
-            onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            onHideInput={hideInputs}
+            isReadOnly={isReadOnly}
+            isInputVisible={showInputs}
+            setIsInputVisible={setShowInputs}
+            focusInput={focusInput}
             actions={isSelected ? menuActions : linkMenuAction}
             {...props}
         >
@@ -190,6 +189,8 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             {showInputs && (
                 <NotebookFileBlockInputs
                     id={id}
+                    editor={editor}
+                    setEditor={setEditor}
                     lineRange={input.lineRange}
                     onLineRangeChange={onLineRangeChange}
                     queryInput={fileQueryInput}

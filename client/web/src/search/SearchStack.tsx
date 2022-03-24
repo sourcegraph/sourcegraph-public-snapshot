@@ -149,11 +149,11 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
         const blocks: BlockInput[] = []
         for (const entry of entries) {
             if (entry.annotation) {
-                blocks.push({ type: 'md', input: entry.annotation })
+                blocks.push({ type: 'md', input: { text: entry.annotation } })
             }
             switch (entry.type) {
                 case 'search':
-                    blocks.push({ type: 'query', input: toSearchQuery(entry) })
+                    blocks.push({ type: 'query', input: { query: toSearchQuery(entry) } })
                     break
                 case 'file':
                     blocks.push({
