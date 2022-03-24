@@ -80,7 +80,7 @@ export const createWebIntegrationTestContext = async ({
         .filter(request => !request.pathname.startsWith('/-/'))
         .intercept((request, response) => {
             response.type('text/html').send(html`
-                <html>
+                <html lang="en">
                     <head>
                         <title>Sourcegraph Test</title>
                     </head>
