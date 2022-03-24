@@ -121,7 +121,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		a := actor.FromContext(r.Context())
 		if !a.IsAuthenticated() {
 			if setupAction == "install" {
-				http.Redirect(w, r, "/install-github-app-success", http.StatusFound)
+				http.Redirect(w, r, "/install-github-app-success?installation_id="+r.URL.Query().Get("installation_id"), http.StatusFound)
 				return
 			}
 
