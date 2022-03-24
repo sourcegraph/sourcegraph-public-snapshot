@@ -11,9 +11,9 @@ In a deployment repository (such as `sourcegraph/deploy-sourcegraph-*`) you can 
 deployment-notifier -environment $MY_ENV -slack.token=$SLACK_TOKEN -slack.webhook=$SLACK_WEBHOOK
 ```
 
-### Flags 
+### Flags
 
-- `-github.token` (defaults to `$GITHUB_TOKEN`) 
+- `-github.token` (defaults to `$GITHUB_TOKEN`)
 - `-environment` either `preprod` or `production`
 - `-dry` (optional) do not post on Slack or GitHub, just print out what would be posted.
 - `-slack.token` Slack Token used to find the matching Slack handle for pull request authors.
