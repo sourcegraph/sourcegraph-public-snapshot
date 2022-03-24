@@ -313,10 +313,22 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string   // the tree or commit to produce an archive for
-	Format  string   // format of the resulting archive (usually "tar" or "zip")
-	Paths   []string // if nonempty, only include these paths
+	Treeish   string     // the tree or commit to produce an archive for
+	Format    string     // format of the resulting archive (usually "tar" or "zip")
+	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
 }
+
+// Pathspec is a git term for a pattern that matches paths using glob-like syntax.
+// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+type Pathspec string
+
+// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
+// characters.
+func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
+
+// PathspecSuffix constructs a pathspec that matches paths ending with the given suffix (useful for
+// matching paths by basename).
+func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
 // Cmd.StdoutReader with one that knows how to report a repository-not-found
@@ -352,8 +364,8 @@ func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, o
 		"format":  {opt.Format},
 	}
 
-	for _, path := range opt.Paths {
-		q.Add("path", path)
+	for _, pathspec := range opt.Pathspecs {
+		q.Add("path", string(pathspec))
 	}
 
 	addrForRepo, err := c.AddrForRepo(ctx, repo)
