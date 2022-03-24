@@ -45,7 +45,51 @@ __TODO__
 
 ### Using external Object Storage
 
-__TODO__
+To use external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then you may come back to add the following values to your override file.
+
+Prior installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+
+> The example override assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-s3-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID: ""
+  PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY: ""
+```
+
+```yaml
+# we use YAML anchors and alias to keep override file clean
+objectStorageEnv: &objectStorageEnv
+  PRECISE_CODE_INTEL_UPLOAD_BACKEND:
+    value: S3 # external object stoage type, one of "S3" or "GCS"
+  PRECISE_CODE_INTEL_UPLOAD_BUCKET:
+    value: lsif-uploads # external object storage bucket name
+  PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT:
+    value: https://s3.us-east-1.amazonaws.com
+  PRECISE_CODE_INTEL_UPLOAD_AWS_REGION:
+    value: us-east-1
+  PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID
+  PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY
+
+frontend:
+  env:
+    <<: *objectStorageEnv
+
+preciseCodeIntel:
+  env:
+    <<: *objectStorageEnv
+```
 
 ### Cloud providers guides
 
