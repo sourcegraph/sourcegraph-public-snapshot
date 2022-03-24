@@ -130,25 +130,68 @@ Upon obtaining the allocated IP address of the load balancer, you should create 
 
 #### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
-You should include these suggested values in your override file, learn more from [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
+#### Prerequisites
 
-In addition to the provided values, you should consult AWS documentation to learn how to configure the Ingress properly.
+You need to have a EKS cluster (>=1.19) with the following addons enabled:
 
-- [Applicatoin load balancing on Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html)
-- [Enable TLS with AWS-managed certificate](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations/#ssl)
-- [Supported AWS load balancer annotations](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations)
+- [x] [AWS Load Balancer Controller]
+- [x] [AWS EBS CSI driver]
 
+You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+
+#### Steps
+
+Create an override file with the following value. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publically and Storage Class to use [AWS EBS CSI driver].
+
+[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)
 ```yaml
 frontend:
   ingress:
     enabled: true
     annotations:
-      kubernetes.io/ingress.class: alb
+      kubernetes.io/ingress.class: alb # aws load balancer controller ingressClass name
       # additional aws alb ingress controller supported annotations
       # ...
     # replace with your actual domain
     host: sourcegraph.company.com
+
+storageClass:
+  create: true
+  type: gp2 # This configures SSDs (recommended).
+  provisioner: ebs.csi.aws.com
+  volumeBindingMode: WaitForFirstConsumer
+  reclaimPolicy: Retain
 ```
+
+Install the chart
+
+```sh
+helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+```
+
+It will take some time for the load balancer to be fully ready, you may check on the status and obtain the load balancer address:
+
+```sh
+kubectl describe ingress sourcegraph-frontend
+```
+
+Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+
+It is recommended to enable TLS and configure certificate properly on your load balancer. You may consider using [AWS-managed certificate](https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html) and add the following annotations to Ingress.
+
+```yaml
+frontend:
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: alb
+      # ARN of the AWS-managed TLS certificate
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-west-2:xxxxx:certificate/xxxxxxx
+```
+
+#### References
+
+- [Enable TLS with AWS-managed certificate](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations/#ssl)
+- [Supported AWS load balancer annotations](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations)
 
 #### Configure Sourcegraph on Azure Managed Kubernetes Service (AKS)
 
@@ -175,6 +218,8 @@ frontend:
 
 #### Configure Sourcegraph on other Cloud providers or on-prem
 
+Create an override file with the following value. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publically and Storage Class to use [AWS EBS CSI driver].
+
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or your on-prem environment.
 
 ```yaml
@@ -185,6 +230,34 @@ storageClass:
   reclaimPolicy: Retain
   parameters:
     key1: value1
+```
+
+If your Cloud provides do not offer managed certificate, you can manually upload the TLS certificate within the cluster by creating a [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
+
+`sourcegraph-frontend-tls.Secret.yaml`
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-frontend-tls
+type: kubernetes.io/tls
+data:
+  tls.crt: |
+    ...
+  tls.key: |
+    ...
+```
+
+```sh
+kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
+```
+
+Add the following values to your override file to configure Ingress to use your self-managed TLS certificate.
+
+```yaml
+frontend:
+  ingress:
+    tlsSecret: "sourcegraph-frontend-tls" # Pre-existing secret, not created by this chart
 ```
 
 ### Advanced configuration
@@ -211,3 +284,5 @@ __TODO__
 [azure application gateway]: https://docs.microsoft.com/en-us/azure/application-gateway/overview
 [Container-native load balancing]: https://cloud.google.com/kubernetes-engine/docs/how-to/container-native-load-balancing
 [Compute Engine persistent disk]: https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver
+[AWS Load Balancer Controller]: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
+[AWS EBS CSI driver]: https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html
