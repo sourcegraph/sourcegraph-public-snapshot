@@ -364,7 +364,7 @@ const AddFeatureFlagOverride: FunctionComponent<{
                     </Label>
                     <Input
                         className="mt-2"
-                        label="Namespace ID"
+                        label={`${overrideType} ID`}
                         type="number"
                         value={namespaceID}
                         onChange={setInputValue}
