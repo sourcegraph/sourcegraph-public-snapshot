@@ -2,6 +2,8 @@ package git
 
 import (
 	"context"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,6 +29,11 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		// sub-repo permissions are enabled only for repo with repoID = 1
 		return id == 1, nil
 	})
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		stringReader := strings.NewReader("1337")
+		return io.NopCloser(stringReader), nil
+	}
+	defer gitserver.ResetClientMocks()
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 
@@ -56,6 +63,11 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		// sub-repo permissions are not present for repo with repoID = 1
 		return id != 1, nil
 	})
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		stringReader := strings.NewReader("1337")
+		return io.NopCloser(stringReader), nil
+	}
+	defer gitserver.ResetClientMocks()
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 

@@ -192,6 +192,18 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 	}
 }
 
+func TestStoreMaxDurationInQueueEmpty(t *testing.T) {
+	db := setupStoreTest(t)
+
+	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting max duration in queue: %s", err)
+	}
+	if age.Round(time.Second) != 0*time.Minute {
+		t.Fatalf("unexpected max age. want=%s have=%s", 0*time.Minute, age)
+	}
+}
+
 func TestStoreDequeueState(t *testing.T) {
 	db := setupStoreTest(t)
 
