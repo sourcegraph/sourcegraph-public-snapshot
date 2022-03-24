@@ -1,114 +1,76 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import classNames from 'classnames'
+import CodeTagsIcon from 'mdi-react/CodeTagsIcon'
+import FunctionIcon from 'mdi-react/FunctionIcon'
+import LanguageMarkdownOutlineIcon from 'mdi-react/LanguageMarkdownOutlineIcon'
+import LaptopIcon from 'mdi-react/LaptopIcon'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 
-import { SymbolKind } from '@sourcegraph/shared/src/schema'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '..'
 import { useExperimentalFeatures } from '../../stores'
+
+import { EMPTY_FILE_BLOCK_INPUT, EMPTY_SYMBOL_BLOCK_INPUT } from './useCommandPaletteOptions'
 
 import styles from './NotebookAddBlockButtons.module.scss'
 
 interface NotebookAddBlockButtonsProps {
     onAddBlock: (blockIndex: number, blockInput: BlockInput) => void
     index: number
-    alwaysVisible?: boolean
-    className?: string
 }
 
 export const NotebookAddBlockButtons: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
-    alwaysVisible,
     index,
-    className,
     onAddBlock,
 }) => {
     const showComputeComponent = useExperimentalFeatures(features => features.showComputeComponent)
+    const addBlock = useCallback((blockInput: BlockInput) => onAddBlock(index, blockInput), [index, onAddBlock])
     return (
-        <div
-            className={classNames(styles.addBlockButtonsWrapper, !alwaysVisible && styles.showOnHover, className)}
-            data-testid={alwaysVisible && 'always-visible-add-block-buttons'}
-        >
-            <hr className="mx-3" />
-            <div className={styles.addBlockButtons}>
+        <>
+            <Button
+                className={styles.addBlockButton}
+                data-tooltip="Add Markdown text"
+                onClick={() => addBlock({ type: 'md', input: { text: '', initialFocusInput: true } })}
+                data-testid="add-md-block"
+            >
+                <Icon as={LanguageMarkdownOutlineIcon} size="sm" />
+            </Button>
+            <Button
+                className={styles.addBlockButton}
+                data-tooltip="Add a Sourcegraph query"
+                onClick={() => addBlock({ type: 'query', input: { query: '', initialFocusInput: true } })}
+                data-testid="add-query-block"
+            >
+                <Icon as={MagnifyIcon} size="sm" />
+            </Button>
+            <Button
+                className={styles.addBlockButton}
+                data-tooltip="Add code from a file"
+                onClick={() => addBlock({ type: 'file', input: EMPTY_FILE_BLOCK_INPUT })}
+                data-testid="add-file-block"
+            >
+                <Icon as={CodeTagsIcon} size="sm" />
+            </Button>
+            <Button
+                className={styles.addBlockButton}
+                data-tooltip="Add a symbol"
+                onClick={() => addBlock({ type: 'symbol', input: EMPTY_SYMBOL_BLOCK_INPUT })}
+                data-testid="add-symbol-block"
+            >
+                <Icon as={FunctionIcon} size="sm" />
+            </Button>
+            {showComputeComponent && (
                 <Button
                     className={styles.addBlockButton}
-                    onClick={() => onAddBlock(index, { type: 'query', input: '' })}
-                    data-testid="add-query-button"
-                    outline={true}
-                    variant="secondary"
-                    size="sm"
+                    data-tooltip="Add compute block"
+                    onClick={() => addBlock({ type: 'compute', input: '' })}
+                    data-testid="add-compute-block"
                 >
-                    + Query
+                    {/* // TODO: Fix icon */}
+                    <Icon as={LaptopIcon} size="sm" />
                 </Button>
-                <Button
-                    className={classNames('ml-2', styles.addBlockButton)}
-                    onClick={() => onAddBlock(index, { type: 'md', input: '' })}
-                    data-testid="add-md-button"
-                    outline={true}
-                    variant="secondary"
-                    size="sm"
-                >
-                    + Markdown
-                </Button>
-                <Button
-                    className={classNames('ml-2', styles.addBlockButton)}
-                    onClick={() =>
-                        onAddBlock(index, {
-                            type: 'file',
-                            input: { repositoryName: '', revision: '', filePath: '', lineRange: null },
-                        })
-                    }
-                    data-testid="add-file-button"
-                    outline={true}
-                    variant="secondary"
-                    size="sm"
-                >
-                    + Code
-                </Button>
-                <Button
-                    className={classNames('ml-2', styles.addBlockButton)}
-                    onClick={() =>
-                        onAddBlock(index, {
-                            type: 'symbol',
-                            input: {
-                                repositoryName: '',
-                                revision: '',
-                                filePath: '',
-                                symbolName: '',
-                                symbolContainerName: '',
-                                symbolKind: SymbolKind.UNKNOWN,
-                                lineContext: 3,
-                            },
-                        })
-                    }
-                    data-testid="add-symbol-button"
-                    outline={true}
-                    variant="secondary"
-                    size="sm"
-                >
-                    + Symbol
-                </Button>
-                {showComputeComponent ? (
-                    <Button
-                        className={classNames('ml-2', styles.addBlockButton)}
-                        onClick={() =>
-                            onAddBlock(index, {
-                                type: 'compute',
-                                input: '',
-                            })
-                        }
-                        data-testid="add-compute-button"
-                        outline={true}
-                        variant="secondary"
-                        size="sm"
-                    >
-                        + Compute
-                    </Button>
-                ) : (
-                    <div />
-                )}
-            </div>
-        </div>
+            )}
+        </>
     )
 }

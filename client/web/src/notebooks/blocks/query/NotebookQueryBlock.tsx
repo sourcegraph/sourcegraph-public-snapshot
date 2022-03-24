@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -33,6 +33,7 @@ import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUse
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor, useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
@@ -75,7 +76,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
-    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
+    const onInputChange = useCallback((query: string) => onBlockInputChange(id, { type: 'query', input: { query } }), [
         id,
         onBlockInputChange,
     ])
@@ -87,11 +88,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         onInputChange,
         ...props,
     })
-
-    // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
-    const onEnterBlock = useCallback(() => {
-        setTimeout(() => editor?.focus(), 0)
-    }, [editor])
 
     const modifierKeyLabel = useModifierKeyLabel()
     const mainMenuAction: BlockMenuAction = useMemo(() => {
@@ -112,7 +108,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
                 type: 'link',
                 label: 'Open in new tab',
                 icon: <Icon as={OpenInNewIcon} />,
-                url: `/search?${buildSearchURLQuery(input, SearchPatternType.literal, false)}`,
+                url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
             },
         ],
         [input]
@@ -122,23 +118,19 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
-    // Focus the query input when a new query block is added (the input is empty).
-    useEffect(() => {
-        if (editor && input.length === 0) {
-            editor.focus()
-        }
-        // Only run this hook for the initial input.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editor])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+
+    useFocusMonacoEditorOnMount({ editor, isEditing: input.initialFocusInput })
 
     return (
         <NotebookBlock
             className={styles.block}
             id={id}
             aria-label="Notebook query block"
-            onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
+            isInputVisible={true}
+            focusInput={focusInput}
             mainAction={mainMenuAction}
             actions={isSelected ? commonMenuActions : linkMenuActions}
             {...props}
@@ -147,7 +139,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
                 <MonacoEditor
                     language={sourcegraphSearchLanguageId}
-                    value={input}
+                    value={input.query}
                     height="auto"
                     isLightTheme={isLightTheme}
                     editorWillMount={noop}
