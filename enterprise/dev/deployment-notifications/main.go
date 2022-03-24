@@ -53,8 +53,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dd := NewManifestDeploymentDiffer("base", changedFiles)
-
+	dd := NewManifestDeploymentDiffer(changedFiles)
 	dn := NewDeploymentNotifier(
 		ghc,
 		dd,

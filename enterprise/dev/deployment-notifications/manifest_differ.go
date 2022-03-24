@@ -10,7 +10,7 @@ import (
 	"github.com/grafana/regexp"
 )
 
-// git diff ...
+// git diff myapp/myapp.Deployment.yaml ...
 // +         image: index.docker.io/sourcegraph/migrator:137540_2022-03-17_d24138504aea@sha256:2b6efe8f447b22f9396544f885f2f326d21325d652f9b36961f3d105723789df
 // -         image: index.docker.io/sourcegraph/migrator:137540_2022-03-17_XXXXXXXXXXXX@sha256:2b6efe8f447b22f9396544f885f2f326d21325d652f9b36961f3d105723789df
 var imageCommitRegexp = `(?m)^DIFF_OP\s+image:\s[^/]+\/sourcegraph\/[^:]+:\d{6}_\d{4}-\d{2}-\d{2}_([^@]+)@sha256.*$` // (?m) stands for multiline.
@@ -20,23 +20,9 @@ type manifestDeploymentDiffer struct {
 	diffs        map[string]*ApplicationVersionDiff
 }
 
-type mockDeploymentDiffer struct {
-	diffs map[string]*ApplicationVersionDiff
-}
-
-func (m *mockDeploymentDiffer) Applications() (map[string]*ApplicationVersionDiff, error) {
-	return m.diffs, nil
-}
-
-func NewManifestDeploymentDiffer(basedir string, changedFiles []string) DeploymentDiffer {
+func NewManifestDeploymentDiffer(changedFiles []string) DeploymentDiffer {
 	return &manifestDeploymentDiffer{
 		changedFiles: changedFiles,
-	}
-}
-
-func NewMockManifestDeployementsDiffer(m map[string]*ApplicationVersionDiff) DeploymentDiffer {
-	return &mockDeploymentDiffer{
-		diffs: m,
 	}
 }
 
@@ -142,4 +128,18 @@ func diffDeploymentManifest(path string, appName string) (*ApplicationVersionDif
 		return nil, err
 	}
 	return imageDiff, nil
+}
+
+type mockDeploymentDiffer struct {
+	diffs map[string]*ApplicationVersionDiff
+}
+
+func (m *mockDeploymentDiffer) Applications() (map[string]*ApplicationVersionDiff, error) {
+	return m.diffs, nil
+}
+
+func NewMockManifestDeployementsDiffer(m map[string]*ApplicationVersionDiff) DeploymentDiffer {
+	return &mockDeploymentDiffer{
+		diffs: m,
+	}
 }
