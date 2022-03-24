@@ -582,7 +582,11 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, gitServerAddrs); !s.hostnameMatch(addr) {
+		addr, err := gitserver.AddrForRepo(ctx, s.DB, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
+		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
