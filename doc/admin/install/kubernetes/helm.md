@@ -195,15 +195,20 @@ frontend:
 
 #### Configure Sourcegraph on Azure Managed Kubernetes Service (AKS)
 
-You should include these suggested values in your override file, learn more from [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml).
+#### Prerequisites
 
-In addition to the provided values, you should configure Ingress to use [Azure Application Gateway] to expose Sourcegraph publically.
+You need to have a AKS cluster (>=1.19) with the following addons enabled:
 
-- [Expose an AKS service over HTTP or HTTPS using Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-expose-service-over-http-https)
-- [Use certificates with LetsEncrypt.org on Application Gateway for AKS clusters](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-letsencrypt-certificate-application-gateway)
-- [Supported Azure Application Gateway Ingress Controller annotations](https://azure.github.io/application-gateway-kubernetes-ingress/annotations/)
-- [What is Application Gateway Ingress Controller?](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview)
+- [x] [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
+- [x] [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
 
+You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+
+#### Steps
+
+Create an override file with the following value. We configure Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publically and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
+
+[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)
 ```yaml
 frontend:
   ingress:
@@ -214,11 +219,50 @@ frontend:
       # ...
     # replace with your actual domain
     host: sourcegraph.company.com
+
+storageClass:
+  create: true
+  type: null
+  provisioner: disk.csi.azure.com
+  volumeBindingMode: WaitForFirstConsumer
+  reclaimPolicy: Retain
+  parameters:
+    storageaccounttype: Premium_LRS # This configures SSDs (recommended). A Premium VM is required.
 ```
 
-#### Configure Sourcegraph on other Cloud providers or on-prem
+Install the chart
 
-Create an override file with the following value. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publically and Storage Class to use [AWS EBS CSI driver].
+```sh
+helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+```
+
+It will take some time for the load balancer to be fully ready, you may check on the status and obtain the load balancer address:
+
+```sh
+kubectl describe ingress sourcegraph-frontend
+```
+
+Upon obtaining the allocated address of the load balancer, you should create a DNS record for the `sourcegraph.company.com` domain that resolves to the load balancer address.
+
+It is recommended to enable TLS and configure certificate properly on your load balancer. You may consider using an [Azure-managed certificate](https://azure.github.io/application-gateway-kubernetes-ingress/features/appgw-ssl-certificate/) and add the following annotations to Ingress.
+
+```yaml
+frontend:
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: azure/application-gateway
+      # Name of the Azure-managed TLS certificate
+      appgw.ingress.kubernetes.io/appgw-ssl-certificate: azure-key-vault-managed-ssl-cert
+```
+
+#### References
+
+- [Expose an AKS service over HTTP or HTTPS using Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-expose-service-over-http-https)
+- [Supported Azure Application Gateway Ingress Controller annotations](https://azure.github.io/application-gateway-kubernetes-ingress/annotations/)
+- [What is Application Gateway Ingress Controller?](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview)
+
+
+#### Configure Sourcegraph on other Cloud providers or on-prem
 
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or your on-prem environment.
 
@@ -230,34 +274,6 @@ storageClass:
   reclaimPolicy: Retain
   parameters:
     key1: value1
-```
-
-If your Cloud provides do not offer managed certificate, you can manually upload the TLS certificate within the cluster by creating a [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
-
-`sourcegraph-frontend-tls.Secret.yaml`
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sourcegraph-frontend-tls
-type: kubernetes.io/tls
-data:
-  tls.crt: |
-    ...
-  tls.key: |
-    ...
-```
-
-```sh
-kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
-```
-
-Add the following values to your override file to configure Ingress to use your self-managed TLS certificate.
-
-```yaml
-frontend:
-  ingress:
-    tlsSecret: "sourcegraph-frontend-tls" # Pre-existing secret, not created by this chart
 ```
 
 ### Advanced configuration
