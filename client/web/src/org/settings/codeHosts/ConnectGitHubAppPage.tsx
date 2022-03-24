@@ -48,10 +48,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
 
     const queryString = window.location.search
     const urlParameters = new URLSearchParams(queryString)
-    let state = urlParameters.get('state')
-    if (state === null) {
-        state = ''
-    }
+    const state = urlParameters.get('state') || ''
 
     useEffect(() => {
         fetch('/.auth/github/get-user-orgs', {
