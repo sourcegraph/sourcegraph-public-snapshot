@@ -13,18 +13,19 @@ export function useCodeMirror(
     const [view, setView] = useState<EditorView>()
 
     useEffect(() => {
-        if (container) {
-            const view = new EditorView({
-                state: EditorState.create({ doc: value ?? '', extensions }),
-                parent: container,
-            })
-            setView(view)
-            return () => {
-                setView(undefined)
-                view.destroy()
-            }
+        if (!container) {
+            return
         }
-        return
+
+        const view = new EditorView({
+            state: EditorState.create({ doc: value ?? '', extensions }),
+            parent: container,
+        })
+        setView(view)
+        return () => {
+            setView(undefined)
+            view.destroy()
+        }
         // Extensions and value are updated via transactions below
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [container])
@@ -52,4 +53,8 @@ export function useCodeMirror(
     }, [extensions])
 
     return view
+}
+
+export function eventOriginatesInInput(): boolean {
+    return (document.activeElement as any)?.contentEditable === 'true'
 }

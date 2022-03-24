@@ -1,10 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
-import { insertTab } from '@codemirror/commands'
+import { defaultKeymap, indentWithTab } from '@codemirror/commands'
+import { indentUnit } from '@codemirror/language'
 import { tags, HighlightStyle, classHighlightStyle } from '@codemirror/highlight'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import { history } from '@codemirror/history'
 import classNames from 'classnames'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
@@ -18,7 +20,6 @@ import { BlockProps, MarkdownBlock } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import { focusLastPositionInMonacoEditor, useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
@@ -26,16 +27,42 @@ import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookMarkdownBlock.module.scss'
 
 const staticExtensions: Extension[] = [
+    history(),
     keymap.of([
+        // Insert a soft tab if the cursor is not at the beginning of the line
+        // or a list item.
         {
-            // TODO: Maybe be smart about this an indent the line if it's the start
-            // of a list item.
-            // See also https://codemirror.net/6/examples/tab/ regarding how to
-            // handle tab properly.
             key: 'Tab',
-            run: insertTab,
+            run: view => {
+                const { main } = view.state.selection
+
+                // If text is actually selected, fall back to indentation
+                // instead
+                if (main.from !== main.to) {
+                    return false
+                }
+                const currentLine = view.state.doc.lineAt(main.to)
+                if (/^\s*((-|\*)\s*)?$/.test(view.state.sliceDoc(currentLine.from, main.to))) {
+                    // We could be smarter about this and actually inspect the
+                    // syntax tree, but maybe this is good enough?
+                    return false
+                }
+
+                // Insert a soft tab
+                const indent = view.state.facet(indentUnit)
+                view.dispatch({
+                    changes: {
+                        from: main.to,
+                        insert: indent,
+                    },
+                    selection: { anchor: main.to + indent.length },
+                })
+                return true
+            },
         },
+        indentWithTab,
     ]),
+    keymap.of(defaultKeymap),
     EditorView.lineWrapping,
     markdown({ base: markdownLanguage }),
     classHighlightStyle,
@@ -44,6 +71,14 @@ const staticExtensions: Extension[] = [
         { tag: tags.url, class: styles.mkdCode },
     ]),
 ]
+
+function focusInput(editor: EditorView) {
+    editor.focus()
+    editor.dispatch({
+        selection: { anchor: editor.state.doc.length },
+        scrollIntoView: true,
+    })
+}
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
 
@@ -89,7 +124,11 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         }
     }, [isReadOnly, setIsEditing])
 
-    // useFocusMonacoEditorOnMount({ editor, isEditing })
+    useEffect(() => {
+        if (editor) {
+            focusInput(editor)
+        }
+    }, [isEditing, editor])
 
     const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
 
@@ -115,31 +154,24 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         return action.concat(commonMenuActions)
     }, [isEditing, modifierKeyLabel, runBlock, editMarkdown, commonMenuActions])
 
-    const focusInput = useCallback(() => {
-        editor?.dispatch({
-            selection: {anchor: editor.state.doc.length},
-            scrollIntoView: true,
-        })
-    }, [editor])
-
     const notebookBlockProps = useMemo(
         () => ({
-                id,
-                isReadOnly,
-                isSelected,
-                onRunBlock,
-                onBlockInputChange,
-                actions: isSelected && !isReadOnly ? menuActions : [],
-                'aria-label': 'Notebook markdown block',
-                isInputVisible: isEditing,
-                setIsInputVisible: setIsEditing,
-                focusInput,
-                ...props,
-            }),
-            [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, focusInput, props]
-        )
+            id,
+            isReadOnly,
+            isSelected,
+            onRunBlock,
+            onBlockInputChange,
+            actions: isSelected && !isReadOnly ? menuActions : [],
+            'aria-label': 'Notebook markdown block',
+            isInputVisible: isEditing,
+            setIsInputVisible: setIsEditing,
+            focusInput: () => editor && focusInput(editor),
+            ...props,
+        }),
+        [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]
+    )
 
-        const isInputFocused = useIsBlockInputFocused(id)
+    const isInputFocused = useIsBlockInputFocused(id)
 
         if (!isEditing) {
             return (
