@@ -49,8 +49,8 @@ type DashboardQueryArgs struct {
 	Limit   int
 	After   int
 
-	// This field will disable user level authorization checks on the insight views. This should only be used
-	// when fetching insights from a container that also has authorization checks, such as a dashboard.
+	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
+	// and not to return dashboards to users.
 	WithoutAuthorization bool
 }
 
