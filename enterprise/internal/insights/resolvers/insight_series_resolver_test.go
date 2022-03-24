@@ -26,6 +26,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+		defer cleanup()
 		postgres := dbtest.NewDB(t)
 		resolver := newWithClock(timescale, postgres, clock)
 
