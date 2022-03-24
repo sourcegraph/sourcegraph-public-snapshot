@@ -2,10 +2,13 @@ package git
 
 import (
 	"context"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,10 +25,15 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
 		// sub-repo permissions are enabled only for repo with repoID = 1
-		return id == 1, nil
+		return name == repoName, nil
 	})
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		stringReader := strings.NewReader("1337")
+		return io.NopCloser(stringReader), nil
+	}
+	defer gitserver.ResetClientMocks()
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 
@@ -34,7 +42,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish: commitID,
 		Paths:   []string{"."},
 	}
-	if _, err := ArchiveReaderWithSubRepo(context.Background(), checker, repo, opts); err == nil {
+	if _, err := ArchiveReader(context.Background(), database.NewMockDB(), checker, repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
 }
@@ -51,10 +59,15 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
 	})
-	checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
 		// sub-repo permissions are not present for repo with repoID = 1
-		return id != 1, nil
+		return name != repoName, nil
 	})
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (io.ReadCloser, error) {
+		stringReader := strings.NewReader("1337")
+		return io.NopCloser(stringReader), nil
+	}
+	defer gitserver.ResetClientMocks()
 
 	repo := &types.Repo{Name: repoName, ID: 1}
 
@@ -63,7 +76,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Treeish: commitID,
 		Paths:   []string{"."},
 	}
-	readCloser, err := ArchiveReaderWithSubRepo(context.Background(), checker, repo, opts)
+	readCloser, err := ArchiveReader(context.Background(), database.NewMockDB(), checker, repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
 	}

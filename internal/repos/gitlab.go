@@ -98,7 +98,7 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(baseURL, cli)
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {

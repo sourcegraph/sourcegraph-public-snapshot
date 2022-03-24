@@ -6,10 +6,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -37,6 +39,7 @@ func TestDefinitions(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	resolver := newQueryResolver(
+		database.NewMockDB(),
 		mockDBStore,
 		mockLSIFStore,
 		newCachedCommitChecker(mockGitserverClient),
@@ -103,6 +106,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	})
 
 	resolver := newQueryResolver(
+		database.NewMockDB(),
 		mockDBStore,
 		mockLSIFStore,
 		newCachedCommitChecker(mockGitserverClient),
@@ -145,8 +149,12 @@ func TestDefinitionsRemote(t *testing.T) {
 	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
 
 	// upload #150's commit no longer exists; all others do
-	mockGitserverClient.CommitExistsFunc.PushReturn(false, nil)
-	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
+		for _, rc := range rcs {
+			exists = append(exists, rc.Commit != "deadbeef1")
+		}
+		return
+	})
 
 	monikers := []precise.MonikerData{
 		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},
@@ -181,6 +189,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	resolver := newQueryResolver(
+		database.NewMockDB(),
 		mockDBStore,
 		mockLSIFStore,
 		newCachedCommitChecker(mockGitserverClient),
@@ -252,8 +261,12 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
 
 	// upload #150's commit no longer exists; all others do
-	mockGitserverClient.CommitExistsFunc.PushReturn(false, nil)
-	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
+		for _, rc := range rcs {
+			exists = append(exists, rc.Commit != "deadbeef1")
+		}
+		return
+	})
 
 	monikers := []precise.MonikerData{
 		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},
@@ -303,6 +316,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 
 	resolver := newQueryResolver(
+		database.NewMockDB(),
 		mockDBStore,
 		mockLSIFStore,
 		newCachedCommitChecker(mockGitserverClient),

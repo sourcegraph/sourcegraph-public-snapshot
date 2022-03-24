@@ -119,6 +119,15 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                 </Button>
             </div>
             <div className="text-muted">
+                {typeof workspace.placeInQueue === 'number' && (
+                    <>
+                        <Icon as={SyncIcon} />{' '}
+                        <strong>
+                            <NumberInQueue number={workspace.placeInQueue} />
+                        </strong>{' '}
+                        in queue |{' '}
+                    </>
+                )}
                 {workspace.path && <>{workspace.path} | </>}
                 <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.displayName}</strong>
                 {workspace.startedAt && (
@@ -128,16 +137,6 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <strong>
                             <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                         </strong>
-                    </>
-                )}
-                {typeof workspace.placeInQueue === 'number' && (
-                    <>
-                        {' '}
-                        | <Icon as={SyncIcon} />{' '}
-                        <strong>
-                            <NumberInQueue number={workspace.placeInQueue} />
-                        </strong>{' '}
-                        in queue
                     </>
                 )}
                 {!workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (

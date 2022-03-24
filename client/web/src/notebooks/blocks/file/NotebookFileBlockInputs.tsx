@@ -9,20 +9,23 @@ import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Icon, Button } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
+import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
     sourcegraphSearchLanguageId: string
+    editor: Monaco.editor.IStandaloneCodeEditor | undefined
     queryInput: string
     lineRange: IHighlightLineRange | null
+    setEditor: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     setQueryInput: (value: string) => void
     debouncedSetQueryInput: (value: string) => void
     onLineRangeChange: (lineRange: IHighlightLineRange | null) => void
@@ -36,11 +39,14 @@ function getFileSuggestionsQuery(queryInput: string): string {
 export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
     id,
     lineRange,
+    editor,
+    setEditor,
     onFileSelected,
     onLineRangeChange,
     ...props
 }) => {
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    useFocusMonacoEditorOnMount({ editor, isEditing: true })
+
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -90,8 +96,8 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
         <div className={styles.fileBlockInputs}>
             <div className="text-muted mb-2">
                 <small>
-                    <InfoCircleOutlineIcon className="icon-inline" /> To automatically select a file, copy a Sourcegraph
-                    file URL, select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
+                    <Icon as={InfoCircleOutlineIcon} /> To automatically select a file, copy a Sourcegraph file URL,
+                    select the block, and paste the URL ({isMacPlatform ? '⌘' : 'Ctrl'} + v).
                 </small>
             </div>
             <SearchTypeSuggestionsInput<PathMatch>

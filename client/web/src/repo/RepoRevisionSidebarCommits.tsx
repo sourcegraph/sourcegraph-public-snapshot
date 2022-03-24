@@ -9,7 +9,7 @@ import { map } from 'rxjs/operators'
 
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -47,7 +47,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location, 
                     className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
-                    <FileIcon className="icon-inline" />
+                    <Icon as={FileIcon} />
                 </Link>
             }
         />

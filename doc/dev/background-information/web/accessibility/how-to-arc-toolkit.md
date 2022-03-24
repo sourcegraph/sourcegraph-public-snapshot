@@ -14,6 +14,7 @@ It is currently only available as a browser extension for Chrome.
 Here is a useful tutorial video that explains how to use this tool: [How to use ARC Toolkit](https://www.youtube.com/watch?v=_X_X_X_X_X_)
 
 In summary:
+
 - Open the Toolkit through the "ARC Toolkit" tab in Chrome DevTools.
 - Click "Run Tests" to start an audit on the current webpage.
   - **Note:** tests will not automatically rerun when the page is interacted with.

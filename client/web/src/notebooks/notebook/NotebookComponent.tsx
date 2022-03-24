@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
@@ -10,12 +10,12 @@ import { Redirect } from 'react-router-dom'
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { useQueryIntelligence } from '@sourcegraph/search/src/useQueryIntelligence'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -25,7 +25,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Icon, useObservable } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -41,7 +41,8 @@ import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
-import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
+import { NotebookBlockSeparator } from './NotebookBlockSeparator'
+import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
@@ -116,6 +117,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
+    const commandPaletteInputReference = useRef<HTMLInputElement>(null)
 
     const updateBlocks = useCallback(
         (serialize = true) => {
@@ -214,7 +216,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 return
             }
             const addedBlock = notebook.insertBlockAtIndex(index, blockInput)
-            if (addedBlock.type === 'md') {
+            if (
+                addedBlock.type === 'md' ||
+                (addedBlock.type === 'file' && addedBlock.input.repositoryName && addedBlock.input.filePath)
+            ) {
                 notebook.runBlockById(addedBlock.id)
             }
             setSelectedBlockId(addedBlock.id)
@@ -289,10 +294,19 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
 
+    const onFocusLastBlock = useCallback(() => {
+        const lastBlockId = notebook.getLastBlockId()
+        if (lastBlockId) {
+            setSelectedBlockId(lastBlockId)
+            focusBlock(lastBlockId)
+        }
+    }, [notebook, setSelectedBlockId])
+
     const notebookEventHandlersProps = useMemo(
         () => ({
             notebook,
             selectedBlockId,
+            commandPaletteInputReference,
             setSelectedBlockId,
             onMoveBlock,
             onRunBlock,
@@ -337,9 +351,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
     // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
     // reposition hover overlay if needed when `SearchNotebook` rerenders
     const rerenders = useMemo(() => new ReplaySubject(1), [])
-    useEffect(() => {
-        rerenders.next()
-    })
+    useEffect(() => rerenders.next())
 
     // Create hoverifier.
     const hoverifier = useMemo(
@@ -470,7 +482,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     onClick={runAllBlocks}
                     disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                 >
-                    <PlayCircleOutlineIcon className="icon-inline mr-1" />
+                    <Icon className="mr-1" as={PlayCircleOutlineIcon} />
                     <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                 </Button>
                 {!isEmbedded && (
@@ -481,7 +493,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         onClick={exportNotebook}
                         data-testid="export-notebook-markdown-button"
                     >
-                        <DownloadIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={DownloadIcon} />
                         <span>Export as Markdown</span>
                     </Button>
                 )}
@@ -494,27 +506,23 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         data-testid="copy-notebook-button"
                         disabled={copiedNotebookOrError === LOADING}
                     >
-                        <ContentCopyIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={ContentCopyIcon} />
                         <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                     </Button>
                 )}
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
-                    {!isReadOnly ? (
-                        <NotebookAddBlockButtons onAddBlock={onAddBlock} index={blockIndex} />
-                    ) : (
-                        <div className="mb-2" />
-                    )}
+                    <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
                     {renderBlock(block)}
                 </div>
             ))}
             {!isReadOnly && (
-                <NotebookAddBlockButtons
-                    onAddBlock={onAddBlock}
+                <NotebookCommandPaletteInput
+                    ref={commandPaletteInputReference}
                     index={blocks.length}
-                    className="mt-2"
-                    alwaysVisible={true}
+                    onAddBlock={onAddBlock}
+                    onFocusPreviousBlock={onFocusLastBlock}
                 />
             )}
             {hoverState.hoverOverlayProps && (

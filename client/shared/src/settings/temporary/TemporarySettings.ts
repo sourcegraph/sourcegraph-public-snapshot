@@ -1,5 +1,9 @@
 import { Optional } from 'utility-types'
 
+import { MultiSelectState } from '@sourcegraph/wildcard'
+
+import { BatchChangeState } from '../../graphql-operations'
+
 import { SectionID, NoResultsSectionID } from './searchSidebar'
 
 /**
@@ -12,6 +16,7 @@ export interface TemporarySettingsSchema {
     'search.onboarding.tourCancelled': boolean
     'search.contexts.ctaDismissed': boolean
     'insights.freeGaAccepted': boolean
+    'insights.freeGaExpiredAccepted': boolean
     'insights.wasMainPageOpen': boolean
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
@@ -24,6 +29,7 @@ export interface TemporarySettingsSchema {
     'integrations.jetbrains.lastDetectionTimestamp': number
     'cta.browserExtensionAlertDismissed': boolean
     'cta.ideExtensionAlertDismissed': boolean
+    'batches.defaultListFilters': MultiSelectState<BatchChangeState>
 }
 
 /**

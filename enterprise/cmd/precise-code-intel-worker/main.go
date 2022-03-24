@@ -94,7 +94,7 @@ func main() {
 	dbStore := dbstore.NewWithDB(db, observationContext)
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, makeObservationContext(observationContext, false))
 	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
-	gitserverClient := gitserver.New(dbStore, observationContext)
+	gitserverClient := gitserver.New(database.NewDB(db), dbStore, observationContext)
 
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
@@ -152,7 +152,7 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB), database.NewDB(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

@@ -10,7 +10,6 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -24,6 +23,7 @@ import {
     CardBody,
     Card,
     Icon,
+    Panel,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -116,7 +116,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         </LinkOrSpan>
                     </>
                 }
-                actions={<BatchSpecActions batchSpec={batchSpec} />}
+                actions={<BatchSpecActions batchSpec={batchSpec} executionURL={match.url} />}
                 className="mb-3"
             />
 
@@ -202,9 +202,10 @@ const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecuti
 
 interface BatchSpecActionsProps {
     batchSpec: BatchSpecExecutionFields
+    executionURL: string
 }
 
-const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec }) => {
+const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batchSpec, executionURL }) => {
     const location = useLocation()
 
     const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
@@ -279,7 +280,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.COMPLETED && (
-                            <Button to="preview" variant="primary" as={Link}>
+                            <Button to={`${executionURL}/preview`} variant="primary" as={Link}>
                                 Preview
                             </Button>
                         )}
@@ -305,7 +306,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.FAILED && (
                             <Button
-                                to="preview"
+                                to={`${executionURL}/preview`}
                                 data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
                                 variant="warning"
                                 outline={true}
@@ -392,20 +393,13 @@ const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPagePr
         <>
             {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
             <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
-                <Resizable
-                    defaultSize={500}
-                    minSize={405}
-                    maxSize={1400}
-                    handlePosition="right"
-                    storageKey={WORKSPACES_LIST_SIZE}
-                    element={
-                        <Workspaces
-                            batchSpecID={batchSpec.id}
-                            selectedNode={selectedWorkspaceID}
-                            executionURL={executionURL}
-                        />
-                    }
-                />
+                <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
+                    <Workspaces
+                        batchSpecID={batchSpec.id}
+                        selectedNode={selectedWorkspaceID}
+                        executionURL={executionURL}
+                    />
+                </Panel>
                 <SelectedWorkspace
                     workspace={selectedWorkspaceID ?? null}
                     isLightTheme={isLightTheme}

@@ -267,6 +267,7 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 viewerIsMember: false,
                 viewerPendingInvitation: null,
+                viewerNeedsCodeHostUpdate: false,
             },
         }),
         UserAreaUserProfile: () => ({
@@ -350,6 +351,9 @@ function mockCommonGraphQLResponses(
                         totalCount: 0,
                     },
                 },
+                batchSpecs: {
+                    nodes: [{ state: BatchSpecState.COMPLETED }],
+                },
                 bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
                 ...batchesOverrides,
@@ -394,6 +398,11 @@ function mockCommonGraphQLResponses(
                           },
                       },
                   },
+        GetStartedInfo: () => ({
+            membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
+            repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
+            extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
+        }),
     }
 }
 

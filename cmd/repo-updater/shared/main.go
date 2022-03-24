@@ -126,14 +126,14 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(database.NewDB(db).ExternalServices(), cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
+		src = repos.NewSourcer(database.NewDB(db), cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
 	}
 
-	updateScheduler := repos.NewUpdateScheduler()
+	updateScheduler := repos.NewUpdateScheduler(db)
 	server := &repoupdater.Server{
 		Store:                 store,
 		Scheduler:             updateScheduler,
-		GitserverClient:       gitserver.DefaultClient,
+		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 

@@ -114,6 +114,10 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             className: 'badge',
             message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
           },
+          {
+            className: 'icon-inline',
+            message: 'Use the <Icon /> component from @sourcegraph/wildcard instead.',
+          },
         ],
       },
     ],

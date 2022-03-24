@@ -6,51 +6,54 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// DefaultRegistry is the default global rate limit registry. It will hold rate limit mappings
-// for each instance of our services.
+// DefaultRegistry is the default global rate limit registry, which holds rate
+// limit mappings for each instance of our services.
 var DefaultRegistry = NewRegistry()
 
-// NewRegistry creates a new empty registry.
+// NewRegistry creates and returns an empty rate limit registry.
 func NewRegistry() *Registry {
 	return &Registry{
 		rateLimiters: make(map[string]*rate.Limiter),
 	}
 }
 
-// Registry keeps a mapping of external service URL to *rate.Limiter.
-// By default an infinite limiter is returned.
+// Registry manages rate limiters for external services.
 type Registry struct {
 	mu sync.Mutex
-	// Rate limiter per code host, keys are the normalized base URL for a
-	// code host.
+	// rateLimiters contains mappings of external service to its *rate.Limiter. The
+	// key should be the URN of the external service.
 	rateLimiters map[string]*rate.Limiter
 }
 
-// Get fetches the rate limiter associated with the given code host. If none has been
-// configured an infinite limiter is returned.
-func (r *Registry) Get(baseURL string) *rate.Limiter {
-	return r.GetOrSet(baseURL, nil)
+// Get returns the rate limiter configured for the given URN of an external
+// service. It returns an infinite limiter if no rate limiter has been configured
+// for the URN.
+//
+// Modifications to the returned rate limiter takes effect on all call sites.
+func (r *Registry) Get(urn string) *rate.Limiter {
+	return r.GetOrSet(urn, nil)
 }
 
-// GetOrSet fetches the rate limiter associated with the given code host. If none has been configured
-// yet, the provided limiter will be set. A nil limiter will fall back to an infinite limiter.
-func (r *Registry) GetOrSet(baseURL string, fallback *rate.Limiter) *rate.Limiter {
-	baseURL = normaliseURL(baseURL)
-	if fallback == nil {
-		// Burst is ignored when rate.Inf is used
-		fallback = rate.NewLimiter(rate.Inf, 1)
-	}
+// GetOrSet returns the rate limiter configured for the given URN of an external
+// service, and sets the `fallback` to be the rate limiter if no rate limiter has
+// been configured for the URN. A nil `fallback` indicates an infinite limiter.
+//
+// Modifications to the returned rate limiter takes effect on all call sites.
+func (r *Registry) GetOrSet(urn string, fallback *rate.Limiter) *rate.Limiter {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	l := r.rateLimiters[baseURL]
+	l := r.rateLimiters[urn]
 	if l == nil {
-		l = fallback
-		r.rateLimiters[baseURL] = l
+		if fallback == nil {
+			fallback = rate.NewLimiter(rate.Inf, 1)
+		}
+		r.rateLimiters[urn] = fallback
+		return fallback
 	}
 	return l
 }
 
-// Count returns the total number of rate limiters in the registry
+// Count returns the total number of rate limiters in the registry.
 func (r *Registry) Count() int {
 	r.mu.Lock()
 	defer r.mu.Unlock()

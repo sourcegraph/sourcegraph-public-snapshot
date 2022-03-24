@@ -10,10 +10,10 @@ import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -29,6 +29,7 @@ import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '..
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { NotebookSymbolBlockInput } from './NotebookSymbolBlockInput'
@@ -70,7 +71,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
-    const [symbolQueryInput, setSymbolQueryInput] = useState('')
+    const [symbolQueryInput, setSymbolQueryInput] = useState(input.initialQueryInput ?? '')
     const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
 
     const onSymbolSelected = useCallback(
@@ -81,14 +82,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
         [id, onBlockInputChange, onRunBlock]
     )
 
-    const onEnterBlock = useCallback(() => {
-        if (showInputs) {
-            // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
-            setTimeout(() => editor?.focus(), 0)
-        } else if (!isReadOnly) {
-            setShowInputs(true)
-        }
-    }, [editor, showInputs, isReadOnly, setShowInputs])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
 
     const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
@@ -102,7 +96,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
 
     const symbolURL = useMemo(
         () =>
-            symbolOutput && symbolOutput !== LOADING && !isErrorLike(symbolOutput)
+            isSymbolOutputLoaded(symbolOutput)
                 ? toPrettyBlobURL({
                       repoName: input.repositoryName,
                       revision: symbolOutput.effectiveRevision,
@@ -118,7 +112,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <Icon as={OpenInNewIcon} className="icon-inline" />,
+                icon: <Icon as={OpenInNewIcon} />,
                 url: symbolURL,
                 isDisabled: symbolURL.length === 0,
             },
@@ -132,11 +126,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             {
                 type: 'button',
                 label: showInputs ? 'Save' : 'Edit',
-                icon: showInputs ? (
-                    <Icon as={CheckIcon} className="icon-inline" />
-                ) : (
-                    <Icon as={PencilIcon} className="icon-inline" />
-                ),
+                icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
                 onClick: () => setShowInputs(!showInputs),
                 keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
             },
@@ -165,8 +155,10 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             className={styles.block}
             id={id}
             aria-label="Notebook symbol block"
-            onEnterBlock={onEnterBlock}
-            onHideInput={hideInputs}
+            isInputVisible={showInputs}
+            setIsInputVisible={setShowInputs}
+            focusInput={focusInput}
+            isReadOnly={isReadOnly}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
             actions={isSelected ? menuActions : linkMenuAction}
@@ -250,7 +242,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHead
 }) => (
     <>
         <div className="mr-2">
-            <SymbolIcon className="icon-inline" kind={symbolKind} />
+            <SymbolIcon kind={symbolKind} />
         </div>
         <div className="d-flex flex-column">
             <div className="mb-1 d-flex align-items-center">
@@ -263,7 +255,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHead
                 {symbolFoundAtLatestRevision === false && (
                     <Icon
                         as={InformationOutlineIcon}
-                        className="icon-inline ml-1"
+                        className="ml-1"
                         data-tooltip={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
                     />
                 )}

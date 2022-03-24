@@ -5,7 +5,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import { useHistory } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { Button, Input, LoadingSpinner, Modal } from '@sourcegraph/wildcard'
+import { Button, Input, LoadingSpinner, Modal, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../area/OrgArea'
@@ -67,10 +67,11 @@ export const DeleteOrgModal: React.FunctionComponent<DeleteOrgModalProps> = prop
                 <h3 className="text-danger" id={deleteLabelId}>
                     Delete organization?
                 </h3>
-                <CloseIcon
-                    className="icon-inline position-absolute cursor-pointer"
+                <Icon
+                    className="position-absolute cursor-pointer"
                     style={{ top: '1rem', right: '1rem' }}
                     onClick={toggleDeleteModal}
+                    as={CloseIcon}
                 />
                 <p className="pt-3">
                     <strong>You are going to delete {org.name} from Sourcegraph.</strong>

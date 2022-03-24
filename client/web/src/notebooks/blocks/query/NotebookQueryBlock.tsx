@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -8,12 +8,12 @@ import * as Monaco from 'monaco-editor'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { useQueryDiagnostics } from '@sourcegraph/search/src/useQueryIntelligence'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -24,7 +24,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
@@ -33,6 +33,7 @@ import { SearchUserNeedsCodeHost } from '../../../user/settings/codeHosts/OrgUse
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
+import { focusLastPositionInMonacoEditor, useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
@@ -75,7 +76,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
     const searchResults = useObservable(output ?? of(undefined))
     const location = useLocation()
 
-    const onInputChange = useCallback((input: string) => onBlockInputChange(id, { type: 'query', input }), [
+    const onInputChange = useCallback((query: string) => onBlockInputChange(id, { type: 'query', input: { query } }), [
         id,
         onBlockInputChange,
     ])
@@ -88,11 +89,6 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
         ...props,
     })
 
-    // setTimeout executes the editor focus in a separate run-loop which prevents adding a newline at the start of the input
-    const onEnterBlock = useCallback(() => {
-        setTimeout(() => editor?.focus(), 0)
-    }, [editor])
-
     const modifierKeyLabel = useModifierKeyLabel()
     const mainMenuAction: BlockMenuAction = useMemo(() => {
         const isLoading = searchResults && searchResults.state === 'loading'
@@ -100,7 +96,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             type: 'button',
             label: isLoading ? 'Searching...' : 'Run search',
             isDisabled: isLoading ?? false,
-            icon: <PlayCircleOutlineIcon className="icon-inline" />,
+            icon: <Icon as={PlayCircleOutlineIcon} />,
             onClick: onRunBlock,
             keyboardShortcutLabel: isSelected ? `${modifierKeyLabel} + ↵` : '',
         }
@@ -111,8 +107,8 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             {
                 type: 'link',
                 label: 'Open in new tab',
-                icon: <OpenInNewIcon className="icon-inline" />,
-                url: `/search?${buildSearchURLQuery(input, SearchPatternType.literal, false)}`,
+                icon: <Icon as={OpenInNewIcon} />,
+                url: `/search?${buildSearchURLQuery(input.query, SearchPatternType.literal, false)}`,
             },
         ],
         [input]
@@ -122,23 +118,19 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
 
     useQueryDiagnostics(editor, { patternType: SearchPatternType.literal, interpretComments: true })
 
-    // Focus the query input when a new query block is added (the input is empty).
-    useEffect(() => {
-        if (editor && input.length === 0) {
-            editor.focus()
-        }
-        // Only run this hook for the initial input.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editor])
+    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+
+    useFocusMonacoEditorOnMount({ editor, isEditing: input.initialFocusInput })
 
     return (
         <NotebookBlock
             className={styles.block}
             id={id}
             aria-label="Notebook query block"
-            onEnterBlock={onEnterBlock}
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
+            isInputVisible={true}
+            focusInput={focusInput}
             mainAction={mainMenuAction}
             actions={isSelected ? commonMenuActions : linkMenuActions}
             {...props}
@@ -147,7 +139,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             <div className={classNames(blockStyles.monacoWrapper, styles.queryInputMonacoWrapper)}>
                 <MonacoEditor
                     language={sourcegraphSearchLanguageId}
-                    value={input}
+                    value={input.query}
                     height="auto"
                     isLightTheme={isLightTheme}
                     editorWillMount={noop}
