@@ -8,13 +8,13 @@ export const OPEN_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Open',
 export const DRAFT_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Draft', value: BatchChangeState.DRAFT }
 export const CLOSED_STATUS: MultiSelectOption<BatchChangeState> = { label: 'Closed', value: BatchChangeState.CLOSED }
 
-const STATUS_OPTIONS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, DRAFT_STATUS, CLOSED_STATUS]
+export const STATUS_OPTIONS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, DRAFT_STATUS, CLOSED_STATUS]
 // Drafts are a new feature of severside execution that for now should not be shown if
 // execution is not enabled.
 const STATUS_OPTIONS_NO_DRAFTS: MultiSelectOption<BatchChangeState>[] = [OPEN_STATUS, CLOSED_STATUS]
 
 interface BatchChangeListFiltersProps
-    extends Required<Pick<MultiSelectProps<MultiSelectOption<BatchChangeState>>, 'onChange' | 'defaultValue'>> {
+    extends Required<Pick<MultiSelectProps<MultiSelectOption<BatchChangeState>>, 'onChange' | 'value'>> {
     className?: string
     isExecutionEnabled: boolean
 }

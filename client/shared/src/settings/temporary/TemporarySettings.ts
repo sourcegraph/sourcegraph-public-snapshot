@@ -1,5 +1,9 @@
 import { Optional } from 'utility-types'
 
+import { MultiSelectState } from '@sourcegraph/wildcard'
+
+import { BatchChangeState } from '../../graphql-operations'
+
 import { SectionID, NoResultsSectionID } from './searchSidebar'
 
 /**
@@ -25,6 +29,7 @@ export interface TemporarySettingsSchema {
     'integrations.jetbrains.lastDetectionTimestamp': number
     'cta.browserExtensionAlertDismissed': boolean
     'cta.ideExtensionAlertDismissed': boolean
+    'batches.defaultListFilters': MultiSelectState<BatchChangeState>
 }
 
 /**
