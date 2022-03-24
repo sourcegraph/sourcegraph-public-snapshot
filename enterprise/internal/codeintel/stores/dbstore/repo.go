@@ -75,7 +75,7 @@ func (s *Store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]
 
 const repoNamesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/repos.go:RepoNames
-SELECT id, name FROM repo WHERE id =  ANY(%s)
+SELECT id, name FROM repo WHERE id = ANY(%s)
 `
 
 // RepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
