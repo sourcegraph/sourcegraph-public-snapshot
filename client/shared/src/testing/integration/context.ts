@@ -120,14 +120,8 @@ export const createSharedIntegrationTestContext = async <
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
     console.log(expect.getState().currentTestName)
-    const testTitle = snakeCase(currentTest ? currentTest.title : expect.getState().currentTestName)
-        .replace('git_lab_', '')
-        .replace('git_hub_', '')
-    const recordingsDirectory = path.join(
-        directory,
-        '__fixtures__',
-        snakeCase(currentTest ? currentTest.fullTitle() : expect.getState().currentTestName)
-    )
+    const testTitle = snakeCase(currentTest ? currentTest.fullTitle() : expect.getState().currentTestName)
+    const recordingsDirectory = path.join(directory, '__fixtures__', testTitle)
     if (pollyMode === 'record') {
         await mkdir(recordingsDirectory, { recursive: true })
     }
