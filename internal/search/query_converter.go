@@ -240,19 +240,14 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 			fileNameOnly := patternMatchesPath && !patternMatchesContent
 			contentOnly := !patternMatchesPath && patternMatchesContent
 
-			if n.Annotation.Labels.IsSet(query.Regexp) {
-				q, err = parseRe(n.Value, fileNameOnly, contentOnly, isCaseSensitive)
-				if err != nil {
-					return nil, err
-				}
-			} else {
-				q = &zoekt.Substring{
-					Pattern:       regexp.QuoteMeta(n.Value),
-					CaseSensitive: isCaseSensitive,
+			pattern := n.Value
+			if n.Annotation.Labels.IsSet(query.Literal) {
+				pattern = regexp.QuoteMeta(pattern)
+			}
 
-					FileName: fileNameOnly,
-					Content:  contentOnly,
-				}
+			q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
+			if err != nil {
+				return nil, err
 			}
 
 			if n.Negated {

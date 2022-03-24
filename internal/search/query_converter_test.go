@@ -393,16 +393,12 @@ func TestToTextPatternInfo(t *testing.T) {
 }
 
 func Test_toZoektPattern(t *testing.T) {
-	test := func(input string) string {
-		q, err := query.ParseLiteral(input)
+	test := func(input string, searchType query.SearchType) string {
+		p, err := query.Pipeline(query.Init(input, searchType))
 		if err != nil {
 			return err.Error()
 		}
-		b, err := query.ToBasicQuery(q)
-		if err != nil {
-			return err.Error()
-		}
-		zoektQuery, err := toZoektPattern(b.Pattern, false, false, true)
+		zoektQuery, err := toZoektPattern(p[0].Pattern, false, false, false)
 		if err != nil {
 			return err.Error()
 		}
@@ -410,10 +406,18 @@ func Test_toZoektPattern(t *testing.T) {
 	}
 
 	autogold.Want("basic string",
-		`file_substr:"a"`).
-		Equal(t, test(`a`))
+		`substr:"a"`).
+		Equal(t, test(`a`, query.SearchTypeLiteral))
 
 	autogold.Want("basic and-expression",
-		`(or (and file_substr:"a" file_substr:"b" (not file_substr:"c")) file_substr:"d")`).
-		Equal(t, test(`a and b and not c or d`))
+		`(and substr:"a" substr:"b" (not substr:"c"))`).
+		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteral))
+
+	autogold.Want("quoted string in literal escapes quotes (regexp meta and string escaping)",
+		`substr:"\"func main() {\\n\""`).
+		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteral))
+
+	autogold.Want("quoted string in regexp interpreted as string (regexp meta escaped)",
+		`substr:"func main() {\n"`).
+		Equal(t, test(`"func main() {\n"`, query.SearchTypeRegex))
 }
