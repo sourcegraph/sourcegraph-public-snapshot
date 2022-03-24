@@ -385,7 +385,7 @@ Flakiness in snapshot tests can be caused by the search response time, order of 
 
 This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` (to apply `visibility: hidden`) or `percy-display-none` (to apply `display: none`) CSS classes to the problematic element and it will be hidden from Percy.
 
-#### Accessibility tests
+### Accessibility tests
 
 We use [axe-core](https://github.com/dequelabs/axe-core) to run accessibility audits through our integration tests. It ensures we can quickly assess entire pages and raise any errors before they become problems in production.
 
@@ -402,8 +402,10 @@ test('Repositories list', async function () {
 If, for whatever reason, we have to ignore some elements from an accessibility audit, we can use the `a11y-ignore` CSS class:
 
 ```JSX
+  import { ACCESSIBILITY_AUDIT_IGNORE_CLASS } from '@sourcegraph/shared/src/testing/accessibility'
+
   {/* Some explanation as to why we need to ignore this element */}
-  <h3 className="a11y-ignore">Heading</h3>
+  <h3 className={ACCESSIBILITY_AUDIT_IGNORE_CLASS}>Heading</h3>
 ```
 
 **Tip:** Don't forget you'll need to rebuild the code if you want to see the tests pass locally after making this change.
