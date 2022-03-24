@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 
 import { BlockProps } from '..'
-import { isModifierKeyPressed } from '../notebook/useNotebookEventHandlers'
+import { isModifierKeyPressed, isMonacoEditorDescendant } from '../notebook/useNotebookEventHandlers'
 
 import { NotebookBlockMenu, NotebookBlockMenuProps } from './menu/NotebookBlockMenu'
 import { useIsBlockInputFocused } from './useIsBlockInputFocused'
@@ -50,6 +50,11 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
+            const target = event.target as HTMLElement
+            if (isMonacoEditorDescendant(target)) {
+                return
+            }
+
             if (isSelected && event.key === 'Enter') {
                 if (isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)) {
                     setIsInputVisible?.(false)
