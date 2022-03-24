@@ -1,4 +1,4 @@
-package background
+package workers
 
 import (
 	"context"
@@ -8,19 +8,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// newBulkOperationWorker creates a dbworker.Worker that fetches enqueued changeset_jobs
+// NewBulkOperationWorker creates a dbworker.Worker that fetches enqueued changeset_jobs
 // from the database and passes them to the bulk executor for processing.
-func newBulkOperationWorker(
+func NewBulkOperationWorker(
 	ctx context.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	sourcer sources.Sourcer,
-	metrics batchChangesMetrics,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
 	r := &bulkProcessorWorker{sourcer: sourcer, store: s}
 
@@ -29,24 +30,11 @@ func newBulkOperationWorker(
 		NumHandlers:       5,
 		HeartbeatInterval: 15 * time.Second,
 		Interval:          5 * time.Second,
-		Metrics:           metrics.bulkProcessorWorkerMetrics,
+		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_bulk_processor"),
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
 	return worker
-}
-
-// newBulkOperationWorkerResetter creates a dbworker.Resetter that reenqueues lost jobs
-// for processing.
-func newBulkOperationWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
-	options := dbworker.ResetterOptions{
-		Name:     "batches_bulk_worker_resetter",
-		Interval: 1 * time.Minute,
-		Metrics:  metrics.bulkProcessorWorkerResetterMetrics,
-	}
-
-	resetter := dbworker.NewResetter(workerStore, options)
-	return resetter
 }
 
 // bulkProcessorWorker is a wrapper for the workerutil handlerfunc to create a

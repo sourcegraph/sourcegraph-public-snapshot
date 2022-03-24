@@ -46,6 +46,24 @@ This job contains all the background processes for Code Monitors:
 2. Execute actions triggered by searches
 3. Cleanup of old execution logs
 
+#### `batches-janitor`
+
+This job runs various cleanup tasks related to Batch Changes in the background.
+#### `batches-scheduler`
+
+This job runs the Batch Changes changeset scheduler for rollout windows.
+#### `batches-reconciler`
+
+This job runs the changeset reconciler that publishes, modifies and closes changesets on the code host.
+
+#### `batches-bulk-processor`
+
+This job Executes the bulk operations in the background.
+
+#### `batches-workspace-resolver`
+
+This job runs the workspace resolutions for batch specs. Used for batch changes that are running server-side.
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.
