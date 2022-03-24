@@ -119,10 +119,15 @@ export const createSharedIntegrationTestContext = async <
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
+    console.log(expect.getState().currentTestName)
+    const testTitle = snakeCase(currentTest ? currentTest.title : expect.getState().currentTestName).replace(
+        'git_lab_',
+        ''
+    )
     const recordingsDirectory = path.join(
         directory,
         '__fixtures__',
-        snakeCase(currentTest ? currentTest.title : expect.getState().currentTestName)
+        snakeCase(currentTest ? currentTest.fullTitle() : expect.getState().currentTestName)
     )
     if (pollyMode === 'record') {
         await mkdir(recordingsDirectory, { recursive: true })
@@ -131,7 +136,8 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapterOptions: CdpAdapterOptions = {
         browser: driver.browser,
     }
-    const polly = new Polly(snakeCase(currentTest ? currentTest.title : expect.getState().currentTestName), {
+
+    const polly = new Polly(testTitle, {
         adapters: [CdpAdapter.id],
         adapterOptions: {
             [CdpAdapter.id]: cdpAdapterOptions,
@@ -161,11 +167,11 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe((error: any) => {
-            if (!currentTest) {
-                throw new Error(error)
-            }
+            // if (!currentTest) {
+            //     throw new Error(error)
+            // }
 
-            currentTest.emit('error', error)
+            currentTest?.emit('error', error)
         })
     )
 
