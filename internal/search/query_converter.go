@@ -237,9 +237,10 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 		case query.Pattern:
 			var q zoekt.Q
 			var err error
+			fileNameOnly := patternMatchesPath && !patternMatchesContent
+			contentOnly := !patternMatchesPath && patternMatchesContent
+
 			if n.Annotation.Labels.IsSet(query.Regexp) {
-				fileNameOnly := patternMatchesPath && !patternMatchesContent
-				contentOnly := !patternMatchesPath && patternMatchesContent
 				q, err = parseRe(n.Value, fileNameOnly, contentOnly, isCaseSensitive)
 				if err != nil {
 					return nil, err
@@ -249,8 +250,8 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 					Pattern:       regexp.QuoteMeta(n.Value),
 					CaseSensitive: isCaseSensitive,
 
-					FileName: true,
-					Content:  true,
+					FileName: fileNameOnly,
+					Content:  contentOnly,
 				}
 			}
 
@@ -302,7 +303,9 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 	}
 
 	var and []zoekt.Q
-	and = append(and, q)
+	if q != nil {
+		and = append(and, q)
+	}
 
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
