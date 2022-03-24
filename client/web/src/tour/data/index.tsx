@@ -221,8 +221,33 @@ export const authenticatedTasks: TourTaskType[] = [
         steps: [
             {
                 id: 'WatchVideo',
-                label: 'Learn how to find and fix vulnerabilities faster',
+                label: 'Watch the 60 second video',
                 action: { type: 'video', value: 'https://www.youtube.com/embed/13OqKPXqZXo' },
+            },
+            {
+                id: 'DiffSearch',
+                label: 'Learn how to find and fix vulnerabilities faster',
+                action: {
+                    type: 'link',
+                    value: {
+                        [TourLanguage.C]:
+                            '/search?q=context:global+repo:chref/doh+type:diff+select:commit.diff.removed+mode&patternType=literal',
+                        [TourLanguage.Go]:
+                            '/search?q=context:global+repo:%5Egitlab%5C.com/sourcegraph/sourcegraph%24+type:diff+lang:go+select:commit.diff.removed+NameSpaceOrgId&patternType=literal',
+                        [TourLanguage.Java]:
+                            '/search?q=context:global+repo:sourcegraph-testing/sg-hadoop+lang:java+type:diff+select:commit.diff.removed+getConf&patternType=literal',
+                        [TourLanguage.Javascript]:
+                            '/search?q=context:global+repo:sourcegraph/sourcegraph%24+lang:javascript+-file:test+type:diff+select:commit.diff.removed+promise&patternType=literal',
+                        [TourLanguage.Php]:
+                            '/search?q=context:global+repo:laravel/laravel.*+lang:php++type:diff+select:commit.diff.removed+password&patternType=regexp&case=yes',
+                        [TourLanguage.Python]:
+                            '/search?q=context:global+repo:pallets/+lang:python+type:diff+select:commit.diff.removed+password&patternType=regexp&case=yes',
+                        [TourLanguage.Typescript]:
+                            '/search?q=context:global+repo:sourcegraph/sourcegraph%24+lang:typescript+type:diff+select:commit.diff.removed+authenticatedUser&patternType=regexp&case=yes',
+                    },
+                },
+                info:
+                    '<strong>Searching diffs for removed code</strong><br/>Find removed code without browsing through history or trying to remember which file it was in.',
             },
         ],
     },

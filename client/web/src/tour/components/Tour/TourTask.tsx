@@ -92,7 +92,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                 </div>
                 <ul className={classNames(styles.stepList, 'm-0', isMultiStep && styles.isMultiStep)}>
                     {steps.map(step => (
-                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-center')}>
+                        <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-start')}>
                             {step.action.type === 'link' && (
                                 <Link
                                     className="flex-grow-1"
