@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -20,30 +20,82 @@ var (
 )
 
 var (
-	ErrAlreadyDeployed = errors.New("target commit matches live commit")
+	ErrNoRelevantChanges = errors.New("no apps changed, nothing to notify")
 )
 
 type DeploymentNotifier struct {
-	vr           VersionRequester
-	ghc          *github.Client
-	changedFiles []string
-	targetCommit string
+	dd          DeploymentDiffer
+	ghc         *github.Client
+	environment string
 }
 
-func NewDeploymentNotifier(ghc *github.Client, vr VersionRequester, targetCommit string, changedFiles []string) *DeploymentNotifier {
-	if targetCommit == "" {
-		panic("can't operate with a blank target commit")
-	}
+func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment string) *DeploymentNotifier {
 	return &DeploymentNotifier{
-		vr:           vr,
-		ghc:          ghc,
-		changedFiles: changedFiles,
-		targetCommit: targetCommit,
+		dd:          dd,
+		ghc:         ghc,
+		environment: environment,
 	}
+}
+
+func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
+	apps, err := dn.dd.Applications()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to infer changes")
+	}
+
+	// Use a map so we avoid duplicate PRs.
+	prSet := map[int64]*github.PullRequest{}
+
+	groups := groupByDiff(apps)
+	for diff := range groups {
+		if diff.Old == diff.New {
+			// If nothing changed, just skip.
+			continue
+		}
+		groupPrs, err := dn.getNewPullRequests(ctx, diff.Old, diff.New)
+		if err != nil {
+			return nil, err
+		}
+		for _, pr := range groupPrs {
+			prSet[pr.GetID()] = pr
+		}
+	}
+
+	var prs []*github.PullRequest
+	for _, pr := range prSet {
+		prs = append(prs, pr)
+	}
+
+	// Sort the PRs so the tests are stable.
+	sort.Slice(prs, func(i, j int) bool {
+		return prs[i].GetMergedAt().After(prs[j].GetMergedAt())
+	})
+
+	var deployedApps []string
+	for app := range apps {
+		deployedApps = append(deployedApps, app)
+	}
+
+	// Sort the Apps so the tests are stable.
+	sort.Strings(deployedApps)
+
+	if len(prs) == 0 {
+		return nil, ErrNoRelevantChanges
+	}
+
+	report := report{
+		Environment:       dn.environment,
+		PullRequests:      prs,
+		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
+		Apps:              deployedApps,
+		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
+	}
+
+	return &report, nil
 }
 
 // getNewCommits returns a slice of commits starting from the target commit up to the currently deployed commit.
-func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit string) ([]*github.RepositoryCommit, error) {
+func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, oldCommit string, newCommit string) ([]*github.RepositoryCommit, error) {
 	var page = 1
 	var commits []*github.RepositoryCommit
 	for page != 0 && page != maxCommitsPageCount {
@@ -60,20 +112,20 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, lastCommit stri
 		commits = append(commits, cs...)
 		var currentCommitIdx int
 		for i, commit := range commits {
-			if strings.HasPrefix(commit.GetSHA(), dn.targetCommit) {
+			if strings.HasPrefix(commit.GetSHA(), newCommit) {
 				currentCommitIdx = i
 			}
-			if commit.GetSHA() == lastCommit {
+			if strings.HasPrefix(commit.GetSHA(), oldCommit) {
 				return commits[currentCommitIdx:i], nil
 			}
 		}
 		page = resp.NextPage
 	}
-	return nil, errors.Newf("commit %s not found in the last %d commits", lastCommit, maxCommitsPageCount*commitsPerPage)
+	return nil, errors.Newf("commit %s not found in the last %d commits", oldCommit, maxCommitsPageCount*commitsPerPage)
 }
 
-func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, liveCommit string) ([]*github.PullRequest, error) {
-	repoCommits, err := dn.getNewCommits(ctx, liveCommit)
+func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, oldCommit string, newCommit string) ([]*github.PullRequest, error) {
+	repoCommits, err := dn.getNewCommits(ctx, oldCommit, newCommit)
 	if err != nil {
 		return nil, err
 	}
@@ -96,51 +148,14 @@ func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, liveCommit
 	return pullsSinceLastCommit, nil
 }
 
-func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
-	liveCommit, err := dn.vr.LastCommit()
-	if err != nil {
-		return nil, err
+type deploymentGroups map[ApplicationVersionDiff][]string
+
+func groupByDiff(diffs map[string]*ApplicationVersionDiff) deploymentGroups {
+	groups := deploymentGroups{}
+	for appName, diff := range diffs {
+		groups[*diff] = append(groups[*diff], appName)
 	}
-
-	if liveCommit == dn.targetCommit {
-		return nil, errors.Wrap(ErrAlreadyDeployed, dn.vr.Environment())
-	}
-
-	prs, err := dn.getNewPullRequests(ctx, liveCommit)
-	if err != nil {
-		return nil, err
-	}
-
-	report := report{
-		Environment:       dn.vr.Environment(),
-		PullRequests:      prs,
-		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
-		Apps:              dn.deployedApps(),
-		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
-	}
-
-	return &report, nil
-}
-
-func (dn *DeploymentNotifier) deployedApps() []string {
-	var deployedApps []string
-	for _, file := range dn.changedFiles {
-		if filepath.Ext(file) != ".yaml" {
-			continue
-		}
-		base := filepath.Base(file)
-		components := strings.Split(base, ".")
-		if len(components) < 3 {
-			continue
-		}
-		// gitserver.[Deployment|StatefulSet|DaemonSet].yaml
-		kind := components[1]
-
-		if kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet" {
-			deployedApps = append(deployedApps, components[0])
-		}
-	}
-	return deployedApps
+	return groups
 }
 
 func renderComment(report *report) (string, error) {

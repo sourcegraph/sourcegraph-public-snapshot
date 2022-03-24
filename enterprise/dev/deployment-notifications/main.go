@@ -18,23 +18,18 @@ import (
 )
 
 type Flags struct {
-	SourcegraphCommit         string
-	SourcegraphDeployedCommit string
-	GitHubToken               string
-	DryRun                    bool
-	InferSourcegraphCommit    bool
-	Environment               string
-	SlackToken                string
-	SlackAnnounceWebhook      string
+	GitHubToken          string
+	DryRun               bool
+	Environment          string
+	SlackToken           string
+	SlackAnnounceWebhook string
+	BaseDir              string
 }
 
 func (f *Flags) Parse() {
 	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
-	flag.StringVar(&f.SourcegraphCommit, "sourcegraph.commit", "", "Sourcegraph commit being deployed")
 	flag.StringVar(&f.Environment, "environment", "", "Environment being deployed")
-	flag.StringVar(&f.SourcegraphDeployedCommit, "sourcegraph.deployed-commit", "", "Use this commit instead of requesting the commit deployed on the target environment")
 	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
-	flag.BoolVar(&f.InferSourcegraphCommit, "sourcegraph.infer-commit", false, "Attempt at inferring the deployed commit from the changes in the diff")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.Parse()
@@ -48,17 +43,6 @@ func main() {
 	if flags.Environment == "" {
 		log.Fatalf("-enviroment must be specified: preprod or production.")
 	}
-	if flags.SourcegraphCommit == "" && !flags.InferSourcegraphCommit {
-		log.Fatalf("-sourcegraph.commit must be specified.")
-	}
-
-	if flags.InferSourcegraphCommit {
-		commit, err := inferSourcegraphCommit()
-		if err != nil || commit == "" {
-			log.Fatalf("could not guess commit from changes, %q", err)
-		}
-		flags.SourcegraphCommit = commit
-	}
 
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: flags.GitHubToken},
@@ -69,24 +53,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var vr VersionRequester
-	if flags.SourcegraphDeployedCommit != "" {
-		vr = NewMockVersionRequester(flags.SourcegraphDeployedCommit, nil)
-	} else {
-		NewAPIVersionRequester(flags.Environment)
-	}
+	dd := NewManifestDeploymentDiffer("base", changedFiles)
 
 	dn := NewDeploymentNotifier(
 		ghc,
-		vr,
-		flags.SourcegraphCommit,
-		changedFiles,
+		dd,
+		flags.Environment,
 	)
 
 	report, err := dn.Report(ctx)
 	if err != nil {
-		if errors.Is(err, ErrAlreadyDeployed) {
-			fmt.Println(":warning: Already deployed, skipping notifications and exiting normally.")
+		if errors.Is(err, ErrNoRelevantChanges) {
+			fmt.Println(":warning: No relevant changes, skipping notifications and exiting normally.")
 			return
 		}
 		log.Fatal(err)

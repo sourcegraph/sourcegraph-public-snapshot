@@ -42,27 +42,32 @@ func TestDeploymentNotifier(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
 
-		changedFiles := []string{
-			"base/frontend/sourcegraph-frontend-internal.Deployment.yaml",
-			"base/frontend/sourcegraph-frontend.Deployment.yaml",
-			"base/precise-code-intel/worker.Deployment.yaml",
-			"base/searcher/searcher.Deployment.yaml",
-			"base/symbols/symbols.Deployment.yaml",
-		}
-		expectedPRs := []int{32512, 32533, 32516, 32525}
+		expectedPRs := []int{32996, 32871, 32767}
 		expectedApps := []string{
-			"sourcegraph-frontend-internal",
-			"sourcegraph-frontend",
-			"worker",
+			"frontend",
+			"gitserver",
 			"searcher",
 			"symbols",
+			"worker",
+		}
+
+		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
+		oldCommit := "54d527f7f7b5770e0dfd1f56398bf8a2f30b935d"
+		olderCommit := "99db56d45299161d3bf62677ba3d3ab701910bb0"
+
+		m := map[string]*ApplicationVersionDiff{
+			"frontend": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			"worker":   &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			"searcher": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			"symbols":  &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			// This one is older by one PR.
+			"gitserver": &ApplicationVersionDiff{Old: olderCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
 			ghc,
-			NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
-			"b7e9d07610591061044b60709bc78205047067b7",
-			changedFiles,
+			NewMockManifestDeployementsDiffer(m),
+			"tests",
 		)
 		report, err := dn.Report(ctx)
 		if err != nil {
@@ -81,53 +86,47 @@ func TestDeploymentNotifier(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
 
-		changedFiles := []string{
-			".buildkite/kubeval.sh",
-			".buildkite/verify-yaml.sh",
-			"base/migrator/migrator.Job.yaml",
-		}
-		expectedApps := []string(nil)
+		m := map[string]*ApplicationVersionDiff{}
 
 		dn := NewDeploymentNotifier(
 			ghc,
-			NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
-			"b7e9d07610591061044b60709bc78205047067b7",
-			changedFiles,
+			NewMockManifestDeployementsDiffer(m),
+			"tests",
 		)
-		report, err := dn.Report(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
 
-		assert.EqualValues(t, expectedApps, report.Apps)
+		_, err := dn.Report(ctx)
+		assert.NotNil(t, err)
+		assert.True(t, errors.Is(err, ErrNoRelevantChanges))
 	})
 
 	t.Run("OK single commit", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
 
-		changedFiles := []string{
-			"base/frontend/sourcegraph-frontend-internal.Deployment.yaml",
-			"base/frontend/sourcegraph-frontend.Deployment.yaml",
-			"base/precise-code-intel/worker.Deployment.yaml",
-			"base/searcher/searcher.Deployment.yaml",
-			"base/symbols/symbols.Deployment.yaml",
-		}
-		expectedPRs := []int{32512}
+		expectedPRs := []int{32996}
 		expectedApps := []string{
-			"sourcegraph-frontend-internal",
-			"sourcegraph-frontend",
-			"worker",
+			"frontend",
 			"searcher",
 			"symbols",
+			"worker",
+		}
+
+		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
+		oldCommit := "68374f229042704f1663ca2fd19401ba0772c828"
+
+		m := map[string]*ApplicationVersionDiff{
+			"frontend": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			"worker":   &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			"searcher": &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
+			"symbols":  &ApplicationVersionDiff{Old: oldCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
 			ghc,
-			NewMockVersionRequester("c9e25b6eef532bccc47c9dfe149265abad939239", nil),
-			"b7e9d07610591061044b60709bc78205047067b7",
-			changedFiles,
+			NewMockManifestDeployementsDiffer(m),
+			"tests",
 		)
+
 		report, err := dn.Report(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -145,33 +144,23 @@ func TestDeploymentNotifier(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
 
-		changedFiles := []string{
-			"base/frontend/sourcegraph-frontend-internal.Deployment.yaml",
-			"base/frontend/sourcegraph-frontend.Deployment.yaml",
-			"base/precise-code-intel/worker.Deployment.yaml",
-			"base/searcher/searcher.Deployment.yaml",
-			"base/symbols/symbols.Deployment.yaml",
+		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
+
+		m := map[string]*ApplicationVersionDiff{
+			"frontend": &ApplicationVersionDiff{Old: newCommit, New: newCommit},
+			"worker":   &ApplicationVersionDiff{Old: newCommit, New: newCommit},
+			"searcher": &ApplicationVersionDiff{Old: newCommit, New: newCommit},
+			"symbols":  &ApplicationVersionDiff{Old: newCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
 			ghc,
-			NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", nil),
-			"cd5f80783501c433474266b57cbf1dc1a9f3a652",
-			changedFiles,
+			NewMockManifestDeployementsDiffer(m),
+			"tests",
 		)
-		_, err := dn.Report(ctx)
-		assert.NotNil(t, err)
-		assert.True(t, errors.Is(err, ErrAlreadyDeployed))
-	})
 
-	t.Run("NOK failed to request current version", func(t *testing.T) {
-		dn := NewDeploymentNotifier(
-			nil,
-			NewMockVersionRequester("cd5f80783501c433474266b57cbf1dc1a9f3a652", errors.New("500")),
-			"cd5f80783501c433474266b57cbf1dc1a9f3a652",
-			nil,
-		)
 		_, err := dn.Report(ctx)
 		assert.NotNil(t, err)
+		assert.True(t, errors.Is(err, ErrNoRelevantChanges))
 	})
 }

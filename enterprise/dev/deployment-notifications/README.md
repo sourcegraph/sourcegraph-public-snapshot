@@ -8,16 +8,14 @@ It is meant to be included in deploymement pipeline to automatically notify team
 In a deployment repository (such as `sourcegraph/deploy-sourcegraph-*`) you can run the following command to post GitHub comments and Slack notifications.
 
 ```sh
-deployment-notifier -environment $MY_ENV -sourcegraph.commit $MY_COMMIT
+deployment-notifier -environment $MY_ENV -slack.token=$SLACK_TOKEN -slack.webhook=$SLACK_WEBHOOK
 ```
 
 ### Flags 
 
 - `-github.token` (defaults to `$GITHUB_TOKEN`) 
-- `-sourcegraph.commit` (optional) the SHA1 of the commit being deployed, used to find the pull requests to mention.
-- `-sourcegraph.guess-commit` (optional) infers the SHA1 of the commit being deployed from the changes, supersedes `-sourcegraph.commit`.
 - `-environment` either `preprod` or `production`
-- `-pretend` (optional) do not post on Slack or GitHub, just print out what would be posted.
+- `-dry` (optional) do not post on Slack or GitHub, just print out what would be posted.
 - `-slack.token` Slack Token used to find the matching Slack handle for pull request authors.
 - `-slack.webhook` Slack webhook URL to post the notifications on.
 
@@ -25,9 +23,9 @@ deployment-notifier -environment $MY_ENV -sourcegraph.commit $MY_COMMIT
 
 Deployment notifier works as following:
 
-1. Request the commit currently running on the target environment
-2. Compute the deployed applications based on the changes included in the latest commit.
-3. Find all PRs that happened in between the commit found in 1. and the commit being currently deployed (`-sourcegraph.commit`)
+1. Inspect the diff of current commit (supposed to be a merge commit)
+2. Compute the deployed applications and take note of the old commit and new commit for each of them.
+3. For each set of old and new commits, find all PRs that happened after the old commit, up to the new commit.
 4. Post a comment in each of those PRs with the list of applications computed in 2.
 5. Post a Slack message pinging all pull request authors.
 
@@ -45,9 +43,7 @@ Assuming you have correct GCP credentials set:
 
 To avoid spamming comments, Deployment Notifier comes with a few flags to help:
 
-- `-pretend` prints a summary of what would be posted on the standard output.
-- `-mock.live-commit` skips the request to a live environment and uses the given commit instead as the version.
-  - This is useful to narrow down the found PR to a small number by pretending the last deploy is only a few commits away.
+- `-dry` prints a summary of what would be posted on the standard output.
 
 ### Testing
 

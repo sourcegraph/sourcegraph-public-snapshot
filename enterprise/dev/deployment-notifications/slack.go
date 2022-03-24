@@ -17,12 +17,14 @@ import (
 
 var slackTemplate = `:truck: *{{.Environment}}* deployment (<{{.BuildURL}}|build>)
 
+- Applications:
 {{- range .Apps }}
-- _{{ . }}_
+    - _{{ . }}_
 {{- end }} 
 
+- Pull Requests:
 {{- range .PullRequests }}
-- <{{ .WebURL }}|{{ .Name }}> {{ .AuthorSlackID }}
+    - <{{ .WebURL }}|{{ .Name }}> {{ .AuthorSlackID }}
 {{- end }}`
 
 type slackSummaryPresenter struct {
