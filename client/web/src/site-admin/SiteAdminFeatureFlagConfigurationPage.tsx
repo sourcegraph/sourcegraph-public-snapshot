@@ -434,21 +434,34 @@ const FeatureFlagOverrideItem: FunctionComponent<{
 }> = ({ override, onUpdate, onDelete }) => {
     const { id, value } = override
 
+    const [error, setError] = useState<Error>()
+
     const { OrgID: orgID, UserID: userID } = JSON.parse(
         atob(id).replace('FeatureFlagOverride:{', '{')
     ) as FeaturefFlagOverrideParsedID
     const nsLabel = orgID > 0 ? 'OrgID' : 'UserID'
     const nsValue = orgID > 0 ? orgID : userID
 
-    const [deleteFeatureFlagOverride, { loading: deleteOverrideLoading, error: deleteOverrideError }] = useMutation(
+    const onError = useCallback(
+        error => {
+            setError(error)
+        },
+        [setError]
+    )
+
+    const [deleteFeatureFlagOverride, { loading: deleteOverrideLoading }] = useMutation(
         DELETE_FEATURE_FLAG_OVERRIDE_MUTATION,
         {
             variables: { id },
-            onCompleted: onDelete,
+            onCompleted: () => {
+                onDelete()
+                setError(undefined)
+            },
+            onError,
         }
     )
 
-    const [updateFeatureFlagOverride, { loading: updateOverrideLoading, error: updateOverrideError }] = useMutation<
+    const [updateFeatureFlagOverride, { loading: updateOverrideLoading }] = useMutation<
         UpdateFeatureFlagOverrideResult,
         FeatureFlagOverride
     >(UPDATE_FEATURE_FLAG_OVERRIDE_MUTATION, {
@@ -458,12 +471,15 @@ const FeatureFlagOverrideItem: FunctionComponent<{
         },
         onCompleted: data => {
             onUpdate(data.updateFeatureFlagOverride.value)
+            setError(undefined)
         },
+        onError,
     })
 
     return (
         <li className="d-flex align-items-center p-2">
             {updateOverrideLoading && <LoadingSpinner />}
+            {error && <ErrorAlert prefix="Error modifying override" error={error} />}
             <Toggle
                 title="Value"
                 value={value}
