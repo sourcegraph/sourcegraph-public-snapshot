@@ -755,7 +755,7 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client(uri, vcrToken, doer), save
+	return NewV4Client("Test", uri, vcrToken, doer), save
 }
 
 func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
@@ -773,5 +773,5 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client(uri, gheToken, doer), save
+	return NewV4Client("Test", uri, gheToken, doer), save
 }

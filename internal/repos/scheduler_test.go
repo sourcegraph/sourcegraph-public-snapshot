@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -66,6 +67,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 	c := configuredRepo{ID: 3, Name: "c"}
 	d := configuredRepo{ID: 4, Name: "d"}
 	e := configuredRepo{ID: 5, Name: "e"}
+	db := database.NewMockDB()
 
 	type enqueueCall struct {
 		repo     configuredRepo
@@ -274,7 +276,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(db)
 
 			for _, call := range test.calls {
 				s.updateQueue.enqueue(call.repo, call.priority)
@@ -440,7 +442,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Perform the removals.
@@ -512,7 +514,7 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialQueue(s, test.initialQueue)
 
 			// Test aquireNext.
@@ -642,7 +644,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 			_, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			setupInitialQueue(s, test.initialQueue)
 
@@ -788,7 +790,7 @@ func TestSchedule_upsert(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.upsertCalls {
@@ -810,7 +812,7 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler()
+	s := NewUpdateScheduler(database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -848,7 +850,7 @@ func TestScheduleInsertNew(t *testing.T) {
 	_, stop := startRecording()
 	defer stop()
 
-	s := NewUpdateScheduler()
+	s := NewUpdateScheduler(database.NewMockDB())
 
 	assertFront := func(name api.RepoName) {
 		t.Helper()
@@ -1039,7 +1041,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
@@ -1138,7 +1140,7 @@ func TestSchedule_remove(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			setupInitialSchedule(s, test.initialSchedule)
 
 			for _, call := range test.removeCalls {
@@ -1300,7 +1302,7 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 			r, stop := startRecording()
 			defer stop()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 
 			setupInitialSchedule(s, test.initialSchedule)
 
@@ -1417,7 +1419,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			// intentionally don't close the channel so any further receives just block
 
 			contexts := make(chan context.Context, expectedRequestCount)
-			requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+			requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo, repo) {
@@ -1431,7 +1433,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			}
 			defer func() { requestRepoUpdate = nil }()
 
-			s := NewUpdateScheduler()
+			s := NewUpdateScheduler(database.NewMockDB())
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel

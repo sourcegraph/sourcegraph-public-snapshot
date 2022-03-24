@@ -1956,6 +1956,7 @@ type UserEmail struct {
 }
 
 type Org struct {
+	ID    int    `json:"id,omitempty"`
 	Login string `json:"login,omitempty"`
 }
 

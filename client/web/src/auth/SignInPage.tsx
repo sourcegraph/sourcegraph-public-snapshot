@@ -89,7 +89,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                                 )}
                                 {provider.serviceType === 'gitlab' && (
                                     <>
-                                        <GitlabIcon className="icon-inline" />{' '}
+                                        <Icon as={GitlabIcon} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}

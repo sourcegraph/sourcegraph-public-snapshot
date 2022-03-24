@@ -1,14 +1,14 @@
 import React from 'react'
 
 import { storiesOf } from '@storybook/react'
-import { NEVER, of } from 'rxjs'
+import { noop } from 'lodash'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 
 import { RepositoriesPanel } from './RepositoriesPanel'
-import { _fetchRecentSearches } from './utils'
+import { recentSearchesPayload } from './utils'
 
 const { add } = storiesOf('web/search/panels/RepositoriesPanel', module)
     .addParameters({
@@ -31,8 +31,10 @@ const emptyRecentSearches = {
 
 const props = {
     authenticatedUser: null,
-    fetchRecentSearches: _fetchRecentSearches,
+    recentlySearchedRepositories: { recentlySearchedRepositoriesLogs: recentSearchesPayload() },
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-explicit-any
+    fetchMore: noop as any,
 }
 
 add('RepositoriesPanel', () => (
@@ -43,10 +45,13 @@ add('RepositoriesPanel', () => (
                 <RepositoriesPanel {...props} />
 
                 <h2>Loading</h2>
-                <RepositoriesPanel {...props} fetchRecentSearches={() => NEVER} />
+                <RepositoriesPanel {...props} recentlySearchedRepositories={null} />
 
                 <h2>Empty</h2>
-                <RepositoriesPanel {...props} fetchRecentSearches={() => of(emptyRecentSearches)} />
+                <RepositoriesPanel
+                    {...props}
+                    recentlySearchedRepositories={{ recentlySearchedRepositoriesLogs: emptyRecentSearches }}
+                />
             </div>
         )}
     </WebStory>

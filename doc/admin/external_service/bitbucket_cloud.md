@@ -30,7 +30,10 @@ Sourcegraph clones repositories from your Bitbucket Cloud via HTTP(S), using the
 
 Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to Bitbucket Cloud. 
 
-If enabled, the default rate is set at 7200 per hour (2 per second) which can be configured via the `requestsPerHour` field (see below). If rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+If enabled, the default rate is set at 7200 per hour (2 per second) which can be configured via the `requestsPerHour` field (see below):
+
+- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
+- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
 **NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
 

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -28,7 +29,7 @@ import (
 )
 
 // Stat returns a FileInfo describing the named file at commit.
-func Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func Stat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	if Mocks.Stat != nil {
 		return Mocks.Stat(commit, path)
 	}
@@ -44,7 +45,7 @@ func Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.
 
 	path = util.Rel(path)
 
-	fi, err := lStat(ctx, checker, repo, commit, path)
+	fi, err := lStat(ctx, db, checker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +56,7 @@ func Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.
 // ReadDir reads the contents of the named directory at commit.
 func ReadDir(
 	ctx context.Context,
+	db database.DB,
 	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	commit api.CommitID,
@@ -80,7 +82,7 @@ func ReadDir(
 		// to list the dir's tree entry in its parent dir).
 		path = filepath.Clean(util.Rel(path)) + "/"
 	}
-	files, err := lsTree(ctx, repo, commit, path, recurse)
+	files, err := lsTree(ctx, db, repo, commit, path, recurse)
 
 	if err != nil || !authz.SubRepoEnabled(checker) {
 		return files, err
@@ -96,7 +98,7 @@ func ReadDir(
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...string) ([]string, error) {
+func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...string) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -112,7 +114,7 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 		args = append(args, pathspecs...)
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -129,7 +131,7 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
-func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func lStat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -143,14 +145,14 @@ func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := gitserver.DefaultClient.GetObject(ctx, repo, string(commit)+"^{tree}")
+		obj, err := gitserver.NewClient(db).GetObject(ctx, repo, string(commit)+"^{tree}")
 		if err != nil {
 			return nil, err
 		}
 		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
 	}
 
-	fis, err := lsTree(ctx, repo, commit, path, false)
+	fis, err := lsTree(ctx, db, repo, commit, path, false)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +191,7 @@ var (
 // lsTree returns ls of tree at path.
 func lsTree(
 	ctx context.Context,
+	db database.DB,
 	repo api.RepoName,
 	commit api.CommitID,
 	path string,
@@ -196,7 +199,7 @@ func lsTree(
 ) (files []fs.FileInfo, err error) {
 	if path != "" || !recurse {
 		// Only cache the root recursive ls-tree.
-		return lsTreeUncached(ctx, repo, commit, path, recurse)
+		return lsTreeUncached(ctx, db, repo, commit, path, recurse)
 	}
 
 	key := string(repo) + ":" + string(commit) + ":" + path
@@ -211,7 +214,7 @@ func lsTree(
 		// Cache miss.
 		var err error
 		start := time.Now()
-		entries, err = lsTreeUncached(ctx, repo, commit, path, recurse)
+		entries, err = lsTreeUncached(ctx, db, repo, commit, path, recurse)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +230,7 @@ func lsTree(
 	return entries, nil
 }
 
-func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
@@ -252,7 +255,7 @@ func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID,
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -331,7 +334,7 @@ func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID,
 			}
 		case "commit":
 			mode = mode | ModeSubmodule
-			cmd := gitserver.DefaultClient.Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
+			cmd := gitserver.NewClient(db).Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
 			cmd.Repo = repo
 			var submodule Submodule
 			if out, err := cmd.Output(ctx); err == nil {
@@ -370,8 +373,8 @@ func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID,
 
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
-func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
-	cmd := gitserver.DefaultClient.Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
+func ListFiles(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
+	cmd := gitserver.NewClient(db).Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -408,6 +411,7 @@ func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPe
 // under each.
 func ListDirectoryChildren(
 	ctx context.Context,
+	db database.DB,
 	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	commit api.CommitID,
@@ -415,7 +419,7 @@ func ListDirectoryChildren(
 ) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)

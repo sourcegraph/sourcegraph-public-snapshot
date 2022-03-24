@@ -16,7 +16,7 @@ import {
     InsightType,
     isCaptureGroupInsight,
 } from '../../../../core/types'
-import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
+import { SearchBackendBasedInsight } from '../../../../core/types/insight/types/search-insight'
 
 import { BackendInsightView } from './BackendInsight'
 

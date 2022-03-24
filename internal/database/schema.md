@@ -947,7 +947,7 @@ Indexes:
 Check constraints:
     "feature_flag_overrides_has_org_or_user_id" CHECK (namespace_org_id IS NOT NULL OR namespace_user_id IS NOT NULL)
 Foreign-key constraints:
-    "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON DELETE CASCADE
+    "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE
     "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 
@@ -981,13 +981,37 @@ CASE
     ELSE 1
 END)
 Referenced by:
-    TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON DELETE CASCADE
+    TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
 **bool_value**: Bool value only defined when flag_type is bool
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
+
+# Table "public.gitserver_localclone_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                        Default                        
+-------------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id                | integer                  |           | not null | nextval('gitserver_localclone_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ repo_id           | integer                  |           | not null | 
+ source_hostname   | text                     |           | not null | 
+ dest_hostname     | text                     |           | not null | 
+ delete_source     | boolean                  |           | not null | false
+Indexes:
+    "gitserver_localclone_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
 
 # Table "public.gitserver_repos"
 ```
