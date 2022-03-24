@@ -47,7 +47,7 @@ import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps
     extends TelemetryProps,
-        Pick<RouteComponentProps, 'location' | 'history'>,
+        Pick<RouteComponentProps, 'location'>,
         SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
@@ -67,7 +67,6 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     canCreate,
     namespaceID,
     headingElement,
-    history,
     location,
     openTab,
     settingsCascade,
