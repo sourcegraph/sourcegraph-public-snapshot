@@ -150,7 +150,7 @@ export class CdpAdapter extends Adapter {
         const fetchEnableRequest: Protocol.Fetch.EnableRequest = {
             patterns: [{ requestStage: 'Request' }, { requestStage: 'Response' }],
         }
-        await cdpSession.send('Fetch.enable', fetchEnableRequest)
+        await cdpSession?.send('Fetch.enable', fetchEnableRequest)
 
         cdpSession.on('Fetch.requestPaused', (event: Protocol.Fetch.RequestPausedEvent): void => {
             const isInResponseStage = eventIsInResponseStage(event)
@@ -288,7 +288,7 @@ export class CdpAdapter extends Adapter {
             throw new Error('Fetch.getResponseBody called before CDP session created')
         }
 
-        const body = await cdpSession.send('Fetch.getResponseBody', {
+        const body = await cdpSession?.send('Fetch.getResponseBody', {
             requestId: event.requestId,
         })
 
