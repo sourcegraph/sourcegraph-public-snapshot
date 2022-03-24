@@ -121,6 +121,7 @@ export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = 
                     ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
                     flags={{
                         sourcegraphURL: platformContext.sourcegraphURL,
+                        isLightTheme,
                         computeInput: input === '' ? null : (JSON.parse(input) as ComputeInput),
                     }}
                 />
