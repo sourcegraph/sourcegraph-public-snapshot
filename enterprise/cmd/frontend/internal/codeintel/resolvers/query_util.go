@@ -228,7 +228,7 @@ func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCo
 	rcs := make([]gitserver.RepositoryCommit, 0, len(uploads))
 	for _, upload := range uploads {
 		rcs = append(rcs, gitserver.RepositoryCommit{
-			RepositoryID: upload.ID,
+			RepositoryID: upload.RepositoryID,
 			Commit:       upload.Commit,
 		})
 	}
