@@ -56,12 +56,12 @@ func TestDeploymentNotifier(t *testing.T) {
 		olderCommit := "99db56d45299161d3bf62677ba3d3ab701910bb0"
 
 		m := map[string]*ServiceVersionDiff{
-			"frontend": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
-			"worker":   &ServiceVersionDiff{Old: oldCommit, New: newCommit},
-			"searcher": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
-			"symbols":  &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"frontend": {Old: oldCommit, New: newCommit},
+			"worker":   {Old: oldCommit, New: newCommit},
+			"searcher": {Old: oldCommit, New: newCommit},
+			"symbols":  {Old: oldCommit, New: newCommit},
 			// This one is older by one PR.
-			"gitserver": &ServiceVersionDiff{Old: olderCommit, New: newCommit},
+			"gitserver": {Old: olderCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
@@ -115,10 +115,10 @@ func TestDeploymentNotifier(t *testing.T) {
 		oldCommit := "68374f229042704f1663ca2fd19401ba0772c828"
 
 		m := map[string]*ServiceVersionDiff{
-			"frontend": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
-			"worker":   &ServiceVersionDiff{Old: oldCommit, New: newCommit},
-			"searcher": &ServiceVersionDiff{Old: oldCommit, New: newCommit},
-			"symbols":  &ServiceVersionDiff{Old: oldCommit, New: newCommit},
+			"frontend": {Old: oldCommit, New: newCommit},
+			"worker":   {Old: oldCommit, New: newCommit},
+			"searcher": {Old: oldCommit, New: newCommit},
+			"symbols":  {Old: oldCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(
@@ -147,10 +147,10 @@ func TestDeploymentNotifier(t *testing.T) {
 		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
 
 		m := map[string]*ServiceVersionDiff{
-			"frontend": &ServiceVersionDiff{Old: newCommit, New: newCommit},
-			"worker":   &ServiceVersionDiff{Old: newCommit, New: newCommit},
-			"searcher": &ServiceVersionDiff{Old: newCommit, New: newCommit},
-			"symbols":  &ServiceVersionDiff{Old: newCommit, New: newCommit},
+			"frontend": {Old: newCommit, New: newCommit},
+			"worker":   {Old: newCommit, New: newCommit},
+			"searcher": {Old: newCommit, New: newCommit},
+			"symbols":  {Old: newCommit, New: newCommit},
 		}
 
 		dn := NewDeploymentNotifier(

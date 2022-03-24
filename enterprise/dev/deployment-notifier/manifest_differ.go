@@ -103,7 +103,7 @@ func imageDiffRegexp(addition bool) *regexp.Regexp {
 
 // parseSourcegraphCommitFromDeploymentManifestsDiff parses the diff output, returning
 // the new and old commits that were used to build this specific image.
-func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte, appname string) (*ServiceVersionDiff, error) {
+func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte) (*ServiceVersionDiff, error) {
 	var diff ServiceVersionDiff
 	addRegexp := imageDiffRegexp(true)
 	delRegexp := imageDiffRegexp(false)
