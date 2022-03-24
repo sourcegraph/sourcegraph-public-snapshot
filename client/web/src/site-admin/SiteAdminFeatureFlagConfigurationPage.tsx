@@ -532,8 +532,8 @@ const ManageFeatureFlag: FunctionComponent<{
 
     const updateOverride = useCallback(
         (index: number, value: boolean): void => {
-            if (overrides?.length > index) {
-                const newOverrides = overrides.slice()
+            if ((overrides?.length || -1) > index) {
+                const newOverrides = overrides?.slice() || []
                 newOverrides[index].value = value
                 onOverridesUpdate(newOverrides)
             }
@@ -543,8 +543,8 @@ const ManageFeatureFlag: FunctionComponent<{
 
     const deleteOverride = useCallback(
         (index: number): void => {
-            if (overrides?.length > index) {
-                const newOverrides = overrides.slice()
+            if ((overrides?.length || -1) > index) {
+                const newOverrides = overrides?.slice() || []
                 newOverrides?.splice(index, 1)
                 onOverridesUpdate(newOverrides)
             }
