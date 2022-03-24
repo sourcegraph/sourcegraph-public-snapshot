@@ -798,7 +798,7 @@ const DELETE_FEATURE_FLAG_MUTATION = gql`
 `
 
 const CREATE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
-    mutation CreateFeatureFlagOverride($namespace: ID!, $flagName: String!, $value: Boolean!) {
+    mutation createFeatureFlagOverride($namespace: ID!, $flagName: String!, $value: Boolean!) {
         createFeatureFlagOverride(namespace: $namespace, flagName: $flagName, value: $value) {
             id
             value
@@ -807,7 +807,7 @@ const CREATE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
 `
 
 const UPDATE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
-    mutation UpdateFeatureFlagOverride($id: ID!, $value: Boolean!) {
+    mutation updateFeatureFlagOverride($id: ID!, $value: Boolean!) {
         updateFeatureFlagOverride(id: $id, value: $value) {
             id
             value
@@ -816,7 +816,7 @@ const UPDATE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
 `
 
 const DELETE_FEATURE_FLAG_OVERRIDE_MUTATION = gql`
-    mutation DeleteFeatureFlagOverride($id: ID!) {
+    mutation deleteFeatureFlagOverride($id: ID!) {
         deleteFeatureFlagOverride(id: $id) {
             alwaysNil
         }
