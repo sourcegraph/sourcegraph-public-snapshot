@@ -10,6 +10,7 @@ interface UseNotebookEventHandlersProps
     extends Pick<BlockProps, 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
     notebook: Notebook
     selectedBlockId: string | null
+    commandPaletteInputReference: React.RefObject<HTMLInputElement>
     setSelectedBlockId: (blockId: string | null) => void
 }
 
@@ -26,6 +27,7 @@ export const isMonacoEditorDescendant = (element: HTMLElement): boolean => eleme
 export function useNotebookEventHandlers({
     notebook,
     selectedBlockId,
+    commandPaletteInputReference,
     setSelectedBlockId,
     onMoveBlock,
     onRunBlock,
@@ -38,15 +40,17 @@ export function useNotebookEventHandlers({
             if (blockId) {
                 setSelectedBlockId(blockId)
                 focusBlock(blockId)
+            } else if (!blockId && direction === 'down') {
+                commandPaletteInputReference.current?.focus()
             }
         },
-        [notebook, setSelectedBlockId]
+        [notebook, commandPaletteInputReference, setSelectedBlockId]
     )
 
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
 
     useEffect(() => {
-        const handleMouseDownOrFocusIn = (event: MouseEvent | FocusEvent): void => {
+        const handleMouseDownUpOrFocusIn = (event: MouseEvent | FocusEvent): void => {
             const target = event.target as HTMLElement | null
             const blockWrapper = target?.closest<HTMLDivElement>('.block-wrapper')
             if (!blockWrapper) {
@@ -54,11 +58,17 @@ export function useNotebookEventHandlers({
                 return
             }
 
-            const blockId = blockWrapper.dataset.blockId
-            if (!blockId) {
+            // When clicking buttons inside the block menu, wait for the mouseup
+            // event to select the block to prevent buttons shifting.
+            const blockMenu = target?.closest<HTMLDivElement>('.block-menu')
+            if (blockMenu && event.type !== 'mouseup') {
                 return
             }
-            setSelectedBlockId(blockId)
+
+            const blockId = blockWrapper.dataset.blockId
+            if (blockId) {
+                setSelectedBlockId(blockId)
+            }
         }
 
         const handleKeyDown = (event: KeyboardEvent): void => {
@@ -99,13 +109,15 @@ export function useNotebookEventHandlers({
 
         document.addEventListener('keydown', handleKeyDown)
         // Check all clicks on the document and deselect the currently selected block if it was triggered outside of a block.
-        document.addEventListener('mousedown', handleMouseDownOrFocusIn)
+        document.addEventListener('mousedown', handleMouseDownUpOrFocusIn)
+        document.addEventListener('mouseup', handleMouseDownUpOrFocusIn)
         // We're using the `focusin` event instead of the `focus` event, since the latter does not bubble up.
-        document.addEventListener('focusin', handleMouseDownOrFocusIn)
+        document.addEventListener('focusin', handleMouseDownUpOrFocusIn)
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
-            document.removeEventListener('mousedown', handleMouseDownOrFocusIn)
-            document.removeEventListener('focusin', handleMouseDownOrFocusIn)
+            document.removeEventListener('mousedown', handleMouseDownUpOrFocusIn)
+            document.removeEventListener('mouseup', handleMouseDownUpOrFocusIn)
+            document.removeEventListener('focusin', handleMouseDownUpOrFocusIn)
         }
     }, [
         notebook,
