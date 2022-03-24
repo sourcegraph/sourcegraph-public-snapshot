@@ -1425,7 +1425,7 @@ type IndexConfiguration {
     """
     The raw JSON-encoded index configuration as infered by the auto-indexer.
     """
-    inferedConfiguration: String
+    inferredConfiguration: String
 }
 
 """
