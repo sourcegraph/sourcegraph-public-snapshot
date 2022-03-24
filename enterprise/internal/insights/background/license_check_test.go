@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"fmt"
 
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 )
 
 func TestCheckAndEnforceLicense(t *testing.T) {
@@ -41,7 +43,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
 	}
 	getLAMDashboardCount := func() (int, error) {
-		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) FROM dashboard WHERE type = 'limited access mode dashboard'`))
+		return basestore.ScanInt(timescale.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM dashboard WHERE type = '%s'", store.LimitedAccessMode)))
 	}
 
 	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
