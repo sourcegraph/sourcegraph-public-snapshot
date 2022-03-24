@@ -70,7 +70,7 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
-	expected := "http://" + gitserver.RendezvousAddrForRepo(repo, addrs)
+	expected := "http://172.16.8.2:8080"
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -91,7 +91,7 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 		addrs,
 	)
 
-	_, err := cli.RequestRepoMigrate(context.Background(), repo)
+	_, err := cli.RequestRepoMigrate(context.Background(), repo, "172.16.8.1:8080", "172.16.8.2:8080")
 	if err != nil {
 		t.Fatalf("expected URL %q, but got err %q", expected, err)
 	}
