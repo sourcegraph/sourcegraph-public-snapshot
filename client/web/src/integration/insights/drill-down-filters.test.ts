@@ -1,7 +1,5 @@
 /** @jest-environment setup-polly-jest/jest-environment-node */
 
-import assert from 'assert'
-
 import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
@@ -93,7 +91,7 @@ describe('Backend insight drill down filters', () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
         }, 'UpdateLineChartSearchInsight')
 
-        assert.deepStrictEqual(variables.input.viewControls, {
+        expect(variables.input.viewControls).toEqual({
             filters: {
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
@@ -169,7 +167,7 @@ describe('Backend insight drill down filters', () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
         }, 'UpdateLineChartSearchInsight')
 
-        assert.deepStrictEqual(variables.input, {
+        expect(variables.input).toEqual({
             dataSeries: [
                 {
                     seriesId: '001',

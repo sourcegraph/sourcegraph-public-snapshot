@@ -281,7 +281,7 @@ describe('Extension Registry', () => {
                 })
             }, 'RegistryExtensions')
 
-            assert.deepStrictEqual(request, {
+            expect(request).toEqual({
                 getFeatured: false,
                 query: 'sqs',
                 prioritizeExtensionIDs: [],
@@ -302,7 +302,7 @@ describe('Extension Registry', () => {
                 await driver.page.click("[data-testid='extension-toggle-sqs/word-count']")
             }, 'EditSettings')
 
-            assert.deepStrictEqual(request, {
+            expect(request).toEqual({
                 subject: 'TestGQLUserID',
                 lastID: 310,
                 edit: {
@@ -324,7 +324,7 @@ describe('Extension Registry', () => {
                 await driver.page.click("[data-testid='extension-toggle-sqs/word-count']")
             }, 'EditSettings')
 
-            assert.deepStrictEqual(request, {
+            expect(request).toEqual({
                 subject: 'TestGQLUserID',
                 lastID: 310,
                 edit: {

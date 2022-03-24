@@ -1,7 +1,5 @@
 /** @jest-environment setup-polly-jest/jest-environment-node */
 
-import assert from 'assert'
-
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { settingsID, testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
@@ -109,13 +107,11 @@ describe('Settings', () => {
             await driver.page.waitForSelector('.test-settings-file .monaco-editor')
             await driver.page.waitForSelector('.test-save-toolbar-save')
 
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
-                ),
-                true,
-                'Expected save button to be disabled'
-            )
+                )
+            ).toBe(true)
 
             await percySnapshotWithVariants(driver.page, 'Settings page')
 
@@ -129,23 +125,21 @@ describe('Settings', () => {
             })
             await retry(async () => {
                 const currentSettings = await getSettingsEditorContent()
-                assert.strictEqual(currentSettings, newSettings)
+                expect(currentSettings).toBe(newSettings)
             })
 
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
-                ),
-                false,
-                'Expected save button to not be disabled'
-            )
+                )
+            ).toBe(false)
 
             // Assert mutation is done when save button is clicked
             const overrideSettingsVariables = await testContext.waitForGraphQLRequest(async () => {
                 await driver.findElementWithText('Save changes', { action: 'click' })
             }, 'OverwriteSettings')
 
-            assert.deepStrictEqual(overrideSettingsVariables, {
+            expect(overrideSettingsVariables).toEqual({
                 contents: newSettings,
                 lastID: settingsID,
                 subject: testUserID,

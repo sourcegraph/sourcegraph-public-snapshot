@@ -1,7 +1,5 @@
 /** @jest-environment setup-polly-jest/jest-environment-node */
 
-import assert from 'assert'
-
 import delay from 'delay'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -121,7 +119,7 @@ describe('Code insight create insight page', () => {
         }, 'CreateLangStatsInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(addToUserConfigRequest.input, {
+        expect(addToUserConfigRequest.input).toEqual({
             query: '',
             repositoryScope: {
                 repositories: ['github.com/sourcegraph/sourcegraph'],
@@ -225,7 +223,7 @@ describe('Code insight create insight page', () => {
         }, 'CreateSearchBasedInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(addToUserConfigRequest.input, {
+        expect(addToUserConfigRequest.input).toEqual({
             dataSeries: [
                 {
                     query: 'test series #1 query',

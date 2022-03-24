@@ -1,7 +1,5 @@
 /** @jest-environment setup-polly-jest/jest-environment-node */
 
-import assert from 'assert'
-
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -70,6 +68,6 @@ describe('User profile page', () => {
             await driver.page.click('#test-EditUserProfileForm__save')
         }, 'UpdateUser')
 
-        assert.strictEqual(requestVariables.displayName, 'Test2')
+        expect(requestVariables.displayName).toBe('Test2')
     })
 })

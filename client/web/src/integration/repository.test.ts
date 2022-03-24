@@ -432,7 +432,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${clickedFileName}`])
+            expect(breadcrumbTexts).toEqual([shortRepositoryName, '@master', `/${clickedFileName}`])
 
             // Return to repo page
             await driver.page.waitForSelector('.test-repo-header-repo-link')
@@ -521,7 +521,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [
+            expect(breadcrumbTexts).toEqual([
                 shortRepositoryName,
                 '@master',
                 "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
@@ -597,7 +597,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
+            expect(breadcrumbTexts).toEqual([shortRepositoryName, '@master', '/readme.md'])
         })
 
         it('works with spaces in the repository name', async () => {
@@ -635,7 +635,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
+            expect(breadcrumbTexts).toEqual([shortRepositoryName, '@master', '/readme.md'])
         })
     })
 
@@ -917,38 +917,26 @@ describe('Repository', () => {
 
             const nestedDecorations = await getDecorationsByFilename('sidebar', 'nested')
 
-            assert.deepStrictEqual(
-                nestedDecorations,
-                {
-                    textContent: '2 vowels',
-                    percentage: '50', // dirs are 50% in mock extension
-                },
-                'Incorrect decorations for nested on tree sidebar'
-            )
+            expect(nestedDecorations).toEqual({
+                textContent: '2 vowels',
+                percentage: '50', // dirs are 50% in mock extension
+            })
 
             // Since nested is a single child, its children should be visible and decorated as well
 
             const testDecorations = await getDecorationsByFilename('sidebar', 'test.ts')
 
-            assert.deepStrictEqual(
-                testDecorations,
-                {
-                    textContent: '1 vowels',
-                    percentage: '100', // files are 100% in mock extension
-                },
-                'Incorrect decorations for test.ts on tree sidebar'
-            )
+            expect(testDecorations).toEqual({
+                textContent: '1 vowels',
+                percentage: '100', // files are 100% in mock extension
+            })
 
             const doublyNestedDecorations = await getDecorationsByFilename('sidebar', 'doubly-nested')
 
-            assert.deepStrictEqual(
-                doublyNestedDecorations,
-                {
-                    textContent: '4 vowels',
-                    percentage: '50',
-                },
-                'Incorrect decorations for doubly-nested on tree sidebar'
-            )
+            expect(doublyNestedDecorations).toEqual({
+                textContent: '4 vowels',
+                percentage: '50',
+            })
 
             // Expand directory. we want to trigger "noopRowClick" handler in order to not navigate to new tree page
             await driver.page.evaluate(() =>
@@ -973,14 +961,10 @@ describe('Repository', () => {
             }
             const triplyNestedDecorations = await getDecorationsByFilename('sidebar', 'triply-nested')
 
-            assert.deepStrictEqual(
-                triplyNestedDecorations,
-                {
-                    textContent: '3 vowels',
-                    percentage: '100',
-                },
-                'Incorrect decorations for triply-nested.ts on tree sidebar'
-            )
+            expect(triplyNestedDecorations).toEqual({
+                textContent: '3 vowels',
+                percentage: '100',
+            })
 
             // TREE PAGE ASSERTIONS
 
@@ -1017,25 +1001,17 @@ describe('Repository', () => {
             }
 
             const reactDecorations = await getDecorationsByFilename('page', 'ReactComponent.tsx')
-            assert.deepStrictEqual(
-                reactDecorations,
-                {
-                    textContent: '5 vowels',
-                    percentage: '100',
-                },
-                'Incorrect decorations for ReactComponent.tsx on tree page'
-            )
+            expect(reactDecorations).toEqual({
+                textContent: '5 vowels',
+                percentage: '100',
+            })
 
             const doublyNestedPageDecorations = await getDecorationsByFilename('page', 'doubly-nested')
             // This should be equal to its sidebar decorations
-            assert.deepStrictEqual(
-                doublyNestedPageDecorations,
-                {
-                    textContent: '4 vowels',
-                    percentage: '50',
-                },
-                'Incorrect decorations for doubly-nested on tree page'
-            )
+            expect(doublyNestedPageDecorations).toEqual({
+                textContent: '4 vowels',
+                percentage: '50',
+            })
 
             await driver.page.evaluate(() =>
                 ([...document.querySelectorAll('.test-page-file-decorable .test-file-decorable-name')].find(name =>
@@ -1061,14 +1037,10 @@ describe('Repository', () => {
 
             const triplyNestedPageDecorations = await getDecorationsByFilename('page', 'triply-nested.ts')
             // This should be equal to its sidebar decorations
-            assert.deepStrictEqual(
-                triplyNestedPageDecorations,
-                {
-                    textContent: '3 vowels',
-                    percentage: '100',
-                },
-                'Incorrect decorations for triply-nested.ts on tree page'
-            )
+            expect(triplyNestedPageDecorations).toEqual({
+                textContent: '3 vowels',
+                percentage: '100',
+            })
         })
     })
 })

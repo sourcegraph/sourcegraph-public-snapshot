@@ -1,7 +1,5 @@
 /** @jest-environment setup-polly-jest/jest-environment-node */
 
-import assert from 'assert'
-
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -122,13 +120,11 @@ describe('Code monitoring', () => {
             await driver.page.type('.test-name-input', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button-email')
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
-                ),
-                true,
-                'Expected action button to be disabled'
-            )
+                )
+            ).toBe(true)
 
             await driver.page.waitForSelector('.test-trigger-button')
             await driver.page.click('.test-trigger-button')
@@ -154,13 +150,11 @@ describe('Code monitoring', () => {
             await driver.page.type('.test-name-input', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button-email')
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
-                ),
-                true,
-                'Expected action button to be disabled'
-            )
+                )
+            ).toBe(true)
 
             await driver.page.waitForSelector('.test-trigger-button')
             await driver.page.click('.test-trigger-button')
@@ -173,13 +167,11 @@ describe('Code monitoring', () => {
             await driver.page.click('.test-submit-trigger')
 
             await driver.page.waitForSelector('.test-action-button-email')
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-action-button-email')!.disabled
-                ),
-                false,
-                'Expected action button to be enabled'
-            )
+                )
+            ).toBe(false)
 
             await driver.page.click('.test-action-button-email')
             await driver.page.waitForSelector('.test-action-form-email')
@@ -191,13 +183,11 @@ describe('Code monitoring', () => {
             await driver.page.type('.test-name-input', 'test monitor')
 
             await driver.page.waitForSelector('.test-submit-monitor')
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-submit-monitor')!.disabled
-                ),
-                true,
-                'Expected submit monitor button to be disabled'
-            )
+                )
+            ).toBe(true)
 
             await driver.page.waitForSelector('.test-trigger-button')
             await driver.page.click('.test-trigger-button')
@@ -215,13 +205,11 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-submit-action-email')
             await driver.page.click('.test-submit-action-email')
 
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLButtonElement>('.test-submit-monitor')!.disabled
-                ),
-                false,
-                'Expected submit monitor button to be enabled'
-            )
+                )
+            ).toBe(false)
         })
     })
 })

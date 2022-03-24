@@ -1,7 +1,5 @@
 /** @jest-environment setup-polly-jest/jest-environment-node */
 
-import assert from 'assert'
-
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -120,7 +118,7 @@ describe('Search onboarding', () => {
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
-            assert.strictEqual(inputContents, 'lang:')
+            expect(inputContents).toBe('lang:')
 
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('typesc')
@@ -144,7 +142,7 @@ describe('Search onboarding', () => {
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
-            assert.strictEqual(inputContents, 'repo:')
+            expect(inputContents).toBe('repo:')
 
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph ')
@@ -164,7 +162,7 @@ describe('Search onboarding', () => {
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
-            assert.strictEqual(inputContents, 'lang:')
+            expect(inputContents).toBe('lang:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('TypeScr')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
@@ -189,7 +187,7 @@ describe('Search onboarding', () => {
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
-            assert.strictEqual(inputContents, 'repo:')
+            expect(inputContents).toBe('repo:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
@@ -214,7 +212,7 @@ describe('Search onboarding', () => {
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
             )
-            assert.strictEqual(inputContents, 'repo:')
+            expect(inputContents).toBe('repo:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph/sourcegraph')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
