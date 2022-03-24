@@ -17,7 +17,7 @@ import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
-    const pollyServer = setupPollyServer()
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: BrowserIntegrationTestContext
 
     const mockUrls = (urls: string[]) => {

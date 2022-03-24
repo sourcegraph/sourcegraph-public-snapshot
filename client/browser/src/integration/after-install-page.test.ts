@@ -8,7 +8,7 @@ import { closeInstallPageTab } from './shared'
 
 describe('After install page', () => {
     let driver: Driver
-    const pollyServer = setupPollyServer()
+    const pollyServer = setupPollyServer(__dirname)
 
     beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true })
