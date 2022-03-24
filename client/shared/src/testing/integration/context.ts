@@ -4,9 +4,10 @@ import * as util from 'util'
 import { MODE, Polly, PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
 import { GraphQLError } from 'graphql'
+import { snakeCase } from 'lodash'
 import * as mime from 'mime-types'
 import { Test } from 'mocha'
-import { readFile } from 'mz/fs'
+import { readFile, mkdirSync } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
@@ -78,10 +79,13 @@ export interface IntegrationTestContext<
 export const setupPollyServer = <
     TGraphQlOperations extends Record<TGraphQlOperationNames, (variables: any) => any>,
     TGraphQlOperationNames extends string
->(): Context => {
-    // const cdpAdapterOptions: CdpAdapterOptions = {
-    //     browser: driver.browser,
-    // }
+>(
+    directory: string
+): Context => {
+    const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(expect.getState().currentTestName))
+    if (pollyMode === 'record') {
+        mkdirSync(recordingsDirectory, { recursive: true })
+    }
 
     const pollyServer = setupPolly({
         // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -89,7 +93,9 @@ export const setupPollyServer = <
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         persister: require('@pollyjs/persister-fs'),
         persisterOptions: {
-            [FSPersister.id]: {},
+            [FSPersister.id]: {
+                recordingsDir: recordingsDirectory,
+            },
         },
         expiryStrategy: 'warn',
         recordIfMissing: pollyMode === 'record',
