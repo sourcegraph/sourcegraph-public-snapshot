@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -72,8 +73,8 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
-	// settings, err := settings.ForActor(ctx, r.db)
-	settings, err := r.finalTyped(ctx)
+	settings, err := settings.ForActor(ctx, r.db)
+	// settings, err := r.finalTyped(ctx)
 	if err != nil {
 		return "", err
 	}

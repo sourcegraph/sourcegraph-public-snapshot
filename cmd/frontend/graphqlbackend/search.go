@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -86,10 +87,12 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
+	return settings.ForActor(ctx, db)
 
-	return cascade.finalTyped(ctx)
+	// cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// return cascade.finalTyped(ctx)
 }

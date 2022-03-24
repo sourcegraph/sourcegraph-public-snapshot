@@ -3,18 +3,14 @@ package settings
 import (
 	"context"
 	"reflect"
-	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-type settingsLoader func(ctx context.Context, db database.DB, v *schema.Settings) error
 
 func ForActor(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "settings.ForActor", "")
@@ -23,61 +19,40 @@ func ForActor(ctx context.Context, db database.DB) (_ *schema.Settings, err erro
 		tr.Finish()
 	}()
 
-	settingsLoaders := []settingsLoader{defaultSettingsLoader, siteSettingsLoader}
+	defaultSettings, err := defaultSettingsLoader(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	settingsLoaders := []*schema.Settings{defaultSettings}
 
 	a := actor.FromContext(ctx)
 
 	// If we have an authenticated user, we add the users orgs' settings and the users settings as well.
 	if a.IsAuthenticated() {
-		orgs, err := db.Orgs().GetByUserID(ctx, a.UID)
+		settings, err := db.Settings().GetLatestForFinal(ctx, a.UID)
 		if err != nil {
 			return nil, err
 		}
-		// Stable-sort the orgs so that the priority of their settings is stable.
-		sort.Slice(orgs, func(i, j int) bool {
-			return orgs[i].ID < orgs[j].ID
-		})
-		// Apply the user's orgs' settings.
-		for _, org := range orgs {
-			settingsLoaders = append(settingsLoaders, orgSettingsLoader(org.ID))
+		settingsLoaders = append(settingsLoaders, settings...)
+	} else {
+		siteSetting, err := db.Settings().GetLatest(ctx, api.SettingsSubject{Site: true})
+		if err != nil {
+			return nil, err
 		}
-		// Apply the user's own settings last (it has highest priority).
-		settingsLoaders = append(settingsLoaders, userSettingsLoader(a.UID))
+		var decoded *schema.Settings
+		err = jsonc.Unmarshal(siteSetting.Contents, &decoded)
+		if err != nil {
+			return nil, err
+		}
+		settingsLoaders = append(settingsLoaders, decoded)
 	}
 
 	return finalTyped(ctx, db, settingsLoaders)
 }
 
-func finalTyped(ctx context.Context, db database.DB, settingsLoaders []settingsLoader) (*schema.Settings, error) {
-	allSettings := make([]*schema.Settings, len(settingsLoaders))
-
-	// Each LatestSettings is a roundtrip to the database. So we do the requests concurrently.
-	bounded := goroutine.NewBounded(8)
-	for i := range settingsLoaders {
-		i := i
-		bounded.Go(func() error {
-			var settings schema.Settings
-			err := settingsLoaders[i](ctx, db, &settings)
-			if err != nil {
-				return err
-			}
-
-			// if settings == (schema.Settings{}) {
-			// 	return nil
-			// }
-
-			allSettings[i] = &settings
-
-			return nil
-		})
-	}
-
-	if err := bounded.Wait(); err != nil {
-		return nil, err
-	}
-
+func finalTyped(ctx context.Context, db database.DB, settingsLoaders []*schema.Settings) (*schema.Settings, error) {
 	var merged *schema.Settings
-	for _, subjectSettings := range allSettings {
+	for _, subjectSettings := range settingsLoaders {
 		merged = mergeSettingsLeft(merged, subjectSettings)
 	}
 	return merged, nil
@@ -132,7 +107,7 @@ var FilterRemoteExtensions = func(extensions []string) []string {
 	return extensions
 }
 
-func defaultSettingsLoader(_ context.Context, _ database.DB, v *schema.Settings) error {
+func defaultSettingsLoader(_ context.Context, _ database.DB) (*schema.Settings, error) {
 	extensionIDs := []string{}
 	for id := range builtinExtensions {
 		extensionIDs = append(extensionIDs, id)
@@ -143,12 +118,10 @@ func defaultSettingsLoader(_ context.Context, _ database.DB, v *schema.Settings)
 		extensions[id] = true
 	}
 
-	(*v) = schema.Settings{
+	return &schema.Settings{
 		ExperimentalFeatures: &schema.SettingsExperimentalFeatures{},
 		Extensions:           extensions,
-	}
-
-	return nil
+	}, nil
 }
 
 func siteSettingsLoader(ctx context.Context, db database.DB, v *schema.Settings) error {

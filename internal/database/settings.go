@@ -23,6 +23,7 @@ type SettingsStore interface {
 	Done(error) error
 	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
+	GetLatestForFinal(ctx context.Context, userID int32) ([]*schema.Settings, error)
 	ListAll(ctx context.Context, impreciseSubstring string) ([]*api.Settings, error)
 	Transact(context.Context) (SettingsStore, error)
 	With(basestore.ShareableStore) SettingsStore
@@ -135,6 +136,69 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 		return nil, nil
 	}
 	return settings[0], nil
+}
+
+func (o *settingsStore) GetLatestForFinal(ctx context.Context, userID int32) ([]*schema.Settings, error) {
+	q := sqlf.Sprintf(`
+	WITH site_settings AS (
+		select
+			s.contents
+		from
+			settings s
+		where
+			s.user_id is null
+			and
+			s.org_id is null
+		order by s.id desc
+		limit 1
+	),
+	user_orgs AS (
+		SELECT org_id FROM org_members where user_id = %d AND EXISTS (SELECT 1 FROM users WHERE id = %d AND deleted_at IS NULL)
+	),
+	org_settings AS (
+		select
+			s.org_id,
+			s.contents
+		from
+			settings s
+		where
+			s.user_id IS NULL
+			and
+			s.org_id IN (select org_id from user_orgs)
+			and
+			NOT EXISTS (select 1 from settings os where os.org_id = s.org_id and os.id > s.id)
+	),
+	user_settings AS (
+		SELECT
+		s.contents
+		FROM settings s
+		LEFT JOIN users ON users.id=s.author_user_id
+		WHERE
+			s.user_id = %d
+			AND
+			s.org_id IS NULL
+			AND users.deleted_at IS NULL
+			ORDER BY s.id DESC
+			LIMIT 1
+	)
+	SELECT * FROM site_settings
+	UNION ALL
+	(SELECT s.contents FROM org_settings s ORDER BY s.org_id ASC)
+	UNION ALL
+	SELECT * FROM user_settings`, userID, userID, userID)
+	settings, err := basestore.ScanStrings(o.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	ss := make([]*schema.Settings, 0, len(settings))
+	for _, s := range settings {
+		var setting schema.Settings
+		if err := jsonc.Unmarshal(s, &setting); err != nil {
+			return nil, err
+		}
+		ss = append(ss, &setting)
+	}
+	return ss, nil
 }
 
 func (o *settingsStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
