@@ -4843,7 +4843,7 @@
   dependencies:
     "@types/d3-time" "*"
 
-"@types/d3-scale@^3.2.1":
+"@types/d3-scale@^3.2.1", "@types/d3-scale@^3.3.0":
   version "3.3.2"
   resolved "https://registry.npmjs.org/@types/d3-scale/-/d3-scale-3.3.2.tgz#18c94e90f4f1c6b1ee14a70f14bfca2bd1c61d06"
   integrity sha512-gGqr7x1ost9px3FvIfUMi5XA/F/yAf4UkUDtdQhpH92XCT0Oa7zkkRzY61gPVJq+DxpHn/btouw5ohWkbBsCzQ==
@@ -4867,7 +4867,7 @@
   resolved "https://registry.npmjs.org/@types/d3-time-format/-/d3-time-format-3.0.0.tgz#913e984362a59792dc8d8b122dd17625991eade2"
   integrity sha512-UpLg1mn/8PLyjr+J/JwdQJM/GzysMvv2CS8y+WYAL5K0+wbvXv/pPSLEfdNaprCZsGcXTxPsFMy8QtkYv9ueew==
 
-"@types/d3-time@*", "@types/d3-time@^2":
+"@types/d3-time@*", "@types/d3-time@^2", "@types/d3-time@^2.0.0":
   version "2.1.1"
   resolved "https://registry.npmjs.org/@types/d3-time/-/d3-time-2.1.1.tgz#743fdc821c81f86537cbfece07093ac39b4bc342"
   integrity sha512-9MVYlmIgmRR31C5b4FVSWtuMmBHh2mOWQYfl7XAYOa8dsnb7iEmUmRSWSFgXFtkjxO65d7hTUHQC+RhR/9IWFg==
@@ -5191,10 +5191,10 @@
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.167.tgz#ce7d78553e3c886d4ea643c37ec7edc20f16765e"
   integrity sha512-w7tQPjARrvdeBkX/Rwg95S592JwxqOjmms3zWQ0XZgSyxSLdzWaYH3vErBhdVS/lRBX7F8aBYcYJYTr5TMGOzw==
 
-"@types/lodash@^4.14.146", "@types/lodash@^4.14.160", "@types/lodash@^4.14.168":
-  version "4.14.168"
-  resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.168.tgz#fe24632e79b7ade3f132891afff86caa5e5ce008"
-  integrity sha512-oVfRvqHV/V6D1yifJbVRU3TMp8OT6o6BG+U9MkwuJ3U8/CsDHvalRpsxBqivn71ztOFZBTfJMvETbqHiaNSj7Q==
+"@types/lodash@^4.14.146", "@types/lodash@^4.14.160", "@types/lodash@^4.14.168", "@types/lodash@^4.14.172":
+  version "4.14.180"
+  resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.180.tgz#4ab7c9ddfc92ec4a887886483bc14c79fb380670"
+  integrity sha512-XOKXa1KIxtNXgASAnwj7cnttJxS4fksBRywK/9LzRV5YxrF80BXZIGeQSuoESQ/VkUj30Ae0+YcuHc15wJCB2g==
 
 "@types/markdown-to-jsx@^6.11.3":
   version "6.11.3"
@@ -5878,7 +5878,7 @@
   resolved "https://registry.npmjs.org/@ungap/promise-all-settled/-/promise-all-settled-1.1.2.tgz#aa58042711d6e3275dd37dc597e5d31e8c290a44"
   integrity sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q==
 
-"@visx/annotation@1.7.2", "@visx/annotation@^1.7.2":
+"@visx/annotation@1.7.2":
   version "1.7.2"
   resolved "https://registry.npmjs.org/@visx/annotation/-/annotation-1.7.2.tgz#8d75469926958495eca3569a84cdfbb11b74ef90"
   integrity sha512-/XsgzSMF5ls2z6okHy71gu2uWZDTFg5yBimG34gK5cO2G0ZP7oBv7p6k4yyaGroAy7gXbiXAQqqMsAJPmKtq+Q==
@@ -5891,6 +5891,21 @@
     "@visx/shape" "1.7.0"
     "@visx/text" "1.7.0"
     classnames "^2.2.5"
+    prop-types "^15.5.10"
+    react-use-measure "^2.0.4"
+
+"@visx/annotation@^2.9.0":
+  version "2.9.0"
+  resolved "https://registry.npmjs.org/@visx/annotation/-/annotation-2.9.0.tgz#99c216a3ef9eab8b2d19f38e34d4ab6c9f1e93b0"
+  integrity sha512-bZiV1I6sDixRP4uPTtKR7fui52GhmkoZzIXGMhQwXtkwrCu/UkMYNvYeRbFYjkMNsjjVD7ULcIteeXcamIOrpw==
+  dependencies:
+    "@types/react" "*"
+    "@visx/drag" "2.6.0"
+    "@visx/group" "2.1.0"
+    "@visx/point" "2.6.0"
+    "@visx/shape" "2.4.0"
+    "@visx/text" "2.3.0"
+    classnames "^2.3.1"
     prop-types "^15.5.10"
     react-use-measure "^2.0.4"
 
@@ -5926,6 +5941,14 @@
     "@types/d3-shape" "^1.3.1"
     d3-shape "^1.0.6"
 
+"@visx/curve@2.1.0":
+  version "2.1.0"
+  resolved "https://registry.npmjs.org/@visx/curve/-/curve-2.1.0.tgz#f614bfe3db66df7db7382db7a75ced1506b94602"
+  integrity sha512-9b6JOnx91gmOQiSPhUOxdsvcnW88fgqfTPKoVgQxidMsD/I3wksixtwo8TR/vtEz2aHzzsEEhlv1qK7Y3yaSDw==
+  dependencies:
+    "@types/d3-shape" "^1.3.1"
+    d3-shape "^1.0.6"
+
 "@visx/drag@1.7.0":
   version "1.7.0"
   resolved "https://registry.npmjs.org/@visx/drag/-/drag-1.7.0.tgz#b57295b852d957ae5f327c25aa2171a78ee4a71a"
@@ -5935,6 +5958,16 @@
     "@visx/event" "1.7.0"
     prop-types "^15.5.10"
 
+"@visx/drag@2.6.0":
+  version "2.6.0"
+  resolved "https://registry.npmjs.org/@visx/drag/-/drag-2.6.0.tgz#382ad9628c8b978d4ee2cf9cfb4392d8b89f315c"
+  integrity sha512-/VTNgpKT1i4+O053C3feI6EIEf7ml+PMr6/YDe+nCuqQeypdRtmxvU6QzhKOJ5xrGT+gxaECE5kLgrx94xZ3aw==
+  dependencies:
+    "@types/react" "*"
+    "@visx/event" "2.6.0"
+    "@visx/point" "2.6.0"
+    prop-types "^15.5.10"
+
 "@visx/event@1.7.0":
   version "1.7.0"
   resolved "https://registry.npmjs.org/@visx/event/-/event-1.7.0.tgz#76a1e726dfb72f33dffb957fd7e0c49488f426fe"
@@ -5942,6 +5975,14 @@
   dependencies:
     "@types/react" "*"
     "@visx/point" "1.7.0"
+
+"@visx/event@2.6.0":
+  version "2.6.0"
+  resolved "https://registry.npmjs.org/@visx/event/-/event-2.6.0.tgz#0718eb1efabd5305cf659a153779c94ba4038996"
+  integrity sha512-WGp91g82s727g3NAnENF1ppC3ZAlvWg+Y+GG0WFg34NmmOZbvPI/PTOqTqZE3x6B8EUn8NJiMxRjxIMbi+IvRw==
+  dependencies:
+    "@types/react" "*"
+    "@visx/point" "2.6.0"
 
 "@visx/glyph@1.7.0", "@visx/glyph@^1.7.0":
   version "1.7.0"
@@ -5981,6 +6022,15 @@
     classnames "^2.2.5"
     prop-types "^15.6.2"
 
+"@visx/group@2.1.0":
+  version "2.1.0"
+  resolved "https://registry.npmjs.org/@visx/group/-/group-2.1.0.tgz#65d4a72feb20dd09443f73cdc12ad5fb339792ef"
+  integrity sha512-bZKa54yVjGYPZZhzYHLz4AVlidSr4ET9B/xmSa7nnictMJWr7e/IuZThB/bMfDQlgdtvhcfTgs+ZluySc5SBUg==
+  dependencies:
+    "@types/react" "*"
+    classnames "^2.3.1"
+    prop-types "^15.6.2"
+
 "@visx/mock-data@^1.7.0":
   version "1.7.0"
   resolved "https://registry.npmjs.org/@visx/mock-data/-/mock-data-1.7.0.tgz#b56e30604ab0e775ada741cb96e6c9c1eaaac56d"
@@ -6002,6 +6052,11 @@
   version "1.7.0"
   resolved "https://registry.npmjs.org/@visx/point/-/point-1.7.0.tgz#1df3c3425eae464f498473bcdda2fcae05c8ecbe"
   integrity sha512-oaoY/HXYHhmpkkeKI4rBPmFtjHWtxSrIhZCVm1ipPoyQp3voJ8L6JD5eUIVmmaUCdUGUGwL1lFLnJiQ2p1Vlwg==
+
+"@visx/point@2.6.0":
+  version "2.6.0"
+  resolved "https://registry.npmjs.org/@visx/point/-/point-2.6.0.tgz#c4316ca409b5b829c5455f07118d8c14a92cc633"
+  integrity sha512-amBi7yMz4S2VSchlPdliznN41TuES64506ySI22DeKQ+mc1s1+BudlpnY90sM1EIw4xnqbKmrghTTGfy6SVqvQ==
 
 "@visx/react-spring@1.7.0":
   version "1.7.0"
@@ -6040,6 +6095,18 @@
     d3-scale "^3.2.3"
     d3-time "^1.1.0"
 
+"@visx/scale@2.2.2":
+  version "2.2.2"
+  resolved "https://registry.npmjs.org/@visx/scale/-/scale-2.2.2.tgz#b8eafabdcf92bb45ab196058fe184772ad80fd25"
+  integrity sha512-3aDySGUTpe6VykDQmF+g2nz5paFu9iSPTcCOEgkcru0/v5tmGzUdvivy8CkYbr87HN73V/Jc53lGm+kJUQcLBw==
+  dependencies:
+    "@types/d3-interpolate" "^1.3.1"
+    "@types/d3-scale" "^3.3.0"
+    "@types/d3-time" "^2.0.0"
+    d3-interpolate "^1.4.0"
+    d3-scale "^3.3.0"
+    d3-time "^2.1.1"
+
 "@visx/shape@1.7.0":
   version "1.7.0"
   resolved "https://registry.npmjs.org/@visx/shape/-/shape-1.7.0.tgz#2a89abf875a6925a6c969de0dc8a6beaa09d00ea"
@@ -6059,6 +6126,24 @@
     lodash "^4.17.15"
     prop-types "^15.5.10"
 
+"@visx/shape@2.4.0":
+  version "2.4.0"
+  resolved "https://registry.npmjs.org/@visx/shape/-/shape-2.4.0.tgz#d25d6a319c416258e12947d74773edb83051ba03"
+  integrity sha512-D6XdGCgWi0/0ZKJ5iK8W5gILCKdrbDwnR/e7o6n/favLU0o+ntiI4a9PZBZ5bYS0aFNG7r+miGMcWV/AQfODuA==
+  dependencies:
+    "@types/d3-path" "^1.0.8"
+    "@types/d3-shape" "^1.3.1"
+    "@types/lodash" "^4.14.172"
+    "@types/react" "*"
+    "@visx/curve" "2.1.0"
+    "@visx/group" "2.1.0"
+    "@visx/scale" "2.2.2"
+    classnames "^2.3.1"
+    d3-path "^1.0.5"
+    d3-shape "^1.2.0"
+    lodash "^4.17.21"
+    prop-types "^15.5.10"
+
 "@visx/text@1.7.0":
   version "1.7.0"
   resolved "https://registry.npmjs.org/@visx/text/-/text-1.7.0.tgz#530dfd85426fa87c3a43ae1d96e3148a14e7c864"
@@ -6069,6 +6154,18 @@
     "@types/react" "*"
     classnames "^2.2.5"
     lodash "^4.17.20"
+    prop-types "^15.7.2"
+    reduce-css-calc "^1.3.0"
+
+"@visx/text@2.3.0":
+  version "2.3.0"
+  resolved "https://registry.npmjs.org/@visx/text/-/text-2.3.0.tgz#34b66a467685cf1db2380a2673e032f2f874919a"
+  integrity sha512-5mEcmzWZqbziz6Azv+H6BWrnUbnpygAw4SNzBqF+YiGik5gR/USaBRAs9aKjnoUg6qFe3NZWFOcGpR3BzDR/bQ==
+  dependencies:
+    "@types/lodash" "^4.14.172"
+    "@types/react" "*"
+    classnames "^2.3.1"
+    lodash "^4.17.21"
     prop-types "^15.7.2"
     reduce-css-calc "^1.3.0"
 
@@ -9856,7 +9953,7 @@ d3-scale@4:
     d3-time "2.1.1 - 3"
     d3-time-format "2 - 4"
 
-d3-scale@^3.2.1, d3-scale@^3.2.3:
+d3-scale@^3.2.1, d3-scale@^3.2.3, d3-scale@^3.3.0:
   version "3.3.0"
   resolved "https://registry.npmjs.org/d3-scale/-/d3-scale-3.3.0.tgz#28c600b29f47e5b9cd2df9749c206727966203f3"
   integrity sha512-1JGp44NQCt5d1g+Yy+GeOnZP7xHo0ii8zsQp6PGzd+C1/dl0KGsp9A7Mxwp+1D1o4unbTTxVdU/ZOIEBoeZPbQ==

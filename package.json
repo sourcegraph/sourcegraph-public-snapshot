@@ -354,7 +354,7 @@
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/svgo": "2.6.0",
     "@types/vscode": "^1.63.1",
-    "@visx/annotation": "^1.7.2",
+    "@visx/annotation": "^2.9.0",
     "@visx/axis": "^1.7.0",
     "@visx/glyph": "^1.7.0",
     "@visx/grid": "^1.7.0",
