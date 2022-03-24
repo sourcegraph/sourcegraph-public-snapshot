@@ -96,7 +96,7 @@ describe('Blob viewer', () => {
             })
 
             // files from TreeEntries request
-            expect(allFilesInTheTree).toBe(
+            expect(allFilesInTheTree).toStrictEqual(
                 files.map(name => ({
                     content: name,
                     href: `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${name}`,

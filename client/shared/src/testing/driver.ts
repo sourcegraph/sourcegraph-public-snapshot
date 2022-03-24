@@ -854,6 +854,6 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
 
     const page = await browser.newPage()
     await page.setRequestInterception(true)
-
+    page.setDefaultNavigationTimeout(5 * 1000)
     return new Driver(browser, page, resolvedOptions)
 }
