@@ -155,8 +155,8 @@ export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockPro
             className={styles.block}
             id={id}
             aria-label="Notebook symbol block"
-            showInput={showInputs}
-            setShowInput={setShowInputs}
+            isInputVisible={showInputs}
+            setIsInputVisible={setShowInputs}
             focusInput={focusInput}
             isReadOnly={isReadOnly}
             isSelected={isSelected}

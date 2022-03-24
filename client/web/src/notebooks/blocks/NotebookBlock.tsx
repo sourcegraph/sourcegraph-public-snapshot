@@ -17,9 +17,9 @@ interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlo
     'aria-label': string
     onDoubleClick?: () => void
     isReadOnly: boolean
-    showInput?: boolean
+    isInputVisible?: boolean
+    setIsInputVisible?: (value: boolean) => void
     focusInput?: () => void
-    setShowInput?: (value: boolean) => void
 }
 
 export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
@@ -33,26 +33,26 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
     'aria-label': ariaLabel,
     onDoubleClick,
     isReadOnly,
-    showInput,
+    isInputVisible,
+    setIsInputVisible,
     focusInput,
-    setShowInput,
 }) => {
     const isInputFocused = useIsBlockInputFocused(id)
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
 
     const onEnterBlock = useCallback(() => {
-        if (showInput) {
+        if (isInputVisible) {
             focusInput?.()
         } else if (!isReadOnly) {
-            setShowInput?.(true)
+            setIsInputVisible?.(true)
         }
-    }, [showInput, isReadOnly, focusInput, setShowInput])
+    }, [isInputVisible, isReadOnly, focusInput, setIsInputVisible])
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
             if (isSelected && event.key === 'Enter') {
                 if (isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)) {
-                    setShowInput?.(false)
+                    setIsInputVisible?.(false)
                 } else {
                     onEnterBlock()
                 }
@@ -63,7 +63,7 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
         }
-    }, [isMacPlatform, isSelected, onEnterBlock, setShowInput])
+    }, [isMacPlatform, isSelected, onEnterBlock, setIsInputVisible])
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>

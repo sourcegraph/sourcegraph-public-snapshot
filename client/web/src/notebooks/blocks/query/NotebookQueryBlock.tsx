@@ -129,7 +129,7 @@ export const NotebookQueryBlock: React.FunctionComponent<NotebookQueryBlockProps
             aria-label="Notebook query block"
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
-            showInput={true}
+            isInputVisible={true}
             focusInput={focusInput}
             mainAction={mainMenuAction}
             actions={isSelected ? commonMenuActions : linkMenuActions}

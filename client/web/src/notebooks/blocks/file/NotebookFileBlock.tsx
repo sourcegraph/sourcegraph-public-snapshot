@@ -177,8 +177,8 @@ export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> 
             isSelected={isSelected}
             isOtherBlockSelected={isOtherBlockSelected}
             isReadOnly={isReadOnly}
-            showInput={showInputs}
-            setShowInput={setShowInputs}
+            isInputVisible={showInputs}
+            setIsInputVisible={setShowInputs}
             focusInput={focusInput}
             actions={isSelected ? menuActions : linkMenuAction}
             {...props}
