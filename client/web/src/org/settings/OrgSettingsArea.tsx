@@ -64,7 +64,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
     const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
         {
-            variables: { orgID: props.org.id, flagName: ORG_DELETION_FEATURE_FLAG_NAME},
+            variables: { orgID: props.org.id, flagName: ORG_DELETION_FEATURE_FLAG_NAME },
             fetchPolicy: 'cache-and-network',
             skip: !props.authenticatedUser || !props.org.id,
         }
