@@ -31,7 +31,7 @@ index 686a43f17..3b661041d 100644
          envFrom:
 `
 
-	diff, err := parseSourcegraphCommitFromDeploymentManifestsDiff([]byte(diffBody), "frontend")
+	diff, err := parseSourcegraphCommitFromDeploymentManifestsDiff([]byte(diffBody))
 	assert.NoError(t, err)
 	assert.Equal(t, "73b7bfcf2c40", diff.New)
 	assert.Equal(t, "7d8d9af5224d", diff.Old)
