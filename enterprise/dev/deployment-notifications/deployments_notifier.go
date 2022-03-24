@@ -4,11 +4,13 @@ import (
 	"context"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -124,26 +126,43 @@ func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, oldCommit strin
 	return nil, errors.Newf("commit %s not found in the last %d commits", oldCommit, maxCommitsPageCount*commitsPerPage)
 }
 
+func parsePRNumberInMergeCommit(message string) int {
+	mergeCommitMessageRegexp := regexp.MustCompile(`\(#(\d+)\)$`)
+	matches := mergeCommitMessageRegexp.FindStringSubmatch(message)
+	if len(matches) > 1 {
+		num, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return 0
+		}
+		return num
+	}
+	return 0
+}
+
 func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, oldCommit string, newCommit string) ([]*github.PullRequest, error) {
 	repoCommits, err := dn.getNewCommits(ctx, oldCommit, newCommit)
 	if err != nil {
 		return nil, err
 	}
-	var pullsSinceLastCommit []*github.PullRequest
+	prNums := map[int]struct{}{}
 	for _, rc := range repoCommits {
-		pulls, _, err := dn.ghc.PullRequests.ListPullRequestsWithCommit(
+		message := rc.GetCommit().GetMessage()
+		if prNum := parsePRNumberInMergeCommit(message); prNum > 0 {
+			prNums[prNum] = struct{}{}
+		}
+	}
+	var pullsSinceLastCommit []*github.PullRequest
+	for prNum := range prNums {
+		pull, _, err := dn.ghc.PullRequests.Get(
 			ctx,
 			repoOwner,
 			repoName,
-			rc.GetSHA(),
-			&github.PullRequestListOptions{
-				State: "merged",
-			},
+			prNum,
 		)
 		if err != nil {
 			return nil, err
 		}
-		pullsSinceLastCommit = append(pullsSinceLastCommit, pulls...)
+		pullsSinceLastCommit = append(pullsSinceLastCommit, pull)
 	}
 	return pullsSinceLastCommit, nil
 }

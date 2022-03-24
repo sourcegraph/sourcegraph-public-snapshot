@@ -158,9 +158,27 @@ func TestDeploymentNotifier(t *testing.T) {
 			NewMockManifestDeployementsDiffer(m),
 			"tests",
 		)
-
 		_, err := dn.Report(ctx)
 		assert.NotNil(t, err)
 		assert.True(t, errors.Is(err, ErrNoRelevantChanges))
 	})
+}
+
+func TestParsePRNumberInMergeCommit(t *testing.T) {
+	tests := []struct {
+		name    string
+		message string
+		want    int
+	}{
+		{name: "Merge commit with revert", message: `Revert "Support diffing for unrelated commits. (#32015)" (#32737)`, want: 32737},
+		{name: "Normal commit", message: `YOLO I commit on main without PR`, want: 0},
+		{name: "Merge commit", message: `batches: Properly quote name in YAML (#32951)`, want: 32951},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := parsePRNumberInMergeCommit(test.message)
+			assert.Equal(t, test.want, got)
+		})
+	}
 }
