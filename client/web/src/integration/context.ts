@@ -62,6 +62,7 @@ export const createWebIntegrationTestContext = async ({
     customContext = {},
     pollyServer,
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
+    await driver.page.setRequestInterception(true)
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
