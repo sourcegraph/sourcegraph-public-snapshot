@@ -74,7 +74,22 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 
 	if newArgs.Mode != search.SearcherOnly {
 		typ := search.TextRequest
-		zoektQuery, err := search.QueryToZoektQuery(newArgs.PatternInfo, &newArgs.Features, typ)
+
+		b, err := query.ToBasicQuery(q)
+		if err != nil {
+			return nil, err
+		}
+
+		types, _ := q.StringValues(query.FieldType)
+		var resultTypes result.Types
+		if len(types) == 0 {
+			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				resultTypes = resultTypes.With(result.TypeFromString[t])
+			}
+		}
+		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &newArgs.Features, typ)
 		if err != nil {
 			return nil, err
 		}

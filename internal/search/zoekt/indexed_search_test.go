@@ -271,7 +271,8 @@ func TestIndexedSearch(t *testing.T) {
 				Repos:  zoektRepos,
 			}
 
-			zoektQuery, err := search.QueryToZoektQuery(&search.TextPatternInfo{}, &search.Features{}, search.TextRequest)
+			var resultTypes result.Types
+			zoektQuery, err := search.QueryToZoektQuery(query.Basic{}, resultTypes, &search.Features{}, search.TextRequest)
 			if err != nil {
 				t.Fatal(err)
 			}
