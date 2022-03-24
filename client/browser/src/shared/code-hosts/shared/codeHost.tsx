@@ -370,12 +370,12 @@ function initCodeIntelligence({
     render,
     telemetryService,
     hoverAlerts,
-    privateCloudErrors,
+    repoSyncErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: Renderer
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
-    privateCloudErrors: Observable<boolean>
+    repoSyncErrors: Observable<boolean>
 }): {
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
@@ -415,10 +415,10 @@ function initCodeIntelligence({
                 [{ isLoading: true, result: null }],
                 combineLatest([
                     from(extensionsController.extHostAPI).pipe(
-                        withLatestFrom(privateCloudErrors),
-                        switchMap(([extensionHost, hasPrivateCloudError]) =>
+                        withLatestFrom(repoSyncErrors),
+                        switchMap(([extensionHost, hasRepoSyncError]) =>
                             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                            hasPrivateCloudError
+                            hasRepoSyncError
                                 ? of({ isLoading: true, result: null })
                                 : wrapRemoteObservable(
                                       extensionHost.getHover(
@@ -429,7 +429,7 @@ function initCodeIntelligence({
                     ),
                     getActiveHoverAlerts([
                         ...hoverAlerts,
-                        privateCloudErrors.pipe(
+                        repoSyncErrors.pipe(
                             distinctUntilChanged(),
                             map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
@@ -446,10 +446,10 @@ function initCodeIntelligence({
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
             from(extensionsController.extHostAPI).pipe(
-                withLatestFrom(privateCloudErrors),
-                switchMap(([extensionHost, hasPrivateCloudError]) =>
+                withLatestFrom(repoSyncErrors),
+                switchMap(([extensionHost, hasRepoSyncError]) =>
                     // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                    hasPrivateCloudError
+                    hasRepoSyncError
                         ? of([])
                         : wrapRemoteObservable(
                               extensionHost.getDocumentHighlights(
@@ -460,10 +460,10 @@ function initCodeIntelligence({
             ),
         getActions: context =>
             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-            privateCloudErrors.pipe(
+            repoSyncErrors.pipe(
                 take(1),
-                switchMap(hasPrivateCloudError =>
-                    hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
+                switchMap(hasRepoSyncError =>
+                    hasRepoSyncError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
         tokenize: codeHost.codeViewsRequireTokenization,
@@ -709,7 +709,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     render: Renderer
     minimalUI: boolean
     hideActions?: boolean
-    background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
+    background: Pick<BackgroundPageApi, 'notifyRepoSyncError' | 'openOptionsPage'>
 }
 
 /**
@@ -793,7 +793,7 @@ const isSafeToContinueCodeIntel = async ({
 
         if (isExtension) {
             // Notify to show extension alert-icon
-            background.notifyPrivateCloudError(true).catch(error => {
+            background.notifyRepoSyncError(true).catch(error => {
                 console.error('Error notifying background page of private cloud.', error)
             })
         }
@@ -882,16 +882,16 @@ export async function handleCodeHost({
      * (only emits `true` when the Sourcegraph instance is Cloud).
      * If the current state is `true`, we can short circuit subsequent requests.
      * */
-    const privateCloudErrors = new BehaviorSubject<boolean>(false)
+    const repoSyncErrors = new BehaviorSubject<boolean>(false)
     // Set by `ViewOnSourcegraphButton` (cleans up and sets to `false` whenever it is unmounted).
-    const setPrivateCloudError = privateCloudErrors.next.bind(privateCloudErrors)
+    const setRepoSyncError = repoSyncErrors.next.bind(repoSyncErrors)
 
     /**
      * Checks whether the error occured because the repository
      * is a private repository that hasn't been added to Sourcegraph Cloud
-     * (no side effects, doesn't notify `privateCloudErrors`)
+     * (no side effects, doesn't notify `repoSyncErrors`)
      * */
-    const checkPrivateCloudError = async (error: any): Promise<boolean> =>
+    const checkRepoSyncError = async (error: any): Promise<boolean> =>
         !!(
             isRepoNotFoundErrorLike(error) &&
             isDefaultSourcegraphUrl(sourcegraphURL) &&
@@ -919,7 +919,7 @@ export async function handleCodeHost({
             mutations,
             nativeTooltipsEnabled,
             codeHost,
-            privateCloudErrors
+            repoSyncErrors
         )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
@@ -934,7 +934,7 @@ export async function handleCodeHost({
         render,
         hoverAlerts,
         mutations,
-        privateCloudErrors,
+        repoSyncErrors,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -1007,10 +1007,10 @@ export async function handleCodeHost({
                 return [asError(error)]
             })
         )
-        const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
-            setPrivateCloudError(hasPrivateCloudError)
+        const onRepoSyncError = (hasRepoSyncError: boolean): void => {
+            setRepoSyncError(hasRepoSyncError)
             if (isExtension) {
-                background.notifyPrivateCloudError(hasPrivateCloudError).catch(error => {
+                background.notifyRepoSyncError(hasRepoSyncError).catch(error => {
                     console.error('Error notifying background page of private cloud error:', error)
                 })
             }
@@ -1045,7 +1045,7 @@ export async function handleCodeHost({
                         // The bound function is constant
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                        onPrivateCloudError={onPrivateCloudError}
+                        onRepoSyncError={onRepoSyncError}
                     />,
                     mount
                 )
@@ -1070,14 +1070,14 @@ export async function handleCodeHost({
                 mergeMap(diffOrBlobInfo =>
                     resolveRepoNamesForDiffOrFileInfo(
                         diffOrBlobInfo,
-                        checkPrivateCloudError,
+                        checkRepoSyncError,
                         platformContext.requestGraphQL
                     )
                 ),
                 mergeMap(diffOrBlobInfo =>
                     fetchFileContentForDiffOrFileInfo(
                         diffOrBlobInfo,
-                        checkPrivateCloudError,
+                        checkRepoSyncError,
                         platformContext.requestGraphQL
                     ).pipe(
                         map(diffOrBlobInfo => ({
@@ -1088,8 +1088,8 @@ export async function handleCodeHost({
                 ),
                 catchError(error =>
                     // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
-                    from(checkPrivateCloudError(error)).pipe(hasPrivateCloudError => {
-                        if (hasPrivateCloudError) {
+                    from(checkRepoSyncError(error)).pipe(hasRepoSyncError => {
+                        if (hasRepoSyncError) {
                             return EMPTY
                         }
                         throw error

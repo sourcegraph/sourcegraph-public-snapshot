@@ -21,7 +21,7 @@ const useRawRepoNameAsFallback = (fileInfo: FileInfo): FileInfoWithRepoName => (
  */
 const resolveRepoNameForFileInfo = (
     fileInfo: FileInfo,
-    checkPrivateCloudError: (error: any) => Promise<boolean>,
+    checkRepoSyncError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithRepoName> =>
     resolveRepo({ rawRepoName: fileInfo.rawRepoName, requestGraphQL }).pipe(
@@ -33,9 +33,9 @@ const resolveRepoNameForFileInfo = (
             // so we keep the repo names inferred from the code host's DOM.
             // Note: we recover/fallback in this case so that we can show informative
             // alerts to the user.
-            from(checkPrivateCloudError(error)).pipe(
-                switchMap(hasPrivateCloudError => {
-                    if (hasPrivateCloudError) {
+            from(checkRepoSyncError(error)).pipe(
+                switchMap(hasRepoSyncError => {
+                    if (hasRepoSyncError) {
                         return of(useRawRepoNameAsFallback(fileInfo))
                     }
                     throw error
@@ -70,34 +70,34 @@ export const ensureRevisionIsClonedForFileInfo = (
 
 export const resolveRepoNamesForDiffOrFileInfo = (
     diffOrFileInfo: DiffOrBlobInfo,
-    checkPrivateCloudError: (error: any) => Promise<boolean>,
+    checkRepoSyncError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<DiffOrBlobInfo<FileInfoWithRepoName>> => {
     if ('blob' in diffOrFileInfo) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.blob, checkPrivateCloudError, requestGraphQL).pipe(
+        return resolveRepoNameForFileInfo(diffOrFileInfo.blob, checkRepoSyncError, requestGraphQL).pipe(
             map(fileInfo => ({ blob: { ...diffOrFileInfo.blob, ...fileInfo } }))
         )
     }
     if (diffOrFileInfo.head && diffOrFileInfo.base) {
         const resolvingHeadWithRepoName = resolveRepoNameForFileInfo(
             diffOrFileInfo.head,
-            checkPrivateCloudError,
+            checkRepoSyncError,
             requestGraphQL
         )
         const resolvingBaseWithRepoName = resolveRepoNameForFileInfo(
             diffOrFileInfo.base,
-            checkPrivateCloudError,
+            checkRepoSyncError,
             requestGraphQL
         )
 
         return zip(resolvingHeadWithRepoName, resolvingBaseWithRepoName).pipe(map(([head, base]) => ({ head, base })))
     }
     if (diffOrFileInfo.head) {
-        return resolveRepoNameForFileInfo(diffOrFileInfo.head, checkPrivateCloudError, requestGraphQL).pipe(
+        return resolveRepoNameForFileInfo(diffOrFileInfo.head, checkRepoSyncError, requestGraphQL).pipe(
             map(head => ({ head }))
         )
     }
-    return resolveRepoNameForFileInfo(diffOrFileInfo.base, checkPrivateCloudError, requestGraphQL).pipe(
+    return resolveRepoNameForFileInfo(diffOrFileInfo.base, checkRepoSyncError, requestGraphQL).pipe(
         map(base => ({ base }))
     )
 }

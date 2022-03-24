@@ -49,7 +49,7 @@ export interface OptionsPageProps {
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
 
-    hasPrivateCloudError?: boolean
+    showPrivateRepositoryAlert?: boolean
     currentUser?: Pick<IUser, 'settingsURL' | 'siteAdmin'>
 }
 
@@ -71,13 +71,13 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     initialShowAdvancedSettings = false,
     isFullPage,
     showSourcegraphCloudAlert,
+    showPrivateRepositoryAlert,
     permissionAlert,
     requestPermissionsHandler,
     optionFlags,
     onChangeOptionFlag,
     onChangeSourcegraphUrl,
     suggestedSourcegraphUrls,
-    hasPrivateCloudError,
     currentUser,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
@@ -128,9 +128,10 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {hasPrivateCloudError && (
+            {showPrivateRepositoryAlert && (
                 <PrivateRepositoryAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />
             )}
+
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
