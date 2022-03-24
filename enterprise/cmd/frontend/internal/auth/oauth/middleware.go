@@ -160,53 +160,8 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		a := actor.FromContext(req.Context())
-		if !a.IsAuthenticated() {
-			http.Error(w, "Authentication failed. Could not find authenticated user.", http.StatusUnauthorized)
-			return
-		}
-
-		// Use the OAuth token stored in the user code host connection to fetch list of
-		// organizations the user belongs to
-		externalServices, err := db.ExternalServices().List(req.Context(), database.ExternalServicesListOptions{
-			NamespaceUserID: a.UID,
-			Kinds:           []string{extsvc.KindGitHub},
-		})
-		if err != nil {
-			log15.Error("Unexpected error while fetching user's external services.", "error", err)
-			http.Error(w, "Unexpected error while fetching GitHub connection.", http.StatusBadRequest)
-			return
-		}
-		if len(externalServices) != 1 {
-			http.Error(w, "User is supposed to have only one GitHub service connected.", http.StatusBadRequest)
-			return
-		}
-
-		esConfg, err := extsvc.ParseConfig("github", externalServices[0].Config)
-		if err != nil {
-			log15.Error("Unexpected error while parsing external service config.", "error", err)
-			http.Error(w, "Unexpected error while processing external service connection.", http.StatusBadRequest)
-			return
-		}
-
-		conn := esConfg.(*schema.GitHubConnection)
-		auther := &eauth.OAuthBearerToken{Token: conn.Token}
-		client := github.NewV3Client(&url.URL{Host: "github.com"}, auther, nil)
-
-		installs, err := client.GetUserInstallations(req.Context())
-		if err != nil {
-			log15.Error("Unexpected error while fetching app installs.", "error", err)
-			http.Error(w, "Unexpected error while fetching list of GitHub organizations.", http.StatusBadRequest)
-			return
-		}
-
 		state := req.URL.Query().Get("state")
-		if len(installs) == 0 {
-			appInstallURL := "https://github.com/apps/" + dotcomConfig.GithubAppCloud.Slug + "/installations/new?state=" + state
-			http.Redirect(w, req, appInstallURL, http.StatusFound)
-		} else {
-			http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
-		}
+		http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
 	}))
 	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		installationIDParam := req.URL.Query().Get("installation_id")
