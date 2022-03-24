@@ -152,7 +152,7 @@ export class CdpAdapter extends Adapter {
         }
         await cdpSession?.send('Fetch.enable', fetchEnableRequest)
 
-        cdpSession.on('Fetch.requestPaused', (event: Protocol.Fetch.RequestPausedEvent): void => {
+        cdpSession?.on('Fetch.requestPaused', (event: Protocol.Fetch.RequestPausedEvent): void => {
             const isInResponseStage = eventIsInResponseStage(event)
             if (isInResponseStage) {
                 this.handlePausedRequestInResponseStage(event, cdpSession)
