@@ -53,10 +53,11 @@ initSentry('background')
 const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
 
 /**
- * For each tab, we store a flag if we know that we are on a private
- * repository that has not been added to Cloud (+ the extension
- * points to Cloud). The content script notifies the background page if it has
- * experienced a private code on Cloud error by `notifyPrivateCloudError` message.
+ * For each tab, we store a flag if we know that we are on a repository
+ * that has not been added to the Sourcegraph instance (+ the extension
+ * points to this instance). The content script notifies the background page if
+ * it has experienced repository does not exist on the instance error
+ * by sending `notifyRepoSyncError` message.
  */
 const tabPrivateCloudErrorCache = (() => {
     const cache = new Map<number, boolean>()
