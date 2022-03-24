@@ -3,7 +3,7 @@
     background-color: var(--primary);
 
     h4,
-    span:first-child:not(:last-child),
+    small,
     svg,
     strong {
         // !important is to override the color applied to the svg Icon and strong

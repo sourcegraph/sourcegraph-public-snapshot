@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 
-import { Branch } from '../Branch'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './Descriptor.module.scss'
 
@@ -46,7 +46,10 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
                 {workspace.path !== '' && workspace.path !== '/' ? (
                     <span className={styles.path}>{workspace.path}</span>
                 ) : null}
-                <Branch name={workspace.branch.displayName} />
+                <div className="d-flex align-items-center text-muted text-monospace">
+                    <Icon className="mr-1" as={SourceBranchIcon} />
+                    <small>{workspace.branch.displayName}</small>
+                </div>
             </div>
         </div>
     )
