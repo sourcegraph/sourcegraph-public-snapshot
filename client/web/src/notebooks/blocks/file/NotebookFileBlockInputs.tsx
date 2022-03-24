@@ -15,14 +15,17 @@ import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
+import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookFileBlockInputs.module.scss'
 
 interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'>, ThemeProps {
     id: string
     sourcegraphSearchLanguageId: string
+    editor: Monaco.editor.IStandaloneCodeEditor | undefined
     queryInput: string
     lineRange: IHighlightLineRange | null
+    setEditor: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     setQueryInput: (value: string) => void
     debouncedSetQueryInput: (value: string) => void
     onLineRangeChange: (lineRange: IHighlightLineRange | null) => void
@@ -36,11 +39,14 @@ function getFileSuggestionsQuery(queryInput: string): string {
 export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockInputsProps> = ({
     id,
     lineRange,
+    editor,
+    setEditor,
     onFileSelected,
     onLineRangeChange,
     ...props
 }) => {
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    useFocusMonacoEditorOnMount({ editor, isEditing: true })
+
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 

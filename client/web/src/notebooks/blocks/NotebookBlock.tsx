@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -16,8 +16,10 @@ interface NotebookBlockProps extends Pick<BlockProps, 'isSelected' | 'isOtherBlo
     className?: string
     'aria-label': string
     onDoubleClick?: () => void
-    onEnterBlock: () => void
-    onHideInput?: () => void
+    isReadOnly: boolean
+    isInputVisible?: boolean
+    setIsInputVisible?: (value: boolean) => void
+    focusInput?: () => void
 }
 
 export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
@@ -30,16 +32,27 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
     actions,
     'aria-label': ariaLabel,
     onDoubleClick,
-    onEnterBlock,
-    onHideInput,
+    isReadOnly,
+    isInputVisible,
+    setIsInputVisible,
+    focusInput,
 }) => {
     const isInputFocused = useIsBlockInputFocused(id)
     const isMacPlatform = useMemo(() => isMacPlatformFn(), [])
+
+    const onEnterBlock = useCallback(() => {
+        if (isInputVisible) {
+            focusInput?.()
+        } else if (!isReadOnly) {
+            setIsInputVisible?.(true)
+        }
+    }, [isInputVisible, isReadOnly, focusInput, setIsInputVisible])
+
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
             if (isSelected && event.key === 'Enter') {
                 if (isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)) {
-                    onHideInput?.()
+                    setIsInputVisible?.(false)
                 } else {
                     onEnterBlock()
                 }
@@ -50,7 +63,7 @@ export const NotebookBlock: React.FunctionComponent<NotebookBlockProps> = ({
         return () => {
             document.removeEventListener('keydown', handleKeyDown)
         }
-    }, [isMacPlatform, isSelected, onEnterBlock, onHideInput])
+    }, [isMacPlatform, isSelected, onEnterBlock, setIsInputVisible])
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>

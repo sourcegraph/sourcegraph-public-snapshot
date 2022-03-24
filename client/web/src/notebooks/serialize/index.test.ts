@@ -8,22 +8,31 @@ const SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
 describe('serialize', () => {
     it('should serialize empty markdown text', async () => {
-        const serialized = await serializeBlockInput({ type: 'md', input: '' }, SOURCEGRAPH_URL).toPromise()
+        const serialized = await serializeBlockInput({ type: 'md', input: { text: '' } }, SOURCEGRAPH_URL).toPromise()
         expect(serialized).toStrictEqual('')
     })
 
     it('should serialize markdown text', async () => {
-        const serialized = await serializeBlockInput({ type: 'md', input: '# Title' }, SOURCEGRAPH_URL).toPromise()
+        const serialized = await serializeBlockInput(
+            { type: 'md', input: { text: '# Title' } },
+            SOURCEGRAPH_URL
+        ).toPromise()
         expect(serialized).toStrictEqual('# Title')
     })
 
     it('should serialize empty query', async () => {
-        const serialized = await serializeBlockInput({ type: 'query', input: '' }, SOURCEGRAPH_URL).toPromise()
+        const serialized = await serializeBlockInput(
+            { type: 'query', input: { query: '' } },
+            SOURCEGRAPH_URL
+        ).toPromise()
         expect(serialized).toStrictEqual('')
     })
 
     it('should serialize a query', async () => {
-        const serialized = await serializeBlockInput({ type: 'query', input: 'repo:a b' }, SOURCEGRAPH_URL).toPromise()
+        const serialized = await serializeBlockInput(
+            { type: 'query', input: { query: 'repo:a b' } },
+            SOURCEGRAPH_URL
+        ).toPromise()
         expect(serialized).toStrictEqual('repo:a b')
     })
 

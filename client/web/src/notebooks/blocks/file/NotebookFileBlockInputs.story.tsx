@@ -25,6 +25,8 @@ const defaultProps = {
     onRunBlock: noop,
     lineRange: null,
     onLineRangeChange: noop,
+    editor: undefined,
+    setEditor: noop,
 }
 
 add('default', () => <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>)

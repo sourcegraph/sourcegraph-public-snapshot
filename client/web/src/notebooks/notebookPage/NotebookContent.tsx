@@ -43,9 +43,9 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
             blocks.map(block => {
                 switch (block.__typename) {
                     case 'MarkdownBlock':
-                        return { id: block.id, type: 'md', input: block.markdownInput }
+                        return { id: block.id, type: 'md', input: { text: block.markdownInput } }
                     case 'QueryBlock':
-                        return { id: block.id, type: 'query', input: block.queryInput }
+                        return { id: block.id, type: 'query', input: { query: block.queryInput } }
                     case 'FileBlock':
                         return {
                             id: block.id,

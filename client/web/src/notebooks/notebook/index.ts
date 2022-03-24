@@ -115,7 +115,7 @@ export class Notebook {
         }
         switch (block.type) {
             case 'md':
-                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input) })
+                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input.text) })
                 break
             case 'query':
                 this.blocks.set(block.id, {
@@ -123,7 +123,7 @@ export class Notebook {
                     output: aggregateStreamingSearch(
                         transformSearchQuery({
                             // Removes comments
-                            query: block.input.replace(/\/\/.*/g, ''),
+                            query: block.input.query.replace(/\/\/.*/g, ''),
                             extensionHostAPIPromise: this.dependencies.extensionHostAPI,
                         }),
                         {
