@@ -29,6 +29,7 @@ import {
 
 import { Collapsible } from '../components/Collapsible'
 import { LoaderButton } from '../components/LoaderButton'
+import { RadioButtons } from '../components/RadioButtons'
 
 import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeatureFlagsPage'
@@ -276,6 +277,7 @@ interface CreateFeatureFlagOverrideVariables {
 }
 
 type FeatureFlagValue = FeatureFlagBooleanValue | FeatureFlagRolloutValue
+type FeatureFlagOverrideType = 'User' | 'Org'
 
 const AddFeatureFlagOverride: FunctionComponent<{
     name: string
@@ -284,15 +286,13 @@ const AddFeatureFlagOverride: FunctionComponent<{
 }> = ({ name, value, onOverrideAdded }) => {
     const [showAddOverride, setShowAddOverride] = useState<boolean>(false)
     const [overrideValue, setOverrideValue] = useState<boolean>(!value)
-    const [userID, setUserID] = useState<number | string>('')
-    const [orgID, setOrgID] = useState<number | string>('')
+    const [overrideType, setOverrideType] = useState<FeatureFlagOverrideType>('User')
+    const [namespaceID, setNamespaceID] = useState<number | string>('')
 
-    const getBase64Namespace = useCallback((): string => {
-        if (userID > 0) {
-            return btoa(`User:${userID}`)
-        }
-        return btoa(`Org:${orgID}`)
-    }, [userID, orgID])
+    const getBase64Namespace = useCallback((): string => btoa(`${overrideType}:${namespaceID}`), [
+        namespaceID,
+        overrideType,
+    ])
 
     const [addOverride, { loading, error, reset }] = useMutation<
         CreateFeatureFlagOverrideResult,
@@ -311,11 +311,11 @@ const AddFeatureFlagOverride: FunctionComponent<{
 
     const closeModal = useCallback(() => {
         setShowAddOverride(false)
-        setUserID('')
-        setOrgID('')
+        setOverrideType('User')
+        setNamespaceID('')
         setOverrideValue(!value)
         reset()
-    }, [setShowAddOverride, setUserID, setOrgID, setOverrideValue, value, reset])
+    }, [setShowAddOverride, setOverrideType, setNamespaceID, setOverrideValue, value, reset])
 
     const openModal = useCallback(
         (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -326,18 +326,15 @@ const AddFeatureFlagOverride: FunctionComponent<{
     )
 
     const setInputValue = useCallback(
-        (
-            event: React.ChangeEvent<HTMLInputElement>,
-            setValue: React.Dispatch<React.SetStateAction<number | string>>
-        ) => {
+        (event: React.ChangeEvent<HTMLInputElement>) => {
             const stringValue = event.target.value.trim()
             if (stringValue !== '') {
-                setValue(Number(stringValue))
+                setNamespaceID(Number(stringValue))
             } else {
-                setValue('')
+                setNamespaceID('')
             }
         },
-        []
+        [setNamespaceID]
     )
 
     return (
@@ -345,29 +342,35 @@ const AddFeatureFlagOverride: FunctionComponent<{
             <Modal isOpen={showAddOverride} onDismiss={closeModal} aria-label="Add Feature Flag Override Modal">
                 <h3>Add feature flag override for {name}</h3>
                 <Form>
-                    <div className="d-flex mt-4">
-                        <Input
-                            label="User ID"
-                            className="mr-2 mb-0"
-                            disabled={orgID > 0}
-                            type="number"
-                            value={userID}
-                            onChange={event => setInputValue(event, setUserID)}
+                    <Label className="w-100 mt-4">
+                        Override type
+                        <RadioButtons
+                            nodes={[
+                                {
+                                    id: 'User',
+                                    label: 'User',
+                                },
+                                {
+                                    id: 'Org',
+                                    label: 'Organization',
+                                },
+                            ]}
+                            name="toggle-retention"
+                            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                                setOverrideType(event.target.value as FeatureFlagOverrideType)
+                            }
+                            selected={overrideType}
                         />
-                        <Input
-                            label="Organization ID"
-                            className="mb-0"
-                            disabled={userID > 0}
-                            type="number"
-                            value={orgID}
-                            onChange={event => setInputValue(event, setOrgID)}
-                        />
-                    </div>
-                    <div className="mb-3">
-                        <small>Fill either User ID or Organization ID, not both</small>
-                    </div>
+                    </Label>
+                    <Input
+                        className="mt-2"
+                        label="Namespace ID"
+                        type="number"
+                        value={namespaceID}
+                        onChange={setInputValue}
+                    />
                     <Label className="w-100">
-                        <div className="mb-2">Value</div>
+                        <div className="mb-2 mt-2">Value</div>
                         <Toggle
                             title="Value"
                             value={overrideValue}
@@ -385,7 +388,7 @@ const AddFeatureFlagOverride: FunctionComponent<{
                         <LoaderButton
                             type="submit"
                             variant="primary"
-                            disabled={loading || (userID > 0 && orgID > 0) || (!userID && !orgID)}
+                            disabled={loading || namespaceID === ''}
                             onClick={() => addOverride()}
                             label="Add override"
                             loading={loading}
