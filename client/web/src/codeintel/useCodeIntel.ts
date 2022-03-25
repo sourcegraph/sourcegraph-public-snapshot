@@ -23,6 +23,7 @@ import {
     LocationFields,
 } from '../graphql-operations'
 
+import { LanguageSpec } from './language-specs/spec'
 import { Location, buildPreciseLocation, buildSearchBasedLocation } from './location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
@@ -64,9 +65,10 @@ export interface UseCodeIntelResult {
 interface UseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     searchToken?: string
+    spec: LanguageSpec
 }
 
-export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters): UseCodeIntelResult => {
+export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParameters): UseCodeIntelResult => {
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
 
     const fellBackToSearchBased = useRef(false)
@@ -74,6 +76,7 @@ export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters)
     useEffect(() => {
         // We need to fetch again if the variables change
         shouldFetchPrecise.current = true
+        console.log('fetching precise again')
     }, [
         variables.repository,
         variables.commit,
@@ -96,14 +99,8 @@ export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters)
             const previousData = codeIntelData
             if (!previousData) {
                 setCodeIntelData({
-                    implementations: {
-                        endCursor: null,
-                        nodes: [],
-                    },
-                    definitions: {
-                        endCursor: null,
-                        nodes: [],
-                    },
+                    implementations: { endCursor: null, nodes: [] },
+                    definitions: { endCursor: null, nodes: [] },
                     references: {
                         endCursor: null,
                         nodes: newReferences,
@@ -155,19 +152,19 @@ export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters)
 
     const fetchSearchBasedReferencesForToken = useCallback(
         (searchToken: string) => {
-            const terms = referencesQuery({ searchToken, path: variables.path, fileExts: ['go'] })
+            const terms = referencesQuery({ searchToken, path: variables.path, fileExts: spec.fileExts })
             const query = terms.join(' ')
             return fetchSearchBasedReferences({ variables: { query } })
         },
-        [fetchSearchBasedReferences, variables.path]
+        [fetchSearchBasedReferences, variables.path, spec.fileExts]
     )
 
     const fetchSearchBasedDefinitionsForToken = useCallback(
         (searchToken: string) => {
-            const query = definitionQuery({ searchToken, path: variables.path, fileExts: ['go'] }).join(' ')
+            const query = definitionQuery({ searchToken, path: variables.path, fileExts: spec.fileExts }).join(' ')
             return fetchSearchBasedDefinitions({ variables: { query } })
         },
-        [fetchSearchBasedDefinitions, variables.path]
+        [fetchSearchBasedDefinitions, variables.path, spec.fileExts]
     )
 
     const { error, loading } = useQuery<
@@ -188,6 +185,11 @@ export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters)
                 } else if (searchToken !== undefined) {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
+                    setCodeIntelData({
+                        implementations: { endCursor: null, nodes: [] },
+                        references: { endCursor: null, nodes: [] },
+                        definitions: { endCursor: null, nodes: [] },
+                    })
                     fetchSearchBasedDefinitionsForToken(searchToken)
                     fetchSearchBasedReferencesForToken(searchToken)
                 } else {
@@ -287,7 +289,6 @@ export const useCodeIntel = ({ variables, searchToken }: UseCodeIntelParameters)
         })
     }
 
-    console.log('fellBackToSearchBased', fellBackToSearchBased.current)
     const combinedLoading =
         loading ||
         (fellBackToSearchBased.current &&

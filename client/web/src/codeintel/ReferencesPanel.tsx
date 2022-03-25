@@ -70,9 +70,6 @@ interface ReferencesPanelProps
         HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
-    /** The token for which to show references. If it's not set, the panel will try to get enough info out of the URL. */
-    token?: Token
-
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
 
@@ -95,15 +92,17 @@ export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<References
 )
 
 const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => {
-    // TODO: We don't use the props.token that can be set from BlobPanel
     const location = useLocation()
 
     const { hash, pathname, search } = location
-    const { line, character, viewState } = parseQueryAndHash(search, hash)
-    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
+    const { line, character } = parseQueryAndHash(search, hash)
+    const { filePath, repoName, ...parsedURL } = parseBrowserRepoURL(pathname)
+
+    const revision = parsedURL.revision
+    const commitID = parsedURL.commitID
 
     // If we don't have enough information in the URL, we can't render the panel
-    if (!(line && character && filePath && viewState)) {
+    if (!(line && character && filePath)) {
         return null
     }
 
@@ -112,7 +111,6 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
 
     const token = { repoName, line, character, filePath }
 
-    console.log('commitID', commitID, 'revision', revision)
     if (commitID === undefined || revision === undefined) {
         return <RevisionResolvingReferencesList {...props} {...token} jumpToFirst={jumpToFirst} />
     }
@@ -129,7 +127,6 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         revision?: string
     }
 > = props => {
-    console.log('resolving the ref baby')
     const resolvedRevision = useObservable(useMemo(() => resolveRevision(props), [props]))
 
     if (!resolvedRevision) {
@@ -137,7 +134,10 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     }
 
     const token = {
-        ...props,
+        repoName: props.repoName,
+        line: props.line,
+        character: props.character,
+        filePath: props.filePath,
         revision: props.revision || resolvedRevision.defaultBranch,
         commitID: resolvedRevision.commitID,
     }
@@ -145,17 +145,18 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     return <FilterableReferencesList {...props} token={token} />
 }
 
-const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = props => {
+interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
+    token: Token
+}
+
+const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
+    console.log('props.token', props.token)
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
     useEffect(() => {
         setFilter(undefined)
     }, [props.token])
-
-    if (props.token === undefined) {
-        return null
-    }
 
     return (
         <>
@@ -174,8 +175,7 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = 
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
-    ReferencesPanelProps & {
-        token: Token
+    ReferencesPanelPropsWithToken & {
         filter?: string
     }
 > = props => {
@@ -227,6 +227,7 @@ export const ReferencesList: React.FunctionComponent<
             afterImplementations: null,
         },
         searchToken: tokenResult?.searchToken,
+        spec,
     })
 
     // We only show the inline loading message if loading takes longer than
