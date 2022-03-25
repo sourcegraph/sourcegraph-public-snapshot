@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
+	gitserverbg "github.com/sourcegraph/sourcegraph/cmd/gitserver/background"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
@@ -41,6 +42,7 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":    webhooks.NewJanitor(),
 		"out-of-band-migrations": migrations.NewMigrator(registerMigrations),
+		"gitserver-localcloner":  gitserverbg.NewLocalCloneJob(),
 	}
 
 	jobs := map[string]job.Job{}

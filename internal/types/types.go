@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
@@ -463,6 +464,39 @@ type GitserverRepo struct {
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
 	UpdatedAt     time.Time
+}
+
+// GitserverLocalCloneJob describes a repository to clone from
+// a gitserver instance to another.
+type GitserverLocalCloneJob struct {
+	ID              int
+	State           string
+	FailureMessage  *string
+	QueuedAt        time.Time
+	StartedAt       *time.Time
+	FinishedAt      *time.Time
+	ProcessAfter    *time.Time
+	NumResets       int
+	NumFailures     int
+	LastHeartbeatAt time.Time
+	ExecutionLogs   []workerutil.ExecutionLogEntry
+	WorkerHostname  string
+
+	// ID of the repository to clone
+	RepoID int
+	// Name of the repository
+	RepoName string
+	// Hostname of the source gitserver instance
+	SourceHostname string
+	// Hostname of the destination gitserver instance
+	DestHostname string
+	// Whether to delete the source repository after cloning
+	DeleteSource bool
+}
+
+// RecordID implements workerutil.Record.
+func (g *GitserverLocalCloneJob) RecordID() int {
+	return g.ID
 }
 
 // ExternalService is a connection to an external service.
