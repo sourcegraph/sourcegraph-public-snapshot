@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -33,8 +34,11 @@ func TestFindClosestDumps(t *testing.T) {
 	mockLSIFStore.ExistsFunc.SetDefaultHook(func(ctx context.Context, bundleID int, path string) (bool, error) {
 		return path == "main.go" && bundleID != 51, nil
 	})
-	mockGitserverClient.CommitExistsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
-		return commit != "c4", nil
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
+		for _, rc := range rcs {
+			exists = append(exists, rc.Commit != "c4")
+		}
+		return
 	})
 
 	resolver := newResolver(mockDBStore, mockLSIFStore, mockGitserverClient, nil, nil, nil, nil, &observation.TestContext, nil)
@@ -67,7 +71,12 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 
 	// has repository, commit unknown but does exist
 	mockDBStore.HasRepositoryFunc.SetDefaultReturn(true, nil)
-	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
+		for range rcs {
+			exists = append(exists, true)
+		}
+		return
+	})
 
 	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
 	mockDBStore.FindClosestDumpsFromGraphFragmentFunc.SetDefaultReturn([]store.Dump{

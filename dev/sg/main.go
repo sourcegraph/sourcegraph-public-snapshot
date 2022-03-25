@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -45,6 +46,9 @@ var (
 		FlagSet:    rootFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
+		},
+		Options: []ff.Option{
+			ff.WithEnvVarPrefix("SG"),
 		},
 		Subcommands: []*ffcli.Command{
 			// Common dev tasks
