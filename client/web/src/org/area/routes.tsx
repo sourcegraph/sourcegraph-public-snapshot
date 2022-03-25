@@ -35,7 +35,7 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
     },
     {
-        path: '/connect-github-app',
+        path: '/install-github-app-select-org',
         render: props => <OrgConnectGitHubApp />,
     },
     ...namespaceAreaRoutes,
