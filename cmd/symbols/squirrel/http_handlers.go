@@ -106,9 +106,7 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for ix, symbol := range payload.Symbols {
-			if symbol.Def != nil {
-				rangeToSymbolIx[*symbol.Def] = ix
-			}
+			rangeToSymbolIx[symbol.Def] = ix
 			for _, ref := range symbol.Refs {
 				rangeToSymbolIx[ref] = ix
 			}

@@ -11,22 +11,26 @@ import (
 )
 
 func TestHover(t *testing.T) {
-	golang := `
-// not a comment line
+	java := `
+class C {
+	void m() {
+		// not a comment line
 
-// comment line 1
-// comment line 2
-func f() {}
+		// comment line 1
+		// comment line 2
+		int x = 5;
+	}
+}
 `
 
-	_ = golang
+	_ = java
 
 	tests := []struct {
 		path     string
 		contents string
 		want     string
 	}{
-		{"test.go", golang, "comment line 1\ncomment line 2\n"},
+		{"test.java", java, "comment line 1\ncomment line 2\n"},
 	}
 
 	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {

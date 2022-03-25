@@ -124,9 +124,8 @@ type Point struct {
 type Symbol struct {
 	Name  string  `json:"name"`
 	Hover *string `json:"hover,omitempty"`
-	Def   *Range  `json:"def,omitempty"`
+	Def   Range   `json:"def,omitempty"`
 	Refs  []Range `json:"refs,omitempty"`
-	Local bool    `json:"local,omitempty"`
 }
 
 func (s Symbol) String() string {
@@ -134,11 +133,7 @@ func (s Symbol) String() string {
 	if s.Hover != nil {
 		hover = *s.Hover
 	}
-	def := "<nil>"
-	if s.Def != nil {
-		def = s.Def.String()
-	}
-	return fmt.Sprintf("Symbol{Hover: %q, Def: %s, Refs: %+v", hover, def, s.Refs)
+	return fmt.Sprintf("Symbol{Hover: %q, Def: %s, Refs: %+v", hover, s.Def, s.Refs)
 }
 
 type Range struct {

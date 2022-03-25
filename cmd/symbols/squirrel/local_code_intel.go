@@ -24,10 +24,9 @@ type Scope = map[SymbolName]*PartialSymbol // pointer for mutability
 type PartialSymbol struct {
 	Name  string
 	Hover *string
-	Def   *types.Range
+	Def   types.Range
 	// Store refs as a set to avoid duplicates from some tree-sitter queries.
-	Refs  map[types.Range]struct{}
-	Local bool
+	Refs map[types.Range]struct{}
 }
 
 // Computes the local code intel payload, which is a list of symbols.
@@ -39,18 +38,6 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	}
 
 	debug := os.Getenv("SQUIRREL_DEBUG") == "true"
-
-	// Collect exported symbols.
-	exports := map[Id]struct{}{}
-	hasExportsQuery := root.LangSpec.exportsQuery != ""
-	if hasExportsQuery {
-		err = forEachCapture(root.LangSpec.exportsQuery, *root, func(captureName string, node Node) {
-			exports[nodeId(node.Node)] = struct{}{}
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	// Collect scopes
 	rootScopeId := nodeId(root.Node)
@@ -93,18 +80,11 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 					hover := findHover(node)
 
 					// Put the symbol in the scope.
-					def := nodeToRange(node.Node)
-					_, exported := exports[nodeId(node.Node)]
-					targetScope := scope
-					if exported {
-						targetScope = scopes[rootScopeId]
-					}
-					targetScope[symbolName] = &PartialSymbol{
+					scope[symbolName] = &PartialSymbol{
 						Name:  string(symbolName),
 						Hover: hover,
-						Def:   &def,
+						Def:   nodeToRange(node.Node),
 						Refs:  map[types.Range]struct{}{},
-						Local: !exported && hasExportsQuery,
 					}
 
 					// Stop walking up the tree.
@@ -144,23 +124,15 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 			}
 		}
 
-		// Did not find the symbol in this file, so create a symbol at the root without a def for it.
-		if _, ok := scopes[rootScopeId][symbolName]; !ok {
-			scopes[rootScopeId][symbolName] = &PartialSymbol{
-				Name:  string(symbolName),
-				Refs:  map[types.Range]struct{}{},
-				Local: false,
-			}
-		}
-		scopes[rootScopeId][symbolName].Refs[nodeToRange(node)] = struct{}{}
+		// Did not find the symbol in this file, so ignore it.
 	})
 
 	// Collect the symbols.
 	symbols := []types.Symbol{}
 	for _, scope := range scopes {
 		for _, partialSymbol := range scope {
-			if partialSymbol.Def == nil && len(partialSymbol.Refs) == 0 && debug {
-				fmt.Println("no def or refs for", partialSymbol)
+			if len(partialSymbol.Refs) == 0 && debug {
+				fmt.Println("no refs for", partialSymbol)
 				continue
 			}
 			refs := []types.Range{}
@@ -172,7 +144,6 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 				Hover: partialSymbol.Hover,
 				Def:   partialSymbol.Def,
 				Refs:  refs,
-				Local: partialSymbol.Local,
 			})
 		}
 	}
@@ -186,24 +157,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, payload types.LocalCodeIntelP
 
 	// Sort payload.Symbols by Def Row then Column.
 	sort.Slice(payload.Symbols, func(i, j int) bool {
-		if payload.Symbols[i].Def == nil && payload.Symbols[j].Def == nil {
-			if len(payload.Symbols[i].Refs) == 0 && len(payload.Symbols[j].Refs) == 0 {
-				fmt.Println("expected a definition or reference, sorting will be unstable")
-				return true
-			} else if len(payload.Symbols[i].Refs) == 0 {
-				return false
-			} else if len(payload.Symbols[j].Refs) == 0 {
-				return true
-			} else {
-				return isLessRange(payload.Symbols[i].Refs[0], payload.Symbols[j].Refs[0])
-			}
-		} else if payload.Symbols[i].Def == nil {
-			return false
-		} else if payload.Symbols[j].Def == nil {
-			return true
-		} else {
-			return isLessRange(*payload.Symbols[i].Def, *payload.Symbols[j].Def)
-		}
+		return isLessRange(payload.Symbols[i].Def, payload.Symbols[j].Def)
 	})
 
 	// Print all symbols.
@@ -224,11 +178,7 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, payload types.LocalCodeIntelP
 		}
 
 		rnges := []rangeColor{}
-
-		if symbol.Def != nil {
-			rnges = append(rnges, rangeColor{rnge: *symbol.Def, color_: defColor})
-		}
-
+		rnges = append(rnges, rangeColor{rnge: symbol.Def, color_: defColor})
 		for _, ref := range symbol.Refs {
 			rnges = append(rnges, rangeColor{rnge: ref, color_: refColor})
 		}
