@@ -43,12 +43,18 @@ export interface FindInsightByNameInput {
     name: string
 }
 
-export type MinimalSearchRuntimeBasedInsightData = Omit<SearchRuntimeBasedInsight, 'id' | 'dashboardReferenceCount'>
-export type MinimalSearchBackendBasedInsightData = Omit<SearchBackendBasedInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalSearchRuntimeBasedInsightData = Omit<
+    SearchRuntimeBasedInsight,
+    'id' | 'dashboardReferenceCount' | 'isFrozen'
+>
+export type MinimalSearchBackendBasedInsightData = Omit<
+    SearchBackendBasedInsight,
+    'id' | 'dashboardReferenceCount' | 'isFrozen'
+>
 export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
 
-export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount'>
-export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type CreationInsightInput =
     | MinimalSearchBasedInsightData

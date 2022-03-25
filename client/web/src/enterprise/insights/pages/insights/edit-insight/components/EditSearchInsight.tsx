@@ -65,6 +65,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             className="pb-5"
             onSubmit={handleSubmit}
             onCancel={onCancel}
+            insight={insight}
         />
     )
 }

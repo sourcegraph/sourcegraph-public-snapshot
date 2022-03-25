@@ -9,6 +9,7 @@ import { useDebounce, Alert } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
+import { LockedChart } from '../../../../../../views/components/view/content/chart-view-content/charts/locked/LockedChart'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import { BackendInsight, InsightFilters } from '../../../../core/types'
@@ -187,6 +188,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                         </Alert>
                     ) : null}
                 </View.ErrorContent>
+            ) : insight.isFrozen ? (
+                <LockedChart />
             ) : (
                 data && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>

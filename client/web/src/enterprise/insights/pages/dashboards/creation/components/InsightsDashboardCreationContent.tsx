@@ -1,4 +1,6 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useContext } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 
@@ -8,7 +10,11 @@ import { FormRadioInput } from '../../../../components/form/form-radio-input/For
 import { useField } from '../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../components/form/validators'
+import { LimitedAccessLabel } from '../../../../components/limited-access-label/LimitedAccessLabel'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core/types'
+
+import styles from './InsightsDashboardCreationContent.module.scss'
 
 const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
 
@@ -34,6 +40,9 @@ export interface InsightsDashboardCreationContentProps {
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
     const { initialValues, owners, onSubmit, children } = props
+
+    const { UIFeatures } = useContext(CodeInsightsBackendContext)
+    const { licensed } = UIFeatures
 
     const userOwner = owners.find(isPersonalOwner)
     const personalOwners = owners.filter(isPersonalOwner)
@@ -134,6 +143,13 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
             {formAPI.submitErrors?.[FORM_ERROR] && (
                 <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} className="mt-2 mb-2" />
+            )}
+
+            {!licensed && (
+                <LimitedAccessLabel
+                    className={classNames(styles.limitedBanner)}
+                    message="Unlock Code Insights to create unlimited custom dashboards"
+                />
             )}
 
             <div className="d-flex flex-wrap justify-content-end mt-3">{children(formAPI)}</div>

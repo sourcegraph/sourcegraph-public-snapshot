@@ -22,3 +22,12 @@ export interface InsightFilters {
     excludeRepoRegexp: string
     repositories?: string[]
 }
+
+export interface BaseInsight {
+    id: string
+    title: string
+    executionType: InsightExecutionType
+    type: InsightType
+    dashboardReferenceCount: number
+    isFrozen: boolean
+}

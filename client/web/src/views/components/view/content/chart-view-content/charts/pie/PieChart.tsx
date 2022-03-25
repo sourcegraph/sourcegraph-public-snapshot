@@ -5,6 +5,7 @@ import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import { noop } from 'rxjs'
 import { PieChartContent } from 'sourcegraph'
 
+import { LockedChart } from '../locked/LockedChart'
 import { MaybeLink } from '../MaybeLink'
 
 import { PieArc } from './components/PieArc'
@@ -29,10 +30,11 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
     onDatumLinkClick?: (event: React.MouseEvent) => void
     /** Chart padding in px */
     padding?: typeof DEFAULT_PADDING
+    locked?: boolean
 }
 
 export function PieChart<Datum extends object>(props: PieChartProps<Datum>): ReactElement | null {
-    const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick = noop } = props
+    const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick = noop, locked = false } = props
 
     // We have to track which arc is hovered to change order of rendering.
     // Due the fact svg elements don't have css z-index (in svg only order of renderings matters)
@@ -65,6 +67,10 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
             ),
         [sortedData, dataKey]
     )
+
+    if (locked) {
+        return <LockedChart className={styles.lockedChart} />
+    }
 
     // Potential problem, we use title/name of pie arc as key, that's not 100% unique value
     // TODO change this we will have id for each pie

@@ -8,6 +8,7 @@ import { useAsyncInsightTitleValidator } from '../../../../../../components/form
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
+import { Insight } from '../../../../../../core/types'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
@@ -32,6 +33,7 @@ export interface LangStatsInsightCreationContentProps {
 
     initialValues?: Partial<LangStatsCreationFormFields>
     className?: string
+    insight?: Insight
 
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel?: () => void
@@ -41,7 +43,15 @@ export interface LangStatsInsightCreationContentProps {
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
-    const { mode = 'creation', initialValues = {}, className, onSubmit, onCancel = noop, onChange = noop } = props
+    const {
+        mode = 'creation',
+        initialValues = {},
+        className,
+        onSubmit,
+        onCancel = noop,
+        onChange = noop,
+        insight,
+    } = props
 
     const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues: {
@@ -107,6 +117,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
                 className={styles.contentForm}
+                insight={insight}
                 onCancel={onCancel}
                 onFormReset={handleFormReset}
             />

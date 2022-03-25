@@ -36,6 +36,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     step: { weeks: 2 },
     filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     dashboardReferenceCount: 0,
+    isFrozen: false,
 }
 
 const mockInsightAPI = ({

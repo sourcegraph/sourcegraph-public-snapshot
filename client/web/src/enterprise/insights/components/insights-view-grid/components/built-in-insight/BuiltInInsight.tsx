@@ -90,7 +90,11 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <View.Content content={data.view.content} onDatumLinkClick={trackDatumClicks} />
+                        <View.Content
+                            content={data.view.content}
+                            onDatumLinkClick={trackDatumClicks}
+                            locked={insight.isFrozen}
+                        />
                     </LineChartSettingsContext.Provider>
                 )
             )}

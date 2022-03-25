@@ -38,6 +38,7 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
             mode="edit"
             className="pb-5"
             initialValues={insightFormValues}
+            insight={insight}
             onSubmit={handleSubmit}
             onCancel={onCancel}
         />
