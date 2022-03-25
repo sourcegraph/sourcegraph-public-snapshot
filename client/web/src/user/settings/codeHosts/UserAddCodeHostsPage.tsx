@@ -92,10 +92,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
-    const codeHostModalRecord: Record<string, boolean> = {}
-    Object.entries(codeHostExternalServices).map(([id_, { kind }]) => {
-        codeHostModalRecord[kind] = false
-    })
+    const codeHostModalRecord: Record<string, boolean> = Object.fromEntries(
+        Object.entries(codeHostExternalServices).map(([id_, { kind }]) => [kind, false])
+    )
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<Record<string, boolean>>(codeHostModalRecord)
     const toggleUpdateModal = (kind: string) => (): void => {
         setIsUpdateModalOpen(modalState => {
