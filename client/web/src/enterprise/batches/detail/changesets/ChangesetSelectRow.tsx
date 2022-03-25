@@ -12,7 +12,7 @@ import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
-    queryAvailableBulkOperations as _queryAvailableBulkOperations
+    queryAvailableBulkOperations as _queryAvailableBulkOperations,
 } from '../backend'
 
 import { CloseChangesetsModal } from './CloseChangesetsModal'
@@ -39,7 +39,7 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
 }
 
 const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
-    'DETACH': {
+    DETACH: {
         type: 'detach',
         buttonLabel: 'Detach changesets',
         dropdownTitle: 'Detach changesets',
@@ -56,7 +56,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    'REENQUEUE': {
+    REENQUEUE: {
         type: 'retry',
         buttonLabel: 'Retry changesets',
         dropdownTitle: 'Retry changesets',
@@ -70,7 +70,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    'COMMENT': {
+    COMMENT: {
         type: 'commentatore',
         buttonLabel: 'Create comment',
         dropdownTitle: 'Create comment',
@@ -85,7 +85,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    'MERGE': {
+    MERGE: {
         type: 'merge',
         experimental: true,
         buttonLabel: 'Merge changesets',
@@ -101,7 +101,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    'CLOSE': {
+    CLOSE: {
         type: 'close',
         buttonLabel: 'Close changesets',
         dropdownTitle: 'Close changesets',
@@ -116,7 +116,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    'PUBLISH': {
+    PUBLISH: {
         type: 'publish',
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
@@ -151,7 +151,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     onSubmit,
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
-    queryAvailableBulkOperations = _queryAvailableBulkOperations
+    queryAvailableBulkOperations = _queryAvailableBulkOperations,
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -164,49 +164,43 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
      * to the selected changesets
      */
     const availableBulkOperations = useObservable(
-        useMemo(
-            () => {
-                if (Array.isArray(allChangesetIDs) && allChangesetIDs.length > 0) {
-                    return queryAvailableBulkOperations({ batchChange: batchChangeID, changesets: allChangesetIDs })
-                }
-
-                return of([])
-            },
-            [queryAvailableBulkOperations, batchChangeID, allChangesetIDs]
-        )
-    )
-
-    const actions = useMemo(
-        () => {
-            if (availableBulkOperations === undefined) {
-                return []
+        useMemo(() => {
+            if (Array.isArray(allChangesetIDs) && allChangesetIDs.length > 0) {
+                return queryAvailableBulkOperations({ batchChange: batchChangeID, changesets: allChangesetIDs })
             }
 
-            return availableBulkOperations.map(operation => {
-                const action = AVAILABLE_ACTIONS[operation]
-                const dropdownAction: Action = {
-                    ...action,
-                    onTrigger: (onDone, onCancel) => {
-                        // Depending on the selection, the set of changeset ids to act on is different.
-                        const ids = selected === 'all' ? allChangesetIDs || [] : [...selected]
-
-                        return action.onTrigger(
-                            batchChangeID,
-                            ids,
-                            () => {
-                                onSubmit()
-                                onDone()
-                            },
-                            onCancel
-                        )
-                    },
-                }
-
-                return dropdownAction
-            })
-        },
-        [allChangesetIDs, availableBulkOperations, batchChangeID, onSubmit, selected]
+            return of([])
+        }, [queryAvailableBulkOperations, batchChangeID, allChangesetIDs])
     )
+
+    const actions = useMemo(() => {
+        if (availableBulkOperations === undefined) {
+            return []
+        }
+
+        return availableBulkOperations.map(operation => {
+            const action = AVAILABLE_ACTIONS[operation]
+            const dropdownAction: Action = {
+                ...action,
+                onTrigger: (onDone, onCancel) => {
+                    // Depending on the selection, the set of changeset ids to act on is different.
+                    const ids = selected === 'all' ? allChangesetIDs || [] : [...selected]
+
+                    return action.onTrigger(
+                        batchChangeID,
+                        ids,
+                        () => {
+                            onSubmit()
+                            onDone()
+                        },
+                        onCancel
+                    )
+                },
+            }
+
+            return dropdownAction
+        })
+    }, [allChangesetIDs, availableBulkOperations, batchChangeID, onSubmit, selected])
 
     return (
         <>
@@ -228,14 +222,16 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
-                {(availableBulkOperations === undefined) ? <LoadingSpinner /> : (
+                {availableBulkOperations === undefined ? (
+                    <LoadingSpinner />
+                ) : (
                     <div className="m-0 col col-md-auto">
-                    <div className="row no-gutters">
-                        <div className="col ml-0 ml-sm-2">
-                            <DropdownButton actions={actions} placeholder="Select action" />
+                        <div className="row no-gutters">
+                            <div className="col ml-0 ml-sm-2">
+                                <DropdownButton actions={actions} placeholder="Select action" />
+                            </div>
                         </div>
                     </div>
-                </div>
                 )}
             </div>
         </>
