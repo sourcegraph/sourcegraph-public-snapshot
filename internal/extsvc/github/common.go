@@ -1552,7 +1552,7 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		rateLimitMonitor.Update(resp.Header)
 	}
 
-	if resp.StatusCode < 200 || (resp.StatusCode >= 400) {
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))

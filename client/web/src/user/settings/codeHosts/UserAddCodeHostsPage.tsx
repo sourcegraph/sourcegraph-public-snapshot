@@ -330,7 +330,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         id: string
         displayName: string
         problem: string
-        outage: boolean
     }
 
     const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
@@ -344,16 +343,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             for (const service of services) {
                 const problem = service.warning || service.lastSyncError
 
-                // if service is unavailable
-                const outage = service.lastSyncError?.includes('500') || service.lastSyncError?.includes('503')
-                if (problem && outage) {
-                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem, outage: true })
-                    continue
-                }
-
-                // if service has warnings and other errors
-                if (problem && !outage) {
-                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem, outage: false })
+                // if service has warnings or errors
+                if (problem) {
+                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
                     continue
                 }
 
