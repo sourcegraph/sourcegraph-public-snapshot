@@ -19,7 +19,7 @@ var slackTemplate = `:truck: *{{.Environment}}* deployment (<{{.BuildURL}}|build
 
 - Applications:
 {{- range .Services }}
-    - _{{ . }}_
+    - ` + "`" + `{{ . }}` + "`" + `
 {{- end }} 
 
 - Pull Requests:
