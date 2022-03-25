@@ -83,7 +83,7 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a pageview, following the new event naming conventions
      *
-     * @eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     * @param eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
     public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
         if (window.context?.userAgentIsBot || !eventName) {
