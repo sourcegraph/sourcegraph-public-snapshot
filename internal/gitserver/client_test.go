@@ -128,33 +128,8 @@ func TestClient_Remove(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected URL %q, but got err %q", expected, err)
 	}
-}
 
-func TestClient_RemoveFrom(t *testing.T) {
-	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
-
-	expected := "http://172.16.8.1:8080"
-
-	cli := gitserver.NewTestClient(
-		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
-			switch r.URL.String() {
-			// Ensure that the request was received by the "expected" gitserver instance - where
-			// expected is the gitserver instance passed as a parameter.
-			// For anything else apart from this we return an error.
-			case expected + "/delete":
-				return &http.Response{
-					StatusCode: 200,
-					Body:       io.NopCloser(bytes.NewBufferString("{}")),
-				}, nil
-			default:
-				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
-			}
-		}),
-		database.NewMockDB(),
-		nil,
-	)
-
-	err := cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
+	err = cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
 	if err != nil {
 		t.Fatalf("expected URL %q, but got err %q", expected, err)
 	}
