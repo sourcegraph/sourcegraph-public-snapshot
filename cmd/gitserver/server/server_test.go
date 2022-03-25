@@ -840,12 +840,13 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		t.Fatal(diff)
 	}
 
-	// if the repo is already cloned, it should not fail
-	// let's run the same request again
+	// let's run the same request again.
+	// If the repo is already cloned, handleRepoUpdate will trigger an update instead of a clone.
+	// Because this test doesn't mock that code path, the method will return an error.
 	resp = runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
 	// we ignore the error, since this should trigger a fetch and fail because the URI is fake
 
-	// the repo should be cloned though
+	// the repo should still be cloned though
 	if !resp.Cloned {
 		t.Fatal("expected cloned to be true")
 	}
