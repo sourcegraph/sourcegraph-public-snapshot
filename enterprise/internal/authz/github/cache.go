@@ -35,11 +35,11 @@ type cachedGroup struct {
 }
 
 func (g *cachedGroup) key() string {
+	key := cacheVersion + "/" + g.Org
 	if g.Team != "" {
-		return "/" + g.Team
+		key += "/" + g.Team
 	}
-
-	return cacheVersion + "/" + g.Org
+	return key
 }
 
 type cachedGroups struct {
