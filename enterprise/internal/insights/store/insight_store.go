@@ -805,6 +805,10 @@ func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globalCount
 	return
 }
 
+func (s *InsightStore) GetUnfrozenInsightUniqueIds(ctx context.Context) ([]string, error) {
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getUnfrozenInsightUniqueIdsSql)))
+}
+
 func (s *InsightStore) FreezeAllInsights(ctx context.Context) error {
 	return s.Exec(ctx, sqlf.Sprintf(freezeAllInsightsSql))
 }
@@ -1030,4 +1034,9 @@ WHERE id IN (
 	ORDER BY iv.id ASC
 	LIMIT %s
 )
+`
+
+const getUnfrozenInsightUniqueIdsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
+SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
 `

@@ -452,18 +452,17 @@ oldest_retryable AS (
 		{state} = 'errored' AND
 		%s - {finished_at} > (%s * '1 second'::interval) AND
 		{num_failures} < %s
-)
-SELECT EXTRACT(EPOCH FROM NOW() - (
+),
+oldest_record AS (
 	(
 		SELECT last_queued_at FROM oldest_queued
-		ORDER BY last_queued_at LIMIT 1
-	)
-	UNION
-	(
+		UNION
 		SELECT last_queued_at FROM oldest_retryable
 	)
-	ORDER BY last_queued_at LIMIT 1
-))::integer AS age
+	ORDER BY last_queued_at
+	LIMIT 1
+)
+SELECT EXTRACT(EPOCH FROM NOW() - last_queued_at)::integer AS age FROM oldest_record
 `
 
 // columnsUpdatedByDequeue are the unmapped column names modified by the dequeue method.

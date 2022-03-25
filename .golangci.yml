@@ -20,7 +20,7 @@ linters:
 
 linters-settings:
   depguard:
-    list-type: blacklist
+    list-type: denylist
     include-go-root: true
     packages-with-error-message:
       # Deprecated packages

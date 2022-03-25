@@ -8,7 +8,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageHeader, CardBody, Card, Link, MultiSelectState, Container } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Link, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -26,7 +26,6 @@ import {
 import {
     ListBatchChange,
     Scalars,
-    BatchChangeState,
     BatchChangesVariables,
     BatchChangesResult,
     BatchChangesByNamespaceResult,
@@ -41,6 +40,7 @@ import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
+import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 
 import styles from './BatchChangeListPage.module.scss'
 
@@ -75,8 +75,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
+    const { selectedFilters, setSelectedFilters, selectedStates } = useBatchChangeListFilters()
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
-    const [selectedFilters, setSelectedFilters] = useState<MultiSelectState<BatchChangeState>>([])
+
     // We keep state to track to the last total count of batch changes in the connection
     // to avoid the display flickering as the connection is loading more data or a
     // different set of filtered data.
@@ -99,10 +100,6 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
         { onCompleted: onUsageCheckCompleted }
     )
 
-    const filterStates = useMemo<BatchChangeState[]>(() => selectedFilters.map(filter => filter.value), [
-        selectedFilters,
-    ])
-
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         BatchChangesByNamespaceResult | BatchChangesResult,
         BatchChangesByNamespaceVariables | BatchChangesVariables,
@@ -111,7 +108,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
         query: namespaceID ? BATCH_CHANGES_BY_NAMESPACE : BATCH_CHANGES,
         variables: {
             namespaceID,
-            states: filterStates,
+            states: selectedStates,
             first: BATCH_CHANGES_PER_PAGE_COUNT,
             after: null,
             viewerCanAdminister: null,
@@ -162,7 +159,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                             <BatchChangeListFilters
                                 className="m-0"
                                 isExecutionEnabled={isExecutionEnabled}
-                                defaultValue={selectedFilters}
+                                value={selectedFilters}
                                 onChange={setSelectedFilters}
                             />
                         </div>

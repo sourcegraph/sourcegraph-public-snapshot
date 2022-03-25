@@ -39,6 +39,7 @@ type SubRepoPermsStore interface {
 	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
 	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
+	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
 // subRepoPermsStore is the unified interface for managing sub repository
@@ -191,6 +192,26 @@ AND private = TRUE
 AND external_service_type IN (%s)
 )
 `, repoId, sqlf.Join(supportedTypesQuery, ","))
+
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	if err != nil {
+		return false, errors.Wrap(err, "querying database")
+	}
+	return exists, nil
+}
+
+// RepoSupported returns true if repo has sub-repo permissions
+// (i.e. it is private and its type is one of the SubRepoSupportedCodeHostTypes)
+func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo api.RepoName) (bool, error) {
+	q := sqlf.Sprintf(`
+SELECT EXISTS(
+SELECT
+FROM repo
+WHERE name = %s
+AND private = TRUE
+AND external_service_type IN (%s)
+)
+`, repo, sqlf.Join(supportedTypesQuery, ","))
 
 	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
 	if err != nil {
