@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -51,6 +52,16 @@ const (
 // likely evolve into some form of site config value in the future.
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
 
+// The limit of 50 mirrors Git's gc_auto_pack_limit
+var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "the maximum number of pack files we tolerate before we trigger a repack"))
+
+// Our original Git gc job used 1 as limit, while git's default is 6700. We
+// don't want to be too aggressive to avoid unnecessary IO, hence we choose a
+// value somewhere in the middle. Gitlab's gitaly uses a limit of 1024, which
+// corresponds to an average of 4 loose objects per folder. We can tune this
+// parameter once we gain more experience.
+var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack"))
+
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 // SRC_ENABLE_SG_MAINTENANCE.
@@ -77,6 +88,10 @@ var (
 		Name: "src_gitserver_janitor_job_duration_seconds",
 		Help: "Duration of the individual jobs within the gitserver janitor background job",
 	}, []string{"job_name"})
+	maintenanceStatus = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_maintenance_status",
+		Help: "whether the maintenance run was a success (true/false) and the reason why a cleanup was needed",
+	}, []string{"success", "reason"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -773,8 +788,20 @@ func gitGC(dir GitDir) error {
 }
 
 // sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
-// concurrently with git gc.
+// concurrently with git gc. sgMaintenance will check the state of the
+// repository to avoid running the cleanup tasks if possible.
 func sgMaintenance(dir GitDir) error {
+	needed, reason, err := needsMaintenance(dir)
+	defer func() {
+		maintenanceStatus.WithLabelValues(strconv.FormatBool(err == nil), reason).Inc()
+	}()
+	if err != nil {
+		return err
+	}
+	if !needed {
+		return nil
+	}
+
 	cmd := exec.Command("sh")
 	dir.Set(cmd)
 
@@ -786,6 +813,104 @@ func sgMaintenance(dir GitDir) error {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	return nil
+}
+
+func needsMaintenance(dir GitDir) (bool, string, error) {
+	// Bitmaps store reachability information about the set of objects in a
+	// packfile which speeds up clone and fetch operations.
+	hasBm, err := hasBitmap(dir)
+	if err != nil {
+		return false, "", err
+	}
+	if !hasBm {
+		return true, "bitmap", nil
+	}
+
+	// The commit-graph file is a supplemental data structure that accelerates
+	// commit graph walks triggered EG by git-log.
+	hasCg, err := hasCommitGraph(dir)
+	if err != nil {
+		return false, "", err
+	}
+	if !hasCg {
+		return true, "commit_graph", nil
+	}
+
+	tooManyPf, err := tooManyPackfiles(dir, autoPackLimit)
+	if err != nil {
+		return false, "", err
+	}
+	if tooManyPf {
+		return true, "packfiles", nil
+	}
+
+	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit)
+	if err != nil {
+		return false, "", err
+	}
+	if tooManyLO {
+		return tooManyLO, "loose_objects", nil
+	}
+	return false, "skipped", nil
+}
+
+var reHexadecimal = regexp.MustCompile("^[0-9a-f]+$")
+
+// tooManyLooseObjects follows Git's approach of estimating the number of
+// loose objects by counting the objects in a sentinel folder and extrapolating
+// based on the assumption that loose objects are randomly distributed in the
+// 256 possible folders.
+func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
+	// We use the same folder git uses to estimate the number of loose objects.
+	objs, err := os.ReadDir(filepath.Join(dir.Path(), "objects", "17"))
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "tooManyLooseObjects")
+	}
+
+	count := 0
+	for _, obj := range objs {
+		// Git checks if the file names are hexadecimal and that they have the right
+		// length depending on the chosen hash algorithm. Since the hash algorithm might
+		// change over time, checking the length seems too brittle. Instead, we just
+		// count all files with hexadecimal names.
+		if obj.IsDir() {
+			continue
+		}
+		if matches := reHexadecimal.MatchString(obj.Name()); !matches {
+			continue
+		}
+		count++
+	}
+	return count*256 > limit, nil
+}
+
+func hasBitmap(dir GitDir) (bool, error) {
+	bitmaps, err := filepath.Glob(dir.Path("objects", "pack", "*.bitmap"))
+	if err != nil {
+		return false, err
+	}
+	return len(bitmaps) > 0, nil
+}
+
+func hasCommitGraph(dir GitDir) (bool, error) {
+	if _, err := os.Stat(dir.Path("objects", "info", "commit-graph")); err == nil {
+		return true, nil
+	} else if errors.Is(err, fs.ErrNotExist) {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
+func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
+	packs, err := filepath.Glob(dir.Path("objects", "pack", "*.pack"))
+	if err != nil {
+		return false, err
+	}
+	return len(packs) > limit, nil
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {

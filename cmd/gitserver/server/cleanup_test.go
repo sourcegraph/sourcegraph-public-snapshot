@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -842,5 +843,277 @@ func TestJitterDuration(t *testing.T) {
 	}
 	if err := quick.Check(f, nil); err != nil {
 		t.Error(err)
+	}
+}
+
+func prepareEmptyGitRepo(dir string) error {
+	cmd := exec.Command("/bin/sh", "-euxc", "git init")
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("execution error: %v, output %s", err, out)
+	}
+	return nil
+}
+
+func TestTooManyLooseObjects(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	// create sentinel object folder
+	if err := os.MkdirAll(filepath.Join(dir, ".git", "objects", "17"), fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	touch := func(name string) error {
+		file, err := os.Create(filepath.Join(dir, ".git", "objects", "17", name))
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+
+	limit := 2 * 256 // 2 objects per folder
+
+	cases := []struct {
+		name string
+		file string
+		want bool
+	}{
+		{
+			name: "empty",
+			file: "",
+			want: false,
+		},
+		{
+			name: "1 file",
+			file: "abc1",
+			want: false,
+		},
+		{
+			name: "ignore files with non-hexadecimal names",
+			file: "abcxyz123",
+			want: false,
+		},
+		{
+			name: "2 files",
+			file: "abc2",
+			want: false,
+		},
+		{
+			name: "3 files (too many)",
+			file: "abc3",
+			want: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.file != "" {
+				err := touch(c.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			tooManyLO, err := tooManyLooseObjects(gitDir, limit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tooManyLO != c.want {
+				t.Fatalf("want %t, got %t\n", c.want, tooManyLO)
+			}
+		})
+	}
+}
+
+func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	_, err := tooManyLooseObjects(gitDir, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestHasBitmap(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	t.Run("empty git repo", func(t *testing.T) {
+		hasBm, err := hasBitmap(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hasBm {
+			t.Fatalf("expected no bitmap file for an empty git repository")
+		}
+	})
+
+	t.Run("repo with bitmap", func(t *testing.T) {
+		script := `echo acont > afile
+git add afile
+git commit -am amsg
+git repack -d -l -A --write-bitmap
+`
+		cmd := exec.Command("/bin/sh", "-euxc", script)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("out=%s, err=%s", out, err)
+		}
+		hasBm, err := hasBitmap(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasBm {
+			t.Fatalf("expected bitmap file after running git repack -d -l -A --write-bitmap")
+		}
+	})
+}
+
+func TestTooManyPackFiles(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	newPackFile := func(name string) error {
+		file, err := os.Create(gitDir.Path("objects", "pack", name))
+		if err != nil {
+			return err
+		}
+		return file.Close()
+	}
+
+	packLimit := 1
+
+	cases := []struct {
+		name string
+		file string
+		want bool
+	}{
+		{
+			name: "empty",
+			file: "",
+			want: false,
+		},
+		{
+			name: "1 pack",
+			file: "a.pack",
+			want: false,
+		},
+		{
+			name: "2 packs",
+			file: "b.pack",
+			want: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.file != "" {
+				err := newPackFile(c.file)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			tooManyPf, err := tooManyPackfiles(gitDir, packLimit)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tooManyPf != c.want {
+				t.Fatalf("want %t, got %t\n", c.want, tooManyPf)
+			}
+		})
+	}
+}
+
+func TestHasCommitGraph(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	t.Run("empty git repo", func(t *testing.T) {
+		hasBm, err := hasCommitGraph(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hasBm {
+			t.Fatalf("expected no commit-graph file for an empty git repository")
+		}
+	})
+
+	t.Run("commit-graph", func(t *testing.T) {
+		script := `echo acont > afile
+git add afile
+git commit -am amsg
+git commit-graph write --reachable --changed-paths
+`
+		cmd := exec.Command("/bin/sh", "-euxc", script)
+		cmd.Dir = dir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("out=%s, err=%s", out, err)
+		}
+		hasCg, err := hasCommitGraph(gitDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !hasCg {
+			t.Fatalf("expected commit-graph file after running git commit-graph write --reachable --changed-paths")
+		}
+	})
+}
+
+func TestNeedsMaintenance(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	needed, reason, err := needsMaintenance(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason != "bitmap" {
+		t.Fatalf("want %s, got %s", "bitmap", reason)
+	}
+	if !needed {
+		t.Fatal("repos without a bitmap should require a repack")
+	}
+
+	// create bitmap file and commit-graph
+	script := `echo acont > afile
+git add afile
+git commit -am amsg
+git repack -d -l -A --write-bitmap
+git commit-graph write --reachable --changed-paths
+`
+	cmd := exec.Command("/bin/sh", "-euxc", script)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("out=%s, err=%s", out, err)
+	}
+
+	needed, reason, err = needsMaintenance(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reason != "skipped" {
+		t.Fatalf("want %s, got %s", "skipped", reason)
+	}
+	if needed {
+		t.Fatal("this repo doesn't need maintenance")
 	}
 }
