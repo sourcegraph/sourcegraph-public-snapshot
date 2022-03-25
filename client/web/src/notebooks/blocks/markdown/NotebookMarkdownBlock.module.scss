@@ -51,8 +51,8 @@
     }
 
     :global(.cmt-punctuation),
-     // stylelint-disable-next-line selector-class-pattern
     :global(.cmt-typeName) {
+        /* stylelint-disable-line selector-class-pattern */
         color: var(--oc-cyan-7);
     }
 

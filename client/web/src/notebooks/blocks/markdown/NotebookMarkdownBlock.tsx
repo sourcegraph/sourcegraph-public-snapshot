@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { defaultKeymap, indentWithTab } from '@codemirror/commands'
-import { indentUnit } from '@codemirror/language'
 import { tags, HighlightStyle, classHighlightStyle } from '@codemirror/highlight'
+import { history } from '@codemirror/history'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { indentUnit } from '@codemirror/language'
 import { Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
-import { history } from '@codemirror/history'
 import classNames from 'classnames'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
@@ -79,7 +79,7 @@ const staticExtensions: Extension[] = [
     ]),
 ]
 
-function focusInput(editor: EditorView) {
+function focusInput(editor: EditorView): void {
     editor.focus()
     editor.dispatch({
         selection: { anchor: editor.state.doc.length },
