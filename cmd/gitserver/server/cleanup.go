@@ -111,7 +111,7 @@ const reposStatsName = "repos-stats.json"
 // 7. Re-clone repos after a while. (simulate git gc)
 // 8. Remove repos based on disk pressure.
 // 9. Perform sg-maintenance
-// 10.Git prune
+// 10. Git prune
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -800,7 +800,7 @@ func gitGC(dir GitDir) error {
 // sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
 // concurrently with git gc. sgMaintenance will check the state of the
 // repository to avoid running the cleanup tasks if possible.
-func sgMaintenance(dir GitDir) error {
+func sgMaintenance(dir GitDir) (err error) {
 	needed, reason, err := needsMaintenance(dir)
 	defer func() {
 		maintenanceStatus.WithLabelValues(strconv.FormatBool(err == nil), reason).Inc()
@@ -835,7 +835,7 @@ func needsPruning(dir GitDir) (bool, error) {
 
 // We run git-prune only if there are enough loose objects that are older than 2
 // weeks. This approach is adapted from https://gitlab.com/gitlab-org/gitaly.
-func pruneIfNeeded(dir GitDir) error {
+func pruneIfNeeded(dir GitDir) (err error) {
 	needed, err := needsPruning(dir)
 	defer func() {
 		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed))

@@ -845,29 +845,27 @@ func TestJitterDuration(t *testing.T) {
 	}
 }
 
-func prepareEmptyGitRepo(dir string) error {
-	cmd := exec.Command("/bin/sh", "-euxc", "git init")
+func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
+	t.Helper()
+	cmd := exec.Command("git", "init", ".")
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return errors.Newf("execution error: %v, output %s", err, out)
+		t.Fatalf("execution error: %v, output %s", err, out)
 	}
-	return nil
+	return GitDir(filepath.Join(dir, ".git"))
 }
 
 func TestTooManyLooseObjects(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	// create sentinel object folder
-	if err := os.MkdirAll(filepath.Join(dir, ".git", "objects", "17"), fs.ModePerm); err != nil {
+	if err := os.MkdirAll(gitDir.Path("objects", "17"), fs.ModePerm); err != nil {
 		t.Fatal(err)
 	}
 
 	touch := func(name string) error {
-		file, err := os.Create(filepath.Join(dir, ".git", "objects", "17", name))
+		file, err := os.Create(gitDir.Path("objects", "17", name))
 		if err != nil {
 			return err
 		}
@@ -929,10 +927,7 @@ func TestTooManyLooseObjects(t *testing.T) {
 
 func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	_, err := tooManyLooseObjects(gitDir, 1, time.Now())
 	if err != nil {
@@ -942,10 +937,7 @@ func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
 
 func TestHasBitmap(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	t.Run("empty git repo", func(t *testing.T) {
 		hasBm, err := hasBitmap(gitDir)
@@ -980,10 +972,7 @@ git repack -d -l -A --write-bitmap
 
 func TestTooManyPackFiles(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	newPackFile := func(name string) error {
 		file, err := os.Create(gitDir.Path("objects", "pack", name))
@@ -1038,10 +1027,7 @@ func TestTooManyPackFiles(t *testing.T) {
 
 func TestHasCommitGraph(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	t.Run("empty git repo", func(t *testing.T) {
 		hasBm, err := hasCommitGraph(gitDir)
@@ -1076,10 +1062,7 @@ git commit-graph write --reachable --changed-paths
 
 func TestNeedsMaintenance(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	needed, reason, err := needsMaintenance(gitDir)
 	if err != nil {
@@ -1119,10 +1102,7 @@ git commit-graph write --reachable --changed-paths
 
 func TestNeedsPruning(t *testing.T) {
 	dir := t.TempDir()
-	if err := prepareEmptyGitRepo(dir); err != nil {
-		t.Fatal(err)
-	}
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := prepareEmptyGitRepo(t, dir)
 
 	needed, err := needsPruning(gitDir)
 	if err != nil {
