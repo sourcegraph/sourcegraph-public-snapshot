@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useContext } from 'react'
 
 import classNames from 'classnames'
 
@@ -12,8 +12,7 @@ import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../comp
 import { createRequiredValidator } from '../../../../components/form/validators'
 import { LimitedAccessLabel } from '../../../../components/limited-access-label/LimitedAccessLabel'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { InsightsDashboardOwner } from '../../../../core/types'
-import { isGlobalSubject, isOrganizationSubject, isUserSubject } from '../../../../core/types/subjects'
+import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core/types'
 
 import styles from './InsightsDashboardCreationContent.module.scss'
 
@@ -42,17 +41,13 @@ export interface InsightsDashboardCreationContentProps {
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
     const { initialValues, owners, onSubmit, children } = props
 
-    const { findDashboardByName } = useContext(CodeInsightsBackendContext)
-
     const { UIFeatures } = useContext(CodeInsightsBackendContext)
     const { licensed } = UIFeatures
 
-    // We always have user subject in our settings cascade
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
-    const organizationSubjects = subjects.filter(isOrganizationSubject)
-
-    // We always have global subject in our settings cascade
-    const globalSubject = subjects.find(isGlobalSubject)
+    const userOwner = owners.find(isPersonalOwner)
+    const personalOwners = owners.filter(isPersonalOwner)
+    const organizationOwners = owners.filter(isOrganizationOwner)
+    const globalOwners = owners.filter(isGlobalOwner)
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues: initialValues ?? {
