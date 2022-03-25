@@ -109,7 +109,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 
 			types, _ := b.ToParseTree().StringValues(query.FieldType)
 			resultTypes := ComputeResultTypes(types, b.PatternString(), query.SearchTypeRegex)
-			got, err := QueryToZoektQuery(b, resultTypes, &tt.Features, tt.Type)
+			got, err := QueryToZoektQuery(b, resultTypes, &tt.Features)
 			if err != nil {
 				t.Fatal("QueryToZoektQuery failed:", err)
 			}

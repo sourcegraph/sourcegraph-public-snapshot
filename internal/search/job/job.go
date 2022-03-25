@@ -100,8 +100,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
 
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
-				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features)
 				if err != nil {
 					return nil, err
 				}
@@ -115,7 +114,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					// Ideally, The ZoektParameters type should not expose this field for Universe text
 					// searches at all, and will be removed once jobs are fully migrated.
 					Query:          nil,
-					Typ:            typ,
+					Typ:            search.TextRequest,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
@@ -130,8 +129,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			if resultTypes.Has(result.TypeSymbol) {
-				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features)
 				if err != nil {
 					return nil, err
 				}
@@ -139,7 +137,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 				zoektArgs := &search.ZoektParameters{
 					Query:          nil,
-					Typ:            typ,
+					Typ:            search.SymbolRequest,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
@@ -158,15 +156,14 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
 			var textSearchJobs []Job
-			typ := search.TextRequest
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features)
 				if err != nil {
 					return nil, err
 				}
 				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
 					Query:          zoektQuery,
-					Typ:            typ,
+					Typ:            search.TextRequest,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
@@ -191,10 +188,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
 			var symbolSearchJobs []Job
-			typ := search.SymbolRequest
-
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features)
 				if err != nil {
 					return nil, err
 				}
@@ -243,14 +238,13 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		}
 
 		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && b.PatternString() != "" {
-			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+			zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features)
 			if err != nil {
 				return nil, err
 			}
 			zoektArgs := &search.ZoektParameters{
 				Query:          zoektQuery,
-				Typ:            typ,
+				Typ:            search.TextRequest,
 				FileMatchLimit: fileMatchLimit,
 				Select:         selector,
 				Zoekt:          jargs.Zoekt,
