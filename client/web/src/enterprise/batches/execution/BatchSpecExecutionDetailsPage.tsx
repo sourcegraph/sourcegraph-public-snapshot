@@ -44,7 +44,7 @@ import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
-import { WorkspacesList } from './WorkspacesList'
+import { Workspaces } from './workspaces/Workspaces'
 
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
@@ -385,30 +385,30 @@ const ExecutionWorkspacesPage: React.FunctionComponent<ExecutionWorkspacesPagePr
     selectedWorkspaceID,
     executionURL,
     isLightTheme,
-}) => (
-    <>
-        {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
-        <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
-            <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
-                <div className="w-100 d-flex flex-column">
-                    <h3 className="mb-2">Workspaces</h3>
-                    <div className={styles.workspacesList}>
-                        <WorkspacesList
-                            batchSpecID={batchSpec.id}
-                            selectedNode={selectedWorkspaceID}
-                            executionURL={executionURL}
-                        />
-                    </div>
-                </div>
-            </Panel>
-            <div className="d-flex flex-grow-1">
-                <div className="d-flex overflow-auto w-100">
-                    <SelectedWorkspace workspace={selectedWorkspaceID ?? null} isLightTheme={isLightTheme} />
-                </div>
+}) => {
+    const history = useHistory()
+    const deselectWorkspace = useCallback(() => history.push(executionURL), [executionURL, history])
+
+    return (
+        <>
+            {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
+            <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
+                <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
+                    <Workspaces
+                        batchSpecID={batchSpec.id}
+                        selectedNode={selectedWorkspaceID}
+                        executionURL={executionURL}
+                    />
+                </Panel>
+                <SelectedWorkspace
+                    workspace={selectedWorkspaceID ?? null}
+                    isLightTheme={isLightTheme}
+                    deselectWorkspace={deselectWorkspace}
+                />
             </div>
-        </div>
-    </>
-)
+        </>
+    )
+}
 
 interface PreviewPageProps extends TelemetryProps, ThemeProps {
     batchSpecID: Scalars['ID']
@@ -442,26 +442,25 @@ const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
     )
 }
 
-const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | null } & ThemeProps> = ({
-    workspace,
-    isLightTheme,
-}) => {
-    if (workspace === null) {
-        return (
-            <Card className="w-100">
-                <CardBody>
-                    <h3 className="text-center my-3">Select a workspace to view details.</h3>
-                </CardBody>
-            </Card>
-        )
-    }
-    return (
-        <Card className="w-100">
-            <CardBody>
-                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
-            </CardBody>
-        </Card>
-    )
+interface SelectedWorkspaceProps extends ThemeProps {
+    deselectWorkspace: () => void
+    workspace: Scalars['ID'] | null
 }
+
+const SelectedWorkspace: React.FunctionComponent<SelectedWorkspaceProps> = ({
+    workspace,
+    deselectWorkspace,
+    isLightTheme,
+}) => (
+    <Card className="w-100 overflow-auto flex-grow-1">
+        <CardBody>
+            {workspace ? (
+                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} deselectWorkspace={deselectWorkspace} />
+            ) : (
+                <h3 className="text-center my-3">Select a workspace to view details.</h3>
+            )}
+        </CardBody>
+    </Card>
+)
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />

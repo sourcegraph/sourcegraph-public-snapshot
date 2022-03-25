@@ -1,7 +1,7 @@
 import React from 'react'
 
-import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CancelIcon from 'mdi-react/CancelIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
@@ -14,63 +14,51 @@ import { BatchSpecWorkspaceState } from '../../../graphql-operations'
 export interface WorkspaceStateIconProps {
     state: BatchSpecWorkspaceState
     cachedResultFound: boolean
-
-    className?: string
 }
 
-export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps> = ({
-    state,
-    cachedResultFound,
-    className,
-}) => {
+export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps> = ({ state, cachedResultFound }) => {
     switch (state) {
         case BatchSpecWorkspaceState.PENDING:
             return null
         case BatchSpecWorkspaceState.QUEUED:
             return (
                 <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="Waiting to be processed"
+                    className="text-muted"
+                    data-tooltip="This workspace is queued for execution."
                     as={TimerSandIcon}
                 />
             )
         case BatchSpecWorkspaceState.PROCESSING:
             return (
                 <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="Currently executing"
+                    className="text-muted"
+                    data-tooltip="This workspace is currently executing."
                     as={LoadingSpinner}
                 />
             )
         case BatchSpecWorkspaceState.SKIPPED:
-            return (
-                <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="The workspace has been skipped"
-                    as={LinkVariantRemoveIcon}
-                />
-            )
+            return <Icon className="text-muted" data-tooltip="This workspace was skipped." as={LinkVariantRemoveIcon} />
         case BatchSpecWorkspaceState.CANCELED:
             return (
                 <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="The execution has been canceled"
-                    as={AlertCircleIcon}
+                    className="text-muted"
+                    data-tooltip="The execution for this workspace was canceled."
+                    as={CancelIcon}
                 />
             )
         case BatchSpecWorkspaceState.CANCELING:
             return (
                 <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="The execution is being canceled"
-                    as={AlertCircleIcon}
+                    className="text-muted"
+                    data-tooltip="The execution for this workspace is being canceled."
+                    as={CancelIcon}
                 />
             )
         case BatchSpecWorkspaceState.FAILED:
             return (
                 <Icon
-                    className={classNames('text-danger', className)}
-                    data-tooltip="The execution has failed"
+                    className="text-danger"
+                    data-tooltip="The execution for this workspace failed."
                     as={AlertCircleIcon}
                 />
             )
@@ -78,16 +66,16 @@ export const WorkspaceStateIcon: React.FunctionComponent<WorkspaceStateIconProps
             if (cachedResultFound) {
                 return (
                     <Icon
-                        className={classNames('text-success', className)}
-                        data-tooltip="Cached result found"
+                        className="text-success"
+                        data-tooltip="Cached result found for this workspace."
                         as={ContentSaveIcon}
                     />
                 )
             }
             return (
                 <Icon
-                    className={classNames('text-success', className)}
-                    data-tooltip="Successfully executed"
+                    className="text-success"
+                    data-tooltip="Execution for this workspace succeeded."
                     as={CheckCircleIcon}
                 />
             )

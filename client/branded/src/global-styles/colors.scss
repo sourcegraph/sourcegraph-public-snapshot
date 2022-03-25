@@ -153,7 +153,7 @@ $theme-colors: (
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
-    --subtle-bg-2: #{rgba($gray-02, 0.6)};
+    --subtle-bg-2: #{rgba($gray-02, 0.5)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;

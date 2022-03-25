@@ -58,14 +58,15 @@ import styles from './WorkspaceDetails.module.scss'
 
 export interface WorkspaceDetailsProps extends ThemeProps {
     id: Scalars['ID']
+    /** Handler to deselect the current workspace, i.e. close the details panel. */
+    deselectWorkspace: () => void
 }
 
-export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({ id, isLightTheme }) => {
-    const history = useHistory()
-    const onClose = useCallback(() => {
-        history.push(history.location.pathname)
-    }, [history])
-
+export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = ({
+    id,
+    isLightTheme,
+    deselectWorkspace,
+}) => {
     // Fetch and poll latest workspace information.
     const workspace = useObservable(
         useMemo(() => fetchBatchSpecWorkspace(id).pipe(repeatWhen(notifier => notifier.pipe(delay(2500)))), [id])
@@ -113,7 +114,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <Icon as={ExternalLinkIcon} />
                     </Link>
                 </h3>
-                <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
+                <Button className="p-0 ml-2" onClick={deselectWorkspace} variant="link" size="sm">
                     <Icon as={CloseIcon} />
                 </Button>
             </div>
@@ -128,7 +129,7 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                     </>
                 )}
                 {workspace.path && <>{workspace.path} | </>}
-                <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.abbrevName}</strong>
+                <Icon as={SourceBranchIcon} /> base: <strong>{workspace.branch.displayName}</strong>
                 {workspace.startedAt && (
                     <>
                         {' '}
