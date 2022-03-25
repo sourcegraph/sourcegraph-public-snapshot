@@ -14,7 +14,7 @@ import {
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
 
-import { NotebookComponentMemoized } from './NotebookComponent'
+import { NotebookComponent } from './NotebookComponent'
 
 const { add } = storiesOf('web/search/notebooks/notebook/NotebookComponent', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -39,7 +39,7 @@ const blocks: BlockInit[] = [
 add('default', () => (
     <WebStory>
         {props => (
-            <NotebookComponentMemoized
+            <NotebookComponent
                 {...props}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
@@ -64,7 +64,7 @@ add('default', () => (
 add('default read-only', () => (
     <WebStory>
         {props => (
-            <NotebookComponentMemoized
+            <NotebookComponent
                 {...props}
                 isReadOnly={true}
                 isSourcegraphDotCom={true}

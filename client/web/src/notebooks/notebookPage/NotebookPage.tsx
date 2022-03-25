@@ -39,7 +39,7 @@ import {
 import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
-import { NotebookContentMemoized } from './NotebookContent'
+import { NotebookContent } from './NotebookContent'
 import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
 
@@ -271,7 +271,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             </div>
                         </small>
                         <hr className="mt-2 mb-3" />
-                        <NotebookContentMemoized
+                        <NotebookContent
                             viewerCanManage={notebookOrError.viewerCanManage}
                             blocks={notebookOrError.blocks}
                             onUpdateBlocks={onUpdateBlocks}

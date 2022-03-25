@@ -7,7 +7,7 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 
 import { WebStory } from '../../../components/WebStory'
 
-import { NotebookComputeBlockMemoized } from './NotebookComputeBlock'
+import { NotebookComputeBlock } from './NotebookComputeBlock'
 
 const { add } = storiesOf('web/search/notebooks/blocks/compute/NotebookComputeBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
@@ -26,7 +26,7 @@ const noopBlockCallbacks = {
 add('default', () => (
     <WebStory>
         {props => (
-            <NotebookComputeBlockMemoized
+            <NotebookComputeBlock
                 {...props}
                 {...noopBlockCallbacks}
                 input=""

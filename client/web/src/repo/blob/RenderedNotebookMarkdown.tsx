@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { noop } from 'lodash'
 import * as uuid from 'uuid'
 
-import { NotebookComponentMemoized, NotebookComponentProps } from '../../notebooks/notebook/NotebookComponent'
+import { NotebookComponent, NotebookComponentProps } from '../../notebooks/notebook/NotebookComponent'
 import { convertMarkdownToBlocks } from '../../notebooks/serialize/convertMarkdownToBlocks'
 
 import styles from './RenderedNotebookMarkdown.module.scss'
@@ -25,7 +25,7 @@ export const RenderedNotebookMarkdown: React.FunctionComponent<RenderedNotebookM
     return (
         <div className={styles.renderedSearchNotebookMarkdownWrapper}>
             <div className={styles.renderedSearchNotebookMarkdown}>
-                <NotebookComponentMemoized isReadOnly={true} blocks={blocks} {...props} onSerializeBlocks={noop} />
+                <NotebookComponent isReadOnly={true} blocks={blocks} {...props} onSerializeBlocks={noop} />
             </div>
         </div>
     )

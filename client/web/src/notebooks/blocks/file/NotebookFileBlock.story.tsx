@@ -9,7 +9,7 @@ import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/
 import { FileBlockInput } from '../..'
 import { WebStory } from '../../../components/WebStory'
 
-import { NotebookFileBlockMemoized } from './NotebookFileBlock'
+import { NotebookFileBlock } from './NotebookFileBlock'
 
 const { add } = storiesOf('web/search/notebooks/blocks/file/NotebookFileBlock', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
@@ -35,7 +35,7 @@ const fileBlockInput: FileBlockInput = {
 add('default', () => (
     <WebStory>
         {props => (
-            <NotebookFileBlockMemoized
+            <NotebookFileBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="file-block-1"
@@ -55,7 +55,7 @@ add('default', () => (
 add('edit mode', () => (
     <WebStory>
         {props => (
-            <NotebookFileBlockMemoized
+            <NotebookFileBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="file-block-1"
@@ -75,7 +75,7 @@ add('edit mode', () => (
 add('error fetching file', () => (
     <WebStory>
         {props => (
-            <NotebookFileBlockMemoized
+            <NotebookFileBlock
                 {...props}
                 {...noopBlockCallbacks}
                 id="file-block-1"
