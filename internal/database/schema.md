@@ -2593,28 +2593,6 @@ Foreign-key constraints:
 ```
 
 # View "public.gitserver_localclone_jobs_with_repo_name"
-```
-      Column       |           Type           | Collation | Nullable | Default 
--------------------+--------------------------+-----------+----------+---------
- id                | integer                  |           |          | 
- state             | text                     |           |          | 
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           |          | 
- num_failures      | integer                  |           |          | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           |          | 
- repo_id           | integer                  |           |          | 
- source_hostname   | text                     |           |          | 
- dest_hostname     | text                     |           |          | 
- delete_source     | boolean                  |           |          | 
- queued_at         | timestamp with time zone |           |          | 
- repo_name         | citext                   |           |          | 
-
-```
 
 ## View query:
 
