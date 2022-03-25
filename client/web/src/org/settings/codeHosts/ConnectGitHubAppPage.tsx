@@ -8,7 +8,6 @@ import { Card, CardBody, Link, PageHeader, LoadingSpinner } from '@sourcegraph/w
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAvatar } from '../../../user/UserAvatar'
 
 import styles from './GitHubOrgListItem.module.scss'
 
@@ -94,13 +93,14 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
                                 <GHOrgListItem onClick={connectOrg(install.id.toString())} key={install.id}>
                                     <div className="d-flex align-items-start">
                                         <div className="align-self-center">
-                                            <UserAvatar
-                                                className="icon-inline mb-0 mr-1"
-                                                user={{ avatarURL: install.account.avatar_url, displayName: '' }}
+                                            <img
+                                                src={install.account.avatar_url}
+                                                className={classNames(styles.ghOrgIcon, 'mr-1')}
+                                                alt="Organization logo"
                                             />
                                         </div>
                                         <div className="flex-1 align-self-center">
-                                            <h3 className="m-0">{install.account.login}</h3>
+                                            <h3 className="m-1">{install.account.login}</h3>
                                         </div>
                                         <div className="align-self-center ml-3">
                                             <ChevronRightIcon />
