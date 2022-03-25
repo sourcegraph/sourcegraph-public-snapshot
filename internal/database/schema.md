@@ -1008,6 +1008,7 @@ Referenced by:
  source_hostname   | text                     |           | not null | 
  dest_hostname     | text                     |           | not null | 
  delete_source     | boolean                  |           | not null | false
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "gitserver_localclone_jobs_pkey" PRIMARY KEY, btree (id)
 
@@ -2642,6 +2643,7 @@ Foreign-key constraints:
  source_hostname   | text                     |           |          | 
  dest_hostname     | text                     |           |          | 
  delete_source     | boolean                  |           |          | 
+ queued_at         | timestamp with time zone |           |          | 
  repo_name         | citext                   |           |          | 
 
 ```
@@ -2664,6 +2666,7 @@ Foreign-key constraints:
     glj.source_hostname,
     glj.dest_hostname,
     glj.delete_source,
+    glj.queued_at,
     r.name AS repo_name
    FROM (gitserver_localclone_jobs glj
      JOIN repo r ON ((r.id = glj.repo_id)));
