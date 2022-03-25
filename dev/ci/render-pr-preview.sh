@@ -169,7 +169,6 @@ fi
 echo "Preview url: ${pr_preview_url}"
 
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-  echo "Updating PR #${pr_number} in ${owner_and_repo} description"
 
   # GitHub pull request number and GitHub api token are set
   # Appending `App Preview` section into PR description if it hasn't existed yet
@@ -182,6 +181,8 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
     --header 'Content-Type: application/json' | jq -r '.body')
 
   if [[ "${pr_description}" != *"## App preview"* ]]; then
+    echo "Updating PR #${pr_number} in ${owner_and_repo} description"
+
     pr_description=$(echo -e "${pr_description}\n## App preview:\n- [Link](${pr_preview_url})\n" | jq -Rs .)
 
     curl -sSf -o /dev/null --request PATCH \
@@ -190,5 +191,7 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
       --header 'Accept: application/vnd.github.v3+json' \
       --header 'Content-Type: application/json' \
       --data "{ \"body\": ${pr_description} }"
+  else
+    echo "PR #${pr_number} in ${owner_and_repo} description already has \"App preview\" section"
   fi
 fi
