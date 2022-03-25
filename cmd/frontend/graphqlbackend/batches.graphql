@@ -1806,6 +1806,20 @@ extend type Query {
     ): BatchChangesCodeHostConnection!
 
     """
+    Returns a list of available bulk operations for changesets belonging to a batch change.
+    """
+    availableBulkOperations(
+        """
+
+        """
+        batchChangeID: ID!
+        """
+
+        """
+        changesetIDs: [ID!]!
+    ): [BulkOperationType!]!
+
+    """
     A list of batch specs.
 
 

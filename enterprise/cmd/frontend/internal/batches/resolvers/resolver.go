@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -1463,7 +1464,6 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 	}
 
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
-
 }
 
 func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
@@ -1821,6 +1821,109 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.AvailableBulkOperations", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChangeID, len(args.ChangesetIDs)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	var changesetIDs []int64
+	for _, changesetID := range args.ChangesetIDs {
+		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
+		if err != nil {
+			return nil, err
+		}
+		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
+	}
+
+	noOfChangesets := len(args.ChangesetIDs)
+	bulkOperationsCounter := map[btypes.ChangesetJobType]int{
+		btypes.ChangesetJobTypePublish: 0,
+		btypes.ChangesetJobTypeComment: 0,
+
+		btypes.ChangesetJobTypeClose:     0,
+		btypes.ChangesetJobTypeDetach:    0,
+		btypes.ChangesetJobTypeReenqueue: 0,
+		btypes.ChangesetJobTypeMerge:     0,
+	}
+
+	// feels a bit unoptimized to be fetching all these data from the database, instead of just the one that's needed
+	changesets, _, err := r.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs: changesetIDs,
+		LimitOpts: store.LimitOpts{
+			// this should not be a problem since changesets are usually paginated
+			// from the frontend.
+			Limit: noOfChangesets,
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	unmarshalledBatchChangeID, err := unmarshalBatchChangeID(args.BatchChangeID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, changeset := range changesets {
+		for _, b := range changeset.BatchChanges {
+			if b.BatchChangeID == unmarshalledBatchChangeID && b.IsArchived {
+				bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
+				break
+			}
+		}
+
+		if changeset.ReconcilerState == btypes.ReconcilerStateFailed {
+			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
+		}
+		if changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+		}
+
+		if changeset.ExternalState.Valid() {
+			// check what operations this changeset support, most likely from the state
+			// so get the changeset then derive the operations from it's state
+			switch changeset.ExternalState {
+			case btypes.ChangesetExternalStateDraft:
+				bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+			case btypes.ChangesetExternalStateOpen:
+				bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
+			case btypes.ChangesetExternalStateClosed:
+				bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+			case btypes.ChangesetExternalStateMerged:
+				bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+				bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+			}
+		}
+	}
+
+	for jobType, count := range bulkOperationsCounter {
+		// we only want to return bulkoperationType that can be applied
+		// to all changesets.
+		if count == noOfChangesets {
+			operation := strings.ToUpper(string(jobType))
+			if operation == "COMMENTATORE" {
+				operation = "COMMENT"
+			}
+			availableBulkOperations = append(availableBulkOperations, operation)
+		}
+	}
+
+	return availableBulkOperations, nil
 }
 
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {

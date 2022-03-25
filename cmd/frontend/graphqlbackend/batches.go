@@ -283,6 +283,7 @@ type BatchChangesResolver interface {
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
 
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -574,6 +575,11 @@ type ListChangesetsArgs struct {
 type ListBatchSpecArgs struct {
 	First int32
 	After *string
+}
+
+type AvailableBulkOperationsArgs struct {
+	BatchChangeID graphql.ID
+	ChangesetIDs  []graphql.ID
 }
 
 type ListWorkspacesArgs struct {
