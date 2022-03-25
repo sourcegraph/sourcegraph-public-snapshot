@@ -54,10 +54,13 @@ func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.F
 		return nil, err
 	}
 
+	gitserverClient := gitserver.NewClient(db)
+	gitserverClient.HTTPClient = gitserverDoer
+
 	return &GitoliteSource{
 		svc:     svc,
 		conn:    &c,
-		cli:     gitserver.NewClient(gitserverDoer),
+		cli:     gitserverClient,
 		exclude: exclude,
 	}, nil
 }

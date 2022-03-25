@@ -16,11 +16,21 @@ interface BaseBlock<I, O> {
     output: O | null
 }
 
-export interface QueryBlock extends BaseBlock<string, Observable<AggregateStreamingSearchResults>> {
+export interface QueryBlockInput {
+    query: string
+    initialFocusInput?: boolean
+}
+
+export interface QueryBlock extends BaseBlock<QueryBlockInput, Observable<AggregateStreamingSearchResults>> {
     type: 'query'
 }
 
-export interface MarkdownBlock extends BaseBlock<string, string> {
+export interface MarkdownBlockInput {
+    text: string
+    initialFocusInput?: boolean
+}
+
+export interface MarkdownBlock extends BaseBlock<MarkdownBlockInput, string> {
     type: 'md'
 }
 
@@ -29,6 +39,7 @@ export interface FileBlockInput {
     revision: string
     filePath: string
     lineRange: IHighlightLineRange | null
+    initialQueryInput?: string
 }
 
 export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[] | Error>> {
@@ -47,6 +58,7 @@ export interface SymbolBlockInput {
     symbolKind: SymbolKind
     symbolContainerName: string
     lineContext: number
+    initialQueryInput?: string
 }
 
 export interface SymbolBlockOutput {

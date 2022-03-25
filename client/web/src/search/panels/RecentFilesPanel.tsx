@@ -1,16 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
-import { Observable } from 'rxjs'
 
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { RecentFilesFragment } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -18,25 +20,40 @@ import { ShowMoreButton } from './ShowMoreButton'
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
-    fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>
+    recentFilesFragment: RecentFilesFragment | null
+    fetchMore: HomePanelsFetchMore
 }
+
+export const recentFilesFragment = gql`
+    fragment RecentFilesFragment on User {
+        recentFilesLogs: eventLogs(first: $firstRecentFiles, eventName: "ViewBlob") {
+            nodes {
+                argument
+                timestamp
+                url
+            }
+            pageInfo {
+                hasNextPage
+            }
+            totalCount
+        }
+    }
+`
 
 export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     className,
-    authenticatedUser,
-    fetchRecentFileViews,
+    recentFilesFragment,
     telemetryService,
+    fetchMore,
 }) => {
-    const pageSize = 20
-
-    const [itemsToLoad, setItemsToLoad] = useState(pageSize)
-    const recentFiles = useObservable(
-        useMemo(() => fetchRecentFileViews(authenticatedUser?.id || '', itemsToLoad), [
-            authenticatedUser?.id,
-            fetchRecentFileViews,
-            itemsToLoad,
-        ])
+    const [recentFiles, setRecentFiles] = useState<null | RecentFilesFragment['recentFilesLogs']>(
+        recentFilesFragment?.recentFilesLogs ?? null
     )
+    useEffect(() => setRecentFiles(recentFilesFragment?.recentFilesLogs ?? null), [
+        recentFilesFragment?.recentFilesLogs,
+    ])
+
+    const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
 
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
 
@@ -50,7 +67,7 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
-        if (processedResults && itemsToLoad === pageSize) {
+        if (processedResults && itemsToLoad === RECENT_FILES_TO_LOAD) {
             telemetryService.log(
                 'RecentFilesPanelLoaded',
                 { empty: processedResults.length === 0 },
@@ -70,9 +87,23 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
         </EmptyPanelContainer>
     )
 
-    function loadMoreItems(): void {
-        setItemsToLoad(current => current + pageSize)
+    async function loadMoreItems(): Promise<void> {
         telemetryService.log('RecentFilesPanelShowMoreClicked')
+        const newItemsToLoad = itemsToLoad + RECENT_FILES_TO_LOAD
+        setItemsToLoad(newItemsToLoad)
+
+        const { data } = await fetchMore({
+            firstRecentFiles: newItemsToLoad,
+        })
+
+        if (data === undefined) {
+            return
+        }
+        const node = data.node
+        if (node === null || node.__typename !== 'User') {
+            return
+        }
+        setRecentFiles(node.recentFilesLogs)
     }
 
     const contentDisplay = (

@@ -400,35 +400,34 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitHubConnection(ctx, e, gitHubValidators, opt.ExternalServiceID, &c)
+			err = validateGitHubConnection(gitHubValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindGitLab:
 			var c schema.GitLabConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitLabConnection(ctx, e, gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
+			err = validateGitLabConnection(gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
 
 		case extsvc.KindBitbucketServer:
 			var c schema.BitbucketServerConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateBitbucketServerConnection(ctx, e, bitbucketServerValidators, opt.ExternalServiceID, &c)
+			err = validateBitbucketServerConnection(bitbucketServerValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindBitbucketCloud:
 			var c schema.BitbucketCloudConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validateBitbucketCloudConnection(ctx, e, opt.ExternalServiceID, &c)
 
 		case extsvc.KindPerforce:
 			var c schema.PerforceConnection
 			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
 				return nil, err
 			}
-			err = validatePerforceConnection(ctx, e, perforceValidators, opt.ExternalServiceID, &c)
+			err = validatePerforceConnection(perforceValidators, opt.ExternalServiceID, &c)
 
 		case extsvc.KindOther:
 			var c schema.OtherExternalServiceConnection
@@ -471,7 +470,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGitHubConnection(ctx context.Context, e ExternalServiceStore, githubValidators []func(*types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
+func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) error, id int64, c *schema.GitHubConnection) error {
 	var err error
 	for _, validate := range githubValidators {
 		err = errors.Append(err,
@@ -488,24 +487,18 @@ func validateGitHubConnection(ctx context.Context, e ExternalServiceStore, githu
 	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
 		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}
-
-	err = errors.Append(err, validateDuplicateRateLimits(ctx, e, id, extsvc.KindGitHub, c))
-
 	return err
 }
 
-func validateGitLabConnection(ctx context.Context, e ExternalServiceStore, gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
+func validateGitLabConnection(gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	var err error
 	for _, validate := range gitLabValidators {
 		err = errors.Append(err, validate(c, ps))
 	}
-
-	err = errors.Append(err, validateDuplicateRateLimits(ctx, e, id, extsvc.KindGitLab, c))
-
 	return err
 }
 
-func validateBitbucketServerConnection(ctx context.Context, e ExternalServiceStore, bitbucketServerValidators []func(connection *schema.BitbucketServerConnection) error, id int64, c *schema.BitbucketServerConnection) error {
+func validateBitbucketServerConnection(bitbucketServerValidators []func(connection *schema.BitbucketServerConnection) error, _ int64, c *schema.BitbucketServerConnection) error {
 	var err error
 	for _, validate := range bitbucketServerValidators {
 		err = errors.Append(err, validate(c))
@@ -514,17 +507,10 @@ func validateBitbucketServerConnection(ctx context.Context, e ExternalServiceSto
 	if c.Repos == nil && c.RepositoryQuery == nil {
 		err = errors.Append(err, errors.New("at least one of repositoryQuery or repos must be set"))
 	}
-
-	err = errors.Append(err, validateDuplicateRateLimits(ctx, e, id, extsvc.KindBitbucketServer, c))
-
 	return err
 }
 
-func validateBitbucketCloudConnection(ctx context.Context, e ExternalServiceStore, id int64, c *schema.BitbucketCloudConnection) error {
-	return validateDuplicateRateLimits(ctx, e, id, extsvc.KindBitbucketCloud, c)
-}
-
-func validatePerforceConnection(ctx context.Context, e ExternalServiceStore, perforceValidators []func(*schema.PerforceConnection) error, id int64, c *schema.PerforceConnection) error {
+func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnection) error, _ int64, c *schema.PerforceConnection) error {
 	var err error
 	for _, validate := range perforceValidators {
 		err = errors.Append(err, validate(c))
@@ -533,58 +519,7 @@ func validatePerforceConnection(ctx context.Context, e ExternalServiceStore, per
 	if c.Depots == nil {
 		err = errors.Append(err, errors.New("depots must be set"))
 	}
-
-	err = errors.Append(err, validateDuplicateRateLimits(ctx, e, id, extsvc.KindPerforce, c))
-
 	return err
-}
-
-// validateDuplicateRateLimits returns an error if given config has duplicated non-default rate limit
-// with another external service for the same code host.
-func validateDuplicateRateLimits(ctx context.Context, e ExternalServiceStore, id int64, kind string, parsedConfig interface{}) error {
-	// Check if rate limit is already defined for this code host on another external service
-	rlc, err := extsvc.GetLimitFromConfig(kind, parsedConfig)
-	if err != nil {
-		return errors.Wrap(err, "getting rate limit config")
-	}
-
-	// Default implies that no overriding rate limit has been set so it can't conflict with anything
-	if rlc.IsDefault {
-		return nil
-	}
-
-	baseURL := rlc.BaseURL
-	opt := ExternalServicesListOptions{
-		Kinds: []string{kind},
-		LimitOffset: &LimitOffset{
-			Limit: 500, // The number is randomly chosen
-		},
-	}
-	for {
-		svcs, err := e.List(ctx, opt)
-		if err != nil {
-			return errors.Wrap(err, "list")
-		}
-		if len(svcs) == 0 {
-			break // No more results, exiting
-		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
-
-		for _, svc := range svcs {
-			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
-			if err != nil {
-				return errors.Wrap(err, "extracting rate limit config")
-			}
-			if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
-				return errors.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
-			}
-		}
-
-		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
-		}
-	}
-	return nil
 }
 
 // validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.

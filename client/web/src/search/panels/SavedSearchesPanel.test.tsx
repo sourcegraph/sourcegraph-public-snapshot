@@ -8,7 +8,7 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { SearchPatternType } from '../../graphql-operations'
 
 import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { _fetchSavedSearches, authUser } from './utils'
+import { savedSearchesPayload, authUser } from './utils'
 
 describe('SavedSearchesPanel', () => {
     afterAll(cleanup)
@@ -18,7 +18,7 @@ describe('SavedSearchesPanel', () => {
     const defaultProps = {
         patternType: SearchPatternType.literal,
         authenticatedUser: authUser,
-        fetchSavedSearches: _fetchSavedSearches,
+        savedSearchesFragment: { savedSearches: savedSearchesPayload() },
         telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 

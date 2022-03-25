@@ -37,7 +37,7 @@ func Expand(ctx context.Context, db database.DB, jobArgs *job.Args, oldPlan quer
 		q := q
 		g.Go(func() error {
 			predicatePlan, err := Substitute(q, func(plan query.Plan) (result.Matches, error) {
-				predicateJob, err := job.FromExpandedPlan(jobArgs, plan)
+				predicateJob, err := job.FromExpandedPlan(jobArgs, plan, db)
 				if err != nil {
 					return nil, err
 				}

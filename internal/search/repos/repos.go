@@ -334,7 +334,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				}
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				commitID, err := git.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true})
+				commitID, err := git.ResolveRevision(ctx, r.DB, repoRev.Repo.Name, trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err
@@ -360,7 +360,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 				if op.CommitAfter != "" {
 
-					if hasCommitAfter, err := git.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
+					if hasCommitAfter, err := git.HasCommitAfter(ctx, r.DB, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
 							res.MultiError = errors.Append(res.MultiError, err)
@@ -568,7 +568,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 
 	depsSvc := codeintel.GetDependenciesService(
 		r.DB,
-		lockfiles.GetService(lockfiles.NewDefaultGitService(nil)),
+		lockfiles.GetService(lockfiles.NewDefaultGitService(nil, r.DB)),
 		&packageRepoSyncer{cli: repoupdater.DefaultClient},
 	)
 

@@ -29,7 +29,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	return git.ResolveRevision(ctx, repo.Name, rev, git.ResolveRevisionOptions{})
+	return git.ResolveRevision(ctx, s.db, repo.Name, rev, git.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
@@ -46,5 +46,5 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return git.GetCommit(ctx, repo.Name, commitID, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+	return git.GetCommit(ctx, s.db, repo.Name, commitID, git.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 }

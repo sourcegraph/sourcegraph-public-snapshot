@@ -32,8 +32,8 @@ type alertJob struct {
 }
 
 func (j *alertJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx := jobutil.StartSpan(ctx, j)
-	defer func() { jobutil.FinishSpan(tr, alert, err) }()
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	defer func() { finish(alert, err) }()
 
 	start := time.Now()
 	countingStream := streaming.NewResultCountingStream(stream)

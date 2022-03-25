@@ -449,7 +449,24 @@ func TestHasDashboardPermission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if created == nil {
+		t.Fatalf("nil dashboard")
+	}
+
+	second, err := store.CreateDashboard(ctx, CreateDashboardArgs{
+		Dashboard: types.Dashboard{
+			Title: "second test dashboard",
+			Save:  true,
+		},
+		Grants: []DashboardGrant{UserDashboardGrant(2), OrgDashboardGrant(5)},
+		UserID: []int{2}, // this is a weird thing I'd love to get rid of, but for now this will cause the db to return
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if second == nil {
 		t.Fatalf("nil dashboard")
 	}
 
@@ -458,35 +475,54 @@ func TestHasDashboardPermission(t *testing.T) {
 		shouldHavePermission bool
 		userIds              []int
 		orgIds               []int
+		dashboardIDs         []int
 	}{
 		{
 			name:                 "user 1 has access to dashboard",
 			shouldHavePermission: true,
 			userIds:              []int{1},
 			orgIds:               nil,
+			dashboardIDs:         []int{created.ID},
 		},
 		{
 			name:                 "user 3 does not have access to dashboard",
 			shouldHavePermission: false,
 			userIds:              []int{3},
 			orgIds:               nil,
+			dashboardIDs:         []int{created.ID},
 		},
 		{
 			name:                 "org 5 has access to dashboard",
 			shouldHavePermission: true,
 			userIds:              nil,
 			orgIds:               []int{5},
+			dashboardIDs:         []int{created.ID},
 		},
 		{
 			name:                 "org 7 does not have access to dashboard",
 			shouldHavePermission: false,
 			userIds:              nil,
 			orgIds:               []int{7},
+			dashboardIDs:         []int{created.ID},
+		},
+		{
+			name:                 "no access when dashboard does not exist",
+			shouldHavePermission: false,
+			userIds:              []int{3},
+			orgIds:               []int{5},
+			dashboardIDs:         []int{-2},
+		},
+		{
+			name:                 "user 1 has access to one of two dashboards",
+			shouldHavePermission: false,
+			userIds:              []int{1},
+			orgIds:               nil,
+			dashboardIDs:         []int{created.ID, second.ID},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := store.HasDashboardPermission(ctx, []int{created.ID}, test.userIds, test.orgIds)
+			got, err := store.HasDashboardPermission(ctx, test.dashboardIDs, test.userIds, test.orgIds)
 			if err != nil {
 				t.Error(err)
 			}

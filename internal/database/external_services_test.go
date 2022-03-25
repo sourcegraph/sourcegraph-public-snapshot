@@ -175,22 +175,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: "<nil>",
 		},
 		{
-			name:   "conflicting rate limit",
-			kind:   extsvc.KindGitHub,
-			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-			listFunc: func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{
-					{
-						ID:          1,
-						Kind:        extsvc.KindGitHub,
-						DisplayName: "GITHUB 1",
-						Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-					},
-				}, nil
-			},
-			wantErr: "existing external service, \"GITHUB 1\", already has a rate limit set",
-		},
-		{
 			name:            "prevent code hosts that are not allowed",
 			kind:            extsvc.KindGitHub,
 			config:          `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
