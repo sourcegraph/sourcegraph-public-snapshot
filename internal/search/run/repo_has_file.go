@@ -94,7 +94,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 
 		zoektArgs := search.ZoektParameters{
 			Query:          zoektQuery,
-			Typ:            search.TextRequest,
 			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
 			Select:         newArgs.PatternInfo.Select,
 			Zoekt:          newArgs.Zoekt,
@@ -103,7 +102,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
 			Repos:          indexed,
 			Query:          zoektArgs.Query,
-			Typ:            search.TextRequest,
 			FileMatchLimit: zoektArgs.FileMatchLimit,
 			Select:         zoektArgs.Select,
 			Zoekt:          zoektArgs.Zoekt,

@@ -46,7 +46,6 @@ func Test_setRepos(t *testing.T) {
           }
         },
         "Query": null,
-        "Typ": "",
         "FileMatchLimit": 0,
         "Select": null,
         "Zoekt": null

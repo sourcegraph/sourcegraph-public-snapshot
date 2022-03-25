@@ -98,7 +98,6 @@ const (
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
 	Query          zoektquery.Q
-	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
 

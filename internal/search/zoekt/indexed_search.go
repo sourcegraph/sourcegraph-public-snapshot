@@ -299,12 +299,23 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 				Name: api.RepoName(file.Repository),
 			}
 			return repo, []string{""}
-		}, args.Typ, args.Select, c)
+		}, queryType(args.Query), args.Select, c)
 	}))
 }
 
+func queryType(q zoektquery.Q) search.IndexedRequestType {
+	typ := search.TextRequest
+	zoektquery.VisitAtoms(q, func(atom zoektquery.Q) {
+		switch atom.(type) {
+		case *zoektquery.Symbol:
+			typ = search.SymbolRequest
+		}
+	})
+	return typ
+}
+
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -345,7 +356,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	foundResults := atomic.Bool{}
 	err := client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, repos.getRepoInputRev, typ, selector, c)
+		sendMatches(event, repos.getRepoInputRev, queryType(q), selector, c)
 	}))
 	if err != nil {
 		return err
@@ -583,7 +594,6 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onM
 type ZoektRepoSubsetSearch struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
-	Typ            search.IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
 	Zoekt          zoekt.Streamer
@@ -610,7 +620,7 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Typ, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
 func (*ZoektRepoSubsetSearch) Name() string {

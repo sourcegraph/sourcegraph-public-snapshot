@@ -114,7 +114,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					// Ideally, The ZoektParameters type should not expose this field for Universe text
 					// searches at all, and will be removed once jobs are fully migrated.
 					Query:          nil,
-					Typ:            search.TextRequest,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
@@ -137,7 +136,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 				zoektArgs := &search.ZoektParameters{
 					Query:          nil,
-					Typ:            search.SymbolRequest,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
@@ -160,7 +158,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				}
 				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
 					Query:          zoektQuery,
-					Typ:            search.TextRequest,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
 					Zoekt:          jargs.Zoekt,
@@ -241,7 +238,6 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 			zoektArgs := &search.ZoektParameters{
 				Query:          zoektQuery,
-				Typ:            search.TextRequest,
 				FileMatchLimit: fileMatchLimit,
 				Select:         selector,
 				Zoekt:          jargs.Zoekt,

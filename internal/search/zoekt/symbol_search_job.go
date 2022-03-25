@@ -43,7 +43,7 @@ func (z *ZoektSymbolSearch) Run(ctx context.Context, _ database.DB, stream strea
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, z.Repos, z.Query, search.SymbolRequest, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	err = zoektSearch(ctx, z.Repos, z.Query, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 	if err != nil {
 		tr.LogFields(otlog.Error(err))
 		// Only record error if we haven't timed out.

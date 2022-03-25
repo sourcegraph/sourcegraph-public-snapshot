@@ -214,7 +214,6 @@ func TestPrettyJSON(t *testing.T) {
                 "FileName": false,
                 "Content": false
               },
-              "Typ": "text",
               "FileMatchLimit": 500,
               "Select": [],
               "Zoekt": null
