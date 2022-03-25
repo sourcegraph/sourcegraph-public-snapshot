@@ -98,6 +98,15 @@ const checkGithubOutage = async ():Promise<true | undefined> => new Promise(reso
     })
 })
 
+const outageMessage = (codeHost: string): string  => {
+    const codeHostsUrls = {
+        'GitHub': 'https://www.githubstatus.com',
+        'GitLab': 'https://status.gitlab.com',
+    }
+
+    return `Codehost ${codeHost} is reporting issues - if you encounter problems adding repos, take a look at their ${codeHostsUrls[codeHost]} page`
+}
+
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     owner,
     codeHostExternalServices,
@@ -181,18 +190,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }, [])
 
     async function checkAndSetOutageAlert(services: Partial<Record<ExternalServiceKind, ListExternalServiceFields>>): Promise<void> {
+
         const svcsErrors = new Map<string, string>()
         for (const svc of Object.values(services)) {
             // When there is a sync error, we check for potential outages by calling GitHub Status API
             if (svc.displayName === 'GitHub' && svc.lastSyncError !== null) {
                 const outage = await checkGithubOutage()
                 if (outage) {
-                    svcsErrors.set(svc.displayName, 'todo: add error msg and link')
+                    svcsErrors.set(svc.displayName, outageMessage(svc.displayName))
                 }
             }
             // GitLab doesn't have an Status API, so we check if the error contains an Status Code of 500 or 503
-            if (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('500') || svc.lastSyncError?.includes('500')) {
-                svcsErrors.set(svc.displayName, 'todo: add error msg and link')
+            if (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('401') || svc.lastSyncError?.includes('503')) {
+                svcsErrors.set(svc.displayName, outageMessage(svc.displayName))
             }
         }
 
