@@ -332,7 +332,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(apiURL, auther, cli, nil)
+	client := github.NewV3Client(apiURL, auther, cli)
 
 	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
 	if err != nil {

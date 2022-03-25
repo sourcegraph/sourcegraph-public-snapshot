@@ -1515,7 +1515,7 @@ var (
 	headerIfModifiedSince = "If-Modified-Since"
 )
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}, outageChecker *GithubStatusClient) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -1554,20 +1554,11 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 
 	if resp.StatusCode < 200 || (resp.StatusCode >= 400) {
 		var err APIError
-
 		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
-
-		if resp.StatusCode >= 500 && outageChecker != nil {
-			down, _ := outageChecker.IsServiceDown(ctx) // TODO: is it safe to ignore this error?
-			if down {
-				err.Message = fmt.Sprintf("Github is experiencing an outage. Status code: %v", resp.StatusCode)
-			}
-		}
-
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode
 		return newHttpResponseState(resp.StatusCode, resp.Header), &err
