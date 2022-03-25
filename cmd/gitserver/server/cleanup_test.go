@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -850,7 +849,7 @@ func prepareEmptyGitRepo(dir string) error {
 	cmd := exec.Command("/bin/sh", "-euxc", "git init")
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("execution error: %v, output %s", err, out)
+		return errors.Newf("execution error: %v, output %s", err, out)
 	}
 	return nil
 }
