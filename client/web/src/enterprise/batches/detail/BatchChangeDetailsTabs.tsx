@@ -14,9 +14,8 @@ import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Container, Icon } from '@sourcegraph/wildcard'
-import { BatchSpecState } from '../../../graphql-operations'
 
-import { BatchChangeFields } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
 import {
     BatchChangeTab,
     BatchChangeTabList,
