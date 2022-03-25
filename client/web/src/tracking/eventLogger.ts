@@ -54,7 +54,21 @@ export class EventLogger implements TelemetryService {
         this.initializeLogParameters()
     }
 
+    private logViewEventInternal(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+        const props = pageViewQueryParameters(window.location.href)
+        serverAdmin.trackPageView(eventName, logAsActiveUser, eventProperties)
+        this.logToConsole(eventName, props)
+
+        // Use flag to ensure URL query params are only stripped once
+        if (!this.hasStrippedQueryParameters) {
+            handleQueryEvents(window.location.href)
+            this.hasStrippedQueryParameters = true
+        }
+    }
+
     /**
+     * @deprecated, Use logPageView instead
+     *
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
      */
@@ -63,16 +77,20 @@ export class EventLogger implements TelemetryService {
             return
         }
         pageTitle = `View${pageTitle}`
+        this.logViewEventInternal(pageTitle, eventProperties, logAsActiveUser)
+    }
 
-        const props = pageViewQueryParameters(window.location.href)
-        serverAdmin.trackPageView(pageTitle, logAsActiveUser, eventProperties)
-        this.logToConsole(pageTitle, props)
-
-        // Use flag to ensure URL query params are only stripped once
-        if (!this.hasStrippedQueryParameters) {
-            handleQueryEvents(window.location.href)
-            this.hasStrippedQueryParameters = true
+    /**
+     * Log a pageview, following the new event naming conventions
+     *
+     * @eventName should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"
+     */
+    public logPageView(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
+        if (window.context?.userAgentIsBot || !eventName) {
+            return
         }
+        eventName = `${eventName}Viewed`
+        this.logViewEventInternal(eventName, eventProperties, logAsActiveUser)
     }
 
     /**
