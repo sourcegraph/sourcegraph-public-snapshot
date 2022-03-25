@@ -128,6 +128,19 @@ kubectl describe ingress sourcegraph-frontend
 
 Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you can learn more from about how to use [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE.
 
+Upon creating the Google-managed certificate, you may add the following annotations to Ingress.
+
+```yaml
+frontend:
+  ingress:
+    annotations:
+      kubernetes.io/ingress.class: null
+      networking.gke.io/managed-certificates: managed-cert # replace with actual Google-managed certificate name
+      # if you reserve a static IP, uncomment below and update ADDRESS_NAME
+      # also, make changes to your DNS record accordingly
+      # kubernetes.io/ingress.global-static-ip-name: ADDRESS_NAME
+```
+
 #### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
 #### Prerequisites
