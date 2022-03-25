@@ -818,7 +818,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: from,
+		CloneFromShard: "http://" + from,
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
