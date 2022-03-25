@@ -6,7 +6,7 @@ import { of } from 'rxjs'
 import { pluralize } from '@sourcegraph/common'
 import { Button, useObservable, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
+import { AllChangesetIDsVariables, Scalars, BulkOperationType } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
@@ -38,8 +38,8 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
     ) => void | JSX.Element
 }
 
-const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
-    DETACH: {
+const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
+    [BulkOperationType.DETACH]: {
         type: 'detach',
         buttonLabel: 'Detach changesets',
         dropdownTitle: 'Detach changesets',
@@ -56,7 +56,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    REENQUEUE: {
+    [BulkOperationType.REENQUEUE]: {
         type: 'retry',
         buttonLabel: 'Retry changesets',
         dropdownTitle: 'Retry changesets',
@@ -70,7 +70,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    COMMENT: {
+    [BulkOperationType.COMMENT]: {
         type: 'commentatore',
         buttonLabel: 'Create comment',
         dropdownTitle: 'Create comment',
@@ -85,7 +85,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    MERGE: {
+    [BulkOperationType.MERGE]: {
         type: 'merge',
         experimental: true,
         buttonLabel: 'Merge changesets',
@@ -101,7 +101,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    CLOSE: {
+    [BulkOperationType.CLOSE]: {
         type: 'close',
         buttonLabel: 'Close changesets',
         dropdownTitle: 'Close changesets',
@@ -116,7 +116,7 @@ const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
             />
         ),
     },
-    PUBLISH: {
+    [BulkOperationType.PUBLISH]: {
         type: 'publish',
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
