@@ -1834,38 +1834,13 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	var changesetIDs []int64
-	for _, changesetID := range args.ChangesetIDs {
-		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
-		if err != nil {
-			return nil, err
-		}
-		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
-	}
-
-	noOfChangesets := len(args.ChangesetIDs)
 	bulkOperationsCounter := map[btypes.ChangesetJobType]int{
-		btypes.ChangesetJobTypePublish: 0,
-		btypes.ChangesetJobTypeComment: 0,
-
+		btypes.ChangesetJobTypePublish:   0,
+		btypes.ChangesetJobTypeComment:   0,
 		btypes.ChangesetJobTypeClose:     0,
 		btypes.ChangesetJobTypeDetach:    0,
 		btypes.ChangesetJobTypeReenqueue: 0,
 		btypes.ChangesetJobTypeMerge:     0,
-	}
-
-	// feels a bit unoptimized to be fetching all these data from the database, instead of just the one that's needed
-	changesets, _, err := r.store.ListChangesets(ctx, store.ListChangesetsOpts{
-		IDs: changesetIDs,
-		LimitOpts: store.LimitOpts{
-			// this should not be a problem since changesets are usually paginated
-			// from the frontend.
-			Limit: noOfChangesets,
-		},
-	})
-
-	if err != nil {
-		return nil, err
 	}
 
 	unmarshalledBatchChangeID, err := unmarshalBatchChangeID(args.BatchChangeID)
@@ -1873,9 +1848,30 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
+	var changesetIDs []int64
+	for _, changesetID := range args.ChangesetIDs {
+		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
+		if err != nil {
+			return nil, err
+		}
+
+		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
+	}
+
+	// noOfChangesets := len(args.ChangesetIDs)
+
+	changesets, _, err := r.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs: changesetIDs,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	for _, changeset := range changesets {
-		for _, b := range changeset.BatchChanges {
-			if b.BatchChangeID == unmarshalledBatchChangeID && b.IsArchived {
+		for _, batchChange := range changeset.BatchChanges {
+			if batchChange.BatchChangeID == unmarshalledBatchChangeID && batchChange.IsArchived {
+				bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
 				bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
 				break
 			}
@@ -1883,9 +1879,12 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 
 		if changeset.ReconcilerState == btypes.ReconcilerStateFailed {
 			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
+			break
 		}
+
 		if changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
 			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+			break
 		}
 
 		if changeset.ExternalState.Valid() {
@@ -1906,14 +1905,14 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 			case btypes.ChangesetExternalStateMerged:
 				bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
 				bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
-				bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
 			}
 		}
 	}
 
+	noOfChangesets := len(args.ChangesetIDs)
 	for jobType, count := range bulkOperationsCounter {
 		// we only want to return bulkoperationType that can be applied
-		// to all changesets.
+		// to all given changesets.
 		if count == noOfChangesets {
 			operation := strings.ToUpper(string(jobType))
 			if operation == "COMMENTATORE" {
