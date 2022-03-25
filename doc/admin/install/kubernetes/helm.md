@@ -151,6 +151,8 @@ frontend:
 
 You need to have a EKS cluster (>=1.19) with the following addons enabled:
 
+> You may consider deploying your own Ingress Controller instead of ALB Ingress Controller, [learn more](https://kubernetes.github.io/ingress-nginx/)
+
 - [x] [AWS Load Balancer Controller]
 - [x] [AWS EBS CSI driver]
 
