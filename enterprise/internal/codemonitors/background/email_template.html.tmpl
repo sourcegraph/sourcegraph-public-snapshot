@@ -23,7 +23,7 @@
     </ul>
 {{- end }}
 
-{{- if and .IncludeResults (gt .TruncatedCount 0) }}
+{{- if .DisplayMoreLink }}
 
     <p style="font-size: 16px; line-height: 24px">
       <a href="{{.SearchURL}}" {{ if .IsTest }}style="color: #9C9FA6; font-weight: 400; text-decoration: underline; cursor: default"{{ end }}>

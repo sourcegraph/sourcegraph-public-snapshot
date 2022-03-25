@@ -13,7 +13,7 @@ Your Sourcegraph code monitor, {{.Description}}, detected {{.TotalCount}} new {{
 {{- end }}
 {{- end }}
 
-{{- if and .IncludeResults (gt .TruncatedCount 0) }}
+{{- if .DisplayMoreLink }}
 
 ...and {{.TruncatedCount}} more {{.TruncatedResultPluralized}}: {{.SearchURL}}
 {{- else }}

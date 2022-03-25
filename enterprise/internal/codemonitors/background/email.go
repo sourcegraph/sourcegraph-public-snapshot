@@ -58,6 +58,7 @@ type TemplateDataNewSearchResults struct {
 	TruncatedCount            int
 	ResultPluralized          string
 	TruncatedResultPluralized string
+	DisplayMoreLink           bool
 	IsTest                    bool
 }
 
@@ -93,24 +94,28 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 		TruncatedCount:            truncatedCount,
 		ResultPluralized:          pluralize("result", totalCount),
 		TruncatedResultPluralized: pluralize("result", truncatedCount),
+		DisplayMoreLink:           args.IncludeResults && truncatedCount > 0,
 	}, nil
 }
 
 func NewTestTemplateDataForNewSearchResults(monitorDescription string) *TemplateDataNewSearchResults {
 	return &TemplateDataNewSearchResults{
-		Priority:         "",
-		Description:      monitorDescription,
-		TotalCount:       1,
-		IsTest:           true,
-		ResultPluralized: "result",
-		IncludeResults: true,
+		IsTest:                    true,
+		Priority:                  "",
+		Description:               monitorDescription,
+		TotalCount:                1,
+		TruncatedCount:            0,
+		ResultPluralized:          "result",
+		TruncatedResultPluralized: "results",
+		IncludeResults:            true,
 		TruncatedResults: []*DisplayResult{{
 			ResultType: "Test",
-			RepoName: "myrepo/test",
-			CommitID: "0000000",
-			CommitURL: "",
-			Content: "This is a test commit message\nfor a code monitoring result.",
+			RepoName:   "testorg/testrepo",
+			CommitID:   "0000000",
+			CommitURL:  "",
+			Content:    "This is a test\nfor a code monitoring result.",
 		}},
+		DisplayMoreLink: false,
 	}
 }
 
@@ -212,6 +217,6 @@ func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayR
 		CommitURL:  getCommitURL(externalURL, string(result.Repo.Name), string(result.Commit.ID), utmSourceEmail),
 		RepoName:   string(result.Repo.Name),
 		CommitID:   result.Commit.ID.Short(),
-		Content: content,
+		Content:    content,
 	}
 }

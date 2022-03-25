@@ -52,6 +52,7 @@ func TestEmail(t *testing.T) {
 			Description:      "My test monitor",
 			TotalCount:       1,
 			ResultPluralized: "result",
+			DisplayMoreLink:  false,
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -84,6 +85,7 @@ func TestEmail(t *testing.T) {
 			Description:      "My test monitor",
 			TotalCount:       2,
 			ResultPluralized: "results",
+			DisplayMoreLink:  false,
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -120,6 +122,7 @@ func TestEmail(t *testing.T) {
 			TruncatedCount:            0,
 			TruncatedResults:          []*DisplayResult{commitDisplayResultMock},
 			TruncatedResultPluralized: "results",
+			DisplayMoreLink:           false,
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -156,6 +159,7 @@ func TestEmail(t *testing.T) {
 			IncludeResults:            true,
 			TruncatedResults:          []*DisplayResult{diffDisplayResultMock, commitDisplayResultMock, diffDisplayResultMock},
 			TruncatedResultPluralized: "result",
+			DisplayMoreLink:           true,
 		}
 
 		t.Run("html", func(t *testing.T) {
