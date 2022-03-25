@@ -82,6 +82,23 @@ export interface ServiceConfig {
     pending: boolean
 }
 
+declare const StatusPage: any
+const checkGithubOutage = async ():Promise<string | undefined> => new Promise(resolve => {
+    const statusPage = new StatusPage.page({ page : 'kctbh9vrtdwd' });
+    console.log('status page ......')
+    statusPage.status({
+      success(data: any) {
+        // if (data.status.indicator === 'none') {
+        //     resolve(undefined)
+        // }
+
+        // if (data.status.indicator === 'major' || data.status.indicator === 'partial' ) {
+            resolve('add here: message and link')
+        // }
+      }
+    })
+})
+
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     owner,
     codeHostExternalServices,
@@ -107,6 +124,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const toggleUpdateModal = useCallback(() => {
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
+    const [servicesOutage, setServicesOutage] = useState<Map<string, string>>()
 
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
@@ -156,6 +174,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
     }, [])
 
+    useEffect(():void => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.statuspage.io/se-v2.js';
+        script.async = true;
+        // script.addEventListener('load', () => setLoaded(true))
+        document.body.append(script);
+
+    }, [])
+
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
 
@@ -172,6 +199,21 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         }, {})
 
         setStatusOrError(services)
+
+        const svcsErrors = new Map<string, string>()
+        for (const svc of Object.values(services)) {
+            // if (svc.displayName === 'GitHub' && svc.lastSyncError?.includes('500') || false) {
+            if (svc.displayName === 'GitHub') {
+                const outage = await checkGithubOutage()
+                if (outage) {
+                    svcsErrors.set(svc.displayName, outage)
+                }
+            }
+            // if gitlab
+        }
+
+        console.log('svc errors', svcsErrors)
+        setServicesOutage(svcsErrors)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
@@ -411,6 +453,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         </Alert>
     )
 
+    const getOutageMessages = (outageMessages: Map<string, string>): JSX.Element => (
+        <>
+        {
+            outageMessages &&
+                [...outageMessages.entries()].map(([key, value]: [string, string]) => (
+                    <ErrorAlert error={value} key={key} />)
+                )
+        }
+        </>
+    )
+
     // auth providers by service type
     const authProvidersByKind = context.authProviders.reduce((accumulator: AuthProvidersByKind, provider) => {
         if (provider.authenticationURL) {
@@ -500,6 +553,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
+            {getOutageMessages(servicesOutage)}
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
