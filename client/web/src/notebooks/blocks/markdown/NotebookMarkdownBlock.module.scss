@@ -51,13 +51,14 @@
     }
 
     :global(.cmt-punctuation),
+     // stylelint-disable-next-line selector-class-pattern
     :global(.cmt-typeName) {
         color: var(--oc-cyan-7);
     }
 
     // Our own class assigned to various token types (see the component
     // implementation).
-    .mkdCode {
+    .markdown-code {
         color: var(--search-filter-keyword-color);
     }
 }

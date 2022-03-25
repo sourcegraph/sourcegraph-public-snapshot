@@ -74,8 +74,8 @@ const staticExtensions: Extension[] = [
     markdown({ base: markdownLanguage }),
     classHighlightStyle,
     HighlightStyle.define([
-        { tag: tags.monospace, class: styles.mkdCode },
-        { tag: tags.url, class: styles.mkdCode },
+        { tag: tags.monospace, class: styles.markdownCode },
+        { tag: tags.url, class: styles.markdownCode },
     ]),
 ]
 
