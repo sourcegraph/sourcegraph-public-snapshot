@@ -92,21 +92,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
-    const [isGithubUpdateModalOpen, setIsGithubUpdateModalOpen] = useState(false)
-    const toggleGithubUpdateModal = useCallback(() => {
-        setIsGithubUpdateModalOpen(!isGithubUpdateModalOpen)
-    }, [isGithubUpdateModalOpen])
-    const [isGitlabUpdateModalOpen, setIsGitlabUpdateModalOpen] = useState(false)
-    const toggleGitlabUpdateModal = useCallback(() => {
-        setIsGitlabUpdateModalOpen(!isGitlabUpdateModalOpen)
-    }, [isGitlabUpdateModalOpen])
-    const toggleUpdateModal: Record<string, () => void> = {
-        GITHUB: toggleGithubUpdateModal,
-        GITLAB: toggleGitlabUpdateModal,
-    }
-    const isUpdateModalOpen: Record<string, boolean> = {
-        GITHUB: isGithubUpdateModalOpen,
-        GITLAB: isGitlabUpdateModalOpen,
+    const codeHostModalRecord: Record<string, boolean> = {}
+    Object.entries(codeHostExternalServices).map(([id_, { kind }]) => {
+        codeHostModalRecord[kind] = false
+    })
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<Record<string, boolean>>(codeHostModalRecord)
+    const toggleUpdateModal = (kind: string) => (): void => {
+        setIsUpdateModalOpen(modalState => {
+            const newModalState = { ...modalState } // You have to create a new object otherwise React won't register the state changed
+            newModalState[kind] = !modalState[kind]
+            return newModalState
+        })
     }
 
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
@@ -238,7 +234,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         interface ServiceConfig {
             pending: boolean
         }
-        const serviceConfig: ServiceConfig = JSON.parse(service.config)
+        const serviceConfig = JSON.parse(service.config) as ServiceConfig
 
         if (serviceConfig.pending) {
             return (
@@ -371,7 +367,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 {owner.type === 'org' ? (
                     <Button
                         className="font-weight-normal shadow-none p-0 border-0"
-                        onClick={toggleUpdateModal[service.kind]}
+                        onClick={toggleUpdateModal(service.kind)}
                         variant="link"
                     >
                         updating the code host connection
@@ -495,7 +491,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         isUpdateModalOpen={isUpdateModalOpen[kind]}
-                                        toggleUpdateModal={toggleUpdateModal[kind]}
+                                        toggleUpdateModal={toggleUpdateModal(kind)}
                                         onDidUpsert={handleServiceUpsert}
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
