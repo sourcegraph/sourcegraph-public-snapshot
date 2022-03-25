@@ -73,8 +73,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 	g, ctx := errgroup.WithContext(ctx)
 
 	if newArgs.Mode != search.SearcherOnly {
-		typ := search.TextRequest
-
 		b, err := query.ToBasicQuery(q)
 		if err != nil {
 			return nil, err
@@ -89,14 +87,14 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 				resultTypes = resultTypes.With(result.TypeFromString[t])
 			}
 		}
-		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &newArgs.Features, typ)
+		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &newArgs.Features)
 		if err != nil {
 			return nil, err
 		}
 
 		zoektArgs := search.ZoektParameters{
 			Query:          zoektQuery,
-			Typ:            typ,
+			Typ:            search.TextRequest,
 			FileMatchLimit: newArgs.PatternInfo.FileMatchLimit,
 			Select:         newArgs.PatternInfo.Select,
 			Zoekt:          newArgs.Zoekt,

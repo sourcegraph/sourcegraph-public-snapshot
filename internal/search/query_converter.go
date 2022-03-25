@@ -267,7 +267,7 @@ func toZoektPattern(expression query.Node, isCaseSensitive, patternMatchesConten
 	return q, nil
 }
 
-func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, typ IndexedRequestType) (q zoekt.Q, err error) {
+func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features) (q zoekt.Q, err error) {
 	isCaseSensitive := b.IsCaseSensitive()
 
 	if b.Pattern != nil {
@@ -290,7 +290,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *Features, 
 	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
 
-	if typ == SymbolRequest {
+	if resultTypes.Has(result.TypeSymbol) {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
 			Expr: q,
