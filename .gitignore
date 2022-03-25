@@ -122,6 +122,9 @@ elm-stuff
 # Extensions
 /client/extension-api/dist
 
+# Compute Component
+/client/web/src/notebooks/blocks/compute/component/public/dist
+
 # Direnv
 .envrc
 .direnv

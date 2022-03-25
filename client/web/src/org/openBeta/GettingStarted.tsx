@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { ReactNode, useEffect } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import classNames from 'classnames'
@@ -10,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Link, LoadingSpinner, PageHeader, Icon } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge } from '@sourcegraph/wildcard'
 
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
@@ -57,7 +57,7 @@ const GET_STARTED_INFO_QUERY = gql`
     }
 `
 
-export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgName: string): number => {
+export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgName: string): ReactNode => {
     if (!info) {
         return 4
     }
@@ -80,7 +80,14 @@ export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgNa
         leftSteps += 1
     }
 
-    return leftSteps
+    return (
+        <span>
+            Get started{' '}
+            <Badge pill={true} className={styles.badge} variant="secondary">
+                {leftSteps}
+            </Badge>
+        </span>
+    )
 }
 
 export const showGetStartPage = (
@@ -116,6 +123,22 @@ interface Props extends RouteComponentProps, FeatureFlagProps {
     isSourcegraphDotCom: boolean
 }
 
+const LinkableContainer: React.FunctionComponent<{ to?: string; onClick?: () => void }> = ({
+    to,
+    onClick,
+    children,
+}) => {
+    if (to) {
+        return (
+            <Link className={styles.entryItemLink} to={to} onClick={onClick}>
+                {children}
+            </Link>
+        )
+    }
+
+    return <>{children}</>
+}
+
 const Step: React.FunctionComponent<{
     complete: boolean
     textMuted: boolean
@@ -124,24 +147,25 @@ const Step: React.FunctionComponent<{
     onClick?: () => void
 }> = ({ complete, label, textMuted, to, onClick }) => (
     <li className={styles.entryItem}>
-        <div className={styles.iconContainer}>
-            <Icon className={classNames(complete ? 'text-success' : styles.iconMuted)} as={CheckCircleIcon} />
-        </div>
-        <h3
-            className={classNames({
-                [`${styles.stepText}`]: true,
-                'text-muted': textMuted,
-            })}
-        >
-            {label}
-        </h3>
-        {to && (
-            <div className={styles.linkContainer}>
-                <Link to={to} onClick={onClick}>
-                    <ArrowRightIcon />
-                </Link>
+        <LinkableContainer to={to} onClick={onClick}>
+            <div className={styles.iconContainer}>
+                {complete && <CheckCircleIcon className="text-success" size={14} />}
+                {!complete && <div className={styles.emptyCircle} />}
             </div>
-        )}
+            <h3
+                className={classNames({
+                    [`${styles.stepText}`]: true,
+                    'text-muted': textMuted,
+                })}
+            >
+                {label}
+            </h3>
+            {to && (
+                <div className={styles.linkContainer}>
+                    <ArrowRightIcon />
+                </div>
+            )}
+        </LinkableContainer>
     </li>
 )
 
@@ -259,13 +283,16 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
                         <PageHeader
                             path={[{ text: 'Welcome to Sourcegraph!' }]}
                             headingElement="h2"
-                            className="mt-4 mb-4"
+                            className={classNames('mt-4 mb-4 justify-content-center', styles.headingTitle)}
                             description={
                                 <span className="text-muted">Next, let’s get your organization up and running.</span>
                             }
                         />
 
-                        <MarketingBlock contentClassName={styles.boxContainer}>
+                        <MarketingBlock
+                            contentClassName={styles.boxContainer}
+                            wrapperClassName={styles.boxContainerWrapper}
+                        >
                             <ul className={styles.entryItems}>
                                 <Step
                                     label="Connect with code hosts"

@@ -97,6 +97,21 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 	}
 }
 
+func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
+	fetchErr := errors.New("test")
+	s, cleanup := tmpStore(t)
+	defer cleanup()
+	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+		r, w := io.Pipe()
+		w.CloseWithError(fetchErr)
+		return r, nil
+	}
+	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	if !errors.Is(err, fetchErr) {
+		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
+	}
+}
+
 func TestPrepareZip_errHeader(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
