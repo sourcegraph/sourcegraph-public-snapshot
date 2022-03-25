@@ -48,6 +48,51 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	return git.CommitExists(ctx, c.db, repo, api.CommitID(commit), authz.DefaultSubRepoPermsChecker)
 }
 
+type RepositoryCommit struct {
+	RepositoryID int
+	Commit       string
+}
+
+// CommitsExist determines if the given commits exists in the given repositories. This method returns a
+// slice of the same size as the input slice, true indicating that the commit at the symmetric index exists.
+func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (_ []bool, err error) {
+	ctx, endObservation := c.operations.commitsExist.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numCommits", len(commits)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repositoryIDMap := map[int]struct{}{}
+	for _, rc := range commits {
+		repositoryIDMap[rc.RepositoryID] = struct{}{}
+	}
+	repositoryIDs := make([]int, 0, len(repositoryIDMap))
+	for repositoryID := range repositoryIDMap {
+		repositoryIDs = append(repositoryIDs, repositoryID)
+	}
+
+	repositoryNames, err := c.repositoryIDsToRepos(ctx, repositoryIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	exists := make([]bool, len(commits))
+	for i, rc := range commits {
+		name, ok := repositoryNames[rc.RepositoryID]
+		if !ok {
+			continue
+		}
+
+		e, err := git.CommitExists(ctx, c.db, name, api.CommitID(rc.Commit), authz.DefaultSubRepoPermsChecker)
+		if err != nil {
+			return nil, err
+		}
+
+		exists[i] = e
+	}
+
+	return exists, nil
+}
+
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
 // for the given repository (which occurs with empty repositories), a false-valued flag is returned along with
 // a nil error and empty revision.
@@ -399,4 +444,19 @@ func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.
 	}
 
 	return api.RepoName(repoName), nil
+}
+
+// repositoryIDsToRepos creates a map from repository identifiers to api.RepoNames.
+func (c *Client) repositoryIDsToRepos(ctx context.Context, repositoryIDs ...int) (map[int]api.RepoName, error) {
+	names, err := c.dbStore.RepoNames(ctx, repositoryIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoNames := make(map[int]api.RepoName, len(names))
+	for repositoryID, name := range names {
+		repoNames[repositoryID] = api.RepoName(name)
+	}
+
+	return repoNames, nil
 }

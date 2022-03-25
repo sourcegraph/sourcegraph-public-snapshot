@@ -61,6 +61,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// HoneyComb dataset that stores build traces.
 		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
+	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch) {
@@ -315,7 +316,7 @@ func withDefaultTimeout(s *bk.Step) {
 func withAgentQueueDefaults(s *bk.Step) {
 	if len(s.Agents) == 0 || s.Agents["queue"] == "" {
 		if bk.FeatureFlags.StatelessBuild {
-			s.Agents["queue"] = bk.AgentQueueJob
+			s.Agents["queue"] = bk.AgentQueueStateless
 		} else {
 			s.Agents["queue"] = bk.AgentQueueStateful
 		}

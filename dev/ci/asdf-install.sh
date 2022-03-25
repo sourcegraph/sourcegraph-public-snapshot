@@ -6,7 +6,7 @@
 
 # TODO remove this when making job the default queue
 # Skip on normal queues because standard agents do not have fresh asdf installs
-if [[ ! "$BUILDKITE_AGENT_META_DATA_QUEUE" =~ .*job.* ]]; then
+if [[ ! "$CI_FEATURE_FLAG_STATELESS_BUILD" == "true" ]]; then
   echo "~~~ asdf install"
   asdf install
   echo "done installing"

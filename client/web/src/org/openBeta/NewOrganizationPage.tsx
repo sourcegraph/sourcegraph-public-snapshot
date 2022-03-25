@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { gql, useLazyQuery, useMutation } from '@apollo/client'
+import { ApolloError, gql, useLazyQuery, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { RouteComponentProps } from 'react-router'
@@ -70,6 +70,18 @@ const isValidOpenBetaId = (openBetaId: string): boolean => {
 
 const normalizeOrgId = (id: string): string => id.toLowerCase().replace(/[\W_]+/g, '-')
 
+const getError = (error: ApolloError): ApolloError => {
+    if (error.message.startsWith('rejected suspicious name')) {
+        return {
+            ...error,
+            message:
+                '<div>Organization name is not available<div>Please choose a different organization name</div><div>',
+        }
+    }
+
+    return error
+}
+
 export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     match,
     history,
@@ -85,7 +97,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     const [displayName, setDisplayName] = useState<string>('')
     const [termsAccepted, setTermsAccepted] = useState(false)
     const [displayBox, setDisplayBox] = useState(false)
-    const isSuggested = useRef(false)
+    const isSuggested = useRef(true)
 
     const [createOpenBetaOrg, { loading, error }] = useMutation<
         CreateOrganizationForOpenBetaResult,
@@ -118,26 +130,21 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
         if (existId && isSuggested.current && orgId && !loadingOrg) {
             setDisplayBox(true)
             const autofixID = `${orgId}-1`
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             tryGetOrg({ variables: { name: autofixID } })
             setOrgId(autofixID)
         }
     }, [existId, tryGetOrg, orgId, loadingOrg])
 
     const onDisplayNameChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        isSuggested.current = true
-        const orgId = normalizeOrgId(event.currentTarget.value)
-        setOrgId(orgId)
-        setDisplayName(event.currentTarget.value)
-        setDisplayBox(false)
-        debounceTryGetOrg.current({ variables: { name: orgId } })
-    }
-
-    const onDisplayNameFocus: React.ChangeEventHandler<HTMLInputElement> = () => {
-        if (displayName && !hasValidId && orgId) {
+        if (isSuggested.current) {
+            const orgId = normalizeOrgId(event.currentTarget.value)
+            setOrgId(orgId)
             setDisplayBox(false)
-            isSuggested.current = true
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             debounceTryGetOrg.current({ variables: { name: orgId } })
         }
+        setDisplayName(event.currentTarget.value)
     }
 
     const onOrgIdChange: React.ChangeEventHandler<HTMLInputElement> = event => {
@@ -145,6 +152,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
         const orgId = normalizeOrgId(event.currentTarget.value)
         setOrgId(orgId)
         setDisplayBox(false)
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         debounceTryGetOrg.current({ variables: { name: orgId } })
     }
 
@@ -188,22 +196,20 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
     return (
         <Page className={styles.newOrgPage}>
             <PageTitle title="New organization" />
-            <PageHeader path={[{ text: 'Set up your organization' }]} className="mb-4" />
+            <PageHeader path={[{ text: 'Set up your organization' }]} className="mb-4 mt-4" />
             <Form className="mb-3" onSubmit={onSubmit}>
-                {error && <ErrorAlert className="mb-3" error={error} />}
+                {error && <ErrorAlert className="mb-3" error={getError(error)} />}
                 <div className={classNames('form-group', styles.formItem)}>
                     <label htmlFor="new-org-page__form-name">Organization name</label>
                     <input
                         id="new-org-page__form-name"
                         type="text"
                         className="form-control test-new-org-name-input mb-2"
-                        placeholder="ACME Corporation"
                         maxLength={ORG_NAME_MAX_LENGTH}
                         required={true}
                         autoCorrect="off"
                         autoComplete="off"
                         autoFocus={true}
-                        onFocus={onDisplayNameFocus}
                         value={displayName}
                         onChange={onDisplayNameChange}
                         disabled={loading}
@@ -218,7 +224,6 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
                     <Input
                         id="new-org-page__form-organizationid"
                         type="text"
-                        placeholder="acme-corp"
                         autoCorrect="off"
                         value={orgId}
                         label="Organization ID"
@@ -240,7 +245,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
                             or end with a dot, nor begin with a hyphen."
                     />
                     {displayBox && hasValidId && (
-                        <Alert variant="info" className="mb-2 d-flex align-items-center">
+                        <Alert variant="secondary" className="mb-2 d-flex align-items-center">
                             <div className="flex-grow-1">
                                 <h4>We’ve suggested an alternative organization ID</h4>
                                 <div>{`${normalizeOrgId(
@@ -272,23 +277,22 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
                         required={true}
                         onChange={onTermsAcceptedChange}
                         label={
-                            <>
+                            <span className={styles.cbLabel}>
                                 I accept the <Link to="/">terms of service</Link> for participating in the Sourcegraph
                                 Cloud for small teams open beta.
-                            </>
+                            </span>
                         }
                     />
                 </div>
 
                 <div className={classNames('form-group d-flex justify-content-end', styles.buttonsRow)}>
-                    <Button disabled={loading} variant="secondary" size="sm" onClick={onCancelClick}>
+                    <Button disabled={loading} variant="secondary" onClick={onCancelClick}>
                         Cancel
                     </Button>
                     <Button
                         type="submit"
                         disabled={loading || !termsAccepted || !hasValidId || loadingOrg}
                         variant="primary"
-                        size="sm"
                     >
                         {(loading || loadingOrg) && <LoadingSpinner />}
                         Continue

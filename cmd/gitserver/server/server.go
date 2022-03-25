@@ -582,7 +582,11 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, gitServerAddrs); !s.hostnameMatch(addr) {
+		addr, err := gitserver.AddrForRepo(ctx, s.DB, repo.Name, gitServerAddrs)
+		if err != nil {
+			return err
+		}
+		if !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -866,11 +870,11 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
-		q       = r.URL.Query()
-		treeish = q.Get("treeish")
-		repo    = q.Get("repo")
-		format  = q.Get("format")
-		paths   = q["path"]
+		q         = r.URL.Query()
+		treeish   = q.Get("treeish")
+		repo      = q.Get("repo")
+		format    = q.Get("format")
+		pathspecs = q["path"]
 	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {
@@ -909,7 +913,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Args = append(req.Args, treeish, "--")
-	req.Args = append(req.Args, paths...)
+	req.Args = append(req.Args, pathspecs...)
 
 	s.exec(w, r, req)
 }

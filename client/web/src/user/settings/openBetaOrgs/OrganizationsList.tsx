@@ -33,43 +33,39 @@ interface OrgItemProps {
 
 const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
     <li data-test-username={org.id}>
-        <div className="d-flex align-items-center justify-content-between">
-            <div className={classNames('d-flex align-items-center justify-content-start flex-1', styles.orgDetails)}>
-                <div className={styles.avatarContainer}>
-                    <div className={styles.avatar}>
-                        <span>{(org.displayName || org.name).slice(0, 2).toUpperCase()}</span>
-                    </div>
-                </div>
-                <div className="d-flex flex-column">
-                    <Link to={`${org.url}/getstarted`} className={styles.orgLink}>
-                        {org.displayName || org.name}
-                    </Link>
-                    {org.displayName && (
-                        <span className={classNames('text-muted', styles.displayName)}>{org.name}</span>
-                    )}
+        <div className={classNames('d-flex align-items-center justify-content-start flex-1', styles.orgDetails)}>
+            <div className={styles.avatarContainer}>
+                <div className={styles.avatar}>
+                    <span>{(org.displayName || org.name).slice(0, 2).toUpperCase()}</span>
                 </div>
             </div>
+            <div className="d-flex flex-column">
+                <Link to={`${org.url}/getstarted`} className={styles.orgLink}>
+                    {org.displayName || org.name}
+                </Link>
+                {org.displayName && <span className={classNames('text-muted', styles.displayName)}>{org.name}</span>}
+            </div>
+        </div>
 
-            <div className={styles.userRole}>
-                <span className="text-muted">Admin</span>
-            </div>
-            <div>
-                <ButtonLink
-                    className={styles.orgSettings}
-                    variant="secondary"
-                    to={org.settingsURL as string}
-                    size="sm"
-                    onClick={() =>
-                        eventLogger.log(
-                            'UserOrganizationSettingsClicked',
-                            { organizationId: org.id },
-                            { organizationId: org.id }
-                        )
-                    }
-                >
-                    Settings
-                </ButtonLink>
-            </div>
+        <div className={styles.userRole}>
+            <span className="text-muted">Admin</span>
+        </div>
+        <div>
+            <ButtonLink
+                className={styles.orgSettings}
+                variant="secondary"
+                to={org.settingsURL as string}
+                size="sm"
+                onClick={() =>
+                    eventLogger.log(
+                        'UserOrganizationSettingsClicked',
+                        { organizationId: org.id },
+                        { organizationId: org.id }
+                    )
+                }
+            >
+                Settings
+            </ButtonLink>
         </div>
     </li>
 )
@@ -103,7 +99,6 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
                 <ButtonLink
                     variant="secondary"
                     to="/organizations/joinopenbeta"
-                    size="sm"
                     onClick={() => eventLogger.log('CreateOrganizationButtonClicked')}
                 >
                     Create organization
@@ -119,14 +114,13 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
                 </Container>
             )}
             {!hasOrgs && (
-                <Container>
+                <Container className={styles.noOrgContainer}>
                     <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                        <h3>Start searching with your team on Sourcegraph</h3>
+                        <h3 className="mb-1">Start searching with your team on Sourcegraph</h3>
                         <div>Product copy here that needs to be written still, this is a placeholder.</div>
                         <ButtonLink
                             variant="primary"
                             to="/organizations/joinopenbeta"
-                            size="sm"
                             className="mt-3"
                             onClick={() => eventLogger.log('CreateFirstOrganizationButtonClicked')}
                         >

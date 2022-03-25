@@ -21,9 +21,9 @@ const { add } = storiesOf('web/search/notebooks/notebook/NotebookComponent', mod
     .addParameters({ chromatic: { disableSnapshots: false } })
 
 const blocks: BlockInit[] = [
-    { id: '1', type: 'md', input: '# Markdown' },
-    { id: '2', type: 'query', input: 'Query' },
-    { id: '3', type: 'md', input: '# Markdown 1' },
+    { id: '1', type: 'md', input: { text: '# Markdown' } },
+    { id: '2', type: 'query', input: { query: 'Query' } },
+    { id: '3', type: 'md', input: { text: '# Markdown 1' } },
     {
         id: '4',
         type: 'file',

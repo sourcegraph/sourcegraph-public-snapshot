@@ -12,7 +12,7 @@ import (
 )
 
 type GitService interface {
-	LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, paths ...string) ([]string, error)
+	LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error)
 	Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error)
 }
 
@@ -32,10 +32,11 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker, db database.DB
 	}
 }
 
-func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, paths ...string) ([]string, error) {
-	return git.LsFiles(ctx, s.db, s.checker, repo, commits, paths...)
+func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {
+	return git.LsFiles(ctx, s.db, s.checker, repo, commits, pathspecs...)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-	return git.ArchiveReader(ctx, s.db, repo, opts)
+	// Note: the sub-repo perms checker is nil here because sub-repo filtering is applied when LsFiles is called
+	return git.ArchiveReader(ctx, s.db, nil, repo, opts)
 }

@@ -8,6 +8,7 @@
 $blue: #0b70db;
 $indigo: #0864c6;
 $purple: #a305e1;
+$purple-01: #e8d1ff;
 $purple-03: #820dde;
 $pink: #d68cf3;
 $red: $oc-red-9;
@@ -66,6 +67,7 @@ $theme-colors: (
     --blue: #{$blue};
     --indigo: #{$indigo};
     --purple: #{$purple};
+    --purple-01: #{$purple-01};
     --purple-03: #{$purple-03};
     --pink: #{$pink};
     --red: #{$red};
@@ -153,7 +155,7 @@ $theme-colors: (
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
-    --subtle-bg-2: #{rgba($gray-02, 0.6)};
+    --subtle-bg-2: #{rgba($gray-02, 0.5)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
