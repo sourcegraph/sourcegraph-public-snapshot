@@ -5,7 +5,6 @@ import classNames from 'classnames'
 import { appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { useIsTruncated, Link } from '@sourcegraph/wildcard'
 
-import styles from './RepoFileLink.module.scss'
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").
  */
@@ -52,17 +51,17 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
      * We want to do it on mouse enter as browser window size might change after the element has been
      * loaded initially
      */
-    const { isTruncated, elementReference: titleReference, checkIsTruncated } = useIsTruncated<HTMLAnchorElement>()
+    const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     return (
-        <div onMouseEnter={checkIsTruncated} className={classNames(className, styles.container)}>
+        <div
+            ref={titleReference}
+            onMouseEnter={checkTruncation}
+            className={classNames(className)}
+            data-tooltip={truncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
+        >
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
-            <Link
-                className="text-truncate"
-                data-tooltip={isTruncated ? (fileBase ? `${fileBase}/${fileName}` : fileName) : null}
-                to={appendSubtreeQueryParameter(fileURL)}
-                ref={titleReference}
-            >
+            <Link to={appendSubtreeQueryParameter(fileURL)}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
             </Link>

@@ -48,20 +48,23 @@ export const SearchResult: React.FunctionComponent<Props> = ({
      * We want to do it on mouse enter as browser window size might change after the element has been
      * loaded initially
      */
-    const { isTruncated, elementReference: titleReference, checkIsTruncated } = useIsTruncated()
+    const [titleReference, truncated, checkTruncation] = useIsTruncated()
 
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
-            <div className={styles.title} onMouseEnter={checkIsTruncated}>
+            <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
                 <span
+                    onMouseEnter={checkTruncation}
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
                     ref={titleReference}
                     data-tooltip={
-                        isTruncated
-                            ? result.type === 'commit' && `${result.authorName}: ${result.message.split('\n', 1)[0]}`
-                            : result.type === 'repo' && displayRepoName(getRepoMatchLabel(result))
+                        (truncated && result.type === 'repo' && displayRepoName(getRepoMatchLabel(result))) ||
+                        (truncated &&
+                            result.type === 'commit' &&
+                            `${result.authorName}: ${result.message.split('\n', 1)[0]}`) ||
+                        null
                     }
                 >
                     {result.type === 'commit' && (

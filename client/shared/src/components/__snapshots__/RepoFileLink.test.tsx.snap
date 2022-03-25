@@ -3,7 +3,7 @@
 exports[`RepoFileLink renders 1`] = `
 <DocumentFragment>
   <div
-    class="container"
+    class=""
   >
     <a
       class="anchorLink"
@@ -13,7 +13,7 @@ exports[`RepoFileLink renders 1`] = `
     </a>
      › 
     <a
-      class="anchorLink text-truncate"
+      class="anchorLink"
       href="/file?subtree=true"
     >
       my/

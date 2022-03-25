@@ -1,26 +1,28 @@
-import { useRef, useState } from 'react'
+import { MutableRefObject, useRef, useState } from 'react'
+
+type UseIsTruncated<Element extends HTMLElement = HTMLDivElement> = [
+    /**
+     * Reference to a HTML element
+     */
+    reference: MutableRefObject<Element | null>,
+    /**
+     * Check if overflow: ellipsis is activated for the element
+     */
+    truncated: boolean,
+    /**
+     * A function to check if overflow: ellipsis is currently
+     * activated for the refered element
+     */
+    checkTruncation: () => void
+]
 
 /**
  * A custom hook that tells if overflow: ellipsis is activated for a HTML element
  * For example, check if the text inside a div is currently truncated on mouse over
  */
-export function useIsTruncated<Element extends HTMLElement>(): {
-    /**
-     * Reference to a HTML element
-     */
-    elementReference: React.RefObject<Element>
-    /**
-     * Check if overflow: ellipsis is activated for the element
-     */
-    isTruncated: boolean
-    /**
-     * A function to check if overflow: ellipsis is currently
-     * activated for the refered element
-     */
-    checkIsTruncated: () => void
-} {
+export function useIsTruncated<Element extends HTMLElement = HTMLDivElement>(): UseIsTruncated<Element> {
+    const elementReference = useRef<Element | null>(null)
     const [isTruncated, setIsTruncated] = useState<boolean>(false)
-    const elementReference = useRef<Element>(null)
     /**
      * Check if ellipsis has been activated by comparing
      * the current client width and scroll width of the element
@@ -34,9 +36,5 @@ export function useIsTruncated<Element extends HTMLElement>(): {
         }
     }
 
-    return {
-        isTruncated,
-        elementReference,
-        checkIsTruncated,
-    }
+    return [elementReference, isTruncated, checkIsTruncated]
 }

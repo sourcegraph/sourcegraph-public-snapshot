@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Truncate and display tooltip when the title of a search result overflows
 
 ### Removed
 
