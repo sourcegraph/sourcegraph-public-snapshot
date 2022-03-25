@@ -70,6 +70,9 @@ type CodeMonitorStore interface {
 	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)
 	ListSlackWebhookActions(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
 
+	GetBatchChangeAction(ctx context.Context, id int64) (*BatchChangeAction, error)
+	CreateBatchChangeAction(ctx context.Context, monitorID int64, enabled bool, batchChangeID int64) (*BatchChangeAction, error)
+
 	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error)
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)

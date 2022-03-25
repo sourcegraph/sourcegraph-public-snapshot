@@ -80,6 +80,7 @@ type MonitorAction interface {
 	ToMonitorEmail() (MonitorEmailResolver, bool)
 	ToMonitorWebhook() (MonitorWebhookResolver, bool)
 	ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool)
+	ToMonitorBatchChange() (MonitorBatchChangeResolver, bool)
 }
 
 type MonitorEmailResolver interface {
@@ -105,6 +106,13 @@ type MonitorSlackWebhookResolver interface {
 	Enabled() bool
 	IncludeResults() bool
 	URL() string
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+}
+
+type MonitorBatchChangeResolver interface {
+	ID() graphql.ID
+	Enabled() bool
+	BatchChange(ctx context.Context) (BatchChangeResolver, error)
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
@@ -165,6 +173,7 @@ type CreateActionArgs struct {
 	Email        *CreateActionEmailArgs
 	Webhook      *CreateActionWebhookArgs
 	SlackWebhook *CreateActionSlackWebhookArgs
+	BatchChange  *CreateActionBatchChangeArgs
 }
 
 type CreateActionEmailArgs struct {
@@ -185,6 +194,11 @@ type CreateActionSlackWebhookArgs struct {
 	Enabled        bool
 	IncludeResults bool
 	URL            string
+}
+
+type CreateActionBatchChangeArgs struct {
+	Enabled     bool
+	BatchChange graphql.ID
 }
 
 type ToggleCodeMonitorArgs struct {
@@ -239,10 +253,16 @@ type EditActionSlackWebhookArgs struct {
 	Update *CreateActionSlackWebhookArgs
 }
 
+type EditActionBatchChangeArgs struct {
+	Id     *graphql.ID
+	Update *CreateActionBatchChangeArgs
+}
+
 type EditActionArgs struct {
 	Email        *EditActionEmailArgs
 	Webhook      *EditActionWebhookArgs
 	SlackWebhook *EditActionSlackWebhookArgs
+	BatchChange  *EditActionBatchChangeArgs
 }
 
 type EditTriggerArgs struct {

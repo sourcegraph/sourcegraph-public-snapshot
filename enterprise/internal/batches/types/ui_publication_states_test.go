@@ -1,4 +1,4 @@
-package service
+package types
 
 import (
 	"strconv"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -43,22 +42,22 @@ func TestUiPublicationStates_get(t *testing.T) {
 
 	// Verify that an uninitialised UiPublicationStates can have get() called
 	// without panicking.
-	ps.get(0)
+	ps.Get(0)
 
-	ps.id = map[int64]*btypes.ChangesetUiPublicationState{
-		1: &btypes.ChangesetUiPublicationStateDraft,
-		2: &btypes.ChangesetUiPublicationStateUnpublished,
+	ps.id = map[int64]*ChangesetUiPublicationState{
+		1: &ChangesetUiPublicationStateDraft,
+		2: &ChangesetUiPublicationStateUnpublished,
 		3: nil,
 	}
 
-	for id, want := range map[int64]*btypes.ChangesetUiPublicationState{
-		1: &btypes.ChangesetUiPublicationStateDraft,
-		2: &btypes.ChangesetUiPublicationStateUnpublished,
+	for id, want := range map[int64]*ChangesetUiPublicationState{
+		1: &ChangesetUiPublicationStateDraft,
+		2: &ChangesetUiPublicationStateUnpublished,
 		3: nil,
 		4: nil,
 	} {
 		t.Run(strconv.FormatInt(id, 10), func(t *testing.T) {
-			if have := ps.get(id); have != want {
+			if have := ps.Get(id); have != want {
 				t.Errorf("unexpected result: have=%v want=%v", have, want)
 			}
 		})
@@ -67,21 +66,21 @@ func TestUiPublicationStates_get(t *testing.T) {
 
 func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 	var (
-		changesetUI = &btypes.ChangesetSpec{
+		changesetUI = &ChangesetSpec{
 			ID:     1,
 			RandID: "1",
 			Spec: &batcheslib.ChangesetSpec{
 				Published: batcheslib.PublishedValue{Val: nil},
 			},
 		}
-		changesetPublished = &btypes.ChangesetSpec{
+		changesetPublished = &ChangesetSpec{
 			ID:     2,
 			RandID: "2",
 			Spec: &batcheslib.ChangesetSpec{
 				Published: batcheslib.PublishedValue{Val: true},
 			},
 		}
-		changesetUnwired = &btypes.ChangesetSpec{
+		changesetUnwired = &ChangesetSpec{
 			ID:     3,
 			RandID: "3",
 			Spec: &batcheslib.ChangesetSpec{
@@ -89,7 +88,7 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 			},
 		}
 
-		mappings = btypes.RewirerMappings{
+		mappings = RewirerMappings{
 			{
 				// This should be ignored, since it has a zero ChangesetSpecID.
 				ChangesetSpecID: 0,
@@ -127,7 +126,7 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 					ps.Add(rid, pv)
 				}
 
-				if err := ps.prepareAndValidate(mappings); err == nil {
+				if err := ps.PrepareAndValidate(mappings); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -138,15 +137,15 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 		var ps UiPublicationStates
 
 		ps.Add(changesetUI.RandID, batcheslib.PublishedValue{Val: true})
-		if err := ps.prepareAndValidate(mappings); err != nil {
+		if err := ps.PrepareAndValidate(mappings); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 		if len(ps.rand) != 0 {
 			t.Errorf("unexpected elements remaining in ps.rand: %+v", ps.rand)
 		}
 
-		want := map[int64]*btypes.ChangesetUiPublicationState{
-			changesetUI.ID: &btypes.ChangesetUiPublicationStatePublished,
+		want := map[int64]*ChangesetUiPublicationState{
+			changesetUI.ID: &ChangesetUiPublicationStatePublished,
 		}
 		if diff := cmp.Diff(want, ps.id); diff != "" {
 			t.Errorf("unexpected ps.id (-want +have):\n%s", diff)
@@ -160,7 +159,7 @@ func TestUiPublicationStates_prepareEmpty(t *testing.T) {
 		"empty": {rand: map[string]batcheslib.PublishedValue{}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := ps.prepareAndValidate(btypes.RewirerMappings{}); err != nil {
+			if err := ps.PrepareAndValidate(RewirerMappings{}); err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 		})

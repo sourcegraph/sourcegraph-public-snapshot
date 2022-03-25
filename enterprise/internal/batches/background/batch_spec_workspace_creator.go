@@ -320,5 +320,13 @@ func (r *batchSpecWorkspaceCreator) process(
 		}
 	}
 
-	return tx.CreateBatchSpecWorkspace(ctx, ws...)
+	if err := tx.CreateBatchSpecWorkspace(ctx, ws...); err != nil {
+		return err
+	}
+
+	// if batchSpec.autoRun {
+	// svc.ExecuteBatchSpec(ctx, tx)
+	// }
+
+	return nil
 }

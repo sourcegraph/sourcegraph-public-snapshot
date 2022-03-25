@@ -79,6 +79,11 @@ func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, boo
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitorBatchChange() (MonitorBatchChangeResolver, bool) {
+	n, ok := r.Node.(MonitorBatchChangeResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
 	n, ok := r.Node.(MonitorActionEventResolver)
 	return n, ok

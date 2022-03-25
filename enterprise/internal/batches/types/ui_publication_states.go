@@ -1,7 +1,6 @@
-package service
+package types
 
 import (
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -15,7 +14,7 @@ import (
 // retrieved using get().
 type UiPublicationStates struct {
 	rand map[string]batches.PublishedValue
-	id   map[int64]*btypes.ChangesetUiPublicationState
+	id   map[int64]*ChangesetUiPublicationState
 }
 
 // Add adds a changeset spec random ID to the publication states.
@@ -33,17 +32,17 @@ func (ps *UiPublicationStates) Add(rand string, value batches.PublishedValue) er
 	return nil
 }
 
-func (ps *UiPublicationStates) get(id int64) *btypes.ChangesetUiPublicationState {
+func (ps *UiPublicationStates) Get(id int64) *ChangesetUiPublicationState {
 	if ps.id != nil {
 		return ps.id[id]
 	}
 	return nil
 }
 
-// prepareAndValidate looks up the random changeset spec IDs, and ensures that
+// PrepareAndValidate looks up the random changeset spec IDs, and ensures that
 // the changeset specs are included in the current rewirer mappings and are
 // eligible for a UI publication state.
-func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMappings) error {
+func (ps *UiPublicationStates) PrepareAndValidate(mappings RewirerMappings) error {
 	// If there are no publication states -- which is the normal case -- there's
 	// nothing to do here, and we can bail early.
 	if len(ps.rand) == 0 {
@@ -53,7 +52,7 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 
 	// Fetch the changeset specs from the rewirer mappings and key them by
 	// random ID, since that's the input we have.
-	specs := map[string]*btypes.ChangesetSpec{}
+	specs := map[string]*ChangesetSpec{}
 	for _, mapping := range mappings {
 		if mapping.ChangesetSpecID != 0 {
 			specs[mapping.ChangesetSpec.RandID] = mapping.ChangesetSpec
@@ -64,7 +63,7 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 	// which means we can ensure that all the given changeset spec IDs mapped to
 	// a changeset spec.
 	var errs error
-	ps.id = map[int64]*btypes.ChangesetUiPublicationState{}
+	ps.id = map[int64]*ChangesetUiPublicationState{}
 	for rid, pv := range ps.rand {
 		if spec, ok := specs[rid]; ok {
 			if !spec.Spec.Published.Nil() {
@@ -72,7 +71,7 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 				// override the publication state in the UI.
 				errs = errors.Append(errs, errors.Newf("changeset spec %q has the published field set in its spec", rid))
 			} else {
-				ps.id[spec.ID] = btypes.ChangesetUiPublicationStateFromPublishedValue(pv)
+				ps.id[spec.ID] = ChangesetUiPublicationStateFromPublishedValue(pv)
 				delete(ps.rand, spec.RandID)
 			}
 		}

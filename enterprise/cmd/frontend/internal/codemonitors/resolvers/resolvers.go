@@ -286,15 +286,24 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 			if err != nil {
 				return err
 			}
+		case a.BatchChange != nil:
+			var batchChangeID int64
+			if err := relay.UnmarshalSpec(a.BatchChange.BatchChange, &batchChangeID); err != nil {
+				return err
+			}
+			_, err := r.db.CodeMonitors().CreateBatchChangeAction(ctx, monitorID, a.BatchChange.Enabled, batchChangeID)
+			if err != nil {
+				return err
+			}
 		default:
-			return errors.New("exactly one of Email, Webhook, or SlackWebhook must be set")
+			return errors.New("exactly one of Email, Webhook, SlackWebhook, org BatchChange must be set")
 		}
 	}
 	return nil
 }
 
 func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []graphql.ID) error {
-	var email, webhook, slackWebhook []int64
+	var email, webhook, slackWebhook, batchChange []int64
 	for _, id := range ids {
 		var intID int64
 		err := relay.UnmarshalSpec(id, &intID)
@@ -309,8 +318,10 @@ func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []gra
 			webhook = append(webhook, intID)
 		case monitorActionSlackWebhookKind:
 			slackWebhook = append(slackWebhook, intID)
+		case monitorActionBatchChangeKind:
+			slackWebhook = append(batchChange, intID)
 		default:
-			return errors.New("action IDs must be exactly one of email, webhook, or slack webhook")
+			return errors.New("action IDs must be exactly one of email, webhook, slack webhook, or batch change")
 		}
 	}
 
@@ -323,6 +334,10 @@ func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []gra
 	}
 
 	if err := r.db.CodeMonitors().DeleteSlackWebhookActions(ctx, monitorID, slackWebhook...); err != nil {
+		return err
+	}
+
+	if err := r.db.CodeMonitors().DeleteBatchChangeActions(ctx, monitorID, batchChange...); err != nil {
 		return err
 	}
 
@@ -718,6 +733,7 @@ const (
 	monitorActionEmailKind             = "CodeMonitorActionEmail"
 	monitorActionWebhookKind           = "CodeMonitorActionWebhook"
 	monitorActionSlackWebhookKind      = "CodeMonitorActionSlackWebhook"
+	monitorActionBatchChangeKind       = "CodeMonitorActionBatchChange"
 	monitorActionEmailEventKind        = "CodeMonitorActionEmailEvent"
 	monitorActionWebhookEventKind      = "CodeMonitorActionWebhookEvent"
 	monitorActionSlackWebhookEventKind = "CodeMonitorActionSlackWebhookEvent"
@@ -1030,6 +1046,7 @@ type action struct {
 	email        graphqlbackend.MonitorEmailResolver
 	webhook      graphqlbackend.MonitorWebhookResolver
 	slackWebhook graphqlbackend.MonitorSlackWebhookResolver
+	batchChange  graphqlbackend.MonitorBatchChangeResolver
 }
 
 func (a *action) ID() graphql.ID {
@@ -1040,6 +1057,8 @@ func (a *action) ID() graphql.ID {
 		return a.webhook.ID()
 	case a.slackWebhook != nil:
 		return a.slackWebhook.ID()
+	case a.batchChange != nil:
+		return a.batchChange.ID()
 	default:
 		panic("action must have a type")
 	}
@@ -1055,6 +1074,10 @@ func (a *action) ToMonitorWebhook() (graphqlbackend.MonitorWebhookResolver, bool
 
 func (a *action) ToMonitorSlackWebhook() (graphqlbackend.MonitorSlackWebhookResolver, bool) {
 	return a.slackWebhook, a.slackWebhook != nil
+}
+
+func (a *action) ToMonitorBatchChange() (graphqlbackend.MonitorBatchChangeResolver, bool) {
+	return a.batchChange, a.batchChange != nil
 }
 
 //

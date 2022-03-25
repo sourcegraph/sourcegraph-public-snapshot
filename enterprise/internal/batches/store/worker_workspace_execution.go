@@ -60,15 +60,22 @@ type BatchSpecWorkspaceExecutionWorkerStore interface {
 	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
+type applyBatchChanger = func(
+	ctx context.Context,
+	tx *Store,
+	batchSpecRandID string,
+) error
+
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) BatchSpecWorkspaceExecutionWorkerStore {
+func NewBatchSpecWorkspaceExecutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context, applyBatchChanger applyBatchChanger) BatchSpecWorkspaceExecutionWorkerStore {
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
 		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter {
 			return tx.DatabaseDB().AccessTokens().HardDeleteByID
 		},
+		applyBatchChanger: applyBatchChanger,
 	}
 }
 
@@ -82,6 +89,8 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 	dbworkerstore.Store
 
 	accessTokenDeleterForTX func(tx *Store) accessTokenHardDeleter
+
+	applyBatchChanger applyBatchChanger
 
 	observationContext *observation.Context
 }
@@ -307,6 +316,11 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	}
 
 	ok, err := s.Store.With(tx).MarkComplete(ctx, id, options)
+
+	if err := s.applyBatchChanger(ctx, tx, batchSpec.RandID); err != nil {
+		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to apply batch spec: %s", err))
+	}
+
 	return ok, tx.Done(err)
 }
 

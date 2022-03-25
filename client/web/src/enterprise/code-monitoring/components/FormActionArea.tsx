@@ -6,6 +6,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
 
+import { BatchChangeAction } from './actions/BatchChangeAction'
 import { EmailAction } from './actions/EmailAction'
 import { SlackWebhookAction } from './actions/SlackWebhookAction'
 import { WebhookAction } from './actions/WebhookAction'
@@ -57,10 +58,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         actions.nodes.find(action => action.__typename === 'MonitorWebhook')
     )
 
+    const [batchChangeAction, setBatchChangeAction] = useState<MonitorAction | undefined>(
+        actions.nodes.find(action => action.__typename === 'MonitorBatchChange')
+    )
+
     // Form is completed if there is at least one action
     useEffect(() => {
-        setActionsCompleted(!!emailAction || !!slackWebhookAction || !!webhookAction)
-    }, [emailAction, setActionsCompleted, slackWebhookAction, webhookAction])
+        setActionsCompleted(!!emailAction || !!slackWebhookAction || !!webhookAction || !!batchChangeAction)
+    }, [emailAction, setActionsCompleted, slackWebhookAction, webhookAction, batchChangeAction])
 
     useEffect(() => {
         const actions: CodeMonitorFields['actions'] = { nodes: [] }
@@ -73,8 +78,11 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
         if (webhookAction) {
             actions.nodes.push(webhookAction)
         }
+        if (batchChangeAction) {
+            actions.nodes.push(batchChangeAction)
+        }
         onActionsChange(actions)
-    }, [emailAction, onActionsChange, slackWebhookAction, webhookAction])
+    }, [emailAction, onActionsChange, slackWebhookAction, webhookAction, batchChangeAction])
 
     const showWebhooks = useExperimentalFeatures(features => features.codeMonitoringWebHooks)
 
@@ -110,6 +118,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     authenticatedUser={authenticatedUser}
                 />
             )}
+
+            <BatchChangeAction
+                disabled={disabled}
+                action={batchChangeAction}
+                setAction={setBatchChangeAction}
+                monitorName={monitorName}
+                authenticatedUser={authenticatedUser}
+            />
 
             <small className="text-muted">
                 What other actions would you like to take?{' '}

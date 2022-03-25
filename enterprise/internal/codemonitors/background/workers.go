@@ -231,6 +231,8 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		return r.handleWebhook(ctx, j)
 	case j.SlackWebhook != nil:
 		return r.handleSlackWebhook(ctx, j)
+	case j.BatchChange != nil:
+		return r.handleBatchChange(ctx, j)
 	default:
 		return errors.New("job must be one of type email, webhook, or slack webhook")
 	}
@@ -364,6 +366,45 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob)
 	}
 
 	return sendSlackNotification(ctx, w.URL, args)
+}
+
+func (r *actionRunner) handleBatchChange(ctx context.Context, j *edb.ActionJob) error {
+	s, err := r.CodeMonitorStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = s.Done(err) }()
+
+	_, err = s.GetActionJobMetadata(ctx, j.ID)
+	if err != nil {
+		return errors.Wrap(err, "GetActionJobMetadata")
+	}
+
+	_, err = s.GetBatchChangeAction(ctx, *j.BatchChange)
+	if err != nil {
+		return errors.Wrap(err, "GetBatchChangeAction")
+	}
+
+	// externalURL, err := getExternalURL(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+
+	return nil
+
+	// batchesstore.New(s.Handle().DB(), )
+
+	// args := actionArgs{
+	// 	MonitorDescription: m.Description,
+	// 	MonitorID:          w.Monitor,
+	// 	ExternalURL:        externalURL,
+	// 	UTMSource:          "code-monitor-slack-webhook",
+	// 	Query:              m.Query,
+	// 	MonitorOwnerName:   m.OwnerName,
+	// 	Results:            m.Results,
+	// }
+
+	// return sendSlackNotification(ctx, w.URL, args)
 }
 
 type StatusCodeError struct {

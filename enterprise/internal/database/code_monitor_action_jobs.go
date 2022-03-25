@@ -18,6 +18,7 @@ type ActionJob struct {
 	Email        *int64
 	Webhook      *int64
 	SlackWebhook *int64
+	BatchChange  *int64
 	TriggerEvent int32
 
 	// Fields demanded by any dbworker.
@@ -52,6 +53,7 @@ var ActionJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.email"),
 	sqlf.Sprintf("cm_action_jobs.webhook"),
 	sqlf.Sprintf("cm_action_jobs.slack_webhook"),
+	sqlf.Sprintf("cm_action_jobs.batch_change"),
 	sqlf.Sprintf("cm_action_jobs.trigger_event"),
 	sqlf.Sprintf("cm_action_jobs.state"),
 	sqlf.Sprintf("cm_action_jobs.failure_message"),
@@ -193,6 +195,15 @@ WITH due_emails AS (
 	SELECT DISTINCT slack_webhook as id FROM cm_action_jobs
 	WHERE state = 'queued'
 		OR state = 'processing'
+), due_batch_changes AS (
+	SELECT id
+	FROM code_monitors_batch_changes
+	WHERE code_monitor_id = %s
+		AND enabled = true
+	EXCEPT
+	SELECT DISTINCT batch_change as id FROM cm_action_jobs
+	WHERE state = 'queued'
+		OR state = 'processing'
 )
 INSERT INTO cm_action_jobs (email, webhook, slack_webhook, trigger_event)
 SELECT id, CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), %s::integer from due_emails
@@ -200,7 +211,9 @@ UNION
 SELECT CAST(NULL AS BIGINT), id, CAST(NULL AS BIGINT), %s::integer from due_webhooks
 UNION
 SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, %s::integer from due_slack_webhooks
-ORDER BY 1, 2, 3
+UNION
+SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, %s::integer from due_batch_changes
+ORDER BY 1, 2, 3, 4
 RETURNING %s
 `
 
@@ -210,6 +223,8 @@ func (s *codeMonitorStore) EnqueueActionJobsForMonitor(ctx context.Context, moni
 		monitorID,
 		monitorID,
 		monitorID,
+		monitorID,
+		triggerJobID,
 		triggerJobID,
 		triggerJobID,
 		triggerJobID,

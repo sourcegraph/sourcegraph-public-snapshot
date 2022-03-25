@@ -64,6 +64,19 @@ const CodeMonitorFragment = gql`
                     includeResults
                     url
                 }
+                ... on MonitorBatchChange {
+                    __typename
+                    id
+                    enabled
+                    batchChange {
+                        id
+                        namespace {
+                            namespaceName
+                        }
+                        name
+                        url
+                    }
+                }
             }
         }
     }
@@ -209,6 +222,18 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                                 enabled
                                 includeResults
                                 url
+                            }
+                            ... on MonitorBatchChange {
+                                id
+                                enabled
+                                batchChange {
+                                    id
+                                    namespace {
+                                        namespaceName
+                                    }
+                                    name
+                                    url
+                                }
                             }
                         }
                     }

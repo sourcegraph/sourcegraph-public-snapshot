@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,7 +21,11 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 	reconcilerWorkerStore := store.NewReconcilerWorkerStore(batchesStore.Handle(), observationContext)
 	bulkProcessorWorkerStore := store.NewBulkOperationWorkerStore(batchesStore.Handle(), observationContext)
 
-	batchSpecWorkspaceExecutionWorkerStore := store.NewBatchSpecWorkspaceExecutionWorkerStore(batchesStore.Handle(), observationContext)
+	batchSpecWorkspaceExecutionWorkerStore := store.NewBatchSpecWorkspaceExecutionWorkerStore(batchesStore.Handle(), observationContext, func(ctx context.Context, tx *store.Store, batchSpecRandID string) error {
+		svc := service.New(tx)
+		_, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{BatchSpecRandID: batchSpecRandID})
+		return err
+	})
 	batchSpecResolutionWorkerStore := store.NewBatchSpecResolutionWorkerStore(batchesStore.Handle(), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{

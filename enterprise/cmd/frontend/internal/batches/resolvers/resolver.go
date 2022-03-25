@@ -442,7 +442,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
+func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *btypes.UiPublicationStates) error {
 	var errs error
 
 	if in != nil && *in != nil {
