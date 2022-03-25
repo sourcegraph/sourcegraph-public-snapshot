@@ -402,6 +402,17 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	}
 	defer func() { err = tx.Done(err) }()
 
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+		}
+		if lamDashboardId == int(dashboardID.Arg) {
+			return nil, errors.New("Cannot add insights to this dashboard while in Limited Access Mode")
+		}
+	}
+
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	txValidator := permissionsValidator.WithBaseStore(tx.Store)
 	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
