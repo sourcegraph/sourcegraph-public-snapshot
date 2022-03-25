@@ -264,9 +264,30 @@ frontend:
 
 #### Configure Sourcegraph on other Cloud providers or on-prem
 
-Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or your on-prem environment.
+#### Prerequisites
+
+You need to have a Kubernetes cluster (>=1.19) with the following components installed:
+
+- [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller](https://github.com/kubernetes/ingress-nginx)
+- [x] Block Storage CSI driver
+
+You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+
+#### Steps
+
+Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
 
 ```yaml
+frontend:
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: ingress-class-name # replace with actual ingress class name
+      # additional ingress controller supported annotations
+      # ...
+    # replace with your actual domain
+    host: sourcegraph.company.com
+
 storageClass:
   create: true
   provisioner: <REPLACE_ME>
@@ -274,6 +295,73 @@ storageClass:
   reclaimPolicy: Retain
   parameters:
     key1: value1
+```
+
+Install the chart
+
+```sh
+helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+```
+
+Depending how your Ingress Controller work, you may be able to check on status and obtain the public address of your Ingress.
+
+```sh
+kubectl describe ingress sourcegraph-frontend
+```
+
+You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
+
+It is recommended to enable TLS and configure certificate properly on your Ingress. You are encouraged to utilize managed certificate solution provided by Cloud providers. Alternatively, you may consider configuring [cert-manager with Let's Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster and add the following override to Ingress.
+
+```yaml
+frontend:
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: ingress-class-name # replace with actual ingress class name
+      # additional ingress controller supported annotations
+      # ...
+      # cert-managed annotations
+      cert-manager.io/cluster-issuer: letsencrypt # replace with actual cluster-issuer name
+    tlsSecret: sourcegraph-frontend-tls # cert-manager will store the created certificate in this secret.
+    # replace with your actual domain
+    host: sourcegraph.company.com
+```
+
+As a last resort, you may manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
+
+`sourcegraph-frontend-tls.Secret.yaml`
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-frontend-tls
+type: kubernetes.io/tls
+data:
+  # the data is abbreviated in this example
+  tls.crt: |
+    MIIC2DCCAcCgAwIBAgIBATANBgkqh ...
+  tls.key: |
+    MIIEpgIBAAKCAQEA7yn3bRHQ5FHMQ ...
+```
+
+```sh
+kubectl apply -f ./sourcegraph-frontend-tls.Secret.yaml
+```
+
+Add the following values to your override file.
+
+```yaml
+frontend:
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: ingress-class-name # replace with actual ingress class name
+      # additional ingress controller supported annotations
+      # ...
+    tlsSecret: sourcegraph-frontend-tls # reference the created TLS Secret
+    # replace with your actual domain
+    host: sourcegraph.company.com
 ```
 
 ### Advanced configuration
