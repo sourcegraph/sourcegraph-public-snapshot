@@ -146,10 +146,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				addJob(true, &symbol.RepoUniverseSymbolSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
-					PatternInfo:      patternInfo,
-					Limit:            maxResults,
-
-					RepoOptions: repoOptions,
+					RepoOptions:      repoOptions,
 				})
 			}
 		}
