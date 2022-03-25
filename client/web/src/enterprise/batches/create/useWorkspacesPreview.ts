@@ -253,7 +253,9 @@ export const useWorkspacesPreview = (
             // We can stop polling once the workspace resolution completes.
             stop()
             // Fetch the results of the workspace preview resolution.
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             fetchWorkspaces()
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             fetchImportingChangesets()
             // Call the optional `onComplete` handler.
             onComplete?.()

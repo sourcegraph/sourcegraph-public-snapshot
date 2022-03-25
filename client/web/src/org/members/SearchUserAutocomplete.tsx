@@ -129,6 +129,7 @@ export const AutocompleteSearchUsers: React.FunctionComponent<AutocompleteSearch
     const searchUsers = useCallback(
         (query: string): void => {
             setOpenResults(true)
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             getUsers({ variables: { query, organization: orgId } })
         },
         [getUsers, orgId]
