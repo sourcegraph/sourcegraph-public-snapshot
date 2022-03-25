@@ -58,7 +58,9 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	githubUrl, _ := github.APIRoot(baseURL)
-	newCache := func(key string, ttl int) github.Cache { return rcache.NewWithTTL(key, ttl) }
+	newCache := func(key string, ttl int) github.Cache {
+		return rcache.NewWithTTL(key, ttl)
+	}
 	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil, newCache)
 
 	possibleRepos := githubCfg.Repos
