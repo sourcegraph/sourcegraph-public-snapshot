@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	. "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store/testdata"
 )
 
@@ -44,7 +44,7 @@ func readQuery(t *testing.T) string {
 	return readTestdataFile(t, "schema.sql")
 }
 
-func readGolden(t *testing.T) (m map[string]SchemaDescription) {
+func readGolden(t *testing.T) (m map[string]schemas.SchemaDescription) {
 	filename := "schema.golden.json"
 
 	if err := json.Unmarshal([]byte(readTestdataFile(t, filename)), &m); err != nil {
