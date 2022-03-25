@@ -1858,8 +1858,6 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
 	}
 
-	// noOfChangesets := len(args.ChangesetIDs)
-
 	changesets, _, err := r.store.ListChangesets(ctx, store.ListChangesetsOpts{
 		IDs: changesetIDs,
 	})
