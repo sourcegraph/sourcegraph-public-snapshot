@@ -5,7 +5,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
-import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
+import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
@@ -28,7 +28,6 @@ import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
-import { resolveRevision as _resolveRevision, fetchRepository as _fetchRepository } from '../../repo/backend'
 import { SearchStreamingProps } from '../../search'
 import {
     fetchNotebook as _fetchNotebook,
@@ -56,8 +55,6 @@ interface NotebookPageProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
-    resolveRevision?: typeof _resolveRevision
-    fetchRepository?: typeof _fetchRepository
     fetchNotebook?: typeof _fetchNotebook
     updateNotebook?: typeof _updateNotebook
     deleteNotebook?: typeof _deleteNotebook
@@ -73,19 +70,30 @@ function isNotebookLoaded(notebook: NotebookFields | Error | typeof LOADING | un
 }
 
 export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
-    fetchRepository = _fetchRepository,
-    resolveRevision = _resolveRevision,
     fetchNotebook = _fetchNotebook,
     updateNotebook = _updateNotebook,
     deleteNotebook = _deleteNotebook,
     createNotebookStar = _createNotebookStar,
     deleteNotebookStar = _deleteNotebookStar,
     copyNotebook = _copyNotebook,
-    ...props
+    globbing,
+    streamSearch,
+    isLightTheme,
+    telemetryService,
+    searchContextsEnabled,
+    isSourcegraphDotCom,
+    location,
+    fetchHighlightedFileLineRanges,
+    authenticatedUser,
+    showSearchContext,
+    settingsCascade,
+    platformContext,
+    extensionsController,
+    match,
 }) => {
-    useEffect(() => props.telemetryService.logViewEvent('SearchNotebookPage'), [props.telemetryService])
+    useEffect(() => telemetryService.logViewEvent('SearchNotebookPage'), [telemetryService])
 
-    const notebookId = props.match.params.id
+    const notebookId = match.params.id
     const [notebookTitle, setNotebookTitle] = useState('')
     const [updateQueue, setUpdateQueue] = useState<Partial<NotebookInput>[]>([])
 
@@ -109,9 +117,8 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
         useCallback(
             (update: Observable<NotebookInput>) =>
                 update.pipe(
-                    debounceTime(400),
                     switchMap(notebook =>
-                        updateNotebook({ id: notebookId, notebook }).pipe(delay(400), startWith(LOADING))
+                        updateNotebook({ id: notebookId, notebook }).pipe(delay(300), startWith(LOADING))
                     ),
                     catchError(error => [asError(error)])
                 ),
@@ -204,15 +211,15 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                             title={notebookOrError.title}
                                             viewerCanManage={notebookOrError.viewerCanManage}
                                             onUpdateTitle={onUpdateTitle}
-                                            telemetryService={props.telemetryService}
+                                            telemetryService={telemetryService}
                                         />
                                     ),
                                 },
                             ]}
                             actions={
                                 <NotebookPageHeaderActions
-                                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                                    authenticatedUser={props.authenticatedUser}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                    authenticatedUser={authenticatedUser}
                                     notebookId={notebookId}
                                     viewerCanManage={notebookOrError.viewerCanManage}
                                     isPublic={notebookOrError.public}
@@ -223,7 +230,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                                     viewerHasStarred={notebookOrError.viewerHasStarred}
                                     createNotebookStar={createNotebookStar}
                                     deleteNotebookStar={deleteNotebookStar}
-                                    telemetryService={props.telemetryService}
+                                    telemetryService={telemetryService}
                                 />
                             }
                         />
@@ -265,12 +272,24 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                         </small>
                         <hr className="mt-2 mb-3" />
                         <NotebookContent
-                            {...props}
                             viewerCanManage={notebookOrError.viewerCanManage}
                             blocks={notebookOrError.blocks}
                             onUpdateBlocks={onUpdateBlocks}
                             onCopyNotebook={onCopyNotebook}
                             exportedFileName={exportedFileName}
+                            globbing={globbing}
+                            streamSearch={streamSearch}
+                            isLightTheme={isLightTheme}
+                            telemetryService={telemetryService}
+                            searchContextsEnabled={searchContextsEnabled}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            location={location}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                            authenticatedUser={authenticatedUser}
+                            showSearchContext={showSearchContext}
+                            settingsCascade={settingsCascade}
+                            platformContext={platformContext}
+                            extensionsController={extensionsController}
                         />
                         <div className={styles.spacer} />
                     </>

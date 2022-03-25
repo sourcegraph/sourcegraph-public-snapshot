@@ -54,175 +54,179 @@ function isSymbolOutputLoaded(
     return output !== undefined && !isErrorLike(output) && output !== LOADING
 }
 
-export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = ({
-    id,
-    input,
-    output,
-    telemetryService,
-    isSelected,
-    isOtherBlockSelected,
-    isReadOnly,
-    hoverifier,
-    extensionsController,
-    isLightTheme,
-    onRunBlock,
-    onBlockInputChange,
-    ...props
-}) => {
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
-    const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
-    const [symbolQueryInput, setSymbolQueryInput] = useState(input.initialQueryInput ?? '')
-    const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
-
-    const onSymbolSelected = useCallback(
-        (input: SymbolBlockInput) => {
-            onBlockInputChange(id, { type: 'symbol', input })
-            onRunBlock(id)
-        },
-        [id, onBlockInputChange, onRunBlock]
-    )
-
-    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
-
-    const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
-
-    const symbolOutput = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
-
-    const commonMenuActions = useCommonBlockMenuActions({
+export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = React.memo(
+    ({
         id,
+        input,
+        output,
+        telemetryService,
+        isSelected,
+        isOtherBlockSelected,
         isReadOnly,
-        ...props,
-    })
+        hoverifier,
+        extensionsController,
+        isLightTheme,
+        onRunBlock,
+        onBlockInputChange,
+        ...props
+    }) => {
+        const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+        const [showInputs, setShowInputs] = useState(input.symbolName.length === 0)
+        const [symbolQueryInput, setSymbolQueryInput] = useState(input.initialQueryInput ?? '')
+        const debouncedSetSymbolQueryInput = useMemo(() => debounce(setSymbolQueryInput, 300), [setSymbolQueryInput])
 
-    const symbolURL = useMemo(
-        () =>
-            isSymbolOutputLoaded(symbolOutput)
-                ? toPrettyBlobURL({
-                      repoName: input.repositoryName,
-                      revision: symbolOutput.effectiveRevision,
-                      filePath: input.filePath,
-                      range: symbolOutput.symbolRange,
-                  })
-                : '',
-        [input, symbolOutput]
-    )
-
-    const linkMenuAction: BlockMenuAction[] = useMemo(
-        () => [
-            {
-                type: 'link',
-                label: 'Open in new tab',
-                icon: <Icon as={OpenInNewIcon} />,
-                url: symbolURL,
-                isDisabled: symbolURL.length === 0,
+        const onSymbolSelected = useCallback(
+            (input: SymbolBlockInput) => {
+                onBlockInputChange(id, { type: 'symbol', input })
+                onRunBlock(id)
             },
-        ],
-        [symbolURL]
-    )
+            [id, onBlockInputChange, onRunBlock]
+        )
 
-    const modifierKeyLabel = useModifierKeyLabel()
-    const toggleEditMenuAction: BlockMenuAction[] = useMemo(
-        () => [
-            {
-                type: 'button',
-                label: showInputs ? 'Save' : 'Edit',
-                icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
-                onClick: () => setShowInputs(!showInputs),
-                keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
-            },
-        ],
-        [modifierKeyLabel, showInputs, setShowInputs]
-    )
+        const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
 
-    const menuActions = useMemo(
-        () => (!isReadOnly ? toggleEditMenuAction : []).concat(linkMenuAction).concat(commonMenuActions),
-        [isReadOnly, linkMenuAction, toggleEditMenuAction, commonMenuActions]
-    )
+        const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
-    const codeIntelViewerUpdatesProps = useMemo(
-        () => ({
-            extensionsController,
-            ...input,
-            revision: isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision : input.revision,
-        }),
-        [symbolOutput, extensionsController, input]
-    )
+        const symbolOutput = useObservable(useMemo(() => output?.pipe(startWith(LOADING)) ?? of(undefined), [output]))
 
-    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
+        const commonMenuActions = useCommonBlockMenuActions({
+            id,
+            isReadOnly,
+            ...props,
+        })
 
-    return (
-        <NotebookBlock
-            className={styles.block}
-            id={id}
-            aria-label="Notebook symbol block"
-            isInputVisible={showInputs}
-            setIsInputVisible={setShowInputs}
-            focusInput={focusInput}
-            isReadOnly={isReadOnly}
-            isSelected={isSelected}
-            isOtherBlockSelected={isOtherBlockSelected}
-            actions={isSelected ? menuActions : linkMenuAction}
-            {...props}
-        >
-            <div className={styles.header}>
-                {input.symbolName.length > 0 ? (
-                    <NotebookSymbolBlockHeader
-                        {...input}
-                        symbolFoundAtLatestRevision={
-                            isSymbolOutputLoaded(symbolOutput) ? symbolOutput.symbolFoundAtLatestRevision : undefined
-                        }
-                        effectiveRevision={
-                            isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision.slice(0, 7) : ''
-                        }
-                        symbolURL={symbolURL}
+        const symbolURL = useMemo(
+            () =>
+                isSymbolOutputLoaded(symbolOutput)
+                    ? toPrettyBlobURL({
+                          repoName: input.repositoryName,
+                          revision: symbolOutput.effectiveRevision,
+                          filePath: input.filePath,
+                          range: symbolOutput.symbolRange,
+                      })
+                    : '',
+            [input, symbolOutput]
+        )
+
+        const linkMenuAction: BlockMenuAction[] = useMemo(
+            () => [
+                {
+                    type: 'link',
+                    label: 'Open in new tab',
+                    icon: <Icon as={OpenInNewIcon} />,
+                    url: symbolURL,
+                    isDisabled: symbolURL.length === 0,
+                },
+            ],
+            [symbolURL]
+        )
+
+        const modifierKeyLabel = useModifierKeyLabel()
+        const toggleEditMenuAction: BlockMenuAction[] = useMemo(
+            () => [
+                {
+                    type: 'button',
+                    label: showInputs ? 'Save' : 'Edit',
+                    icon: <Icon as={showInputs ? CheckIcon : PencilIcon} />,
+                    onClick: () => setShowInputs(!showInputs),
+                    keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
+                },
+            ],
+            [modifierKeyLabel, showInputs, setShowInputs]
+        )
+
+        const menuActions = useMemo(
+            () => (!isReadOnly ? toggleEditMenuAction : []).concat(linkMenuAction).concat(commonMenuActions),
+            [isReadOnly, linkMenuAction, toggleEditMenuAction, commonMenuActions]
+        )
+
+        const codeIntelViewerUpdatesProps = useMemo(
+            () => ({
+                extensionsController,
+                ...input,
+                revision: isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision : input.revision,
+            }),
+            [symbolOutput, extensionsController, input]
+        )
+
+        const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
+
+        return (
+            <NotebookBlock
+                className={styles.block}
+                id={id}
+                aria-label="Notebook symbol block"
+                isInputVisible={showInputs}
+                setIsInputVisible={setShowInputs}
+                focusInput={focusInput}
+                isReadOnly={isReadOnly}
+                isSelected={isSelected}
+                isOtherBlockSelected={isOtherBlockSelected}
+                actions={isSelected ? menuActions : linkMenuAction}
+                {...props}
+            >
+                <div className={styles.header}>
+                    {input.symbolName.length > 0 ? (
+                        <NotebookSymbolBlockHeader
+                            {...input}
+                            symbolFoundAtLatestRevision={
+                                isSymbolOutputLoaded(symbolOutput)
+                                    ? symbolOutput.symbolFoundAtLatestRevision
+                                    : undefined
+                            }
+                            effectiveRevision={
+                                isSymbolOutputLoaded(symbolOutput) ? symbolOutput.effectiveRevision.slice(0, 7) : ''
+                            }
+                            symbolURL={symbolURL}
+                        />
+                    ) : (
+                        <>No symbol selected</>
+                    )}
+                </div>
+                {showInputs && (
+                    <NotebookSymbolBlockInput
+                        id={id}
+                        editor={editor}
+                        queryInput={symbolQueryInput}
+                        isLightTheme={isLightTheme}
+                        setEditor={setEditor}
+                        setQueryInput={setSymbolQueryInput}
+                        debouncedSetQueryInput={debouncedSetSymbolQueryInput}
+                        onSymbolSelected={onSymbolSelected}
+                        onRunBlock={hideInputs}
+                        {...props}
                     />
-                ) : (
-                    <>No symbol selected</>
                 )}
-            </div>
-            {showInputs && (
-                <NotebookSymbolBlockInput
-                    id={id}
-                    editor={editor}
-                    queryInput={symbolQueryInput}
-                    isLightTheme={isLightTheme}
-                    setEditor={setEditor}
-                    setQueryInput={setSymbolQueryInput}
-                    debouncedSetQueryInput={debouncedSetSymbolQueryInput}
-                    onSymbolSelected={onSymbolSelected}
-                    onRunBlock={hideInputs}
-                    {...props}
-                />
-            )}
-            {symbolOutput === LOADING && (
-                <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
-                    <LoadingSpinner inline={false} />
-                </div>
-            )}
-            {isSymbolOutputLoaded(symbolOutput) && (
-                <div className={styles.highlightedFileWrapper}>
-                    <CodeExcerpt
-                        repoName={input.repositoryName}
-                        commitID={input.revision}
-                        filePath={input.filePath}
-                        blobLines={symbolOutput.highlightedLines}
-                        highlightRanges={[symbolOutput.highlightSymbolRange]}
-                        {...symbolOutput.highlightLineRange}
-                        isFirst={false}
-                        fetchHighlightedFileRangeLines={() => of([])}
-                        hoverifier={hoverifier}
-                        viewerUpdates={viewerUpdates}
-                    />
-                </div>
-            )}
-            {symbolOutput && symbolOutput !== LOADING && isErrorLike(symbolOutput) && (
-                <Alert className="m-3" variant="danger">
-                    {symbolOutput.message}
-                </Alert>
-            )}
-        </NotebookBlock>
-    )
-}
+                {symbolOutput === LOADING && (
+                    <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
+                        <LoadingSpinner inline={false} />
+                    </div>
+                )}
+                {isSymbolOutputLoaded(symbolOutput) && (
+                    <div className={styles.highlightedFileWrapper}>
+                        <CodeExcerpt
+                            repoName={input.repositoryName}
+                            commitID={input.revision}
+                            filePath={input.filePath}
+                            blobLines={symbolOutput.highlightedLines}
+                            highlightRanges={[symbolOutput.highlightSymbolRange]}
+                            {...symbolOutput.highlightLineRange}
+                            isFirst={false}
+                            fetchHighlightedFileRangeLines={() => of([])}
+                            hoverifier={hoverifier}
+                            viewerUpdates={viewerUpdates}
+                        />
+                    </div>
+                )}
+                {symbolOutput && symbolOutput !== LOADING && isErrorLike(symbolOutput) && (
+                    <Alert className="m-3" variant="danger">
+                        {symbolOutput.message}
+                    </Alert>
+                )}
+            </NotebookBlock>
+        )
+    }
+)
 
 interface NotebookSymbolBlockHeaderProps extends SymbolBlockInput {
     symbolFoundAtLatestRevision: boolean | undefined
