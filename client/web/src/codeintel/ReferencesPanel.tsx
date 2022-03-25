@@ -180,6 +180,11 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         identCharPattern: spec.identCharPattern,
     })
 
+    // If the blobInfo observable hasn't emitted yet, we show the loading message
+    if (blobInfo === undefined) {
+        return <LoadingCodeIntel />
+    }
+
     if (!tokenResult?.searchToken) {
         return (
             <div>
@@ -327,21 +332,14 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     if (loading && !data) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading precise code intel ...</i>
-                </p>
-            </>
-        )
+        return <LoadingCodeIntel />
     }
 
     // If we received an error before we had received any data
     if (error && !data) {
         return (
             <div>
-                <p className="text-danger">Loading precise code intel failed:</p>
+                <p className="text-danger">Loading code intel failed:</p>
                 <pre>{error.message}</pre>
             </div>
         )
@@ -806,6 +804,15 @@ const ReferenceGroup: React.FunctionComponent<{
         </div>
     )
 }
+
+const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
+    <>
+        <LoadingSpinner inline={false} className="mx-auto my-4" />
+        <p className="text-muted text-center">
+            <i>Loading code intel ...</i>
+        </p>
+    </>
+)
 
 export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
     const parsedQuery = parseQueryAndHash(location.search, location.hash)
