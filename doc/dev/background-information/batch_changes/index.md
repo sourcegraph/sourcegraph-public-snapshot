@@ -185,7 +185,7 @@ Take a look at the following links to see some examples of batch changes and the
 - [k8s.sgdev.org/batch-changes](https://k8s.sgdev.org/batch-changes)
 - [Batch Changes tutorials](https://docs.sourcegraph.com/batch_changes/tutorials)
 
-## Server-side batch changes
+## Server-side execution
 
 ### Database tables
 
