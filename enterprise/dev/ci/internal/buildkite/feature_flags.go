@@ -22,7 +22,7 @@ var FeatureFlags = featureFlags{
 		// TODO: remove when we switch over entirely to stateless agents
 		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "" ||
 		// Roll out to 10% of builds
-		rand.NewSource(time.Now().UnixNano()).Int63()%100 < 10 || true, // TODO remove
+		rand.NewSource(time.Now().UnixNano()).Int63()%100 < 10,
 }
 
 func (f *featureFlags) ApplyEnv(env map[string]string) {
