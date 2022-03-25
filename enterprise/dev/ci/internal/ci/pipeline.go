@@ -61,6 +61,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// HoneyComb dataset that stores build traces.
 		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
+	bk.FeatureFlags.ApplyEnv(env)
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch) {
