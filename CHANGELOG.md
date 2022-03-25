@@ -47,6 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Monitoring creation and editing now supports syntax highlighting and autocomplete on the search box. [#32536](https://github.com/sourcegraph/sourcegraph/pull/32536)
 - New `repo:dependencies(...)` predicate allows you to [search through the dependencies of your repositories](https://docs.sourcegraph.com/code_search/how-to/dependencies_search). This feature is currently in beta and only npm package repositories are supported with dependencies from `package-lock.json` and `yarn.lock` files. [#32405](https://github.com/sourcegraph/sourcegraph/issues/32405)
 - Site config has a new _experimental_ feature called `gitServerPinnedRepos` that allows admins to pin specific repositories to particular gitserver instances. [#32831](https://github.com/sourcegraph/sourcegraph/pull/32831).
+- Added [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip), a scalable symbol service backend for a fast symbol sidebar and search-based code intelligence on monorepos.
 
 ### Changed
 
@@ -204,6 +205,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code insights creation UI form query field now supports suggestions and syntax highlighting. [#28130](https://github.com/sourcegraph/sourcegraph/pull/28130)
 - Using `select:repo` in search queries will now stream results incrementally, greatly improving speed and reducing time-to-first-result. [#28920](https://github.com/sourcegraph/sourcegraph/pull/28920)
 - The fuzzy file finder is now enabled by default and can be activated with the shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows. Change the user setting `experimentalFeatures.fuzzyFinder` to `false` to disable this feature. [#29010](https://github.com/sourcegraph/sourcegraph/pull/29010)
+- Search-based code intelligence and the symbol sidebar are much faster now that the symbols service incrementally processes files that changed. [#27932](https://github.com/sourcegraph/sourcegraph/pull/27932)
 
 ### Fixed
 
