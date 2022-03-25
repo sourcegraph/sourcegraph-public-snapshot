@@ -83,9 +83,8 @@ export interface ServiceConfig {
 }
 
 declare const StatusPage: any
-const checkGithubOutage = async ():Promise<string | undefined> => new Promise(resolve => {
+const checkGithubOutage = async ():Promise<true | undefined> => new Promise(resolve => {
     const statusPage = new StatusPage.page({ page : 'kctbh9vrtdwd' });
-    console.log('status page ......')
     statusPage.status({
       success(data: any) {
         // if (data.status.indicator === 'none') {
@@ -93,7 +92,7 @@ const checkGithubOutage = async ():Promise<string | undefined> => new Promise(re
         // }
 
         // if (data.status.indicator === 'major' || data.status.indicator === 'partial' ) {
-            resolve('add here: message and link')
+            resolve(true)
         // }
       }
     })
@@ -124,7 +123,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const toggleUpdateModal = useCallback(() => {
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
-    const [servicesOutage, setServicesOutage] = useState<Map<string, string>>()
+    const [isAnyServiceDown, setIsAnyServiceDown] = useState<Map<string, string>>()
 
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
@@ -178,10 +177,28 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         const script = document.createElement('script');
         script.src = 'https://cdn.statuspage.io/se-v2.js';
         script.async = true;
-        // script.addEventListener('load', () => setLoaded(true))
         document.body.append(script);
-
     }, [])
+
+    async function checkAndSetOutageAlert(services: Partial<Record<ExternalServiceKind, ListExternalServiceFields>>): Promise<void> {
+        const svcsErrors = new Map<string, string>()
+        for (const svc of Object.values(services)) {
+            // When there is a sync error, we check for potential outages by calling GitHub Status API
+            if (svc.displayName === 'GitHub' && svc.lastSyncError !== null) {
+                const outage = await checkGithubOutage()
+                if (outage) {
+                    svcsErrors.set(svc.displayName, 'todo: add error msg and link')
+                }
+            }
+            // GitLab doesn't have an Status API, so we check if the error contains an Status Code of 500 or 503
+            if (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('500') || svc.lastSyncError?.includes('500')) {
+                svcsErrors.set(svc.displayName, 'todo: add error msg and link')
+            }
+        }
+
+        setIsAnyServiceDown(svcsErrors)
+        return
+    }
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -200,20 +217,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         setStatusOrError(services)
 
-        const svcsErrors = new Map<string, string>()
-        for (const svc of Object.values(services)) {
-            // if (svc.displayName === 'GitHub' && svc.lastSyncError?.includes('500') || false) {
-            if (svc.displayName === 'GitHub') {
-                const outage = await checkGithubOutage()
-                if (outage) {
-                    svcsErrors.set(svc.displayName, outage)
-                }
-            }
-            // if gitlab
-        }
-
-        console.log('svc errors', svcsErrors)
-        setServicesOutage(svcsErrors)
+        await checkAndSetOutageAlert(services)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
@@ -343,7 +347,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             for (const service of services) {
                 const problem = service.warning || service.lastSyncError
 
-                // if service has warnings or errors
+                // if service has warnings  errors
                 if (problem) {
                     servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
                     continue
@@ -445,7 +449,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         </Alert>
     )
 
-    const getOutageMessages = (outageMessages: Map<string, string>): JSX.Element => (
+    const getOutageMessages = (outageMessages: Map<string, string> | undefined): JSX.Element => (
         <>
         {
             outageMessages &&
@@ -545,7 +549,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
-            {getOutageMessages(servicesOutage)}
+            {/* display outage alert when a service is experiencing an outage */}
+            { console.log( 'is a svc down',  isAnyServiceDown)}
+            {isAnyServiceDown ? getOutageMessages(isAnyServiceDown) : null}
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
