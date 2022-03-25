@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed reading search pattern type from settings [#32989](https://github.com/sourcegraph/sourcegraph/issues/32989)
 -
 
 ### Removed
