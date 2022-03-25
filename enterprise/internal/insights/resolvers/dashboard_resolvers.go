@@ -64,7 +64,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 				d.err = errors.Wrap(err, "unmarshalDashboardID")
 			}
 			if !id.isVirtualized() {
-				args.ID = int(id.Arg)
+				args.ID = []int{int(id.Arg)}
 			}
 		}
 
@@ -413,7 +413,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		}
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: []int{int(dashboardID.Arg)},
 		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
@@ -452,7 +452,7 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil {
 		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
 	}
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: []int{int(dashboardID.Arg)},
 		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")

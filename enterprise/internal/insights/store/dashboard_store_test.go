@@ -315,7 +315,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{ID: 1})
+		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{ID: []int{1}})
 		if err != nil || len(dashboards) != 1 {
 			t.Errorf("failed to fetch dashboard before adding insight")
 		}
@@ -328,7 +328,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 		if err != nil {
 			t.Errorf("failed to add view to dashboard")
 		}
-		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{ID: 1})
+		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{ID: []int{1}})
 		if err != nil || len(dashboards) != 1 {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
