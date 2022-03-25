@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"fmt"
 
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 )
 
 func TestCheckAndEnforceLicense(t *testing.T) {
@@ -38,7 +40,10 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}
 
 	getNumFrozenInsights := func() (int, error) {
-		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) from insight_view where is_frozen = TRUE`))
+		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
+	}
+	getLAMDashboardCount := func() (int, error) {
+		return basestore.ScanInt(timescale.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM dashboard WHERE type = '%s'", store.LimitedAccessMode)))
 	}
 
 	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
@@ -51,11 +56,11 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = timescale.Exec(`INSERT INTO dashboard (id, title)
-										VALUES (1, 'private dashboard 1'),
-											   (2, 'org dashboard 1'),
-										 	   (3, 'global dashboard 1'),
-										 	   (4, 'global dashboard 2');`)
+	_, err = timescale.Exec(`INSERT INTO dashboard (title)
+										VALUES ('private dashboard 1'),
+											   ('org dashboard 1'),
+										 	   ('global dashboard 1'),
+										 	   ('global dashboard 2');`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,11 +73,11 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = timescale.Exec(`INSERT INTO dashboard_grants (id, dashboard_id, user_id, org_id, global)
-										VALUES  (1, 1, 1, NULL, NULL),
-												(2, 2, NULL, 1, NULL),
-												(3, 3, NULL, NULL, TRUE),
-												(4, 4, NULL, NULL, TRUE);`)
+	_, err = timescale.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
+										VALUES  (1, 1, NULL, NULL),
+												(2, NULL, 1, NULL),
+												(3, NULL, NULL, TRUE),
+												(4, NULL, NULL, TRUE);`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +112,13 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
+
+		lamDashboardCount, err := getLAMDashboardCount()
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("NumFrozen", lamDashboardCount).Equal(t, 1)
+
 	})
 	t.Run("Does nothing if there is no license and insights are already frozen", func(t *testing.T) {
 		numFrozen, err := getNumFrozenInsights()
@@ -122,5 +134,11 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
+
+		lamDashboardCount, err := getLAMDashboardCount()
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("NumFrozen", lamDashboardCount).Equal(t, 1)
 	})
 }

@@ -20,7 +20,7 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
+	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
 	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }
 
