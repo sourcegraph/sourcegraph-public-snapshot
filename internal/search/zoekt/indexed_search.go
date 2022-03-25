@@ -591,7 +591,7 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onM
 	return unindexed
 }
 
-type ZoektRepoSubsetSearch struct {
+type ZoektSearch struct {
 	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
 	Query          zoektquery.Q
 	FileMatchLimit int32
@@ -601,7 +601,7 @@ type ZoektRepoSubsetSearch struct {
 }
 
 // ZoektSearch is a job that searches repositories using zoekt.
-func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+func (z *ZoektSearch) Run(ctx context.Context, _ database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, z)
 	defer func() { finish(alert, err) }()
 
@@ -623,8 +623,8 @@ func (z *ZoektRepoSubsetSearch) Run(ctx context.Context, _ database.DB, stream s
 	return nil, zoektSearch(ctx, z.Repos, z.Query, z.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 }
 
-func (*ZoektRepoSubsetSearch) Name() string {
-	return "ZoektRepoSubset"
+func (*ZoektSearch) Name() string {
+	return "ZoektSearch"
 }
 
 type GlobalSearch struct {

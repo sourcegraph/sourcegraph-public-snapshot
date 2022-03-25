@@ -26,7 +26,7 @@ type repoPagerJob struct {
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
 func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.RepositoryRevisions) Job {
-	setZoektRepos := func(job *zoekt.ZoektRepoSubsetSearch) *zoekt.ZoektRepoSubsetSearch {
+	setZoektRepos := func(job *zoekt.ZoektSearch) *zoekt.ZoektSearch {
 		jobCopy := *job
 		jobCopy.Repos = indexed
 		return &jobCopy
@@ -38,12 +38,6 @@ func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Repos
 		return &jobCopy
 	}
 
-	setZoektSymbolRepos := func(job *zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch {
-		jobCopy := *job
-		jobCopy.Repos = indexed
-		return &jobCopy
-	}
-
 	setSymbolSearcherRepos := func(job *searcher.SymbolSearcher) *searcher.SymbolSearcher {
 		jobCopy := *job
 		jobCopy.Repos = unindexed
@@ -51,10 +45,9 @@ func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Repos
 	}
 
 	setRepos := Mapper{
-		MapZoektRepoSubsetSearchJob: setZoektRepos,
-		MapZoektSymbolSearchJob:     setZoektSymbolRepos,
-		MapSearcherJob:              setSearcherRepos,
-		MapSymbolSearcherJob:        setSymbolSearcherRepos,
+		MapZoektSearchJob:    setZoektRepos,
+		MapSearcherJob:       setSearcherRepos,
+		MapSymbolSearcherJob: setSymbolSearcherRepos,
 	}
 
 	return setRepos.Map(job)

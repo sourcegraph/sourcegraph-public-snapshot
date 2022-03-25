@@ -26,8 +26,7 @@ type Job interface {
 }
 
 var allJobs = []Job{
-	&zoekt.ZoektRepoSubsetSearch{},
-	&zoekt.ZoektSymbolSearch{},
+	&zoekt.ZoektSearch{},
 	&searcher.Searcher{},
 	&searcher.SymbolSearcher{},
 	&run.RepoSearch{},

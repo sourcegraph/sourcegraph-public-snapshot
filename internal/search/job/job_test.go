@@ -33,7 +33,7 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
+      ZoektSearch
       Searcher))
   RepoSearch
   ComputeExcludedRepos)
@@ -57,7 +57,7 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
+      ZoektSearch
       Searcher))
   RepoSearch
   ComputeExcludedRepos)
@@ -67,7 +67,7 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
+      ZoektSearch
       Searcher))
   RepoSearch
   ComputeExcludedRepos)
@@ -130,11 +130,11 @@ func TestToSearchInputs(t *testing.T) {
 (PARALLEL
   REPOPAGER
     (PARALLEL
-      ZoektRepoSubset
+      ZoektSearch
       Searcher))
   REPOPAGER
     (PARALLEL
-      ZoektSymbolSearch
+      ZoektSearch
       SymbolSearcher))
   Commit
   RepoSearch
@@ -158,7 +158,7 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       REPOPAGER
         (PARALLEL
-          ZoektRepoSubset
+          ZoektSearch
           Searcher))
       RepoSearch
       ComputeExcludedRepos))
@@ -166,7 +166,7 @@ func TestToSearchInputs(t *testing.T) {
     (PARALLEL
       REPOPAGER
         (PARALLEL
-          ZoektSymbolSearch
+          ZoektSearch
           SymbolSearcher))
       Commit)))
 `).Equal(t, test("type:file type:path type:repo type:commit type:symbol repo:test test", search.Batch, query.ParseRegexp))

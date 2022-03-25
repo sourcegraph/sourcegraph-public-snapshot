@@ -156,7 +156,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
+				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektSearch{
 					Query:          zoektQuery,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,
@@ -187,7 +187,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
+				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSearch{
 					Query:          zoektQuery,
 					FileMatchLimit: fileMatchLimit,
 					Select:         selector,

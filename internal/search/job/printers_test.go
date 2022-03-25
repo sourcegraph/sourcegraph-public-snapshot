@@ -206,7 +206,7 @@ func TestPrettyJSON(t *testing.T) {
       "REPOPAGER": {
         "PARALLEL": [
           {
-            "ZoektRepoSubset": {
+            "ZoektSearch": {
               "Repos": null,
               "Query": {
                 "Pattern": "bar",

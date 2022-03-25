@@ -32,7 +32,7 @@ func Test_setRepos(t *testing.T) {
 {
   "PARALLEL": [
     {
-      "ZoektRepoSubset": {
+      "ZoektSearch": {
         "Repos": {
           "RepoRevs": {
             "1": {
@@ -72,7 +72,7 @@ func Test_setRepos(t *testing.T) {
   ]
 }`).Equal(t, test(
 		NewParallelJob(
-			&zoekt.ZoektRepoSubsetSearch{},
+			&zoekt.ZoektSearch{},
 			&searcher.Searcher{},
 		),
 	))

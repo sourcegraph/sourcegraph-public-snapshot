@@ -461,7 +461,7 @@ func RunRepoSubsetTextSearch(
 			return nil, streaming.Stats{}, err
 		}
 
-		zoektJob := &zoektutil.ZoektRepoSubsetSearch{
+		zoektJob := &zoektutil.ZoektSearch{
 			Repos:          indexed,
 			Query:          zoektQuery,
 			Typ:            search.TextRequest,
