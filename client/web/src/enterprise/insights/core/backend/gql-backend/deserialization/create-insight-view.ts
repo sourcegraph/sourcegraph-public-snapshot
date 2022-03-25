@@ -2,7 +2,8 @@ import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
 import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
-import { BaseInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
+import { Insight, InsightExecutionType, InsightType } from '../../../types'
+import { BaseInsight } from '../../../types/insight/common'
 
 /**
  * Transforms/casts gql api insight model to FE insight model. We still
