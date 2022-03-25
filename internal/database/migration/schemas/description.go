@@ -1,82 +1,82 @@
 package schemas
 
 type SchemaDescription struct {
-	Extensions []string              `json:"extensions"`
-	Enums      []EnumDescription     `json:"enums"`
-	Functions  []FunctionDescription `json:"functions"`
-	Sequences  []SequenceDescription `json:"sequences"`
-	Tables     []TableDescription    `json:"tables"`
-	Views      []ViewDescription     `json:"views"`
+	Extensions []string
+	Enums      []EnumDescription
+	Functions  []FunctionDescription
+	Sequences  []SequenceDescription
+	Tables     []TableDescription
+	Views      []ViewDescription
 }
 
 type EnumDescription struct {
-	Name   string   `json:"name"`
-	Labels []string `json:"labels"`
+	Name   string
+	Labels []string
 }
 
 type FunctionDescription struct {
-	Name       string `json:"name"`
-	Definition string `json:"definition"`
+	Name       string
+	Definition string
 }
 
 type SequenceDescription struct {
-	Name         string `json:"name"`
-	TypeName     string `json:"typeName"`
-	StartValue   int    `json:"startValue"`
-	MinimumValue int    `json:"minimumValue"`
-	MaximumValue int    `json:"maximumValue"`
-	Increment    int    `json:"increment"`
-	CycleOption  string `json:"cycleOption"`
+	Name         string
+	TypeName     string
+	StartValue   int
+	MinimumValue int
+	MaximumValue int
+	Increment    int
+	CycleOption  string
 }
 
 type TableDescription struct {
-	Name        string                  `json:"name"`
-	Comment     string                  `json:"comment"`
-	Columns     []ColumnDescription     `json:"columns"`
-	Indexes     []IndexDescription      `json:"indexes"`
-	Constraints []ConstraintDescription `json:"constraints"`
-	Triggers    []TriggerDescription    `json:"triggers"`
+	Name        string
+	Comment     string
+	Columns     []ColumnDescription
+	Indexes     []IndexDescription
+	Constraints []ConstraintDescription
+	Triggers    []TriggerDescription
 }
 
 type ColumnDescription struct {
-	Name                   string `json:"name"`
-	Index                  int    `json:"index"`
-	TypeName               string `json:"typeName"`
-	IsNullable             bool   `json:"isNullable"`
-	Default                string `json:"default"`
-	CharacterMaximumLength int    `json:"characterMaximumLength"`
-	IsIdentity             bool   `json:"isIdentity"`
-	IdentityGeneration     string `json:"identityGeneration"`
-	IsGenerated            string `json:"isGenerated"`
-	GenerationExpression   string `json:"generationExpression"`
-	Comment                string `json:"comment"`
+	Name                   string
+	Index                  int
+	TypeName               string
+	IsNullable             bool
+	Default                string
+	CharacterMaximumLength int
+	IsIdentity             bool
+	IdentityGeneration     string
+	IsGenerated            string
+	GenerationExpression   string
+	Comment                string
 }
 
 type IndexDescription struct {
-	Name                 string `json:"name"`
-	IsPrimaryKey         bool   `json:"isPrimaryKey"`
-	IsUnique             bool   `json:"isUnique"`
-	IsExclusion          bool   `json:"isExclusion"`
-	IsDeferrable         bool   `json:"isDeferrable"`
-	IndexDefinition      string `json:"indexDefinition"`
-	ConstraintType       string `json:"constraintType"`
-	ConstraintDefinition string `json:"constraintDefinition"`
+	Name                 string
+	IsPrimaryKey         bool
+	IsUnique             bool
+	IsExclusion          bool
+	IsDeferrable         bool
+	IndexDefinition      string
+	ConstraintType       string
+	ConstraintDefinition string
 }
 
 type ConstraintDescription struct {
-	Name                 string `json:"name"`
-	ConstraintType       string `json:"constraintType"`
-	RefTableName         string `json:"refTableName"`
-	IsDeferrable         bool   `json:"isDeferrable"`
-	ConstraintDefinition string `json:"constraintDefinition"`
+	Name                 string
+	ConstraintType       string
+	RefTableName         string
+	IsDeferrable         bool
+	ConstraintDefinition string
 }
 
 type TriggerDescription struct {
-	Name       string `json:"name"`
-	Definition string `json:"definition"`
+	Name       string
+	Definition string
 }
 
 type ViewDescription struct {
-	Name       string `json:"name"`
-	Definition string `json:"definition"`
+	Name       string
+	Definition string
 }
