@@ -23,9 +23,9 @@ deployment-notifier -environment $MY_ENV -slack.token=$SLACK_TOKEN -slack.webhoo
 
 Deployment notifier works as following:
 
-1. Inspect the diff of current commit (supposed to be a merge commit)
-2. Compute the deployed applications and take note of the old commit and new commit for each of them.
-3. For each set of old and new commits, find all PRs that happened after the old commit, up to the new commit.
+1. Inspect the of diff the deployment manifests' current commit (supposed to be a merge commit, e.g. run on a release or deploy branch)
+2. Compute the deployed applications and take note of the old commit new and Sourcegraph commit for each of them.
+3. For each set of old and new commits, find all PRs that happened after the old Sourcegraph commit, up to the new Sourcegraph commit.
 4. Post a comment in each of those PRs with the list of applications computed in 2.
 5. Post a Slack message pinging all pull request authors.
 
