@@ -371,8 +371,8 @@ type GitTreeEntryCodeIntelInfoArgs struct {
 }
 
 type GitTreeCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) ([]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) ([]GitTreePreciseCoverage, error)
+	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
+	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
 }
 
 type GitTreeSearchBasedCoverage interface {
