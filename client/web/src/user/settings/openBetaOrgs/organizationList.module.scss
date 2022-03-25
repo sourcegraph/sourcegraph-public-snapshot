@@ -8,22 +8,23 @@
         padding: 0;
         margin: 0;
         li {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
             &:first-child {
-                padding: 0.5rem 1.5rem;
                 border-top: unset;
-                font-weight: 500;
-                color: var(--dark-text);
-                font-size: 0.75rem;
             }
             list-style: none;
-            padding: 0.8rem 1.5rem;
+            padding: 1rem !important;
             border-top: 1px solid var(--border-color-2);
+            height: 4.313rem !important;
         }
     }
 }
 
 .org-details {
     gap: 1rem;
+    flex: 1;
 }
 
 .org-link {
@@ -60,13 +61,20 @@
 }
 
 .user-role {
-    flex: 0.1;
     font-size: 0.75rem;
 }
 
 .org-settings {
     background-color: var(--body-bg);
+    padding: 0.4rem 0.5rem !important;
+    width: 4rem !important;
+    height: 1.75rem !important;
     &:hover {
         background-color: var(--color-bg-2) !important;
     }
+}
+
+.no-org-container {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
 }

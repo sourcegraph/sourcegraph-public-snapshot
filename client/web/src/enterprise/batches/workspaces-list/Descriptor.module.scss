@@ -1,0 +1,18 @@
+.status {
+    width: 1.5rem;
+    flex-shrink: 0;
+    padding-right: 0.5rem;
+}
+
+.name {
+    line-height: var(--icon-inline-md-size);
+    overflow-wrap: anywhere;
+    margin: 0;
+}
+
+.path {
+    display: block;
+    overflow-wrap: anywhere;
+    color: var(--text-muted);
+    padding-top: 0.25rem;
+}

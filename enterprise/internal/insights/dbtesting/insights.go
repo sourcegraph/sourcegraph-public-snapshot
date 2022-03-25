@@ -73,7 +73,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	// Some tests that exercise concurrency need lots of connections or they block forever.
 	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
-	db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(20)
 
 	// Perform DB migrations.
 	cleanup = func() {

@@ -789,7 +789,6 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	_ = s.Handler()
 
 	// we send a request to the dest server, asking it to clone the repo from the source server
-	rr := httptest.NewRecorder()
 	updateReq := protocol.RepoUpdateRequest{
 		Repo:           repoName,
 		CloneFromShard: srv.URL,
@@ -799,12 +798,27 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// This will perform an initial clone
-	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	runAndCheck := func(t *testing.T, req *http.Request) *protocol.RepoUpdateResponse {
+		t.Helper()
+		rr := httptest.NewRecorder()
+		s.handleRepoUpdate(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Fatalf("unexpected status code: %d", rr.Code)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("unexpected status code: %d", rr.Code)
+		}
+
+		var resp protocol.RepoUpdateResponse
+		if err = json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+			t.Fatal(err)
+		}
+
+		return &resp
+	}
+
+	// This will perform an initial clone
+	resp := runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	if resp.Error != "" {
+		t.Fatalf("unexpected error: %s", resp.Error)
 	}
 
 	size := dirSize(s.dir(repoName).Path("."))
@@ -824,6 +838,17 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	// We don't expect an error
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
+	}
+
+	// let's run the same request again.
+	// If the repo is already cloned, handleRepoUpdate will trigger an update instead of a clone.
+	// Because this test doesn't mock that code path, the method will return an error.
+	resp = runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	// we ignore the error, since this should trigger a fetch and fail because the URI is fake
+
+	// the repo should still be cloned though
+	if !resp.Cloned {
+		t.Fatal("expected cloned to be true")
 	}
 }
 
