@@ -1327,9 +1327,6 @@ func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string
 // getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
 // Otherwise, if repo is not pinned -- false and empty string are returned
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
-	if pinned, found := pinnedServers[repo]; found {
-		return true, pinned
-	} else {
-		return false, ""
-	}
+	pinned, found := pinnedServers[repo]
+	return found, pinned
 }
