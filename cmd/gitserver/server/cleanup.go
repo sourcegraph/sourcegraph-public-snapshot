@@ -92,6 +92,10 @@ var (
 		Name: "src_gitserver_maintenance_status",
 		Help: "whether the maintenance run was a success (true/false) and the reason why a cleanup was needed",
 	}, []string{"success", "reason"})
+	pruneStatus = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_prune_status",
+		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
+	}, []string{"success", "skipped"})
 )
 
 const reposStatsName = "repos-stats.json"
@@ -107,6 +111,7 @@ const reposStatsName = "repos-stats.json"
 // 7. Re-clone repos after a while. (simulate git gc)
 // 8. Remove repos based on disk pressure.
 // 9. Perform sg-maintenance
+// 10.Git prune
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -269,6 +274,10 @@ func (s *Server) cleanupRepos() {
 		return false, sgMaintenance(dir)
 	}
 
+	performGitPrune := func(dir GitDir) (done bool, err error) {
+		return false, pruneIfNeeded(dir)
+	}
+
 	type cleanupFn struct {
 		Name string
 		Do   func(GitDir) (bool, error)
@@ -302,6 +311,7 @@ func (s *Server) cleanupRepos() {
 		// reducing storage requirements for the repository. Note: "garbage collect" and
 		// "sg maintenance" must not be enabled at the same time.
 		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
+		cleanups = append(cleanups, cleanupFn{"git prune", performGitPrune})
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -815,6 +825,35 @@ func sgMaintenance(dir GitDir) error {
 	return nil
 }
 
+func needsPruning(dir GitDir) (bool, error) {
+	tooMany, err := tooManyLooseObjects(dir, looseObjectsLimit, time.Now().AddDate(0, 0, -14))
+	if err != nil {
+		return false, err
+	}
+	return tooMany, nil
+}
+
+func pruneIfNeeded(dir GitDir) error {
+	needed, err := needsPruning(dir)
+	defer func() {
+		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(needed == false))
+	}()
+	if err != nil {
+		return err
+	}
+	if !needed {
+		return nil
+	}
+
+	cmd := exec.Command("git", "-c", "prune", "--expire", "2.weeks-ago")
+	dir.Set(cmd)
+	err = cmd.Run()
+	if err != nil {
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-prune")
+	}
+	return nil
+}
+
 func needsMaintenance(dir GitDir) (bool, string, error) {
 	// Bitmaps store reachability information about the set of objects in a
 	// packfile which speeds up clone and fetch operations.
@@ -844,7 +883,7 @@ func needsMaintenance(dir GitDir) (bool, string, error) {
 		return true, "packfiles", nil
 	}
 
-	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit)
+	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit, time.Now())
 	if err != nil {
 		return false, "", err
 	}
@@ -860,7 +899,7 @@ var reHexadecimal = regexp.MustCompile("^[0-9a-f]+$")
 // loose objects by counting the objects in a sentinel folder and extrapolating
 // based on the assumption that loose objects are randomly distributed in the
 // 256 possible folders.
-func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
+func tooManyLooseObjects(dir GitDir, limit int, cutoffDate time.Time) (bool, error) {
 	// We use the same folder git uses to estimate the number of loose objects.
 	objs, err := os.ReadDir(filepath.Join(dir.Path(), "objects", "17"))
 	if err != nil {
@@ -877,6 +916,13 @@ func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
 		// change over time, checking the length seems too brittle. Instead, we just
 		// count all files with hexadecimal names.
 		if obj.IsDir() {
+			continue
+		}
+		fi, err := obj.Info()
+		if err != nil {
+			continue
+		}
+		if fi.ModTime().After(cutoffDate) {
 			continue
 		}
 		if matches := reHexadecimal.MatchString(obj.Name()); !matches {

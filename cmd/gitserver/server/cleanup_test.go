@@ -917,7 +917,7 @@ func TestTooManyLooseObjects(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			tooManyLO, err := tooManyLooseObjects(gitDir, limit)
+			tooManyLO, err := tooManyLooseObjects(gitDir, limit, time.Now())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -935,7 +935,7 @@ func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
 	}
 	gitDir := GitDir(filepath.Join(dir, ".git"))
 
-	_, err := tooManyLooseObjects(gitDir, 1)
+	_, err := tooManyLooseObjects(gitDir, 1, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1115,5 +1115,21 @@ git commit-graph write --reachable --changed-paths
 	}
 	if needed {
 		t.Fatal("this repo doesn't need maintenance")
+	}
+}
+
+func TestNeedsPruning(t *testing.T) {
+	dir := t.TempDir()
+	if err := prepareEmptyGitRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	gitDir := GitDir(filepath.Join(dir, ".git"))
+
+	needed, err := needsPruning(gitDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if needed {
+		t.Fatal("empty repos don't need pruning")
 	}
 }

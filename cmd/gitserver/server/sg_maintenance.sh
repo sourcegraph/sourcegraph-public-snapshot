@@ -54,9 +54,6 @@ git reflog expire --all
 # have no effect.
 git repack -d -l -A --write-bitmap-index --window-memory 100m --unpack-unreachable=2.weeks.ago
 
-# Usually run by git gc. Prune all unreachable objects form the object database.
-git prune --expire 2.weeks.ago
-
 # With the --changed-paths option, compute and write information about the
 # paths changed between a commit and its first parent. This operation can take
 # a while on large repositories. It provides significant performance gains for
