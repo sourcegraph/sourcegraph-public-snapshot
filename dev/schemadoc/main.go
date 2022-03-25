@@ -59,12 +59,12 @@ func main() {
 }
 
 func mainErr() error {
-	// Run pg12 locally if it exists
-	if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
-		return mainLocal()
-	}
+	// // Run pg12 locally if it exists
+	// if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
+	return mainLocal()
+	// }
 
-	return mainContainer()
+	// return mainContainer()
 }
 
 func mainLocal() error {
