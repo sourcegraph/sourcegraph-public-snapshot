@@ -45,7 +45,7 @@ func NewCodeIntelTreeInfoResolver(
 	}
 }
 
-func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) ([]gql.GitTreeSearchBasedCoverage, error) {
+func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]gql.GitTreeSearchBasedCoverage, error) {
 	langMapping := make(map[string][]string)
 
 	for _, file := range r.files {
@@ -67,10 +67,10 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) ([]g
 		})
 	}
 
-	return resolvers, nil
+	return &resolvers, nil
 }
 
-func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.GitTreePreciseCoverage, error) {
+func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]gql.GitTreePreciseCoverage, error) {
 	configurations, ok, err := r.resolver.InferedIndexConfiguration(ctx, int(r.repo.ID), r.commit)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) ([]gql.G
 		})
 	}
 
-	return resolvers, nil
+	return &resolvers, nil
 }
 
 type codeIntelTreePreciseCoverageResolver struct {
