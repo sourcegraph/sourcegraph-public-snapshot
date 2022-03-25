@@ -1008,6 +1008,7 @@ Referenced by:
  source_hostname   | text                     |           | not null | 
  dest_hostname     | text                     |           | not null | 
  delete_source     | boolean                  |           | not null | false
+ queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "gitserver_localclone_jobs_pkey" PRIMARY KEY, btree (id)
 
@@ -2621,6 +2622,54 @@ Foreign-key constraints:
     e.next_sync_at
    FROM (external_services e
      JOIN external_service_sync_jobs j ON ((e.id = j.external_service_id)));
+```
+
+# View "public.gitserver_localclone_jobs_with_repo_name"
+```
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ id                | integer                  |           |          | 
+ state             | text                     |           |          | 
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           |          | 
+ num_failures      | integer                  |           |          | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           |          | 
+ repo_id           | integer                  |           |          | 
+ source_hostname   | text                     |           |          | 
+ dest_hostname     | text                     |           |          | 
+ delete_source     | boolean                  |           |          | 
+ queued_at         | timestamp with time zone |           |          | 
+ repo_name         | citext                   |           |          | 
+
+```
+
+## View query:
+
+```sql
+ SELECT glj.id,
+    glj.state,
+    glj.failure_message,
+    glj.started_at,
+    glj.finished_at,
+    glj.process_after,
+    glj.num_resets,
+    glj.num_failures,
+    glj.last_heartbeat_at,
+    glj.execution_logs,
+    glj.worker_hostname,
+    glj.repo_id,
+    glj.source_hostname,
+    glj.dest_hostname,
+    glj.delete_source,
+    glj.queued_at,
+    r.name AS repo_name
+   FROM (gitserver_localclone_jobs glj
+     JOIN repo r ON ((r.id = glj.repo_id)));
 ```
 
 # View "public.lsif_dumps"

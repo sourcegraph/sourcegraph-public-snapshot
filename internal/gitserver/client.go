@@ -177,6 +177,9 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
+	// RemoveFrom removes the repository clone from the given gitserver.
+	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
+
 	// RendezvousAddrForRepo returns the gitserver address to use for the given
 	// repo name using the Rendezvous hashing scheme.
 	RendezvousAddrForRepo(api.RepoName) string
@@ -313,10 +316,22 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish string   // the tree or commit to produce an archive for
-	Format  string   // format of the resulting archive (usually "tar" or "zip")
-	Paths   []string // if nonempty, only include these paths
+	Treeish   string     // the tree or commit to produce an archive for
+	Format    string     // format of the resulting archive (usually "tar" or "zip")
+	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
 }
+
+// Pathspec is a git term for a pattern that matches paths using glob-like syntax.
+// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+type Pathspec string
+
+// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
+// characters.
+func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
+
+// PathspecSuffix constructs a pathspec that matches paths ending with the given suffix (useful for
+// matching paths by basename).
+func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
 // Cmd.StdoutReader with one that knows how to report a repository-not-found
@@ -352,8 +367,8 @@ func (c *ClientImplementor) ArchiveURL(ctx context.Context, repo api.RepoName, o
 		"format":  {opt.Format},
 	}
 
-	for _, path := range opt.Paths {
-		q.Add("path", path)
+	for _, pathspec := range opt.Pathspecs {
+		q.Add("path", string(pathspec))
 	}
 
 	addrForRepo, err := c.AddrForRepo(ctx, repo)
@@ -803,7 +818,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: from,
+		CloneFromShard: "http://" + from,
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -1094,14 +1109,29 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 }
 
 func (c *ClientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
-	req := &protocol.RepoDeleteRequest{
-		Repo: repo,
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return err
 	}
-	resp, err := c.httpPost(ctx, repo, "delete", req)
+
+	return c.RemoveFrom(ctx, repo, addrForRepo)
+}
+
+func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
+	b, err := json.Marshal(&protocol.RepoDeleteRequest{
+		Repo: repo,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + from + "/delete"
+	resp, err := c.do(ctx, repo, "POST", uri, b)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
@@ -1297,9 +1327,6 @@ func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string
 // getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
 // Otherwise, if repo is not pinned -- false and empty string are returned
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
-	if pinned, found := pinnedServers[repo]; found {
-		return true, pinned
-	} else {
-		return false, ""
-	}
+	pinned, found := pinnedServers[repo]
+	return found, pinned
 }
