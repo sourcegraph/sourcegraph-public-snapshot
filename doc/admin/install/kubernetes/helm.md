@@ -60,7 +60,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 #### Prerequisites
 
-You need to have a __public__ VPC-native GKE cluster (>=1.19) with the following addons enabled:
+You need to have a GKE cluster (>=1.19) with the following addons enabled:
 
 - [x] HTTP Load Balancing
 - [x] Compute Engine persistent disk CSI Driver
@@ -68,6 +68,8 @@ You need to have a __public__ VPC-native GKE cluster (>=1.19) with the following
 You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
+
+> [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress)
 
 Create an override file with the following value. We configure Ingress to use [Container-native load balancing] to expose Sourcegraph publically and Storage Class to use [Compute Engine persistent disk].
 
@@ -126,7 +128,7 @@ It will take around 10 mintues for the load balancer to be fully ready, you may 
 kubectl describe ingress sourcegraph-frontend
 ```
 
-Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you can learn more from about how to use [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE.
+Upon obtaining the allocated IP address of the load balancer, you should create an A record for the `sourcegraph.company.com` domain. Finally, it is recommended to enable TLS and you may consider using [Google-managed certificate](https://cloud.google.com/kubernetes-engine/docs/how-to/managed-certs) in GKE.
 
 Upon creating the Google-managed certificate, you may add the following annotations to Ingress.
 
@@ -324,7 +326,9 @@ kubectl describe ingress sourcegraph-frontend
 
 You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
 
-It is recommended to enable TLS and configure certificate properly on your Ingress. You are encouraged to utilize managed certificate solution provided by Cloud providers. Alternatively, you may consider configuring [cert-manager with Let's Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster and add the following override to Ingress.
+It is recommended to enable TLS and configure certificate properly on your Ingress. You may utilize managed certificate solution provided by Cloud providers. 
+
+Alternatively, you may consider configuring [cert-manager with Let's Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster and add the following override to Ingress.
 
 ```yaml
 frontend:
@@ -341,7 +345,7 @@ frontend:
     host: sourcegraph.company.com
 ```
 
-As a last resort, you may manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
+You also have the option to manually configure TLS certificate via [TLS Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets).
 
 `sourcegraph-frontend-tls.Secret.yaml`
 ```yaml
