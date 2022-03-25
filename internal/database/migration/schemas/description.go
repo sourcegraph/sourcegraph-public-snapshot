@@ -1,25 +1,25 @@
 package schemas
 
 type SchemaDescription struct {
-	Extensions []string   `json:"extensions"`
-	Enums      []Enum     `json:"enums"`
-	Functions  []Function `json:"functions"`
-	Sequences  []Sequence `json:"sequences"`
-	Tables     []Table    `json:"tables"`
-	Views      []View     `json:"views"`
+	Extensions []string              `json:"extensions"`
+	Enums      []EnumDescription     `json:"enums"`
+	Functions  []FunctionDescription `json:"functions"`
+	Sequences  []SequenceDescription `json:"sequences"`
+	Tables     []TableDescription    `json:"tables"`
+	Views      []ViewDescription     `json:"views"`
 }
 
-type Enum struct {
+type EnumDescription struct {
 	Name   string   `json:"name"`
 	Labels []string `json:"labels"`
 }
 
-type Function struct {
+type FunctionDescription struct {
 	Name       string `json:"name"`
 	Definition string `json:"definition"`
 }
 
-type Sequence struct {
+type SequenceDescription struct {
 	Name         string `json:"name"`
 	TypeName     string `json:"typeName"`
 	StartValue   int    `json:"startValue"`
@@ -29,16 +29,16 @@ type Sequence struct {
 	CycleOption  string `json:"cycleOption"`
 }
 
-type Table struct {
-	Name        string       `json:"name"`
-	Comment     string       `json:"comment"`
-	Columns     []Column     `json:"columns"`
-	Indexes     []Index      `json:"indexes"`
-	Constraints []Constraint `json:"constraints"`
-	Triggers    []Trigger    `json:"triggers"`
+type TableDescription struct {
+	Name        string                  `json:"name"`
+	Comment     string                  `json:"comment"`
+	Columns     []ColumnDescription     `json:"columns"`
+	Indexes     []IndexDescription      `json:"indexes"`
+	Constraints []ConstraintDescription `json:"constraints"`
+	Triggers    []TriggerDescription    `json:"triggers"`
 }
 
-type Column struct {
+type ColumnDescription struct {
 	Name                   string `json:"name"`
 	Index                  int    `json:"index"`
 	TypeName               string `json:"typeName"`
@@ -52,7 +52,7 @@ type Column struct {
 	Comment                string `json:"comment"`
 }
 
-type Index struct {
+type IndexDescription struct {
 	Name                 string `json:"name"`
 	IsPrimaryKey         bool   `json:"isPrimaryKey"`
 	IsUnique             bool   `json:"isUnique"`
@@ -63,7 +63,7 @@ type Index struct {
 	ConstraintDefinition string `json:"constraintDefinition"`
 }
 
-type Constraint struct {
+type ConstraintDescription struct {
 	Name                 string `json:"name"`
 	ConstraintType       string `json:"constraintType"`
 	RefTableName         string `json:"refTableName"`
@@ -71,12 +71,12 @@ type Constraint struct {
 	ConstraintDefinition string `json:"constraintDefinition"`
 }
 
-type Trigger struct {
+type TriggerDescription struct {
 	Name       string `json:"name"`
 	Definition string `json:"definition"`
 }
 
-type View struct {
+type ViewDescription struct {
 	Name       string `json:"name"`
 	Definition string `json:"definition"`
 }

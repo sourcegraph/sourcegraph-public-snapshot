@@ -52,7 +52,7 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 				return
 			}
 
-			description.Enums = append(description.Enums, schemas.Enum{Name: enum.TypeName, Labels: []string{enum.Label}})
+			description.Enums = append(description.Enums, schemas.EnumDescription{Name: enum.TypeName, Labels: []string{enum.Label}})
 		})
 	}
 
@@ -62,7 +62,7 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 	}
 	for _, function := range functions {
 		updateDescription(function.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Functions = append(description.Functions, schemas.Function{
+			description.Functions = append(description.Functions, schemas.FunctionDescription{
 				Name:       function.FunctionName,
 				Definition: function.Definition,
 			})
@@ -75,7 +75,7 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 	}
 	for _, sequence := range sequences {
 		updateDescription(sequence.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Sequences = append(description.Sequences, schemas.Sequence{
+			description.Sequences = append(description.Sequences, schemas.SequenceDescription{
 				Name:         sequence.SequenceName,
 				TypeName:     sequence.DataType,
 				StartValue:   sequence.StartValue,
@@ -87,17 +87,17 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 		})
 	}
 
-	tableMap := map[string]map[string]schemas.Table{}
-	updateTableMap := func(schemaName, tableName string, f func(table *schemas.Table)) {
+	tableMap := map[string]map[string]schemas.TableDescription{}
+	updateTableMap := func(schemaName, tableName string, f func(table *schemas.TableDescription)) {
 		if _, ok := tableMap[schemaName]; !ok {
-			tableMap[schemaName] = map[string]schemas.Table{}
+			tableMap[schemaName] = map[string]schemas.TableDescription{}
 		}
 
 		if _, ok := tableMap[schemaName][tableName]; !ok {
-			tableMap[schemaName][tableName] = schemas.Table{
-				Columns:  []schemas.Column{},
-				Indexes:  []schemas.Index{},
-				Triggers: []schemas.Trigger{},
+			tableMap[schemaName][tableName] = schemas.TableDescription{
+				Columns:  []schemas.ColumnDescription{},
+				Indexes:  []schemas.IndexDescription{},
+				Triggers: []schemas.TriggerDescription{},
 			}
 		}
 
@@ -111,7 +111,7 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 		return nil, errors.Wrap(err, "store.listTables")
 	}
 	for _, table := range tables {
-		updateTableMap(table.SchemaName, table.TableName, func(t *schemas.Table) {
+		updateTableMap(table.SchemaName, table.TableName, func(t *schemas.TableDescription) {
 			t.Name = table.TableName
 			t.Comment = table.Comment
 		})
@@ -122,8 +122,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 		return nil, errors.Wrap(err, "store.listColumns")
 	}
 	for _, column := range columns {
-		updateTableMap(column.SchemaName, column.TableName, func(table *schemas.Table) {
-			table.Columns = append(table.Columns, schemas.Column{
+		updateTableMap(column.SchemaName, column.TableName, func(table *schemas.TableDescription) {
+			table.Columns = append(table.Columns, schemas.ColumnDescription{
 				Name:                   column.ColumnName,
 				Index:                  column.Index,
 				TypeName:               column.DataType,
@@ -144,8 +144,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 		return nil, errors.Wrap(err, "store.listIndexes")
 	}
 	for _, index := range indexes {
-		updateTableMap(index.SchemaName, index.TableName, func(table *schemas.Table) {
-			table.Indexes = append(table.Indexes, schemas.Index{
+		updateTableMap(index.SchemaName, index.TableName, func(table *schemas.TableDescription) {
+			table.Indexes = append(table.Indexes, schemas.IndexDescription{
 				Name:                 index.IndexName,
 				IsPrimaryKey:         index.IsPrimaryKey,
 				IsUnique:             index.IsUnique,
@@ -163,8 +163,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 		return nil, errors.Wrap(err, "store.listConstraints")
 	}
 	for _, constraint := range constraints {
-		updateTableMap(constraint.SchemaName, constraint.TableName, func(table *schemas.Table) {
-			table.Constraints = append(table.Constraints, schemas.Constraint{
+		updateTableMap(constraint.SchemaName, constraint.TableName, func(table *schemas.TableDescription) {
+			table.Constraints = append(table.Constraints, schemas.ConstraintDescription{
 				Name:                 constraint.ConstraintName,
 				ConstraintType:       constraint.ConstraintType,
 				IsDeferrable:         constraint.IsDeferrable,
@@ -179,8 +179,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 		return nil, errors.Wrap(err, "store.listTriggers")
 	}
 	for _, trigger := range triggers {
-		updateTableMap(trigger.SchemaName, trigger.TableName, func(table *schemas.Table) {
-			table.Triggers = append(table.Triggers, schemas.Trigger{
+		updateTableMap(trigger.SchemaName, trigger.TableName, func(table *schemas.TableDescription) {
+			table.Triggers = append(table.Triggers, schemas.TriggerDescription{
 				Name:       trigger.TriggerName,
 				Definition: trigger.TriggerDefinition,
 			})
@@ -207,7 +207,7 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 	}
 	for _, view := range views {
 		updateDescription(view.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Views = append(description.Views, schemas.View{
+			description.Views = append(description.Views, schemas.ViewDescription{
 				Name:       view.ViewName,
 				Definition: view.Definition,
 			})
