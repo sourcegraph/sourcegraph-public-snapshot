@@ -8,7 +8,7 @@ set -e
 # - BUILDKITE_BRANCH (optional)
 # - BUILDKITE_PULL_REQUEST_REPO (optional)
 # - BUILDKITE_PULL_REQUEST (optional)
-# - GITHUB_TOKEN (optional)
+# - RENDER_PREVIEW_GITHUB_TOKEN (optional)
 
 print_usage() {
   echo "Usage: [ -b BRANCH_NAME ] [ -r REPO_URL ] [ -d ]" 1>&2
@@ -61,7 +61,7 @@ fi
 render_api_key="${RENDER_COM_API_KEY}"
 render_owner_id="${RENDER_COM_OWNER_ID}"
 pr_number="${BUILDKITE_PULL_REQUEST}"
-github_api_key="${GITHUB_TOKEN}"
+github_api_key="${RENDER_PREVIEW_GITHUB_TOKEN}"
 
 if [[ -z "${render_api_key}" || -z "${render_owner_id}" ]]; then
   echo "RENDER_COM_API_KEY or RENDER_COM_OWNER_ID is not set"
@@ -156,8 +156,6 @@ if [ -z "${renderServiceId}" ]; then
         \"branch\": \"${branch_name}\"
     }
     " | jq -r '.service.serviceDetails.url')
-
-  echo "Preview url: ${pr_preview_url}"
 else
   echo "Found preview id: ${renderServiceId}, getting preview url..."
 
@@ -166,15 +164,15 @@ else
     --header 'Accept: application/json' \
     --header 'Content-Type: application/json' \
     --header "Authorization: Bearer ${render_api_key}" | jq -r '.serviceDetails.url')
-
-  echo "Preview url: ${pr_preview_url}"
 fi
 
+echo "Preview url: ${pr_preview_url}"
+
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-  echo "Updating PR ${owner_and_repo} #${pr_number} description"
+  echo "Updating PR #${pr_number} in ${owner_and_repo} description"
+
   # GitHub pull request number and GitHub api token are set
   # Appending `App Preview` section into PR description if it hasn't existed yet
-
   github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
 
   pr_description=$(curl -sSf --request GET \

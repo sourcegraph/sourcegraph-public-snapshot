@@ -14,19 +14,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Create PR preview app
-        if: github.event.action != 'closed'
-        run: ./dev/ci/render-pr-preview.sh
-        env:
-          RENDER_COM_API_KEY: ${{ secrets.RENDER_COM_API_KEY }}
-          RENDER_COM_OWNER_ID: ${{ secrets.RENDER_COM_OWNER_ID }}
-
-          BUILDKITE_PULL_REQUEST_REPO: "https://github.com/${{ github.repository }}"
-          BUILDKITE_PULL_REQUEST: ${{ github.event.pull_request.number }}
-          BUILDKITE_BRANCH: ${{ github.head_ref }}
-
-          GITHUB_TOKEN: ${{ github.token }}
-
       - name: Delete PR preview app
         if: github.event.action == 'closed'
         run: ./dev/ci/render-pr-preview.sh -d
