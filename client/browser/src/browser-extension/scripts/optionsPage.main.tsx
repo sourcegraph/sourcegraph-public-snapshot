@@ -174,15 +174,9 @@ const Options: React.FunctionComponent = () => {
     const previouslyUsedUrls = useObservable(observingPreviouslyUsedUrls)
     const isActivated = useObservable(observingIsActivated)
     const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues)
-    const currentTabStatus = useObservable(
-        useMemo(
-            () =>
-                from(fetchCurrentTabStatus()).pipe(
-                    map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
-                ),
-            []
-        )
-    )
+    const [currentTabStatus, setCurrentTabStatus] = useState<
+        { status: TabStatus; handler: React.MouseEventHandler } | undefined
+    >()
 
     const currentUser = useObservable(
         useMemo(() => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)), [
@@ -190,6 +184,12 @@ const Options: React.FunctionComponent = () => {
             sourcegraphUrl,
         ])
     )
+
+    useEffect(() => {
+        fetchCurrentTabStatus().then(tabStatus => {
+            setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
+        }, noop)
+    }, [])
 
     const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
