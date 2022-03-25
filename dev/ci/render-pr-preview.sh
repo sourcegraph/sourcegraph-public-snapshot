@@ -98,6 +98,8 @@ fi
 
 # Create PR app if it hasn't existed yet and get the app url
 if [ -z "${renderServiceId}" ]; then
+  echo "Creating new pr preview app..."
+
   # New app is created with following envs
   # - ENTERPRISE=1
   # - NODE_ENV=production
@@ -154,15 +156,22 @@ if [ -z "${renderServiceId}" ]; then
         \"branch\": \"${branch_name}\"
     }
     " | jq -r '.service.serviceDetails.url')
+
+  echo "Preview url: ${pr_preview_url}"
 else
+  echo "Found preview id: ${renderServiceId}, getting preview url..."
+
   pr_preview_url=$(curl -sSf --request GET \
     --url "https://api.render.com/v1/services/${renderServiceId}" \
     --header 'Accept: application/json' \
     --header 'Content-Type: application/json' \
     --header "Authorization: Bearer ${render_api_key}" | jq -r '.serviceDetails.url')
+
+  echo "Preview url: ${pr_preview_url}"
 fi
 
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
+  echo "Updating PR #${pr_number} description"
   # GitHub pull request number and GitHub api token are set
   # Appending `App Preview` section into PR description if it hasn't existed yet
 
@@ -185,5 +194,3 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
       --data "{ \"body\": ${pr_description} }"
   fi
 fi
-
-echo "${pr_preview_url}"
