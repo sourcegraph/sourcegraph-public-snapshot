@@ -57,9 +57,9 @@ var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "th
 
 // Our original Git gc job used 1 as limit, while git's default is 6700. We
 // don't want to be too aggressive to avoid unnecessary IO, hence we choose a
-// value somewhere in the middle. Gitlab's gitaly uses a limit of 1024, which
-// corresponds to an average of 4 loose objects per folder. We can tune this
-// parameter once we gain more experience.
+// value somewhere in the middle. https://gitlab.com/gitlab-org/gitaly uses a
+// limit of 1024, which corresponds to an average of 4 loose objects per folder.
+// We can tune this parameter once we gain more experience.
 var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack"))
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
@@ -833,6 +833,8 @@ func needsPruning(dir GitDir) (bool, error) {
 	return tooMany, nil
 }
 
+// We run git-prune only if there are enough loose objects that are older than 2
+// weeks. This approach is adapted from https://gitlab.com/gitlab-org/gitaly.
 func pruneIfNeeded(dir GitDir) error {
 	needed, err := needsPruning(dir)
 	defer func() {
