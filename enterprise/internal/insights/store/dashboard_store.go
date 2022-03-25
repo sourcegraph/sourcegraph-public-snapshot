@@ -41,6 +41,14 @@ func (s *DBDashboardStore) Transact(ctx context.Context) (*DBDashboardStore, err
 	return &DBDashboardStore{Store: txBase, Now: s.Now}, err
 }
 
+type DashboardType string
+
+const (
+	Standard DashboardType = "standard"
+	// This is a singleton dashboard that facilitates users having global access to their insights in Limited Access Mode.
+	LimitedAccessMode DashboardType = "limited_access_mode"
+)
+
 type DashboardQueryArgs struct {
 	UserID  []int
 	OrgID   []int
@@ -49,8 +57,8 @@ type DashboardQueryArgs struct {
 	Limit   int
 	After   int
 
-	// This field will disable user level authorization checks on the insight views. This should only be used
-	// when fetching insights from a container that also has authorization checks, such as a dashboard.
+	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
+	// and not to return dashboards to users.
 	WithoutAuthorization bool
 }
 
@@ -183,6 +191,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashb
 	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
 		args.Dashboard.Title,
 		args.Dashboard.Save,
+		Standard,
 	))
 	if row.Err() != nil {
 		return nil, row.Err()
@@ -337,12 +346,13 @@ func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(getLimitedAccessModeDashboardSql)))
+	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("SELECT id FROM dashboard WHERE type = %s", LimitedAccessMode)))
 	if err != nil {
 		return 0, err
 	}
 	if id == 0 {
-		id, _, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insertLimitedAccessModeDashboardSql)))
+		query := sqlf.Sprintf(insertDashboardSql, "Limited Access Mode Dashboard", true, LimitedAccessMode)
+		id, _, err = basestore.ScanFirstInt(tx.Query(ctx, query))
 		if err != nil {
 			return 0, err
 		}
@@ -355,19 +365,9 @@ func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context)
 	return id, nil
 }
 
-const getLimitedAccessModeDashboardSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:EnsureLimitedAccessModeDashboard
-SELECT id FROM dashboard WHERE type = 'limited access mode dashboard';
-`
-
-const insertLimitedAccessModeDashboardSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:EnsureLimitedAccessModeDashboard
-INSERT INTO dashboard (title, type) VALUES ('Limited Access Mode Dashboard', 'limited access mode dashboard') RETURNING id;
-`
-
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
-INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
+INSERT INTO dashboard (title, save, type) VALUES (%s, %s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
