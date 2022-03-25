@@ -190,7 +190,7 @@ type ExampleJob struct {
 	ID              int
 	State           string
 	FailureMessage  *string
-  QueuedAt        time.Time
+	QueuedAt        time.Time
 	StartedAt       *time.Time
 	FinishedAt      *time.Time
 	ProcessAfter    *time.Time
@@ -208,7 +208,7 @@ var exampleJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.id"),
 	sqlf.Sprintf("j.state"),
 	sqlf.Sprintf("j.failure_message"),
-  sqlf.Sprintf("j.queued_at"),
+	sqlf.Sprintf("j.queued_at"),
 	sqlf.Sprintf("j.started_at"),
 	sqlf.Sprintf("j.finished_at"),
 	sqlf.Sprintf("j.process_after"),
@@ -247,7 +247,7 @@ func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, e
 			&job.ID,
 			&job.State,
 			&job.FailureMessage,
-      &job.QueuedAt,
+			&job.QueuedAt,
 			&job.StartedAt,
 			&job.FinishedAt,
 			&job.ProcessAfter,
