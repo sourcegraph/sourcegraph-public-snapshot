@@ -5,7 +5,21 @@ This email is a preview. Links are removed.
 
 Your Sourcegraph code monitor, {{.Description}}, detected {{.TotalCount}} new {{.ResultPluralized}}.
 
+{{- if .IncludeResults }}
+{{- range .TruncatedResults }}
+
+- {{.ResultType}} match: {{.CommitURL}} from {{.RepoName}}@{{.CommitID}}
+{{.Content}}
+{{- end }}
+{{- end }}
+
+{{- if and .IncludeResults (gt .TruncatedCount 0) }}
+
+...and {{.TruncatedCount}} more {{.TruncatedResultPluralized}}: {{.SearchURL}}
+{{- else }}
+
 View search on Sourcegraph: {{.SearchURL}}
+{{- end }}
 
 __
 You are receiving this notification because you are a recipient on a code monitor.
