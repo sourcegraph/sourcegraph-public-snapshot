@@ -620,9 +620,7 @@ func (*ZoektRepoSubsetSearch) Name() string {
 type GlobalSearch struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
-
-	RepoOptions search.RepoOptions
-	UserID      int32
+	RepoOptions      search.RepoOptions
 }
 
 func (t *GlobalSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
