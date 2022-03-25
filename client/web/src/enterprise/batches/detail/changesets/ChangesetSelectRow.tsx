@@ -4,7 +4,7 @@ import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars, BulkOperationType } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
@@ -222,17 +222,13 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
-                {availableBulkOperations === undefined ? (
-                    <LoadingSpinner />
-                ) : (
-                    <div className="m-0 col col-md-auto">
-                        <div className="row no-gutters">
-                            <div className="col ml-0 ml-sm-2">
-                                <DropdownButton actions={actions} placeholder="Select action" />
-                            </div>
+                <div className="m-0 col col-md-auto">
+                    <div className="row no-gutters">
+                        <div className="col ml-0 ml-sm-2">
+                            <DropdownButton actions={actions} placeholder="Select action" />
                         </div>
                     </div>
-                )}
+                </div>
             </div>
         </>
     )

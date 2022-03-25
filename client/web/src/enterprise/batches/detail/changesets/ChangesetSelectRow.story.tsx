@@ -9,7 +9,7 @@ import { WebStory } from '../../../../components/WebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
-    queryAvailableBulkOperations as _queryAvailableBulkOperations
+    queryAvailableBulkOperations as _queryAvailableBulkOperations,
 } from '../backend'
 
 import { ChangesetSelectRow } from './ChangesetSelectRow'
