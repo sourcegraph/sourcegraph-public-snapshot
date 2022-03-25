@@ -111,7 +111,7 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
                     definitions: previousData.definitions,
                     references: {
                         endCursor: null,
-                        nodes: [...previousData.references.nodes, ...newReferences],
+                        nodes: newReferences,
                     },
                 })
             }
@@ -142,7 +142,7 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
                     references: previousData.references,
                     definitions: {
                         endCursor: null,
-                        nodes: [...previousData.definitions.nodes, ...newDefinitions],
+                        nodes: newDefinitions,
                     },
                 })
             }
@@ -181,18 +181,12 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
                 const lsifData = result ? getLsifData({ data: result }) : undefined
                 if (lsifData) {
                     setCodeIntelData(lsifData)
-                } else if (searchToken !== undefined) {
+                } else {
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
-                    setCodeIntelData({
-                        implementations: { endCursor: null, nodes: [] },
-                        references: { endCursor: null, nodes: [] },
-                        definitions: { endCursor: null, nodes: [] },
-                    })
+
                     fetchSearchBasedDefinitionsForToken(searchToken)
                     fetchSearchBasedReferencesForToken(searchToken)
-                } else {
-                    console.info('No LSIF data. No search token.')
                 }
             }
         },
@@ -204,7 +198,6 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
     >(LOAD_ADDITIONAL_REFERENCES_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
-            console.log('fetch additional references')
             const previousData = codeIntelData
 
             const newReferenceData = result.repository?.commit?.blob?.lsif?.references
@@ -253,7 +246,6 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
     })
 
     const fetchMoreReferences = (): void => {
-        console.log('fetchMoreReferences')
         const cursor = codeIntelData?.references.endCursor || null
 
         if (cursor === null && attemptedSearchReferences === false) {
