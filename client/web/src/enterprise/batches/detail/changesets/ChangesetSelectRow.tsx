@@ -1,16 +1,19 @@
 import React, { useMemo, useContext } from 'react'
 
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
-import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, useObservable, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
-import { queryAllChangesetIDs as _queryAllChangesetIDs } from '../backend'
+import {
+    queryAllChangesetIDs as _queryAllChangesetIDs,
+    queryAvailableBulkOperations as _queryAvailableBulkOperations
+} from '../backend'
 
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
@@ -23,8 +26,6 @@ import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
  * Describes a possible action on the changeset list.
  */
 interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
-    /* Conditionally display the action based on the given query arguments. */
-    isAvailable: (queryArguments: Omit<AllChangesetIDsVariables, 'after'>) => boolean
     /**
      * Invoked when the action is triggered. Either onDone or onCancel need to be called
      * eventually. Can return a JSX.Element to be rendered adacent to the button (i.e. a modal).
@@ -37,15 +38,14 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
     ) => void | JSX.Element
 }
 
-const AVAILABLE_ACTIONS: ChangesetListAction[] = [
-    {
+const AVAILABLE_ACTIONS: Record<string, ChangesetListAction> = {
+    'DETACH': {
         type: 'detach',
         buttonLabel: 'Detach changesets',
         dropdownTitle: 'Detach changesets',
         dropdownDescription:
             "Remove the selected changesets from this batch change. Unlike archive, this can't be undone.",
         // Only show on the archived tab.
-        isAvailable: ({ onlyArchived }) => !!onlyArchived,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <DetachChangesetsModal
                 batchChangeID={batchChangeID}
@@ -56,13 +56,11 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
             />
         ),
     },
-    {
+    'REENQUEUE': {
         type: 'retry',
         buttonLabel: 'Retry changesets',
         dropdownTitle: 'Retry changesets',
         dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
-        // Only show when filtering by state === FAILED:
-        isAvailable: ({ state }) => state === ChangesetState.FAILED,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <ReenqueueChangesetsModal
                 batchChangeID={batchChangeID}
@@ -72,13 +70,12 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
             />
         ),
     },
-    {
+    'COMMENT': {
         type: 'commentatore',
         buttonLabel: 'Create comment',
         dropdownTitle: 'Create comment',
         dropdownDescription:
             'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
-        isAvailable: () => true,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <CreateCommentModal
                 batchChangeID={batchChangeID}
@@ -88,14 +85,13 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
             />
         ),
     },
-    {
+    'MERGE': {
         type: 'merge',
         experimental: true,
         buttonLabel: 'Merge changesets',
         dropdownTitle: 'Merge changesets',
         dropdownDescription:
             'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
-        isAvailable: ({ state }) => state === ChangesetState.OPEN,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <MergeChangesetsModal
                 batchChangeID={batchChangeID}
@@ -105,13 +101,12 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
             />
         ),
     },
-    {
+    'CLOSE': {
         type: 'close',
         buttonLabel: 'Close changesets',
         dropdownTitle: 'Close changesets',
         dropdownDescription:
             'Attempt to close all selected changesets on the code hosts. The changesets will remain part of the batch change.',
-        isAvailable: ({ state }) => state === ChangesetState.OPEN || state === ChangesetState.DRAFT,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <CloseChangesetsModal
                 batchChangeID={batchChangeID}
@@ -121,12 +116,11 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
             />
         ),
     },
-    {
+    'PUBLISH': {
         type: 'publish',
         buttonLabel: 'Publish changesets',
         dropdownTitle: 'Publish changesets',
         dropdownDescription: 'Attempt to publish all selected changesets to the code hosts.',
-        isAvailable: ({ state }) => state !== ChangesetState.CLOSED,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <PublishChangesetsModal
                 batchChangeID={batchChangeID}
@@ -136,7 +130,7 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
             />
         ),
     },
-]
+}
 
 export interface ChangesetSelectRowProps {
     batchChangeID: Scalars['ID']
@@ -145,6 +139,7 @@ export interface ChangesetSelectRowProps {
 
     /** For testing only. */
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
+    queryAvailableBulkOperations?: typeof _queryAvailableBulkOperations
 }
 
 /**
@@ -156,6 +151,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     onSubmit,
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
+    queryAvailableBulkOperations = _queryAvailableBulkOperations
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
@@ -163,9 +159,31 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         useMemo(() => queryAllChangesetIDs(queryArguments), [queryArguments, queryAllChangesetIDs])
     )
 
+    /**
+     * Query the backed to figure out what bulk operations can be applied
+     * to the selected changesets
+     */
+    const availableBulkOperations = useObservable(
+        useMemo(
+            () => {
+                if (Array.isArray(allChangesetIDs) && allChangesetIDs.length > 0) {
+                    return queryAvailableBulkOperations({ batchChange: batchChangeID, changesets: allChangesetIDs })
+                }
+
+                return of([])
+            },
+            [queryAvailableBulkOperations, batchChangeID, allChangesetIDs]
+        )
+    )
+
     const actions = useMemo(
-        () =>
-            AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)).map(action => {
+        () => {
+            if (availableBulkOperations === undefined) {
+                return []
+            }
+
+            return availableBulkOperations.map(operation => {
+                const action = AVAILABLE_ACTIONS[operation]
                 const dropdownAction: Action = {
                     ...action,
                     onTrigger: (onDone, onCancel) => {
@@ -185,8 +203,9 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 }
 
                 return dropdownAction
-            }),
-        [batchChangeID, onSubmit, queryArguments, selected, allChangesetIDs]
+            })
+        },
+        [allChangesetIDs, availableBulkOperations, batchChangeID, onSubmit, selected]
     )
 
     return (
@@ -209,13 +228,15 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
-                <div className="m-0 col col-md-auto">
+                {(availableBulkOperations === undefined) ? <LoadingSpinner /> : (
+                    <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
                             <DropdownButton actions={actions} placeholder="Select action" />
                         </div>
                     </div>
                 </div>
+                )}
             </div>
         </>
     )

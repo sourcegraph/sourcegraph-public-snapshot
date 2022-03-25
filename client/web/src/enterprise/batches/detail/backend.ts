@@ -44,6 +44,9 @@ import {
     CloseChangesetsVariables,
     PublishChangesetsResult,
     PublishChangesetsVariables,
+    QueryAvailableBulkOperationsResult,
+    QueryAvailableBulkOperationsVariables,
+    BulkOperationType,
 } from '../../../graphql-operations'
 
 const changesetsStatsFragment = gql`
@@ -895,3 +898,19 @@ export const queryAllChangesetIDs = ({
         )
     )
 }
+
+export const queryAvailableBulkOperations = ({
+    batchChange,
+    changesets,
+}: {
+    batchChange: Scalars['ID']
+    changesets: Scalars['ID'][]
+}): Observable<BulkOperationType[]> =>
+    requestGraphQL<QueryAvailableBulkOperationsResult, QueryAvailableBulkOperationsVariables>(
+        gql`
+            query AvailableBulkOperations($batchChange: ID!, $changesets: [ID!]!) {
+                availableBulkOperations(batchChangeID: $batchChange, changesetIDs: $changesets)
+            }
+        `,
+        { batchChange, changesets }
+    ).pipe(map(dataOrThrowErrors), map(result => result.availableBulkOperations))
