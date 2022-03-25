@@ -1,3 +1,5 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import fs from 'fs'
 import path from 'path'
 
@@ -7,6 +9,7 @@ import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/
 import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { CreateNotebookBlockInput, NotebookFields, WebGraphQlOperations } from '../graphql-operations'
@@ -164,6 +167,8 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search Notebook', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -173,6 +178,7 @@ describe('Search Notebook', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
         testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)

@@ -1,6 +1,7 @@
-import assert from 'assert'
+/** @jest-environment setup-polly-jest/jest-environment-node */
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
@@ -56,6 +57,7 @@ async function clearAndType(driver: Driver, selector: string, value: string): Pr
 
 describe('Code insight edit insight page', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: WebIntegrationTestContext
 
     beforeAll(async () => {
@@ -70,6 +72,7 @@ describe('Code insight edit insight page', () => {
                 // Enforces a new GQL backend for the creation UI
                 codeInsightsGqlApiEnabled: true,
             },
+            pollyServer: pollyServer.polly,
         })
     })
 
@@ -198,7 +201,7 @@ describe('Code insight edit insight page', () => {
             : newlyCreateSeriesId
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(editInsightMutationVariables, {
+        expect(editInsightMutationVariables).toEqual({
             input: {
                 dataSeries: [
                     {
@@ -288,10 +291,9 @@ describe('Code insight edit insight page', () => {
         )
 
         // Check redirect URL for edit insight page
-        assert.strictEqual(
-            driver.page.url().endsWith('/insights/edit/searchInsights.insight.graphQLTypesMigration?dashboardId=all'),
-            true
-        )
+        expect(
+            driver.page.url().endsWith('/insights/edit/searchInsights.insight.graphQLTypesMigration?dashboardId=all')
+        ).toBe(true)
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="search-insight-edit-page-content"]')
@@ -304,7 +306,7 @@ describe('Code insight edit insight page', () => {
         // Gather all filled inputs within a creation UI form.
         const grabbedInsightInfo = await driver.page.evaluate(getInsightFormValues)
 
-        assert.deepStrictEqual(grabbedInsightInfo, {
+        expect(grabbedInsightInfo).toEqual({
             title: 'Migration to new GraphQL TS types',
             repositories: 'github.com/sourcegraph/sourcegraph',
             visibility: 'TestUserID',

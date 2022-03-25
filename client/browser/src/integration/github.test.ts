@@ -1,9 +1,12 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import type * as sourcegraph from 'sourcegraph'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
@@ -14,6 +17,7 @@ import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: BrowserIntegrationTestContext
 
     const mockUrls = (urls: string[]) => {
@@ -35,6 +39,7 @@ describe('GitHub', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
 
         mockUrls(['https://api.github.com/_private/browser/*', 'https://collector.github.com/*path'])
@@ -929,7 +934,7 @@ describe('GitHub', () => {
                 }
             })
 
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper type and search query from search input', async () => {
+            it.skip('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper type and search query from search input', async () => {
                 const initialQuery = 'hello'
 
                 for (const page of pages) {
@@ -980,7 +985,7 @@ describe('GitHub', () => {
                 }
             })
 
-            it('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type and language', async () => {
+            it.skip('"Search on Sourcegraph" click navigates to Sourcegraph search page with proper result type and language', async () => {
                 const searchTerm = 'hello'
 
                 for (const page of pages) {

@@ -22,11 +22,12 @@ export const createBrowserIntegrationTestContext = async ({
     driver,
     currentTest,
     directory,
+    pollyServer,
 }: IntegrationTestOptions): Promise<BrowserIntegrationTestContext> => {
     const sharedTestContext = await createSharedIntegrationTestContext<
         BrowserGraphQlOperations & SharedGraphQlOperations,
         string & keyof (BrowserGraphQlOperations & SharedGraphQlOperations)
-    >({ driver, currentTest, directory })
+    >({ driver, currentTest, directory, pollyServer })
     sharedTestContext.overrideGraphQL(commonBrowserGraphQlResults)
 
     // The Chrome extension id is unstable in CI, so find it at runtime.

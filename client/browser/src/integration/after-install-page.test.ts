@@ -1,10 +1,15 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
 describe('After install page', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest({ loadExtension: true })
         await closeInstallPageTab(driver.browser)
@@ -12,6 +17,7 @@ describe('After install page', () => {
             await driver.setExtensionSourcegraphUrl()
         }
     })
+
     afterAll(() => driver?.close())
 
     let testContext: BrowserIntegrationTestContext
@@ -19,10 +25,11 @@ describe('After install page', () => {
         testContext = await createBrowserIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
 
         // Requests to other origins that we need to ignore to prevent breaking tests.
-        testContext.server
+        pollyServer.polly.server
             .get('https://storage.googleapis.com/sourcegraph-assets/code-host-integration/*path')
             .intercept((request, response) => {
                 response.sendStatus(200)

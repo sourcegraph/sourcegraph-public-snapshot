@@ -13,13 +13,7 @@ const config = {
   roots: ['<rootDir>'],
   testTimeout: 300000,
 
-  setupFiles: [
-    require.resolve('ts-node/register/transpile-only'),
-    // Needed for reusing API functions that use fetch
-    // Neither NodeJS nor JSDOM have fetch + AbortController yet
-    require.resolve('abort-controller/polyfill'),
-    path.join(__dirname, 'client/shared/dev/fetch'),
-  ],
+  setupFiles: [require.resolve('ts-node/register/transpile-only')],
 }
 
 module.exports = config

@@ -1,6 +1,7 @@
-import assert from 'assert'
+/** @jest-environment setup-polly-jest/jest-environment-node */
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { UserSettingsAreaUserFields } from '../graphql-operations'
@@ -10,6 +11,8 @@ import { commonWebGraphQlResults } from './graphQlResults'
 
 describe('User profile page', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -19,6 +22,7 @@ describe('User profile page', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
     })
     afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
@@ -64,6 +68,6 @@ describe('User profile page', () => {
             await driver.page.click('#test-EditUserProfileForm__save')
         }, 'UpdateUser')
 
-        assert.strictEqual(requestVariables.displayName, 'Test2')
+        expect(requestVariables.displayName).toBe('Test2')
     })
 })

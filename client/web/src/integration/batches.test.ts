@@ -1,4 +1,4 @@
-import assert from 'assert'
+/** @jest-environment setup-polly-jest/jest-environment-node */
 
 import { subDays, addDays } from 'date-fns'
 
@@ -9,6 +9,7 @@ import {
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -398,6 +399,7 @@ function mockCommonGraphQLResponses(
 
 describe('Batches', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -407,6 +409,7 @@ describe('Batches', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
     })
     afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
@@ -470,16 +473,15 @@ describe('Batches', () => {
             await driver.page.waitForSelector('.test-batches-list-page')
             await driver.page.waitForSelector('.test-batches-namespace-link')
             await driver.page.waitForSelector('.test-batches-link')
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector<HTMLAnchorElement>('.test-batches-namespace-link')?.href
-                ),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes'
-            )
-            assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
-            )
+                )
+            ).toBe(testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes')
+
+            expect(
+                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href)
+            ).toBe(testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change')
 
             await percySnapshotWithVariants(driver.page, 'Batch Changes List')
         })
@@ -495,11 +497,10 @@ describe('Batches', () => {
 
             await driver.page.waitForSelector('.test-batches-list-page')
             await driver.page.waitForSelector('.test-batches-link')
-            assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
-            )
-            assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
+            expect(
+                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href)
+            ).toBe(testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change')
+            expect(await driver.page.$('.test-batches-namespace-link')).toBe(null)
         })
 
         it('lists org batch changes', async () => {
@@ -514,11 +515,10 @@ describe('Batches', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes')
             await driver.page.waitForSelector('.test-batches-list-page')
             await driver.page.waitForSelector('.test-batches-link')
-            assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
-                testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-batch-change'
-            )
-            assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
+            expect(
+                await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href)
+            ).toBe(testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-batch-change')
+            expect(await driver.page.$('.test-batches-namespace-link')).toBe(null)
         })
     })
 
@@ -563,8 +563,7 @@ describe('Batches', () => {
 
                 // Go to close page via button.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
-                assert.strictEqual(
-                    await driver.page.evaluate(() => window.location.href),
+                expect(await driver.page.evaluate(() => window.location.href)).toBe(
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/close'
                 )
                 await driver.page.waitForSelector('.test-batch-change-close-page')
@@ -586,8 +585,7 @@ describe('Batches', () => {
                 // Return to details page.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-abort-btn')])
                 await driver.page.waitForSelector('.test-batch-change-details-page')
-                assert.strictEqual(
-                    await driver.page.evaluate(() => window.location.href),
+                expect(await driver.page.evaluate(() => window.location.href)).toBe(
                     // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
                 )
@@ -598,8 +596,7 @@ describe('Batches', () => {
                     driver.acceptNextDialog(),
                     driver.page.click('.test-batches-delete-btn'),
                 ])
-                assert.strictEqual(
-                    await driver.page.evaluate(() => window.location.href),
+                expect(await driver.page.evaluate(() => window.location.href)).toBe(
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes'
                 )
 
@@ -809,8 +806,7 @@ describe('Batches', () => {
                     driver.page.click('.test-batches-confirm-apply-btn'),
                 ])
                 // Expect to be back at batch change overview page.
-                assert.strictEqual(
-                    await driver.page.evaluate(() => window.location.href),
+                expect(await driver.page.evaluate(() => window.location.href)).toBe(
                     testContext.driver.sourcegraphBaseUrl +
                         namespaceURL +
                         '/batch-changes/test-batch-change?archivedCount=10&archivedBy=spec123'
@@ -842,7 +838,7 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-close-page')
 
                 // Check close changesets box.
-                assert.strictEqual(await driver.page.$('.test-batches-close-willclose-header'), null)
+                expect(await driver.page.$('.test-batches-close-willclose-header')).toBe(null)
                 await driver.page.click('.test-batches-close-changesets-checkbox')
                 await driver.page.waitForSelector('.test-batches-close-willclose-header')
 
@@ -857,8 +853,7 @@ describe('Batches', () => {
                     driver.page.click('.test-batches-confirm-close-btn'),
                 ])
                 // Expect to be back at the batch change overview page.
-                assert.strictEqual(
-                    await driver.page.evaluate(() => window.location.href),
+                expect(await driver.page.evaluate(() => window.location.href)).toBe(
                     testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
                 )
             })
@@ -924,7 +919,7 @@ describe('Batches', () => {
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
             // Check no credential is configured.
-            assert.strictEqual(await driver.page.$('.test-code-host-connection-node-enabled'), null)
+            expect(await driver.page.$('.test-code-host-connection-node-enabled')).toBe(null)
             // Click "Add token".
             await driver.page.click('.test-code-host-connection-node-btn-add')
             // Wait for modal to appear.
@@ -936,7 +931,7 @@ describe('Batches', () => {
             // Await list reload and expect to be enabled.
             await driver.page.waitForSelector('.test-code-host-connection-node-enabled')
             // No modal open.
-            assert.strictEqual(await driver.page.$('.test-add-credential-modal'), null)
+            expect(await driver.page.$('.test-add-credential-modal')).toBe(null)
             // Click "Remove" to remove the token.
             await driver.page.click('.test-code-host-connection-node-btn-remove')
             // Wait for modal to appear.
@@ -946,7 +941,7 @@ describe('Batches', () => {
             // Await list reload and expect to be disabled again.
             await driver.page.waitForSelector('.test-code-host-connection-node-disabled')
             // No modal open.
-            assert.strictEqual(await driver.page.$('.test-remove-credential-modal'), null)
+            expect(await driver.page.$('.test-remove-credential-modal')).toBe(null)
         })
     })
 })

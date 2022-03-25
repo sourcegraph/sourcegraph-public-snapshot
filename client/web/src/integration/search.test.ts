@@ -1,9 +1,12 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import { Key } from 'ts-key-enum'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
@@ -61,6 +64,8 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
 
 describe('Search', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -70,6 +75,7 @@ describe('Search', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,

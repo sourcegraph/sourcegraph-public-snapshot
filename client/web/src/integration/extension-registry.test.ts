@@ -1,7 +1,10 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import { ExtensionsResult } from '@sourcegraph/shared/src/graphql-operations'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
@@ -110,6 +113,8 @@ const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes
 
 describe('Extension Registry', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -119,6 +124,7 @@ describe('Extension Registry', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
     })
     afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
@@ -275,7 +281,7 @@ describe('Extension Registry', () => {
                 })
             }, 'RegistryExtensions')
 
-            assert.deepStrictEqual(request, {
+            expect(request).toEqual({
                 getFeatured: false,
                 query: 'sqs',
                 prioritizeExtensionIDs: [],
@@ -296,7 +302,7 @@ describe('Extension Registry', () => {
                 await driver.page.click("[data-testid='extension-toggle-sqs/word-count']")
             }, 'EditSettings')
 
-            assert.deepStrictEqual(request, {
+            expect(request).toEqual({
                 subject: 'TestGQLUserID',
                 lastID: 310,
                 edit: {
@@ -318,7 +324,7 @@ describe('Extension Registry', () => {
                 await driver.page.click("[data-testid='extension-toggle-sqs/word-count']")
             }, 'EditSettings')
 
-            assert.deepStrictEqual(request, {
+            expect(request).toEqual({
                 subject: 'TestGQLUserID',
                 lastID: 310,
                 edit: {

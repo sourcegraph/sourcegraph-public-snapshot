@@ -1,3 +1,5 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import assert from 'assert'
 
 import { Page } from 'puppeteer'
@@ -7,6 +9,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
@@ -24,6 +27,8 @@ import { percySnapshotWithVariants } from './utils'
 
 describe('Blob viewer', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
+
     beforeAll(async () => {
         driver = await createDriverForTest()
     })
@@ -33,6 +38,7 @@ describe('Blob viewer', () => {
         testContext = await createWebIntegrationTestContext({
             driver,
             directory: __dirname,
+            pollyServer: pollyServer.polly,
         })
     })
     afterEachSaveScreenshotIfFailedWithJest(() => driver.page)
@@ -77,7 +83,7 @@ describe('Blob viewer', () => {
             )
 
             // editor shows the return string content from Blob request
-            assert.strictEqual(blobContent, `content for: ${fileName}\nsecond line\nthird line`)
+            expect(blobContent).toBe(`content for: ${fileName}\nsecond line\nthird line`)
 
             // collect all files/links visible the the "Files" tab
             const allFilesInTheTree = await driver.page.evaluate(() => {
@@ -90,8 +96,7 @@ describe('Blob viewer', () => {
             })
 
             // files from TreeEntries request
-            assert.deepStrictEqual(
-                allFilesInTheTree,
+            expect(allFilesInTheTree).toStrictEqual(
                 files.map(name => ({
                     content: name,
                     href: `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${name}`,
@@ -526,13 +531,11 @@ describe('Blob viewer', () => {
                 'Expected line 2 to have a decoration attachment portal before selecting a line'
             )
             // Count child nodes of existing portals
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector('#line-decoration-attachment-2')?.childElementCount
-                ),
-                1,
-                'Expected line 2 to have 1 decoration'
-            )
+                )
+            ).toBe(1)
 
             // Select line 1. Line 1
             await driver.page.click('[data-line="1"]')
@@ -545,13 +548,11 @@ describe('Blob viewer', () => {
                 await driver.page.$('#line-decoration-attachment-2'),
                 'Expected line 2 to have a decoration attachment portal'
             )
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector('#line-decoration-attachment-2')?.childElementCount
-                ),
-                1,
-                'Expected line 2 to have 1 decoration'
-            )
+                )
+            ).toBe(1)
 
             // Select line 2. Assert that everything is normal
             await driver.page.click('[data-line="2"]')
@@ -566,13 +567,11 @@ describe('Blob viewer', () => {
             )
 
             // Count child nodes of existing portals
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector('#line-decoration-attachment-2')?.childElementCount
-                ),
-                2,
-                'Expected line 2 to have 2 decorations'
-            )
+                )
+            ).toBe(2)
 
             // Select line 1 again. before fix, line 2 will still have 2 decorations
             await driver.page.click('[data-line="1"]')
@@ -587,13 +586,11 @@ describe('Blob viewer', () => {
             )
 
             // Count child nodes of existing portals
-            assert.strictEqual(
+            expect(
                 await driver.page.evaluate(
                     () => document.querySelector('#line-decoration-attachment-2')?.childElementCount
-                ),
-                1,
-                'Expected line 2 to have 1 decoration'
-            )
+                )
+            ).toBe(1)
         })
 
         it('sends the latest document to extensions', async () => {
@@ -1123,11 +1120,7 @@ describe('Blob viewer', () => {
                 const popoverHeader = await driver.page.evaluate(
                     () => document.querySelector('.test-install-browser-extension-popover-header')?.textContent
                 )
-                assert.strictEqual(
-                    popoverHeader,
-                    "Take Sourcegraph's code intelligence to GitHub!",
-                    'Expected popover header text to reflect code host'
-                )
+                expect(popoverHeader).toBe("Take Sourcegraph's code intelligence to GitHub!")
             })
 
             it.skip(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {

@@ -788,7 +788,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     }
 
     const { loadExtension } = resolvedOptions
-    const args: string[] = ['--no-sandbox'] // https://stackoverflow.com/a/61278676
+    const args: string[] = ['--no-sandbox', '--disable-dev-shm-usage'] // https://stackoverflow.com/a/61278676
     const launchOptions: LaunchOptions & BrowserLaunchArgumentOptions & BrowserConnectOptions = {
         ignoreHTTPSErrors: true,
         ...resolvedOptions,
@@ -853,6 +853,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     }
 
     const page = await browser.newPage()
-
+    await page.setRequestInterception(true)
+    page.setDefaultNavigationTimeout(5 * 1000)
     return new Driver(browser, page, resolvedOptions)
 }

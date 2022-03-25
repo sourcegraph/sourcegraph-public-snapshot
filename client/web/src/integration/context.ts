@@ -60,11 +60,12 @@ export const createWebIntegrationTestContext = async ({
     driver,
     directory,
     customContext = {},
+    pollyServer,
 }: IntegrationTestOptions): Promise<WebIntegrationTestContext> => {
     const sharedTestContext = await createSharedIntegrationTestContext<
         WebGraphQlOperations & SharedGraphQlOperations,
         string & keyof (WebGraphQlOperations & SharedGraphQlOperations)
-    >({ driver, directory })
+    >({ driver, directory, pollyServer })
     sharedTestContext.overrideGraphQL(commonWebGraphQlResults)
 
     // On CI, we don't use `react-fast-refresh`, so we don't need the runtime bundle.

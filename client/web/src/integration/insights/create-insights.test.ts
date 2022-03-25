@@ -1,8 +1,9 @@
-import assert from 'assert'
+/** @jest-environment setup-polly-jest/jest-environment-node */
 
 import delay from 'delay'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
@@ -17,6 +18,7 @@ import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-ap
 
 describe('Code insight create insight page', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: WebIntegrationTestContext
 
     beforeAll(async () => {
@@ -31,6 +33,7 @@ describe('Code insight create insight page', () => {
                 // Enforce using a new gql API for code insights pages
                 codeInsightsGqlApiEnabled: true,
             },
+            pollyServer: pollyServer.polly,
         })
     })
 
@@ -116,7 +119,7 @@ describe('Code insight create insight page', () => {
         }, 'CreateLangStatsInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(addToUserConfigRequest.input, {
+        expect(addToUserConfigRequest.input).toEqual({
             query: '',
             repositoryScope: {
                 repositories: ['github.com/sourcegraph/sourcegraph'],
@@ -220,7 +223,7 @@ describe('Code insight create insight page', () => {
         }, 'CreateSearchBasedInsight')
 
         // Check that new org settings config has edited insight
-        assert.deepStrictEqual(addToUserConfigRequest.input, {
+        expect(addToUserConfigRequest.input).toEqual({
             dataSeries: [
                 {
                     query: 'test series #1 query',

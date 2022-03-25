@@ -1,6 +1,9 @@
+/** @jest-environment setup-polly-jest/jest-environment-node */
+
 import delay from 'delay'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { setupPollyServer } from '@sourcegraph/shared/src/testing/integration/context'
 import { afterEachSaveScreenshotIfFailedWithJest } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
@@ -21,6 +24,7 @@ import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-ap
 
 describe('[VISUAL] Code insights page', () => {
     let driver: Driver
+    const pollyServer = setupPollyServer(__dirname)
     let testContext: WebIntegrationTestContext
 
     beforeAll(async () => {
@@ -35,6 +39,7 @@ describe('[VISUAL] Code insights page', () => {
                 // Enforce using a new gql API for code insights pages
                 codeInsightsGqlApiEnabled: true,
             },
+            pollyServer: pollyServer.polly,
         })
     })
 
