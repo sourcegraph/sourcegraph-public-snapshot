@@ -56,7 +56,7 @@ import { findLanguageSpec } from './language-specs/languages'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { findSearchToken } from './token'
-import { useCodeIntel } from './usePreciseCodeIntel'
+import { useCodeIntel } from './useCodeIntel'
 import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
@@ -200,10 +200,9 @@ export const ReferencesList: React.FunctionComponent<
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
-    console.log('tokenResult', tokenResult, 'languageId', languageId)
 
     const {
-        data: results,
+        data,
         error,
         loading,
         referencesHasNextPage,
@@ -222,9 +221,9 @@ export const ReferencesList: React.FunctionComponent<
             line: props.token.line - 1,
             character: props.token.character - 1,
             filter: props.filter || null,
-            firstReferences: 20,
+            firstReferences: 100,
             afterReferences: null,
-            firstImplementations: 5,
+            firstImplementations: 100,
             afterImplementations: null,
         },
         searchToken: tokenResult?.searchToken,
@@ -240,9 +239,9 @@ export const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = useMemo(() => results?.references.nodes ?? [], [results])
-    const definitions = useMemo(() => results?.definitions.nodes ?? [], [results])
-    const implementations = useMemo(() => results?.implementations.nodes ?? [], [results])
+    const references = useMemo(() => data?.references.nodes ?? [], [data])
+    const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
+    const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
@@ -307,7 +306,7 @@ export const ReferencesList: React.FunctionComponent<
         panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
-    if (loading && !results) {
+    if (loading && !data) {
         return (
             <>
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
@@ -319,7 +318,7 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     // If we received an error before we had received any data
-    if (error && !results) {
+    if (error && !data) {
         return (
             <div>
                 <p className="text-danger">Loading precise code intel failed:</p>
@@ -329,7 +328,7 @@ export const ReferencesList: React.FunctionComponent<
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!results) {
+    if (!data) {
         return <>Nothing found</>
     }
 
