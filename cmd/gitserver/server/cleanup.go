@@ -838,7 +838,7 @@ func needsPruning(dir GitDir) (bool, error) {
 func pruneIfNeeded(dir GitDir) error {
 	needed, err := needsPruning(dir)
 	defer func() {
-		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(needed == false))
+		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed))
 	}()
 	if err != nil {
 		return err
