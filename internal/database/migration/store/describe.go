@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Schema struct {
+type SchemaDescription struct {
 	Extensions []string   `json:"extensions"`
 	Enums      []Enum     `json:"enums"`
 	Functions  []Function `json:"functions"`
@@ -92,19 +92,19 @@ type View struct {
 	Definition string `json:"definition"`
 }
 
-func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
+func (s *Store) Describe(ctx context.Context) (_ map[string]SchemaDescription, err error) {
 	ctx, endObservation := s.operations.describe.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	schemas := map[string]Schema{}
-	updateSchema := func(schemaName string, f func(schema *Schema)) {
-		if _, ok := schemas[schemaName]; !ok {
-			schemas[schemaName] = Schema{}
+	descriptions := map[string]SchemaDescription{}
+	updateDescription := func(schemaName string, f func(description *SchemaDescription)) {
+		if _, ok := descriptions[schemaName]; !ok {
+			descriptions[schemaName] = SchemaDescription{}
 		}
 
-		schema := schemas[schemaName]
-		f(&schema)
-		schemas[schemaName] = schema
+		description := descriptions[schemaName]
+		f(&description)
+		descriptions[schemaName] = description
 	}
 
 	extensions, err := s.listExtensions(ctx)
@@ -112,8 +112,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listExtensions")
 	}
 	for _, extension := range extensions {
-		updateSchema(extension.SchemaName, func(schema *Schema) {
-			schema.Extensions = append(schema.Extensions, extension.ExtensionName)
+		updateDescription(extension.SchemaName, func(description *SchemaDescription) {
+			description.Extensions = append(description.Extensions, extension.ExtensionName)
 		})
 	}
 
@@ -122,17 +122,17 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listEnums")
 	}
 	for _, enum := range enums {
-		updateSchema(enum.SchemaName, func(schema *Schema) {
-			for i, e := range schema.Enums {
+		updateDescription(enum.SchemaName, func(description *SchemaDescription) {
+			for i, e := range description.Enums {
 				if e.Name != enum.TypeName {
 					continue
 				}
 
-				schema.Enums[i].Labels = append(schema.Enums[i].Labels, enum.Label)
+				description.Enums[i].Labels = append(description.Enums[i].Labels, enum.Label)
 				return
 			}
 
-			schema.Enums = append(schema.Enums, Enum{Name: enum.TypeName, Labels: []string{enum.Label}})
+			description.Enums = append(description.Enums, Enum{Name: enum.TypeName, Labels: []string{enum.Label}})
 		})
 	}
 
@@ -141,8 +141,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listFunctions")
 	}
 	for _, function := range functions {
-		updateSchema(function.SchemaName, func(schema *Schema) {
-			schema.Functions = append(schema.Functions, Function{
+		updateDescription(function.SchemaName, func(description *SchemaDescription) {
+			description.Functions = append(description.Functions, Function{
 				Name:       function.FunctionName,
 				Definition: function.Definition,
 			})
@@ -154,8 +154,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listSequences")
 	}
 	for _, sequence := range sequences {
-		updateSchema(sequence.SchemaName, func(schema *Schema) {
-			schema.Sequences = append(schema.Sequences, Sequence{
+		updateDescription(sequence.SchemaName, func(description *SchemaDescription) {
+			description.Sequences = append(description.Sequences, Sequence{
 				Name:         sequence.SequenceName,
 				TypeName:     sequence.DataType,
 				StartValue:   sequence.StartValue,
@@ -275,8 +275,8 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		sort.Strings(tableNames)
 
 		for _, tableName := range tableNames {
-			updateSchema(schemaName, func(schema *Schema) {
-				schema.Tables = append(schema.Tables, tables[tableName])
+			updateDescription(schemaName, func(description *SchemaDescription) {
+				description.Tables = append(description.Tables, tables[tableName])
 			})
 		}
 	}
@@ -286,15 +286,15 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]Schema, err error) {
 		return nil, errors.Wrap(err, "store.listViews")
 	}
 	for _, view := range views {
-		updateSchema(view.SchemaName, func(schema *Schema) {
-			schema.Views = append(schema.Views, View{
+		updateDescription(view.SchemaName, func(description *SchemaDescription) {
+			description.Views = append(description.Views, View{
 				Name:       view.ViewName,
 				Definition: view.Definition,
 			})
 		})
 	}
 
-	return schemas, nil
+	return descriptions, nil
 }
 
 func (s *Store) listExtensions(ctx context.Context) ([]Extension, error) {

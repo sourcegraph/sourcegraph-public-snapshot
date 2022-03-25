@@ -512,7 +512,7 @@ func generateInternalNew(db *sql.DB, name string, run runFunc) (_ string, err er
 	return strings.Join(docs, "\n"), nil
 }
 
-func formatTable(schemaName string, schema migrationstore.Schema, table migrationstore.Table) []string {
+func formatTable(schemaName string, description migrationstore.SchemaDescription, table migrationstore.Table) []string {
 	docs := []string{}
 	docs = append(docs, fmt.Sprintf("# Table \"%s.%s\"", schemaName, table.Name))
 	docs = append(docs, "```")
@@ -606,7 +606,7 @@ func formatTable(schemaName string, schema migrationstore.Schema, table migratio
 		migrationstore.Constraint
 	}
 	tableAndConstraints := []tableAndConstraint{}
-	for _, otherTable := range schema.Tables {
+	for _, otherTable := range description.Tables {
 		for _, constraint := range otherTable.Constraints {
 			if constraint.RefTableName == table.Name {
 				tableAndConstraints = append(tableAndConstraints, tableAndConstraint{otherTable, constraint})
@@ -648,7 +648,7 @@ func formatTable(schemaName string, schema migrationstore.Schema, table migratio
 	return docs
 }
 
-func formatView(schemaName string, schema migrationstore.Schema, view migrationstore.View) []string {
+func formatView(schemaName string, description migrationstore.SchemaDescription, view migrationstore.View) []string {
 	docs := []string{}
 	docs = append(docs, fmt.Sprintf("# View \"public.%s\"\n", view.Name))
 	docs = append(docs, fmt.Sprintf("## View query:\n\n```sql\n%s\n```\n", view.Definition))

@@ -21,20 +21,20 @@ func TestDescribe(t *testing.T) {
 		t.Fatalf("failed to create database objects: %s", err)
 	}
 
-	schemas, err := store.Describe(ctx)
+	descriptions, err := store.Describe(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error describing schema: %s", err)
 	}
 
-	expectedSchemas := readGolden(t)
+	expectedDescriptions := readGolden(t)
 
 	mx := map[string]json.RawMessage{}
-	for schemaName, schema := range schemas {
-		p, _ := json.Marshal(schema)
+	for schemaName, description := range descriptions {
+		p, _ := json.Marshal(description)
 		mx[schemaName] = p
 
-		if diff := cmp.Diff(expectedSchemas[schemaName], schema); diff != "" {
-			t.Errorf("unexpected payload for schema %s (-want +got):\n%s", schemaName, diff)
+		if diff := cmp.Diff(expectedDescriptions[schemaName], description); diff != "" {
+			t.Errorf("unexpected payload for schema description %s (-want +got):\n%s", schemaName, diff)
 		}
 	}
 }
@@ -43,7 +43,7 @@ func readQuery(t *testing.T) string {
 	return readTestdataFile(t, "schema.sql")
 }
 
-func readGolden(t *testing.T) (m map[string]Schema) {
+func readGolden(t *testing.T) (m map[string]SchemaDescription) {
 	filename := "schema.golden.json"
 
 	if err := json.Unmarshal([]byte(readTestdataFile(t, filename)), &m); err != nil {
