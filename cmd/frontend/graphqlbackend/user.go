@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// foo
 func (r *schemaResolver) User(
 	ctx context.Context,
 	args struct {
