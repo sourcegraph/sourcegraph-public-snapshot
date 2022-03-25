@@ -19,7 +19,10 @@ import {
 } from './fixtures/runtime-insights'
 import { overrideInsightsGraphQLApi } from './utils/override-insights-graphql-api'
 
-describe('[VISUAL] Code insights page', () => {
+// Disable these tests since SVG elements rendering is super flaky in the Percy sandbox,
+// Enable these visual code insights tests when we finish the investigation around screenshot
+// testing tooling.
+describe.skip('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
