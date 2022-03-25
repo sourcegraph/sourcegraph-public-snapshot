@@ -216,6 +216,8 @@ frontend:
 
 You need to have a AKS cluster (>=1.19) with the following addons enabled:
 
+> You may consider using your custom Ingress Controller instead of Application Gateway, [learn more](https://docs.microsoft.com/en-us/azure/aks/ingress-basic)
+
 - [x] [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
 - [x] [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
 
