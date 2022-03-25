@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -473,6 +474,9 @@ func (s *Syncer) SyncExternalService(
 	minSyncInterval time.Duration,
 ) (err error) {
 	s.log().Info("Syncing external service", "serviceID", externalServiceID)
+
+	// Ensure the job field is recorded when monitoring external API calls
+	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
