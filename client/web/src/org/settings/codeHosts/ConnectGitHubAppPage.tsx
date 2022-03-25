@@ -10,7 +10,7 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 
-import styles from './GHOrgListItem.module.scss'
+import styles from './GitHubOrgListItem.module.scss'
 
 const connectOrg = (installation_id: string) => () => {
     const queryString = window.location.search
