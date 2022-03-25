@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
+import AutorenewIcon from 'mdi-react/AutorenewIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
@@ -128,9 +129,8 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {hasPrivateCloudError && (
-                <PrivateRepositoryAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />
-            )}
+            {hasPrivateCloudError && <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />}
+
             <section className={styles.section}>
                 <Link
                     to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
@@ -195,7 +195,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const PrivateRepositoryAlert: React.FunctionComponent<Pick<OptionsPageProps, 'sourcegraphUrl' | 'currentUser'>> = ({
+const RepoSyncErrorAlert: React.FunctionComponent<Pick<OptionsPageProps, 'sourcegraphUrl' | 'currentUser'>> = ({
     sourcegraphUrl,
     currentUser,
 }) => {
@@ -203,13 +203,13 @@ const PrivateRepositoryAlert: React.FunctionComponent<Pick<OptionsPageProps, 'so
         return null
     }
 
-    return (
-        <section className={classNames('bg-2', styles.section)}>
-            <h4>
-                <Icon className="mr-2" as={LockIcon} />
-                Private repository
-            </h4>
-            {isDefaultSourcegraphUrl(sourcegraphUrl) ? (
+    if (isDefaultSourcegraphUrl(sourcegraphUrl)) {
+        return (
+            <section className={classNames('bg-2', styles.section)}>
+                <h4>
+                    <Icon className="mr-2" as={LockIcon} />
+                    Private repository
+                </h4>
                 <p>
                     To use the browser extension with your private repositories, you need to enable sync in{' '}
                     <Link
@@ -220,10 +220,27 @@ const PrivateRepositoryAlert: React.FunctionComponent<Pick<OptionsPageProps, 'so
                     </Link>
                     .
                 </p>
-            ) : currentUser.siteAdmin ? (
-                <p>You're admin</p>
+            </section>
+        )
+    }
+
+    return (
+        <section className={classNames('bg-2', styles.section)}>
+            <h4>
+                <Icon className="mr-2" as={AutorenewIcon} />
+                Not synced repository
+            </h4>
+
+            {currentUser.siteAdmin ? (
+                <p>
+                    This repository is not added to your Sourcegraph instance. Check out{' '}
+                    <Link to="https://docs.sourcegraph.com/admin/repo/add" {...NEW_TAB_LINK_PROPS}>
+                        how to add repositorory from a code host
+                    </Link>{' '}
+                    to Sourcegraph.
+                </p>
             ) : (
-                <p>Contact your admin</p>
+                <p>Contact your admin to sync this repository with your Sourcegraph instance.</p>
             )}
         </section>
     )
