@@ -69,7 +69,7 @@ func (m *manifestDeploymentDiffer) parseManifests() error {
 		}
 		kind := components[1]
 		if kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet" {
-			appDiff, err := diffDeploymentManifest(path, appName)
+			appDiff, err := diffDeploymentManifest(path)
 			if err != nil {
 				return err
 			}
@@ -103,7 +103,7 @@ func imageDiffRegexp(addition bool) *regexp.Regexp {
 
 // parseSourcegraphCommitFromDeploymentManifestsDiff parses the diff output, returning
 // the new and old commits that were used to build this specific image.
-func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte) (*ServiceVersionDiff, error) {
+func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte) *ServiceVersionDiff {
 	var diff ServiceVersionDiff
 	addRegexp := imageDiffRegexp(true)
 	delRegexp := imageDiffRegexp(false)
@@ -119,22 +119,19 @@ func parseSourcegraphCommitFromDeploymentManifestsDiff(output []byte) (*ServiceV
 	}
 
 	if diff.Old == "" || diff.New == "" {
-		return nil, nil
+		return nil
 	}
 
-	return &diff, nil
+	return &diff
 }
 
-func diffDeploymentManifest(path string, appName string) (*ServiceVersionDiff, error) {
+func diffDeploymentManifest(path string) (*ServiceVersionDiff, error) {
 	diffCommand := []string{"diff", "@^", path}
 	output, err := exec.Command("git", diffCommand...).Output()
 	if err != nil {
 		return nil, err
 	}
-	imageDiff, err := parseSourcegraphCommitFromDeploymentManifestsDiff(output)
-	if err != nil {
-		return nil, err
-	}
+	imageDiff := parseSourcegraphCommitFromDeploymentManifestsDiff(output)
 	return imageDiff, nil
 }
 
