@@ -25,7 +25,7 @@ import styles from './NotebookMarkdownBlock.module.scss'
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
 
-export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = ({
+const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = ({
     id,
     input,
     output,
@@ -144,3 +144,5 @@ export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBloc
         </NotebookBlock>
     )
 }
+
+export const NotebookMarkdownBlockMemoized = React.memo(NotebookMarkdownBlock)

@@ -14,7 +14,7 @@ import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
 import { CopyNotebookProps } from '../notebook'
-import { NotebookComponent } from '../notebook/NotebookComponent'
+import { NotebookComponentMemoized } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
@@ -32,11 +32,24 @@ export interface NotebookContentProps
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
 }
 
-export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
+const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
     viewerCanManage,
     blocks,
+    exportedFileName,
+    onCopyNotebook,
     onUpdateBlocks,
-    ...props
+    globbing,
+    streamSearch,
+    isLightTheme,
+    telemetryService,
+    searchContextsEnabled,
+    isSourcegraphDotCom,
+    fetchHighlightedFileLineRanges,
+    authenticatedUser,
+    showSearchContext,
+    settingsCascade,
+    platformContext,
+    extensionsController,
 }) => {
     const initializerBlocks: BlockInit[] = useMemo(
         () =>
@@ -70,11 +83,26 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = ({
     )
 
     return (
-        <NotebookComponent
-            {...props}
+        <NotebookComponentMemoized
+            globbing={globbing}
+            streamSearch={streamSearch}
+            isLightTheme={isLightTheme}
+            telemetryService={telemetryService}
+            searchContextsEnabled={searchContextsEnabled}
+            isSourcegraphDotCom={isSourcegraphDotCom}
+            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+            authenticatedUser={authenticatedUser}
+            showSearchContext={showSearchContext}
+            settingsCascade={settingsCascade}
+            platformContext={platformContext}
+            extensionsController={extensionsController}
             isReadOnly={!viewerCanManage}
             blocks={initializerBlocks}
             onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
+            exportedFileName={exportedFileName}
+            onCopyNotebook={onCopyNotebook}
         />
     )
 }
+
+export const NotebookContentMemoized = React.memo(NotebookContent)

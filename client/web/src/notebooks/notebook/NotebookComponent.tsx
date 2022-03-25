@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { noop } from 'lodash'
+import { debounce, noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
@@ -35,13 +35,13 @@ import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
-import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
-import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
-import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
-import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
-import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
+import { NotebookComputeBlockMemoized } from '../blocks/compute/NotebookComputeBlock'
+import { NotebookFileBlockMemoized } from '../blocks/file/NotebookFileBlock'
+import { NotebookMarkdownBlockMemoized } from '../blocks/markdown/NotebookMarkdownBlock'
+import { NotebookQueryBlockMemoized } from '../blocks/query/NotebookQueryBlock'
+import { NotebookSymbolBlockMemoized } from '../blocks/symbol/NotebookSymbolBlock'
 
-import { NotebookBlockSeparator } from './NotebookBlockSeparator'
+import { NotebookBlockSeparatorMemoized } from './NotebookBlockSeparator'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
@@ -96,7 +96,7 @@ function downloadTextAsFile(text: string, fileName: string): void {
     window.URL.revokeObjectURL(blobURL)
 }
 
-export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = ({
+const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = ({
     onSerializeBlocks,
     onCopyNotebook,
     isReadOnly = false,
@@ -104,36 +104,45 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
     exportedFileName,
     isEmbedded,
     authenticatedUser,
-    ...props
+    isLightTheme,
+    telemetryService,
+    isSourcegraphDotCom,
+    platformContext,
+    blocks: initialBlocks,
+    fetchHighlightedFileLineRanges,
+    globbing,
+    searchContextsEnabled,
+    settingsCascade,
 }) => {
     const notebook = useMemo(
         () =>
-            new Notebook(props.blocks, {
+            new Notebook(initialBlocks, {
                 extensionHostAPI: extensionsController.extHostAPI,
-                fetchHighlightedFileLineRanges: props.fetchHighlightedFileLineRanges,
+                fetchHighlightedFileLineRanges,
             }),
-        [props.blocks, props.fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+        [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
     )
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
     const commandPaletteInputReference = useRef<HTMLInputElement>(null)
+    const debouncedOnSerializeBlocks = useMemo(() => debounce(onSerializeBlocks, 400), [onSerializeBlocks])
 
     const updateBlocks = useCallback(
         (serialize = true) => {
             const blocks = notebook.getBlocks()
             setBlocks(blocks)
             if (serialize) {
-                onSerializeBlocks(blocks)
+                debouncedOnSerializeBlocks(blocks)
             }
             const blockCountsPerType = countBlockTypes(blocks)
-            props.telemetryService.log(
+            telemetryService.log(
                 'SearchNotebookBlocksUpdated',
                 { blocksCount: blocks.length, blockCountsPerType },
                 { blocksCount: blocks.length, blockCountsPerType }
             )
         },
-        [notebook, setBlocks, onSerializeBlocks, props.telemetryService]
+        [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService]
     )
 
     // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
@@ -144,13 +153,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             notebook.runBlockById(id)
             updateBlocks(false)
 
-            props.telemetryService.log(
+            telemetryService.log(
                 'SearchNotebookRunBlock',
                 { type: notebook.getBlockById(id)?.type },
                 { type: notebook.getBlockById(id)?.type }
             )
         },
-        [notebook, props.telemetryService, updateBlocks]
+        [notebook, telemetryService, updateBlocks]
     )
 
     const [runAllBlocks, runningAllBlocks] = useEventObservable(
@@ -160,10 +169,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
                     tap(() => {
                         updateBlocks(false)
-                        props.telemetryService.log('SearchNotebookRunAllBlocks')
+                        telemetryService.log('SearchNotebookRunAllBlocks')
                     })
                 ),
-            [notebook, props.telemetryService, updateBlocks]
+            [notebook, telemetryService, updateBlocks]
         )
     )
 
@@ -174,10 +183,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                     switchMap(() => notebook.exportToMarkdown(window.location.origin)),
                     tap(exportedMarkdown => {
                         downloadTextAsFile(exportedMarkdown, exportedFileName)
-                        props.telemetryService.log('SearchNotebookExportNotebook')
+                        telemetryService.log('SearchNotebookExportNotebook')
                     })
                 ),
-            [notebook, exportedFileName, props.telemetryService]
+            [notebook, exportedFileName, telemetryService]
         )
     )
 
@@ -198,9 +207,9 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         if (!authenticatedUser) {
             return
         }
-        props.telemetryService.log('SearchNotebookCopyNotebookButtonClick')
+        telemetryService.log('SearchNotebookCopyNotebookButtonClick')
         copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
-    }, [authenticatedUser, copyNotebook, notebook, props.telemetryService])
+    }, [authenticatedUser, copyNotebook, notebook, telemetryService])
 
     const onBlockInputChange = useCallback(
         (id: string, blockInput: BlockInput) => {
@@ -225,9 +234,9 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             setSelectedBlockId(addedBlock.id)
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
+            telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
         },
-        [notebook, isReadOnly, props.telemetryService, updateBlocks, setSelectedBlockId]
+        [notebook, isReadOnly, telemetryService, updateBlocks, setSelectedBlockId]
     )
 
     const onDeleteBlock = useCallback(
@@ -245,9 +254,9 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             }
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
+            telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
         },
-        [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
+        [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
     )
 
     const onMoveBlock = useCallback(
@@ -260,13 +269,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             focusBlock(id)
             updateBlocks()
 
-            props.telemetryService.log(
+            telemetryService.log(
                 'SearchNotebookMoveBlock',
                 { type: notebook.getBlockById(id)?.type, direction },
                 { type: notebook.getBlockById(id)?.type, direction }
             )
         },
-        [notebook, isReadOnly, props.telemetryService, updateBlocks]
+        [notebook, isReadOnly, telemetryService, updateBlocks]
     )
 
     const onDuplicateBlock = useCallback(
@@ -285,13 +294,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             }
             updateBlocks()
 
-            props.telemetryService.log(
+            telemetryService.log(
                 'SearchNotebookDuplicateBlock',
                 { type: duplicateBlock?.type },
                 { type: duplicateBlock?.type }
             )
         },
-        [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
+        [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
     )
 
     const onFocusLastBlock = useCallback(() => {
@@ -319,13 +328,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType: SearchPatternType.literal,
-        globbing: props.globbing,
+        globbing,
         interpretComments: true,
     })
 
     const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType: SearchPatternType.literal,
-        globbing: props.globbing,
+        globbing,
         interpretComments: true,
         disablePatternSuggestions: true,
     })
@@ -377,14 +386,13 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
                         { extensionsController }
                     ),
-                getActions: context =>
-                    getHoverActions({ extensionsController, platformContext: props.platformContext }, context),
+                getActions: context => getHoverActions({ extensionsController, platformContext }, context),
                 tokenize: false,
             }),
         [
             // None of these dependencies are likely to change
             extensionsController,
-            props.platformContext,
+            platformContext,
             hoverOverlayElements,
             notebookElements,
             rerenders,
@@ -400,12 +408,12 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
     const renderBlock = useCallback(
         (block: Block) => {
             const blockProps = {
-                ...props,
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
                 onMoveBlock,
                 onDuplicateBlock,
+                isLightTheme,
                 isReadOnly,
                 isSelected: selectedBlockId === block.id,
                 isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
@@ -413,22 +421,30 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
 
             switch (block.type) {
                 case 'md':
-                    return <NotebookMarkdownBlock {...block} {...blockProps} />
+                    return <NotebookMarkdownBlockMemoized {...block} {...blockProps} />
                 case 'file':
                     return (
-                        <NotebookFileBlock
+                        <NotebookFileBlockMemoized
                             {...block}
                             {...blockProps}
                             hoverifier={hoverifier}
                             sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                             extensionsController={extensionsController}
+                            telemetryService={telemetryService}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )
                 case 'query':
                     return (
-                        <NotebookQueryBlock
+                        <NotebookQueryBlockMemoized
                             {...block}
                             {...blockProps}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                            searchContextsEnabled={searchContextsEnabled}
+                            settingsCascade={settingsCascade}
+                            telemetryService={telemetryService}
+                            platformContext={platformContext}
                             authenticatedUser={authenticatedUser}
                             hoverifier={hoverifier}
                             sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
@@ -436,12 +452,14 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         />
                     )
                 case 'compute':
-                    return <NotebookComputeBlock {...block} {...blockProps} />
+                    return <NotebookComputeBlockMemoized platformContext={platformContext} {...block} {...blockProps} />
                 case 'symbol':
                     return (
-                        <NotebookSymbolBlock
+                        <NotebookSymbolBlockMemoized
                             {...block}
                             {...blockProps}
+                            telemetryService={telemetryService}
+                            platformContext={platformContext}
                             hoverifier={hoverifier}
                             sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                             extensionsController={extensionsController}
@@ -450,19 +468,25 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             }
         },
         [
-            isReadOnly,
+            onRunBlock,
             onBlockInputChange,
             onDeleteBlock,
-            onDuplicateBlock,
             onMoveBlock,
-            onRunBlock,
-            props,
+            onDuplicateBlock,
+            isLightTheme,
+            isReadOnly,
             selectedBlockId,
-            sourcegraphSearchLanguageId,
+            hoverifier,
             sourcegraphSuggestionsSearchLanguageId,
             extensionsController,
-            hoverifier,
+            telemetryService,
+            isSourcegraphDotCom,
+            fetchHighlightedFileLineRanges,
+            searchContextsEnabled,
+            settingsCascade,
+            platformContext,
             authenticatedUser,
+            sourcegraphSearchLanguageId,
         ]
     )
 
@@ -513,7 +537,11 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
-                    <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
+                    <NotebookBlockSeparatorMemoized
+                        isReadOnly={isReadOnly}
+                        index={blockIndex}
+                        onAddBlock={onAddBlock}
+                    />
                     {renderBlock(block)}
                 </div>
             ))}
@@ -527,16 +555,19 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
             )}
             {hoverState.hoverOverlayProps && (
                 <WebHoverOverlay
-                    {...props}
                     {...hoverState.hoverOverlayProps}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
                     hoveredTokenElement={hoverState.hoveredTokenElement}
                     hoverRef={nextOverlayElement}
                     extensionsController={extensionsController}
                     location={location}
-                    telemetryService={props.telemetryService}
-                    isLightTheme={props.isLightTheme}
+                    telemetryService={telemetryService}
+                    isLightTheme={isLightTheme}
                 />
             )}
         </div>
     )
 }
+
+export const NotebookComponentMemoized = React.memo(NotebookComponent)

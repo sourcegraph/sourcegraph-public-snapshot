@@ -48,7 +48,7 @@ interface NotebookFileBlockProps
 
 const LOADING = 'loading' as const
 
-export const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> = ({
+const NotebookFileBlock: React.FunctionComponent<NotebookFileBlockProps> = ({
     id,
     input,
     output,
@@ -257,3 +257,5 @@ const NotebookFileBlockHeader: React.FunctionComponent<FileBlockInput & { fileUR
         </div>
     </>
 )
+
+export const NotebookFileBlockMemoized = React.memo(NotebookFileBlock)

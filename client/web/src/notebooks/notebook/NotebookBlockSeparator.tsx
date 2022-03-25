@@ -12,7 +12,7 @@ interface NotebookAddBlockButtonsProps {
     onAddBlock: (blockIndex: number, blockInput: BlockInput) => void
 }
 
-export const NotebookBlockSeparator: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
+const NotebookBlockSeparator: React.FunctionComponent<NotebookAddBlockButtonsProps> = ({
     isReadOnly,
     index,
     onAddBlock,
@@ -24,3 +24,5 @@ export const NotebookBlockSeparator: React.FunctionComponent<NotebookAddBlockBut
             <NotebookAddBlockButtons index={index} onAddBlock={onAddBlock} />
         </div>
     )
+
+export const NotebookBlockSeparatorMemoized = React.memo(NotebookBlockSeparator)

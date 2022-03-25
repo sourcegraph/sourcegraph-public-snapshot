@@ -16,7 +16,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
 
-import { NotebookContent, NotebookContentProps } from './NotebookContent'
+import { NotebookContentMemoized, NotebookContentProps } from './NotebookContent'
 
 interface EmbeddedNotebookPageProps
     extends Pick<
@@ -64,7 +64,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                 </Alert>
             )}
             {notebookOrError && notebookOrError !== LOADING && !isErrorLike(notebookOrError) && (
-                <NotebookContent
+                <NotebookContentMemoized
                     {...props}
                     location={location}
                     blocks={notebookOrError.blocks}

@@ -54,7 +54,7 @@ function isSymbolOutputLoaded(
     return output !== undefined && !isErrorLike(output) && output !== LOADING
 }
 
-export const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = ({
+const NotebookSymbolBlock: React.FunctionComponent<NotebookSymbolBlockProps> = ({
     id,
     input,
     output,
@@ -266,3 +266,5 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<NotebookSymbolBlockHead
         </div>
     </>
 )
+
+export const NotebookSymbolBlockMemoized = React.memo(NotebookSymbolBlock)
