@@ -21,6 +21,7 @@ import {
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -51,7 +52,7 @@ import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { goSpec } from './language-specs/go'
+import { findLanguageSpec } from './language-specs/languages'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { findSearchToken } from './token'
@@ -187,7 +188,8 @@ export const ReferencesList: React.FunctionComponent<
         })
     )
 
-    const spec = goSpec
+    const languageId = getModeFromPath(props.token.filePath)
+    const spec = findLanguageSpec(languageId)
     const tokenResult = findSearchToken({
         text: blobInfo?.content ?? '',
         position: {
@@ -198,7 +200,7 @@ export const ReferencesList: React.FunctionComponent<
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
-    console.log('tokenResult', tokenResult)
+    console.log('tokenResult', tokenResult, 'languageId', languageId)
 
     const {
         data: results,
