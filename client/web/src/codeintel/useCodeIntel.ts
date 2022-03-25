@@ -64,7 +64,7 @@ export interface UseCodeIntelResult {
 
 interface UseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
-    searchToken?: string
+    searchToken: string
     spec: LanguageSpec
 }
 
@@ -76,7 +76,6 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
     useEffect(() => {
         // We need to fetch again if the variables change
         shouldFetchPrecise.current = true
-        console.log('fetching precise again')
     }, [
         variables.repository,
         variables.commit,

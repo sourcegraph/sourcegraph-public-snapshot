@@ -53,6 +53,7 @@ import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
+import { LanguageSpec } from './language-specs/spec'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { findSearchToken } from './token'
@@ -150,7 +151,6 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
 }
 
 const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
-    console.log('props.token', props.token)
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
@@ -158,27 +158,6 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
         setFilter(undefined)
     }, [props.token])
 
-    return (
-        <>
-            <Input
-                className={classNames('py-0 my-0', styles.referencesFilter)}
-                type="text"
-                placeholder="Filter by filename..."
-                value={filter === undefined ? '' : filter}
-                onChange={event => setFilter(event.target.value)}
-            />
-            <ReferencesList {...props} token={props.token} filter={debouncedFilter} />
-        </>
-    )
-}
-
-const SHOW_SPINNER_DELAY_MS = 100
-
-export const ReferencesList: React.FunctionComponent<
-    ReferencesPanelPropsWithToken & {
-        filter?: string
-    }
-> = props => {
     const blobInfo = useObservable(
         fetchBlob({
             repoName: props.token.repoName,
@@ -201,6 +180,46 @@ export const ReferencesList: React.FunctionComponent<
         identCharPattern: spec.identCharPattern,
     })
 
+    if (!tokenResult?.searchToken) {
+        return (
+            <div>
+                <p className="text-danger">Could not find hovered token.</p>
+            </div>
+        )
+    }
+
+    return (
+        <>
+            <CardHeader>
+                <code>{tokenResult.searchToken}</code>
+            </CardHeader>
+            <Input
+                className={classNames('py-0 my-0', styles.referencesFilter)}
+                type="text"
+                placeholder="Filter by filename..."
+                value={filter === undefined ? '' : filter}
+                onChange={event => setFilter(event.target.value)}
+            />
+            <ReferencesList
+                {...props}
+                token={props.token}
+                filter={debouncedFilter}
+                searchToken={tokenResult?.searchToken}
+                spec={spec}
+            />
+        </>
+    )
+}
+
+const SHOW_SPINNER_DELAY_MS = 100
+
+export const ReferencesList: React.FunctionComponent<
+    ReferencesPanelPropsWithToken & {
+        filter?: string
+        searchToken: string
+        spec: LanguageSpec
+    }
+> = props => {
     const {
         data,
         error,
@@ -226,8 +245,8 @@ export const ReferencesList: React.FunctionComponent<
             firstImplementations: 100,
             afterImplementations: null,
         },
-        searchToken: tokenResult?.searchToken,
-        spec,
+        searchToken: props.searchToken,
+        spec: props.spec,
     })
 
     // We only show the inline loading message if loading takes longer than
