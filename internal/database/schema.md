@@ -2623,6 +2623,52 @@ Foreign-key constraints:
      JOIN external_service_sync_jobs j ON ((e.id = j.external_service_id)));
 ```
 
+# View "public.gitserver_localclone_jobs_with_repo_name"
+```
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ id                | integer                  |           |          | 
+ state             | text                     |           |          | 
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           |          | 
+ num_failures      | integer                  |           |          | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           |          | 
+ repo_id           | integer                  |           |          | 
+ source_hostname   | text                     |           |          | 
+ dest_hostname     | text                     |           |          | 
+ delete_source     | boolean                  |           |          | 
+ repo_name         | citext                   |           |          | 
+
+```
+
+## View query:
+
+```sql
+ SELECT glj.id,
+    glj.state,
+    glj.failure_message,
+    glj.started_at,
+    glj.finished_at,
+    glj.process_after,
+    glj.num_resets,
+    glj.num_failures,
+    glj.last_heartbeat_at,
+    glj.execution_logs,
+    glj.worker_hostname,
+    glj.repo_id,
+    glj.source_hostname,
+    glj.dest_hostname,
+    glj.delete_source,
+    r.name AS repo_name
+   FROM (gitserver_localclone_jobs glj
+     JOIN repo r ON ((r.id = glj.repo_id)));
+```
+
 # View "public.lsif_dumps"
 ```
          Column         |           Type           | Collation | Nullable | Default 
