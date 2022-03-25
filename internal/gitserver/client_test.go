@@ -139,7 +139,7 @@ func TestClient_RemoveFrom(t *testing.T) {
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
 			// Ensure that the request was received by the "expected" gitserver instance - where
-			// expected is the gitserver instance according to the Rendezvous hashing scheme.
+			// expected is the gitserver instance passed as a parameter.
 			// For anything else apart from this we return an error.
 			case expected + "/delete":
 				return &http.Response{
