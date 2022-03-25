@@ -27,8 +27,8 @@ func TestSlackWebhook(t *testing.T) {
 		MonitorOwnerName:   "Camden Cheek",
 		ExternalURL:        eu,
 		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-		Results: []*result.CommitMatch{&diffResultMock, &commitResultMock},
-		IncludeResults: false,
+		Results:            []*result.CommitMatch{&diffResultMock, &commitResultMock},
+		IncludeResults:     false,
 	}
 
 	t.Run("no error", func(t *testing.T) {

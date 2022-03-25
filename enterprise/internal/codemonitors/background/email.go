@@ -53,7 +53,7 @@ type TemplateDataNewSearchResults struct {
 	SearchURL                 string
 	Description               string
 	IncludeResults            bool
-	TruncatedResults          []*result.CommitMatch
+	TruncatedResults          []*DisplayResult
 	TotalCount                int
 	TruncatedCount            int
 	ResultPluralized          string
@@ -77,13 +77,18 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 
 	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
 
+	displayResults := make([]*DisplayResult, len(truncatedResults))
+	for i, result := range truncatedResults {
+		displayResults[i] = toDisplayResult(result, args.ExternalURL)
+	}
+
 	return &TemplateDataNewSearchResults{
 		Priority:                  priority,
 		CodeMonitorURL:            codeMonitorURL,
 		SearchURL:                 searchURL,
 		Description:               args.MonitorDescription,
 		IncludeResults:            args.IncludeResults,
-		TruncatedResults:          truncatedResults,
+		TruncatedResults:          displayResults,
 		TotalCount:                totalCount,
 		TruncatedCount:            truncatedCount,
 		ResultPluralized:          pluralize("result", totalCount),
@@ -91,13 +96,21 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 	}, nil
 }
 
-func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
+func NewTestTemplateDataForNewSearchResults(monitorDescription string) *TemplateDataNewSearchResults {
 	return &TemplateDataNewSearchResults{
 		Priority:         "",
 		Description:      monitorDescription,
 		TotalCount:       1,
 		IsTest:           true,
 		ResultPluralized: "result",
+		IncludeResults: true,
+		TruncatedResults: []*DisplayResult{{
+			ResultType: "Test",
+			RepoName: "myrepo/test",
+			CommitID: "0000000",
+			CommitURL: "",
+			Content: "This is a test commit message\nfor a code monitoring result.",
+		}},
 	}
 }
 
@@ -171,4 +184,34 @@ func pluralize(word string, count int) string {
 		return word
 	}
 	return word + "s"
+}
+
+type DisplayResult struct {
+	ResultType string
+	CommitURL  string
+	RepoName   string
+	CommitID   string
+	Content    string
+}
+
+func toDisplayResult(result *result.CommitMatch, externalURL *url.URL) *DisplayResult {
+	resultType := "Message"
+	if result.DiffPreview != nil {
+		resultType = "Diff"
+	}
+
+	var content string
+	if result.DiffPreview != nil {
+		content = truncateString(result.DiffPreview.Content, 10)
+	} else {
+		content = truncateString(result.MessagePreview.Content, 10)
+	}
+
+	return &DisplayResult{
+		ResultType: resultType,
+		CommitURL:  getCommitURL(externalURL, string(result.Repo.Name), string(result.Commit.ID), utmSourceEmail),
+		RepoName:   string(result.Repo.Name),
+		CommitID:   result.Commit.ID.Short(),
+		Content: content,
+	}
 }

@@ -1,15 +1,19 @@
 package background
 
 import (
+	"net/url"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+var externalURLMock, _ = url.Parse("https://www.sourcegraph.com")
+
 var diffResultMock = result.CommitMatch{
 	Commit: gitdomain.Commit{
-		ID: api.CommitID("7815187511872asbasdfgasd"),
+		ID:      api.CommitID("7815187511872asbasdfgasd"),
 		Parents: []api.CommitID{},
 	},
 	Repo: types.MinimalRepo{
@@ -26,9 +30,11 @@ var diffResultMock = result.CommitMatch{
 		}},
 	}}
 
+var diffDisplayResultMock = toDisplayResult(&diffResultMock, externalURLMock)
+
 var commitResultMock = result.CommitMatch{
 	Commit: gitdomain.Commit{
-		ID: api.CommitID("7815187511872asbasdfgasd"),
+		ID:      api.CommitID("7815187511872asbasdfgasd"),
 		Parents: []api.CommitID{},
 	},
 	Repo: types.MinimalRepo{
@@ -42,3 +48,5 @@ var commitResultMock = result.CommitMatch{
 		}},
 	},
 }
+
+var commitDisplayResultMock = toDisplayResult(&commitResultMock, externalURLMock)

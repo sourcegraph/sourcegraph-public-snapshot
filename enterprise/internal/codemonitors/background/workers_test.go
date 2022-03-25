@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"net/url"
 	"testing"
 	"time"
 
@@ -15,42 +14,38 @@ import (
 )
 
 func TestActionRunner(t *testing.T) {
+
 	tests := []struct {
 		name           string
 		results        []*result.CommitMatch
 		wantNumResults int
-		wantResults []*result.CommitMatch
+		wantResults    []*DisplayResult
 	}{
 		{
-			name: "9 results",
-			results: []*result.CommitMatch{&diffResultMock, &commitResultMock, &diffResultMock, &commitResultMock, &diffResultMock, &commitResultMock},
+			name:           "9 results",
+			results:        []*result.CommitMatch{&diffResultMock, &commitResultMock, &diffResultMock, &commitResultMock, &diffResultMock, &commitResultMock},
 			wantNumResults: 9,
-			wantResults: []*result.CommitMatch{&diffResultMock, &commitResultMock, &diffResultMock},
+			wantResults:    []*DisplayResult{diffDisplayResultMock, commitDisplayResultMock, diffDisplayResultMock},
 		},
 		{
-			name: "1 result",
-			results: []*result.CommitMatch{&commitResultMock},
+			name:           "1 result",
+			results:        []*result.CommitMatch{&commitResultMock},
 			wantNumResults: 1,
-			wantResults: []*result.CommitMatch{&commitResultMock},
+			wantResults:    []*DisplayResult{commitDisplayResultMock},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := dbtest.NewDB(t)
-
-			externalURL := "https://www.sourcegraph.com"
 			testQuery := "test patternType:literal"
+			externalURL := "https://www.sourcegraph.com"
 
 			// Mocks.
 			got := TemplateDataNewSearchResults{}
 			MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
 				got = *data
 				return nil
-			}
-			MockExternalURL = func() *url.URL {
-				externalURL, _ := url.Parse("https://www.sourcegraph.com")
-				return externalURL
 			}
 
 			// Create a TestStore.
@@ -88,7 +83,7 @@ func TestActionRunner(t *testing.T) {
 				wantResultsPluralized = "result"
 			}
 			wantTruncatedCount := 0
-			if (tt.wantNumResults > 5) {
+			if tt.wantNumResults > 5 {
 				wantTruncatedCount = tt.wantNumResults - 5
 			}
 			wantTruncatedResultsPluralized := "results"
@@ -97,15 +92,15 @@ func TestActionRunner(t *testing.T) {
 			}
 
 			want := TemplateDataNewSearchResults{
-				Priority:         "",
-				SearchURL:        externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
-				Description:      "test description",
-				CodeMonitorURL:   externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
-				TotalCount:       tt.wantNumResults,
-				ResultPluralized: wantResultsPluralized,
-				TruncatedCount: wantTruncatedCount,
+				Priority:                  "",
+				SearchURL:                 externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
+				Description:               "test description",
+				CodeMonitorURL:            externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
+				TotalCount:                tt.wantNumResults,
+				ResultPluralized:          wantResultsPluralized,
+				TruncatedCount:            wantTruncatedCount,
 				TruncatedResultPluralized: wantTruncatedResultsPluralized,
-				TruncatedResults: tt.wantResults,
+				TruncatedResults:          tt.wantResults,
 			}
 
 			want.TotalCount = tt.wantNumResults

@@ -2,11 +2,11 @@ package background
 
 import (
 	"bytes"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
@@ -14,16 +14,13 @@ import (
 func TestEmail(t *testing.T) {
 	template := txemail.MustParseTemplate(newSearchResultsEmailTemplates)
 
+	MockExternalURL = func() *url.URL {
+		externalURL, _ := url.Parse("https://www.sourcegraph.com")
+		return externalURL
+	}
+
 	t.Run("test message", func(t *testing.T) {
-		templateData := &TemplateDataNewSearchResults{
-			Priority:         "",
-			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
-			SearchURL:        "https://sourcegraph.com/search",
-			Description:      "My test monitor",
-			TotalCount:       1,
-			IsTest:           true,
-			ResultPluralized: "result",
-		}
+		templateData := NewTestTemplateDataForNewSearchResults("My test monitor")
 
 		t.Run("html", func(t *testing.T) {
 			var buf bytes.Buffer
@@ -113,16 +110,16 @@ func TestEmail(t *testing.T) {
 
 	t.Run("one result with results", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:         "",
-			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
-			SearchURL:        "https://sourcegraph.com/search",
-			Description:      "My test monitor",
-			TotalCount:       1,
-			ResultPluralized: "result",
-			IncludeResults: true,
-			TruncatedCount: 0,
-			TruncatedResults: []*result.CommitMatch{&commitResultMock},
-			TruncatedResultPluralized: "result",
+			Priority:                  "",
+			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
+			SearchURL:                 "https://sourcegraph.com/search",
+			Description:               "My test monitor",
+			TotalCount:                1,
+			ResultPluralized:          "result",
+			IncludeResults:            true,
+			TruncatedCount:            0,
+			TruncatedResults:          []*DisplayResult{commitDisplayResultMock},
+			TruncatedResultPluralized: "results",
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -149,15 +146,15 @@ func TestEmail(t *testing.T) {
 
 	t.Run("multiple results with results", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:         "",
-			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
-			SearchURL:        "https://sourcegraph.com/search",
-			Description:      "My test monitor",
-			TotalCount:       6,
-			TruncatedCount: 1,
-			ResultPluralized: "results",
-			IncludeResults: true,
-			TruncatedResults: []*result.CommitMatch{&diffResultMock, &commitResultMock, &diffResultMock},
+			Priority:                  "",
+			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
+			SearchURL:                 "https://sourcegraph.com/search",
+			Description:               "My test monitor",
+			TotalCount:                6,
+			TruncatedCount:            1,
+			ResultPluralized:          "results",
+			IncludeResults:            true,
+			TruncatedResults:          []*DisplayResult{diffDisplayResultMock, commitDisplayResultMock, diffDisplayResultMock},
 			TruncatedResultPluralized: "result",
 		}
 

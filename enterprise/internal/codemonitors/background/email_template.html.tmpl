@@ -12,10 +12,12 @@
     </h1>
 
 {{- if .IncludeResults }}
-    <ul style="font-size: 14px; line-height: 21px; margin-bottom: 50px">
-{{- range .TruncatedResults }}
-      <li style="margin-bottom: 10px">
 
+    <ul style="list-style-type: none; padding-left: 0;">
+{{- range .TruncatedResults }}
+      <li>
+        {{.ResultType}} match: <a href="{{.CommitURL}}" {{ if $.IsTest }}style="color: #9C9FA6; font-weight: 400; text-decoration: underline; cursor: default"{{ end }}>{{.RepoName}}@{{.CommitID}}</a>
+        <pre style="background-color: #e6ebf2; padding: 8px; border-radius: 4px;">{{.Content}}</pre>
       </li>
 {{- end }}
     </ul>
