@@ -131,7 +131,7 @@ func diffDeploymentManifest(path string, appName string) (*ServiceVersionDiff, e
 	if err != nil {
 		return nil, err
 	}
-	imageDiff, err := parseSourcegraphCommitFromDeploymentManifestsDiff(output, appName)
+	imageDiff, err := parseSourcegraphCommitFromDeploymentManifestsDiff(output)
 	if err != nil {
 		return nil, err
 	}
