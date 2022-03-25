@@ -34,7 +34,7 @@ func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	squirrel := NewSquirrelService(readFileFromGitserver, nil)
+	squirrel := NewSquirrelService(readFileFromGitserver)
 	defer squirrel.Close()
 
 	// Compute the local code intel payload.
@@ -92,7 +92,7 @@ func DebugLocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
 		return os.ReadFile("/tmp/squirrel-example.txt")
 	}
 
-	squirrel := NewSquirrelService(readFile, nil)
+	squirrel := NewSquirrelService(readFile)
 	defer squirrel.Close()
 
 	rangeToSymbolIx := map[types.Range]int{}

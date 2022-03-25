@@ -42,7 +42,7 @@ class C {
 		return nil, errors.Newf("path %s not found", path.Path)
 	}
 
-	squirrel := NewSquirrelService(readFile, nil)
+	squirrel := NewSquirrelService(readFile)
 	defer squirrel.Close()
 
 	for _, test := range tests {

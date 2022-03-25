@@ -85,7 +85,7 @@ func getLocalCodeIntel(t *testing.T, path types.RepoCommitPath, contents string)
 		return []byte(contents), nil
 	}
 
-	squirrel := NewSquirrelService(readFile, nil)
+	squirrel := NewSquirrelService(readFile)
 	defer squirrel.Close()
 
 	payload, err := squirrel.localCodeIntel(context.Background(), path)

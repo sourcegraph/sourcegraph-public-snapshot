@@ -5,7 +5,6 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 
-	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -15,24 +14,19 @@ import (
 // How to read a file.
 type ReadFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
 
-// SquirrelService uses tree-sitter and the symbols service to analyze and traverse files to find
-// symbols.
+// SquirrelService uses tree-sitter to analyze code and collect symbols.
 type SquirrelService struct {
-	readFile     ReadFileFunc
-	symbolSearch symbolsTypes.SearchFunc
-	breadcrumbs  []Breadcrumb
-	parser       *sitter.Parser
-	closables    []func()
+	readFile  ReadFileFunc
+	parser    *sitter.Parser
+	closables []func()
 }
 
 // Creates a new SquirrelService.
-func NewSquirrelService(readFile ReadFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
+func NewSquirrelService(readFile ReadFileFunc) *SquirrelService {
 	return &SquirrelService{
-		readFile:     readFile,
-		symbolSearch: symbolSearch,
-		breadcrumbs:  []Breadcrumb{},
-		parser:       sitter.NewParser(),
-		closables:    []func(){},
+		readFile:  readFile,
+		parser:    sitter.NewParser(),
+		closables: []func(){},
 	}
 }
 
