@@ -476,7 +476,7 @@ func (s *Syncer) SyncExternalService(
 	s.log().Info("Syncing external service", "serviceID", externalServiceID)
 
 	// Ensure the job field is recorded when monitoring external API calls
-	ctx = metrics.ContextWithJob(ctx, "SyncExternalService")
+	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")

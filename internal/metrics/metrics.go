@@ -38,21 +38,21 @@ const (
 	labelCategory = "category"
 	labelCode     = "code"
 	labelHost     = "host"
-	labelJob      = "job"
+	labelTask     = "task"
 )
 
-var jobKey struct{}
+var taskKey struct{}
 
-// ContextWithJob adds the "job" value to the context
-func ContextWithJob(ctx context.Context, job string) context.Context {
-	return context.WithValue(ctx, jobKey, job)
+// ContextWithTask adds the "job" value to the context
+func ContextWithTask(ctx context.Context, task string) context.Context {
+	return context.WithValue(ctx, taskKey, task)
 }
 
-// JobFromContext will return the job, if any, stored in the context. If none is
+// TaskFromContext will return the job, if any, stored in the context. If none is
 // found the default string "unknown" is returned
-func JobFromContext(ctx context.Context) string {
-	if job, ok := ctx.Value(jobKey).(string); ok {
-		return job
+func TaskFromContext(ctx context.Context) string {
+	if task, ok := ctx.Value(taskKey).(string); ok {
+		return task
 	}
 	return "unknown"
 }
@@ -64,7 +64,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Subsystem: subsystem,
 		Name:      "requests_total",
 		Help:      help,
-	}, []string{labelCategory, labelCode, labelHost, labelJob})
+	}, []string{labelCategory, labelCode, labelHost, labelTask})
 	registerer.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
@@ -138,7 +138,7 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 		labelCategory: category,
 		labelCode:     code,
 		labelHost:     r.URL.Host,
-		labelJob:      JobFromContext(r.Context()),
+		labelTask:     TaskFromContext(r.Context()),
 	}).Inc()
 
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())

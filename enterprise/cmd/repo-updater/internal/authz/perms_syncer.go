@@ -871,10 +871,10 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	switch request.Type {
 	case requestTypeUser:
 		// Ensure the job field is recorded when monitoring external API calls
-		ctx = metrics.ContextWithJob(ctx, "SyncUserPerms")
+		ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
 		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
 	case requestTypeRepo:
-		ctx = metrics.ContextWithJob(ctx, "SyncRepoPerms")
+		ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
 		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
 	default:
 		err = errors.Errorf("unexpected request type: %v", request.Type)
