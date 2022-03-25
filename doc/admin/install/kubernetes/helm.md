@@ -69,7 +69,9 @@ You account should have sufficient access equivalent to the `cluster-admin` Clus
 
 #### Steps
 
-> [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress)
+> [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
+>
+> Alternatively, you may consider using your custom Ingress Controller, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/custom-ingress-controller).
 
 Create an override file with the following value. We configure Ingress to use [Container-native load balancing] to expose Sourcegraph publically and Storage Class to use [Compute Engine persistent disk].
 
