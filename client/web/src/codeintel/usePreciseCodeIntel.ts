@@ -119,6 +119,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     const fetchMoreReferences = (): void => {
         const cursor = referenceData?.references.pageInfo?.endCursor || null
 
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         fetchAdditionalReferences({
             variables: {
                 ...variables,
@@ -130,6 +131,7 @@ export const usePreciseCodeIntel = ({ variables }: UsePreciseCodeIntelParameters
     const fetchMoreImplementations = (): void => {
         const cursor = referenceData?.implementations.pageInfo?.endCursor || null
 
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         fetchAdditionalImplementations({
             variables: {
                 ...variables,

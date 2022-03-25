@@ -1,4 +1,4 @@
-import { InsightExecutionType, InsightType } from '../common'
+import { BaseInsight, InsightExecutionType, InsightType } from '../common'
 
 /**
  * Extended Lang Stats Insight.
@@ -8,12 +8,9 @@ import { InsightExecutionType, InsightType } from '../common'
  * Note: Lang stats insight works only via Extension API and doesn't have a be version
  * (like search based insight has)
  */
-export interface LangStatsInsight {
-    id: string
+export interface LangStatsInsight extends BaseInsight {
     executionType: InsightExecutionType.Runtime
     type: InsightType.LangStats
-    title: string
     repository: string
     otherThreshold: number
-    dashboardReferenceCount: number
 }

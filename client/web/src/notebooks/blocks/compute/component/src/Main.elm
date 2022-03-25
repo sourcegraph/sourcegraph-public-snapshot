@@ -279,6 +279,20 @@ type DataFilterMsg
     | OnExcludeStopWordsCheckbox Bool
 
 
+updateComputeInput : List String -> DataFilter -> Tab -> ComputeInput
+updateComputeInput queries dataFilter selectedTab =
+    { computeQueries = queries
+    , experimentalOptions =
+        Just
+            { dataPoints = Just dataFilter.dataPoints
+            , sortByCount = Just dataFilter.sortByCount
+            , reverse = Just dataFilter.reverse
+            , excludeStopWords = Just dataFilter.excludeStopWords
+            , activeTab = Just { name = stringFromTab selectedTab }
+            }
+    }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -289,7 +303,16 @@ update msg model =
 
         OnDebounce ->
             if model.debounce - 1 == 0 then
-                update RunCompute { model | debounce = model.debounce - 1 }
+                let
+                    ( newModel, runCompute ) =
+                        update RunCompute { model | debounce = model.debounce - 1 }
+                in
+                ( newModel
+                , Cmd.batch
+                    [ emitInput (updateComputeInput [ model.query ] model.dataFilter model.selectedTab)
+                    , runCompute
+                    ]
+                )
 
             else
                 ( { model | debounce = model.debounce - 1 }, Cmd.none )
@@ -300,32 +323,12 @@ update msg model =
                     updateDataFilter dataFilterMsg model.dataFilter
             in
             ( { model | dataFilter = newDataFilter }
-            , emitInput
-                { computeQueries = [ model.query ]
-                , experimentalOptions =
-                    Just
-                        { dataPoints = Just newDataFilter.dataPoints
-                        , sortByCount = Just newDataFilter.sortByCount
-                        , reverse = Just newDataFilter.reverse
-                        , excludeStopWords = Just newDataFilter.excludeStopWords
-                        , activeTab = Just { name = stringFromTab model.selectedTab }
-                        }
-                }
+            , emitInput (updateComputeInput [ model.query ] newDataFilter model.selectedTab)
             )
 
         OnTabSelected selectedTab ->
             ( { model | selectedTab = selectedTab }
-            , emitInput
-                { computeQueries = [ model.query ]
-                , experimentalOptions =
-                    Just
-                        { dataPoints = Just model.dataFilter.dataPoints
-                        , sortByCount = Just model.dataFilter.sortByCount
-                        , reverse = Just model.dataFilter.reverse
-                        , excludeStopWords = Just model.dataFilter.excludeStopWords
-                        , activeTab = Just { name = stringFromTab selectedTab }
-                        }
-                }
+            , emitInput (updateComputeInput [ model.query ] model.dataFilter selectedTab)
             )
 
         OnDownloadData ->
@@ -355,18 +358,7 @@ update msg model =
                 in
                 ( { model | resultsMap = Dict.empty, alerts = alerts }
                 , Cmd.batch
-                    [ emitInput
-                        { computeQueries = [ model.query ]
-                        , experimentalOptions =
-                            Just
-                                { dataPoints = Just model.dataFilter.dataPoints
-                                , sortByCount = Just model.dataFilter.sortByCount
-                                , reverse = Just model.dataFilter.reverse
-                                , excludeStopWords = Just model.dataFilter.excludeStopWords
-                                , activeTab = Just { name = stringFromTab model.selectedTab }
-                                }
-                        }
-                    , openStream
+                    [ openStream
                         ( Url.Builder.crossOrigin
                             model.sourcegraphURL
                             [ ".api", "compute", "stream" ]
@@ -944,7 +936,7 @@ textInputBackgroundColor theme =
         Dark ->
             E.rgb255 0x1D 0x22 0x2F
 
-        Light ->            
+        Light ->
             E.rgb 0xFF 0xFF 0xFF
 
 

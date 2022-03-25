@@ -177,6 +177,9 @@ type Client interface {
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
+	// RemoveFrom removes the repository clone from the given gitserver.
+	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
+
 	// RendezvousAddrForRepo returns the gitserver address to use for the given
 	// repo name using the Rendezvous hashing scheme.
 	RendezvousAddrForRepo(api.RepoName) string
@@ -815,7 +818,7 @@ func (c *ClientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	// ignored.
 	req := &protocol.RepoUpdateRequest{
 		Repo:           repo,
-		CloneFromShard: from,
+		CloneFromShard: "http://" + from,
 	}
 
 	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
@@ -1106,14 +1109,29 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 }
 
 func (c *ClientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
-	req := &protocol.RepoDeleteRequest{
-		Repo: repo,
+	addrForRepo, err := c.AddrForRepo(ctx, repo)
+	if err != nil {
+		return err
 	}
-	resp, err := c.httpPost(ctx, repo, "delete", req)
+
+	return c.RemoveFrom(ctx, repo, addrForRepo)
+}
+
+func (c *ClientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
+	b, err := json.Marshal(&protocol.RepoDeleteRequest{
+		Repo: repo,
+	})
+	if err != nil {
+		return err
+	}
+
+	uri := "http://" + from + "/delete"
+	resp, err := c.do(ctx, repo, "POST", uri, b)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
@@ -1309,9 +1327,6 @@ func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string
 // getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
 // Otherwise, if repo is not pinned -- false and empty string are returned
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
-	if pinned, found := pinnedServers[repo]; found {
-		return true, pinned
-	} else {
-		return false, ""
-	}
+	pinned, found := pinnedServers[repo]
+	return found, pinned
 }
