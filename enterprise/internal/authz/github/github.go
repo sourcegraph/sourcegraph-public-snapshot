@@ -383,14 +383,14 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		affiliation github.CollaboratorAffiliation
 	)
 
-	// addUserToRepoPerms just adds to perms.
-	addUserToRepoPerms = func(users ...extsvc.AccountID) {
-		userIDs = append(userIDs, users...)
-	}
-
-	// If groupsCache is enabled, special handling of users is required.
-	if p.groupsCache != nil {
-		// instantiate map to help with deduplication of users.
+	// If cache is disabled the code path is simpler, avoid allocating memory
+	if p.groupsCache == nil { // groups cache is disabled
+		// addUserToRepoPerms just adds to perms.
+		addUserToRepoPerms = func(users ...extsvc.AccountID) {
+			userIDs = append(userIDs, users...)
+		}
+	} else { // groups cache is enabled
+		// instantiate map to help with deduplication
 		seenUsers = make(map[extsvc.AccountID]struct{}, userPageSize)
 		// addUserToRepoPerms checks if the given users are already tracked before adding it to perms.
 		addUserToRepoPerms = func(users ...extsvc.AccountID) {
