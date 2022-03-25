@@ -102,6 +102,12 @@ func Context(ctx context.Context) (context.Context, error) {
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func Cmd(ctx context.Context, cmd string) *exec.Cmd {
+	if os.Getenv("SG_DEV_NO_RELOAD_ENV") != "" {
+		// If the user does not want the auto env reloading mechanism, just
+		// perform a standard command.
+		return exec.CommandContext(ctx, ShellPath(ctx), "-c", cmd)
+	}
+
 	if ShellType(ctx) == FishShell {
 		command := fmt.Sprintf("fish || true; %s", cmd)
 		return exec.CommandContext(ctx, ShellPath(ctx), "-c", command)
