@@ -14,30 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-func TestHumanReadableBranchName(t *testing.T) {
-	for _, tc := range []struct {
-		text string
-		want string
-	}{{
-		// Respect word boundaries when cutting length
-		text: "Change coördination mechanisms of fungible automation processes in place",
-		want: "change-coordination-mechanisms-of-fungible-automation",
-	}, {
-		// Length smaller than maximum
-		text: "Change coördination mechanisms",
-		want: "change-coordination-mechanisms",
-	}, {
-		// Respecting word boundary would result in cutting too much,
-		// so we don't.
-		text: "Change alongwordmadeofmanylettersandnumbersandsymbolsandwhatnotisthisalreadymorethansixtyrunes",
-		want: "change-alongwordmadeofmanylettersandnumbersandsymbolsandwhat",
-	}} {
-		if have := HumanReadableBranchName(tc.text); have != tc.want {
-			t.Fatalf("HumanReadableBranchName(%q):\nhave %q\nwant %q", tc.text, have, tc.want)
-		}
-	}
-}
-
 func testBranches(t *testing.T, gitCommands []string, wantBranches []*Branch, options BranchesOptions) {
 	t.Helper()
 
