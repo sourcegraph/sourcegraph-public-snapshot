@@ -50,7 +50,7 @@ export interface OptionsPageProps {
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
 
-    hasPrivateCloudError?: boolean
+    hasRepoSyncError?: boolean
     currentUser?: Pick<IUser, 'settingsURL' | 'siteAdmin'>
 }
 
@@ -78,7 +78,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     onChangeOptionFlag,
     onChangeSourcegraphUrl,
     suggestedSourcegraphUrls,
-    hasPrivateCloudError,
+    hasRepoSyncError,
     currentUser,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
@@ -129,7 +129,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {hasPrivateCloudError && <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />}
+            {hasRepoSyncError && <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />}
 
             <section className={styles.section}>
                 <Link

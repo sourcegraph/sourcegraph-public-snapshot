@@ -39,7 +39,7 @@ interface TabStatus {
     host: string
     protocol: string
     hasPermissions: boolean
-    hasPrivateCloudError: boolean
+    hasRepoSyncError: boolean
 }
 
 assertEnvironment('OPTIONS')
@@ -70,10 +70,10 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!id) {
         throw new Error('Currently active tab has no ID')
     }
-    const hasPrivateCloudError = await background.checkPrivateCloudError(id)
+    const hasRepoSyncError = await background.checkRepoSyncError(id)
     const { host, protocol } = new URL(url)
     const hasPermissions = await checkUrlPermissions(url)
-    return { hasPrivateCloudError, host, protocol, hasPermissions }
+    return { hasRepoSyncError, host, protocol, hasPermissions }
 }
 
 // Make GraphQL requests from background page
@@ -174,22 +174,22 @@ const Options: React.FunctionComponent = () => {
     const previouslyUsedUrls = useObservable(observingPreviouslyUsedUrls)
     const isActivated = useObservable(observingIsActivated)
     const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues)
-    const [currentTabStatus, setCurrentTabStatus] = useState<
-        { status: TabStatus; handler: React.MouseEventHandler } | undefined
-    >()
-
-    const currentUser = useObservable(
+    const currentTabStatus = useObservable(
         useMemo(
-            () => (currentTabStatus?.status.hasPrivateCloudError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)),
-            [currentTabStatus, sourcegraphUrl]
+            () =>
+                from(fetchCurrentTabStatus()).pipe(
+                    map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
+                ),
+            []
         )
     )
 
-    useEffect(() => {
-        fetchCurrentTabStatus().then(tabStatus => {
-            setCurrentTabStatus({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) })
-        }, noop)
-    }, [])
+    const currentUser = useObservable(
+        useMemo(() => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)), [
+            currentTabStatus,
+            sourcegraphUrl,
+        ])
+    )
 
     const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
@@ -249,6 +249,7 @@ const Options: React.FunctionComponent = () => {
     return (
         <ThemeWrapper>
             <WildcardThemeProvider isBranded={true}>
+                {sourcegraphUrl}/ error: {currentTabStatus?.status?.hasRepoSyncError.toString()}
                 <OptionsPage
                     isFullPage={isFullPage}
                     sourcegraphUrl={sourcegraphUrl || ''}
@@ -260,7 +261,7 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
-                    hasPrivateCloudError={currentTabStatus?.status.hasPrivateCloudError}
+                    hasRepoSyncError={currentTabStatus?.status.hasRepoSyncError}
                     currentUser={currentUser}
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                     permissionAlert={permissionAlert}

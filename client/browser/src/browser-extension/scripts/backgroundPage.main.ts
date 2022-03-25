@@ -59,27 +59,27 @@ const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
  * it has experienced repository does not exist on the instance error
  * by sending `notifyRepoSyncError` message.
  */
-const tabPrivateCloudErrorCache = (() => {
+const tabRepoSyncErrorCache = (() => {
     const cache = new Map<number, boolean>()
     const subject = new Subject<ReadonlyMap<number, boolean>>()
     return {
         observable: subject.asObservable(),
         /**
-         * Update the background page's cache of which tabs have experienced a
-         * private code on Cloud error.
+         * Update the background page's cache of which tabs have experienced either a
+         * private code on Cloud or not synced repo on other than Cloud Sourcegrpah instance error.
          */
-        setTabHasPrivateCloudError(tabId: number, hasPrivateCloudError: boolean): void {
-            if (!hasPrivateCloudError) {
+        setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean): void {
+            if (!hasRepoSyncError) {
                 // An absent value is equivalent to being false; so we can delete it.
                 cache.delete(tabId)
             }
-            cache.set(tabId, hasPrivateCloudError)
+            cache.set(tabId, hasRepoSyncError)
 
             // Emit the updated repository cache when it changes, so that consumers can
             // observe the value.
             subject.next(cache)
         },
-        getTabHasPrivateCloudError(tabId: number): boolean {
+        getTabHasRepoSyncError(tabId: number): boolean {
             return !!cache.get(tabId)
         },
     }
@@ -175,7 +175,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
-            tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
+            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
             return
         }
 
@@ -218,19 +218,16 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        async notifyPrivateCloudError(
-            hasPrivateCloudError: boolean,
-            sender: browser.runtime.MessageSender
-        ): Promise<void> {
+        async notifyRepoSyncError(hasRepoSyncError: boolean, sender: browser.runtime.MessageSender): Promise<void> {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, hasPrivateCloudError)
+                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, hasRepoSyncError)
             }
             return Promise.resolve()
         },
 
-        async checkPrivateCloudError(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
+        async checkRepoSyncError(tabId: number): Promise<boolean> {
+            return Promise.resolve(!!tabRepoSyncErrorCache.getTabHasRepoSyncError(tabId))
         },
 
         fetchCache,
@@ -424,7 +421,7 @@ function observeCurrentTabId(): Observable<number> {
  * a private code on Cloud error.
  */
 function observeCurrentTabPrivateCloudError(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), tabPrivateCloudErrorCache.observable]).pipe(
+    return combineLatest([observeCurrentTabId(), tabRepoSyncErrorCache.observable]).pipe(
         map(([tabId, privateCloudErrorCache]) => !!privateCloudErrorCache.get(tabId)),
         distinctUntilChanged()
     )
