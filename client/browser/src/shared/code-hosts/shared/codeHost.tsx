@@ -709,7 +709,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     render: Renderer
     minimalUI: boolean
     hideActions?: boolean
-    background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
+    background: Pick<BackgroundPageApi, 'notifyRepoSyncError' | 'openOptionsPage'>
 }
 
 /**
@@ -793,7 +793,7 @@ const isSafeToContinueCodeIntel = async ({
 
         if (isExtension) {
             // Notify to show extension alert-icon
-            background.notifyPrivateCloudError(true).catch(error => {
+            background.notifyRepoSyncError(true).catch(error => {
                 console.error('Error notifying background page of private cloud.', error)
             })
         }
@@ -876,15 +876,16 @@ export async function handleCodeHost({
     const hoverAlerts: Observable<HoverAlert>[] = []
 
     /**
+     * TODO: update comment
      * A stream that emits a boolean that signifies
      * whether any request for the current repository has failed on the basis
      * that it is a private repository that has not been added to Sourcegraph Cloud
      * (only emits `true` when the Sourcegraph instance is Cloud).
      * If the current state is `true`, we can short circuit subsequent requests.
      * */
-    const privateCloudErrors = new BehaviorSubject<boolean>(false)
+    const repoSyncErrors = new BehaviorSubject<boolean>(false)
     // Set by `ViewOnSourcegraphButton` (cleans up and sets to `false` whenever it is unmounted).
-    const setPrivateCloudError = privateCloudErrors.next.bind(privateCloudErrors)
+    const setRepoSyncError = repoSyncErrors.next.bind(repoSyncErrors)
 
     /**
      * Checks whether the error occured because the repository
@@ -919,7 +920,7 @@ export async function handleCodeHost({
             mutations,
             nativeTooltipsEnabled,
             codeHost,
-            privateCloudErrors
+            repoSyncErrors
         )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
@@ -934,7 +935,7 @@ export async function handleCodeHost({
         render,
         hoverAlerts,
         mutations,
-        privateCloudErrors,
+        privateCloudErrors: repoSyncErrors,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -1007,10 +1008,10 @@ export async function handleCodeHost({
                 return [asError(error)]
             })
         )
-        const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
-            setPrivateCloudError(hasPrivateCloudError)
+        const onRepoSyncError = (hasRepoSyncError: boolean): void => {
+            setRepoSyncError(hasRepoSyncError)
             if (isExtension) {
-                background.notifyPrivateCloudError(hasPrivateCloudError).catch(error => {
+                background.notifyRepoSyncError(hasRepoSyncError).catch(error => {
                     console.error('Error notifying background page of private cloud error:', error)
                 })
             }
@@ -1045,7 +1046,7 @@ export async function handleCodeHost({
                         // The bound function is constant
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                        onPrivateCloudError={onPrivateCloudError}
+                        onRepoSyncError={onRepoSyncError}
                     />,
                     mount
                 )
