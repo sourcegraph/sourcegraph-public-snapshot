@@ -159,6 +159,7 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
 
     // Automatically updates the batch spec code when the user wants to exclude a repo
     // resolved in the workspaces preview.
+    // TODO: https://github.com/sourcegraph/sourcegraph/issues/25085
     const excludeRepo = useCallback(
         (repo: string, branch: string) => {
             clearErrors()

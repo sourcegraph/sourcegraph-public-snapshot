@@ -1,4 +1,4 @@
-import { excludeRepo, haveMatchingWorkspaces } from './yaml-util'
+import { excludeRepo, haveMatchingWorkspaces, insertNameIntoLibraryItem } from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
 on:
@@ -299,6 +299,28 @@ describe('Batch spec yaml utils', () => {
                 // Order shouldn't matter
                 expect(haveMatchingWorkspaces(spec1, spec2)).toEqual(matches)
                 expect(haveMatchingWorkspaces(spec2, spec1)).toEqual(matches)
+            }
+        })
+    })
+
+    describe('insertNameIntoLibraryItem', () => {
+        it('should correctly overwrite the name in a given spec', () => {
+            for (const spec of [SPEC_WITH_ONE_REPOSITORY, SPEC_WITH_IMPORT_AND_STEPS]) {
+                expect(insertNameIntoLibraryItem(spec, 'new-name')).toEqual(spec.replace('hello-world', 'new-name'))
+            }
+        })
+        it('should correctly quote special names', () => {
+            for (const newName of ['bad: colons', 'true', 'false', '1.23']) {
+                expect(insertNameIntoLibraryItem(SPEC_WITH_ONE_REPOSITORY, newName)).toEqual(
+                    SPEC_WITH_ONE_REPOSITORY.replace('hello-world', `"${newName}"`)
+                )
+            }
+        })
+        it('should not quote edge-cases that do not need quoting', () => {
+            for (const newName of ['"asdf"', "'asdf'", 'hello-"asdf"', 'zero', 'on', 'off', 'yes', 'no']) {
+                expect(insertNameIntoLibraryItem(SPEC_WITH_ONE_REPOSITORY, newName)).toEqual(
+                    SPEC_WITH_ONE_REPOSITORY.replace('hello-world', newName)
+                )
             }
         })
     })
