@@ -60,7 +60,7 @@ func ParseDiff(files []string) (diff Diff) {
 		}
 
 		// Affects GraphQL
-		if strings.HasSuffix(p, ".graphql") {
+		if strings.HasSuffix(p, ".graphql") || strings.HasPrefix(p, "cmd/frontend/graphqlbackend/") {
 			diff |= GraphQL
 		}
 

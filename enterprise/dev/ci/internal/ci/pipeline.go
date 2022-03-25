@@ -92,6 +92,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
 		}
+
+		if c.Diff.Has(changed.GraphQL) {
+			ops.Merge(operations.NewNamedSet("Integration tests",
+				buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+				backendIntegrationTests(c.candidateImageTag()),
+				codeIntelQA(c.candidateImageTag()),
+			))
+		}
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case runtype.ReleaseNightly:
