@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var slackTemplate = `:truck: *{{.Environment}}* deployment (<{{.BuildURL}}|build>)
+var slackTemplate = `*{{.Environment}}* deployment (<{{.BuildURL}}|build>)
 
 - Applications:
 {{- range .Services }}
@@ -130,7 +130,7 @@ func postSlackUpdate(webhook string, summary string) error {
 	}
 	defer resp.Body.Close()
 	if buf.String() != "ok" {
-		return err
+		return errors.Newf("failed to post on slack: %q", buf.String())
 	}
 	return err
 }
