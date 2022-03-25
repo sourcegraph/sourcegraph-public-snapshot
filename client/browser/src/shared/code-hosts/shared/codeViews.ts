@@ -102,7 +102,7 @@ export const trackCodeViews = ({
 
 const fetchFileContentForFileInfo = (
     fileInfo: FileInfoWithRepoName,
-    checkRepoSyncError: (error: any) => Promise<boolean>,
+    checkPrivateCloudError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithContent> =>
     ensureRevisionIsClonedForFileInfo(fileInfo, requestGraphQL).pipe(
@@ -127,10 +127,10 @@ const fetchFileContentForFileInfo = (
             // so we fallback with undefined content.
             // Note: we recover/fallback in this case so that we can show informative
             // alerts to the user.
-            from(checkRepoSyncError(error)).pipe(
-                switchMap(hasRepoSyncError => {
+            from(checkPrivateCloudError(error)).pipe(
+                switchMap(hasPrivateCloudError => {
                     // In this case, fileInfo will have undefined content.
-                    if (hasRepoSyncError) {
+                    if (hasPrivateCloudError) {
                         return of(fileInfo)
                     }
                     throw error
@@ -141,28 +141,36 @@ const fetchFileContentForFileInfo = (
 
 export const fetchFileContentForDiffOrFileInfo = (
     diffOrBlobInfo: DiffOrBlobInfo<FileInfoWithRepoName>,
-    checkRepoSyncError: (error: any) => Promise<boolean>,
+    checkPrivateCloudError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<DiffOrBlobInfo<FileInfoWithContent>> => {
     if ('blob' in diffOrBlobInfo) {
-        return fetchFileContentForFileInfo(diffOrBlobInfo.blob, checkRepoSyncError, requestGraphQL).pipe(
+        return fetchFileContentForFileInfo(diffOrBlobInfo.blob, checkPrivateCloudError, requestGraphQL).pipe(
             map(fileInfo => ({ blob: fileInfo }))
         )
     }
     if (diffOrBlobInfo.head && diffOrBlobInfo.base) {
-        const fetchingBaseFile = fetchFileContentForFileInfo(diffOrBlobInfo.base, checkRepoSyncError, requestGraphQL)
-        const fetchingHeadFile = fetchFileContentForFileInfo(diffOrBlobInfo.head, checkRepoSyncError, requestGraphQL)
+        const fetchingBaseFile = fetchFileContentForFileInfo(
+            diffOrBlobInfo.base,
+            checkPrivateCloudError,
+            requestGraphQL
+        )
+        const fetchingHeadFile = fetchFileContentForFileInfo(
+            diffOrBlobInfo.head,
+            checkPrivateCloudError,
+            requestGraphQL
+        )
 
         return zip(fetchingBaseFile, fetchingHeadFile).pipe(
             map(([base, head]): DiffOrBlobInfo<FileInfoWithContent> => ({ head, base }))
         )
     }
     if (diffOrBlobInfo.head) {
-        return fetchFileContentForFileInfo(diffOrBlobInfo.head, checkRepoSyncError, requestGraphQL).pipe(
+        return fetchFileContentForFileInfo(diffOrBlobInfo.head, checkPrivateCloudError, requestGraphQL).pipe(
             map((head): DiffOrBlobInfo<FileInfoWithContent> => ({ head }))
         )
     }
-    return fetchFileContentForFileInfo(diffOrBlobInfo.base, checkRepoSyncError, requestGraphQL).pipe(
+    return fetchFileContentForFileInfo(diffOrBlobInfo.base, checkPrivateCloudError, requestGraphQL).pipe(
         map(base => ({ base }))
     )
 }

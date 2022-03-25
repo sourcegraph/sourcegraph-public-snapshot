@@ -39,7 +39,7 @@ interface TabStatus {
     host: string
     protocol: string
     hasPermissions: boolean
-    hasRepoSyncError: boolean
+    hasPrivateCloudError: boolean
 }
 
 assertEnvironment('OPTIONS')
@@ -70,10 +70,10 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!id) {
         throw new Error('Currently active tab has no ID')
     }
-    const hasRepoSyncError = await background.checkRepoSyncError(id)
+    const hasPrivateCloudError = await background.checkPrivateCloudError(id)
     const { host, protocol } = new URL(url)
     const hasPermissions = await checkUrlPermissions(url)
-    return { hasRepoSyncError, host, protocol, hasPermissions }
+    return { hasPrivateCloudError, host, protocol, hasPermissions }
 }
 
 // Make GraphQL requests from background page
@@ -180,10 +180,7 @@ const Options: React.FunctionComponent = () => {
 
     const currentUser = useObservable(
         useMemo(
-            () =>
-                currentTabStatus?.status.hasRepoSyncError && sourcegraphUrl
-                    ? fetchCurrentUser(sourcegraphUrl)
-                    : of(undefined),
+            () => (currentTabStatus?.status.hasPrivateCloudError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)),
             [currentTabStatus, sourcegraphUrl]
         )
     )
@@ -263,9 +260,9 @@ const Options: React.FunctionComponent = () => {
                     onToggleActivated={handleToggleActivated}
                     optionFlags={optionFlagsWithValues || []}
                     onChangeOptionFlag={handleChangeOptionFlag}
+                    hasPrivateCloudError={currentTabStatus?.status.hasPrivateCloudError}
                     currentUser={currentUser}
                     showSourcegraphCloudAlert={showSourcegraphCloudAlert}
-                    showPrivateRepositoryAlert={currentTabStatus?.status.hasRepoSyncError}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}
                 />

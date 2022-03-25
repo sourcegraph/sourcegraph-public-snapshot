@@ -42,13 +42,13 @@ export function handleNativeTooltips(
     mutations: Observable<MutationRecordLike[]>,
     nativeTooltipsEnabled: Observable<boolean>,
     { nativeTooltipResolvers, name }: Pick<CodeHost, 'nativeTooltipResolvers' | 'name' | 'getContext'>,
-    repoSyncErrors: Observable<boolean>
+    privateCloudErrors: Observable<boolean>
 ): { nativeTooltipsAlert: Observable<HoverAlert>; subscription: Unsubscribable } {
     const nativeTooltips = mutations.pipe(trackViews(nativeTooltipResolvers || []))
     const nativeTooltipsAlert = nativeTooltips.pipe(
         first(),
         switchMap(() =>
-            repoSyncErrors.pipe(
+            privateCloudErrors.pipe(
                 filter(hasError => !hasError),
                 mapTo({
                     type: NATIVE_TOOLTIP_TYPE,
@@ -67,13 +67,13 @@ export function handleNativeTooltips(
         subscription: nativeTooltips.subscribe(({ element, subscriptions }) => {
             subscriptions.add(
                 nativeTooltipsEnabled
-                    .pipe(withLatestFrom(repoSyncErrors))
+                    .pipe(withLatestFrom(privateCloudErrors))
                     // This subscription is correctly handled through the view's `subscriptions`
                     // eslint-disable-next-line rxjs/no-nested-subscribe
-                    .subscribe(([enabled, hasRepoSyncError]) => {
+                    .subscribe(([enabled, hasPrivateCloudError]) => {
                         // If we can't provide the user hovers because it's private code, don't hide native tooltips.
                         // Otherwise we would have to show the user two alerts at the same time.
-                        const isTooltipHidden = !enabled && !hasRepoSyncError
+                        const isTooltipHidden = !enabled && !hasPrivateCloudError
                         element.dataset.nativeTooltipHidden = String(isTooltipHidden)
                         element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, isTooltipHidden)
                     })

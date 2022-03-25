@@ -16,7 +16,7 @@ interface RequestGraphQLOptions<V> {
     request: string
     variables: V
     mightContainPrivateInfo: boolean
-    repoSyncErrors?: Observable<boolean>
+    privateCloudErrors?: Observable<boolean>
 }
 
 interface GraphQLHelpers {

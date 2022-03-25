@@ -95,8 +95,8 @@ export interface BackgroundPageApi {
         variables: V
         sourcegraphURL?: string
     }): Promise<GraphQLResult<T>>
-    notifyRepoSyncError(hasRepoSyncError: boolean): Promise<void>
-    checkRepoSyncError(tabId: number): Promise<boolean>
+    notifyPrivateCloudError(hasPrivateCloudError: boolean): Promise<void>
+    checkPrivateCloudError(tabId: number): Promise<boolean>
     fetchCache: typeof fetchCache
     getCookie: typeof browser.cookies.get
 }

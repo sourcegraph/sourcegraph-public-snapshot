@@ -59,7 +59,7 @@ const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
  * it has experienced repository does not exist on the instance error
  * by sending `notifyRepoSyncError` message.
  */
-const tabRepoSyncErrorCache = (() => {
+const tabPrivateCloudErrorCache = (() => {
     const cache = new Map<number, boolean>()
     const subject = new Subject<ReadonlyMap<number, boolean>>()
     return {
@@ -68,18 +68,18 @@ const tabRepoSyncErrorCache = (() => {
          * Update the background page's cache of which tabs have experienced a
          * private code on Cloud error.
          */
-        setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean): void {
-            if (!hasRepoSyncError) {
+        setTabHasPrivateCloudError(tabId: number, hasPrivateCloudError: boolean): void {
+            if (!hasPrivateCloudError) {
                 // An absent value is equivalent to being false; so we can delete it.
                 cache.delete(tabId)
             }
-            cache.set(tabId, hasRepoSyncError)
+            cache.set(tabId, hasPrivateCloudError)
 
             // Emit the updated repository cache when it changes, so that consumers can
             // observe the value.
             subject.next(cache)
         },
-        getTabHasRepoSyncError(tabId: number): boolean {
+        getTabHasPrivateCloudError(tabId: number): boolean {
             return !!cache.get(tabId)
         },
     }
@@ -175,7 +175,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
-            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
+            tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
             return
         }
 
@@ -218,16 +218,19 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        async notifyRepoSyncError(hasRepoSyncError: boolean, sender: browser.runtime.MessageSender): Promise<void> {
+        async notifyPrivateCloudError(
+            hasPrivateCloudError: boolean,
+            sender: browser.runtime.MessageSender
+        ): Promise<void> {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, hasRepoSyncError)
+                tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, hasPrivateCloudError)
             }
             return Promise.resolve()
         },
 
-        async checkRepoSyncError(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabRepoSyncErrorCache.getTabHasRepoSyncError(tabId))
+        async checkPrivateCloudError(tabId: number): Promise<boolean> {
+            return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
         },
 
         fetchCache,
@@ -420,9 +423,9 @@ function observeCurrentTabId(): Observable<number> {
  * Returns an observable that indicates whether the current tab has experienced
  * a private code on Cloud error.
  */
-function observeCurrentTabRepoSyncError(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), tabRepoSyncErrorCache.observable]).pipe(
-        map(([tabId, repoSyncErrorCache]) => !!repoSyncErrorCache.get(tabId)),
+function observeCurrentTabPrivateCloudError(): Observable<boolean> {
+    return combineLatest([observeCurrentTabId(), tabPrivateCloudErrorCache.observable]).pipe(
+        map(([tabId, privateCloudErrorCache]) => !!privateCloudErrorCache.get(tabId)),
         distinctUntilChanged()
     )
 }
@@ -439,14 +442,14 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
     return combineLatest([
         observeStorageKey('sync', 'disableExtension'),
         observeSourcegraphUrlValidation(),
-        observeCurrentTabRepoSyncError(),
+        observeCurrentTabPrivateCloudError(),
     ]).pipe(
-        map(([isDisabled, isSourcegraphUrlValid, hasRepoSyncError]) => {
+        map(([isDisabled, isSourcegraphUrlValid, hasPrivateCloudError]) => {
             if (isDisabled) {
                 return 'inactive'
             }
 
-            if (!isSourcegraphUrlValid || hasRepoSyncError) {
+            if (!isSourcegraphUrlValid || hasPrivateCloudError) {
                 return 'active-with-alert'
             }
 

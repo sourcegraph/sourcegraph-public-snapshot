@@ -36,7 +36,7 @@ interface ViewOnSourcegraphButtonProps
      */
     onSignInClose?: () => void
 
-    onRepoSyncError: (hasError: boolean) => void
+    onPrivateCloudError: (hasError: boolean) => void
 }
 
 export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
@@ -51,7 +51,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     onSignInClose,
     className,
     iconClassName,
-    onRepoSyncError,
+    onPrivateCloudError,
 }) => {
     className = classNames('open-on-sourcegraph', className)
     const mutedIconClassName = classNames(styles.iconMuted, iconClassName)
@@ -63,12 +63,12 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     const { rawRepoName, revision, privateRepository } = context
 
     useEffect(() => {
-        onRepoSyncError(repoExistsOrError === false)
+        onPrivateCloudError(repoExistsOrError === false)
 
         return () => {
-            onRepoSyncError(false)
+            onPrivateCloudError(false)
         }
-    }, [repoExistsOrError, onRepoSyncError])
+    }, [repoExistsOrError, onPrivateCloudError])
 
     // Show nothing while loading
     if (repoExistsOrError === undefined) {
