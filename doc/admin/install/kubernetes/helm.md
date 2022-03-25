@@ -23,7 +23,7 @@ helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 
 The Sourcegraph chart is highly customizable to support a wide range of environments. Please review the default values from [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) and all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts.
 
-To customize configuration settings with an override file, create an empty yaml file (e.g. `override.yaml`) and configure overrides.
+To customize configuration settings with an override file, create an empty yaml file (e.g. `override.yaml`) to get started.
 
 > WARNING: __DO NOT__ copy the [default values file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) as a boilerplate for your override file. You risk having outdated values during upgrades.
 
@@ -49,11 +49,11 @@ __TODO__
 
 ### Cloud providers guides
 
-This section is aimed at providing high-level guidance on configuring Ingress and Storage Class for Sourcegraph deployment on major Cloud providers. In general, you need the following to get started:
+This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:
 
 - A working Kubernetes cluster 1.19 and higher
-- The cluster should have Block Storage CSI storage drivers installed
-- The cluster should have Ingress Controller installed. We recommend the use of platform native ingress controller.
+- The ability to provision persistent volumes, e.g. Block Storage [CSI storage driver](https://kubernetes-csi.github.io/docs/drivers.html) is installed.
+- The cluster should have Ingress Controller installed, e.g. platform native ingress controller, [NGINX Ingress Controller].
 - You can have control over your `company.com` domain to create DNS records for Sourcegraph, e.g. `sourcegraph.company.com`
 
 #### Configure Sourcegraph on Google Kubernetes Engine (GKE)
@@ -281,7 +281,7 @@ frontend:
 
 You need to have a Kubernetes cluster (>=1.19) with the following components installed:
 
-- [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller](https://github.com/kubernetes/ingress-nginx)
+- [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
 - [x] Block Storage CSI driver
 
 You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
@@ -403,3 +403,4 @@ __TODO__
 [Compute Engine persistent disk]: https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver
 [AWS Load Balancer Controller]: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
 [AWS EBS CSI driver]: https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html
+[NGINX Ingress Controller]: https://github.com/kubernetes/ingress-nginx
