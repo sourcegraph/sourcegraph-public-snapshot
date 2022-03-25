@@ -11,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,25 +42,28 @@ var (
 )
 
 var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.NumberOfResults}} new {{.ResultPluralized}}`,
+	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.TotalCount}} new {{.ResultPluralized}}`,
 	Text:    textTemplate,
 	HTML:    htmlTemplate,
 })
 
 type TemplateDataNewSearchResults struct {
-	Priority         string
-	CodeMonitorURL   string
-	SearchURL        string
-	Description      string
-	NumberOfResults  int
-	ResultPluralized string
-	IsTest           bool
+	Priority                  string
+	CodeMonitorURL            string
+	SearchURL                 string
+	Description               string
+	IncludeResults            bool
+	TruncatedResults          []*result.CommitMatch
+	TotalCount                int
+	TruncatedCount            int
+	ResultPluralized          string
+	TruncatedResultPluralized string
+	IsTest                    bool
 }
 
 func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction) (d *TemplateDataNewSearchResults, err error) {
 	var (
-		priority         string
-		resultPluralized string
+		priority string
 	)
 
 	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
@@ -71,19 +75,19 @@ func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction)
 		priority = ""
 	}
 
-	if len(args.Results) == 1 {
-		resultPluralized = "result"
-	} else {
-		resultPluralized = "results"
-	}
+	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
 
 	return &TemplateDataNewSearchResults{
-		Priority:         priority,
-		CodeMonitorURL:   codeMonitorURL,
-		SearchURL:        searchURL,
-		Description:      args.MonitorDescription,
-		NumberOfResults:  len(args.Results),
-		ResultPluralized: resultPluralized,
+		Priority:                  priority,
+		CodeMonitorURL:            codeMonitorURL,
+		SearchURL:                 searchURL,
+		Description:               args.MonitorDescription,
+		IncludeResults:            args.IncludeResults,
+		TruncatedResults:          truncatedResults,
+		TotalCount:                totalCount,
+		TruncatedCount:            truncatedCount,
+		ResultPluralized:          pluralize("result", totalCount),
+		TruncatedResultPluralized: pluralize("result", truncatedCount),
 	}, nil
 }
 
@@ -91,7 +95,7 @@ func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescript
 	return &TemplateDataNewSearchResults{
 		Priority:         "",
 		Description:      monitorDescription,
-		NumberOfResults:  1,
+		TotalCount:       1,
 		IsTest:           true,
 		ResultPluralized: "result",
 	}
@@ -159,4 +163,12 @@ func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string 
 	q.Set("utm_source", utmSource)
 	u.RawQuery = q.Encode()
 	return u.String()
+}
+
+// Only works for simple plurals (eg. result/results)
+func pluralize(word string, count int) string {
+	if count == 1 {
+		return word
+	}
+	return word + "s"
 }

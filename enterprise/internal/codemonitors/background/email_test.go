@@ -19,7 +19,7 @@ func TestEmail(t *testing.T) {
 			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
 			SearchURL:        "https://sourcegraph.com/search",
 			Description:      "My test monitor",
-			NumberOfResults:  1,
+			TotalCount:       1,
 			IsTest:           true,
 			ResultPluralized: "result",
 		}
@@ -52,7 +52,7 @@ func TestEmail(t *testing.T) {
 			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
 			SearchURL:        "https://sourcegraph.com/search",
 			Description:      "My test monitor",
-			NumberOfResults:  1,
+			TotalCount:       1,
 			ResultPluralized: "result",
 		}
 
@@ -84,7 +84,7 @@ func TestEmail(t *testing.T) {
 			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
 			SearchURL:        "https://sourcegraph.com/search",
 			Description:      "My test monitor",
-			NumberOfResults:  2,
+			TotalCount:       2,
 			ResultPluralized: "results",
 		}
 

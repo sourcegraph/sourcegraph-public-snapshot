@@ -19,16 +19,19 @@ func TestActionRunner(t *testing.T) {
 		name           string
 		results        []*result.CommitMatch
 		wantNumResults int
+		wantResults []*result.CommitMatch
 	}{
 		{
-			name:           "5 results",
-			results:        make([]*result.CommitMatch, 5),
-			wantNumResults: 5,
+			name: "9 results",
+			results: []*result.CommitMatch{&diffResultMock, &commitResultMock, &diffResultMock, &commitResultMock, &diffResultMock, &commitResultMock},
+			wantNumResults: 9,
+			wantResults: []*result.CommitMatch{&diffResultMock, &commitResultMock, &diffResultMock},
 		},
 		{
-			name:           "1 result",
-			results:        make([]*result.CommitMatch, 1),
+			name: "1 result",
+			results: []*result.CommitMatch{&commitResultMock},
 			wantNumResults: 1,
+			wantResults: []*result.CommitMatch{&commitResultMock},
 		},
 	}
 
@@ -84,17 +87,28 @@ func TestActionRunner(t *testing.T) {
 			if tt.wantNumResults == 1 {
 				wantResultsPluralized = "result"
 			}
+			wantTruncatedCount := 0
+			if (tt.wantNumResults > 5) {
+				wantTruncatedCount = tt.wantNumResults - 5
+			}
+			wantTruncatedResultsPluralized := "results"
+			if wantTruncatedCount == 1 {
+				wantTruncatedResultsPluralized = "result"
+			}
 
 			want := TemplateDataNewSearchResults{
 				Priority:         "",
 				SearchURL:        externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
 				Description:      "test description",
 				CodeMonitorURL:   externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
-				NumberOfResults:  tt.wantNumResults,
+				TotalCount:       tt.wantNumResults,
 				ResultPluralized: wantResultsPluralized,
+				TruncatedCount: wantTruncatedCount,
+				TruncatedResultPluralized: wantTruncatedResultsPluralized,
+				TruncatedResults: tt.wantResults,
 			}
 
-			want.NumberOfResults = tt.wantNumResults
+			want.TotalCount = tt.wantNumResults
 			require.Equal(t, want, got)
 		})
 	}
