@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Code Insights: Added locked insights overlays for frozen insights while in limited access mode. Restricted insight editing save change button for frozen insights. [#33062](https://github.com/sourcegraph/sourcegraph/pull/33062)
 
 ### Fixed
 
