@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
-// TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
+// CodeInsightsDB returns a handle to the Code Insights Postgres instance.
 //
 // The returned DB handle is initialized with a unique database just for the specified test, with
 // all migrations applied.
@@ -22,7 +22,7 @@ func CodeInsightsDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		t.Skip()
 	}
 
-	// Setup TimescaleDB for testing.
+	// Setup postgres DB for testing.
 	if os.Getenv("CODEINSIGHTS_PGDATASOURCE") == "" {
 		os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")
 	}
@@ -35,7 +35,7 @@ func CodeInsightsDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	initConn, err := connections.NewTestDB(insightsDSN)
 	if err != nil {
 		t.Log("")
-		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
+		t.Log("README: To run these tests you need to have the codeinsights db running:")
 		t.Log("")
 		t.Log("$ ./dev/codeinsights-db.sh &")
 		t.Log("")
@@ -63,7 +63,7 @@ func CodeInsightsDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	// Connect to the new DB.
 	u, err := url.Parse(insightsDSN)
 	if err != nil {
-		t.Fatal("parsing Timescale DSN", err)
+		t.Fatal("parsing insights DSN", err)
 	}
 	u.Path = dbname
 	insightsDSN = u.String()

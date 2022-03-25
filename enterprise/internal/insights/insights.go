@@ -57,7 +57,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 	return nil
 }
 
-// InitializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running
+// InitializeCodeInsightsDB connects to and initializes the Code Insights Postgres DB, running
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
