@@ -303,7 +303,16 @@ update msg model =
 
         OnDebounce ->
             if model.debounce - 1 == 0 then
-                update RunCompute { model | debounce = model.debounce - 1 }
+                let
+                    ( newModel, runCompute ) =
+                        update RunCompute { model | debounce = model.debounce - 1 }
+                in
+                ( newModel
+                , Cmd.batch
+                    [ emitInput (updateComputeInput [ model.query ] model.dataFilter model.selectedTab)
+                    , runCompute
+                    ]
+                )
 
             else
                 ( { model | debounce = model.debounce - 1 }, Cmd.none )
@@ -349,8 +358,7 @@ update msg model =
                 in
                 ( { model | resultsMap = Dict.empty, alerts = alerts }
                 , Cmd.batch
-                    [ emitInput (updateComputeInput [ model.query ] model.dataFilter model.selectedTab)
-                    , openStream
+                    [ openStream
                         ( Url.Builder.crossOrigin
                             model.sourcegraphURL
                             [ ".api", "compute", "stream" ]
