@@ -171,7 +171,7 @@ else
 fi
 
 if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-  echo "Updating PR #${pr_number} description"
+  echo "Updating PR ${owner_and_repo} #${pr_number} description"
   # GitHub pull request number and GitHub api token are set
   # Appending `App Preview` section into PR description if it hasn't existed yet
 
