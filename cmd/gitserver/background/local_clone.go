@@ -89,6 +89,8 @@ func (h *localCloneHandler) Handle(ctx context.Context, record workerutil.Record
 
 	if job.DeleteSource {
 		if err := h.client.RemoveFrom(ctx, api.RepoName(job.RepoName), job.SourceHostname); err != nil {
+			// It is fine to return an error here because the job will be retried and, instead of being cloned again, the repo will
+			// get updated, which is much cheaper.
 			return errors.Wrap(err, "error deleting repo from source")
 		}
 	}
