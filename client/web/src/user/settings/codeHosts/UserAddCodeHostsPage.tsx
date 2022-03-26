@@ -346,9 +346,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             for (const service of services) {
                 const problem = service.warning || service.lastSyncError
+                let outage = false
 
-                // if service has warnings  errors
-                if (problem) {
+                // Skip when status code >= 500, as they are handled by the outage checkers. This will avoid creating duplicate alert messages.
+                if (service.lastSyncError && (service.lastSyncError?.includes('503') || service.lastSyncError?.includes('500'))) {
+                    outage = true
+                }
+
+                // if service has warnings or errors
+                if (problem && !outage) {
                     servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
                     continue
                 }
@@ -405,24 +411,22 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <Alert className="my-3" key={service.id} variant="warning">
-                <div>
-                    <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
-                    <p className="align-middle mb-0">
-                        <span className="align-middle">Please try</span>{' '}
-                        {owner.type === 'org' ? (
-                            <Button
-                                className="font-weight-normal shadow-none p-0 border-0"
-                                onClick={toggleUpdateModal}
-                                variant="link"
-                            >
-                                updating the code host connection
-                            </Button>
-                        ) : (
-                            <span className="align-middle">reconnecting the code host connection</span>
-                        )}{' '}
-                        <span className="align-middle">with {service.displayName} to restore access.</span>
-                    </p>
-                </div>
+            <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
+            <p className="align-middle mb-0">
+                <span className="align-middle">Please try</span>{' '}
+                {owner.type === 'org' ? (
+                    <Button
+                        className="font-weight-normal shadow-none p-0 border-0"
+                        onClick={toggleUpdateModal}
+                        variant="link"
+                    >
+                        updating the code host connection
+                    </Button>
+                ) : (
+                    <span className="align-middle">reconnecting the code host connection</span>
+                )}{' '}
+                <span className="align-middle">with {service.displayName} to restore access.</span>
+            </p>
         </Alert>
     )
 
