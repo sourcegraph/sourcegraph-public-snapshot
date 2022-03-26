@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
+import { AggregableBadge } from 'sourcegraph'
 
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'

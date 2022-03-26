@@ -2,9 +2,9 @@
 
 set -e
 
-echo "--- yarn in root"
+echo "--- pnpm in root"
 # mutex is necessary since CI runs various pnpm installs in parallel
-pnpm install
+pnpm install --silent
 
 echo "--- generate"
 pnpm gulp generate
