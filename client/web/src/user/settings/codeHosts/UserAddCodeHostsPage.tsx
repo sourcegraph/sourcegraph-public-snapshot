@@ -98,15 +98,6 @@ const checkGithubOutage = async ():Promise<true | undefined> => new Promise(reso
     })
 })
 
-const outageMessage = (codeHost: string): string  => {
-    const codeHostsUrls = {
-        'GitHub': 'https://www.githubstatus.com',
-        'GitLab': 'https://status.gitlab.com',
-    }
-
-    return `Codehost ${codeHost} is reporting issues - if you encounter problems adding repos, take a look at their ${codeHostsUrls[codeHost]} page`
-}
-
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     owner,
     codeHostExternalServices,
@@ -132,7 +123,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const toggleUpdateModal = useCallback(() => {
         setIssUpdateModalOpen(!isUpdateModalOpen)
     }, [isUpdateModalOpen])
-    const [isAnyServiceDown, setIsAnyServiceDown] = useState<Map<string, string>>()
+    const [servicesDown, setServicesDown] = useState<string[]>()
 
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
         GET_ORG_FEATURE_FLAG_VALUE,
@@ -190,23 +181,22 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }, [])
 
     async function checkAndSetOutageAlert(services: Partial<Record<ExternalServiceKind, ListExternalServiceFields>>): Promise<void> {
-
-        const svcsErrors = new Map<string, string>()
+        const svcs = []
         for (const svc of Object.values(services)) {
             // When there is a sync error, we check for potential outages by calling GitHub Status API
             if (svc.displayName === 'GitHub' && svc.lastSyncError !== null) {
                 const outage = await checkGithubOutage()
                 if (outage) {
-                    svcsErrors.set(svc.displayName, outageMessage(svc.displayName))
+                    svcs.push(svc.displayName)
                 }
             }
             // GitLab doesn't have an Status API, so we check if the error contains an Status Code of 500 or 503
-            if (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('401') || svc.lastSyncError?.includes('503')) {
-                svcsErrors.set(svc.displayName, outageMessage(svc.displayName))
+            if (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('500') || svc.lastSyncError?.includes('503')) {
+                svcs.push(svc.displayName)
             }
         }
 
-        setIsAnyServiceDown(svcsErrors)
+        setServicesDown(svcs)
         return
     }
 
@@ -415,27 +405,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <Alert className="my-3" key={service.id} variant="warning">
-            {service.outage ? (
-                <div>
-                    <h4 className="align-middle mb-1">We're having trouble connecting to {service.displayName}</h4>
-                    <p className="align-middle mb-0">
-                        <span className="align-middle">Before continuing, verify that</span>{' '}
-                                {service.displayName}
-                            <span className="align-middle"> is available by visiting{' '}
-                            {service.displayName === 'GitHub' ? (
-                                <Link to="https://githubstatus.com" target="_blank" rel="noopener">
-                                githubstatus.com
-                                </Link>
-                            ):(
-                                <Link to="https://status.gitlab.com/" target="_blank" rel="noopener">
-                                status.gitlab.com
-                                </Link>
-                            )}
-                            </span>
-                        {' '}
-                    </p>
-                </div>
-            ) : (
                 <div>
                     <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
                     <p className="align-middle mb-0">
@@ -454,21 +423,33 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         <span className="align-middle">with {service.displayName} to restore access.</span>
                     </p>
                 </div>
-            )
-        }
         </Alert>
     )
 
-    const getOutageMessages = (outageMessages: Map<string, string> | undefined): JSX.Element => (
-        <>
-        {
-            outageMessages &&
-                [...outageMessages.entries()].map(([key, value]: [string, string]) => (
-                    <ErrorAlert error={value} key={key} />)
-                )
-        }
-        </>
-    )
+    const getOutageMessage = (servicesDown: string[]): JSX.Element =>
+        <Alert className="my-3" key={servicesDown[0]} variant="warning">
+            {servicesDown?.map(svc => (
+                <div key={svc}>
+                    <h4 className="align-middle mb-1">We're having trouble connecting to {svc} </h4>
+                    <p className="align-middle mb-0">
+                        <span className="align-middle">Before continuing, verify that</span>{' '}
+                            {svc}
+                            <span className="align-middle"> is available by visiting{' '}
+                                {svc === 'GitHub' ? (
+                                    <Link to="https://githubstatus.com" target="_blank" rel="noopener">
+                                    githubstatus.com
+                                    </Link>
+                                ) : (
+                                    <Link to="https://githubstatus.com" target="_blank" rel="noopener">
+                                    githubstatus.com
+                                    </Link>
+                                )}
+                            </span>
+                        {' '}
+                    </p>
+                </div>
+            ))}
+        </Alert>
 
     // auth providers by service type
     const authProvidersByKind = context.authProviders.reduce((accumulator: AuthProvidersByKind, provider) => {
@@ -560,8 +541,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
             {/* display outage alert when a service is experiencing an outage */}
-            { console.log( 'is a svc down',  isAnyServiceDown)}
-            {isAnyServiceDown ? getOutageMessages(isAnyServiceDown) : null}
+            {servicesDown && servicesDown.length > 0 && getOutageMessage(servicesDown)}
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
