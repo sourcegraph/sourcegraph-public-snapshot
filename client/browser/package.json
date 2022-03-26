@@ -339,9 +339,6 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "engines": {
-    "pnpm": ">6.32.1"
-  },
   "scripts": {
     "storybook": "STORIES_GLOB='client/browser/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "fetch-code-intel-extensions": "node scripts/fetch-code-intel-extensions",
