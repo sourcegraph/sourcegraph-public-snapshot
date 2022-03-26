@@ -340,18 +340,24 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 }
 
 func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (int, error) {
-	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT id FROM dashboard WHERE type = %s", LimitedAccessMode)))
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("SELECT id FROM dashboard WHERE type = %s", LimitedAccessMode)))
 	if err != nil {
 		return 0, err
 	}
 	if id == 0 {
 		query := sqlf.Sprintf(insertDashboardSql, "Limited Access Mode Dashboard", true, LimitedAccessMode)
-		id, _, err = basestore.ScanFirstInt(s.Query(ctx, query))
+		id, _, err = basestore.ScanFirstInt(tx.Query(ctx, query))
 		if err != nil {
 			return 0, err
 		}
 		global := true
-		err = s.AddDashboardGrants(ctx, id, []DashboardGrant{{Global: &global}})
+		err = tx.AddDashboardGrants(ctx, id, []DashboardGrant{{Global: &global}})
 		if err != nil {
 			return 0, err
 		}
