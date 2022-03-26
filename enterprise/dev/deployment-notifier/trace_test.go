@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,7 +14,7 @@ func intPtr(v int) *int {
 }
 
 func TestGenerateDeploymentTrace(t *testing.T) {
-	events, err := GenerateDeploymentTrace(&DeploymentReport{
+	trace, err := GenerateDeploymentTrace(&DeploymentReport{
 		DeployedAt: time.RFC822Z,
 		PullRequests: []*github.PullRequest{
 			{Number: intPtr(32996)},
@@ -27,11 +28,13 @@ func TestGenerateDeploymentTrace(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+	require.NotNil(t, trace)
 
 	const (
-		expectRootSpan     = 1
 		expectPRSpans      = 3
 		expectServiceSpans = 3 + 3 + 1
 	)
-	require.Equal(t, expectRootSpan+expectPRSpans+expectServiceSpans, len(events))
+	assert.NotEmpty(t, trace.ID)
+	assert.NotNil(t, trace.Root)
+	assert.Equal(t, expectPRSpans+expectServiceSpans, len(trace.Spans))
 }

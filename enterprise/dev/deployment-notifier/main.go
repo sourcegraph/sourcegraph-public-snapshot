@@ -84,8 +84,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Tracing
 	honeyConfig := libhoney.Config{
 		APIKey:  flags.HoneycombToken,
+		APIHost: "https://api.honeycomb.io/",
 		Dataset: "deploy-sourcegraph",
 	}
 	if flags.DryRun {
@@ -94,12 +96,12 @@ func main() {
 	if err := libhoney.Init(honeyConfig); err != nil {
 		log.Fatal(err)
 	}
-	events, err := GenerateDeploymentTrace(report)
+	trace, err := GenerateDeploymentTrace(report)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var sendErrs error
-	for _, event := range events {
+	for _, event := range trace.Spans {
 		if err := event.Send(); err != nil {
 			sendErrs = errors.Append(sendErrs, err)
 		}
@@ -107,11 +109,20 @@ func main() {
 	if sendErrs != nil {
 		log.Fatal(err)
 	}
+	if err := trace.Root.Send(); err != nil {
+		log.Fatal(err)
+	}
+	traceURL, err := buildTraceURL(&honeyConfig, trace.ID, trace.Root.Timestamp.Unix())
+	if err != nil {
+		log.Println("warning: buildTraceURL: ", err.Error())
+	} else {
+		log.Println("trace: ", traceURL)
+	}
 	libhoney.Close()
 
+	// Notifcations
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
-
 	if flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
