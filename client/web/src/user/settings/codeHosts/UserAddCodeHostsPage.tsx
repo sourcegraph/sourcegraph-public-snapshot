@@ -83,20 +83,21 @@ export interface ServiceConfig {
 }
 
 declare const StatusPage: any
-const checkGithubOutage = async ():Promise<true | undefined> => new Promise(resolve => {
-    const statusPage = new StatusPage.page({ page : 'kctbh9vrtdwd' });
-    statusPage.status({
-      success(data: any) {
-        // if (data.status.indicator === 'none') {
-        //     resolve(undefined)
-        // }
+const checkGithubOutage = async (): Promise<true | undefined> =>
+    new Promise(resolve => {
+        const statusPage = new StatusPage.page({ page: 'kctbh9vrtdwd' })
+        statusPage.status({
+            success(data: any) {
+                if (data.status.indicator === 'none') {
+                    resolve(undefined)
+                }
 
-        // if (data.status.indicator === 'major' || data.status.indicator === 'partial' ) {
-            resolve(true)
-        // }
-      }
+                if (data.status.indicator === 'major' || data.status.indicator === 'partial' ) {
+                    resolve(true)
+                }
+            },
+        })
     })
-})
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
     owner,
@@ -173,14 +174,16 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
     }, [])
 
-    useEffect(():void => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.statuspage.io/se-v2.js';
-        script.async = true;
-        document.body.append(script);
+    useEffect((): void => {
+        const script = document.createElement('script')
+        script.src = 'https://cdn.statuspage.io/se-v2.js'
+        script.async = true
+        document.body.append(script)
     }, [])
 
-    async function checkAndSetOutageAlert(services: Partial<Record<ExternalServiceKind, ListExternalServiceFields>>): Promise<void> {
+    async function checkAndSetOutageAlert(
+        services: Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
+    ): Promise<void> {
         const svcs = []
         for (const svc of Object.values(services)) {
             // When there is a sync error, we check for potential outages by calling GitHub Status API
@@ -191,7 +194,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
             }
             // GitLab doesn't have an Status API, so we check if the error contains an Status Code of 500 or 503
-            if (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('500') || svc.lastSyncError?.includes('503')) {
+            if (
+                (svc.displayName === 'GitLab' && svc.lastSyncError?.includes('500')) ||
+                svc.lastSyncError?.includes('503')
+            ) {
                 svcs.push(svc.displayName)
             }
         }
@@ -349,7 +355,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 let outage = false
 
                 // Skip when status code >= 500, as they are handled by the outage checkers. This will avoid creating duplicate alert messages.
-                if (service.lastSyncError && (service.lastSyncError?.includes('503') || service.lastSyncError?.includes('500'))) {
+                if (
+                    service.lastSyncError &&
+                    (service.lastSyncError?.includes('503') || service.lastSyncError?.includes('500'))
+                ) {
                     outage = true
                 }
 
@@ -430,30 +439,31 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         </Alert>
     )
 
-    const getOutageMessage = (servicesDown: string[]): JSX.Element =>
+    const getOutageMessage = (servicesDown: string[]): JSX.Element => (
         <Alert className="my-3" key={servicesDown[0]} variant="warning">
             {servicesDown?.map(svc => (
                 <div key={svc}>
                     <h4 className="align-middle mb-1">We're having trouble connecting to {svc} </h4>
                     <p className="align-middle mb-0">
-                        <span className="align-middle">Before continuing, verify that</span>{' '}
-                            {svc}
-                            <span className="align-middle"> is available by visiting{' '}
-                                {svc === 'GitHub' ? (
-                                    <Link to="https://githubstatus.com" target="_blank" rel="noopener">
+                        <span className="align-middle">Before continuing, verify that</span> {svc}
+                        <span className="align-middle">
+                            {' '}
+                            is available by visiting{' '}
+                            {svc === 'GitHub' ? (
+                                <Link to="https://githubstatus.com" target="_blank" rel="noopener">
                                     githubstatus.com
-                                    </Link>
-                                ) : (
-                                    <Link to="https://githubstatus.com" target="_blank" rel="noopener">
+                                </Link>
+                            ) : (
+                                <Link to="https://githubstatus.com" target="_blank" rel="noopener">
                                     githubstatus.com
-                                    </Link>
-                                )}
-                            </span>
-                        {' '}
+                                </Link>
+                            )}
+                        </span>{' '}
                     </p>
                 </div>
             ))}
         </Alert>
+    )
 
     // auth providers by service type
     const authProvidersByKind = context.authProviders.reduce((accumulator: AuthProvidersByKind, provider) => {
