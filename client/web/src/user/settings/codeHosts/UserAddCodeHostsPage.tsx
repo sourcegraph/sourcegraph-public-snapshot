@@ -454,8 +454,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                     githubstatus.com
                                 </Link>
                             ) : (
-                                <Link to="https://githubstatus.com" target="_blank" rel="noopener">
-                                    githubstatus.com
+                                <Link to="https://status.gitlab.com" target="_blank" rel="noopener">
+                                    status.gitlab.com
                                 </Link>
                             )}
                         </span>{' '}
