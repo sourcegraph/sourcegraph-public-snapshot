@@ -92,7 +92,7 @@ const checkGithubOutage = async (): Promise<true | undefined> =>
                     resolve(undefined)
                 }
 
-                if (data.status.indicator === 'major' || data.status.indicator === 'partial' ) {
+                if (data.status.indicator === 'major' || data.status.indicator === 'partial') {
                     resolve(true)
                 }
             },
