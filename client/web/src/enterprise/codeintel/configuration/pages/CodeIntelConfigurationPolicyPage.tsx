@@ -26,7 +26,7 @@ export interface CodeIntelConfigurationPolicyPageProps
         TelemetryProps {
     repo?: { id: string }
     indexingEnabled?: boolean
-    history: H.History
+    history: H.History<any>
 }
 
 export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({

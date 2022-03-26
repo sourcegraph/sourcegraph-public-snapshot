@@ -75,7 +75,6 @@ var (
 			Checks: []checkScriptFn{
 				runCheckScript("Typescript imports in OSS", "dev/check/ts-enterprise-import.sh"),
 				runCheckScript("Inline templates", "dev/check/template-inlines.sh"),
-				runCheckScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
 				runCheckScript("SVG Compression", "dev/check/svgo.sh"),
 			},
 		},

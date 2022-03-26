@@ -1,9 +1,10 @@
 import { escapeRegExp, partition, sum } from 'lodash'
 import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
-import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
+import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
 
 import { LangStatsInsightsSettings } from '../../code-insights-backend-types'
 import { resolveDocumentURI } from '../../utils/resolve-uri'

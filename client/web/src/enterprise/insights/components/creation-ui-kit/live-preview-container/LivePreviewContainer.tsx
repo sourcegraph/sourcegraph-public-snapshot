@@ -1,10 +1,11 @@
 import classNames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
-import { ChartContent } from 'sourcegraph'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'
+
+import { ChartContent } from 'sourcegraph'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
 import * as View from '../../../../../views'

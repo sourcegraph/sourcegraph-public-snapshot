@@ -1,6 +1,6 @@
-import * as sourcegraph from 'sourcegraph'
-
 import { renderMarkdown } from '@sourcegraph/common'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { LinkPreviewMerged } from '../../api/extension/extensionHostApi'
 

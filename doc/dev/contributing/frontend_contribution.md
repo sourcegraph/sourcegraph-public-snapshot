@@ -18,7 +18,7 @@ To work on most frontend issues, it is necessary to run three applications local
 
     ```sh
     # Generate Typescript types
-    yarn generate
+    pnpm generate
 
     # Verify Typescript build
     yarn build-ts
@@ -44,7 +44,7 @@ To work on most frontend issues, it is necessary to run three applications local
 
     ```sh
     # Prepare web application for integration tests
-    ENTERPRISE=1 DISABLE_TYPECHECKING=true yarn run build-web
+    ENTERPRISE=1 DISABLE_TYPECHECKING=true pnpm runbuild-web
     # Run integration tests
     yarn test-integration
     ```

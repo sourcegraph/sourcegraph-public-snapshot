@@ -1,8 +1,9 @@
 import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxyMarker } from 'comlink'
 import { Observable, Observer, PartialObserver, Subscription } from 'rxjs'
-import { Subscribable, Unsubscribable } from 'sourcegraph'
 
 import { hasProperty } from '@sourcegraph/common'
+
+import { Subscribable, Unsubscribable } from 'sourcegraph'
 
 import { ProxySubscribable } from './extension/api/common'
 

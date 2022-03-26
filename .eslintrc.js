@@ -1,4 +1,5 @@
 // @ts-check
+require('@rushstack/eslint-patch/modern-module-resolution')
 
 const config = {
   extends: '@sourcegraph/eslint-config',
@@ -14,6 +15,7 @@ const config = {
       jsx: true,
     },
     EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
+    warnOnUnsupportedTypeScriptVersion: false,
     project: __dirname + '/tsconfig.json',
   },
   settings: {

@@ -1,7 +1,7 @@
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, StaticContext } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -24,7 +24,7 @@ import { queryLsifIndexListByRepository as defaultQueryLsifIndexListByRepository
 
 import styles from './CodeIntelIndexesPage.module.scss'
 
-export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
+export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}, StaticContext, any>, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     queryLsifIndexListByRepository?: typeof defaultQueryLsifIndexListByRepository

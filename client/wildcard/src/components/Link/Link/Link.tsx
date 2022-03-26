@@ -8,7 +8,7 @@ export interface LinkProps
         React.AnchorHTMLAttributes<HTMLAnchorElement>,
         Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
     > {
-    to: string | H.LocationDescriptor<any>
+    to: string | H.LocationDescriptor
     ref?: React.Ref<HTMLAnchorElement>
 }
 

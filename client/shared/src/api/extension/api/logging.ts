@@ -1,4 +1,5 @@
 import { map } from 'rxjs/operators'
+
 import sourcegraph from 'sourcegraph'
 
 import { Settings } from '../../../settings/settings'

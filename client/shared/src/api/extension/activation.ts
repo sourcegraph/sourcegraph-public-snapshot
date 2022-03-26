@@ -1,9 +1,10 @@
 import { Remote } from 'comlink'
 import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
-import sourcegraph from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@sourcegraph/common'
+
+import sourcegraph from 'sourcegraph'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'

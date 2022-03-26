@@ -1,7 +1,8 @@
 import { Duration } from 'date-fns'
-import { LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
+import { LineChartContent } from 'sourcegraph'
 
 import { ExtensionInsight, Insight, InsightDashboard, CustomInsightDashboard } from '../types'
 import { SearchBasedInsightSeries } from '../types/insight/search-insight'

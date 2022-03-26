@@ -8,7 +8,6 @@ import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import * as sourcegraph from 'sourcegraph'
 
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { allOf, check, isTaggedUnionMember, resetAllMemoizationCaches, subtypeOf } from '@sourcegraph/common'
@@ -25,6 +24,8 @@ import { IQuery } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'

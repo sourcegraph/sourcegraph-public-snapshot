@@ -113,6 +113,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 required={true}

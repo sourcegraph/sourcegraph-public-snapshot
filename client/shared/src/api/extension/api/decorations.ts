@@ -1,4 +1,8 @@
 import { uniqueId } from 'lodash'
+
+import { hasProperty } from '@sourcegraph/common'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+
 import {
     TextDocumentDecorationType,
     DecorationAttachmentRenderOptions,
@@ -6,9 +10,6 @@ import {
     ThemableDecorationStyle,
     FileDecoration,
 } from 'sourcegraph'
-
-import { hasProperty } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 // LINE DECORATIONS
 

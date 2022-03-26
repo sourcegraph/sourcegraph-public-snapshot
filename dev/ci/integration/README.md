@@ -66,7 +66,7 @@ export SOURCEGRAPH_SUDO_TOKEN=<insert token here>
 
 ```sh
 cd client/web
-yarn run test:regression
+pnpm runtest:regression
 ```
 
 ### Codeintel QA

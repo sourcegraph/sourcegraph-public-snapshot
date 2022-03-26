@@ -3,10 +3,11 @@ import { number, select, text } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
-import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
 import { NotificationType } from '@sourcegraph/extension-api-classes'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { NotificationType as NotificationTypeType } from 'sourcegraph'
 
 import { NotificationItem } from './NotificationItem'
 

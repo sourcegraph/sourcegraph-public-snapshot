@@ -55,7 +55,7 @@ To install it, [see the instructions](../../setup/quickstart.md).
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.
 
     ```sh
-    yarn generate
+    pnpm generate
     ```
 
     To regenerate on file change:
@@ -73,7 +73,7 @@ To use it locally, use `yarn storybook` command to start the Storybook developme
 To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
 
 ```sh
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+STORIES_GLOB='client/web/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start
 ```
 
 It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
@@ -131,7 +131,7 @@ If you don't do this (and just use a normal `import`), it will still work, but i
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`yarn run prettier` will check & autoformat all code.
+`pnpm runprettier` will check & autoformat all code.
 
 ## Tests
 

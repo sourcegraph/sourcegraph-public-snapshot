@@ -4,12 +4,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 # Build the webapp typescript code.
 echo "--- yarn"
-# mutex is necessary since CI runs various yarn installs in parallel
-if [[ -z "${CI}" ]]; then
-  yarn --mutex network
-else
-  yarn --mutex network --frozen-lockfile --network-timeout 60000
-fi
+# mutex is necessary since CI runs various pnpm installs in parallel
+pnpm install
 
-echo "--- yarn run build-web"
-NODE_ENV=production DISABLE_TYPECHECKING=true yarn run build-web
+echo "--- pnpm runbuild-web"
+NODE_ENV=production DISABLE_TYPECHECKING=true pnpm run build-web

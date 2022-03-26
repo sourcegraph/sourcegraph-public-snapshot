@@ -1,4 +1,5 @@
 import { random } from 'lodash'
+
 import type { LineChartContent } from 'sourcegraph'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {

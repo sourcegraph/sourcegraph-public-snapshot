@@ -3,7 +3,7 @@
 set -ex
 
 # Setup
-yarn build
+pnpm build
 rm -rf build/web-ext
 mkdir -p build/web-ext
 

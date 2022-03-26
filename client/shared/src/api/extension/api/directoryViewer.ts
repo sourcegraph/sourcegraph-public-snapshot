@@ -1,4 +1,5 @@
 import { ProxyMarked, proxyMarker } from 'comlink'
+
 import * as sourcegraph from 'sourcegraph'
 
 import { DirectoryViewerData, ViewerId } from '../../viewerTypes'

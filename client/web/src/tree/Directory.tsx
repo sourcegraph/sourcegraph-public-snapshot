@@ -1,9 +1,10 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
-import { FileDecoration } from 'sourcegraph'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { FileDecoration } from 'sourcegraph'
 
 import {
     TreeLayerRowContentsText,

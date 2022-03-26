@@ -10,7 +10,7 @@ import {
 } from '@sourcegraph/build-config'
 
 import { getWebpackStats, getVendorModules } from './dllPlugin'
-import { monacoEditorPath, dllPluginConfig, dllBundleManifestPath } from './webpack.config.common'
+import { dllPluginConfig, dllBundleManifestPath } from './webpack.config.common'
 
 const webpackStats = getWebpackStats()
 signale.await('Waiting for Webpack to build DLL bundle based on vendor stats.')
@@ -34,7 +34,7 @@ const config: Configuration = {
             getMonacoTTFRule(),
             {
                 test: /\.css$/,
-                exclude: [monacoEditorPath],
+                exclude: /monaco-editor/,
                 use: [getBasicCSSLoader()],
             },
         ],

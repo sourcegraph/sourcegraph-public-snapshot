@@ -1,4 +1,5 @@
 import { BehaviorSubject } from 'rxjs'
+
 import * as sourcegraph from 'sourcegraph'
 
 /**

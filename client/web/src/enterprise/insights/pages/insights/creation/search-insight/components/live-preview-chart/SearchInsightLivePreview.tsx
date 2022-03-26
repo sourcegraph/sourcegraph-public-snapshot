@@ -1,8 +1,9 @@
 import React, { ReactNode, useContext, useEffect, useState } from 'react'
-import type { LineChartContent, ChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
 import { useDebounce } from '@sourcegraph/wildcard'
+
+import type { LineChartContent, ChartContent } from 'sourcegraph'
 
 import { LivePreviewContainer, getSanitizedRepositories } from '../../../../../../components/creation-ui-kit'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'

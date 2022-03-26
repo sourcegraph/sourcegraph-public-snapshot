@@ -96,7 +96,7 @@ function e2e() {
   pushd client/web
   echo "$SOURCEGRAPH_BASE_URL"
   echo "--- TEST: Running tests"
-  yarn run test:regression:core
+  pnpm runtest:regression:core
   popd
 }
 

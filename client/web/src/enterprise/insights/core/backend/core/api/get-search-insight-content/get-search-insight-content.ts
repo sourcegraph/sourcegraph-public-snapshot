@@ -2,9 +2,10 @@ import { formatISO, isAfter, startOfDay, sub, Duration } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
-import type { DirectoryViewContext, LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
+import type { DirectoryViewContext, LineChartContent } from 'sourcegraph'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../../../../views'
 import { SearchInsightSettings } from '../../../code-insights-backend-types'

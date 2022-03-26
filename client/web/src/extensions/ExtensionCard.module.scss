@@ -116,7 +116,7 @@
     top: -1.625rem;
 
     /* feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width */
-    right: 0.5rem + (calc(var(--toggle-width) / 2));
+    right: 0.5rem + (var(--toggle-width) / 2);
     transform: translateX(50%);
     z-index: 1;
 }

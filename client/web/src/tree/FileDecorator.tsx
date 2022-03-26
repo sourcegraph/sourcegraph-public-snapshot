@@ -1,8 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
-import { FileDecoration } from 'sourcegraph'
 
 import { fileDecorationColorForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
+
+import { FileDecoration } from 'sourcegraph'
 
 import styles from './FileDecorator.module.scss'
 

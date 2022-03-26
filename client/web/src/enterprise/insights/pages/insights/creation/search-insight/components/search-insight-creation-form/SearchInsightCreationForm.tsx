@@ -107,6 +107,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
             <FormGroup
                 name="insight repositories"

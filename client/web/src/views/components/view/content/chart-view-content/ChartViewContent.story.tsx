@@ -2,9 +2,10 @@ import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
 import { createMemoryHistory } from 'history'
 import React from 'react'
-import { ChartContent } from 'sourcegraph'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { ChartContent } from 'sourcegraph'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK, LINE_CHART_WITH_MANY_LINES } from '../../../../mocks/charts-content'

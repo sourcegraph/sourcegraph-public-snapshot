@@ -12,6 +12,8 @@
     "**/.nyc_output": true,
     "doc/_resources/assets": true,
     "**/.eslintcache": true,
+    "**/.yarn": true,
+    "**/.pnp.*": true,
   },
   "files.exclude": {
     "**/*.scss.d.ts": true,
@@ -36,7 +38,7 @@
   "gopls": {
     "local": "github.com/sourcegraph/sourcegraph",
   },
-  "jest.pathToJest": "yarn -s test",
+  "jest.pathToJest": "yarn --silent test",
   "jest.showCoverageOnLoad": false,
   "jest.autoEnable": false, // until we confirm people like it
   "gulp.autoDetect": "off",
@@ -46,7 +48,7 @@
   "typescript.preferences.importModuleSpecifier": "relative",
   "typescript.format.semicolons": "remove",
   "typescript.tsc.autoDetect": "off",
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.tsdk": ".yarn/sdks/typescript/lib",
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
@@ -54,7 +56,9 @@
     "source.fixAll.eslint": true,
   },
   "eslint.codeActionsOnSave.mode": "problems",
-  "eslint.options": { "cache": true },
+  "eslint.options": {
+    "cache": true,
+  },
   "eslint.workingDirectories": [
     "./dev/release",
     "./client/web",
@@ -76,5 +80,8 @@
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
-  "jest.jestCommandLine": "yarn -s test",
+  "jest.jestCommandLine": "yarn --silent test",
+  "eslint.nodePath": ".yarn/sdks",
+  "prettier.prettierPath": ".yarn/sdks/prettier/index.js",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
 }

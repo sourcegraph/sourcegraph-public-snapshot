@@ -1,6 +1,7 @@
 import { pick } from 'lodash'
 import { from, of } from 'rxjs'
 import { switchMap, take, toArray, first } from 'rxjs/operators'
+
 import { ViewComponent, Window } from 'sourcegraph'
 
 import { wrapRemoteObservable } from '../client/api/common'

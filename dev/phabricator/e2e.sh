@@ -15,5 +15,5 @@ PHABRICATOR_CONTAINER="$(docker ps -aq -f name=phabricator$)"
 source ./dev/phabricator/install-sourcegraph.sh
 
 pushd client/web
-yarn run test-phabricator-e2e
+pnpm runtest-phabricator-e2e
 popd

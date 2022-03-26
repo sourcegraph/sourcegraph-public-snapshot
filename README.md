@@ -1,3 +1,11 @@
+# Deps
+
+- 4.6M    ./mermaid-npm: CLI used to generate diagrams.
+– 12M    ./simmerjs: use in codeintel test dom utils.
+- 4.9M    ./@atlassian-aui: used to test HoverOverlay. Only CSS file is required.
+– 11M    ./typescript-patch: duplicate Typescript package required for https://github.com/yarnpkg/berry/pull/651
+- textarea-caret
+
 # <a href="https://sourcegraph.com"><picture><source srcset="./ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="./ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
 
 [![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main)](https://buildkite.com/sourcegraph/sourcegraph)

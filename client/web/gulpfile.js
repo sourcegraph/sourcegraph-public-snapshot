@@ -7,7 +7,6 @@ require('ts-node').register({
 })
 
 const compression = require('compression')
-const log = require('fancy-log')
 const gulp = require('gulp')
 const { createProxyMiddleware } = require('http-proxy-middleware')
 const signale = require('signale')
@@ -47,7 +46,7 @@ const WEBPACK_STATS_OPTIONS = {
  * @param {import('webpack').Stats} stats
  */
 const logWebpackStats = stats => {
-  log(stats.toString(WEBPACK_STATS_OPTIONS))
+  signale.info(stats.toString(WEBPACK_STATS_OPTIONS))
 }
 
 async function webpack() {
@@ -69,14 +68,14 @@ const webBuild = DEV_WEB_BUILDER === 'webpack' ? webpack : buildEsbuild
  */
 async function watchWebpack() {
   const compiler = createWebpackCompiler(webpackConfig)
-  compiler.hooks.watchRun.tap('Notify', () => log('Webpack compiling...'))
+  compiler.hooks.watchRun.tap('Notify', () => signale.info('Webpack compiling...'))
   await new Promise(() => {
     compiler.watch({ aggregateTimeout: 300 }, (error, stats) => {
       logWebpackStats(stats)
       if (error || stats.hasErrors()) {
-        log.error('Webpack compilation error')
+        signale.error('Webpack compilation error')
       } else {
-        log('Webpack compilation done')
+        signale.info('Webpack compilation done')
       }
     })
   })

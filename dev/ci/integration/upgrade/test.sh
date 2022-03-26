@@ -80,5 +80,5 @@ curl -f "$URL"
 curl -f "$URL"/healthz
 echo "--- TEST: Running tests"
 pushd client/web
-yarn run test:regression:core
+pnpm runtest:regression:core
 popd

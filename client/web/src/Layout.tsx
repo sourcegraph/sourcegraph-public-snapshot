@@ -1,3 +1,4 @@
+import * as H from 'history'
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
@@ -238,6 +239,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
+                    history={history as H.History<{ query: string }>}
+                    location={location as H.Location<{ query: string }>}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&

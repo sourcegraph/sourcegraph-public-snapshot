@@ -1,6 +1,7 @@
 golang 1.17.5
 nodejs 16.7.0
 yarn 1.22.17
+pnpm 6.32.1
 fd 7.4.0
 shfmt 3.2.0
 shellcheck 0.7.1

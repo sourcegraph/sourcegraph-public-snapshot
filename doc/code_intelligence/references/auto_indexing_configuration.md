@@ -47,7 +47,7 @@ index_jobs:
           - go generate ./...
         root: cmd/bar
     root: cmd/bar
-  
+
   # Index cmd/baz
   - indexer: sourcegraph/lsif-go
     root: cmd/baz
@@ -125,7 +125,7 @@ steps:
       - npm install
     root: editors/code
 
-# sourcegraph/lsif-node does not define a Docker entrypoint, so we need 
+# sourcegraph/lsif-node does not define a Docker entrypoint, so we need
 # to indicate which binary to invoke (along with any additional arguments).
 # Here, -p and . are passed to the underlying TypeScript language analyzer.
 indexer: sourcegraph/lsif-node:autoiondex
@@ -147,7 +147,7 @@ local_steps:
   - python3 -m pip install compiledb
   - python3 -m compiledb -n make
 
-# sourcegraph/lsif-clang does not define a Docker entrypoint, so we need 
+# sourcegraph/lsif-clang does not define a Docker entrypoint, so we need
 # to indicate which binary to invoke (along with any additional arguments).
 # Here, we have lsif-clang consume the compile_commands.json manifest generated
 # by the local steps defined above.
@@ -195,6 +195,6 @@ The following example runs a series of commands to install dependencies in the `
 indexer: node:alpine3.12@sha256:4435145...fd06fd3
 commands:
   - yarn config set ignore-engines true
-  - yarn install
+  - pnpm install
 root: lib/proj
 ```

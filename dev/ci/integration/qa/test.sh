@@ -35,7 +35,7 @@ function qa_test() {
   local test_exit_code
 
   pushd client/web
-  yarn run test:regression --reporter mocha-junit-reporter
+  pnpm runtest:regression --reporter mocha-junit-reporter
   # Save the test exit code so we can return it after submitting the test run to the analytics.
   test_exit_code="$?"
 

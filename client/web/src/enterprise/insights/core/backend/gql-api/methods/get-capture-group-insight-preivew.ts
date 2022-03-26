@@ -1,6 +1,7 @@
 import { ApolloClient, gql } from '@apollo/client'
 import { startCase } from 'lodash'
 import openColor from 'open-color'
+
 import { LineChartContent } from 'sourcegraph'
 
 import {

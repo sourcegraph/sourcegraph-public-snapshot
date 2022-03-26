@@ -2,6 +2,7 @@ import 'message-port-polyfill'
 
 import { Remote } from 'comlink'
 import { BehaviorSubject, throwError, of, Subscription, Unsubscribable } from 'rxjs'
+
 import * as sourcegraph from 'sourcegraph'
 
 import { EndpointPair, PlatformContext } from '../../platform/context'

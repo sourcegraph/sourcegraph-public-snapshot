@@ -14,7 +14,7 @@ if (codeIntelExtensionsDirectoryExists) {
   console.log('Found existing code-intel-extensions.')
 } else {
   console.log('Did not find an existing code-intel-extensions. Running fetch-code-intel-extensions')
-  shelljs.exec('yarn run fetch-code-intel-extensions')
+  shelljs.exec('pnpm runfetch-code-intel-extensions')
 }
 
 // Install dependencies

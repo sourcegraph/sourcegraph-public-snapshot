@@ -1,8 +1,9 @@
 import * as comlink from 'comlink'
 import { BehaviorSubject, Observable, ReplaySubject, Subject } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
 
 import { Context } from '@sourcegraph/template-parser'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { ConfiguredExtension } from '../../extensions/extension'
 import { SettingsCascade } from '../../settings/settings'

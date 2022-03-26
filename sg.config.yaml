@@ -306,24 +306,24 @@ commands:
 
   web:
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: pnpm install
 
   enterprise-web:
     cmd: ./node_modules/.bin/gulp --color dev
-    install: yarn --no-progress
+    install: pnpm install
     env:
       ENTERPRISE: 1
 
   web-standalone-http:
-    cmd: yarn workspace @sourcegraph/web serve:dev --color
-    install: yarn --no-progress
+    cmd: pnpm --filter @sourcegraph/web serve:dev --color
+    install: pnpm install
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
-    cmd: yarn workspace @sourcegraph/web serve:prod
-    install: yarn workspace @sourcegraph/web run build
+    cmd: pnpm --filter @sourcegraph/web serve:prod
+    install: pnpm install workspace @sourcegraph/web run build
     env:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
@@ -423,8 +423,8 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-template: &executor_template
-    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+  executor-template:
+    &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
@@ -448,7 +448,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ":6092"
+      SRC_PROF_HTTP: ':6092'
 
   batches-executor:
     <<: *executor_template
@@ -457,7 +457,7 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
-      SRC_PROF_HTTP: ":6093"
+      SRC_PROF_HTTP: ':6093'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -470,7 +470,7 @@ commands:
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      SRC_PROF_HTTP: ":6093"
+      SRC_PROF_HTTP: ':6093'
 
   minio:
     cmd: |
@@ -602,8 +602,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
       CACHE: false
     watch:
       - monitoring
@@ -653,11 +653,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ""
-      DOCKER_NET: ""
+      DOCKER_USER: ''
+      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ""
+      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -684,12 +684,12 @@ commands:
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: "2.3.0"
+      LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   storybook:
-    cmd: yarn storybook
-    install: yarn
+    cmd: pnpm storybook
+    install: pnpm install
 
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
@@ -697,8 +697,8 @@ commands:
     cmd: env
 
   bext:
-    cmd: yarn --cwd client/browser dev
-    install: yarn
+    cmd: pnpm --filter @sourcegraph/browser dev
+    install: pnpm install
 
 defaultCommandset: enterprise
 commandsets:
@@ -939,28 +939,28 @@ tests:
       PASSWORD: '12345'
 
   web-integration:
-    cmd: yarn test-integration
-    install: ENTERPRISE=1 yarn build-web
+    cmd: pnpm test-integration
+    install: ENTERPRISE=1 pnpm build-web
 
   bext:
-    cmd: yarn --cwd client/browser test
+    cmd: pnpm --filter @sourcegraph/browser test
 
   bext-build:
-    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
+    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true pnpm --filter @sourcegraph/browser build
 
   bext-integration:
-    cmd: POLLYJS_MODE=replay yarn --cwd client/browser test-integration
+    cmd: POLLYJS_MODE=replay pnpm --filter @sourcegraph/browser test-integration
 
   bext-e2e:
-    cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    cmd: pnpm --filter @sourcegraph/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   frontend:
-    cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
+    cmd: pnpm run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
   frontend-e2e:
-    cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
+    cmd: pnpm run mocha ./client/web/src/end-to-end/end-to-end.test.ts
     env:
       TS_NODE_PROJECT: client/web/src/end-to-end/tsconfig.json
 

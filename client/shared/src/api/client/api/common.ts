@@ -2,9 +2,10 @@ import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyOrClone } from 'c
 import { noop } from 'lodash'
 import { from, Observable, observable as symbolObservable, Subscription } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
-import { Subscribable } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
+
+import { Subscribable } from 'sourcegraph'
 
 import { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'

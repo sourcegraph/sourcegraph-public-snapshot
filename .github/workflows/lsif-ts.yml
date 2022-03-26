@@ -36,7 +36,7 @@ jobs:
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
-        run: yarn --ignore-engines --ignore-scripts
+        run: pnpm install
       - name: Run gulp generate
         run: ./node_modules/.bin/gulp generate
 
@@ -64,10 +64,10 @@ jobs:
 
       # Run lsif-eslint
       - name: Build TypeScript
-        run: yarn run --ignore-engines build-ts
+        run: pnpm run build-ts
       - name: Run lsif-eslint
         working-directory: ${{ matrix.root }}
-        run: yarn eslint -f lsif
+        run: pnpm eslint -f lsif
 
       # Upload lsif-eslint data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-eslint dump to Cloud

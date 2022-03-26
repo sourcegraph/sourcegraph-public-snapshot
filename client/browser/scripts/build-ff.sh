@@ -28,7 +28,7 @@ fi
 
 # Install dependencies and build
 yarn
-yarn run build-browser-extension
+pnpm runbuild-browser-extension
 
 # Remove build directory if it exists
 rm -rf build

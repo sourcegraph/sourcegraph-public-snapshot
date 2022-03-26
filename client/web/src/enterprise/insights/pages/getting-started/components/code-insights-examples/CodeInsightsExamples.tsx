@@ -1,11 +1,12 @@
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import React from 'react'
-import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link } from '@sourcegraph/wildcard'
+
+import { LineChartContent, LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
 import * as View from '../../../../../../views'
 import { LegendBlock, LegendItem } from '../../../../../../views'

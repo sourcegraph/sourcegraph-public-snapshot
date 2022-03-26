@@ -557,7 +557,7 @@ export class Driver {
     public async getRepository(name: string): Promise<Pick<IRepository, 'id'>> {
         const response = await this.makeGraphQLRequest<IQuery>({
             request: gql`
-                query($name: String!) {
+                query ($name: String!) {
                     repository(name: $name) {
                         id
                     }
@@ -741,7 +741,7 @@ export function modifyJSONC(
 
 // Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
 async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(((puppeteerFirefox as unknown) as PuppeteerNode).executablePath())
+    const firefoxFolder = path.dirname((puppeteerFirefox as unknown as PuppeteerNode).executablePath())
     let configPath: string
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
@@ -811,7 +811,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             await webExt.cmd.run(
                 {
                     sourceDir: firefoxExtensionPath,
-                    firefox: ((puppeteer as unknown) as puppeteer.PuppeteerNode).executablePath(),
+                    firefox: (puppeteer as unknown as puppeteer.PuppeteerNode).executablePath(),
                     args,
                 },
                 { shouldExitProgram: false }
@@ -836,7 +836,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             ) as { permissions: string[] }
             if (!manifest.permissions.includes('<all_urls>')) {
                 throw new Error(
-                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true pnpm rundev` inside the browser/ directory.'
                 )
             }
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)

@@ -14,7 +14,7 @@ Each query must have a globally unique name as per the [GraphQL specification](h
 
 Using each unique query, we can generate specific types so you can receive autocompletion, syntax highlighting, hover tooltips and validation in your IDE.
 
-Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `yarn generate` or `yarn watch-generate`.
+Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `pnpm generate` or `yarn watch-generate`.
 
 Using a `useQuery` hook, we can easily fire a request and handle the response correctly.
 

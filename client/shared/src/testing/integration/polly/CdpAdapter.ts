@@ -1,7 +1,6 @@
 import PollyAdapter from '@pollyjs/adapter'
 import { Polly, Request as PollyRequest } from '@pollyjs/core'
 import Protocol from 'devtools-protocol'
-import { ProtocolMapping } from 'devtools-protocol/types/protocol-mapping'
 import { noop } from 'lodash'
 import Puppeteer from 'puppeteer'
 import { Observable, Subject } from 'rxjs'
@@ -254,7 +253,7 @@ export class CdpAdapter extends PollyAdapter {
         request?: object
     ): Promise<void> {
         try {
-            await cdpSession?.send(cdpRequestName as keyof ProtocolMapping.Commands, request)
+            await cdpSession?.send(cdpRequestName as keyof Puppeteer.ProtocolMapping.Commands, request)
         } catch (error) {
             // TODO: also ignore "target closed" error
             if (

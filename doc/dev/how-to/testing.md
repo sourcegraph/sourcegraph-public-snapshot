@@ -98,7 +98,7 @@ This utility method will let you print a URL that will visually render the DOM o
     })
 ```
 
-This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element.
 
 ## Browser-based tests
 
@@ -262,7 +262,7 @@ There's a GitHub test token in `../dev-private/enterprise/dev/external-services-
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
-For regression tests, you can also run tests selectively with a command like `yarn run test:regression:search` in the `web/` directory, which runs the tests for search functionality.
+For regression tests, you can also run tests selectively with a command like `pnpm runtest:regression:search` in the `web/` directory, which runs the tests for search functionality.
 
 #### Writing end-to-end tests
 
@@ -381,7 +381,7 @@ We run Lighthouse performance tests through [Lighthouse CI](https://github.com/G
 
 
 #### Running the tests locally
-1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
+1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true pnpm --filter @sourcegraph/web build`
 2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
 
 #### Running the tests in CI

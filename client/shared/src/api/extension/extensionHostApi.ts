@@ -10,7 +10,6 @@ import {
     mergeMap,
     switchMap,
 } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
 
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import {
@@ -26,6 +25,8 @@ import {
 import * as clientType from '@sourcegraph/extension-api-types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Context } from '@sourcegraph/template-parser'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { getModeFromPath } from '../../languages'
 import { fromHoverMerged } from '../client/types/hover'

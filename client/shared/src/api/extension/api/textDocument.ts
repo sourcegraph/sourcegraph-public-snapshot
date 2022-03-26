@@ -1,6 +1,6 @@
-import * as sourcegraph from 'sourcegraph'
-
 import { Position, Range } from '@sourcegraph/extension-api-classes'
+
+import * as sourcegraph from 'sourcegraph'
 
 import { PrefixSumComputer } from './utils/prefixSumComputer'
 import { getWordAtText } from './utils/wordHelpers'

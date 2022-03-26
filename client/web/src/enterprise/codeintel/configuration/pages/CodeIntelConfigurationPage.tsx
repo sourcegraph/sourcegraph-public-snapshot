@@ -75,7 +75,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
-    const history = useHistory()
+    const history = useHistory<any>()
 
     const apolloClient = useApolloClient()
     const queryPoliciesCallback = useCallback(
