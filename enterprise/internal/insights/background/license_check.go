@@ -62,7 +62,7 @@ func checkAndEnforceLicense(ctx context.Context, insightsdb dbutil.DB) (err erro
 			return errors.Wrap(err, "UnfreezeGlobalInsights")
 		}
 
-		// Attach the unfrozen insights to the limited access mode dashboard:
+		// Attach the unfrozen insights to the limited access mode dashboard
 		dashboardId, err := dashboardTx.EnsureLimitedAccessModeDashboard(ctx)
 		if err != nil {
 			return errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
