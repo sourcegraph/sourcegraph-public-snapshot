@@ -75,7 +75,7 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.NewFrontendDB(postgresdsn.New("", "", globalConf.GetEnv), "frontend", true, &observation.TestContext)
+	conn, err := connections.EnsureNewFrontendDB(postgresdsn.New("", "", globalConf.GetEnv), "frontend", &observation.TestContext)
 	if err != nil {
 		return err
 	}

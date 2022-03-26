@@ -10,15 +10,15 @@
  */
 {
     // Captain information
-    "captainSlackUsername": "coury",
-    "captainGitHubUsername": "coury-clark",
+    "captainSlackUsername": "camden",
+    "captainGitHubUsername": "camdencheek",
     // Release versions
-    "previousRelease": "3.36.3",
-    "upcomingRelease": "3.37.0",
+    "previousRelease": "3.37.0",
+    "upcomingRelease": "3.38.0",
     // Release dates
-    "oneWorkingDayBeforeRelease": "18 February 2022 10:00 PST",
-    "releaseDate": "21 February 2022 10:00 PST",
-    "oneWorkingDayAfterRelease": "22 February 2022 10:00 PST",
+    "oneWorkingDayBeforeRelease": "17 March 2022 10:00 PST",
+    "releaseDate": "18 March 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "21 March 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "prod-eng-announce",
     // Email for preparing calendar events

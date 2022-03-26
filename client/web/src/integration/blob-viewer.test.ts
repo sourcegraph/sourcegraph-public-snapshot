@@ -55,8 +55,10 @@ describe('Blob viewer', () => {
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
         FileNames: () => ({
             repository: {
+                id: 'repo-123',
                 __typename: 'Repository',
                 commit: {
+                    id: 'c0ff33',
                     __typename: 'GitCommit',
                     fileNames: ['README.md'],
                 },
@@ -132,6 +134,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
                                         '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Third line\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                 },
                             },
                         },
@@ -213,6 +216,7 @@ describe('Blob viewer', () => {
                                         'Hello world' +
                                         '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
                                         '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                 },
                             },
                         },
@@ -481,6 +485,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
                                         '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Third line\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                 },
                             },
                         },
@@ -728,6 +733,7 @@ describe('Blob viewer', () => {
                                           '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; First word line\n' +
                                           '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; Second line</span></td></tr>\n' +
                                           '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; Third word line</span></td></tr></tbody></table>',
+                                      lsif: '',
                                   },
                               }
                             : {
@@ -740,6 +746,7 @@ describe('Blob viewer', () => {
                                           '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; First line\n' +
                                           '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; Second word line</span></td></tr>\n' +
                                           '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; Third line</span></td></tr></tbody></table>',
+                                      lsif: '',
                                   },
                               }
 
@@ -934,6 +941,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
                                         '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>' +
                                         '\n</span></span></td></tr></tbody></table>',
+                                    lsif: '',
                                     lineRanges: [],
                                 },
                             },

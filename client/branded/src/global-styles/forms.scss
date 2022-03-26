@@ -4,9 +4,6 @@
     --input-border-color: var(--gray-04);
     --input-color: var(--gray-09);
     --input-placeholder-color: var(--gray-07);
-    --input-group-addon-color: var(--gray-08);
-    --input-group-addon-bg: var(--gray-03);
-    --input-group-addon-border-color: var(--gray-03);
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
 
@@ -20,14 +17,17 @@
     --input-border-color: var(--gray-08);
     --input-color: var(--gray-04);
     --input-placeholder-color: var(--gray-05);
-    --input-group-addon-color: var(--gray-01);
-    --input-group-addon-bg: var(--gray-08);
-    --input-group-addon-border-color: var(--gray-08);
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
 
     // Checkbox margins
     --form-check-input-margin-y: 0.2rem;
+}
+
+:root {
+    --input-border-width: 0.0625rem;
+    --input-padding-y: 0.375rem;
+    --input-padding-x: 0.75rem;
 }
 
 // Prevent Firefox's default red outline for inputs

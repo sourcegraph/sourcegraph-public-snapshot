@@ -1870,11 +1870,11 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 			}
 
 			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
-				me, ok := err.(*errors.MultiError)
-				if !ok {
+				var me errors.MultiError
+				if !errors.As(err, &me) {
 					t.Fatalf("Expected error.MultiError, got: %T", err)
 				}
-				actualErr := me.Errors[0]
+				actualErr := me.Errors()[0]
 
 				var r *repos.RepoLimitError
 

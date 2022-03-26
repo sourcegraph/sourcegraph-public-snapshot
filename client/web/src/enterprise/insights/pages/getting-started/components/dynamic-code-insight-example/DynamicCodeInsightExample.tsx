@@ -72,21 +72,24 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         formApi: form.formAPI,
     })
 
-    const hasValidLivePreview = repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
-    const repository = useObservable(useMemo(() => getFirstExampleRepository(), [getFirstExampleRepository]))
+    const debouncedQuery = useDebounce(query.input.value, 1000)
+    const debouncedRepositories = useDebounce(repositories.input.value, 1000)
 
-    // This is to prevent resetting the name in an endless loop
-    if (repository && repositories.input.value !== repository) {
-        repositories.meta.setState(state => ({ ...state, value: repository }))
-    }
+    const derivedRepositoryURL = useObservable(useMemo(() => getFirstExampleRepository(), [getFirstExampleRepository]))
+
+    const { onChange: setRepositoryValue } = repositories.input
+
+    useEffect(() => {
+        // This is to prevent resetting the name in an endless loop
+        if (derivedRepositoryURL) {
+            setRepositoryValue(derivedRepositoryURL)
+        }
+    }, [setRepositoryValue, derivedRepositoryURL])
 
     const { trackMouseEnter, trackMouseLeave, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
         insightType: CodeInsightTrackType.InProductLandingPageInsight,
     })
-
-    const debouncedQuery = useDebounce(query.input.value, 1000)
-    const debouncedRepositories = useDebounce(repositories.input.value, 1000)
 
     useEffect(() => {
         if (debouncedQuery !== INITIAL_INSIGHT_VALUES.query) {
@@ -103,6 +106,8 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     const handleGetStartedClick = (): void => {
         telemetryService.log('InsightsGetStartedPrimaryCTAClick')
     }
+
+    const hasValidLivePreview = repositories.meta.validState === 'VALID' && query.meta.validState === 'VALID'
 
     return (
         <Card {...otherProps} className={classNames(styles.wrapper, otherProps.className)}>

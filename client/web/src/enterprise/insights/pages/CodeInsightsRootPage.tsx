@@ -85,7 +85,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                 actions={
                     <>
                         <Button as={Link} to="/insights/add-dashboard" variant="secondary" className="mr-2">
-                            <PlusIcon className="icon-inline" /> Create dashboard
+                            <PlusIcon className="icon-inline" /> Add dashboard
                         </Button>
                         <Button
                             as={Link}

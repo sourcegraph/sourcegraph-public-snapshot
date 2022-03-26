@@ -16,6 +16,13 @@
     }
 }
 
+.tab-list {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--body-bg);
+}
+
 .cards-footer-button {
     margin-left: auto;
     margin-right: auto;
@@ -33,14 +40,14 @@
 }
 
 .query {
-    padding: 0.25rem 1rem 0.25rem 0.5rem;
+    padding: 0.375rem 1rem 0.375rem 0.5rem;
     position: relative;
 }
 
 .copy-button {
     position: absolute;
-    right: 0.25rem;
-    top: 0.25rem;
+    right: 0.375rem;
+    top: 0.375rem;
     color: var(--icon-color);
 
     &:hover {

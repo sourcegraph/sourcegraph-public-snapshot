@@ -360,7 +360,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"1 error occurred:\n\t* authorization.oauth.signingKey: illegal base64 data at input byte 7\n\n"},
+			expSeriousProblems:           []string{"authorization.oauth.signingKey: illegal base64 data at input byte 7"},
 		},
 		{
 			description: "Bitbucket Server exact username matching",

@@ -232,7 +232,7 @@ func parseConfiguration(raw *[]*schema.BatchChangeRolloutWindow) ([]Window, erro
 		return windows, nil
 	}
 
-	var errs *errors.MultiError
+	var errs error
 	for i, rawWindow := range *raw {
 		if window, err := parseWindow(rawWindow); err != nil {
 			errs = errors.Append(errs, errors.Wrapf(err, "window %d", i))
@@ -241,5 +241,5 @@ func parseConfiguration(raw *[]*schema.BatchChangeRolloutWindow) ([]Window, erro
 		}
 	}
 
-	return windows, errs.ErrorOrNil()
+	return windows, errs
 }

@@ -334,14 +334,27 @@ func (q Q) IsCaseSensitive() bool {
 }
 
 func (q Q) Repositories() (repos []string, negatedRepos []string) {
-	VisitField(q, FieldRepo, func(value string, negated bool, _ Annotation) {
-		if negated {
-			negatedRepos = append(negatedRepos, value)
+	VisitField(q, FieldRepo, func(value string, negated bool, a Annotation) {
+		if a.Labels.IsSet(IsPredicate) {
 			return
 		}
-		repos = append(repos, value)
+
+		if negated {
+			negatedRepos = append(negatedRepos, value)
+		} else {
+			repos = append(repos, value)
+		}
 	})
 	return repos, negatedRepos
+}
+
+func (q Q) Dependencies() (dependencies []string) {
+	VisitPredicate(q, func(field, name, value string) {
+		if field == FieldRepo && (name == "dependencies" || name == "deps") {
+			dependencies = append(dependencies, value)
+		}
+	})
+	return dependencies
 }
 
 func (q Q) MaxResults(defaultLimit int) int {

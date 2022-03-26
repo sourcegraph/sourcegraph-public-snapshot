@@ -8,7 +8,7 @@ import { useExperimentalFeatures } from './experimentalFeatures'
 import {
     addSearchStackEntry,
     removeAllSearchStackEntries,
-    removeSearchStackEntry,
+    removeFromSearchStack,
     restorePreviousSession,
     SearchStackEntry,
     SearchStackEntryInput,
@@ -71,15 +71,15 @@ describe('search stack store', () => {
     })
 
     it('removes individual entries', () => {
-        useSearchStackState.setState({ entries: [exampleEntry, { ...exampleEntry }] })
-        removeSearchStackEntry(exampleEntry)
+        useSearchStackState.setState({ entries: [exampleEntry, { ...exampleEntry, id: 1 }] })
+        removeFromSearchStack(exampleEntry.id)
 
         const state = useSearchStackState.getState()
         expect(state.entries).toHaveLength(1)
     })
 
     it('removes all entries', () => {
-        useSearchStackState.setState({ entries: [exampleEntry, { ...exampleEntry }] })
+        useSearchStackState.setState({ entries: [exampleEntry, { ...exampleEntry, id: 1 }] })
         removeAllSearchStackEntries()
 
         const state = useSearchStackState.getState()

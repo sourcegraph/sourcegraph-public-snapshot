@@ -164,12 +164,3 @@ annotations/
 # Buildkite analytics files
 jest-junit.xml
 mocha-junit.xml
-
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-**/.yarn/*

@@ -389,8 +389,5 @@
     "browserslist": "browserslist",
     "analyze-bundle": "WEBPACK_USE_NAMED_CHUNKS=true NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 pnpm build",
     "bundlesize": "bundlesize --config=./bundlesize.config.js"
-  },
-  "jest": {
-    "testURL": "http://localhost:3080"
   }
 }

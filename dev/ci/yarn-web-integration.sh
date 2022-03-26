@@ -11,9 +11,7 @@ echo "--- pnpm install in root"
 pnpm install
 
 echo "--- Run integration test suite"
-# Word splittinng is intentional here. $1 contains a string with test files separated by a space.
-# shellcheck disable=SC2086
-pnpm percy exec --parallel pnpm cover-integration:base $1
+pnpm percy exec --parallel pnpm cover-integration:base "$@"
 
 echo "--- Process NYC report"
 pnpm nyc report -r json

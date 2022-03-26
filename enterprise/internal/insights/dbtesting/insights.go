@@ -18,6 +18,10 @@ import (
 // The returned DB handle is initialized with a unique database just for the specified test, with
 // all migrations applied.
 func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	// Setup TimescaleDB for testing.
 	if os.Getenv("CODEINSIGHTS_PGDATASOURCE") == "" {
 		os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")

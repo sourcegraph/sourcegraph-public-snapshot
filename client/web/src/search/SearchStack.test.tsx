@@ -14,6 +14,10 @@ describe('Search Stack', () => {
     const renderSearchStack = (props?: Partial<{ initialOpen: boolean }>): RenderWithBrandedContextResult =>
         renderWithBrandedContext(<SearchStack {...props} />)
 
+    function open() {
+        userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+    }
+
     afterEach(cleanup)
 
     const mockEntries: SearchStackEntry[] = [
@@ -97,7 +101,7 @@ describe('Search Stack', () => {
 
         it('redirects to entries', () => {
             renderSearchStack()
-            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+            open()
 
             const entryLinks = screen.queryAllByRole('link')
 
@@ -108,8 +112,8 @@ describe('Search Stack', () => {
 
         it('creates notebooks', () => {
             const result = renderSearchStack()
+            open()
 
-            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
 
             expect(result.history.location.pathname).toMatchInlineSnapshot('"/notebooks/new"')
@@ -120,7 +124,7 @@ describe('Search Stack', () => {
 
         it('allows to delete entries', () => {
             renderSearchStack()
-            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+            open()
 
             userEvent.click(screen.getAllByRole('button', { name: 'Remove entry' })[0])
             const entryLinks = screen.queryByRole('link')
@@ -129,10 +133,220 @@ describe('Search Stack', () => {
 
         it('opens the text annotation aria', () => {
             renderSearchStack()
-            userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
+            open()
 
             userEvent.click(screen.getAllByRole('button', { name: 'Add annotation' })[0])
             expect(screen.queryByPlaceholderText('Type to add annotation...')).toBeInTheDocument()
+        })
+    })
+
+    describe('selection', () => {
+        beforeEach(() => {
+            useExperimentalFeatures.setState({ enableSearchStack: true })
+            useSearchStackState.setState({
+                entries: [
+                    {
+                        id: 0,
+                        type: 'search',
+                        query: 'TODO',
+                        caseSensitive: false,
+                        patternType: SearchPatternType.literal,
+                    },
+                    { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+                    {
+                        id: 2,
+                        type: 'search',
+                        query: 'another query',
+                        caseSensitive: true,
+                        patternType: SearchPatternType.literal,
+                    },
+                    {
+                        id: 3,
+                        type: 'search',
+                        query: 'yet another query',
+                        caseSensitive: true,
+                        patternType: SearchPatternType.literal,
+                    },
+                ],
+            })
+        })
+
+        it('selects an item on click or space', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            // item1 <-
+            // item2
+            // item3
+            // item4
+            userEvent.click(item[0])
+            // item1
+            // item2 <-
+            // item3
+            // item4
+            userEvent.click(item[1])
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[1]])
+
+            item[2].focus()
+            // item1
+            // item2
+            // item3 <-
+            // item4
+            userEvent.keyboard('{space}')
+
+            expect(screen.getByRole('option', { selected: true })).toBe(item[2])
+        })
+
+        it('selects multiple items on ctrl/meta+click/space', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            // item1 <-
+            // item2
+            // item3
+            // item4
+            userEvent.click(item[0])
+            // item1 <-
+            // item2 <-
+            // item3
+            // item4
+            userEvent.click(item[1], { ctrlKey: true })
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1]])
+
+            item[3].focus()
+            // item1 <-
+            // item2 <-
+            // item3
+            // item4 <-
+            userEvent.keyboard('{ctrl}{space}')
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1], item[3]])
+        })
+
+        it('selects a range of items on shift+click', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            // item1 <-
+            // item2
+            // item3
+            // item4
+            userEvent.click(item[0])
+            // item1 <- (last)
+            // item2 <-
+            // item3 <-
+            // item4
+            userEvent.click(item[2], { shiftKey: true })
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1], item[2]])
+        })
+
+        it('extends the range of items on shift+click', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            // item1
+            // item2 <-
+            // item3
+            // item4
+            userEvent.click(item[1])
+            // item1
+            // item2 <- (last)
+            // item3 <-
+            // item4 <-
+            userEvent.click(item[3], { shiftKey: true })
+            // Shift click always adds!
+            // item1 <-
+            // item2 <-
+            // item3 <-
+            // item4 <- (last)
+            userEvent.click(item[0], { shiftKey: true })
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual(item)
+        })
+
+        it('selects a range of items on shift+space', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            // item1 <-
+            // item2
+            // item3
+            // item4
+            item[0].focus()
+            userEvent.keyboard('{space}')
+            // item1 <- (last)
+            // item2 <-
+            // item3 <-
+            // item4
+            item[2].focus()
+            userEvent.keyboard('{shift}{space}')
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual([item[0], item[1], item[2]])
+        })
+
+        it('extends the range of items on shift+space', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            // item1
+            // item2 <-
+            // item3
+            // item4
+            item[1].focus()
+            userEvent.keyboard('{space}')
+            // item1
+            // item2 <- (last)
+            // item3 <-
+            // item4 <-
+            item[3].focus()
+            userEvent.keyboard('{shift}{space}')
+            // Shift click always adds!
+            // item1 <-
+            // item2 <-
+            // item3 <-
+            // item4 <- (last)
+            item[0].focus()
+            userEvent.keyboard('{shift}{space}')
+
+            expect(screen.queryAllByRole('option', { selected: true })).toEqual(item)
+        })
+
+        it('deletes all selected entries', () => {
+            renderSearchStack()
+            open()
+
+            const item = screen.getAllByRole('option')
+            userEvent.click(item[0])
+            userEvent.click(item[2], { shiftKey: true })
+            userEvent.click(screen.queryAllByRole('button', { name: 'Remove all selected entries' })[0])
+
+            expect(screen.queryAllByRole('option').length).toBe(1)
+        })
+
+        it('does not select entry on toggle annotion click', () => {
+            renderSearchStack()
+            open()
+
+            userEvent.click(screen.queryAllByRole('button', { name: 'Add annotation' })[0])
+
+            expect(screen.queryByRole('option', { selected: true })).not.toBeInTheDocument()
+        })
+
+        it('does not select entry on typing space into the annotation area', () => {
+            renderSearchStack()
+            open()
+
+            userEvent.click(screen.queryAllByRole('button', { name: 'Add annotation' })[0])
+            userEvent.type(screen.getByPlaceholderText('Type to add annotation...'), '{space}')
+
+            expect(screen.queryByRole('option', { selected: true })).not.toBeInTheDocument()
         })
     })
 })
