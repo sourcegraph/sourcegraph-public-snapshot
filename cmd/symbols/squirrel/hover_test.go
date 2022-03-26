@@ -23,8 +23,6 @@ class C {
 }
 `
 
-	_ = java
-
 	tests := []struct {
 		path     string
 		contents string
