@@ -52,9 +52,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if diff.Has(changed.SVG) {
 		linterOps.Append(addSVGLint)
 	}
-	if diff.Has(changed.Client) {
-		linterOps.Append(addYarnDeduplicateLint)
-	}
 	if diff.Has(changed.Dockerfiles) {
 		linterOps.Append(addDockerfileLint)
 	}
