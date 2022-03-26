@@ -40,7 +40,7 @@ func (squirrel *SquirrelService) Close() {
 
 // How to read a file from gitserver.
 func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	cmd := gitserver.DefaultClient.Command("git", "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
+	cmd := gitserver.NewClient(nil).Command("git", "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
 	cmd.Repo = api.RepoName(repoCommitPath.Repo)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
