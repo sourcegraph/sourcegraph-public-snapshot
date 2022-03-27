@@ -84,6 +84,7 @@ const batchChangeDefaults: BatchChangeFields = {
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],
+        pageInfo: { hasNextPage: false },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
