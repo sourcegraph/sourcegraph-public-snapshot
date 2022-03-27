@@ -866,7 +866,7 @@ func stableTimeRepr(t time.Time) string {
 var unixEpoch = stableTimeRepr(time.Unix(0, 0))
 
 func (opts *CommitGraphOptions) LogFields() []log.Field {
-	var since = unixEpoch
+	since := unixEpoch
 	if opts.Since != nil {
 		since = stableTimeRepr(*opts.Since)
 	}
