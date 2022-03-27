@@ -58,7 +58,7 @@ setLinkComponent(AnchorLink)
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)
 
-const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
+const fetchCurrentTabStatus = async (sourcegraphURL: string): Promise<TabStatus> => {
     const tabs = await browser.tabs.query({ active: true, currentWindow: true })
     if (tabs.length > 1) {
         throw new Error('Querying for the currently active tab returned more than one result')
@@ -70,7 +70,7 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     if (!id) {
         throw new Error('Currently active tab has no ID')
     }
-    const hasRepoSyncError = await background.checkRepoSyncError(id)
+    const hasRepoSyncError = await background.checkRepoSyncError({ tabId: id, sourcegraphURL })
     const { host, protocol } = new URL(url)
     const hasPermissions = await checkUrlPermissions(url)
     return { hasRepoSyncError, host, protocol, hasPermissions }
@@ -177,13 +177,14 @@ const Options: React.FunctionComponent = () => {
     const currentTabStatus = useObservable(
         useMemo(
             () =>
-                from(fetchCurrentTabStatus()).pipe(
-                    map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
-                ),
-            []
+                sourcegraphUrl
+                    ? from(fetchCurrentTabStatus(sourcegraphUrl)).pipe(
+                          map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
+                      )
+                    : of(undefined),
+            [sourcegraphUrl]
         )
     )
-
     const currentUser = useObservable(
         useMemo(() => (currentTabStatus?.status.hasRepoSyncError ? fetchCurrentUser(sourcegraphUrl!) : of(undefined)), [
             currentTabStatus,

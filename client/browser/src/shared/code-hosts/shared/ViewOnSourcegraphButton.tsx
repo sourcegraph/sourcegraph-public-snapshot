@@ -36,7 +36,7 @@ interface ViewOnSourcegraphButtonProps
      */
     onSignInClose?: () => void
 
-    onRepoSyncError: (hasError: boolean) => void
+    onRepoSyncError: (sourcegraphURL: string, hasError: boolean) => void
 }
 
 export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
@@ -63,12 +63,12 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     const { rawRepoName, revision, privateRepository } = context
 
     useEffect(() => {
-        onRepoSyncError(repoExistsOrError === false)
+        onRepoSyncError(sourcegraphURL, repoExistsOrError === false)
 
         return () => {
-            onRepoSyncError(false)
+            onRepoSyncError(sourcegraphURL, false)
         }
-    }, [repoExistsOrError, onRepoSyncError])
+    }, [sourcegraphURL, repoExistsOrError, onRepoSyncError])
 
     // Show nothing while loading
     if (repoExistsOrError === undefined) {

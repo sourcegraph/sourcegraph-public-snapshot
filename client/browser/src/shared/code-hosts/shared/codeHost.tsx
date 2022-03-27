@@ -793,7 +793,7 @@ const isSafeToContinueCodeIntel = async ({
 
         if (isExtension) {
             // Notify to show extension alert-icon
-            background.notifyRepoSyncError(true).catch(error => {
+            background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError: true }).catch(error => {
                 console.error('Error notifying background page of private cloud.', error)
             })
         }
@@ -1008,10 +1008,10 @@ export async function handleCodeHost({
                 return [asError(error)]
             })
         )
-        const onRepoSyncError = (hasRepoSyncError: boolean): void => {
+        const onRepoSyncError = (sourcegraphURL: string, hasRepoSyncError: boolean): void => {
             setRepoSyncError(hasRepoSyncError)
             if (isExtension) {
-                background.notifyRepoSyncError(hasRepoSyncError).catch(error => {
+                background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }).catch(error => {
                     console.error('Error notifying background page of private cloud error:', error)
                 })
             }

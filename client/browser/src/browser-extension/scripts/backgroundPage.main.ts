@@ -60,27 +60,41 @@ const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
  * by sending `notifyRepoSyncError` message.
  */
 const tabRepoSyncErrorCache = (() => {
-    const cache = new Map<number, boolean>()
-    const subject = new Subject<ReadonlyMap<number, boolean>>()
+    const cache = new Map<number, Map<string, boolean>>()
+    const subject = new Subject<ReadonlyMap<number, Map<string, boolean>>>()
     return {
         observable: subject.asObservable(),
         /**
          * Update the background page's cache of which tabs have experienced either a
          * private code on Cloud or not synced repo on other than Cloud Sourcegrpah instance error.
          */
-        setTabHasRepoSyncError(tabId: number, hasRepoSyncError: boolean): void {
-            if (!hasRepoSyncError) {
-                // An absent value is equivalent to being false; so we can delete it.
+        setTabHasRepoSyncError(tabId: number, sourcegraphURL: string, hasRepoSyncError: boolean): void {
+            if (sourcegraphURL) {
+                const record = cache.get(tabId)
+
+                if (record) {
+                    if (hasRepoSyncError) {
+                        record.set(sourcegraphURL, true)
+                    } else {
+                        record.delete(sourcegraphURL)
+                    }
+
+                    if (record.size === 0) {
+                        cache.delete(tabId)
+                    }
+                } else if (hasRepoSyncError) {
+                    cache.set(tabId, new Map().set(sourcegraphURL, true))
+                }
+            } else {
                 cache.delete(tabId)
             }
-            cache.set(tabId, hasRepoSyncError)
 
             // Emit the updated repository cache when it changes, so that consumers can
             // observe the value.
             subject.next(cache)
         },
-        getTabHasRepoSyncError(tabId: number): boolean {
-            return !!cache.get(tabId)
+        getTabHasRepoSyncError(tabId: number, sourcegraphURL: string): boolean {
+            return !!cache.get(tabId)?.get(sourcegraphURL)
         },
     }
 })()
@@ -175,7 +189,7 @@ async function main(): Promise<void> {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
-            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, false)
+            tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, '', false)
             return
         }
 
@@ -218,16 +232,16 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        async notifyRepoSyncError(hasRepoSyncError: boolean, sender: browser.runtime.MessageSender): Promise<void> {
+        async notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }, sender: browser.runtime.MessageSender) {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, hasRepoSyncError)
+                tabRepoSyncErrorCache.setTabHasRepoSyncError(tabId, sourcegraphURL, hasRepoSyncError)
             }
             return Promise.resolve()
         },
 
-        async checkRepoSyncError(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabRepoSyncErrorCache.getTabHasRepoSyncError(tabId))
+        async checkRepoSyncError({ tabId, sourcegraphURL }) {
+            return Promise.resolve(!!tabRepoSyncErrorCache.getTabHasRepoSyncError(tabId, sourcegraphURL))
         },
 
         fetchCache,
@@ -421,8 +435,15 @@ function observeCurrentTabId(): Observable<number> {
  * a private code on Cloud error.
  */
 function observeCurrentTabPrivateCloudError(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), tabRepoSyncErrorCache.observable]).pipe(
-        map(([tabId, privateCloudErrorCache]) => !!privateCloudErrorCache.get(tabId)),
+    return combineLatest([
+        observeCurrentTabId(),
+        observeStorageKey('sync', 'sourcegraphURL'),
+        tabRepoSyncErrorCache.observable,
+    ]).pipe(
+        map(
+            ([tabId, sourcegraphURL, privateCloudErrorCache]) =>
+                !!(sourcegraphURL && privateCloudErrorCache.get(tabId)?.get(sourcegraphURL))
+        ),
         distinctUntilChanged()
     )
 }
