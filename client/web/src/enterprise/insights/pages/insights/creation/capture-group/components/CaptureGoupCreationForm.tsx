@@ -13,6 +13,7 @@ import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import { Insight } from '../../../../../core/types'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
@@ -34,6 +35,7 @@ interface CaptureGroupCreationFormProps {
     dashboardReferenceCount?: number
     isFormClearActive?: boolean
     className?: string
+    insight?: Insight
 
     onCancel: () => void
     onFormReset: () => void
@@ -54,6 +56,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         isFormClearActive,
         onFormReset,
         onCancel,
+        insight,
     } = props
 
     const {
@@ -62,14 +65,17 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         formAPI: { submitErrors, submitting },
     } = form
 
-    const { licensed, insight } = useUiFeatures()
+    const { licensed, insight: insightFeatures } = useUiFeatures()
     const isEditMode = mode === 'edit'
 
     const creationPermission = useObservable(
-        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
-            insight,
-            isEditMode,
-        ])
+        useMemo(
+            () =>
+                isEditMode && insight
+                    ? insightFeatures.getEditPermissions(insight)
+                    : insightFeatures.getCreationPermissions(),
+            [insightFeatures, isEditMode, insight]
+        )
     )
 
     return (
