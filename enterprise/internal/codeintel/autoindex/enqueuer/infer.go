@@ -45,14 +45,14 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bo
 		version = match[0][1]
 	}
 
-	return api.RepoName(strings.Join(repoParts, "/")), version, true
+	return api.NewRepoName(strings.Join(repoParts, "/")), version, true
 }
 
 func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
 	if pkg.Scheme != dependenciesStore.JVMPackagesScheme {
 		return "", "", false
 	}
-	return api.RepoName(pkg.Name), "v" + pkg.Version, true
+	return api.NewRepoName(pkg.Name), "v" + pkg.Version, true
 }
 
 func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {

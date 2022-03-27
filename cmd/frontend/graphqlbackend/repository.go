@@ -391,7 +391,7 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	_, err := database.Phabricator(r.db).CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
+	_, err := database.Phabricator(r.db).CreateIfNotExists(ctx, args.Callsign, api.NewRepoName(*args.URI), args.URL)
 	if err != nil {
 		log15.Error("adding phabricator repo", "callsign", args.Callsign, "name", args.URI, "url", args.URL)
 	}
@@ -409,7 +409,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	Date        *string
 }) (*GitCommitResolver, error) {
 	db := r.db
-	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
+	repo, err := db.Repos().GetByName(ctx, api.NewRepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +435,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	origin := ""
-	if phabRepo, err := database.Phabricator(db).GetByName(ctx, api.RepoName(args.RepoName)); err == nil {
+	if phabRepo, err := database.Phabricator(db).GetByName(ctx, api.NewRepoName(args.RepoName)); err == nil {
 		origin = phabRepo.URL
 	}
 
@@ -492,7 +492,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	_, err = gitserver.NewClient(db).CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
-		Repo:       api.RepoName(args.RepoName),
+		Repo:       api.NewRepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
 		Patch:      patch,

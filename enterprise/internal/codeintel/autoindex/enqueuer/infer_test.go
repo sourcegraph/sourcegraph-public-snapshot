@@ -66,8 +66,8 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 				t.Fatalf("expected repository to be inferred")
 			}
 
-			if string(repoName) != testCase.repoName {
-				t.Errorf("unexpected repo name. want=%q have=%q", testCase.repoName, string(repoName))
+			if repoName.GetNameUnchecked() != testCase.repoName {
+				t.Errorf("unexpected repo name. want=%q have=%q", testCase.repoName, repoName.GetNameUnchecked())
 			}
 			if revision != testCase.revision {
 				t.Errorf("unexpected revision. want=%q have=%q", testCase.revision, revision)

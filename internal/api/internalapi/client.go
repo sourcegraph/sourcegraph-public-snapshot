@@ -126,7 +126,7 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 
 func (c *internalClient) ReposGetByName(ctx context.Context, repoName api.RepoName) (*api.Repo, error) {
 	var repo api.Repo
-	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
+	err := c.postInternal(ctx, "repos/"+repoName.GetNameUnchecked(), nil, &repo)
 	if err != nil {
 		return nil, err
 	}

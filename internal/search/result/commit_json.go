@@ -111,7 +111,7 @@ func (cm *CommitMatch) UnmarshalJSON(input []byte) error {
 		},
 		Repo: types.MinimalRepo{
 			ID:    api.RepoID(unmarshaler.RepoID),
-			Name:  api.RepoName(unmarshaler.RepoName),
+			Name:  api.NewRepoName(unmarshaler.RepoName),
 			Stars: unmarshaler.RepoStars,
 		},
 		Refs:           unmarshaler.Refs,

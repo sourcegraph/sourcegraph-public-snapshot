@@ -74,7 +74,7 @@ func TestRepositoryHydration(t *testing.T) {
 
 		minimal := types.Repo{
 			ID:   api.RepoID(id),
-			Name: api.RepoName(name),
+			Name: api.NewRepoName(name),
 		}
 
 		hydrated := minimal
@@ -153,7 +153,7 @@ func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
 			RepoMatch: result.RepoMatch{
-				Name: api.RepoName(name),
+				Name: api.NewRepoName(name),
 				ID:   api.RepoID(0),
 			},
 		}

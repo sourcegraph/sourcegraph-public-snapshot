@@ -14,7 +14,7 @@ func TestDeduper(t *testing.T) {
 	commit := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
 			Repo: types.MinimalRepo{
-				Name: api.RepoName(repo),
+				Name: api.NewRepoName(repo),
 			},
 			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
@@ -25,7 +25,7 @@ func TestDeduper(t *testing.T) {
 	diff := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
 			Repo: types.MinimalRepo{
-				Name: api.RepoName(repo),
+				Name: api.NewRepoName(repo),
 			},
 			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
@@ -36,7 +36,7 @@ func TestDeduper(t *testing.T) {
 
 	repo := func(name, rev string) *RepoMatch {
 		return &RepoMatch{
-			Name: api.RepoName(name),
+			Name: api.NewRepoName(name),
 			Rev:  rev,
 		}
 	}
@@ -45,7 +45,7 @@ func TestDeduper(t *testing.T) {
 		return &FileMatch{
 			File: File{
 				Repo: types.MinimalRepo{
-					Name: api.RepoName(repo),
+					Name: api.NewRepoName(repo),
 				},
 				CommitID: api.CommitID(commit),
 				Path:     path,

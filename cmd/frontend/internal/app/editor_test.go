@@ -14,7 +14,7 @@ import (
 )
 
 func TestEditorRev(t *testing.T) {
-	repoName := api.RepoName("myRepo")
+	repoName := api.NewRepoName("myRepo")
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
 		if rev == "branch" {
 			return api.CommitID(strings.Repeat("b", 40)), nil

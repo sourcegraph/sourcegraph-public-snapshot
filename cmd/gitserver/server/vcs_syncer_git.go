@@ -19,7 +19,7 @@ func (s *GitRepoSyncer) Type() string {
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	if isAlwaysCloningTest(api.RepoName(remoteURL.String())) {
+	if isAlwaysCloningTest(api.NewRepoName(remoteURL.String())) {
 		return nil
 	}
 	if testGitRepoExists != nil {

@@ -12,16 +12,38 @@ import (
 // RepoID is the unique identifier for a repository.
 type RepoID int32
 
+type RepoVisibility struct {
+	value uint8
+}
+
+var (
+	UnknownVisibility = RepoVisibility{value: 0}
+	PrivateVisibility = RepoVisibility{value: 1}
+	PublicVisibility  = RepoVisibility{value: 2}
+)
+
 // RepoName is the name of a repository, consisting of one or more "/"-separated path components.
 //
 // Previously, this was called RepoURI.
-type RepoName string
+type RepoName struct {
+	visibility RepoVisibility
+	rawName    string
+}
+
+// NewRepoName creates a repo with unknown visibility.
+func NewRepoName(s string) RepoName {
+	return RepoName{visibility: UnknownVisibility, rawName: s}
+}
+
+func (r RepoName) GetNameUnchecked() string {
+	return r.rawName
+}
 
 // RepoHashedName is the hashed name of a repo
 type RepoHashedName string
 
-func (r RepoName) Equal(o RepoName) bool {
-	return strings.EqualFold(string(r), string(o))
+func (r RepoName) Equal(o RepoName) bool { // TODO: Rename to HasSameName? Could this allow "leaking" the repo name?
+	return strings.EqualFold(r.rawName, o.rawName)
 }
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.

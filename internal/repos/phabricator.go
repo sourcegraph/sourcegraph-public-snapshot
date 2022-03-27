@@ -137,7 +137,7 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error
 
 	urn := s.svc.URN()
 	return &types.Repo{
-		Name: api.RepoName(name),
+		Name: api.NewRepoName(name),
 		URI:  name,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repo.PHID,

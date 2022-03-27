@@ -628,7 +628,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 	var name api.RepoName
 	if args.Name != nil {
 		// Query by name
-		name = api.RepoName(*args.Name)
+		name = api.NewRepoName(*args.Name)
 	} else if args.CloneURL != nil {
 		// Query by git clone URL
 		var err error
@@ -667,7 +667,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := database.Phabricator(r.db).GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := database.Phabricator(r.db).GetByName(ctx, api.NewRepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}

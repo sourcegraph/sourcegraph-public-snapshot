@@ -96,7 +96,7 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *types.Repo {
 	urn := s.svc.URN()
 	name := string(reposource.GitoliteRepoName(s.conn.Prefix, repo.Name))
 	return &types.Repo{
-		Name:         api.RepoName(name),
+		Name:         api.NewRepoName(name),
 		URI:          name,
 		ExternalRepo: gitolite.ExternalRepoSpec(repo, gitolite.ServiceID(s.conn.Host)),
 		Sources: map[string]*types.SourceInfo{

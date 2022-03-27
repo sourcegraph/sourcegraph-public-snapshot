@@ -53,7 +53,7 @@ var cloneURLResolvers = conf.Cached(func() interface{} {
 func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
 	for _, r := range cloneURLResolvers().([]*cloneURLResolver) {
 		if name := mapString(r.from, cloneURL, r.to); name != "" {
-			return api.RepoName(name)
+			return api.NewRepoName(name)
 		}
 	}
 	return ""

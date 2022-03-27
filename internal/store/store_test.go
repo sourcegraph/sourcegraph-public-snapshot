@@ -23,7 +23,7 @@ func TestPrepareZip(t *testing.T) {
 	s, cleanup := tmpStore(t)
 	defer cleanup()
 
-	wantRepo := api.RepoName("foo")
+	wantRepo := api.NewRepoName("foo")
 	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 
 	returnFetch := make(chan struct{})

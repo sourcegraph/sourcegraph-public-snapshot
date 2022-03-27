@@ -250,13 +250,13 @@ func TestStatusMessages(t *testing.T) {
 			idMapping := make(map[api.RepoName]api.RepoID)
 			for _, r := range stored {
 				lower := strings.ToLower(string(r.Name))
-				idMapping[api.RepoName(lower)] = r.ID
+				idMapping[api.NewRepoName(lower)] = r.ID
 			}
 
 			// Add gitserver_repos rows
 			for _, toClone := range tc.gitserverCloned {
 				toClone = strings.ToLower(toClone)
-				id := idMapping[api.RepoName(toClone)]
+				id := idMapping[api.NewRepoName(toClone)]
 				if id == 0 {
 					continue
 				}

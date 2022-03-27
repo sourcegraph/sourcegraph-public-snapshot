@@ -63,7 +63,7 @@ func (s *Server) name(dir GitDir) api.RepoName {
 	name := strings.TrimPrefix(parent, s.ReposDir)        // remove prefix "${s.ReposDir}"
 	name = strings.Trim(name, string(filepath.Separator)) // remove /
 	name = filepath.ToSlash(name)                         // filepath -> path
-	return protocol.NormalizeRepo(api.RepoName(name))
+	return protocol.NormalizeRepo(api.NewRepoName(name))
 }
 
 func cloneStatus(cloned, cloning bool) types.CloneStatus {

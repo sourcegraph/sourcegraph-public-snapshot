@@ -534,7 +534,7 @@ func TestCloneRepo(t *testing.T) {
 	defer cancel()
 
 	remote := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
+	repoName := api.NewRepoName("example.com/foo/bar")
 	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
@@ -638,7 +638,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	defer cancel()
 
 	remote := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
+	repoName := api.NewRepoName("example.com/foo/bar")
 	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
@@ -757,7 +757,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	reposDirSource := t.TempDir()
 	remote := filepath.Join(reposDirSource, "example.com/foo/bar")
 	os.MkdirAll(remote, 0755)
-	repoName := api.RepoName("example.com/foo/bar")
+	repoName := api.NewRepoName("example.com/foo/bar")
 	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
@@ -1066,7 +1066,7 @@ func TestSyncRepoState(t *testing.T) {
 	cmd("git", "commit", "-m", "hello")
 
 	reposDir := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
+	repoName := api.NewRepoName("example.com/foo/bar")
 	hostname := "test"
 
 	s := makeTestServer(ctx, reposDir, remoteDir, db)
@@ -1074,7 +1074,7 @@ func TestSyncRepoState(t *testing.T) {
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
-		URI:         string(repoName),
+		URI:         repoName.GetNameUnchecked(),
 		Description: "Test",
 	}
 

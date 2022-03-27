@@ -50,7 +50,7 @@ func (m *MavenModule) RepoName() api.RepoName {
 	if m.IsJDK() {
 		return "jdk"
 	}
-	return api.RepoName(fmt.Sprintf("maven/%s/%s", m.GroupID, m.ArtifactID))
+	return api.NewRepoName(fmt.Sprintf("maven/%s/%s", m.GroupID, m.ArtifactID))
 }
 
 func (m *MavenModule) CloneURL() string {

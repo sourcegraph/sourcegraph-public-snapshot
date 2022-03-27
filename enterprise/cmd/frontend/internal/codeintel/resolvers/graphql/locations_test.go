@@ -229,7 +229,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 func TestResolveLocations(t *testing.T) {
 	repos := database.NewStrictMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
+		return &types.Repo{ID: id, Name: api.NewRepoName(fmt.Sprintf("repo%d", id))}, nil
 	})
 
 	db := database.NewStrictMockDB()

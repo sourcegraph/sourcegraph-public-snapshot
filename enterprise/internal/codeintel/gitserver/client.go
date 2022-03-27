@@ -393,8 +393,8 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 func (c *Client) repositoryIDToRepo(ctx context.Context, repositoryID int) (api.RepoName, error) {
 	repoName, err := c.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
-		return "", errors.Wrap(err, "dbstore.RepoName")
+		return api.RepoName{}, errors.Wrap(err, "dbstore.RepoName")
 	}
 
-	return api.RepoName(repoName), nil
+	return api.NewRepoName(repoName), nil
 }

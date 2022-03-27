@@ -27,7 +27,7 @@ func TestDBTransactions(t *testing.T) {
 
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equal(t, api.NewRepoName("test1"), r.Name)
 	})
 
 	t.Run("basic transaction works", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestDBTransactions(t *testing.T) {
 			// Get inside the transaction should work
 			r, err := tx.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equal(t, api.NewRepoName("test1"), r.Name)
 
 			// Before committing the transaction, the repo should not be visible
 			// outside the transaction
@@ -59,7 +59,7 @@ func TestDBTransactions(t *testing.T) {
 		// outisde the transaction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equal(t, api.NewRepoName("test1"), r.Name)
 	})
 
 	t.Run("rolled back transaction works", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestDBTransactions(t *testing.T) {
 			// Get inside the transaction should work
 			r, err := tx.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equal(t, api.NewRepoName("test1"), r.Name)
 
 			// Before committing the transaction, the repo should not be visible
 			// outside the transaction
@@ -108,7 +108,7 @@ func TestDBTransactions(t *testing.T) {
 			// Get inside the transaction should work
 			r, err := tx1.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equal(t, api.NewRepoName("test1"), r.Name)
 
 			// Before committing the transaction, the repo should not be visible
 			// outside the transaction
@@ -126,7 +126,7 @@ func TestDBTransactions(t *testing.T) {
 				// Get inside the transaction should work
 				r, err := tx2.Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
+				require.Equal(t, api.NewRepoName("test2"), r.Name)
 
 				// Before committing the transaction, repo 2 should not be visible
 				// outside the transaction
@@ -142,10 +142,10 @@ func TestDBTransactions(t *testing.T) {
 			// outside the transaction
 			r, err = db.Repos().Get(ctx, 2)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test2"), r.Name)
+			require.Equal(t, api.NewRepoName("test2"), r.Name)
 			r, err = tx1.Get(ctx, 2)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test2"), r.Name)
+			require.Equal(t, api.NewRepoName("test2"), r.Name)
 
 			tx1.Done(nil)
 		}
@@ -154,7 +154,7 @@ func TestDBTransactions(t *testing.T) {
 		// outisde the transaction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equal(t, api.NewRepoName("test1"), r.Name)
 	})
 
 	t.Run("nested transaction rollback works", func(t *testing.T) {
@@ -172,7 +172,7 @@ func TestDBTransactions(t *testing.T) {
 			// Get inside the transaction should work
 			r, err := tx1.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equal(t, api.NewRepoName("test1"), r.Name)
 
 			// Before committing the transaction, the repo should not be visible
 			// outside the transaction
@@ -190,7 +190,7 @@ func TestDBTransactions(t *testing.T) {
 				// Get inside the transaction should work
 				r, err := tx2.Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
+				require.Equal(t, api.NewRepoName("test2"), r.Name)
 
 				// Before committing the transaction, repo 2 should not be visible
 				// outside the transaction
@@ -216,7 +216,7 @@ func TestDBTransactions(t *testing.T) {
 		// outisde the transaction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equal(t, api.NewRepoName("test1"), r.Name)
 	})
 
 	t.Run("basic transaction works with nested database.DB", func(t *testing.T) {
@@ -237,7 +237,7 @@ func TestDBTransactions(t *testing.T) {
 			// Get inside the transaction should work
 			r, err := tx.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equal(t, api.NewRepoName("test1"), r.Name)
 
 			// Before committing the transaction, the repo should not be visible
 			// outside the transaction
@@ -251,6 +251,6 @@ func TestDBTransactions(t *testing.T) {
 		// outisde the transaction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equal(t, api.NewRepoName("test1"), r.Name)
 	})
 }

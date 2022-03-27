@@ -99,7 +99,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
 			Host:     "sourcegraph.com",
-			Path:     string(name),
+			Path:     name.GetNameUnchecked(),
 			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
 		}).String()}
 	}
@@ -129,7 +129,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	// access.
 	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
 	if codehost == nil {
-		return "", &database.RepoNotFoundErr{Name: name}
+		return api.RepoName{}, &database.RepoNotFoundErr{Name: name}
 	}
 
 	status := "unknown"
@@ -144,7 +144,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 			} else {
 				status = "fail"
 			}
-			return "", err
+			return api.RepoName{}, err
 		}
 	}
 
@@ -156,7 +156,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	if lookupResult != nil && lookupResult.Repo != nil {
 		return lookupResult.Repo.Name, err
 	}
-	return "", err
+	return api.RepoName{}, err
 }
 
 func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {

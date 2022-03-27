@@ -174,7 +174,7 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifsto
 		if !checkerEnabled {
 			adjustedLocations = append(adjustedLocations, adjustedLocation)
 		} else {
-			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
+			repo := api.NewRepoName(adjustedLocation.Dump.RepositoryName)
 			if include, err := authz.FilterActorPath(ctx, r.checker, a, repo, adjustedLocation.Path); err != nil {
 				return nil, err
 			} else if include {

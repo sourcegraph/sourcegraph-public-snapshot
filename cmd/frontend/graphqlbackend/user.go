@@ -24,9 +24,9 @@ import (
 func (r *schemaResolver) User(
 	ctx context.Context,
 	args struct {
-		Username *string
-		Email    *string
-	},
+	Username *string
+	Email    *string
+},
 ) (*UserResolver, error) {
 	var err error
 	var user *types.User
@@ -583,7 +583,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 		out = append(out, &RepositoryResolver{
 			RepoMatch: result.RepoMatch{
 				ID:   repo.RepoID,
-				Name: api.RepoName(repo.RepoURI),
+				Name: api.NewRepoName(repo.RepoURI),
 			},
 			db: r.db,
 			innerRepo: &types.Repo{

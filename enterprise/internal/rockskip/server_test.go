@@ -111,7 +111,7 @@ func TestIndex(t *testing.T) {
 	verifyBlobs := func() {
 		repo := "somerepo"
 		commit := getHead()
-		args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit), Query: ""}
+		args := types.SearchArgs{Repo: api.NewRepoName(repo), CommitID: api.CommitID(commit), Query: ""}
 		symbols, err := service.Search(context.Background(), args)
 		fatalIfError(err, "Search")
 

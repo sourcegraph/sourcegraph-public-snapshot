@@ -105,7 +105,7 @@ func (s *PagureSource) makeRepo(p *pagure.Project) (*types.Repo, error) {
 	name := path.Join(fullURL.Host, fullURL.Path)
 
 	return &types.Repo{
-		Name:        api.RepoName(name),
+		Name:        api.NewRepoName(name),
 		URI:         name,
 		Description: p.Description,
 		Fork:        p.Parent != nil,

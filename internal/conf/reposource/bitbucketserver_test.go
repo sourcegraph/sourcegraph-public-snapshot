@@ -49,7 +49,7 @@ func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if u.repoName != string(repoName) {
+			if u.repoName != repoName.GetNameUnchecked() {
 				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
 			}
 		}

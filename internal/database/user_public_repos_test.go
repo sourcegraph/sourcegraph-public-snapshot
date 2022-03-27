@@ -77,15 +77,15 @@ func TestUserPublicRepos_SetUserRepos(t *testing.T) {
 
 	repos := []*types.Repo{
 		{
-			Name: api.RepoName("test1"),
+			Name: api.NewRepoName("test1"),
 			URI:  "https://foo.com/1",
 		},
 		{
-			Name: api.RepoName("test2"),
+			Name: api.NewRepoName("test2"),
 			URI:  "https://foo.com/2",
 		},
 		{
-			Name: api.RepoName("test3"),
+			Name: api.NewRepoName("test3"),
 			URI:  "https://foo.com/3",
 		},
 	}

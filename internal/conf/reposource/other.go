@@ -22,7 +22,7 @@ func (c Other) CloneURLToRepoURI(cloneURL string) (string, error) {
 
 func (c Other) CloneURLToRepoName(cloneURL string) (api.RepoName, error) {
 	repoName, err := cloneURLToRepoName(cloneURL, c.Url, c.RepositoryPathPattern)
-	return api.RepoName(repoName), err
+	return api.NewRepoName(repoName), err
 }
 
 func cloneURLToRepoName(cloneURL, baseURL, repositoryPathPattern string) (string, error) {

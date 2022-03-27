@@ -143,9 +143,9 @@ func (s *NpmPackagesSource) makeRepo(npmPackage *reposource.NpmPackage, descript
 	return &types.Repo{
 		Name:        repoName,
 		Description: description,
-		URI:         string(repoName),
+		URI:         repoName.GetNameUnchecked(),
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          string(repoName),
+			ID:          repoName.GetNameUnchecked(),
 			ServiceID:   extsvc.TypeNpmPackages,
 			ServiceType: extsvc.TypeNpmPackages,
 		},

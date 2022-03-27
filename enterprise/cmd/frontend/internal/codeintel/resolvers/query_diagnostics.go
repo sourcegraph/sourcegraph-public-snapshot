@@ -69,7 +69,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 			}
 
 			// sub-repo checker is enabled, proceeding with check
-			if include, err := authz.FilterActorPath(ctx, r.checker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
+			if include, err := authz.FilterActorPath(ctx, r.checker, a, api.NewRepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
 				return nil, 0, err
 			} else if include {
 				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)

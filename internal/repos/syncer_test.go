@@ -516,11 +516,11 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					name: string(tc.repo.Name) + "/case insensitive name",
 					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo.Clone(),
-						tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
+						tc.repo.With(typestest.Opt.RepoName(api.NewRepoName(strings.ToUpper(string(tc.repo.Name))))),
 					)),
 					store: s,
 					stored: types.Repos{
-						tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
+						tc.repo.With(typestest.Opt.RepoName(api.NewRepoName(strings.ToUpper(string(tc.repo.Name))))),
 					},
 					now:  clock.Now,
 					diff: repos.Diff{Modified: types.Repos{tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(0)))}},
@@ -755,7 +755,7 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 
 		mk := func(name string) *types.Repo {
 			return &types.Repo{
-				Name:     api.RepoName(name),
+				Name:     api.NewRepoName(name),
 				Metadata: &github.Repository{},
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          name,
@@ -2066,7 +2066,7 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 			{
 				label:     "github test",
 				svcKind:   extsvc.KindGitHub,
-				repoName:  api.RepoName("github.com/foo/bar"),
+				repoName:  api.NewRepoName("github.com/foo/bar"),
 				config:    `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 				extSvcErr: github.ErrRepoNotFound,
 				serviceID: "https://github.com/",
@@ -2074,7 +2074,7 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 			{
 				label:     "gitlab test",
 				svcKind:   extsvc.KindGitLab,
-				repoName:  api.RepoName("gitlab.com/foo/bar"),
+				repoName:  api.NewRepoName("gitlab.com/foo/bar"),
 				config:    `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
 				extSvcErr: gitlab.ProjectNotFoundError{Name: "/foo/bar"},
 				serviceID: "https://gitlab.com/",

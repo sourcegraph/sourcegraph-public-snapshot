@@ -227,7 +227,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		}
 	case args.Name != nil:
 		// Use just the name to look up the repository from gitserver.
-		repo = &types.Repo{Name: api.RepoName(*args.Name)}
+		repo = &types.Repo{Name: api.NewRepoName(*args.Name)}
 	}
 
 	var result checkMirrorRepositoryConnectionResult

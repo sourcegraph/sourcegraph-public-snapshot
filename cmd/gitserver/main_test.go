@@ -146,7 +146,7 @@ func TestGetRemoteURLFunc_GitHubAppCloud(t *testing.T) {
 }
 
 func TestGetVCSSyncer(t *testing.T) {
-	repo := api.RepoName("foo/bar")
+	repo := api.NewRepoName("foo/bar")
 	extsvcStore := database.NewMockExternalServiceStore()
 	repoStore := database.NewMockRepoStore()
 	codeIntelDB := new(dependenciesStore.Store)

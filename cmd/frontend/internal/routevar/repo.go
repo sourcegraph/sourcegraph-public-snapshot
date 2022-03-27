@@ -43,7 +43,7 @@ var repoPattern = lazyregexp.New("^" + RepoPattern + "$")
 // InvalidError is returned.
 func ParseRepo(spec string) (repo api.RepoName, err error) {
 	if m := repoPattern.FindStringSubmatch(spec); len(m) > 0 {
-		repo = api.RepoName(m[0])
+		repo = api.NewRepoName(m[0])
 		return
 	}
 	return "", InvalidError{"Repo", spec, nil}
@@ -74,7 +74,7 @@ func ToRepoRev(routeVars map[string]string) RepoRev {
 
 // ToRepo returns the repo path string from a map containing route variables.
 func ToRepo(routeVars map[string]string) api.RepoName {
-	return api.RepoName(routeVars["Repo"])
+	return api.NewRepoName(routeVars["Repo"])
 }
 
 // RepoRevRouteVars returns route variables for constructing routes to a

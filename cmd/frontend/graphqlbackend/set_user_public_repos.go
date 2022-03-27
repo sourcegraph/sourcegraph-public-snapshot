@@ -75,9 +75,10 @@ func getRepo(ctx context.Context, repoStore database.RepoStore, repoURI string) 
 		return nil, errors.Wrap(err, "Unable to parse repository URL "+repoURI)
 	}
 
-	var repoName = gitserverproto.NormalizeRepo(api.RepoName(u.Host + u.Path))
+	var repoName = gitserverproto.NormalizeRepo(api.NewRepoName(u.Host + u.Path))
 
-	if !strings.HasPrefix(string(repoName), "github.com") && !strings.HasPrefix(string(repoName), "gitlab.com") {
+	// TODO: This needs a "kind" check.
+	if !strings.HasPrefix(repoName.GetNameUnchecked(), "github.com") && !strings.HasPrefix(repoName.GetNameUnchecked(), "gitlab.com") {
 		return nil, errors.Errorf("Unable to add non-GitHub.com or GitLab.com repository: " + repoURI)
 	}
 

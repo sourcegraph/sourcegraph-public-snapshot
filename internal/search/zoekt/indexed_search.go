@@ -126,7 +126,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 	if repoRev == nil {
 		repo := types.MinimalRepo{
 			ID:   api.RepoID(file.RepositoryID),
-			Name: api.RepoName(file.Repository),
+			Name: api.NewRepoName(file.Repository),
 		}
 		return repo, []string{file.Version}
 	}
@@ -296,7 +296,7 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
-				Name: api.RepoName(file.Repository),
+				Name: api.NewRepoName(file.Repository),
 			}
 			return repo, []string{""}
 		}, args.Typ, args.Select, c)

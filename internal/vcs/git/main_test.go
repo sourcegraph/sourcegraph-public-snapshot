@@ -137,7 +137,7 @@ func GitCommand(dir, name string, args ...string) *exec.Cmd {
 func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
-	repo := api.RepoName(filepath.Base(dir))
+	repo := api.NewRepoName(filepath.Base(dir))
 	if resp, err := testGitserverClient.RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
 	} else if resp.Error != "" {

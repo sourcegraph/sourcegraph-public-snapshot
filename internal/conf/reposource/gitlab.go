@@ -42,7 +42,7 @@ func GitLabRepoName(repositoryPathPattern, host, pathWithNamespace string, nts N
 		"{pathWithNamespace}", pathWithNamespace,
 	).Replace(repositoryPathPattern)
 
-	return api.RepoName(nts.Transform(name))
+	return api.NewRepoName(nts.Transform(name))
 }
 
 // CompileGitLabNameTransformations compiles a list of GitLabNameTransformation into common NameTransformation,

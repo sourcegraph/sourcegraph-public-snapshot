@@ -15,7 +15,7 @@ var updateGolden = flag.Bool("update", false, "Updastdata goldens")
 func TestSearchProgress(t *testing.T) {
 	namer := func(ids []api.RepoID) (names []api.RepoName) {
 		for _, id := range ids {
-			names = append(names, api.RepoName(fmt.Sprintf("repo-%d", id)))
+			names = append(names, api.NewRepoName(fmt.Sprintf("repo-%d", id)))
 		}
 		return names
 	}

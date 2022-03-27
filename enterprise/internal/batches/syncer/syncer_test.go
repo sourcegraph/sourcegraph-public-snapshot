@@ -281,7 +281,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
 	}
 	repo := &types.Repo{
-		Name:    api.RepoName("test-repo"),
+		Name:    api.NewRepoName("test-repo"),
 		URI:     "test-repo",
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{

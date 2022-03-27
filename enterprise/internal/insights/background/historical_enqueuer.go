@@ -364,7 +364,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		log15.Info("[historical_enqueuer_backfill] buildForRepo start", "repo_id", id, "repo_name", repoName, "traceId", traceId)
 
 		// Find the first commit made to the repository on the default branch.
-		firstHEADCommit, err := h.gitFirstEverCommit(ctx, h.db, api.RepoName(repoName))
+		firstHEADCommit, err := h.gitFirstEverCommit(ctx, h.db, api.NewRepoName(repoName))
 		if err != nil {
 			span.LogFields(log.Error(err))
 			for _, stats := range h.statistics {
@@ -413,7 +413,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				// Build historical data for this unique timeframe+repo+series.
 				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
 					execution:       queryExecution,
-					repoName:        api.RepoName(repoName),
+					repoName:        api.NewRepoName(repoName),
 					id:              id,
 					firstHEADCommit: firstHEADCommit,
 					seriesID:        seriesID,

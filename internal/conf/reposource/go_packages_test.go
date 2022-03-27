@@ -35,7 +35,7 @@ func TestParseGoModDependency(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dep, err := ParseGoModDependency(test.name)
 			require.NoError(t, err)
-			assert.Equal(t, api.RepoName(test.wantRepoName), dep.RepoName())
+			assert.Equal(t, api.NewRepoName(test.wantRepoName), dep.RepoName())
 			assert.Equal(t, test.wantVersion, dep.PackageVersion())
 		})
 	}

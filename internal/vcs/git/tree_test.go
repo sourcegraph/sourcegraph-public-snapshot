@@ -43,7 +43,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	dir := InitGitRepository(t, gitCommands...)
-	repo := api.RepoName(filepath.Base(dir))
+	repo := api.NewRepoName(filepath.Base(dir))
 
 	if resp, err := gitserver.NewClient(db).RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)
@@ -695,7 +695,7 @@ func TestStat(t *testing.T) {
 	}
 
 	dir := InitGitRepository(t, gitCommands...)
-	repo := api.RepoName(filepath.Base(dir))
+	repo := api.NewRepoName(filepath.Base(dir))
 
 	if resp, err := gitserver.NewClient(db).RequestRepoUpdate(context.Background(), repo, 0); err != nil {
 		t.Fatal(err)

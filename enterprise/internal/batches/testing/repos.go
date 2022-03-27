@@ -48,7 +48,7 @@ func TestRepoWithService(t *testing.T, store database.ExternalServiceStore, name
 	t.Helper()
 
 	return &types.Repo{
-		Name:    api.RepoName(name),
+		Name:    api.NewRepoName(name),
 		URI:     name,
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{

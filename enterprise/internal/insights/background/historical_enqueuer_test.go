@@ -91,7 +91,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	repoStore := NewMockRepoStore()
 	repos := map[api.RepoName]*types.Repo{}
 	for i := 0; i < p.numRepos; i++ {
-		name := api.RepoName(fmt.Sprintf("repo/%d", i))
+		name := api.NewRepoName(fmt.Sprintf("repo/%d", i))
 		repos[name] = &types.Repo{
 			ID:   api.RepoID(i),
 			Name: name,

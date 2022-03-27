@@ -131,7 +131,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 		Name: repoName,
 		URI:  repoURI,
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          string(repoName),
+			ID:          repoName.GetNameUnchecked(),
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   serviceID,
 		},
@@ -202,7 +202,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 		}
 		// The only required field left is Name
 		if r.Name == "" {
-			r.Name = api.RepoName(r.URI)
+			r.Name = api.NewRepoName(r.URI)
 		}
 	}
 

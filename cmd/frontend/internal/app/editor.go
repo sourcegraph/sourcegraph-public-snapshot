@@ -134,7 +134,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 		}
 		// Note: we do not use ^ at the front of the repo filter because repoName may
 		// produce imprecise results and a suffix match seems better than no match.
-		repoFilter = "repo:" + regexp.QuoteMeta(string(repoName)) + "$"
+		repoFilter = "repo:" + regexp.QuoteMeta(repoName.GetNameUnchecked()) + "$"
 	}
 
 	// Handle searches scoped to a specific revision/branch.
@@ -192,7 +192,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 
 	rev := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
 
-	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
+	u := &url.URL{Path: path.Join("/", repoName.GetNameUnchecked()+rev, "/-/blob/", of.file)}
 	q := u.Query()
 	if of.startRow == of.endRow && of.startCol == of.endCol {
 		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")

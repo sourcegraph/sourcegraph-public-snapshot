@@ -59,7 +59,7 @@ func TestExtractCloneURL(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := &types.Repo{
-				Name:    api.RepoName("github.com/sourcegraph/sourcegraph"),
+				Name:    api.NewRepoName("github.com/sourcegraph/sourcegraph"),
 				URI:     "github.com/sourcegraph/sourcegraph",
 				Sources: make(map[string]*types.SourceInfo),
 				Metadata: &github.Repository{
@@ -133,7 +133,7 @@ func TestLoadExternalService(t *testing.T) {
 	}
 
 	repo := &types.Repo{
-		Name:    api.RepoName("test-repo"),
+		Name:    api.NewRepoName("test-repo"),
 		URI:     "test-repo",
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
@@ -498,7 +498,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				ExternalRepo: api.ExternalRepoSpec{
 					ServiceType: tt.externalServiceType,
 				},
-				Name:     api.RepoName(tt.repoName),
+				Name:     api.NewRepoName(tt.repoName),
 				URI:      tt.repoName,
 				Sources:  make(map[string]*types.SourceInfo),
 				Metadata: tt.repoMetadata,

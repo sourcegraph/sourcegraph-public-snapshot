@@ -886,7 +886,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &protocol.ExecRequest{
-		Repo: api.RepoName(repo),
+		Repo: api.NewRepoName(repo),
 		Args: []string{
 			"archive",
 

@@ -359,7 +359,7 @@ func generateRepos(count int) ([]types.MinimalRepo, []*zoekt.RepoListEntry) {
 
 		repoWithIDs := types.MinimalRepo{
 			ID:   api.RepoID(i),
-			Name: api.RepoName(name),
+			Name: api.NewRepoName(name),
 		}
 
 		repos = append(repos, repoWithIDs)

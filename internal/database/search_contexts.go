@@ -537,7 +537,7 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 		out = append(out, &types.SearchContextRepositoryRevisions{
 			Repo: types.MinimalRepo{
 				ID:   api.RepoID(repoID),
-				Name: api.RepoName(repositoryIDsToName[repoID]),
+				Name: api.NewRepoName(repositoryIDsToName[repoID]),
 			},
 			Revisions: revisions,
 		})

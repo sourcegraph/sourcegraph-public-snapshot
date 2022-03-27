@@ -41,7 +41,7 @@ func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.T
 func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
-		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
+		repo, err := c.repoStore.GetByName(ctx, api.NewRepoName(repository))
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to fetch repository information for repository name: %s", repository)
 		}
@@ -55,7 +55,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.NewRepoName(repository), authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return nil, errors.Wrapf(err, "FirstEverCommit")
 		}
@@ -83,7 +83,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			commits, err := git.Commits(ctx, c.db, api.NewRepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {

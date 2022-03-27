@@ -19,7 +19,7 @@ import (
 
 func FetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
+	h := sha256.Sum256([]byte(repo.GetNameUnchecked() + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
 	path := filepath.Join("/tmp/search_test/codeload/", key+".tar.gz")
 
@@ -35,7 +35,7 @@ func FetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit 
 
 	// Fetch archive to a temporary path
 	tmpPath := path + ".part"
-	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo), string(commit))
+	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", repo.GetNameUnchecked(), string(commit))
 	fmt.Println("fetching", url)
 	resp, err := ctxhttp.Get(ctx, nil, url)
 	if err != nil {

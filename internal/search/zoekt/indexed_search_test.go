@@ -793,7 +793,7 @@ func mkRepos(names ...string) []types.MinimalRepo {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.MinimalRepo{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, types.MinimalRepo{ID: id, Name: api.NewRepoName(name)})
 	}
 	return repos
 }

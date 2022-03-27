@@ -264,7 +264,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	repoWithIDs := &types.Repo{
 		ID:   api.RepoID(id),
-		Name: api.RepoName(repoName),
+		Name: api.NewRepoName(repoName),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repoName,
 			ServiceType: extsvc.TypeGitHub,
@@ -454,7 +454,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *result.FileMatch {
 		return &result.FileMatch{File: result.File{
-			Repo: types.MinimalRepo{Name: api.RepoName(repo)},
+			Repo: types.MinimalRepo{Name: api.NewRepoName(repo)},
 			Path: file,
 		}}
 	}

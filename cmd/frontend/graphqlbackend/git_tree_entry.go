@@ -207,7 +207,7 @@ func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (s
 	if repoName == "" {
 		return "", errors.Errorf("no matching code host found for %s", cloneURL)
 	}
-	return string(repoName), nil
+	return repoName.GetNameUnchecked(), nil
 }
 
 func CreateFileInfo(path string, isDir bool) fs.FileInfo {

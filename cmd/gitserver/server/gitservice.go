@@ -53,7 +53,7 @@ func flowrateWriter(w io.Writer) io.Writer {
 func (s *Server) gitServiceHandler() *gitservice.Handler {
 	return &gitservice.Handler{
 		Dir: func(d string) string {
-			return string(s.dir(api.RepoName(d)))
+			return string(s.dir(api.NewRepoName(d)))
 		},
 
 		// Limit rate of stdout from git.

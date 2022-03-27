@@ -57,7 +57,7 @@ func (d *GoDependency) PackageVersion() string {
 //
 // The returned value is used for repo:... in queries.
 func (d *GoDependency) RepoName() api.RepoName {
-	return api.RepoName("go/" + d.mod.Path)
+	return api.NewRepoName("go/" + d.mod.Path)
 }
 
 func (d *GoDependency) GitTagFromVersion() string {

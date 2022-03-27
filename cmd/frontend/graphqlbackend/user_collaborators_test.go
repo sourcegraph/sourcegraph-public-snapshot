@@ -35,17 +35,17 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		return []*gitdomain.Commit{
 			{
 				Author: gitdomain.Signature{
-					Name: string(repoName) + "-joe",
+					Name: repoName.GetNameUnchecked() + "-joe",
 				},
 			},
 			{
 				Author: gitdomain.Signature{
-					Name: string(repoName) + "-jane",
+					Name: repoName.GetNameUnchecked() + "-jane",
 				},
 			},
 			{
 				Author: gitdomain.Signature{
-					Name: string(repoName) + "-janet",
+					Name: repoName.GetNameUnchecked() + "-janet",
 				},
 			},
 		}, nil
@@ -67,7 +67,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 
 	autogold.Want("calls", []args{
 		{
-			repoName: api.RepoName("golang/go"),
+			repoName: api.NewRepoName("golang/go"),
 			opt: git.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
@@ -75,7 +75,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 			},
 		},
 		{
-			repoName: api.RepoName("gorilla/mux"),
+			repoName: api.NewRepoName("gorilla/mux"),
 			opt: git.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
@@ -83,7 +83,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 			},
 		},
 		{
-			repoName: api.RepoName("sourcegraph/sourcegraph"),
+			repoName: api.NewRepoName("sourcegraph/sourcegraph"),
 			opt: git.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,

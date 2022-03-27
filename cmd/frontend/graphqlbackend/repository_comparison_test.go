@@ -33,7 +33,7 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 
 	repo := &types.Repo{
 		ID:        api.RepoID(1),
-		Name:      api.RepoName("test"),
+		Name:      api.NewRepoName("test"),
 		CreatedAt: time.Now(),
 	}
 
@@ -69,7 +69,7 @@ func TestRepositoryComparison(t *testing.T) {
 
 	repo := &types.Repo{
 		ID:        api.RepoID(1),
-		Name:      api.RepoName("github.com/sourcegraph/sourcegraph"),
+		Name:      api.NewRepoName("github.com/sourcegraph/sourcegraph"),
 		CreatedAt: time.Now(),
 	}
 

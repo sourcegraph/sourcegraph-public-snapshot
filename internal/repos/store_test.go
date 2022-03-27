@@ -436,7 +436,7 @@ func mkRepos(n int, base ...*types.Repo) types.Repos {
 	for i := 0; i < n; i++ {
 		id := strconv.Itoa(i)
 		r := base[i%len(base)].Clone()
-		r.Name += api.RepoName(id)
+		r.Name += api.NewRepoName(id)
 		r.ExternalRepo.ID += id
 		rs = append(rs, r)
 	}

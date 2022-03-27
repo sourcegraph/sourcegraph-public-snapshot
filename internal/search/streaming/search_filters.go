@@ -72,14 +72,14 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
-		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
+		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(repoName.GetNameUnchecked()))
 		if rev != "" {
 			// We don't need to quote rev. The only special characters we interpret
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
 		limitHit := event.Stats.Status.Get(repoID)&search.RepoStatusLimitHit != 0
-		s.filters.Add(filter, string(repoName), lineMatchCount, limitHit, "repo")
+		s.filters.Add(filter, repoName.GetNameUnchecked(), lineMatchCount, limitHit, "repo")
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {

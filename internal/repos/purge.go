@@ -72,7 +72,7 @@ func purge(ctx context.Context, db database.DB, log log15.Logger) error {
 
 	// remove repositories that are in cloned but not in enabled
 	for _, repoStr := range cloned {
-		repo := protocol.NormalizeRepo(api.RepoName(repoStr))
+		repo := protocol.NormalizeRepo(api.NewRepoName(repoStr))
 		if _, ok := enabled[repo]; ok {
 			continue
 		}

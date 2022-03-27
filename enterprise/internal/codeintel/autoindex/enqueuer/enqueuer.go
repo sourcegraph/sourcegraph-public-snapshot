@@ -114,7 +114,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	if !ok {
 		return nil
 	}
-	trace.Log(log.String("repoName", string(repoName)))
+	trace.Log(log.String("repoName", repoName.GetNameUnchecked()))
 	trace.Log(log.String("revision", revision))
 
 	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {

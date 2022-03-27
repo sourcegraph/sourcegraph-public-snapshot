@@ -76,7 +76,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 		called := false
 		mockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 			called = true
-			if want := api.RepoName("github.com/a/b"); args.Repo != want {
+			if want := api.NewRepoName("github.com/a/b"); args.Repo != want {
 				t.Errorf("got owner %q, want %q", args.Repo, want)
 			}
 			return &protocol.RepoLookupResult{Repo: nil}, nil
@@ -382,7 +382,7 @@ func TestServer_RepoLookup(t *testing.T) {
 		{
 			name: "found - aws code commit",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+				Repo: api.NewRepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
 			stored: []*types.Repo{awsCodeCommitRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
@@ -405,16 +405,16 @@ func TestServer_RepoLookup(t *testing.T) {
 		{
 			name: "not synced from non public codehost",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.private.corp/a/b"),
+				Repo: api.NewRepoName("github.private.corp/a/b"),
 			},
 			src:    repos.NewFakeSource(&githubSource, nil),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.private.corp/a/b"), true),
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.NewRepoName("github.private.corp/a/b"), true),
 		},
 		{
 			name: "synced - npm package host",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("npm/package"),
+				Repo: api.NewRepoName("npm/package"),
 				// In order for new versions of package repos to be synced quickly, it's necessary to enqueue
 				// a high priority git update.
 				Update: true,
@@ -431,7 +431,7 @@ func TestServer_RepoLookup(t *testing.T) {
 		{
 			name: "synced - github.com cloud default",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+				Repo: api.NewRepoName("github.com/foo/bar"),
 			},
 			stored: []*types.Repo{},
 			src:    repos.NewFakeSource(&githubSource, nil, githubRepository),
@@ -456,7 +456,7 @@ func TestServer_RepoLookup(t *testing.T) {
 		{
 			name: "found - github.com already exists",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+				Repo: api.NewRepoName("github.com/foo/bar"),
 			},
 			stored: []*types.Repo{githubRepository},
 			src:    repos.NewFakeSource(&githubSource, nil, githubRepository),
@@ -480,33 +480,33 @@ func TestServer_RepoLookup(t *testing.T) {
 		{
 			name: "not found - github.com",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+				Repo: api.NewRepoName("github.com/foo/bar"),
 			},
 			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
+			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.NewRepoName("github.com/foo/bar"), true),
 			assert: typestest.Assert.ReposEqual(),
 		},
 		{
 			name: "unauthorized - github.com",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+				Repo: api.NewRepoName("github.com/foo/bar"),
 			},
 			src:    repos.NewFakeSource(&githubSource, &github.APIError{Code: http.StatusUnauthorized}),
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
-			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
+			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.NewRepoName("github.com/foo/bar"), true),
 			assert: typestest.Assert.ReposEqual(),
 		},
 		{
 			name: "temporarily unavailable - github.com",
 			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+				Repo: api.NewRepoName("github.com/foo/bar"),
 			},
 			src:    repos.NewFakeSource(&githubSource, &github.APIError{Message: "API rate limit exceeded"}),
 			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
 			err: fmt.Sprintf(
 				"repository temporarily unavailable (name=%s istemporary=%v)",
-				api.RepoName("github.com/foo/bar"),
+				api.NewRepoName("github.com/foo/bar"),
 				true,
 			),
 			assert: typestest.Assert.ReposEqual(),

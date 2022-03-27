@@ -36,7 +36,7 @@ func TestReposSubset(t *testing.T) {
 			if !ok {
 				r = types.MinimalRepo{
 					ID:   api.RepoID(rand.Int31()),
-					Name: api.RepoName(name),
+					Name: api.NewRepoName(name),
 				}
 				repos[name] = r
 			}

@@ -176,7 +176,7 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 			nonCloudDefaultService := createTestExternalService(ctx, t, now, db, false)
 			for i, tr := range tc.testRepos {
 				testRepo := &types.Repo{
-					Name:        api.RepoName(tr.name),
+					Name:        api.NewRepoName(tr.name),
 					URI:         tr.name,
 					Description: "",
 					ExternalRepo: api.ExternalRepoSpec{

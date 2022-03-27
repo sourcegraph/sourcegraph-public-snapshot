@@ -245,7 +245,7 @@ func getCustomInterval(c *conf.Unified, repoName string) time.Duration {
 			log15.Warn("error compiling GitUpdateInterval pattern", "error", err)
 			continue
 		}
-		if re.MatchString(repoName) {
+		if re.MatchrepoName.UncheckedGetName() {
 			return time.Duration(rule.Interval) * time.Minute
 		}
 	}

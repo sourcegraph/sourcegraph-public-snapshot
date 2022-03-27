@@ -22,7 +22,7 @@ func TestRepository(t *testing.T) {
 
 	t.Run("repo", func(t *testing.T) {
 		repo := &types.Repo{
-			Name: api.RepoName("github.com/foo/bar"),
+			Name: api.NewRepoName("github.com/foo/bar"),
 			ExternalRepo: api.ExternalRepoSpec{
 				ServiceID:   extsvc.GitHubDotCom.ServiceID,
 				ServiceType: extsvc.GitHubDotCom.ServiceType,
@@ -56,7 +56,7 @@ func TestRepository(t *testing.T) {
 	t.Run("phabricator", func(t *testing.T) {
 		phabricator := database.NewMockPhabricatorStore()
 		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
-			if want := api.RepoName("myrepo"); repo != want {
+			if want := api.NewRepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
@@ -104,7 +104,7 @@ func TestFileOrDir(t *testing.T) {
 	)
 
 	repo := &types.Repo{
-		Name: api.RepoName("gitlab.com/foo/bar"),
+		Name: api.NewRepoName("gitlab.com/foo/bar"),
 		ExternalRepo: api.ExternalRepoSpec{
 			ServiceID:   extsvc.GitLabDotCom.ServiceID,
 			ServiceType: extsvc.GitLabDotCom.ServiceType,
@@ -156,7 +156,7 @@ func TestFileOrDir(t *testing.T) {
 	t.Run("phabricator", func(t *testing.T) {
 		phabricator := database.NewMockPhabricatorStore()
 		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
-			if want := api.RepoName("myrepo"); repo != want {
+			if want := api.NewRepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
@@ -206,7 +206,7 @@ func TestCommit(t *testing.T) {
 	const commit = "mycommit"
 
 	repo := &types.Repo{
-		Name: api.RepoName("github.com/foo/bar"),
+		Name: api.NewRepoName("github.com/foo/bar"),
 		ExternalRepo: api.ExternalRepoSpec{
 			ServiceID:   extsvc.GitHubDotCom.ServiceID,
 			ServiceType: extsvc.GitHubDotCom.ServiceType,
@@ -241,7 +241,7 @@ func TestCommit(t *testing.T) {
 	t.Run("phabricator", func(t *testing.T) {
 		phabricator := database.NewMockPhabricatorStore()
 		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
-			if want := api.RepoName("myrepo"); repo != want {
+			if want := api.NewRepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil

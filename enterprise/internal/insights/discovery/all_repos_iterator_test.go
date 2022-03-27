@@ -33,7 +33,7 @@ func TestAllReposIterator(t *testing.T) {
 		var result []*types.Repo
 		for i := 0; i < 3; i++ {
 			nextRepoID++
-			result = append(result, &types.Repo{ID: nextRepoID, Name: api.RepoName(fmt.Sprint(nextRepoID))})
+			result = append(result, &types.Repo{ID: nextRepoID, Name: api.NewRepoName(fmt.Sprint(nextRepoID))})
 		}
 		if nextRepoID > 10 {
 			return nil, nil

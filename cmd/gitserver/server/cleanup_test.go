@@ -513,7 +513,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"example.com/repo",
 	} {
 		repo := &types.Repo{
-			Name: api.RepoName(r),
+			Name: api.NewRepoName(r),
 		}
 		if err := database.Repos(db).Create(ctx, repo); err != nil {
 			t.Fatal(err)

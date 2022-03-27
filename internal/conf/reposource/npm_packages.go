@@ -115,9 +115,9 @@ func (pkg *NpmPackage) UnmarshalJSON(data []byte) error {
 // The returned value is used for repo:... in queries.
 func (pkg *NpmPackage) RepoName() api.RepoName {
 	if pkg.scope != "" {
-		return api.RepoName(fmt.Sprintf("npm/%s/%s", pkg.scope, pkg.name))
+		return api.NewRepoName(fmt.Sprintf("npm/%s/%s", pkg.scope, pkg.name))
 	}
-	return api.RepoName("npm/" + pkg.name)
+	return api.NewRepoName("npm/" + pkg.name)
 }
 
 // CloneURL returns a "URL" that can later be used to download a repo.

@@ -16,7 +16,7 @@ func TestGetObjectService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+	repoName := api.NewRepoName("github.com/sourcegraph/sourcegraph")
 
 	tests := []struct {
 		name string

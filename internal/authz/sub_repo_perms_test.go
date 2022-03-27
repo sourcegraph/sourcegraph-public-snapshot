@@ -154,7 +154,7 @@ func TestFilterActorPaths(t *testing.T) {
 		UID: 1,
 	}
 	ctx = actor.WithActor(ctx, a)
-	repo := api.RepoName("foo")
+	repo := api.NewRepoName("foo")
 
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
@@ -185,7 +185,7 @@ func TestCanReadAllPaths(t *testing.T) {
 		UID: 1,
 	}
 	ctx = actor.WithActor(ctx, a)
-	repo := api.RepoName("foo")
+	repo := api.NewRepoName("foo")
 
 	checker.EnabledFunc.SetDefaultHook(func() bool {
 		return true
@@ -239,7 +239,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 
 	ctx := context.Background()
 	content := RepoContent{
-		Repo: api.RepoName("thing"),
+		Repo: api.NewRepoName("thing"),
 		Path: "/stuff",
 	}
 

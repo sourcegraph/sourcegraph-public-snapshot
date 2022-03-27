@@ -32,7 +32,7 @@ import (
 func TestReposService_Get(t *testing.T) {
 	t.Parallel()
 
-	wantRepo := &types.Repo{ID: 1, Name: "github.com/u/r"}
+	wantRepo := &types.Repo{ID: 1, Name: api.NewRepoName("github.com/u/r")}
 
 	repoStore := database.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultReturn(wantRepo, nil)
@@ -48,8 +48,8 @@ func TestReposService_List(t *testing.T) {
 	t.Parallel()
 
 	wantRepos := []*types.Repo{
-		{Name: "r1"},
-		{Name: "r2"},
+		{Name: api.NewRepoName("r1")},
+		{Name: api.NewRepoName("r2")},
 	}
 
 	repoStore := database.NewMockRepoStore()
@@ -66,8 +66,8 @@ func TestRepos_Add(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	const repoName = "github.com/my/repo"
-	const newName = "github.com/my/repo2"
+	var repoName = api.NewRepoName("github.com/my/repo")
+	var newName = api.NewRepoName("github.com/my/repo2")
 
 	calledRepoLookup := false
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
@@ -94,7 +94,7 @@ func TestRepos_Add(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if addedName != newName {
+	if !addedName.Equal(newName) {
 		t.Fatalf("Want %q, got %q", newName, addedName)
 	}
 	if !calledRepoLookup {
@@ -121,7 +121,7 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 	defer func() { gitserver.MockIsRepoCloneable = nil }()
 
 	// The repoName could change if it has been renamed on the code host
-	_, err := s.Add(ctx, repoName)
+	_, err := s.Add(ctx, api.NewRepoName(repoName))
 	if !errcode.IsNotFound(err) {
 		t.Fatalf("expected a not found error, got: %v", err)
 	}
@@ -145,10 +145,10 @@ func TestReposGetInventory(t *testing.T) {
 		wantRootOID  = "oid-root"
 	)
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		if args.Repo != wantRepo {
+		if !args.Repo.Equal(api.NewRepoName(wantRepo)) {
 			t.Errorf("got %q, want %q", args.Repo, wantRepo)
 		}
-		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
+		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: api.NewRepoName(wantRepo)}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
@@ -220,7 +220,7 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
 			defer func() { useEnhancedLanguageDetection = orig }() // reset
 
-			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, false)
+			inv, err := s.GetInventory(ctx, &types.Repo{Name: api.NewRepoName(wantRepo)}, wantCommitID, false)
 			if err != nil {
 				t.Fatal(err)
 			}

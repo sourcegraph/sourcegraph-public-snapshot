@@ -171,9 +171,9 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 			}
 
 			for _, repo := range conn.Repos {
-				if api.RepoName(repo.Path) == name {
+				if api.NewRepoName(repo.Path) == name {
 					return &types.PhabricatorRepo{
-						Name:     api.RepoName(repo.Path),
+						Name:     api.NewRepoName(repo.Path),
 						Callsign: repo.Callsign,
 						URL:      conn.Url,
 					}, nil

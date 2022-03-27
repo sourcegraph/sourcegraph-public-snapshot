@@ -28,7 +28,7 @@ import (
 
 func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		repoName := api.RepoName(mux.Vars(r)["RepoName"])
+		repoName := api.NewRepoName(mux.Vars(r)["RepoName"])
 		repo, err := backend.NewRepos(db).GetByName(r.Context(), repoName)
 		if err != nil {
 			return err
@@ -278,7 +278,7 @@ func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http
 	return func(w http.ResponseWriter, r *http.Request) error {
 		// used by zoekt-sourcegraph-mirror
 		vars := mux.Vars(r)
-		name := api.RepoName(vars["RepoName"])
+		name := api.NewRepoName(vars["RepoName"])
 		spec := vars["Spec"]
 
 		// Do not to trigger a repo-updater lookup since this is a batch job.
@@ -301,7 +301,7 @@ func serveGitTar(db database.DB) func(w http.ResponseWriter, r *http.Request) er
 		spec := vars["Commit"]
 
 		// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
-		repo := api.RepoName(name)
+		repo := api.NewRepoName(name)
 		ctx := r.Context()
 		commit, err := git.ResolveRevision(ctx, db, repo, spec, git.ResolveRevisionOptions{})
 		if err != nil {
@@ -388,7 +388,7 @@ func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.R
 
 	u := &url.URL{
 		Scheme:   "http",
-		Host:     s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo)),
+		Host:     s.Gitserver.AddrForRepo(r.Context(), api.NewRepoName(repo)),
 		Path:     path.Join("/git", repo, gitPath),
 		RawQuery: r.URL.RawQuery,
 	}

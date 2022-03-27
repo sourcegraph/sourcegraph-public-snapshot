@@ -32,7 +32,7 @@ func TestCommitMatchMarshaling(t *testing.T) {
 			},
 			Repo: types.MinimalRepo{
 				ID:    42,
-				Name:  api.RepoName("github.com/historyofconsumption/beverages"),
+				Name:  api.NewRepoName("github.com/historyofconsumption/beverages"),
 				Stars: 7,
 			},
 			Refs:       []string{"awakeness"},

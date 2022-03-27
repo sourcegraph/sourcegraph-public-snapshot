@@ -53,7 +53,7 @@ func LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntr
 	defer cancel()
 
 	command := gitserver.NewClient(db).Command("git", LogReverseArgs(n, commit)...)
-	command.Repo = api.RepoName(repo)
+	command.Repo = api.NewRepoName(repo)
 	// We run a single `git log` command and stream the output while the repo is being processed, which
 	// can take much longer than 1 minute (the default timeout).
 	command.DisableTimeout()

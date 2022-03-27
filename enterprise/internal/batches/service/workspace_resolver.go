@@ -263,7 +263,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 		tr.Finish()
 	}()
 
-	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
+	repo, err := wr.store.Repos().GetByName(ctx, api.NewRepoName(name))
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		tr.Finish()
 	}()
 
-	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
+	repo, err := wr.store.Repos().GetByName(ctx, api.NewRepoName(name))
 	if err != nil {
 		return nil, err
 	}

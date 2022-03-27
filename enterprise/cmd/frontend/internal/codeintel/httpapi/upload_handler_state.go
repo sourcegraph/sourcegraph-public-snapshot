@@ -103,7 +103,7 @@ func ensureRepoAndCommitExist(ctx context.Context, db database.DB, repoName, com
 	//
 	// 1. Resolve repository
 
-	repo, err := backend.NewRepos(db).GetByName(ctx, api.RepoName(repoName))
+	repo, err := backend.NewRepos(db).GetByName(ctx, api.NewRepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return 0, http.StatusNotFound, errors.Errorf("unknown repository %q", repoName)

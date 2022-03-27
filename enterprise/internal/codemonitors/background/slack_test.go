@@ -35,7 +35,7 @@ func TestSlackWebhook(t *testing.T) {
 				ID: api.CommitID("7815187511872asbasdfgasd"),
 			},
 			Repo: types.MinimalRepo{
-				Name: api.RepoName("github.com/test/test"),
+				Name: api.NewRepoName("github.com/test/test"),
 			},
 			DiffPreview: &result.MatchedString{
 				Content: "file1.go file2.go\n@ -97,5 +97,5 @ func Test() {\n leading context\n+matched added\n-matched removed\n trailing context\n",
@@ -52,7 +52,7 @@ func TestSlackWebhook(t *testing.T) {
 				ID: api.CommitID("7815187511872asbasdfgasd"),
 			},
 			Repo: types.MinimalRepo{
-				Name: api.RepoName("github.com/test/test"),
+				Name: api.NewRepoName("github.com/test/test"),
 			},
 			MessagePreview: &result.MatchedString{
 				Content: "summary line\n\nvery\nlong\nmessage\nbody\nwith\nmore\nthan\nten\nlines\nthat\nwill\nbe\ntruncated\n",

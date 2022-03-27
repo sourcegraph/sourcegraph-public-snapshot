@@ -65,7 +65,7 @@ func repoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
 			if name, ok := cache[id]; ok {
 				names = append(names, name)
 			} else {
-				names = append(names, api.RepoName(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
+				names = append(names, api.NewRepoName(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
 			}
 		}
 

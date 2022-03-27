@@ -195,7 +195,7 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 			"route":  routeName,
 			"method": strings.ToLower(r.Method),
 			"code":   strconv.Itoa(m.Code),
-			"repo":   repotrackutil.GetTrackedRepo(api.RepoName(r.URL.Path)),
+			"repo":   repotrackutil.GetTrackedRepo(api.NewRepoName(r.URL.Path)),
 			"origin": origin,
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())

@@ -581,7 +581,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	depNames := make([]string, 0, len(dependencyRepoRevs))
 
 	for repoName, revs := range dependencyRepoRevs {
-		depNames = append(depNames, string(repoName))
+		depNames = append(depNames, repoName.GetNameUnchecked())
 		revSpecs := make([]search.RevisionSpecifier, 0, len(revs))
 		for rev := range revs {
 			revSpecs = append(revSpecs, search.RevisionSpecifier{RevSpec: string(rev)})

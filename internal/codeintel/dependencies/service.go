@@ -200,7 +200,7 @@ func constructLogFields(repoRevs map[api.RepoName]types.RevSpecSet) []log.Field 
 			}
 
 			return []log.Field{
-				log.String("repo", string(repoName)),
+				log.String("repo", repoName.GetNameUnchecked()),
 				log.String("revs", strings.Join(revStrs, ",")),
 			}
 		}

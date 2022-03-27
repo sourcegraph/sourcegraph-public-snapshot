@@ -54,7 +54,7 @@ func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args
 func repoCommitKey(repo api.RepoName, commitID api.CommitID) []string {
 	return []string{
 		fmt.Sprint(symbolsDBVersion),
-		string(repo),
+		repo.GetNameUnchecked(),
 		string(commitID),
 	}
 }
@@ -63,6 +63,6 @@ func repoCommitKey(repo api.RepoName, commitID api.CommitID) []string {
 func repoKey(repo api.RepoName) []string {
 	return []string{
 		fmt.Sprint(symbolsDBVersion),
-		string(repo),
+		repo.GetNameUnchecked(),
 	}
 }

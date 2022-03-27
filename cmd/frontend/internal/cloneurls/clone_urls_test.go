@@ -42,17 +42,17 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 		{
 			name:         "match existing external service",
 			cloneURL:     "https://github.example.com/user/repo.git",
-			wantRepoName: api.RepoName("github.example.com/user/repo"),
+			wantRepoName: api.NewRepoName("github.example.com/user/repo"),
 		},
 		{
 			name:         "fallback for github.com",
 			cloneURL:     "https://github.com/user/repo",
-			wantRepoName: api.RepoName("github.com/user/repo"),
+			wantRepoName: api.NewRepoName("github.com/user/repo"),
 		},
 		{
 			name:         "relatively-pathed submodule",
 			cloneURL:     "../../a/b/c.git",
-			wantRepoName: api.RepoName("github.example.com/a/b/c"),
+			wantRepoName: api.NewRepoName("github.example.com/a/b/c"),
 		},
 	}
 	for _, test := range tests {

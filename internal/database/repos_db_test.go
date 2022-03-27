@@ -1146,7 +1146,7 @@ func TestRepos_createRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, want := repo.Name, api.RepoName("a/b"); got != want {
+	if got, want := repo.Name, api.NewRepoName("a/b"); got != want {
 		t.Fatalf("got Name %q, want %q", got, want)
 	}
 	if got, want := repo.Description, "test"; got != want {
@@ -1812,7 +1812,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 
 	var (
 		perforceMarketing = &types.Repo{
-			Name:    api.RepoName("perforce/Marketing"),
+			Name:    api.NewRepoName("perforce/Marketing"),
 			URI:     "Marketing",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -1822,7 +1822,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 			},
 		}
 		perforceEngineering = &types.Repo{
-			Name:    api.RepoName("perforce/Engineering"),
+			Name:    api.NewRepoName("perforce/Engineering"),
 			URI:     "Engineering",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -1832,7 +1832,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 			},
 		}
 		perforceEngineeringFrontend = &types.Repo{
-			Name:    api.RepoName("perforce/Engineering/Frontend"),
+			Name:    api.NewRepoName("perforce/Engineering/Frontend"),
 			URI:     "Engineering/Frontend",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -1842,7 +1842,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 			},
 		}
 		perforceEngineeringBackend = &types.Repo{
-			Name:    api.RepoName("perforce/Engineering/Backend"),
+			Name:    api.NewRepoName("perforce/Engineering/Backend"),
 			URI:     "Engineering/Backend",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -1852,7 +1852,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 			},
 		}
 		perforceEngineeringHandbookFrontend = &types.Repo{
-			Name:    api.RepoName("perforce/Engineering/Handbook/Frontend"),
+			Name:    api.NewRepoName("perforce/Engineering/Handbook/Frontend"),
 			URI:     "Engineering/Handbook/Frontend",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -1862,7 +1862,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 			},
 		}
 		perforceEngineeringHandbookBackend = &types.Repo{
-			Name:    api.RepoName("perforce/Engineering/Handbook/Backend"),
+			Name:    api.NewRepoName("perforce/Engineering/Handbook/Backend"),
 			URI:     "Engineering/Handbook/Backend",
 			Private: true,
 			ExternalRepo: api.ExternalRepoSpec{
@@ -2253,7 +2253,7 @@ func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.Us
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Name:        api.RepoName("github.com/sourcegraph/" + rand.String(10)),
+		Name:        api.NewRepoName("github.com/sourcegraph/" + rand.String(10)),
 		Private:     false,
 		URI:         "uri",
 		Description: "description",

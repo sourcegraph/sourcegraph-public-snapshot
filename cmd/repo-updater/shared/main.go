@@ -281,7 +281,7 @@ func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
 			return
 		}
 
-		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
+		status, err := db.GitserverRepos().GetByName(r.Context(), api.NewRepoName(repo))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
 			return

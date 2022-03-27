@@ -184,7 +184,7 @@ func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFil
 		return nil
 	}
 
-	args := types.SearchArgs{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
+	args := types.SearchArgs{Repo: api.NewRepoName(repo), CommitID: api.CommitID(commit)}
 	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args, paths)
 	defer func() {
 		// Ensure the channel is drained

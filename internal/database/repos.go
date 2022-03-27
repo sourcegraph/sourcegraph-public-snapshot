@@ -1522,7 +1522,7 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 	if err != nil {
 		return "", err
 	}
-	return api.RepoName(name), nil
+	return api.NewRepoName(name), nil
 }
 
 func parsePattern(p string, caseSensitive bool) ([]*sqlf.Query, error) {

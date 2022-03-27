@@ -14,7 +14,7 @@ import (
 )
 
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
-	const repoName = api.RepoName("my/repo")
+	const repoName = api.NewRepoName("my/repo")
 
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)

@@ -128,7 +128,7 @@ func (i *CommitIndexer) index(name string, id api.RepoID) (err error) {
 
 	logger := log15.Root().New("worker", "insights-commit-indexer")
 
-	repoName := api.RepoName(name)
+	repoName := api.NewRepoName(name)
 	repoId := id
 
 	metadata, err := getMetadata(ctx, repoId, i.commitStore)

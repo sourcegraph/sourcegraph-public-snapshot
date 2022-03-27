@@ -276,7 +276,7 @@ func TestSearchRevspecs(t *testing.T) {
 			if test.err != nil {
 				t.Errorf("missing expected error: wanted '%s'", test.err.Error())
 			}
-			matched, clashing := getRevsForMatchedRepo(api.RepoName(test.repo), pats)
+			matched, clashing := getRevsForMatchedRepo(api.NewRepoName(test.repo), pats)
 			if !reflect.DeepEqual(matched, test.matched) {
 				t.Errorf("matched repo mismatch: actual: %#v, expected: %#v", matched, test.matched)
 			}
@@ -309,7 +309,7 @@ func TestResolverPaginate(t *testing.T) {
 
 	for i := 1; i <= 5; i++ {
 		r := types.MinimalRepo{
-			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
+			Name:  api.NewRepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
 			Stars: i * 100,
 		}
 

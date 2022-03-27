@@ -30,7 +30,7 @@ func MakeRepo(name, serviceID, serviceType string, services ...*types.ExternalSe
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
 		},
-		Name:        api.RepoName(name),
+		Name:        api.NewRepoName(name),
 		URI:         name,
 		Description: "The description",
 		CreatedAt:   now,
@@ -98,7 +98,7 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	for i := 0; i < n; i++ {
 		id := strconv.Itoa(i)
 		r := base[i%len(base)].Clone()
-		r.Name += api.RepoName(id)
+		r.Name += api.NewRepoName(id)
 		r.ExternalRepo.ID += id
 		rs = append(rs, r)
 	}

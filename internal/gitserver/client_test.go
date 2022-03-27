@@ -67,7 +67,7 @@ func TestClient_ListCloned(t *testing.T) {
 }
 
 func TestClient_RequestRepoMigrate(t *testing.T) {
-	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
+	repo := api.NewRepoName("github.com/sourcegraph/sourcegraph")
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
 	expected := "http://" + gitserver.RendezvousAddrForRepo(repo, addrs)
@@ -304,22 +304,22 @@ func TestAddrForRepo(t *testing.T) {
 	}{
 		{
 			name: "repo1",
-			repo: api.RepoName("repo1"),
+			repo: api.NewRepoName("repo1"),
 			want: "gitserver-3",
 		},
 		{
 			name: "check we normalise",
-			repo: api.RepoName("repo1.git"),
+			repo: api.NewRepoName("repo1.git"),
 			want: "gitserver-3",
 		},
 		{
 			name: "another repo",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			repo: api.NewRepoName("github.com/sourcegraph/sourcegraph.git"),
 			want: "gitserver-2",
 		},
 		{
 			name: "pinned repo", // different server address that the hashing function would normally yield
-			repo: api.RepoName("repo2"),
+			repo: api.NewRepoName("repo2"),
 			want: "gitserver-1",
 		},
 	}
@@ -347,22 +347,22 @@ func TestRendezvousAddrForRepo(t *testing.T) {
 	}{
 		{
 			name: "repo1",
-			repo: api.RepoName("repo1"),
+			repo: api.NewRepoName("repo1"),
 			want: "gitserver-1",
 		},
 		{
 			name: "check we normalise",
-			repo: api.RepoName("repo1.git"),
+			repo: api.NewRepoName("repo1.git"),
 			want: "gitserver-1",
 		},
 		{
 			name: "another repo",
-			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			repo: api.NewRepoName("github.com/sourcegraph/sourcegraph.git"),
 			want: "gitserver-3",
 		},
 		{
 			name: "yet another repo",
-			repo: api.RepoName("gitlab.com/foo/bar"),
+			repo: api.NewRepoName("gitlab.com/foo/bar"),
 			want: "gitserver-2",
 		},
 	}
@@ -491,7 +491,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		want:  []string{hash1, hash1}, // two hashes because to refs point to that hash
 	}, {
 		input: []protocol.RevisionSpecifier{{RevSpec: "test-fake-ref"}},
-		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
+		err:   &gitdomain.RevisionNotFoundError{Repo: api.NewRepoName(remote), Spec: "test-fake-ref"},
 	}}
 
 	srv := httptest.NewServer((&server.Server{
@@ -512,10 +512,10 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	ctx := context.Background()
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
-			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)
+			_, err := cli.RequestRepoUpdate(ctx, api.NewRepoName(remote), 0)
 			require.NoError(t, err)
 
-			got, err := cli.ResolveRevisions(ctx, api.RepoName(remote), test.input)
+			got, err := cli.ResolveRevisions(ctx, api.NewRepoName(remote), test.input)
 			if test.err != nil {
 				require.Equal(t, test.err, err)
 				return
