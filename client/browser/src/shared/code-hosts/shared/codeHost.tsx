@@ -370,12 +370,12 @@ function initCodeIntelligence({
     render,
     telemetryService,
     hoverAlerts,
-    privateCloudErrors,
+    repoSyncErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: Renderer
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
-    privateCloudErrors: Observable<boolean>
+    repoSyncErrors: Observable<boolean>
 }): {
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
@@ -415,7 +415,7 @@ function initCodeIntelligence({
                 [{ isLoading: true, result: null }],
                 combineLatest([
                     from(extensionsController.extHostAPI).pipe(
-                        withLatestFrom(privateCloudErrors),
+                        withLatestFrom(repoSyncErrors),
                         switchMap(([extensionHost, hasPrivateCloudError]) =>
                             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
                             hasPrivateCloudError
@@ -429,7 +429,7 @@ function initCodeIntelligence({
                     ),
                     getActiveHoverAlerts([
                         ...hoverAlerts,
-                        privateCloudErrors.pipe(
+                        repoSyncErrors.pipe(
                             distinctUntilChanged(),
                             map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
@@ -446,7 +446,7 @@ function initCodeIntelligence({
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
             from(extensionsController.extHostAPI).pipe(
-                withLatestFrom(privateCloudErrors),
+                withLatestFrom(repoSyncErrors),
                 switchMap(([extensionHost, hasPrivateCloudError]) =>
                     // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
                     hasPrivateCloudError
@@ -460,7 +460,7 @@ function initCodeIntelligence({
             ),
         getActions: context =>
             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-            privateCloudErrors.pipe(
+            repoSyncErrors.pipe(
                 take(1),
                 switchMap(hasPrivateCloudError =>
                     hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
@@ -935,7 +935,7 @@ export async function handleCodeHost({
         render,
         hoverAlerts,
         mutations,
-        privateCloudErrors: repoSyncErrors,
+        repoSyncErrors,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
