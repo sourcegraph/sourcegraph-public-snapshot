@@ -166,6 +166,9 @@ const batchChangeFragment = gql`
             nodes {
                 state
             }
+            pageInfo {
+                hasNextPage
+            }
         }
     }
 

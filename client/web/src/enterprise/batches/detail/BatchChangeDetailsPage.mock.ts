@@ -63,6 +63,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],
+        pageInfo: { hasNextPage: false },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
