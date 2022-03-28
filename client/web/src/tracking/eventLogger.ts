@@ -13,7 +13,7 @@ export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
-const isProduction = process.env.NODE_ENV === 'production'
+const isTelemetryDisabled = process.env.DISABLE_TELEMETRY
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
@@ -57,7 +57,7 @@ export class EventLogger implements TelemetryService {
 
     private logViewEventInternal(eventName: string, eventProperties?: any, logAsActiveUser = true): void {
         const props = pageViewQueryParameters(window.location.href)
-        if (isProduction) {
+        if (!isTelemetryDisabled) {
             serverAdmin.trackPageView(eventName, logAsActiveUser, eventProperties)
         }
         this.logToConsole(eventName, props)
@@ -114,7 +114,7 @@ export class EventLogger implements TelemetryService {
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
-        if (isProduction) {
+        if (!isTelemetryDisabled) {
             serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         }
         this.logToConsole(eventLabel, eventProperties, publicArgument)
