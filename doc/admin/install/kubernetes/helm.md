@@ -35,6 +35,8 @@ Provide the override file to helm:
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
+When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for more details.
+
 ### Using external PostgreSQL databases
 
 To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations). Then you may come back to add the following values to your override file.
@@ -518,7 +520,115 @@ __TODO__
 
 ## Upgrading Sourcegraph
 
-__TODO__
+A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
+
+> WARNING: Skipping minor version upgrades of Sourcegraph is not supported. You must upgrade one minor version at a time - e.g. v3.26 –> v3.27 –> v3.28.
+
+### Upgrading
+
+1. Review [Helm Changelog] and [Sourcegraph Changelog] and select a helm chart version compatible with your current Sourcegraph version. You can only upgrade one minor version of Sourcegraph at a time.
+
+1. Update the repo list of charts to retrieve the updated list of versions:
+
+   ```bash
+      helm repo update sourcegraph
+   ```
+
+1. (Optional) Review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for options.
+
+1.  Install the new version:
+
+   ```bash
+      helm upgrade --install --wait -f override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
+   ```
+
+The --wait flag is optional and can be removed if you do not want to wait for the upgraded resources to become healthy.
+
+### Rollback
+
+You can revert to a previous version with the following command:
+
+   ```bash
+      helm rollback sourcegraph
+   ```
+
+Sourcegraph only supports rolling back one minor version, due to database compatibility guarantees.
+
+### Database Migrations
+
+By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
+
+In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+
+To execute the database migrations independently, you can use the [Sourcegraph Migrator] helm chart.
+
+## Reviewing Changes
+
+When configuring an override file or performing an upgrade, we recommend reviewing the changes before applying them.
+
+### Using helm template
+
+The helm template command can be used to render manifests for review and comparison. This is particularly useful to confirm the effect of changes to your override file. This approach does not require access to the Kubernetes server.
+
+For example:
+
+1. Render the initial manifests from your existing deployment setup to an output file:
+
+   ```bash
+      CHART_VERSION=0.6.0 # Currently deployed version
+      helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > original_manifests
+   ```
+
+1. Make changes to your override file, and/or update the chart version, then render that output:
+
+   ```bash
+      CHART_VERSION=0.7.0 # Not yet deployed version
+      helm template sourcegraph -f override.yaml --version $CHART_VERSION sourcegraph sourcegraph/sourcegraph > new_manifests
+   ```
+
+1. Compare the two outputs:
+
+   ```bash
+      diff original_manifests new_manifests
+   ```
+
+### Using helm upgrade --dry-run
+
+Similar to `helm template`, the `helm upgrade --dry-run` command can be used to render manifests for review and comparison. This requires access to the Kubernetes server, but has the benefit of validating the Kubernetes manifests.
+
+The following command will render and validate the manifests:
+
+   ```bash
+      helm upgrade --install --dry-run -f override.yaml sourcegraph sourcegraph/sourcegraph
+   ```
+
+Any validation errors will be displayed instead of the rendered manifests.
+
+If you are having difficulty tracking down the cause of an issue, add the `--debug` flag to enable verbose logging:
+
+   ```bash
+      helm upgrade --install --dry-run --debug -f override.yaml sourcegraph sourcegraph/sourcegraph
+   ```
+
+The `--debug` flag will enable verbose logging and additional context, including the computed values used by the chart. This is useful when confirming your overrides have been interpreted correctly.
+
+### Using Helm Diff plugin
+
+The [Helm Diff] plugin can provide a diff against a deployed chart. It is similar to the `helm upgrade --dry-run` option, but can run against the live deployment. This requires access to the Kubernetes server.
+
+To install the plugin, run:
+
+   ```bash
+      helm plugin install https://github.com/databus23/helm-diff
+   ```
+
+Then, display a diff between a live deployment and an upgrade, with 5 lines of context:
+
+   ```bash
+      helm diff upgrade -f override.yaml sourcegraph sourcegraph/sourcegraph -C 5
+   ```
+
+For more examples and configuration options, reference the [Helm Diff] plugin documentation.
 
 [backendconfig]: https://cloud.google.com/kubernetes-engine/docs/how-to/ingress-features#create_backendconfig
 [azure application gateway]: https://docs.microsoft.com/en-us/azure/application-gateway/overview
@@ -527,3 +637,7 @@ __TODO__
 [AWS Load Balancer Controller]: https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html
 [AWS EBS CSI driver]: https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html
 [NGINX Ingress Controller]: https://github.com/kubernetes/ingress-nginx
+[Helm Changelog]: https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md
+[Sourcegraph Changelog]: https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md
+[Sourcegraph Migrator]: https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph-migrator
+[Helm Diff]: https://github.com/databus23/helm-diff
