@@ -7,7 +7,7 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
-import LanguageGoIcon from 'mdi-react/LanguageGoIcon';
+import LanguageGoIcon from 'mdi-react/LanguageGoIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
@@ -1290,9 +1290,10 @@ const GO_MODULES = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <Field>urls</Field> to the Go module proxies you want to sync dependency repositories from.
-                    For example, <code>"https://user:pass@athens.mycompany.com"</code> or <code>"https://proxy.golang.org"</code>.
-                    A module will be synced from the first proxy that has it, trying the next when it's not found.
+                    In the configuration below, set <Field>urls</Field> to the Go module proxies you want to sync
+                    dependency repositories from. For example, <code>"https://user:pass@athens.mycompany.com"</code> or{' '}
+                    <code>"https://proxy.golang.org"</code>. A module will be synced from the first proxy that has it,
+                    trying the next when it's not found.
                 </li>
                 <li>
                     In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
@@ -1304,7 +1305,7 @@ const GO_MODULES = {
         </div>
     ),
     editorActions: [],
-};
+}
 
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
