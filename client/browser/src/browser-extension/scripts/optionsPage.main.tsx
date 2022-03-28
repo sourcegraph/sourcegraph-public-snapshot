@@ -179,6 +179,8 @@ const Options: React.FunctionComponent = () => {
             () =>
                 sourcegraphUrl
                     ? from(fetchCurrentTabStatus(sourcegraphUrl)).pipe(
+                          catchError(() => of(undefined)),
+                          filter(isDefined),
                           map(tabStatus => ({ status: tabStatus, handler: buildRequestPermissionsHandler(tabStatus) }))
                       )
                     : of(undefined),
