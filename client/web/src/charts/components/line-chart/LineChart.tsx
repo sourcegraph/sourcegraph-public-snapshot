@@ -8,7 +8,7 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Series } from '../../types'
+import { SeriesLikeChart } from '../../types'
 
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, NonActiveBackground, PointGlyph } from './components'
 import { useChartEventHandlers } from './hooks/event-listeners'
@@ -24,20 +24,9 @@ import {
 
 import styles from './LineChart.module.scss'
 
-export interface LineChartContentProps<D> {
+export interface LineChartContentProps<Datum> extends SeriesLikeChart<Datum> {
     width: number
     height: number
-
-    data: D[]
-    series: Series<D>[]
-    xAxisKey: keyof D
-    stacked?: boolean
-
-    /**
-     * Callback runs whenever a point-zone (zone around point) and point itself
-     * on the chart is clicked.
-     */
-    onDatumClick?: (event: React.MouseEvent) => void
 }
 
 /**

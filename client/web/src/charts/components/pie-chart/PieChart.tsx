@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { MaybeLink } from '../../../views/components/view/content/chart-view-content/charts/MaybeLink'
+import { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'
 import { distributePieArcs } from './distribute-pie-data'
@@ -24,17 +25,10 @@ function getSubtitle<Datum>(arc: PieArcDatum<Datum>, total: number): string {
     return `${((100 * arc.value) / total).toFixed(2)}%`
 }
 
-export interface PieChartProps<Datum> {
+export interface PieChartProps<Datum> extends CategoricalLikeChart<Datum> {
     width: number
     height: number
-    data: Datum[]
     padding?: typeof DEFAULT_PADDING
-
-    getDatumValue: (datum: Datum) => number
-    getDatumName: (datum: Datum) => string
-    getDatumColor: (datum: Datum) => string | undefined
-    getDatumLink: (datum: Datum) => string | undefined
-    onDatumLinkClick?: (event: React.MouseEvent) => void
 }
 
 export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | null {

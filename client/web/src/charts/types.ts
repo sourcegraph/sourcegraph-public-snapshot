@@ -1,10 +1,25 @@
-export enum SeriesBasedChartTypes {
-    Line,
+import React from 'react'
+
+export interface SeriesLikeChart<Datum> {
+    data: Datum[]
+    series: Series<Datum>[]
+    xAxisKey: keyof Datum
+    stacked?: boolean
+
+    /**
+     * Callback runs whenever a point-zone (zone around point) and point itself
+     * on the chart is clicked.
+     */
+    onDatumClick?: (event: React.MouseEvent) => void
 }
 
-export enum CategoricalBasedChartTypes {
-    Pie,
-    Bar,
+export interface CategoricalLikeChart<Datum> {
+    data: Datum[]
+    getDatumValue: (datum: Datum) => number
+    getDatumName: (datum: Datum) => string
+    getDatumColor: (datum: Datum) => string | undefined
+    getDatumLink: (datum: Datum) => string | undefined
+    onDatumLinkClick?: (event: React.MouseEvent) => void
 }
 
 export interface Series<Datum> {
