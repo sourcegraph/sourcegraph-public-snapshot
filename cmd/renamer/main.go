@@ -105,7 +105,7 @@ func writeReplacement(ranges map[string][]codeRange, replacement string) (err er
 		var buf []byte
 		buf, err = os.ReadFile(filePath)
 		content := string(buf)
-		newCode, _ := replaceCode(content, crs, replacement) //TODO handle err
+		newCode, _ := applyReplacement(content, crs, replacement) //TODO handle err
 		println(newCode)
 		// write that to file
 	}
@@ -113,7 +113,7 @@ func writeReplacement(ranges map[string][]codeRange, replacement string) (err er
 }
 
 // writeReplacement in-place replaces all the codeRanges in the given files by the replacement string.
-func replaceCode(content string, ranges []codeRange, replacement string) (newCode string, err error) {
+func applyReplacement(content string, ranges []codeRange, replacement string) (newCode string, err error) {
 
 	// We need to make sure to order the codeRanges in ascending order and carry-forward
 	// the offset of the replacement - original length to the next code ranges.

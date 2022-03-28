@@ -2,7 +2,7 @@ package main
 
 import "testing"
 
-func Test_replaceCode(t *testing.T) {
+func Test_applyReplacement(t *testing.T) {
 	type args struct {
 		fileContent string
 		ranges      []codeRange
@@ -52,13 +52,13 @@ func Test_replaceCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotNewCode, err := replaceCode(tt.args.fileContent, tt.args.ranges, tt.args.replacement)
+			gotNewCode, err := applyReplacement(tt.args.fileContent, tt.args.ranges, tt.args.replacement)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("replaceCode() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("applyReplacement() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotNewCode != tt.wantNewCode {
-				t.Errorf("replaceCode() gotNewCode = %v, want %v", gotNewCode, tt.wantNewCode)
+				t.Errorf("applyReplacement() gotNewCode = %v, want %v", gotNewCode, tt.wantNewCode)
 			}
 		})
 	}
