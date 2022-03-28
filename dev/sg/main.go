@@ -143,7 +143,7 @@ func checkSgVersion(ctx context.Context) error {
 	}
 
 	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	err = updateCommand.Exec(ctx, nil)
+	err = updateToPrebuiltSG(ctx)
 	if err != nil {
 		return err
 	}
