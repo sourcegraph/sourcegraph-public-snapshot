@@ -129,8 +129,8 @@ export interface RepositoryMatch {
 export interface NotebookMatch {
     type: 'notebook'
     id: string
-    name: string
-    namespaceName: string
+    title: string
+    namespace: string
     url: string
 
     stars?: number

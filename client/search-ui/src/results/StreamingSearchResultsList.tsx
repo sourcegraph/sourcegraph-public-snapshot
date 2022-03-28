@@ -147,7 +147,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <SearchResult
                             icon={NotebookIcon}
                             result={result}
-                            repoName={`${result.namespaceName} / ${result.name}`}
+                            repoName={`${result.namespace} / ${result.title}`}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'notebook')}
                         />

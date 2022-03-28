@@ -12,10 +12,10 @@ import (
 type NotebookMatch struct {
 	ID int64
 
-	Name          string
-	NamespaceName string
-	Private       bool
-	Stars         int
+	Title     string
+	Namespace string
+	Private   bool
+	Stars     int
 }
 
 func (n NotebookMatch) RepoName() types.MinimalRepo {

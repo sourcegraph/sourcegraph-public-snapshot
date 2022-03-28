@@ -20,18 +20,18 @@ func (s *SearchJob) Run(ctx context.Context, db database.DB, stream streaming.Se
 	stream.Send(streaming.SearchEvent{
 		Results: result.Matches{
 			&result.NotebookMatch{
-				Name:          "FOOBAR",
-				NamespaceName: "sourcegraph",
-				ID:            1,
-				Stars:         64,
-				Private:       false,
+				Title:     "FOOBAR",
+				Namespace: "sourcegraph",
+				ID:        1,
+				Stars:     64,
+				Private:   false,
 			},
 			&result.NotebookMatch{
-				Name:          "BAZ",
-				NamespaceName: "robert",
-				ID:            2,
-				Stars:         0,
-				Private:       true,
+				Title:     "BAZ",
+				Namespace: "robert",
+				ID:        2,
+				Stars:     0,
+				Private:   true,
 			},
 		},
 	})

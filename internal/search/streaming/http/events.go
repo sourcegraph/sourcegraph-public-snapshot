@@ -153,12 +153,12 @@ func (e *EventCommitMatch) eventMatch() {}
 type EventNotebookMatch struct {
 	Type MatchType `json:"type"`
 
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	NamespaceName string `json:"namespaceName"`
-	URL           string `json:"url"`
-	Private       bool   `json:"private"`
-	Stars         int    `json:"stars,omitempty"`
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Namespace string `json:"namespace"`
+	URL       string `json:"url"`
+	Private   bool   `json:"private"`
+	Stars     int    `json:"stars,omitempty"`
 }
 
 func (e *EventNotebookMatch) eventMatch() {}

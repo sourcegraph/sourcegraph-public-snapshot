@@ -586,13 +586,13 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 
 func fromNotebook(notebook *result.NotebookMatch) *streamhttp.EventNotebookMatch {
 	return &streamhttp.EventNotebookMatch{
-		Type:          streamhttp.NotebookMatchType,
-		ID:            notebook.Key().ID,
-		Name:          notebook.Name,
-		NamespaceName: notebook.NamespaceName,
-		URL:           notebook.URL().String(),
-		Stars:         notebook.Stars,
-		Private:       notebook.Private,
+		Type:      streamhttp.NotebookMatchType,
+		ID:        notebook.Key().ID,
+		Title:     notebook.Title,
+		Namespace: notebook.Namespace,
+		URL:       notebook.URL().String(),
+		Stars:     notebook.Stars,
+		Private:   notebook.Private,
 	}
 }
 
