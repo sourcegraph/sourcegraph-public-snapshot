@@ -11,10 +11,11 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-github/v41/github"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var updateRecordings = flag.Bool("update", false, "update integration test")
@@ -50,6 +51,11 @@ func TestDeploymentNotifier(t *testing.T) {
 			"symbols",
 			"worker",
 		}
+		expectedServicesPerPullRequest := map[int][]string{
+			32996: {"frontend", "gitserver", "searcher", "symbols", "worker"},
+			32871: {"frontend", "gitserver", "searcher", "symbols", "worker"},
+			32767: {"gitserver"},
+		}
 
 		newCommit := "e1aea6f8d82283695ae4a3b2b5a7a8f36b1b934b"
 		oldCommit := "54d527f7f7b5770e0dfd1f56398bf8a2f30b935d"
@@ -68,6 +74,7 @@ func TestDeploymentNotifier(t *testing.T) {
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
 			"tests",
+			"",
 		)
 		report, err := dn.Report(ctx)
 		if err != nil {
@@ -80,6 +87,7 @@ func TestDeploymentNotifier(t *testing.T) {
 		}
 		assert.EqualValues(t, expectedPRs, prNumbers)
 		assert.EqualValues(t, expectedServices, report.Services)
+		assert.EqualValues(t, expectedServicesPerPullRequest, report.ServicesPerPullRequest)
 	})
 
 	t.Run("OK no relevant changed files", func(t *testing.T) {
@@ -92,6 +100,7 @@ func TestDeploymentNotifier(t *testing.T) {
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
 			"tests",
+			"",
 		)
 
 		_, err := dn.Report(ctx)
@@ -125,6 +134,7 @@ func TestDeploymentNotifier(t *testing.T) {
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
 			"tests",
+			"",
 		)
 
 		report, err := dn.Report(ctx)
@@ -157,6 +167,7 @@ func TestDeploymentNotifier(t *testing.T) {
 			ghc,
 			NewMockManifestDeployementsDiffer(m),
 			"tests",
+			"",
 		)
 		_, err := dn.Report(ctx)
 		assert.NotNil(t, err)

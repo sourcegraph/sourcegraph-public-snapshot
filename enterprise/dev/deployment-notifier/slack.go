@@ -19,7 +19,7 @@ var slackTemplate = `:arrow_left: *{{.Environment}}* deployment (<{{.BuildURL}}|
 - Applications:
 {{- range .Services }}
     - ` + "`" + `{{ . }}` + "`" + `
-{{- end }} 
+{{- end }}
 
 - Pull Requests:
 {{- range .PullRequests }}
@@ -39,7 +39,7 @@ type pullRequestPresenter struct {
 	WebURL        string
 }
 
-func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *report) (string, error) {
+func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport) (string, error) {
 	presenter := &slackSummaryPresenter{
 		Environment: report.Environment,
 		BuildURL:    report.BuildkiteBuildURL,
