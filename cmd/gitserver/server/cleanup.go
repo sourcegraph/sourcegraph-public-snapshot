@@ -826,11 +826,7 @@ func sgMaintenance(dir GitDir) (err error) {
 }
 
 func needsPruning(dir GitDir) (bool, error) {
-	tooMany, err := tooManyLooseObjects(dir, looseObjectsLimit, time.Now().AddDate(0, 0, -14))
-	if err != nil {
-		return false, err
-	}
-	return tooMany, nil
+	return tooManyLooseObjects(dir, looseObjectsLimit, time.Now().AddDate(0, 0, -14))
 }
 
 // We run git-prune only if there are enough loose objects that are older than 2
