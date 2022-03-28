@@ -23,12 +23,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
+func testSyncRateLimiters(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 		ctx := context.Background()
-		transact(ctx, store, func(t testing.TB, tx *repos.Store) {
+		transact(ctx, store, func(t testing.TB, tx repos.Store) {
 			toCreate := 501 // Larger than default page size in order to test pagination
 			services := make([]*types.ExternalService, 0, toCreate)
 			for i := 0; i < toCreate; i++ {
@@ -73,7 +73,7 @@ func testSyncRateLimiters(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
+func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -186,7 +186,7 @@ func testStoreEnqueueSyncJobs(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
+func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
@@ -289,7 +289,7 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testStoreListExternalServiceUserIDsByRepoID(store *repos.Store) func(*testing.T) {
+func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -357,7 +357,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 	}
 }
 
-func testStoreListExternalServicePrivateRepoIDsByUserID(store *repos.Store) func(*testing.T) {
+func testStoreListExternalServicePrivateRepoIDsByUserID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		t.Cleanup(func() {
@@ -457,7 +457,7 @@ func generateExternalServices(n int, base ...*types.ExternalService) types.Exter
 	return es
 }
 
-func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.Store)) func(*testing.T) {
+func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.Store)) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
 
@@ -476,7 +476,7 @@ func transact(ctx context.Context, s *repos.Store, test func(testing.TB, *repos.
 	}
 }
 
-func createExternalServices(t *testing.T, store *repos.Store, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
+func createExternalServices(t *testing.T, store repos.Store, opts ...func(*types.ExternalService)) map[string]*types.ExternalService {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
