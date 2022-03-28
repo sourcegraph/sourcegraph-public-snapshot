@@ -19,30 +19,7 @@ func Test_applyReplacement(t *testing.T) {
 			args: args{
 				replacement: "NewType",
 				// ranges are unsorted on purpose, the tested code should handle the sorting
-				ranges: []codeRange{
-					// replacement of 'b' parameter
-					{
-						start: codeLocation{
-							line:      2,
-							character: 23,
-						},
-						end: codeLocation{
-							line:      2,
-							character: 30,
-						},
-					},
-					// replacement of 'a' parameter
-					{
-						start: codeLocation{
-							line:      2,
-							character: 12,
-						},
-						end: codeLocation{
-							line:      2,
-							character: 19,
-						},
-					},
-				},
+				ranges:      testRanges(),
 				fileContent: twoTypesOneLine,
 			},
 			wantNewCode: twoTypesOneLineReplaced,
@@ -53,33 +30,21 @@ func Test_applyReplacement(t *testing.T) {
 			args: args{
 				replacement: "NewTypeLonger",
 				// ranges are unsorted on purpose, the tested code should handle the sorting
-				ranges: []codeRange{
-					// replacement of 'b' parameter
-					{
-						start: codeLocation{
-							line:      2,
-							character: 23,
-						},
-						end: codeLocation{
-							line:      2,
-							character: 30,
-						},
-					},
-					// replacement of 'a' parameter
-					{
-						start: codeLocation{
-							line:      2,
-							character: 12,
-						},
-						end: codeLocation{
-							line:      2,
-							character: 19,
-						},
-					},
-				},
+				ranges:      testRanges(),
 				fileContent: twoTypesOneLine,
 			},
-			wantNewCode: twoTypesOneLineReplacedDiffReplacement,
+			wantNewCode: twoTypesOneLineReplacedWithLonger,
+			wantErr:     false,
+		},
+		{
+			name: "replace shorter size symbol",
+			args: args{
+				replacement: "New",
+				// ranges are unsorted on purpose, the tested code should handle the sorting
+				ranges:      testRanges(),
+				fileContent: twoTypesOneLine,
+			},
+			wantNewCode: twoTypesOneLineReplacedWithShorter,
 			wantErr:     false,
 		},
 	}
@@ -95,6 +60,33 @@ func Test_applyReplacement(t *testing.T) {
 				t.Errorf("applyReplacement() gotNewCode = %v, want %v", gotNewCode, tt.wantNewCode)
 			}
 		})
+	}
+}
+
+func testRanges() []codeRange {
+	return []codeRange{
+		// replacement of 'b' parameter
+		{
+			start: codeLocation{
+				line:      2,
+				character: 23,
+			},
+			end: codeLocation{
+				line:      2,
+				character: 30,
+			},
+		},
+		// replacement of 'a' parameter
+		{
+			start: codeLocation{
+				line:      2,
+				character: 12,
+			},
+			end: codeLocation{
+				line:      2,
+				character: 19,
+			},
+		},
 	}
 }
 
@@ -114,9 +106,17 @@ const twoTypesOneLineReplaced = `
 }
 `
 
-const twoTypesOneLineReplacedDiffReplacement = `
+const twoTypesOneLineReplacedWithLonger = `
 {
 	func foo(a NewTypeLonger, b NewTypeLonger) {
+		...
+	}
+}
+`
+
+const twoTypesOneLineReplacedWithShorter = `
+{
+	func foo(a New, b New) {
 		...
 	}
 }
