@@ -5,7 +5,7 @@ exports[`Select custom variant renders correctly 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -43,7 +43,7 @@ exports[`Select custom variant renders with correct styles when invalid 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -86,7 +86,7 @@ exports[`Select custom variant renders with correct styles when valid 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -129,7 +129,7 @@ exports[`Select custom variant renders with message correctly 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -172,7 +172,7 @@ exports[`Select native variant renders correctly 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -210,7 +210,7 @@ exports[`Select native variant renders with correct styles when invalid 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -253,7 +253,7 @@ exports[`Select native variant renders with correct styles when valid 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>
@@ -296,7 +296,7 @@ exports[`Select native variant renders with message correctly 1`] = `
   class="form-group"
 >
   <label
-    for="test"
+    class="label"
   >
     What is your favorite fruit?
   </label>

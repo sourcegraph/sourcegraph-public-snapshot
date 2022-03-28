@@ -18,29 +18,20 @@ describe('Input', () => {
             />
         )
         expect(container.firstChild).toMatchInlineSnapshot(`
-            <label
-              class="w-100"
+            <div
+              class="container d-flex"
             >
+              <input
+                class="input form-control with-invalid-icon"
+                placeholder="loading status input"
+                title="Input loading"
+                type="text"
+                value="Input value"
+              />
               <div
-                class="container d-flex"
-              >
-                <input
-                  class="input form-control with-invalid-icon"
-                  placeholder="loading status input"
-                  title="Input loading"
-                  type="text"
-                  value="Input value"
-                />
-                <div
-                  class="loadingSpinner spinner"
-                />
-              </div>
-              <small
-                class="text-muted form-text font-weight-normal mt-2"
-              >
-                random message
-              </small>
-            </label>
+                class="loadingSpinner spinner"
+              />
+            </div>
         `)
     })
 
