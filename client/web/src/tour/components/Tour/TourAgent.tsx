@@ -26,7 +26,7 @@ export const TourAgent: React.FunctionComponent<TourAgentProps> = React.memo(
         // Agent 1: Track completion
         useEffect(() => {
             const filteredSteps = tasks.flatMap(task => task.steps).filter(step => step.completeAfterEvents)
-            telemetryService?.addEventLogListener?.(eventName => {
+            return telemetryService?.addEventLogListener?.(eventName => {
                 const step = filteredSteps.find(step => step.completeAfterEvents?.includes(eventName))
                 if (step) {
                     onStepComplete(step)
@@ -63,7 +63,7 @@ export const TourAgent: React.FunctionComponent<TourAgentProps> = React.memo(
         return ReactDOM.createPortal(
             <div className={styles.infoPanel}>
                 <Icon as={CheckCircleIcon} className={styles.infoIcon} />
-                <span dangerouslySetInnerHTML={{ __html: info }} />
+                <span>{info}</span>
             </div>,
             domNode
         )

@@ -39,8 +39,14 @@ export const visitorsTasks: TourTaskType[] = [
                             '/search?q=context:global+r:react+lang:typescript+-file:test+createPortal%28&patternType=regexp&case=yes',
                     },
                 },
-                info: `<strong>Reference code in multiple repositories</strong><br/>
-            The repo: query allows searching in multiple repositories matching a term. Use it to reference all of your projects or find open source examples.`,
+                info: (
+                    <>
+                        <strong>Reference code in multiple repositories</strong>
+                        <br />
+                        The repo: query allows searching in multiple repositories matching a term. Use it to reference
+                        all of your projects or find open source examples.
+                    </>
+                ),
             },
             {
                 id: 'TourCommitsSearch',
@@ -64,8 +70,14 @@ export const visitorsTasks: TourTaskType[] = [
                             '/search?q=context:global+repo:%5Egitlab%5C.com/sourcegraph/sourcegraph%24+type:commit+bump&patternType=literal',
                     },
                 },
-                info: `<strong>Find changes in commits</strong><br/>
-            Quickly find commits in history, then browse code from the commit, without checking out the branch.`,
+                info: (
+                    <>
+                        <strong>Find changes in commits</strong>
+                        <br />
+                        Quickly find commits in history, then browse code from the commit, without checking out the
+                        branch.
+                    </>
+                ),
             },
             {
                 id: 'TourDiffSearch',
@@ -89,8 +101,13 @@ export const visitorsTasks: TourTaskType[] = [
                             '/search?q=context:global+repo:sourcegraph/sourcegraph%24+lang:typescript+type:diff+select:commit.diff.removed+authenticatedUser&patternType=regexp&case=yes',
                     },
                 },
-                info:
-                    '<strong>Searching diffs for removed code</strong><br/>Find removed code without browsing through history or trying to remember which file it was in.',
+                info: (
+                    <>
+                        <strong>Searching diffs for removed code</strong>
+                        <br />
+                        Find removed code without browsing through history or trying to remember which file it was in.
+                    </>
+                ),
             },
         ],
     },
@@ -117,15 +134,27 @@ export const visitorsTasks: TourTaskType[] = [
                             '/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/search/query/hover.ts?L202:14',
                     },
                 },
-                info:
-                    '<strong>FIND REFERENCES</strong><br/>Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to locate all calls of this code.',
+                info: (
+                    <>
+                        <strong>FIND REFERENCES</strong>
+                        <br />
+                        Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to
+                        locate all calls of this code.
+                    </>
+                ),
                 completeAfterEvents: ['findReferences'],
             },
             {
                 id: 'TourGoToDefinition',
                 label: 'Go to a definition',
-                info: `<strong>GO TO DEFINITION</strong><br/>
-            Hover over a token in the highlighted line to open code intel, then click ‘Go to definition’ to locate a token definition.`,
+                info: (
+                    <>
+                        <strong>GO TO DEFINITION</strong>
+                        <br />
+                        Hover over a token in the highlighted line to open code intel, then click ‘Go to definition’ to
+                        locate a token definition.
+                    </>
+                ),
                 completeAfterEvents: ['goToDefinition', 'goToDefinition.preloaded'],
                 action: {
                     type: 'link',
@@ -209,9 +238,14 @@ export const authenticatedTasks: TourTaskType[] = [
                             '/search?q=context:global+repo:react+lang:typescript+-file:test+createPortal%28&patternType=regexp&case=yes',
                     },
                 },
-                info: `<strong>Discover code across multiple repositories</strong><br/>
-                    The <code>repo:</code> keyword allows searching in multiple repositories matching a term. Use it to reference all of your projects or find open source examples.
-                `,
+                info: (
+                    <>
+                        <strong>Discover code across multiple repositories</strong>
+                        <br />
+                        The <code>repo:</code> keyword allows searching in multiple repositories matching a term. Use it
+                        to reference all of your projects or find open source examples.
+                    </>
+                ),
             },
         ],
     },
@@ -246,8 +280,13 @@ export const authenticatedTasks: TourTaskType[] = [
                             '/search?q=context:global+repo:sourcegraph/sourcegraph%24+lang:typescript+type:diff+select:commit.diff.removed+authenticatedUser&patternType=regexp&case=yes',
                     },
                 },
-                info:
-                    '<strong>Searching diffs for removed code</strong><br/>Find removed code without browsing through history or trying to remember which file it was in.',
+                info: (
+                    <>
+                        <strong>Searching diffs for removed code</strong>
+                        <br />
+                        Find removed code without browsing through history or trying to remember which file it was in.
+                    </>
+                ),
             },
         ],
     },
@@ -260,7 +299,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 label: 'Document post mortems using search notebooks',
                 action: {
                     type: 'new-tab-link',
-                    value: 'https://sourcegraph.com/notebooks',
+                    value: 'https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ==',
                 },
             },
         ],
@@ -289,8 +328,14 @@ export const authenticatedTasks: TourTaskType[] = [
                             '/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/search/query/hover.ts?L202:14',
                     },
                 },
-                info:
-                    '<strong>Find References</strong><br/>Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to locate all calls of this code.',
+                info: (
+                    <>
+                        <strong>Find References</strong>
+                        <br />
+                        Hover over a token in the highlighted line to open code intel, then click ‘Find References’ to
+                        locate all calls of this code.
+                    </>
+                ),
                 completeAfterEvents: ['findReferences'],
             },
         ],

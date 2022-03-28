@@ -39,7 +39,7 @@ export interface TourTaskStepType {
     /**
      * HTML string, which will be displayed in info box when navigating to a step link.
      */
-    info?: string
+    info?: JSX.Element
     /**
      * The step will be marked as completed only if one of the "completeAfterEvents" will be triggered
      */
