@@ -826,11 +826,11 @@ func sgMaintenance(dir GitDir) (err error) {
 }
 
 func needsPruning(dir GitDir) (bool, error) {
-	return tooManyLooseObjects(dir, looseObjectsLimit, time.Now().AddDate(0, 0, -14))
+	return tooManyLooseObjects(dir, looseObjectsLimit)
 }
 
-// We run git-prune only if there are enough loose objects that are older than 2
-// weeks. This approach is adapted from https://gitlab.com/gitlab-org/gitaly.
+// We run git-prune only if there are enough loose objects. This approach is
+// adapted from https://gitlab.com/gitlab-org/gitaly.
 func pruneIfNeeded(dir GitDir) (err error) {
 	needed, err := needsPruning(dir)
 	defer func() {
@@ -843,7 +843,7 @@ func pruneIfNeeded(dir GitDir) (err error) {
 		return nil
 	}
 
-	cmd := exec.Command("git", "-c", "prune", "--expire", "2.weeks-ago")
+	cmd := exec.Command("git", "-c", "prune", "--expire", "now")
 	dir.Set(cmd)
 	err = cmd.Run()
 	if err != nil {
@@ -881,7 +881,7 @@ func needsMaintenance(dir GitDir) (bool, string, error) {
 		return true, "packfiles", nil
 	}
 
-	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit, time.Now())
+	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit)
 	if err != nil {
 		return false, "", err
 	}
@@ -897,7 +897,7 @@ var reHexadecimal = regexp.MustCompile("^[0-9a-f]+$")
 // loose objects by counting the objects in a sentinel folder and extrapolating
 // based on the assumption that loose objects are randomly distributed in the
 // 256 possible folders.
-func tooManyLooseObjects(dir GitDir, limit int, cutoffDate time.Time) (bool, error) {
+func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
 	// We use the same folder git uses to estimate the number of loose objects.
 	objs, err := os.ReadDir(filepath.Join(dir.Path(), "objects", "17"))
 	if err != nil {
@@ -914,13 +914,6 @@ func tooManyLooseObjects(dir GitDir, limit int, cutoffDate time.Time) (bool, err
 		// change over time, checking the length seems too brittle. Instead, we just
 		// count all files with hexadecimal names.
 		if obj.IsDir() {
-			continue
-		}
-		fi, err := obj.Info()
-		if err != nil {
-			continue
-		}
-		if fi.ModTime().After(cutoffDate) {
 			continue
 		}
 		if matches := reHexadecimal.MatchString(obj.Name()); !matches {

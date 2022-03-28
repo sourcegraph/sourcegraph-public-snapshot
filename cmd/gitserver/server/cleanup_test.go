@@ -914,7 +914,7 @@ func TestTooManyLooseObjects(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			tooManyLO, err := tooManyLooseObjects(gitDir, limit, time.Now())
+			tooManyLO, err := tooManyLooseObjects(gitDir, limit)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -929,7 +929,7 @@ func TestTooManyLooseObjectsMissingSentinelDir(t *testing.T) {
 	dir := t.TempDir()
 	gitDir := prepareEmptyGitRepo(t, dir)
 
-	_, err := tooManyLooseObjects(gitDir, 1, time.Now())
+	_, err := tooManyLooseObjects(gitDir, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
