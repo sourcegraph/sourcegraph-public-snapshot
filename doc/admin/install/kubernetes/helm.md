@@ -39,8 +39,9 @@ helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sour
 
 To use external PostgreSQL databases, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/postgres#using-your-own-postgresql-server) and [required postgres permissions](https://docs.sourcegraph.com/admin/external_services/postgres#postgres-permissions-and-database-migrations). Then you may come back to add the following values to your override file.
 
-Prior installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
 
+`pgsql-credentials.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -51,6 +52,7 @@ data:
   PGPASSWORD: ""
 ```
 
+`codeintel-db-credentials.Secret.yaml`
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -61,6 +63,7 @@ data:
   CODEINTEL_PGPASSWORD: ""
 ```
 
+[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-databases/override.yaml)
 ```yaml
 frontend:
   env:
