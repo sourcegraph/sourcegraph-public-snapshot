@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react'
+
 import { EditorState, EditorStateConfig, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { useEffect, useState } from 'react'
 
 /**
  * Hook for rendering and updating a CodeMirror instance.

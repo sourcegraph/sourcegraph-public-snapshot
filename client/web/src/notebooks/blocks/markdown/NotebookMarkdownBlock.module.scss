@@ -50,11 +50,12 @@
         color: var(--oc-orange-9);
     }
 
+    // stylelint-disable selector-class-pattern
     :global(.cmt-punctuation),
     :global(.cmt-typeName) {
-        /* stylelint-disable-line selector-class-pattern */
         color: var(--oc-cyan-7);
     }
+    // stylelint-enable selector-class-pattern
 
     // Our own class assigned to various token types (see the component
     // implementation).
