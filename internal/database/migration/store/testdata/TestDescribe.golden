@@ -1,5 +1,5 @@
-store.Schema{
-	Enums: []store.Enum{
+schemas.SchemaDescription{
+	Enums: []schemas.EnumDescription{
 		{
 			Name: "mpaa_rating",
 			Labels: []string{
@@ -11,7 +11,7 @@ store.Schema{
 			},
 		},
 	},
-	Functions: []store.Function{
+	Functions: []schemas.FunctionDescription{
 		{
 			Name: "_group_concat",
 			Definition: `CREATE OR REPLACE FUNCTION public._group_concat(text, text)
@@ -223,7 +223,7 @@ $function$
 `,
 		},
 	},
-	Sequences: []store.Sequence{
+	Sequences: []schemas.SequenceDescription{
 		{
 			Name:         "actor_actor_id_seq",
 			TypeName:     "bigint",
@@ -342,10 +342,10 @@ $function$
 			CycleOption:  "NO",
 		},
 	},
-	Tables: []store.Table{
+	Tables: []schemas.TableDescription{
 		{
 			Name: "actor",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "actor_id",
 					Index:       1,
@@ -375,7 +375,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:                 "actor_pkey",
 					IsPrimaryKey:         true,
@@ -389,14 +389,14 @@ $function$
 					IndexDefinition: "CREATE INDEX idx_actor_last_name ON actor USING btree (last_name)",
 				},
 			},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON actor FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "address",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:                   "address",
 					Index:                  2,
@@ -455,7 +455,7 @@ $function$
 					IsGenerated:            "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:                 "address_pkey",
 					IsPrimaryKey:         true,
@@ -469,20 +469,20 @@ $function$
 					IndexDefinition: "CREATE INDEX idx_fk_city_id ON address USING btree (city_id)",
 				},
 			},
-			Constraints: []store.Constraint{{
+			Constraints: []schemas.ConstraintDescription{{
 				Name:                 "fk_address_city",
 				ConstraintType:       "f",
 				RefTableName:         "city",
 				ConstraintDefinition: "FOREIGN KEY (city_id) REFERENCES city(city_id)",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON address FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "category",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "category_id",
 					Index:       1,
@@ -505,7 +505,7 @@ $function$
 					IsGenerated:            "NEVER",
 				},
 			},
-			Indexes: []store.Index{{
+			Indexes: []schemas.IndexDescription{{
 				Name:                 "category_pkey",
 				IsPrimaryKey:         true,
 				IsUnique:             true,
@@ -513,14 +513,14 @@ $function$
 				ConstraintType:       "p",
 				ConstraintDefinition: "PRIMARY KEY (category_id)",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON category FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "city",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:                   "city",
 					Index:                  2,
@@ -549,7 +549,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:                 "city_pkey",
 					IsPrimaryKey:         true,
@@ -563,20 +563,20 @@ $function$
 					IndexDefinition: "CREATE INDEX idx_fk_country_id ON city USING btree (country_id)",
 				},
 			},
-			Constraints: []store.Constraint{{
+			Constraints: []schemas.ConstraintDescription{{
 				Name:                 "fk_city",
 				ConstraintType:       "f",
 				RefTableName:         "country",
 				ConstraintDefinition: "FOREIGN KEY (country_id) REFERENCES country(country_id)",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON city FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "country",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:                   "country",
 					Index:                  2,
@@ -599,7 +599,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{{
+			Indexes: []schemas.IndexDescription{{
 				Name:                 "country_pkey",
 				IsPrimaryKey:         true,
 				IsUnique:             true,
@@ -607,14 +607,14 @@ $function$
 				ConstraintType:       "p",
 				ConstraintDefinition: "PRIMARY KEY (country_id)",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON country FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "customer",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "active",
 					Index:       10,
@@ -686,7 +686,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:                 "customer_pkey",
 					IsPrimaryKey:         true,
@@ -708,20 +708,20 @@ $function$
 					IndexDefinition: "CREATE INDEX idx_last_name ON customer USING btree (last_name)",
 				},
 			},
-			Constraints: []store.Constraint{{
+			Constraints: []schemas.ConstraintDescription{{
 				Name:                 "customer_address_id_fkey",
 				ConstraintType:       "f",
 				RefTableName:         "address",
 				ConstraintDefinition: "FOREIGN KEY (address_id) REFERENCES address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON customer FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "film",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "description",
 					Index:       3,
@@ -813,7 +813,7 @@ $function$
 					IsGenerated:            "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:            "film_fulltext_idx",
 					IndexDefinition: "CREATE INDEX film_fulltext_idx ON film USING gist (fulltext)",
@@ -835,13 +835,13 @@ $function$
 					IndexDefinition: "CREATE INDEX idx_title ON film USING btree (title)",
 				},
 			},
-			Constraints: []store.Constraint{{
+			Constraints: []schemas.ConstraintDescription{{
 				Name:                 "film_language_id_fkey",
 				ConstraintType:       "f",
 				RefTableName:         "language",
 				ConstraintDefinition: "FOREIGN KEY (language_id) REFERENCES language(language_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 			}},
-			Triggers: []store.Trigger{
+			Triggers: []schemas.TriggerDescription{
 				{
 					Name:       "film_fulltext_trigger",
 					Definition: "CREATE TRIGGER film_fulltext_trigger BEFORE INSERT OR UPDATE ON film FOR EACH ROW EXECUTE FUNCTION tsvector_update_trigger('fulltext', 'pg_catalog.english', 'title', 'description')",
@@ -854,7 +854,7 @@ $function$
 		},
 		{
 			Name: "film_actor",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "actor_id",
 					Index:       1,
@@ -875,7 +875,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:                 "film_actor_pkey",
 					IsPrimaryKey:         true,
@@ -889,7 +889,7 @@ $function$
 					IndexDefinition: "CREATE INDEX idx_fk_film_id ON film_actor USING btree (film_id)",
 				},
 			},
-			Constraints: []store.Constraint{
+			Constraints: []schemas.ConstraintDescription{
 				{
 					Name:                 "film_actor_actor_id_fkey",
 					ConstraintType:       "f",
@@ -903,14 +903,14 @@ $function$
 					ConstraintDefinition: "FOREIGN KEY (film_id) REFERENCES film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 				},
 			},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON film_actor FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "film_category",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "category_id",
 					Index:       2,
@@ -931,7 +931,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{{
+			Indexes: []schemas.IndexDescription{{
 				Name:                 "film_category_pkey",
 				IsPrimaryKey:         true,
 				IsUnique:             true,
@@ -939,7 +939,7 @@ $function$
 				ConstraintType:       "p",
 				ConstraintDefinition: "PRIMARY KEY (film_id, category_id)",
 			}},
-			Constraints: []store.Constraint{
+			Constraints: []schemas.ConstraintDescription{
 				{
 					Name:                 "film_category_category_id_fkey",
 					ConstraintType:       "f",
@@ -953,14 +953,14 @@ $function$
 					ConstraintDefinition: "FOREIGN KEY (film_id) REFERENCES film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 				},
 			},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON film_category FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "inventory",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "film_id",
 					Index:       2,
@@ -988,7 +988,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:            "idx_store_id_film_id",
 					IndexDefinition: "CREATE INDEX idx_store_id_film_id ON inventory USING btree (store_id, film_id)",
@@ -1002,20 +1002,20 @@ $function$
 					ConstraintDefinition: "PRIMARY KEY (inventory_id)",
 				},
 			},
-			Constraints: []store.Constraint{{
+			Constraints: []schemas.ConstraintDescription{{
 				Name:                 "inventory_film_id_fkey",
 				ConstraintType:       "f",
 				RefTableName:         "film",
 				ConstraintDefinition: "FOREIGN KEY (film_id) REFERENCES film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON inventory FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "language",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "language_id",
 					Index:       1,
@@ -1038,7 +1038,7 @@ $function$
 					IsGenerated:            "NEVER",
 				},
 			},
-			Indexes: []store.Index{{
+			Indexes: []schemas.IndexDescription{{
 				Name:                 "language_pkey",
 				IsPrimaryKey:         true,
 				IsUnique:             true,
@@ -1046,14 +1046,14 @@ $function$
 				ConstraintType:       "p",
 				ConstraintDefinition: "PRIMARY KEY (language_id)",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON language FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "payment",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "amount",
 					Index:       5,
@@ -1092,7 +1092,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:            "idx_fk_customer_id",
 					IndexDefinition: "CREATE INDEX idx_fk_customer_id ON payment USING btree (customer_id)",
@@ -1114,7 +1114,7 @@ $function$
 					ConstraintDefinition: "PRIMARY KEY (payment_id)",
 				},
 			},
-			Constraints: []store.Constraint{
+			Constraints: []schemas.ConstraintDescription{
 				{
 					Name:                 "payment_customer_id_fkey",
 					ConstraintType:       "f",
@@ -1134,11 +1134,11 @@ $function$
 					ConstraintDefinition: "FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 				},
 			},
-			Triggers: []store.Trigger{},
+			Triggers: []schemas.TriggerDescription{},
 		},
 		{
 			Name: "rental",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "customer_id",
 					Index:       4,
@@ -1185,7 +1185,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:            "idx_fk_inventory_id",
 					IndexDefinition: "CREATE INDEX idx_fk_inventory_id ON rental USING btree (inventory_id)",
@@ -1204,7 +1204,7 @@ $function$
 					ConstraintDefinition: "PRIMARY KEY (rental_id)",
 				},
 			},
-			Constraints: []store.Constraint{
+			Constraints: []schemas.ConstraintDescription{
 				{
 					Name:                 "rental_customer_id_fkey",
 					ConstraintType:       "f",
@@ -1224,14 +1224,14 @@ $function$
 					ConstraintDefinition: "FOREIGN KEY (staff_id) REFERENCES staff(staff_id)",
 				},
 			},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON rental FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "staff",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "active",
 					Index:       7,
@@ -1310,7 +1310,7 @@ $function$
 					IsGenerated:            "NEVER",
 				},
 			},
-			Indexes: []store.Index{{
+			Indexes: []schemas.IndexDescription{{
 				Name:                 "staff_pkey",
 				IsPrimaryKey:         true,
 				IsUnique:             true,
@@ -1318,20 +1318,20 @@ $function$
 				ConstraintType:       "p",
 				ConstraintDefinition: "PRIMARY KEY (staff_id)",
 			}},
-			Constraints: []store.Constraint{{
+			Constraints: []schemas.ConstraintDescription{{
 				Name:                 "staff_address_id_fkey",
 				ConstraintType:       "f",
 				RefTableName:         "address",
 				ConstraintDefinition: "FOREIGN KEY (address_id) REFERENCES address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 			}},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON staff FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 		{
 			Name: "store",
-			Columns: []store.Column{
+			Columns: []schemas.ColumnDescription{
 				{
 					Name:        "address_id",
 					Index:       3,
@@ -1359,7 +1359,7 @@ $function$
 					IsGenerated: "NEVER",
 				},
 			},
-			Indexes: []store.Index{
+			Indexes: []schemas.IndexDescription{
 				{
 					Name:            "idx_unq_manager_staff_id",
 					IsUnique:        true,
@@ -1374,7 +1374,7 @@ $function$
 					ConstraintDefinition: "PRIMARY KEY (store_id)",
 				},
 			},
-			Constraints: []store.Constraint{
+			Constraints: []schemas.ConstraintDescription{
 				{
 					Name:                 "store_address_id_fkey",
 					ConstraintType:       "f",
@@ -1388,13 +1388,13 @@ $function$
 					ConstraintDefinition: "FOREIGN KEY (manager_staff_id) REFERENCES staff(staff_id) ON UPDATE CASCADE ON DELETE RESTRICT",
 				},
 			},
-			Triggers: []store.Trigger{{
+			Triggers: []schemas.TriggerDescription{{
 				Name:       "last_updated",
 				Definition: "CREATE TRIGGER last_updated BEFORE UPDATE ON store FOR EACH ROW EXECUTE FUNCTION last_updated()",
 			}},
 		},
 	},
-	Views: []store.View{
+	Views: []schemas.ViewDescription{
 		{
 			Name: "actor_info",
 			Definition: ` SELECT a.actor_id,
