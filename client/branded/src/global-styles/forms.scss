@@ -358,10 +358,10 @@ textarea.form-control.is-valid {
     border-color: var(--success);
 
     &:focus {
-        @at-root #{selector-append('.theme-light', &)} {
+        @at-root #{selector-append('.theme-light')} & {
             box-shadow: var(--input-focus-box-shadow-valid);
         }
-        @at-root #{selector-append('.theme-dark', &)} {
+        @at-root #{selector-append('.theme-dark')} & {
             box-shadow: var(--input-focus-box-shadow-valid);
         }
     }
@@ -375,10 +375,10 @@ textarea.form-control.is-valid {
     border-color: var(--danger);
 
     &:focus {
-        @at-root #{selector-append('.theme-light', &)} {
+        @at-root #{selector-append('.theme-light')} & {
             box-shadow: var(--input-focus-box-shadow-invalid);
         }
-        @at-root #{selector-append('.theme-dark', &)} {
+        @at-root #{selector-append('.theme-dark')} & {
             box-shadow: var(--input-focus-box-shadow-invalid);
         }
     }
