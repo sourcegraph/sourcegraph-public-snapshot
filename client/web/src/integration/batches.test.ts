@@ -46,10 +46,12 @@ const batchChangeListNode: ListBatchChange & { __typename: 'BatchChange' } = {
     closedAt: null,
     description: null,
     state: BatchChangeState.OPEN,
+
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',
     },
+
     currentSpec: {
         id: 'test-spec',
     },
@@ -241,6 +243,8 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                             baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
+                        pageInfo: { hasNextPage: false },
+
                         forkTarget: null,
                     },
                 },
@@ -353,6 +357,7 @@ function mockCommonGraphQLResponses(
                 },
                 batchSpecs: {
                     nodes: [{ state: BatchSpecState.COMPLETED }],
+                    pageInfo: { hasNextPage: false },
                 },
                 bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },

@@ -12,7 +12,6 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v0.9.4
-	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
 	github.com/aws/aws-sdk-go-v2 v1.13.0
 	github.com/aws/aws-sdk-go-v2/config v1.13.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
@@ -118,7 +117,6 @@ require (
 	github.com/prometheus/common v0.32.1
 	github.com/pseudomuto/protoc-gen-doc v1.5.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
-	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
 	github.com/rjeczalik/notify v0.9.2
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.1
