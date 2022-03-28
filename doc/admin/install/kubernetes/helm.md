@@ -7,7 +7,7 @@
 
 ## Quickstart
 
-To use the Helm chart, add Sourcegraph helm repository:
+To use the Helm chart, add the Sourcegraph helm repository:
  
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
@@ -67,13 +67,13 @@ You need to have a GKE cluster (>=1.19) with the following addons enabled:
 - [x] HTTP Load Balancing
 - [x] Compute Engine persistent disk CSI Driver
 
-You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
 > [Container-native load balancing] is only available on VPC-native cluster. For legacy clusters, [learn more](https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress).
 
-Create an override file with the following value. We configure Ingress to use [Container-native load balancing] to expose Sourcegraph publically and Storage Class to use [Compute Engine persistent disk].
+Create an override file with the following values. We configure Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Compute Engine persistent disk].
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml)
 ```yaml
@@ -104,7 +104,7 @@ Install the chart
 helm upgrade --install --values ./override.yaml --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-You need to deploy the [BackendConfig] CRD to properly expose Sourcegraph publically. The [BackendConfig] CR should be deployed in the same namespace where Sourcegraph chart is installed.
+You need to deploy the [BackendConfig] CRD to properly expose Sourcegraph publicly. The [BackendConfig] CR should be deployed in the same namespace where the Sourcegraph chart is installed.
 
 [sourcegraph-frontend.BackendConfig.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/michael/improve-gcp-example/charts/sourcegraph/examples/gcp/sourcegraph-frontend.BackendConfig.yaml)
 ```yaml
@@ -124,7 +124,7 @@ spec:
 kubectl apply -f sourcegraph-frontend.BackendConfig.yaml
 ```
 
-It will take around 10 mintues for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP:
+It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP:
 
 ```sh
 kubectl describe ingress sourcegraph-frontend
@@ -156,11 +156,11 @@ You need to have a EKS cluster (>=1.19) with the following addons enabled:
 - [x] [AWS Load Balancer Controller]
 - [x] [AWS EBS CSI driver]
 
-You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
-Create an override file with the following value. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publically and Storage Class to use [AWS EBS CSI driver].
+Create an override file with the following values. We configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [AWS EBS CSI driver].
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml)
 ```yaml
@@ -223,11 +223,11 @@ You need to have a AKS cluster (>=1.19) with the following addons enabled:
 - [x] [Azure Application Gateway Ingress Controller](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-install-new)
 - [x] [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)
 
-You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
-Create an override file with the following value. We configure Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publically and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
+Create an override file with the following values. We configure Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi).
 
 [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml)
 ```yaml
@@ -292,7 +292,7 @@ You need to have a Kubernetes cluster (>=1.19) with the following components ins
 - [x] Ingress Controller, e.g. Cloud providers-native solution, [NGINX Ingress Controller]
 - [x] Block Storage CSI driver
 
-You account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
+Your account should have sufficient access equivalent to the `cluster-admin` ClusterRole.
 
 #### Steps
 
