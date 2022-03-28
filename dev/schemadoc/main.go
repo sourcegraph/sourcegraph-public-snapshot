@@ -23,6 +23,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -512,7 +513,7 @@ func generateInternalNew(db *sql.DB, name string, run runFunc) (_ string, err er
 	return strings.Join(docs, "\n"), nil
 }
 
-func formatTable(schemaName string, schema migrationstore.Schema, table migrationstore.Table) []string {
+func formatTable(schemaName string, description descriptions.SchemaDescription, table descriptions.TableDescription) []string {
 	docs := []string{}
 	docs = append(docs, fmt.Sprintf("# Table \"%s.%s\"", schemaName, table.Name))
 	docs = append(docs, "```")
@@ -602,11 +603,11 @@ func formatTable(schemaName string, schema migrationstore.Schema, table migratio
 	}
 
 	type tableAndConstraint struct {
-		migrationstore.Table
-		migrationstore.Constraint
+		descriptions.TableDescription
+		descriptions.ConstraintDescription
 	}
 	tableAndConstraints := []tableAndConstraint{}
-	for _, otherTable := range schema.Tables {
+	for _, otherTable := range description.Tables {
 		for _, constraint := range otherTable.Constraints {
 			if constraint.RefTableName == table.Name {
 				tableAndConstraints = append(tableAndConstraints, tableAndConstraint{otherTable, constraint})
@@ -614,13 +615,13 @@ func formatTable(schemaName string, schema migrationstore.Schema, table migratio
 		}
 	}
 	sort.Slice(tableAndConstraints, func(i, j int) bool {
-		return tableAndConstraints[i].Constraint.Name < tableAndConstraints[j].Constraint.Name
+		return tableAndConstraints[i].ConstraintDescription.Name < tableAndConstraints[j].ConstraintDescription.Name
 	})
 	if len(tableAndConstraints) > 0 {
 		docs = append(docs, "Referenced by:")
 
 		for _, tableAndConstraint := range tableAndConstraints {
-			docs = append(docs, fmt.Sprintf("    TABLE %q CONSTRAINT %q %s", tableAndConstraint.Table.Name, tableAndConstraint.Constraint.Name, tableAndConstraint.Constraint.ConstraintDefinition))
+			docs = append(docs, fmt.Sprintf("    TABLE %q CONSTRAINT %q %s", tableAndConstraint.TableDescription.Name, tableAndConstraint.ConstraintDescription.Name, tableAndConstraint.ConstraintDescription.ConstraintDefinition))
 		}
 	}
 
@@ -648,30 +649,30 @@ func formatTable(schemaName string, schema migrationstore.Schema, table migratio
 	return docs
 }
 
-func formatView(schemaName string, schema migrationstore.Schema, view migrationstore.View) []string {
+func formatView(schemaName string, description descriptions.SchemaDescription, view descriptions.ViewDescription) []string {
 	docs := []string{}
 	docs = append(docs, fmt.Sprintf("# View \"public.%s\"\n", view.Name))
 	docs = append(docs, fmt.Sprintf("## View query:\n\n```sql\n%s\n```\n", view.Definition))
 	return docs
 }
 
-func sortTables(tables []migrationstore.Table) {
+func sortTables(tables []descriptions.TableDescription) {
 	sort.Slice(tables, func(i, j int) bool { return tables[i].Name < tables[j].Name })
 }
 
-func sortViews(views []migrationstore.View) {
+func sortViews(views []descriptions.ViewDescription) {
 	sort.Slice(views, func(i, j int) bool { return views[i].Name < views[j].Name })
 }
 
-func sortColumns(columns []migrationstore.Column) {
+func sortColumns(columns []descriptions.ColumnDescription) {
 	sort.Slice(columns, func(i, j int) bool { return columns[i].Index < columns[j].Index })
 }
 
-func sortColumnsByName(columns []migrationstore.Column) {
+func sortColumnsByName(columns []descriptions.ColumnDescription) {
 	sort.Slice(columns, func(i, j int) bool { return columns[i].Name < columns[j].Name })
 }
 
-func sortIndexes(indexes []migrationstore.Index) {
+func sortIndexes(indexes []descriptions.IndexDescription) {
 	sort.Slice(indexes, func(i, j int) bool {
 		if indexes[i].IsUnique && !indexes[j].IsUnique {
 			return true
