@@ -3,30 +3,15 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import TagIcon from 'mdi-react/TagIcon'
 import { Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ContributableMenu } from '@sourcegraph/client-api'
-import {
-    asError,
-    ErrorLike,
-    isErrorLike,
-    pluralize,
-    encodeURIPathComponent,
-    memoizeObservable,
-} from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, pluralize, memoizeObservable } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -42,27 +27,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Button,
-    useObservable,
-    ButtonGroup,
-    Link,
-    Icon,
-} from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
-import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -70,6 +44,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+import { TreeNavigation } from './TreeNavigation'
 
 import styles from './TreePage.module.scss'
 
@@ -273,9 +248,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [uri, showCodeInsights, props.extensionsController])
 
-    // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
-
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
         if (filePath) {
@@ -359,85 +331,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="mb-3 test-tree-page-title"
                                     />
                                     {repo.description && <p>{repo.description}</p>}
-                                    <ButtonGroup>
-                                        {enableAPIDocs && (
-                                            <Button
-                                                to={`${treeOrError.url}/-/docs`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <Icon as={BookOpenBlankVariantIcon} /> API docs
-                                            </Button>
-                                        )}
-                                        <Button
-                                            to={`${treeOrError.url}/-/commits`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={SourceCommitIcon} /> Commits
-                                        </Button>
-                                        <Button
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={SourceBranchIcon} /> Branches
-                                        </Button>
-                                        <Button
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={TagIcon} /> Tags
-                                        </Button>
-                                        <Button
-                                            to={
-                                                revision
-                                                    ? `/${encodeURIPathComponent(
-                                                          repo.name
-                                                      )}/-/compare/...${encodeURIComponent(revision)}`
-                                                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                                            }
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={HistoryIcon} /> Compare
-                                        </Button>
-                                        <Button
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={AccountIcon} /> Contributors
-                                        </Button>
-                                        {codeIntelligenceEnabled && (
-                                            <Button
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <Icon as={BrainIcon} /> Code Intelligence
-                                            </Button>
-                                        )}
-                                        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
-                                        {repo.viewerCanAdminister && (
-                                            <Button
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <Icon as={SettingsIcon} /> Settings
-                                            </Button>
-                                        )}
-                                    </ButtonGroup>
+                                    <TreeNavigation
+                                        batchChangesEnabled={batchChangesEnabled}
+                                        codeIntelligenceEnabled={codeIntelligenceEnabled}
+                                        repo={repo}
+                                        revision={revision}
+                                        tree={treeOrError}
+                                    />
                                 </>
                             ) : (
                                 <PageHeader
