@@ -128,19 +128,19 @@ func main() {
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
 		}
-		out, err := renderComment(report)
+		out, err := renderComment(report, traceURL)
 		if err != nil {
 			log.Fatalf("can't render GitHub comment %q", err)
 		}
 		fmt.Println(out)
 		fmt.Println("Slack\n---")
-		out, err = slackSummary(ctx, teammates, report)
+		out, err = slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			log.Fatalf("can't render Slack post %q", err)
 		}
 		fmt.Println(out)
 	} else {
-		out, err := slackSummary(ctx, teammates, report)
+		out, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			log.Fatalf("can't render Slack post %q", err)
 		}
