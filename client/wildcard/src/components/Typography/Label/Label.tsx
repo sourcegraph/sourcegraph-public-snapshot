@@ -22,13 +22,14 @@ export const Label = React.forwardRef(
     ) => (
         <Component
             className={classNames(
-                isUnderline && styles.underline,
-                isUppercase && styles.uppercase,
+                styles.label,
+                isUnderline && styles.labelUnderline,
+                isUppercase && styles.labelUppercase,
                 size === 'small' && typographyStyles.small,
                 weight && getFontWeightStyle({ weight }),
                 alignment && getAlignmentStyle({ alignment }),
                 mode && getModeStyle({ mode }),
-                mode === 'single-line' && styles.singleLine,
+                mode === 'single-line' && styles.labelSingleLine,
                 className
             )}
             ref={reference}

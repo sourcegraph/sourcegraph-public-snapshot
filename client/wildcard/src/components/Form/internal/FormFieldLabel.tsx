@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { Label } from '../../Typography/Label'
+
 export interface FormFieldLabelProps {
     /**
      * The id of the form field to associate with the label.
@@ -12,7 +14,7 @@ export interface FormFieldLabelProps {
  * A simple label to render alongside a form field.
  */
 export const FormFieldLabel: React.FunctionComponent<FormFieldLabelProps> = ({ htmlFor, className, children }) => (
-    <label htmlFor={htmlFor} className={className}>
+    <Label htmlFor={htmlFor} className={className}>
         {children}
-    </label>
+    </Label>
 )
