@@ -34,6 +34,16 @@ func (p *PersonCount) String() string {
 }
 
 // ShortLog returns the per-author commit statistics of the repo.
+//
+// TODO: Experiment:
+// Move this up to the gitserver client so that it's called instead
+// like this: gitserver.NewClient(db).ShortLog(ctx, repo, opt)
+//
+// This should allow us to move a lot of code into the gitserver package without changing
+// anything and give us the quickest path to being able to remove the Command type since at
+// that point it will only be used inside the gitserver package and it can be made internal.
+//
+// AFTER that we can start exposing commands on gitserver
 func ShortLog(ctx context.Context, db database.DB, repo api.RepoName, opt ShortLogOptions) ([]*PersonCount, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
