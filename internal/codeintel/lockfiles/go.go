@@ -40,7 +40,13 @@ func parseGoSumFile(r io.Reader) ([]reposource.PackageDependency, error) {
 			errs = errors.Append(errs, err)
 		} else if last, ok := added[name]; ok {
 			// go.sum records and sorts all non-major versions with
-			// the latest version as last entry, which we pick.
+			// the latest version as last entry, which we pick, since
+			// it's correct most of the time as empirically observed in
+			// our own repository.
+			//
+			// for 100% accurate dependencies, we'll rely on lsif-go indexing
+			// running the Minimum Version Selection algorithm in the go toolchain.
+			//
 			*last = *dep // update previously appended dep in-place
 		} else {
 			added[name] = dep
