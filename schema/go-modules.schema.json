@@ -6,9 +6,7 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "urls"
-  ],
+  "required": ["urls"],
   "properties": {
     "urls": {
       "description": "The list of Go module proxy URLs to fetch modules from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.",
@@ -16,24 +14,14 @@
       "items": {
         "type": "string"
       },
-      "default": [
-        "https://proxy.golang.org"
-      ],
-      "examples": [
-        [
-          "https://athens.mycorp.org",
-          "https://proxy.golang.org"
-        ]
-      ]
+      "default": ["https://proxy.golang.org"],
+      "examples": [["https://athens.mycorp.org", "https://proxy.golang.org"]]
     },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to the go registry.",
       "title": "GoRateLimit",
       "type": "object",
-      "required": [
-        "enabled",
-        "requestsPerHour"
-      ],
+      "required": ["enabled", "requestsPerHour"],
       "properties": {
         "enabled": {
           "description": "true if rate limiting is enabled.",
@@ -58,11 +46,7 @@
       "items": {
         "type": "string"
       },
-      "examples": [
-        [
-          "cloud.google.com/go/kms@v1.1.0"
-        ]
-      ]
+      "examples": [["cloud.google.com/go/kms@v1.1.0"]]
     }
   }
 }
