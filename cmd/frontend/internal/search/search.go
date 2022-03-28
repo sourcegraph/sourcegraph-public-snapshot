@@ -183,8 +183,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
 			// searched repos that user shouldn't have access to.
-			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
-				continue
+			//
+			// This check doesn't apply if the result is not associated with a repository,
+			// i.e. RepoName is a 0-value.
+			if string(repo.ID) != "" && string(repo.Name) != "" {
+				if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
+					continue
+				}
 			}
 
 			eventMatch := fromMatch(match, repoMetadata)
@@ -419,6 +424,8 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
 		return fromCommit(v, repoCache)
+	case *result.NotebookMatch:
+		return fromNotebook(v)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
@@ -575,6 +582,18 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	return commitEvent
+}
+
+func fromNotebook(notebook *result.NotebookMatch) *streamhttp.EventNotebookMatch {
+	return &streamhttp.EventNotebookMatch{
+		Type:          streamhttp.NotebookMatchType,
+		ID:            notebook.Key().ID,
+		Name:          notebook.Name,
+		NamespaceName: notebook.NamespaceName,
+		URL:           notebook.URL().String(),
+		Stars:         notebook.Stars,
+		Private:       notebook.Private,
+	}
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.

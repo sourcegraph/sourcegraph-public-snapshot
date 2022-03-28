@@ -150,6 +150,19 @@ type EventCommitMatch struct {
 
 func (e *EventCommitMatch) eventMatch() {}
 
+type EventNotebookMatch struct {
+	Type MatchType `json:"type"`
+
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	NamespaceName string `json:"namespaceName"`
+	URL           string `json:"url"`
+	Private       bool   `json:"private"`
+	Stars         int    `json:"stars,omitempty"`
+}
+
+func (e *EventNotebookMatch) eventMatch() {}
+
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
 type EventFilter struct {
@@ -188,6 +201,7 @@ const (
 	SymbolMatchType
 	CommitMatchType
 	PathMatchType
+	NotebookMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -202,6 +216,8 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"commit"`), nil
 	case PathMatchType:
 		return []byte(`"path"`), nil
+	case NotebookMatchType:
+		return []byte(`"notebook"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
@@ -218,6 +234,8 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = CommitMatchType
 	} else if bytes.Equal(b, []byte(`"path"`)) {
 		*t = PathMatchType
+	} else if bytes.Equal(b, []byte(`"notebook"`)) {
+		*t = NotebookMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}

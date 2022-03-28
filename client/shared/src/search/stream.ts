@@ -9,7 +9,7 @@ import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
-export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
+export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | 'notebook' | null
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
@@ -19,7 +19,7 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | NotebookMatch
 
 export interface PathMatch {
     type: 'path'
@@ -124,6 +124,17 @@ export interface RepositoryMatch {
     archived?: boolean
     private?: boolean
     branches?: string[]
+}
+
+export interface NotebookMatch {
+    type: 'notebook'
+    id: string
+    name: string
+    namespaceName: string
+    url: string
+
+    stars?: number
+    private: boolean
 }
 
 /**
@@ -528,5 +539,7 @@ export function getMatchUrl(match: SearchMatch): string {
             return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
+        case 'notebook':
+            return match.url
     }
 }
