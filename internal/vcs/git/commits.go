@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -854,6 +856,26 @@ type CommitGraphOptions struct {
 	AllRefs bool
 	Limit   int
 	Since   *time.Time
+} // please update LogFields if you add a field here
+
+func stableTimeRepr(t time.Time) string {
+	s, _ := t.MarshalText()
+	return string(s)
+}
+
+var unixEpoch = stableTimeRepr(time.Unix(0, 0))
+
+func (opts *CommitGraphOptions) LogFields() []log.Field {
+	since := unixEpoch
+	if opts.Since != nil {
+		since = stableTimeRepr(*opts.Since)
+	}
+	return []log.Field{
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
+		log.Bool("allrefs", opts.AllRefs),
+		log.String("since", since),
+	}
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping

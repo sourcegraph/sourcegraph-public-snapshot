@@ -164,11 +164,9 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
 func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", opts.Commit),
-		log.Int("limit", opts.Limit),
-	}})
+	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{
+		LogFields: append([]log.Field{log.Int("repositoryID", repositoryID)}, opts.LogFields()...),
+	})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
