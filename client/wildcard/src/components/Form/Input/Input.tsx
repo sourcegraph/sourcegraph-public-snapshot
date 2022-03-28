@@ -31,7 +31,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputSymbol?: ReactNode
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
-    error?: string
+    error?: ReactNode
     /** Disable input behavior */
     disabled?: boolean
     /** Determines the size of the input */
