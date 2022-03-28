@@ -129,7 +129,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
 
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
-            {hasRepoSyncError && <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />}
+            {hasRepoSyncError && currentUser && (
+                <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />
+            )}
 
             <section className={styles.section}>
                 <Link
@@ -195,11 +197,11 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     </section>
 )
 
-const RepoSyncErrorAlert: React.FunctionComponent<Pick<OptionsPageProps, 'sourcegraphUrl' | 'currentUser'>> = ({
-    sourcegraphUrl,
-    currentUser,
-}) => {
-    if (!currentUser || (isDefaultSourcegraphUrl(sourcegraphUrl) && !currentUser.settingsURL)) {
+const RepoSyncErrorAlert: React.FunctionComponent<{
+    sourcegraphUrl: OptionsPageProps['sourcegraphUrl']
+    currentUser: NonNullable<OptionsPageProps['currentUser']>
+}> = ({ sourcegraphUrl, currentUser }) => {
+    if (isDefaultSourcegraphUrl(sourcegraphUrl) && !currentUser.settingsURL) {
         return null
     }
 
