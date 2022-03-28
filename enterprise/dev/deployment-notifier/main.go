@@ -85,40 +85,13 @@ func main() {
 	}
 
 	// Tracing
-	honeyConfig := libhoney.Config{
-		APIKey:  flags.HoneycombToken,
-		APIHost: "https://api.honeycomb.io/",
-		Dataset: "deploy-sourcegraph",
-	}
-	if flags.DryRun {
-		honeyConfig.Transmission = &transmission.WriterSender{} // prints events to stdout instead
-	}
-	if err := libhoney.Init(honeyConfig); err != nil {
-		log.Fatal(err)
-	}
-	trace, err := GenerateDeploymentTrace(report)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var sendErrs error
-	for _, event := range trace.Spans {
-		if err := event.Send(); err != nil {
-			sendErrs = errors.Append(sendErrs, err)
+	var traceURL string
+	if flags.HoneycombToken != "" {
+		traceURL, err = reportDeployTrace(report, flags.HoneycombToken, flags.DryRun)
+		if err != nil {
+			log.Fatal("trace: ", err.Error())
 		}
 	}
-	if sendErrs != nil {
-		log.Fatal(err)
-	}
-	if err := trace.Root.Send(); err != nil {
-		log.Fatal(err)
-	}
-	traceURL, err := buildTraceURL(&honeyConfig, trace.ID, trace.Root.Timestamp.Unix())
-	if err != nil {
-		log.Println("warning: buildTraceURL: ", err.Error())
-	} else {
-		log.Println("trace: ", traceURL)
-	}
-	libhoney.Close()
 
 	// Notifcations
 	slc := slack.New(flags.SlackToken)
@@ -167,4 +140,42 @@ func getRevision() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(output)), nil
+}
+
+func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (string, error) {
+	honeyConfig := libhoney.Config{
+		APIKey:  token,
+		APIHost: "https://api.honeycomb.io/",
+		Dataset: "deploy-sourcegraph",
+	}
+	if dryRun {
+		honeyConfig.Transmission = &transmission.WriterSender{} // prints events to stdout instead
+	}
+	if err := libhoney.Init(honeyConfig); err != nil {
+		return "", errors.Wrap(err, "libhoney.Init")
+	}
+	defer libhoney.Close()
+	trace, err := GenerateDeploymentTrace(report)
+	if err != nil {
+		return "", errors.Wrap(err, "GenerateDeploymentTrace")
+	}
+	var sendErrs error
+	for _, event := range trace.Spans {
+		if err := event.Send(); err != nil {
+			sendErrs = errors.Append(sendErrs, err)
+		}
+	}
+	if sendErrs != nil {
+		return "", errors.Wrap(err, "trace.Spans.Send")
+	}
+	if err := trace.Root.Send(); err != nil {
+		return "", errors.Wrap(err, "trace.Root.Send")
+	}
+	traceURL, err := buildTraceURL(&honeyConfig, trace.ID, trace.Root.Timestamp.Unix())
+	if err != nil {
+		log.Println("warning: buildTraceURL: ", err.Error())
+	} else {
+		log.Println("trace: ", traceURL)
+	}
+	return traceURL, nil
 }
