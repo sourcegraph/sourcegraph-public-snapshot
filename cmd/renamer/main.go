@@ -205,14 +205,14 @@ func writeReplacement(ranges map[string][]codeRange, repoPath, replacement strin
 			return err
 		}
 		content := string(buf)
-		_, err := applyReplacement(content, crs, replacement)
+		newCode, err := applyReplacement(content, crs, replacement)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("I would write a replacement for %s\n", p)
-		// if err := os.WriteFile(filePath, []byte(newCode), 0); err != nil {
-		// 	return err
-		// }
+		if err := os.WriteFile(p, []byte(newCode), 0); err != nil {
+			return err
+		}
 	}
 	return nil
 }
