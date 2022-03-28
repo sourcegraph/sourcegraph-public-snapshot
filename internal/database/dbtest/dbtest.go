@@ -74,9 +74,9 @@ var insightsTemplateOnce sync.Once
 // the same schema as Sourcegraph's CodeInsights production Postgres database.
 func NewInsightsDB(t testing.TB) *sql.DB {
 	insightsTemplateOnce.Do(func() {
-		initTemplateDB(t, "insights-migrated", []*schemas.Schema{schemas.CodeInsights})
+		initTemplateDB(t, "insights", []*schemas.Schema{schemas.CodeInsights})
 	})
-	return newFromDSN(t, "insights-migrated")
+	return newFromDSN(t, "insights")
 }
 
 var rawTemplateOnce sync.Once
