@@ -33,8 +33,9 @@ var placeholderGoDependency = func() *reposource.GoDependency {
 	return dep
 }()
 
+// GoModulesSyncer implements the VCSSyncer interface for cloning Go modules
+// from Go module proxies and converting them to Git repositories.
 type GoModulesSyncer struct {
-	// Configuration object describing the connection to the npm registry.
 	connection *schema.GoModulesConnection
 	depsStore  repos.DependenciesStore
 	client     *gomodproxy.Client
@@ -202,12 +203,12 @@ func (s *GoModulesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirec
 
 	zipBytes, err := s.client.GetZip(ctx, dep.PackageSyntax(), dep.PackageVersion())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get zip")
 	}
 
 	err = s.commitZip(ctx, dep, tmpDir, zipBytes)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "commit zip")
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
@@ -237,7 +238,7 @@ func (s *GoModulesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirec
 }
 
 // commitZip initializes a git repository in the given working directory and creates
-// a git commit in that contains all the file contents of the given zip archive.
+// a git commit that contains all the file contents of the given zip archive.
 func (s *GoModulesSyncer) commitZip(ctx context.Context, dep *reposource.GoDependency, workDir string, zipBytes []byte) (err error) {
 	if err = unzip(dep, zipBytes, workDir); err != nil {
 		return errors.Wrap(err, "failed to unzip go module")
@@ -269,6 +270,8 @@ func (s *GoModulesSyncer) commitZip(ctx context.Context, dep *reposource.GoDepen
 	return nil
 }
 
+// unzip the given go module zip into workDir, skipping any files that aren't
+// valid according to modzip.CheckZip or that are potentially malicious.
 func unzip(dep *reposource.GoDependency, zipBytes []byte, workDir string) error {
 	zipFile := path.Join(workDir, "mod.zip")
 	err := os.WriteFile(zipFile, zipBytes, 0666)
@@ -308,6 +311,9 @@ func unzip(dep *reposource.GoDependency, zipBytes []byte, workDir string) error 
 		return err
 	}
 
+	// All files in module zips are prefixed by prefix below, but we don't want
+	// those nested directories in our actual repository, so we move all the files up
+	// with the below renames.
 	tmpDir := workDir + ".tmp"
 
 	// mv $workDir $tmpDir
