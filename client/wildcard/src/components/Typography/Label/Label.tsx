@@ -15,12 +15,23 @@ interface LabelProps extends React.HTMLAttributes<HTMLLabelElement>, TypographyP
     isUppercase?: boolean
 }
 
-export const Label = React.forwardRef(
-    (
-        { children, as: Component = 'label', size, weight, alignment, mode, isUnderline, isUppercase, className },
-        reference
-    ) => (
+export const Label = React.forwardRef((props, reference) => {
+    const {
+        children,
+        as: Component = 'label',
+        size,
+        weight,
+        alignment,
+        mode,
+        isUnderline,
+        isUppercase,
+        className,
+        ...rest
+    } = props
+
+    return (
         <Component
+            ref={reference}
             className={classNames(
                 styles.label,
                 isUnderline && styles.labelUnderline,
@@ -32,9 +43,9 @@ export const Label = React.forwardRef(
                 mode === 'single-line' && styles.labelSingleLine,
                 className
             )}
-            ref={reference}
+            {...rest}
         >
             {children}
         </Component>
     )
-) as ForwardReferenceComponent<'label', LabelProps>
+}) as ForwardReferenceComponent<'label', LabelProps>
