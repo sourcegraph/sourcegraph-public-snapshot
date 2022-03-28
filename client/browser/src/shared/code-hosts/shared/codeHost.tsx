@@ -416,9 +416,9 @@ function initCodeIntelligence({
                 combineLatest([
                     from(extensionsController.extHostAPI).pipe(
                         withLatestFrom(repoSyncErrors),
-                        switchMap(([extensionHost, hasPrivateCloudError]) =>
+                        switchMap(([extensionHost, hasRepoSyncError]) =>
                             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                            hasPrivateCloudError
+                            hasRepoSyncError
                                 ? of({ isLoading: true, result: null })
                                 : wrapRemoteObservable(
                                       extensionHost.getHover(
@@ -447,9 +447,9 @@ function initCodeIntelligence({
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
             from(extensionsController.extHostAPI).pipe(
                 withLatestFrom(repoSyncErrors),
-                switchMap(([extensionHost, hasPrivateCloudError]) =>
+                switchMap(([extensionHost, hasRepoSyncError]) =>
                     // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-                    hasPrivateCloudError
+                    hasRepoSyncError
                         ? of([])
                         : wrapRemoteObservable(
                               extensionHost.getDocumentHighlights(
@@ -462,8 +462,8 @@ function initCodeIntelligence({
             // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
             repoSyncErrors.pipe(
                 take(1),
-                switchMap(hasPrivateCloudError =>
-                    hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
+                switchMap(hasRepoSyncError =>
+                    hasRepoSyncError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
         tokenize: codeHost.codeViewsRequireTokenization,

@@ -42,13 +42,13 @@ export function handleNativeTooltips(
     mutations: Observable<MutationRecordLike[]>,
     nativeTooltipsEnabled: Observable<boolean>,
     { nativeTooltipResolvers, name }: Pick<CodeHost, 'nativeTooltipResolvers' | 'name' | 'getContext'>,
-    privateCloudErrors: Observable<boolean>
+    repoSyncErrors: Observable<boolean>
 ): { nativeTooltipsAlert: Observable<HoverAlert>; subscription: Unsubscribable } {
     const nativeTooltips = mutations.pipe(trackViews(nativeTooltipResolvers || []))
     const nativeTooltipsAlert = nativeTooltips.pipe(
         first(),
         switchMap(() =>
-            privateCloudErrors.pipe(
+            repoSyncErrors.pipe(
                 filter(hasError => !hasError),
                 mapTo({
                     type: NATIVE_TOOLTIP_TYPE,
@@ -67,7 +67,7 @@ export function handleNativeTooltips(
         subscription: nativeTooltips.subscribe(({ element, subscriptions }) => {
             subscriptions.add(
                 nativeTooltipsEnabled
-                    .pipe(withLatestFrom(privateCloudErrors))
+                    .pipe(withLatestFrom(repoSyncErrors))
                     // This subscription is correctly handled through the view's `subscriptions`
                     // eslint-disable-next-line rxjs/no-nested-subscribe
                     .subscribe(([enabled, hasPrivateCloudError]) => {

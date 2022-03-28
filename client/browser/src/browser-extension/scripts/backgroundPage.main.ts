@@ -434,15 +434,15 @@ function observeCurrentTabId(): Observable<number> {
  * Returns an observable that indicates whether the current tab has experienced
  * a private code on Cloud error.
  */
-function observeCurrentTabPrivateCloudError(): Observable<boolean> {
+function observeCurrentTabRepoSyncError(): Observable<boolean> {
     return combineLatest([
         observeCurrentTabId(),
         observeStorageKey('sync', 'sourcegraphURL'),
         tabRepoSyncErrorCache.observable,
     ]).pipe(
         map(
-            ([tabId, sourcegraphURL, privateCloudErrorCache]) =>
-                !!(sourcegraphURL && privateCloudErrorCache.get(tabId)?.get(sourcegraphURL))
+            ([tabId, sourcegraphURL, repoSyncErrorCache]) =>
+                !!(sourcegraphURL && repoSyncErrorCache.get(tabId)?.get(sourcegraphURL))
         ),
         distinctUntilChanged()
     )
@@ -460,14 +460,14 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
     return combineLatest([
         observeStorageKey('sync', 'disableExtension'),
         observeSourcegraphUrlValidation(),
-        observeCurrentTabPrivateCloudError(),
+        observeCurrentTabRepoSyncError(),
     ]).pipe(
-        map(([isDisabled, isSourcegraphUrlValid, hasPrivateCloudError]) => {
+        map(([isDisabled, isSourcegraphUrlValid, hasRepoSyncError]) => {
             if (isDisabled) {
                 return 'inactive'
             }
 
-            if (!isSourcegraphUrlValid || hasPrivateCloudError) {
+            if (!isSourcegraphUrlValid || hasRepoSyncError) {
                 return 'active-with-alert'
             }
 
