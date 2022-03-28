@@ -20,6 +20,7 @@ import {
     RepositoryMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+// eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Icon } from '@sourcegraph/wildcard'
 

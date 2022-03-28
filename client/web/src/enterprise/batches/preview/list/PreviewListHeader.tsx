@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+import { InputTooltip } from '../../../../components/InputTooltip'
 
 export interface PreviewListHeaderProps {
     allSelected?: boolean

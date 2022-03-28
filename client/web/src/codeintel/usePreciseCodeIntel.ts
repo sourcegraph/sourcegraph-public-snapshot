@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { ApolloError, QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
-import { asGraphQLResult } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
+import { asGraphQLResult } from '../components/FilteredConnection/utils'
 import {
     UsePreciseCodeIntelForPositionVariables,
     UsePreciseCodeIntelForPositionResult,

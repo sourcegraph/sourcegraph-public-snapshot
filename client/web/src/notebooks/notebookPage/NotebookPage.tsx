@@ -13,8 +13,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Page } from '@sourcegraph/web/src/components/Page'
-import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import {
     FeedbackBadge,
     LoadingSpinner,
@@ -26,6 +24,8 @@ import {
 
 import { Block } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields, NotebookInput, Scalars } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
