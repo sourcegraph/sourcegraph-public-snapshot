@@ -135,7 +135,7 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 // initTemplateDB creates a template database with a fully migrated schema for the
 // current package. New databases can then do a cheap copy of the migrated schema
 // rather than running the full migration every time.
-func initTemplateDB(t testing.TB, templateNamespace string, dbSchema []*schemas.Schema) {
+func initTemplateDB(t testing.TB, templateNamespace string, dbSchemas []*schemas.Schema) {
 	config, err := getDSN()
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
@@ -160,7 +160,7 @@ func initTemplateDB(t testing.TB, templateNamespace string, dbSchema []*schemas.
 		dbConn(t, &cfgCopy, schemas...).Close()
 	}
 
-	init(templateNamespace, dbSchema)
+	init(templateNamespace, dbSchemas)
 }
 
 // templateDBName returns the name of the template database for the currently running package and namespace.
