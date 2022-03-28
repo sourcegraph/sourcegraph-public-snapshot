@@ -89,6 +89,11 @@ func (c *Client) GetZip(ctx context.Context, mod, version string) ([]byte, error
 	return zipBytes, nil
 }
 
+// rateLimitingWaitThreshold is maximum rate limiting wait duration after which
+// a warning log is produced to help site admins debug why syncing may be taking
+// longer than expected.
+const rateLimitingWaitThreshold = 200 * time.Millisecond
+
 func (c *Client) get(ctx context.Context, mod string, paths ...string) (respBody []byte, err error) {
 	escapedMod, err := module.EscapePath(mod)
 	if err != nil {
@@ -108,7 +113,7 @@ func (c *Client) get(ctx context.Context, mod string, paths ...string) (respBody
 			return nil, err
 		}
 
-		if d := time.Since(startWait); d > 200*time.Millisecond {
+		if d := time.Since(startWait); d > rateLimitingWaitThreshold {
 			log15.Warn("go modules proxy client self-enforced API rate limit: request delayed longer than expected due to rate limit", "delay", d)
 		}
 
