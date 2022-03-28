@@ -16,8 +16,6 @@ Not sure if Kubernetes is the right choice for you? Learn more about the various
 
 ## Installation
 
-> NOTE: We recently launched beta support for deploying Sourcegraph with Helm chart. [Give it a try](./helm.md)! 🎉
-
 Before you get started, we recommend [learning about how Sourcegraph with Kubernetes works](#about).
 
 Additionally, we recommend reading the [configuration guide](configure.md#getting-started), ensuring you have prepared the items below so that you're ready to start your installation:
