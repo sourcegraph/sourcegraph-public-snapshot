@@ -53,7 +53,7 @@ export const Simple = () => {
             />
             <Input
                 value={selected}
-                title="Input loading"
+                label="Input loading"
                 onChange={handleChange}
                 message="random message"
                 status="loading"
