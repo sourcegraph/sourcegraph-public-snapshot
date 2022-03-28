@@ -3,7 +3,7 @@
 exports[`TextArea should render correctly 1`] = `
 <DocumentFragment>
   <label
-    class="label"
+    class="label label"
   >
     <textarea
       class="textarea form-control is-valid"
