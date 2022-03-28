@@ -67,7 +67,7 @@ const AskingForPermission: Story = () => (
 
 const OnPrivateRepository: Story = () => (
     <OptionsPageWrapper
-        manageRepositoriesURL={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
         requestPermissionsHandler={requestPermissionsHandler}
     />
 )
