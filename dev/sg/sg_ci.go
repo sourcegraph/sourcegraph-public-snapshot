@@ -502,11 +502,11 @@ From there, you can start exploring logs with the Grafana explore panel.
 			ShortUsage: "sg ci open [pipeline]",
 			LongHelp:   "Open Sourcegraph's Buildkite page in browser. Optionally specify the pipeline you want to open.",
 			Exec: func(ctx context.Context, args []string) error {
-				orgURL := bk.GetBuildkiteURL(bk.BuildkiteOrg)
-				if len(args) == 0 {
-					return open.URL(orgURL)
+				buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
+				if pipeline := args[0]; pipeline != "" {
+					buildkiteURL += fmt.Sprintf("/%s", pipeline)
 				}
-				return open.URL(orgURL + "/" + args[0])
+				return open.URL(buildkiteURL)
 			},
 		}},
 	}
