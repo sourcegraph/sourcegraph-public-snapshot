@@ -57,14 +57,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	}
 	types, _ := q.StringValues(query.FieldType)
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
-
 	patternInfo := search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
-	if b.PatternString() == "" {
-		// Fallback to basic search for searching repos and files if
-		// the structural search pattern is empty.
-		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-		patternInfo.IsStructuralPat = false
-	}
 
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
@@ -101,7 +94,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
 				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -131,7 +124,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 			if resultTypes.Has(result.TypeSymbol) {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -148,10 +141,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				addJob(true, &symbol.RepoUniverseSymbolSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
-					PatternInfo:      patternInfo,
-					Limit:            maxResults,
-
-					RepoOptions: repoOptions,
+					RepoOptions:      repoOptions,
 				})
 			}
 		}
@@ -160,7 +150,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			var textSearchJobs []Job
 			typ := search.TextRequest
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -194,7 +184,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			typ := search.SymbolRequest
 
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -242,9 +232,9 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			})
 		}
 
-		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && b.PatternString() != "" {
+		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+			zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 			if err != nil {
 				return nil, err
 			}

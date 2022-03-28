@@ -86,7 +86,7 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     </Link>{' '}
                     and{' '}
                     <Link to="/help/batch_changes/explanations/server_side" rel="noopener">
-                        server-side Batch Changes
+                        running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
                     <Link to="/help/admin/deploy_executors" rel="noopener">

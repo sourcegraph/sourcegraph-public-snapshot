@@ -23,6 +23,7 @@ const commonProps = {
     viewID: '1',
     telemetryService: NOOP_TELEMETRY_SERVICE,
     className: styles.chart,
+    locked: false,
 }
 
 const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (

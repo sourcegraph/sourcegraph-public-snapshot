@@ -32,7 +32,7 @@ var (
 		name: "lsif-java",
 		urn:  "github.com/sourcegraph/lsif-java",
 	}
-	msftJAva = codeIntelIndexerResolver{
+	msftJava = codeIntelIndexerResolver{
 		name: "msft/lsif-java",
 		urn:  "github.com/Microsoft/lsif-java",
 	}
@@ -40,7 +40,7 @@ var (
 		name: "lsif-go",
 		urn:  "github.com/sourcegraph/lsif-go",
 	}
-	LSIFClang = codeIntelIndexerResolver{
+	lsifClang = codeIntelIndexerResolver{
 		name: "lsif-clang",
 		urn:  "github.com/sourcegraph/lsif-clang",
 	}
@@ -94,7 +94,7 @@ var (
 // from most to least.
 var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".go":      {&lsifGo},
-	".java":    {&lsifJava, &msftJAva},
+	".java":    {&lsifJava, &msftJava},
 	".kt":      {&lsifJava},
 	".scala":   {&lsifJava},
 	".js":      {&lsifTypescript, &lsifNode, &msftNode},
@@ -102,11 +102,12 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".ts":      {&lsifTypescript, &lsifNode, &msftNode},
 	".tsx":     {&lsifTypescript, &lsifNode, &msftNode},
 	".dart":    {&workivaDart, &lsifDart},
-	".c":       {&LSIFClang, &lsifCPP},
-	".cc":      {&LSIFClang, &lsifCPP},
-	".cpp":     {&LSIFClang, &lsifCPP},
-	".cxx":     {&LSIFClang, &lsifCPP},
-	".h":       {&LSIFClang, &lsifCPP},
+	".c":       {&lsifClang, &lsifCPP},
+	".cc":      {&lsifClang, &lsifCPP},
+	".cpp":     {&lsifClang, &lsifCPP},
+	".cxx":     {&lsifClang, &lsifCPP},
+	".h":       {&lsifClang, &lsifCPP},
+	".hpp":     {&lsifClang, &lsifCPP},
 	".hs":      {&hieLSIF},
 	".jsonnet": {&lsifJsonnet},
 	".py":      {&lsifPy},
@@ -115,4 +116,14 @@ var languageToIndexer = map[string][]gql.CodeIntelIndexerResolver{
 	".php":     {&lsifPHP},
 	".tf":      {&lsifTerraform},
 	".cs":      {&lsifDotnet},
+}
+
+var imageToIndexer = map[string]gql.CodeIntelIndexerResolver{
+	"sourcegraph/lsif-java":       &lsifJava,
+	"sourcegraph/lsif-go":         &lsifGo,
+	"sourcegraph/lsif-typescript": &lsifTypescript,
+	"sourcegraph/lsif-node":       &lsifNode,
+	"sourcegraph/lsif-clang":      &lsifClang,
+	"davidrjenni/lsif-php":        &lsifPHP,
+	"sourcegraph/lsif-rust":       &rustAnalyzer,
 }

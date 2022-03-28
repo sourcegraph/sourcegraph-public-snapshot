@@ -14,6 +14,7 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
 import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { Insight } from '../../../../../../core/types'
 import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -38,6 +39,7 @@ interface CreationSearchInsightFormProps {
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
+    insight?: Insight
 
     onCancel: () => void
 
@@ -80,6 +82,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         className,
         isFormClearActive,
         dashboardReferenceCount,
+        insight,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -90,13 +93,16 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     } = props
 
     const isEditMode = mode === 'edit'
-    const { licensed, insight } = useUiFeatures()
+    const { licensed, insight: insightFeatures } = useUiFeatures()
 
     const creationPermission = useObservable(
-        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
-            insight,
-            isEditMode,
-        ])
+        useMemo(
+            () =>
+                isEditMode && insight
+                    ? insightFeatures.getEditPermissions(insight)
+                    : insightFeatures.getCreationPermissions(),
+            [insightFeatures, isEditMode, insight]
+        )
     )
 
     return (
@@ -200,8 +206,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className="my-4 w-100" />
 
-            {!licensed && !isEditMode && (
-                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="my-3" />
+            {!licensed && (
+                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="mb-3" />
             )}
 
             <div className="d-flex flex-wrap align-items-center">
