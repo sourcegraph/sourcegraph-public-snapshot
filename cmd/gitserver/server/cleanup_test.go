@@ -1104,16 +1104,3 @@ git commit-graph write --reachable --changed-paths
 		t.Fatal("this repo doesn't need maintenance")
 	}
 }
-
-func TestNeedsPruning(t *testing.T) {
-	dir := t.TempDir()
-	gitDir := prepareEmptyGitRepo(t, dir)
-
-	needed, err := needsPruning(gitDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if needed {
-		t.Fatal("empty repos don't need pruning")
-	}
-}

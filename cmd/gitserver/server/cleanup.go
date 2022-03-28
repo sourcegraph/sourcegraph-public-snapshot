@@ -825,14 +825,10 @@ func sgMaintenance(dir GitDir) (err error) {
 	return nil
 }
 
-func needsPruning(dir GitDir) (bool, error) {
-	return tooManyLooseObjects(dir, looseObjectsLimit)
-}
-
 // We run git-prune only if there are enough loose objects. This approach is
 // adapted from https://gitlab.com/gitlab-org/gitaly.
 func pruneIfNeeded(dir GitDir) (err error) {
-	needed, err := needsPruning(dir)
+	needed, err := tooManyLooseObjects(dir, looseObjectsLimit)
 	defer func() {
 		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed))
 	}()
