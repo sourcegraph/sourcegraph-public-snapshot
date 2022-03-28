@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 
 import { WebStory } from '../../../components/WebStory'
@@ -8,12 +8,14 @@ import { Series } from '../../types'
 
 import { LineChart, LegendList, LegendItem, getLineColor } from '.'
 
-export default {
+export const StoryConfig: Meta = {
     title: 'web/charts/line',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
 
-export const LineChartsVitrina = () => (
+export default StoryConfig
+
+export const LineChartsVitrina: Story = () => (
     <div className="d-flex flex-wrap">
         <PlainChart />
         <PlainStackedChart />
@@ -66,7 +68,7 @@ const PlainChart = () => {
             cLink: 'https://twitter.com/search',
         },
         {
-            x: 1588965700286 - 1 * 24 * 60 * 60 * 1000,
+            x: 1588965700286 - 24 * 60 * 60 * 1000,
             a: 9800,
             aLink: 'https://google.com/search',
             b: 19000,
@@ -139,7 +141,7 @@ const PlainStackedChart = () => {
             cLink: 'https://twitter.com/search',
         },
         {
-            x: 1588965700286 - 1 * 24 * 60 * 60 * 1000,
+            x: 1588965700286 - 24 * 60 * 60 * 1000,
             a: 9800,
             aLink: 'https://google.com/search',
             b: 19000,
@@ -212,7 +214,7 @@ const WithLegendExample = () => {
             cLink: 'https://twitter.com/search',
         },
         {
-            x: 1588965700286 - 1 * 24 * 60 * 60 * 1000,
+            x: 1588965700286 - 24 * 60 * 60 * 1000,
             a: 9800,
             aLink: 'https://google.com/search',
             b: 19000,
@@ -438,14 +440,14 @@ interface DatumWithMissingData {
     x: number
 }
 
-export const WithDataMissingValues = () => {
+const WithDataMissingValues = () => {
     const DATA_WITH_STEP: DatumWithMissingData[] = [
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null, c: null },
         { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200, c: 200 },
         { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 134 },
         { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: null },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190, c: 134 },
+        { x: 1588965700286 - 24 * 60 * 60 * 1000, a: 134, b: 190, c: 134 },
         { x: 1588965700286, a: 123, b: 170, c: 123 },
     ]
 
@@ -486,7 +488,7 @@ const StackedWithDataMissingValues = () => {
         { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: null, c: null },
         { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null, c: 200 },
         { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150, c: 150 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190, c: 190 },
+        { x: 1588965700286 - 24 * 60 * 60 * 1000, a: 134, b: 190, c: 190 },
         { x: 1588965700286, a: 123, b: 170, c: 170 },
     ]
 

@@ -1,16 +1,18 @@
 import React from 'react'
 
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { Series, SeriesBasedChartTypes } from '../../types'
 
 import { SeriesChart } from './SeriesChart'
 
-export default {
+export const StoryConfig: Meta = {
     title: 'web/charts/SeriesChart',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default StoryConfig
 
 interface StandardDatum {
     a: number | null
@@ -91,7 +93,7 @@ const SERIES: Series<StandardDatum>[] = [
     },
 ]
 
-export const SeriesLineChart = () => (
+export const SeriesLineChart: Story = () => (
     <SeriesChart
         type={SeriesBasedChartTypes.Line}
         data={DATA}
