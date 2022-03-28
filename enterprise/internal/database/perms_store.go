@@ -1327,7 +1327,7 @@ func (s *permsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 		syncedAt:  syncedAt,
 		updatedAt: updatedAt,
 	}
-	vals.ids = append(vals.ids, ids)
+	vals.ids = append(vals.ids, ids...)
 	return vals, nil
 }
 
