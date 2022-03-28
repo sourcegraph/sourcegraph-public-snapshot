@@ -37,6 +37,7 @@ import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
+import { NotebookInsightsBlock } from '../blocks/insights/NotebooksInightsBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
@@ -543,6 +544,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                         {renderBlock(block)}
                     </div>
                 ))}
+                <div>
+                    <NotebookBlockSeparator isReadOnly={isReadOnly} index={blocks.length} onAddBlock={onAddBlock} />
+                    <NotebookInsightsBlock />
+                </div>
                 {!isReadOnly && (
                     <NotebookCommandPaletteInput
                         ref={commandPaletteInputReference}
