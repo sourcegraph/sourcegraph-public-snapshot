@@ -81,3 +81,11 @@ const SeriesLineChart = () => (
   />
 )
 ```
+
+### Direct imported charts vs Categorical/Series view-like charts
+
+If you want to visualize some data and know exactly what chart you want to use for it,
+you probably need to use directly imported charts (line, pie, bar charts). The main benefit
+of using data grouped charts like Categorical and Series is that you can easily change the
+view part (bar chart instead line chart) later. The chart view is just another setting for
+a graph with Categorical and Series charts.
