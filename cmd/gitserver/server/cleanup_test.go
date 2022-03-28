@@ -1004,6 +1004,11 @@ func TestTooManyPackFiles(t *testing.T) {
 			file: "b.pack",
 			want: true,
 		},
+		{
+			name: "2 packs, with 1 keep file",
+			file: "b.keep",
+			want: false,
+		},
 	}
 
 	for _, c := range cases {

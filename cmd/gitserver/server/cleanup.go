@@ -953,12 +953,27 @@ func hasCommitGraph(dir GitDir) (bool, error) {
 	}
 }
 
+// tooManyPackfiles counts the packfiles in objects/pack. Packfiles with an
+// accompanying .keep file are ignored.
 func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
 	packs, err := filepath.Glob(dir.Path("objects", "pack", "*.pack"))
 	if err != nil {
 		return false, err
 	}
-	return len(packs) > limit, nil
+	count := 0
+	for _, p := range packs {
+		// Because we know p has the extension .pack, we can slice it off directly
+		// instead of using strings.TrimSuffix and filepath.Ext. Benchmarks showed that
+		// this option is 20x faster than strings.TrimSuffix(file, filepath.Ext(file))
+		// and 17x faster than file[:strings.LastIndex(file, ".")]. However, the runtime
+		// of all options is dominated by adding the extension ".keep".
+		keepFile := p[:len(p)-5] + ".keep"
+		if _, err := os.Stat(keepFile); err == nil {
+			continue
+		}
+		count++
+	}
+	return count > limit, nil
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {
