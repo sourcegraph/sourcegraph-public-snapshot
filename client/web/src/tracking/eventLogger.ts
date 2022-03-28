@@ -67,7 +67,7 @@ export class EventLogger implements TelemetryService {
     }
 
     /**
-     * @deprecated, Use logPageView instead
+     * @deprecated Use logPageView instead
      *
      * Log a pageview.
      * Page titles should be specific and human-readable in pascal case, e.g. "SearchResults" or "Blob" or "NewOrg"

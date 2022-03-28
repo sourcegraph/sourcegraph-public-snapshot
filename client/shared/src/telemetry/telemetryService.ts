@@ -17,7 +17,7 @@ export interface TelemetryService {
      */
     log(eventName: string, eventProperties?: any, publicArgument?: any): void
     /**
-     * @deprecated, use logPageView instead
+     * @deprecated use logPageView instead
      *
      * Log a pageview event (by sending it to the server).
      */
