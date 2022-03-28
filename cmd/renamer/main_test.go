@@ -68,56 +68,104 @@ func testRanges() []codeRange {
 		// replacement of 'b' parameter
 		{
 			start: codeLocation{
-				line:      2,
-				character: 23,
+				line:      3,
+				character: 22,
 			},
 			end: codeLocation{
-				line:      2,
-				character: 30,
+				line:      3,
+				character: 29,
 			},
 		},
 		// replacement of 'a' parameter
 		{
 			start: codeLocation{
-				line:      2,
-				character: 12,
+				line:      3,
+				character: 11,
 			},
 			end: codeLocation{
-				line:      2,
-				character: 19,
+				line:      3,
+				character: 18,
 			},
 		},
 	}
 }
 
 const twoTypesOneLine = `
-{
-	func foo(a OldType, b OldType) {
-		...
-	}
+package main
+
+func foo(a OldType, b OldType) {
+	println("hello")
 }
+
+type OldType = string
+type NewType = string
+type New = string
 `
 
 const twoTypesOneLineReplaced = `
-{
-	func foo(a NewType, b NewType) {
-		...
-	}
+package main
+
+func foo(a NewType, b NewType) {
+	println("hello")
 }
+
+type OldType = string
+type NewType = string
+type New = string
 `
 
 const twoTypesOneLineReplacedWithLonger = `
-{
-	func foo(a NewTypeLonger, b NewTypeLonger) {
-		...
-	}
+package main
+
+func foo(a NewTypeLonger, b NewTypeLonger) {
+	println("hello")
 }
+
+type OldType = string
+type NewType = string
+type New = string
 `
 
 const twoTypesOneLineReplacedWithShorter = `
-{
-	func foo(a New, b New) {
-		...
+package main
+
+func foo(a New, b New) {
+	println("hello")
+}
+
+type OldType = string
+type NewType = string
+type New = string
+`
+
+func Test_writeReplacement(t *testing.T) {
+	type args struct {
+		ranges      map[string][]codeRange
+		replacement string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "replaces stuff in a single file",
+			args: args{
+				ranges: map[string][]codeRange{
+					"cmd/renamer/sample_test_file.go": testRanges(),
+				},
+				replacement: "ReplacedStuff",
+			},
+		},
+		//TODO more files
+		//TODO err case
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := writeReplacement(tt.args.ranges, tt.args.replacement); (err != nil) != tt.wantErr {
+				t.Errorf("writeReplacement() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }
-`
