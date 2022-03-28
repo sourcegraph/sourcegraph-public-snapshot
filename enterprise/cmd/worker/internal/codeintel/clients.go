@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -34,7 +35,7 @@ var initGitserverClient = memo.NewMemoizedConstructor(func() (interface{}, error
 		return nil, err
 	}
 
-	return gitserver.New(dbStore, observationContext), nil
+	return gitserver.New(database.NewDBWith(dbStore), dbStore, observationContext), nil
 })
 
 func InitRepoUpdaterClient() *repoupdater.Client {

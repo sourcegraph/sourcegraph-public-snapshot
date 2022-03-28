@@ -75,6 +75,19 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
         }),
         IsCodeInsightsLicensed: () => ({ __typename: 'Query', enterpriseLicenseHasFeature: true }),
         InsightsDashboards: () => ({
+            currentUser: {
+                __typename: 'User',
+                id: testUserID,
+                organizations: {
+                    nodes: [
+                        {
+                            id: 'Org_test_id',
+                            name: 'test organization',
+                            displayName: 'Test organization',
+                        },
+                    ],
+                },
+            },
             insightsDashboards: {
                 __typename: 'InsightsDashboardConnection',
                 nodes: [],

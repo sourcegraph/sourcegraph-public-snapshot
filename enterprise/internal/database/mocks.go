@@ -6831,6 +6831,9 @@ type MockEnterpriseDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *EnterpriseDBFeatureFlagsFunc
+	// GitserverLocalCloneFunc is an instance of a mock function object
+	// controlling the behavior of the method GitserverLocalClone.
+	GitserverLocalCloneFunc *EnterpriseDBGitserverLocalCloneFunc
 	// GitserverReposFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverRepos.
 	GitserverReposFunc *EnterpriseDBGitserverReposFunc
@@ -6954,6 +6957,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		FeatureFlagsFunc: &EnterpriseDBFeatureFlagsFunc{
 			defaultHook: func() database.FeatureFlagStore {
+				return nil
+			},
+		},
+		GitserverLocalCloneFunc: &EnterpriseDBGitserverLocalCloneFunc{
+			defaultHook: func() database.GitserverLocalCloneStore {
 				return nil
 			},
 		},
@@ -7134,6 +7142,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.FeatureFlags")
 			},
 		},
+		GitserverLocalCloneFunc: &EnterpriseDBGitserverLocalCloneFunc{
+			defaultHook: func() database.GitserverLocalCloneStore {
+				panic("unexpected invocation of MockEnterpriseDB.GitserverLocalClone")
+			},
+		},
 		GitserverReposFunc: &EnterpriseDBGitserverReposFunc{
 			defaultHook: func() database.GitserverRepoStore {
 				panic("unexpected invocation of MockEnterpriseDB.GitserverRepos")
@@ -7293,6 +7306,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		FeatureFlagsFunc: &EnterpriseDBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
+		},
+		GitserverLocalCloneFunc: &EnterpriseDBGitserverLocalCloneFunc{
+			defaultHook: i.GitserverLocalClone,
 		},
 		GitserverReposFunc: &EnterpriseDBGitserverReposFunc{
 			defaultHook: i.GitserverRepos,
@@ -8280,6 +8296,108 @@ func (c EnterpriseDBFeatureFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBFeatureFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBGitserverLocalCloneFunc describes the behavior when the
+// GitserverLocalClone method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBGitserverLocalCloneFunc struct {
+	defaultHook func() database.GitserverLocalCloneStore
+	hooks       []func() database.GitserverLocalCloneStore
+	history     []EnterpriseDBGitserverLocalCloneFuncCall
+	mutex       sync.Mutex
+}
+
+// GitserverLocalClone delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) GitserverLocalClone() database.GitserverLocalCloneStore {
+	r0 := m.GitserverLocalCloneFunc.nextHook()()
+	m.GitserverLocalCloneFunc.appendCall(EnterpriseDBGitserverLocalCloneFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitserverLocalClone
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBGitserverLocalCloneFunc) SetDefaultHook(hook func() database.GitserverLocalCloneStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitserverLocalClone method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBGitserverLocalCloneFunc) PushHook(hook func() database.GitserverLocalCloneStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBGitserverLocalCloneFunc) SetDefaultReturn(r0 database.GitserverLocalCloneStore) {
+	f.SetDefaultHook(func() database.GitserverLocalCloneStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBGitserverLocalCloneFunc) PushReturn(r0 database.GitserverLocalCloneStore) {
+	f.PushHook(func() database.GitserverLocalCloneStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBGitserverLocalCloneFunc) nextHook() func() database.GitserverLocalCloneStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBGitserverLocalCloneFunc) appendCall(r0 EnterpriseDBGitserverLocalCloneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBGitserverLocalCloneFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBGitserverLocalCloneFunc) History() []EnterpriseDBGitserverLocalCloneFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBGitserverLocalCloneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBGitserverLocalCloneFuncCall is an object that describes an
+// invocation of method GitserverLocalClone on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBGitserverLocalCloneFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.GitserverLocalCloneStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBGitserverLocalCloneFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBGitserverLocalCloneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -59,10 +60,10 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func resultContent(ctx context.Context, r result.Match) (string, bool, error) {
+func resultContent(ctx context.Context, db database.DB, r result.Match) (string, bool, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		contentBytes, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
+		contentBytes, err := git.ReadFile(ctx, db, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
 		}
@@ -80,8 +81,8 @@ func resultContent(ctx context.Context, r result.Match) (string, bool, error) {
 	}
 }
 
-func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
-	content, ok, err := resultContent(ctx, r)
+func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
+	content, ok, err := resultContent(ctx, db, r)
 	if err != nil {
 		return nil, err
 	}

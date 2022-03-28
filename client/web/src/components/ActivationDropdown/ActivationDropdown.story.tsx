@@ -9,9 +9,9 @@ import { subtypeOf } from '@sourcegraph/common'
 import { Activation } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/wildcard'
 
-import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
+import { WebStory } from '../WebStory'
 
-import webMainStyles from '../../SourcegraphWebApp.scss'
+import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
 
 const baseActivation = (): Activation => ({
     steps: [
@@ -54,16 +54,16 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
 })
 
 const decorator: DecoratorFn = story => (
-    <>
-        <style>{webMainStyles}</style>
-        <div>{story()}</div>
-    </>
+    <WebStory>{() => <div className="container h-100 web-content">{story()}</div>}</WebStory>
 )
+
 const config: Meta = {
     title: 'shared/ActivationDropdown',
     decorators: [decorator],
 }
+
 export default config
+
 export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
 
 export const _04Completed: Story = () => (
@@ -82,6 +82,13 @@ export const _04Completed: Story = () => (
 )
 
 _04Completed.storyName = 'Progress 0/4 completed'
+_04Completed.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+        chromatic: { viewports: [480] },
+    },
+}
 
 export const _14Completed: Story = () => (
     <ActivationDropdown
@@ -103,5 +110,6 @@ _14Completed.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,
+        chromatic: { viewports: [480] },
     },
 }

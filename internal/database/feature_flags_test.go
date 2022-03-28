@@ -493,6 +493,21 @@ func testUserFlags(t *testing.T) {
 		expected := map[string]bool{"f1": true, "f2": false}
 		require.Equal(t, expected, got)
 	})
+
+	t.Run("delete flag with override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		u1 := mkUser("u", o1.ID)
+		f1 := mkFFBool("f1", true)
+		mkUserOverride(u1.ID, "f1", false)
+
+		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
+		require.NoError(t, err)
+
+		flags, err := flagStore.GetFeatureFlags(ctx)
+		require.NoError(t, err)
+		require.Len(t, flags, 0)
+	})
 }
 
 func testAnonymousUserFlags(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"reflect"
 	"sort"
@@ -15,9 +16,8 @@ import (
 	"github.com/grafana/regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
-	"github.com/sourcegraph/sourcegraph/internal/store"
-	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -180,7 +180,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 		b.Fatal(err)
 	}
 
-	var zc store.ZipCache
+	var zc zipCache
 	zf, err := zc.Get(path)
 	if err != nil {
 		b.Fatal(err)
@@ -315,7 +315,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := storetest.MockZipFile(buf.Bytes())
+	zf, err := mockZipFile(buf.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +348,7 @@ func TestMaxMatches(t *testing.T) {
 // - A path must match all (not any) of the IncludePatterns
 // - An empty pattern is allowed
 func TestPathMatches(t *testing.T) {
-	zipData, err := storetest.CreateZip(map[string]string{
+	zipData, err := createZip(map[string]string{
 		"a":   "",
 		"a/b": "",
 		"a/c": "",
@@ -360,7 +360,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := storetest.MockZipFile(zipData)
+	zf, err := mockZipFile(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -390,9 +390,14 @@ func TestPathMatches(t *testing.T) {
 }
 
 // githubStore fetches from github and caches across test runs.
-var githubStore = &store.Store{
-	FetchTar: testutil.FetchTarFromGithub,
+var githubStore = &Store{
+	FetchTar: fetchTarFromGithub,
 	Path:     "/tmp/search_test/store",
+}
+
+func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	r, err := testutil.FetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+	return r, err
 }
 
 func init() {
@@ -408,7 +413,7 @@ func TestRegexSearch(t *testing.T) {
 	type args struct {
 		ctx                   context.Context
 		rg                    *readerGrep
-		zf                    *store.ZipFile
+		zf                    *zipFile
 		limit                 int
 		patternMatchesContent bool
 		patternMatchesPaths   bool
@@ -429,8 +434,8 @@ func TestRegexSearch(t *testing.T) {
 					re:        nil,
 					matchPath: match,
 				},
-				zf: &store.ZipFile{
-					Files: []store.SrcFile{
+				zf: &zipFile{
+					Files: []srcFile{
 						{
 							Name: "a.go",
 						},

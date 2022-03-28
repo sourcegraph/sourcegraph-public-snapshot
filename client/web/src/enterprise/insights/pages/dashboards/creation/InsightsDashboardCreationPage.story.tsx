@@ -7,10 +7,10 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
-import { SupportedInsightSubject } from '../../../core/types/subjects'
-import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
+import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
+import { InsightsDashboardOwnerType } from '../../../core/types'
 
-import { InsightsDashboardCreationPage as InsightsDashboardCreationPageComponent } from './InsightsDashboardCreationPage'
+import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 
 const defaultStory: Meta = {
     title: 'web/insights/InsightsDashboardCreationPage',
@@ -25,14 +25,18 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-const subjects = SETTINGS_CASCADE_MOCK.subjects.map(({ subject }) => subject) as SupportedInsightSubject[]
-
-const codeInsightsBackend = {
-    getDashboardSubjects: () => of(subjects),
+const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
+    getDashboardOwners: () =>
+        of([
+            { type: InsightsDashboardOwnerType.Personal, id: '001', title: 'Personal' },
+            { type: InsightsDashboardOwnerType.Organization, id: '002', title: 'Organization 1' },
+            { type: InsightsDashboardOwnerType.Organization, id: '003', title: 'Organization 2' },
+            { type: InsightsDashboardOwnerType.Global, id: '004', title: 'Global' },
+        ]),
 }
 
-export const InsightsDashboardCreationPage: Story = () => (
+export const InsightsDashboardCreationStory: Story = () => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <InsightsDashboardCreationPageComponent telemetryService={NOOP_TELEMETRY_SERVICE} />
+        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendStoryMock>
 )

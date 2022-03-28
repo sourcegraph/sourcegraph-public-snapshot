@@ -64,7 +64,7 @@ func (s *RepoSearch) Run(ctx context.Context, db database.DB, stream streaming.S
 		}
 
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, page.RepoRevs),
+			Results: repoRevsToRepoMatches(ctx, db, page.RepoRevs),
 		})
 
 		return nil
@@ -81,10 +81,10 @@ func (*RepoSearch) Name() string {
 	return "RepoSearch"
 }
 
-func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
+func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
-		revs, err := r.ExpandedRevSpecs(ctx)
+		revs, err := r.ExpandedRevSpecs(ctx, db)
 		if err != nil { // fallback to just return revspecs
 			revs = r.RevSpecs()
 		}

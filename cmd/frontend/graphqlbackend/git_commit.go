@@ -81,7 +81,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		r.commit, r.commitErr = git.GetCommit(ctx, r.db, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -183,11 +183,15 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() string {
-	return r.repoResolver.URL() + "/-/commit/" + r.inputRevOrImmutableRev()
+	url := r.repoResolver.url()
+	url.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	return url.String()
 }
 
 func (r *GitCommitResolver) CanonicalURL() string {
-	return r.repoResolver.URL() + "/-/commit/" + string(r.oid)
+	url := r.repoResolver.url()
+	url.Path += "/-/commit/" + string(r.oid)
+	return url.String()
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -207,7 +211,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -226,7 +230,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -246,7 +250,7 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return git.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
+	return git.LsFiles(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -255,7 +259,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +277,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +310,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := git.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := git.GetBehindAhead(ctx, r.db, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +330,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 // canonical OID for the revision.
 func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
-		return escapePathForURL(*r.inputRev)
+		return *r.inputRev
 	}
 	return string(r.oid)
 }

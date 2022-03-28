@@ -31,10 +31,10 @@ func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSo
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(&c, cf, nil)
+	return newGithubSource(svc.URN(), &c, cf, nil)
 }
 
-func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
+func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 
 	return &GithubSource{
 		au:     authr,
-		client: github.NewV4Client(apiURL, authr, cli),
+		client: github.NewV4Client(urn, apiURL, authr, cli),
 	}, nil
 }
 
