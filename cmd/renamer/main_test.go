@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"io/ioutil"
+	"os"
+	"testing"
+)
 
 func Test_applyReplacement(t *testing.T) {
 	type args struct {
@@ -199,9 +203,12 @@ func Test_writeReplacement(t *testing.T) {
 			name: "replaces stuff in a single file",
 			args: args{
 				ranges: map[string][]codeRange{
-					"cmd/renamer/sample_test_file.go": testRangesTwoArgs(),
+					"sample_file.go": testRangesTwoArgs(),
 				},
-				replacement: "ReplacedStuff",
+				replacement: "NewType",
+			},
+			expectedContent: map[string]string{
+				"sample_file.go": twoTypesOneLineReplaced,
 			},
 		},
 		//TODO more files
@@ -210,10 +217,29 @@ func Test_writeReplacement(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//TODO repoPath
-			if err := writeReplacement(tt.args.ranges, "repoPath", tt.args.replacement); (err != nil) != tt.wantErr {
+			getwd, err := os.Getwd()
+			if err != nil {
+				t.Error("couldn't create tmp dir here boo")
+			}
+			dir, err := ioutil.TempDir(getwd, "testing*")
+			if err != nil {
+				t.Error("couldn't create tmp dir here boo")
+			}
+
+			err = os.WriteFile(dir+"/sample_file.go", []byte(twoTypesOneLine), 0x777f)
+			if err != nil {
+				t.Fatalf("couldn't create the sample file in tmp dir: %s", err)
+			}
+
+			if err = writeReplacement(tt.args.ranges, dir, tt.args.replacement); (err != nil) != tt.wantErr {
 				t.Errorf("writeReplacement() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
+			//for _, _ := range tt.expectedContent {
+			var read []byte
+			read, err = ioutil.ReadFile(dir + "/sample_file.go")
+			println(string(read))
+			//}
 		})
 	}
 }
