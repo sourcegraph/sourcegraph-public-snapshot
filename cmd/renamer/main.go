@@ -247,11 +247,8 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 		// the first replacement can't be offset yet
 		offset := 0
 		if idx > 0 {
-			offset = lengthDiff
+			offset = idx * lengthDiff
 		}
-		// TODO: We need to do something like this I think, otherwise we don't get the right
-		// results for cases where there's more than 2 occurences on one line
-		// offset := lengthDiff * idx
 
 		line = line[:cr.start.character+offset] + replacement + line[cr.end.character+offset:]
 		lines[cr.start.line] = line

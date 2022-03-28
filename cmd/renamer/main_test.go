@@ -19,7 +19,7 @@ func Test_applyReplacement(t *testing.T) {
 			args: args{
 				replacement: "NewType",
 				// ranges are unsorted on purpose, the tested code should handle the sorting
-				ranges:      testRanges(),
+				ranges:      testRangesTwoArgs(),
 				fileContent: twoTypesOneLine,
 			},
 			wantNewCode: twoTypesOneLineReplaced,
@@ -30,7 +30,7 @@ func Test_applyReplacement(t *testing.T) {
 			args: args{
 				replacement: "NewTypeLonger",
 				// ranges are unsorted on purpose, the tested code should handle the sorting
-				ranges:      testRanges(),
+				ranges:      testRangesTwoArgs(),
 				fileContent: twoTypesOneLine,
 			},
 			wantNewCode: twoTypesOneLineReplacedWithLonger,
@@ -41,10 +41,21 @@ func Test_applyReplacement(t *testing.T) {
 			args: args{
 				replacement: "New",
 				// ranges are unsorted on purpose, the tested code should handle the sorting
-				ranges:      testRanges(),
+				ranges:      testRangesTwoArgs(),
 				fileContent: twoTypesOneLine,
 			},
 			wantNewCode: twoTypesOneLineReplacedWithShorter,
+			wantErr:     false,
+		},
+		{
+			name: "replace three inline function args",
+			args: args{
+				replacement: "Replaced",
+				// ranges are unsorted on purpose, the tested code should handle the sorting
+				ranges:      testRangesThreeArgs(),
+				fileContent: threeTypesOneLine,
+			},
+			wantNewCode: threeTypesOneLineReplaced,
 			wantErr:     false,
 		},
 	}
@@ -63,7 +74,7 @@ func Test_applyReplacement(t *testing.T) {
 	}
 }
 
-func testRanges() []codeRange {
+func testRangesTwoArgs() []codeRange {
 	return []codeRange{
 		// replacement of 'b' parameter
 		{
@@ -90,6 +101,21 @@ func testRanges() []codeRange {
 	}
 }
 
+func testRangesThreeArgs() []codeRange {
+	ranges := testRangesTwoArgs()
+	ranges = append(ranges, codeRange{
+		start: codeLocation{
+			line:      3,
+			character: 33,
+		},
+		end: codeLocation{
+			line:      3,
+			character: 40,
+		},
+	})
+	return ranges
+}
+
 const twoTypesOneLine = `
 package main
 
@@ -100,6 +126,26 @@ func foo(a OldType, b OldType) {
 type OldType = string
 type NewType = string
 type New = string
+`
+
+const threeTypesOneLine = `
+package main
+
+func foo(a OldType, b OldType, c OldType) {
+	println("hello")
+}
+
+type Replaced = string
+`
+
+const threeTypesOneLineReplaced = `
+package main
+
+func foo(a Replaced, b Replaced, c Replaced) {
+	println("hello")
+}
+
+type Replaced = string
 `
 
 const twoTypesOneLineReplaced = `
@@ -144,15 +190,16 @@ func Test_writeReplacement(t *testing.T) {
 		replacement string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name            string
+		args            args
+		wantErr         bool
+		expectedContent map[string]string
 	}{
 		{
 			name: "replaces stuff in a single file",
 			args: args{
 				ranges: map[string][]codeRange{
-					"cmd/renamer/sample_test_file.go": testRanges(),
+					"cmd/renamer/sample_test_file.go": testRangesTwoArgs(),
 				},
 				replacement: "ReplacedStuff",
 			},
@@ -163,7 +210,8 @@ func Test_writeReplacement(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := writeReplacement(tt.args.ranges, tt.args.replacement); (err != nil) != tt.wantErr {
+			//TODO repoPath
+			if err := writeReplacement(tt.args.ranges, "repoPath", tt.args.replacement); (err != nil) != tt.wantErr {
 				t.Errorf("writeReplacement() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
