@@ -38,6 +38,7 @@ jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
 const mockTelemetryService = {
     log: sinon.spy(),
     logViewEvent: sinon.spy(),
+    logPageView: sinon.spy(),
 }
 
 const Wrapper: React.FunctionComponent = ({ children }) => {

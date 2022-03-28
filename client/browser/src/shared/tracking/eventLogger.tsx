@@ -46,6 +46,9 @@ export class ConditionalTelemetryService implements TelemetryService {
             }
         })
     }
+    /**
+     * @deprecated Use logPageView instead
+     */
     public logViewEvent(eventName: string, eventProperties?: any): void {
         // Wait for this.isEnabled to get a new value
         setTimeout(() => {
@@ -54,6 +57,20 @@ export class ConditionalTelemetryService implements TelemetryService {
             }
         })
     }
+    public logPageView(eventName: string, eventProperties?: any, publicArgument?: any): void {
+        // Wait for this.isEnabled to get a new value
+        setTimeout(() => {
+            if (this.isEnabled) {
+                this.innerTelemetryService.logPageView(eventName, eventProperties, publicArgument)
+            }
+        })
+    }
+    /**
+     * Logs page view events, adding a suffix
+     *
+     * @returns
+     *
+     */
     public unsubscribe(): void {
         // Reset initial state
         this.isEnabled = false
@@ -173,9 +190,20 @@ export class EventLogger implements TelemetryService {
     /**
      * Implements {@link TelemetryService}.
      *
+     * @deprecated Use logPageView instead
+     *
      * @param pageTitle The title of the page being viewed.
      */
     public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
         await this.logEvent(`View${pageTitle}`, eventProperties)
+    }
+
+    /**
+     * Implements {@link TelemetryService}.
+     *
+     * @param eventName The name of the entity being viewed.
+     */
+    public async logPageView(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
+        await this.logEvent(`${eventName}Viewed`, eventProperties, publicArgument)
     }
 }

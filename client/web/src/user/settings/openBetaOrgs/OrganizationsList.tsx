@@ -88,7 +88,7 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
     const hasOrgs = orgs.length > 0
 
     useEffect(() => {
-        eventLogger.logViewEvent('YourOrganizations', { userId: authenticatedUser.id })
+        eventLogger.logPageView('YourOrganizations', { userId: authenticatedUser.id })
     }, [authenticatedUser.id])
 
     return (

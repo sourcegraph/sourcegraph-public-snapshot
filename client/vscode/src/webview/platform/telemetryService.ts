@@ -6,4 +6,5 @@ export const vscodeTelemetryService: TelemetryService = {
 
     log: () => {},
     logViewEvent: () => {},
+    logPageView: () => {},
 }
