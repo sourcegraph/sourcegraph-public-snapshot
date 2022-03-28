@@ -27,7 +27,7 @@ exports[`ProductPlanFormControl new subscription 1`] = `
               value="p0"
             />
             <label
-              class="form-check-label label"
+              class="label form-check-label label"
               for="product-plan-form-control__plan0"
             >
               <div>
@@ -63,7 +63,7 @@ exports[`ProductPlanFormControl new subscription 1`] = `
               value="p1"
             />
             <label
-              class="form-check-label label"
+              class="label form-check-label label"
               for="product-plan-form-control__plan1"
             >
               <div>

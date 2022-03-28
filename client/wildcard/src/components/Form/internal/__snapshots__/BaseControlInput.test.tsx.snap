@@ -11,7 +11,7 @@ exports[`BaseControlInput checkbox input renders correctly 1`] = `
     type="checkbox"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -30,7 +30,7 @@ exports[`BaseControlInput checkbox input renders with correct styles when invali
     type="checkbox"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -54,7 +54,7 @@ exports[`BaseControlInput checkbox input renders with correct styles when valid 
     type="checkbox"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -78,7 +78,7 @@ exports[`BaseControlInput checkbox input renders with message correctly 1`] = `
     type="checkbox"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -102,7 +102,7 @@ exports[`BaseControlInput radio input renders correctly 1`] = `
     type="radio"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -121,7 +121,7 @@ exports[`BaseControlInput radio input renders with correct styles when invalid 1
     type="radio"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -145,7 +145,7 @@ exports[`BaseControlInput radio input renders with correct styles when valid 1`]
     type="radio"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
@@ -169,7 +169,7 @@ exports[`BaseControlInput radio input renders with message correctly 1`] = `
     type="radio"
   />
   <label
-    class="form-check-label label"
+    class="label form-check-label label"
     for="test"
   >
     Hello world
