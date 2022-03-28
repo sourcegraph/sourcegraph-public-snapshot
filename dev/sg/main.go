@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -45,6 +46,9 @@ var (
 		FlagSet:    rootFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
+		},
+		Options: []ff.Option{
+			ff.WithEnvVarPrefix("SG"),
 		},
 		Subcommands: []*ffcli.Command{
 			// Common dev tasks
@@ -139,7 +143,7 @@ func checkSgVersion(ctx context.Context) error {
 	}
 
 	stdout.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	err = updateCommand.Exec(ctx, nil)
+	err = updateToPrebuiltSG(ctx)
 	if err != nil {
 		return err
 	}

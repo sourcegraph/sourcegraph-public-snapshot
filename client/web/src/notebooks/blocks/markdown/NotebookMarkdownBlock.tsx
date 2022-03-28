@@ -1,13 +1,18 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
+import { defaultKeymap, indentWithTab } from '@codemirror/commands'
+import { tags, HighlightStyle, classHighlightStyle } from '@codemirror/highlight'
+import { history } from '@codemirror/history'
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { indentUnit } from '@codemirror/language'
+import { Extension } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
 import classNames from 'classnames'
-import { noop } from 'lodash'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
-import * as Monaco from 'monaco-editor'
 
+import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -15,132 +20,183 @@ import { BlockProps, MarkdownBlock } from '../..'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
-import { focusLastPositionInMonacoEditor, useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 import { useIsBlockInputFocused } from '../useIsBlockInputFocused'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
-import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from '../useMonacoBlockInput'
 
 import blockStyles from '../NotebookBlock.module.scss'
 import styles from './NotebookMarkdownBlock.module.scss'
 
+const staticExtensions: Extension[] = [
+    history(),
+    keymap.of([
+        // Insert a soft tab if the cursor is not at the beginning of the line
+        // or a list item.
+        {
+            key: 'Tab',
+            run: view => {
+                const { main } = view.state.selection
+
+                // If text is actually selected, fall back to indentation
+                // instead
+                if (main.from !== main.to) {
+                    return false
+                }
+                const currentLine = view.state.doc.lineAt(main.to)
+                if (/^\s*((-|\*)\s*)?$/.test(view.state.sliceDoc(currentLine.from, main.to))) {
+                    // We could be smarter about this and actually inspect the
+                    // syntax tree, but maybe this is good enough?
+                    return false
+                }
+
+                // Insert a soft tab
+                const indent = view.state.facet(indentUnit)
+                view.dispatch({
+                    changes: {
+                        from: main.to,
+                        insert: indent,
+                    },
+                    selection: { anchor: main.to + indent.length },
+                })
+                return true
+            },
+        },
+        {
+            key: 'Escape',
+            run: view => {
+                view.contentDOM.blur()
+                return true
+            },
+        },
+        indentWithTab,
+    ]),
+    keymap.of(defaultKeymap),
+    EditorView.lineWrapping,
+    markdown({ base: markdownLanguage }),
+    classHighlightStyle,
+    HighlightStyle.define([
+        { tag: tags.monospace, class: styles.markdownCode },
+        { tag: tags.url, class: styles.markdownCode },
+    ]),
+]
+
+function focusInput(editor: EditorView): void {
+    editor.focus()
+    editor.dispatch({
+        selection: { anchor: editor.state.doc.length },
+        scrollIntoView: true,
+    })
+}
+
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {}
 
-export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = ({
-    id,
-    input,
-    output,
-    isSelected,
-    isLightTheme,
-    isReadOnly,
-    onBlockInputChange,
-    onRunBlock,
-    ...props
-}) => {
-    const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
-    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+export const NotebookMarkdownBlock: React.FunctionComponent<NotebookMarkdownBlockProps> = React.memo(
+    ({ id, input, output, isSelected, isLightTheme, isReadOnly, onBlockInputChange, onRunBlock, ...props }) => {
+        const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
+        const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-    const runBlock = useCallback(
-        (id: string) => {
+        const runBlock = useCallback(() => {
             onRunBlock(id)
             setIsEditing(false)
-        },
-        [onRunBlock, setIsEditing]
-    )
+            return true
+        }, [id, onRunBlock, setIsEditing])
 
-    const onInputChange = useCallback((text: string) => onBlockInputChange(id, { type: 'md', input: { text } }), [
-        id,
-        onBlockInputChange,
-    ])
-
-    useMonacoBlockInput({
-        editor,
-        id,
-        tabMovesFocus: false,
-        ...props,
-        onInputChange,
-        onRunBlock: runBlock,
-    })
-
-    const editMarkdown = useCallback(() => {
-        if (!isReadOnly) {
-            setIsEditing(true)
-        }
-    }, [isReadOnly, setIsEditing])
-
-    useFocusMonacoEditorOnMount({ editor, isEditing })
-
-    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
-
-    const modifierKeyLabel = useModifierKeyLabel()
-    const menuActions = useMemo(() => {
-        const action: BlockMenuAction[] = [
-            isEditing
-                ? {
-                      type: 'button',
-                      label: 'Render',
-                      icon: <Icon as={PlayCircleOutlineIcon} />,
-                      onClick: runBlock,
-                      keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
-                  }
-                : {
-                      type: 'button',
-                      label: 'Edit',
-                      icon: <Icon as={PencilIcon} />,
-                      onClick: editMarkdown,
-                      keyboardShortcutLabel: '↵',
-                  },
-        ]
-        return action.concat(commonMenuActions)
-    }, [isEditing, modifierKeyLabel, runBlock, editMarkdown, commonMenuActions])
-
-    const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
-
-    const notebookBlockProps = useMemo(
-        () => ({
+        const onInputChange = useCallback((text: string) => onBlockInputChange(id, { type: 'md', input: { text } }), [
             id,
-            isReadOnly,
-            isSelected,
-            onRunBlock,
             onBlockInputChange,
-            actions: isSelected && !isReadOnly ? menuActions : [],
-            'aria-label': 'Notebook markdown block',
-            isInputVisible: isEditing,
-            setIsInputVisible: setIsEditing,
-            focusInput,
-            ...props,
-        }),
-        [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, focusInput, props]
-    )
+        ])
 
-    const isInputFocused = useIsBlockInputFocused(id)
+        const extensions: Extension[] = useMemo(
+            () => [
+                keymap.of([
+                    {
+                        key: 'Mod-Enter',
+                        run: runBlock,
+                    },
+                ]),
+                EditorView.updateListener.of(update => {
+                    if (update.docChanged) {
+                        onInputChange(update.state.sliceDoc())
+                    }
+                }),
+                staticExtensions,
+            ],
+            [runBlock, onInputChange]
+        )
 
-    if (!isEditing) {
+        const editor = useCodeMirror(container, input.text, extensions)
+
+        const editMarkdown = useCallback(() => {
+            if (!isReadOnly) {
+                setIsEditing(true)
+            }
+        }, [isReadOnly, setIsEditing])
+
+        useEffect(() => {
+            if (editor) {
+                focusInput(editor)
+            }
+        }, [isEditing, editor])
+
+        const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
+
+        const modifierKeyLabel = useModifierKeyLabel()
+        const menuActions = useMemo(() => {
+            const action: BlockMenuAction[] = [
+                isEditing
+                    ? {
+                          type: 'button',
+                          label: 'Render',
+                          icon: <Icon as={PlayCircleOutlineIcon} />,
+                          onClick: runBlock,
+                          keyboardShortcutLabel: `${modifierKeyLabel} + ↵`,
+                      }
+                    : {
+                          type: 'button',
+                          label: 'Edit',
+                          icon: <Icon as={PencilIcon} />,
+                          onClick: editMarkdown,
+                          keyboardShortcutLabel: '↵',
+                      },
+            ]
+            return action.concat(commonMenuActions)
+        }, [isEditing, modifierKeyLabel, runBlock, editMarkdown, commonMenuActions])
+
+        const notebookBlockProps = useMemo(
+            () => ({
+                id,
+                isReadOnly,
+                isSelected,
+                onRunBlock,
+                onBlockInputChange,
+                actions: isSelected && !isReadOnly ? menuActions : [],
+                'aria-label': 'Notebook markdown block',
+                isInputVisible: isEditing,
+                setIsInputVisible: setIsEditing,
+                focusInput: () => editor && focusInput(editor),
+                ...props,
+            }),
+            [id, isEditing, isReadOnly, isSelected, menuActions, onBlockInputChange, onRunBlock, editor, props]
+        )
+
+        const isInputFocused = useIsBlockInputFocused(id)
+
+        if (!isEditing) {
+            return (
+                <NotebookBlock {...notebookBlockProps} onDoubleClick={editMarkdown}>
+                    <div className={styles.output} data-testid="output">
+                        <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
+                    </div>
+                </NotebookBlock>
+            )
+        }
+
         return (
-            <NotebookBlock {...notebookBlockProps} onDoubleClick={editMarkdown}>
-                <div className={styles.output} data-testid="output">
-                    <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
-                </div>
+            <NotebookBlock
+                className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
+                {...notebookBlockProps}
+            >
+                <div ref={setContainer} />
             </NotebookBlock>
         )
     }
-
-    return (
-        <NotebookBlock
-            className={classNames(styles.input, (isInputFocused || isSelected) && blockStyles.selected)}
-            {...notebookBlockProps}
-        >
-            <div className={blockStyles.monacoWrapper}>
-                <MonacoEditor
-                    language="markdown"
-                    value={input.text}
-                    height="auto"
-                    isLightTheme={isLightTheme}
-                    editorWillMount={noop}
-                    onEditorCreated={setEditor}
-                    options={MONACO_BLOCK_INPUT_OPTIONS}
-                    border={false}
-                />
-            </div>
-        </NotebookBlock>
-    )
-}
+)

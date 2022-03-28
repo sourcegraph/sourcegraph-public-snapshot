@@ -61,13 +61,12 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
             <ConnectionList className="list-group list-group-flush w-100">
-                {connectionOrCached?.nodes?.map((node, index) => (
+                {connectionOrCached?.nodes?.map(node => (
                     <WorkspacesPreviewListItem
                         key={`${node.repository.id}-${node.branch.id}`}
-                        item={node}
+                        workspace={node}
                         isStale={isStale}
                         exclude={excludeRepo}
-                        variant={index % 2 === 0 ? 'light' : 'dark'}
                     />
                 ))}
             </ConnectionList>

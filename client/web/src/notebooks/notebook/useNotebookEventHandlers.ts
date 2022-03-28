@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 
 import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
+import { elementIsInput } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import { BlockDirection, BlockProps } from '..'
 
@@ -73,7 +74,8 @@ export function useNotebookEventHandlers({
 
         const handleKeyDown = (event: KeyboardEvent): void => {
             const target = event.target as HTMLElement
-            if (isMonacoEditorDescendant(target)) {
+
+            if (elementIsInput(target)) {
                 return
             }
 

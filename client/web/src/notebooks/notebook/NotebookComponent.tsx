@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { noop } from 'lodash'
+import { debounce, noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
@@ -96,447 +96,475 @@ function downloadTextAsFile(text: string, fileName: string): void {
     window.URL.revokeObjectURL(blobURL)
 }
 
-export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = ({
-    onSerializeBlocks,
-    onCopyNotebook,
-    isReadOnly = false,
-    extensionsController,
-    exportedFileName,
-    isEmbedded,
-    authenticatedUser,
-    ...props
-}) => {
-    const notebook = useMemo(
-        () =>
-            new Notebook(props.blocks, {
-                extensionHostAPI: extensionsController.extHostAPI,
-                fetchHighlightedFileLineRanges: props.fetchHighlightedFileLineRanges,
-            }),
-        [props.blocks, props.fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
-    )
-
-    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
-    const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
-    const commandPaletteInputReference = useRef<HTMLInputElement>(null)
-
-    const updateBlocks = useCallback(
-        (serialize = true) => {
-            const blocks = notebook.getBlocks()
-            setBlocks(blocks)
-            if (serialize) {
-                onSerializeBlocks(blocks)
-            }
-            const blockCountsPerType = countBlockTypes(blocks)
-            props.telemetryService.log(
-                'SearchNotebookBlocksUpdated',
-                { blocksCount: blocks.length, blockCountsPerType },
-                { blocksCount: blocks.length, blockCountsPerType }
-            )
-        },
-        [notebook, setBlocks, onSerializeBlocks, props.telemetryService]
-    )
-
-    // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
-    useEffect(() => setBlocks(notebook.getBlocks()), [notebook])
-
-    const onRunBlock = useCallback(
-        (id: string) => {
-            notebook.runBlockById(id)
-            updateBlocks(false)
-
-            props.telemetryService.log(
-                'SearchNotebookRunBlock',
-                { type: notebook.getBlockById(id)?.type },
-                { type: notebook.getBlockById(id)?.type }
-            )
-        },
-        [notebook, props.telemetryService, updateBlocks]
-    )
-
-    const [runAllBlocks, runningAllBlocks] = useEventObservable(
-        useCallback(
-            (click: Observable<React.MouseEvent>) =>
-                click.pipe(
-                    switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
-                    tap(() => {
-                        updateBlocks(false)
-                        props.telemetryService.log('SearchNotebookRunAllBlocks')
-                    })
-                ),
-            [notebook, props.telemetryService, updateBlocks]
+export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> = React.memo(
+    ({
+        onSerializeBlocks,
+        onCopyNotebook,
+        isReadOnly = false,
+        extensionsController,
+        exportedFileName,
+        isEmbedded,
+        authenticatedUser,
+        isLightTheme,
+        telemetryService,
+        isSourcegraphDotCom,
+        platformContext,
+        blocks: initialBlocks,
+        fetchHighlightedFileLineRanges,
+        globbing,
+        searchContextsEnabled,
+        settingsCascade,
+    }) => {
+        const notebook = useMemo(
+            () =>
+                new Notebook(initialBlocks, {
+                    extensionHostAPI: extensionsController.extHostAPI,
+                    fetchHighlightedFileLineRanges,
+                }),
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
         )
-    )
 
-    const [exportNotebook] = useEventObservable(
-        useCallback(
-            (event: Observable<React.MouseEvent<HTMLButtonElement>>) =>
-                event.pipe(
-                    switchMap(() => notebook.exportToMarkdown(window.location.origin)),
-                    tap(exportedMarkdown => {
-                        downloadTextAsFile(exportedMarkdown, exportedFileName)
-                        props.telemetryService.log('SearchNotebookExportNotebook')
-                    })
-                ),
-            [notebook, exportedFileName, props.telemetryService]
+        const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
+        const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
+        const commandPaletteInputReference = useRef<HTMLInputElement>(null)
+        const debouncedOnSerializeBlocks = useMemo(() => debounce(onSerializeBlocks, 400), [onSerializeBlocks])
+
+        const updateBlocks = useCallback(
+            (serialize = true) => {
+                const blocks = notebook.getBlocks()
+                setBlocks(blocks)
+                if (serialize) {
+                    debouncedOnSerializeBlocks(blocks)
+                }
+                const blockCountsPerType = countBlockTypes(blocks)
+                telemetryService.log(
+                    'SearchNotebookBlocksUpdated',
+                    { blocksCount: blocks.length, blockCountsPerType },
+                    { blocksCount: blocks.length, blockCountsPerType }
+                )
+            },
+            [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService]
         )
-    )
 
-    const [copyNotebook, copiedNotebookOrError] = useEventObservable(
-        useCallback(
-            (input: Observable<Omit<CopyNotebookProps, 'title'>>) =>
-                input.pipe(
-                    // The delay is added to make the copy loading state more obvious. Otherwise, the copy
-                    // happens too fast, and it can seem like nothing happened.
-                    switchMap(props => onCopyNotebook(props).pipe(delay(400), startWith(LOADING))),
-                    catchError(error => [asError(error)])
-                ),
-            [onCopyNotebook]
+        // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
+        useEffect(() => setBlocks(notebook.getBlocks()), [notebook])
+
+        const onRunBlock = useCallback(
+            (id: string) => {
+                notebook.runBlockById(id)
+                updateBlocks(false)
+
+                telemetryService.log(
+                    'SearchNotebookRunBlock',
+                    { type: notebook.getBlockById(id)?.type },
+                    { type: notebook.getBlockById(id)?.type }
+                )
+            },
+            [notebook, telemetryService, updateBlocks]
         )
-    )
 
-    const onCopyNotebookButtonClick = useCallback(() => {
-        if (!authenticatedUser) {
-            return
-        }
-        props.telemetryService.log('SearchNotebookCopyNotebookButtonClick')
-        copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
-    }, [authenticatedUser, copyNotebook, notebook, props.telemetryService])
-
-    const onBlockInputChange = useCallback(
-        (id: string, blockInput: BlockInput) => {
-            notebook.setBlockInputById(id, blockInput)
-            updateBlocks()
-        },
-        [notebook, updateBlocks]
-    )
-
-    const onAddBlock = useCallback(
-        (index: number, blockInput: BlockInput) => {
-            if (isReadOnly) {
-                return
-            }
-            const addedBlock = notebook.insertBlockAtIndex(index, blockInput)
-            if (
-                addedBlock.type === 'md' ||
-                (addedBlock.type === 'file' && addedBlock.input.repositoryName && addedBlock.input.filePath)
-            ) {
-                notebook.runBlockById(addedBlock.id)
-            }
-            setSelectedBlockId(addedBlock.id)
-            updateBlocks()
-
-            props.telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
-        },
-        [notebook, isReadOnly, props.telemetryService, updateBlocks, setSelectedBlockId]
-    )
-
-    const onDeleteBlock = useCallback(
-        (id: string) => {
-            if (isReadOnly) {
-                return
-            }
-
-            const block = notebook.getBlockById(id)
-            const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
-            notebook.deleteBlockById(id)
-            setSelectedBlockId(blockToFocusAfterDelete)
-            if (blockToFocusAfterDelete) {
-                focusBlock(blockToFocusAfterDelete)
-            }
-            updateBlocks()
-
-            props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
-        },
-        [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
-    )
-
-    const onMoveBlock = useCallback(
-        (id: string, direction: BlockDirection) => {
-            if (isReadOnly) {
-                return
-            }
-
-            notebook.moveBlockById(id, direction)
-            focusBlock(id)
-            updateBlocks()
-
-            props.telemetryService.log(
-                'SearchNotebookMoveBlock',
-                { type: notebook.getBlockById(id)?.type, direction },
-                { type: notebook.getBlockById(id)?.type, direction }
-            )
-        },
-        [notebook, isReadOnly, props.telemetryService, updateBlocks]
-    )
-
-    const onDuplicateBlock = useCallback(
-        (id: string) => {
-            if (isReadOnly) {
-                return
-            }
-
-            const duplicateBlock = notebook.duplicateBlockById(id)
-            if (duplicateBlock) {
-                setSelectedBlockId(duplicateBlock.id)
-                focusBlock(duplicateBlock.id)
-            }
-            if (duplicateBlock?.type === 'md') {
-                notebook.runBlockById(duplicateBlock.id)
-            }
-            updateBlocks()
-
-            props.telemetryService.log(
-                'SearchNotebookDuplicateBlock',
-                { type: duplicateBlock?.type },
-                { type: duplicateBlock?.type }
-            )
-        },
-        [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
-    )
-
-    const onFocusLastBlock = useCallback(() => {
-        const lastBlockId = notebook.getLastBlockId()
-        if (lastBlockId) {
-            setSelectedBlockId(lastBlockId)
-            focusBlock(lastBlockId)
-        }
-    }, [notebook, setSelectedBlockId])
-
-    const notebookEventHandlersProps = useMemo(
-        () => ({
-            notebook,
-            selectedBlockId,
-            commandPaletteInputReference,
-            setSelectedBlockId,
-            onMoveBlock,
-            onRunBlock,
-            onDeleteBlock,
-            onDuplicateBlock,
-        }),
-        [notebook, onDeleteBlock, onDuplicateBlock, onMoveBlock, onRunBlock, selectedBlockId]
-    )
-    useNotebookEventHandlers(notebookEventHandlersProps)
-
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-        patternType: SearchPatternType.literal,
-        globbing: props.globbing,
-        interpretComments: true,
-    })
-
-    const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-        patternType: SearchPatternType.literal,
-        globbing: props.globbing,
-        interpretComments: true,
-        disablePatternSuggestions: true,
-    })
-
-    // Register dummy onCompletionSelected handler to prevent console errors
-    useEffect(() => {
-        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
-        return () => disposable.dispose()
-    }, [])
-
-    // Element reference subjects passed to `hoverifier`
-    const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextNotebookElement = useCallback((blockElement: HTMLElement | null) => notebookElements.next(blockElement), [
-        notebookElements,
-    ])
-
-    const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-    const nextOverlayElement = useCallback(
-        (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
-        [hoverOverlayElements]
-    )
-
-    // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
-    // reposition hover overlay if needed when `SearchNotebook` rerenders
-    const rerenders = useMemo(() => new ReplaySubject(1), [])
-    useEffect(() => rerenders.next())
-
-    // Create hoverifier.
-    const hoverifier = useMemo(
-        () =>
-            createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                hoverOverlayElements,
-                hoverOverlayRerenders: rerenders.pipe(
-                    withLatestFrom(hoverOverlayElements, notebookElements),
-                    map(([, hoverOverlayElement, blockElement]) => ({
-                        hoverOverlayElement,
-                        relativeElement: blockElement,
-                    })),
-                    filter(property('relativeElement', isDefined)),
-                    // Can't reposition HoverOverlay if it wasn't rendered
-                    filter(property('hoverOverlayElement', isDefined))
-                ),
-                getHover: context =>
-                    getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
-                        extensionsController,
-                    }),
-                getDocumentHighlights: context =>
-                    getDocumentHighlights(
-                        getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
-                        { extensionsController }
+        const [runAllBlocks, runningAllBlocks] = useEventObservable(
+            useCallback(
+                (click: Observable<React.MouseEvent>) =>
+                    click.pipe(
+                        switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
+                        tap(() => {
+                            updateBlocks(false)
+                            telemetryService.log('SearchNotebookRunAllBlocks')
+                        })
                     ),
-                getActions: context =>
-                    getHoverActions({ extensionsController, platformContext: props.platformContext }, context),
-                tokenize: false,
+                [notebook, telemetryService, updateBlocks]
+            )
+        )
+
+        const [exportNotebook] = useEventObservable(
+            useCallback(
+                (event: Observable<React.MouseEvent<HTMLButtonElement>>) =>
+                    event.pipe(
+                        switchMap(() => notebook.exportToMarkdown(window.location.origin)),
+                        tap(exportedMarkdown => {
+                            downloadTextAsFile(exportedMarkdown, exportedFileName)
+                            telemetryService.log('SearchNotebookExportNotebook')
+                        })
+                    ),
+                [notebook, exportedFileName, telemetryService]
+            )
+        )
+
+        const [copyNotebook, copiedNotebookOrError] = useEventObservable(
+            useCallback(
+                (input: Observable<Omit<CopyNotebookProps, 'title'>>) =>
+                    input.pipe(
+                        // The delay is added to make the copy loading state more obvious. Otherwise, the copy
+                        // happens too fast, and it can seem like nothing happened.
+                        switchMap(props => onCopyNotebook(props).pipe(delay(400), startWith(LOADING))),
+                        catchError(error => [asError(error)])
+                    ),
+                [onCopyNotebook]
+            )
+        )
+
+        const onCopyNotebookButtonClick = useCallback(() => {
+            if (!authenticatedUser) {
+                return
+            }
+            telemetryService.log('SearchNotebookCopyNotebookButtonClick')
+            copyNotebook({ namespace: authenticatedUser.id, blocks: notebook.getBlocks() })
+        }, [authenticatedUser, copyNotebook, notebook, telemetryService])
+
+        const onBlockInputChange = useCallback(
+            (id: string, blockInput: BlockInput) => {
+                notebook.setBlockInputById(id, blockInput)
+                updateBlocks()
+            },
+            [notebook, updateBlocks]
+        )
+
+        const onAddBlock = useCallback(
+            (index: number, blockInput: BlockInput) => {
+                if (isReadOnly) {
+                    return
+                }
+                const addedBlock = notebook.insertBlockAtIndex(index, blockInput)
+                if (
+                    addedBlock.type === 'md' ||
+                    (addedBlock.type === 'file' && addedBlock.input.repositoryName && addedBlock.input.filePath)
+                ) {
+                    notebook.runBlockById(addedBlock.id)
+                }
+                setSelectedBlockId(addedBlock.id)
+                updateBlocks()
+
+                telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
+            },
+            [notebook, isReadOnly, telemetryService, updateBlocks, setSelectedBlockId]
+        )
+
+        const onDeleteBlock = useCallback(
+            (id: string) => {
+                if (isReadOnly) {
+                    return
+                }
+
+                const block = notebook.getBlockById(id)
+                const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
+                notebook.deleteBlockById(id)
+                setSelectedBlockId(blockToFocusAfterDelete)
+                if (blockToFocusAfterDelete) {
+                    focusBlock(blockToFocusAfterDelete)
+                }
+                updateBlocks()
+
+                telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
+            },
+            [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
+        )
+
+        const onMoveBlock = useCallback(
+            (id: string, direction: BlockDirection) => {
+                if (isReadOnly) {
+                    return
+                }
+
+                notebook.moveBlockById(id, direction)
+                focusBlock(id)
+                updateBlocks()
+
+                telemetryService.log(
+                    'SearchNotebookMoveBlock',
+                    { type: notebook.getBlockById(id)?.type, direction },
+                    { type: notebook.getBlockById(id)?.type, direction }
+                )
+            },
+            [notebook, isReadOnly, telemetryService, updateBlocks]
+        )
+
+        const onDuplicateBlock = useCallback(
+            (id: string) => {
+                if (isReadOnly) {
+                    return
+                }
+
+                const duplicateBlock = notebook.duplicateBlockById(id)
+                if (duplicateBlock) {
+                    setSelectedBlockId(duplicateBlock.id)
+                    focusBlock(duplicateBlock.id)
+                }
+                if (duplicateBlock?.type === 'md') {
+                    notebook.runBlockById(duplicateBlock.id)
+                }
+                updateBlocks()
+
+                telemetryService.log(
+                    'SearchNotebookDuplicateBlock',
+                    { type: duplicateBlock?.type },
+                    { type: duplicateBlock?.type }
+                )
+            },
+            [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
+        )
+
+        const onFocusLastBlock = useCallback(() => {
+            const lastBlockId = notebook.getLastBlockId()
+            if (lastBlockId) {
+                setSelectedBlockId(lastBlockId)
+                focusBlock(lastBlockId)
+            }
+        }, [notebook, setSelectedBlockId])
+
+        const notebookEventHandlersProps = useMemo(
+            () => ({
+                notebook,
+                selectedBlockId,
+                commandPaletteInputReference,
+                setSelectedBlockId,
+                onMoveBlock,
+                onRunBlock,
+                onDeleteBlock,
+                onDuplicateBlock,
             }),
-        [
-            // None of these dependencies are likely to change
-            extensionsController,
-            props.platformContext,
-            hoverOverlayElements,
-            notebookElements,
-            rerenders,
-        ]
-    )
+            [notebook, onDeleteBlock, onDuplicateBlock, onMoveBlock, onRunBlock, selectedBlockId]
+        )
+        useNotebookEventHandlers(notebookEventHandlersProps)
 
-    // Passed to HoverOverlay
-    const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
+        const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
+            patternType: SearchPatternType.literal,
+            globbing,
+            interpretComments: true,
+        })
 
-    // Dispose hoverifier or change/unmount.
-    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
+        const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
+            patternType: SearchPatternType.literal,
+            globbing,
+            interpretComments: true,
+            disablePatternSuggestions: true,
+        })
 
-    const renderBlock = useCallback(
-        (block: Block) => {
-            const blockProps = {
-                ...props,
+        // Register dummy onCompletionSelected handler to prevent console errors
+        useEffect(() => {
+            const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
+            return () => disposable.dispose()
+        }, [])
+
+        // Element reference subjects passed to `hoverifier`
+        const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+        const nextNotebookElement = useCallback(
+            (blockElement: HTMLElement | null) => notebookElements.next(blockElement),
+            [notebookElements]
+        )
+
+        const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
+        const nextOverlayElement = useCallback(
+            (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
+            [hoverOverlayElements]
+        )
+
+        // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
+        // reposition hover overlay if needed when `SearchNotebook` rerenders
+        const rerenders = useMemo(() => new ReplaySubject(1), [])
+        useEffect(() => rerenders.next())
+
+        // Create hoverifier.
+        const hoverifier = useMemo(
+            () =>
+                createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
+                    hoverOverlayElements,
+                    hoverOverlayRerenders: rerenders.pipe(
+                        withLatestFrom(hoverOverlayElements, notebookElements),
+                        map(([, hoverOverlayElement, blockElement]) => ({
+                            hoverOverlayElement,
+                            relativeElement: blockElement,
+                        })),
+                        filter(property('relativeElement', isDefined)),
+                        // Can't reposition HoverOverlay if it wasn't rendered
+                        filter(property('hoverOverlayElement', isDefined))
+                    ),
+                    getHover: context =>
+                        getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
+                            extensionsController,
+                        }),
+                    getDocumentHighlights: context =>
+                        getDocumentHighlights(
+                            getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
+                            { extensionsController }
+                        ),
+                    getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+                    tokenize: false,
+                }),
+            [
+                // None of these dependencies are likely to change
+                extensionsController,
+                platformContext,
+                hoverOverlayElements,
+                notebookElements,
+                rerenders,
+            ]
+        )
+
+        // Passed to HoverOverlay
+        const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
+
+        // Dispose hoverifier or change/unmount.
+        useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
+
+        const renderBlock = useCallback(
+            (block: Block) => {
+                const blockProps = {
+                    onRunBlock,
+                    onBlockInputChange,
+                    onDeleteBlock,
+                    onMoveBlock,
+                    onDuplicateBlock,
+                    isLightTheme,
+                    isReadOnly,
+                    isSelected: selectedBlockId === block.id,
+                    isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
+                }
+
+                switch (block.type) {
+                    case 'md':
+                        return <NotebookMarkdownBlock {...block} {...blockProps} />
+                    case 'file':
+                        return (
+                            <NotebookFileBlock
+                                {...block}
+                                {...blockProps}
+                                hoverifier={hoverifier}
+                                sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
+                                extensionsController={extensionsController}
+                                telemetryService={telemetryService}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                            />
+                        )
+                    case 'query':
+                        return (
+                            <NotebookQueryBlock
+                                {...block}
+                                {...blockProps}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                searchContextsEnabled={searchContextsEnabled}
+                                settingsCascade={settingsCascade}
+                                telemetryService={telemetryService}
+                                platformContext={platformContext}
+                                authenticatedUser={authenticatedUser}
+                                hoverifier={hoverifier}
+                                sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                                extensionsController={extensionsController}
+                            />
+                        )
+                    case 'compute':
+                        return <NotebookComputeBlock platformContext={platformContext} {...block} {...blockProps} />
+                    case 'symbol':
+                        return (
+                            <NotebookSymbolBlock
+                                {...block}
+                                {...blockProps}
+                                telemetryService={telemetryService}
+                                platformContext={platformContext}
+                                hoverifier={hoverifier}
+                                sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
+                                extensionsController={extensionsController}
+                            />
+                        )
+                }
+            },
+            [
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
                 onMoveBlock,
                 onDuplicateBlock,
+                isLightTheme,
                 isReadOnly,
-                isSelected: selectedBlockId === block.id,
-                isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
-            }
+                selectedBlockId,
+                hoverifier,
+                sourcegraphSuggestionsSearchLanguageId,
+                extensionsController,
+                telemetryService,
+                isSourcegraphDotCom,
+                fetchHighlightedFileLineRanges,
+                searchContextsEnabled,
+                settingsCascade,
+                platformContext,
+                authenticatedUser,
+                sourcegraphSearchLanguageId,
+            ]
+        )
 
-            switch (block.type) {
-                case 'md':
-                    return <NotebookMarkdownBlock {...block} {...blockProps} />
-                case 'file':
-                    return (
-                        <NotebookFileBlock
-                            {...block}
-                            {...blockProps}
-                            hoverifier={hoverifier}
-                            sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
-                            extensionsController={extensionsController}
-                        />
-                    )
-                case 'query':
-                    return (
-                        <NotebookQueryBlock
-                            {...block}
-                            {...blockProps}
-                            authenticatedUser={authenticatedUser}
-                            hoverifier={hoverifier}
-                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
-                            extensionsController={extensionsController}
-                        />
-                    )
-                case 'compute':
-                    return <NotebookComputeBlock {...block} {...blockProps} />
-                case 'symbol':
-                    return (
-                        <NotebookSymbolBlock
-                            {...block}
-                            {...blockProps}
-                            hoverifier={hoverifier}
-                            sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
-                            extensionsController={extensionsController}
-                        />
-                    )
-            }
-        },
-        [
-            isReadOnly,
-            onBlockInputChange,
-            onDeleteBlock,
-            onDuplicateBlock,
-            onMoveBlock,
-            onRunBlock,
-            props,
-            selectedBlockId,
-            sourcegraphSearchLanguageId,
-            sourcegraphSuggestionsSearchLanguageId,
-            extensionsController,
-            hoverifier,
-            authenticatedUser,
-        ]
-    )
+        const location = useLocation()
 
-    const location = useLocation()
+        if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
+            return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+        }
 
-    if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-        return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
-    }
-
-    return (
-        <div className={styles.searchNotebook} ref={nextNotebookElement}>
-            <div className="pb-1">
-                <Button
-                    className="mr-2"
-                    variant="primary"
-                    size="sm"
-                    onClick={runAllBlocks}
-                    disabled={blocks.length === 0 || runningAllBlocks === LOADING}
-                >
-                    <Icon className="mr-1" as={PlayCircleOutlineIcon} />
-                    <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
-                </Button>
-                {!isEmbedded && (
+        return (
+            <div className={styles.searchNotebook} ref={nextNotebookElement}>
+                <div className="pb-1">
                     <Button
                         className="mr-2"
-                        variant="secondary"
+                        variant="primary"
                         size="sm"
-                        onClick={exportNotebook}
-                        data-testid="export-notebook-markdown-button"
+                        onClick={runAllBlocks}
+                        disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                     >
-                        <Icon className="mr-1" as={DownloadIcon} />
-                        <span>Export as Markdown</span>
+                        <Icon className="mr-1" as={PlayCircleOutlineIcon} />
+                        <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                     </Button>
+                    {!isEmbedded && (
+                        <Button
+                            className="mr-2"
+                            variant="secondary"
+                            size="sm"
+                            onClick={exportNotebook}
+                            data-testid="export-notebook-markdown-button"
+                        >
+                            <Icon className="mr-1" as={DownloadIcon} />
+                            <span>Export as Markdown</span>
+                        </Button>
+                    )}
+                    {!isEmbedded && authenticatedUser && (
+                        <Button
+                            className="mr-2"
+                            variant="secondary"
+                            size="sm"
+                            onClick={onCopyNotebookButtonClick}
+                            data-testid="copy-notebook-button"
+                            disabled={copiedNotebookOrError === LOADING}
+                        >
+                            <Icon className="mr-1" as={ContentCopyIcon} />
+                            <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
+                        </Button>
+                    )}
+                </div>
+                {blocks.map((block, blockIndex) => (
+                    <div key={block.id}>
+                        <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
+                        {renderBlock(block)}
+                    </div>
+                ))}
+                {!isReadOnly && (
+                    <NotebookCommandPaletteInput
+                        ref={commandPaletteInputReference}
+                        index={blocks.length}
+                        onAddBlock={onAddBlock}
+                        onFocusPreviousBlock={onFocusLastBlock}
+                    />
                 )}
-                {!isEmbedded && authenticatedUser && (
-                    <Button
-                        className="mr-2"
-                        variant="secondary"
-                        size="sm"
-                        onClick={onCopyNotebookButtonClick}
-                        data-testid="copy-notebook-button"
-                        disabled={copiedNotebookOrError === LOADING}
-                    >
-                        <Icon className="mr-1" as={ContentCopyIcon} />
-                        <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
-                    </Button>
+                {hoverState.hoverOverlayProps && (
+                    <WebHoverOverlay
+                        {...hoverState.hoverOverlayProps}
+                        platformContext={platformContext}
+                        settingsCascade={settingsCascade}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
+                        hoverRef={nextOverlayElement}
+                        extensionsController={extensionsController}
+                        location={location}
+                        telemetryService={telemetryService}
+                        isLightTheme={isLightTheme}
+                    />
                 )}
             </div>
-            {blocks.map((block, blockIndex) => (
-                <div key={block.id}>
-                    <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
-                    {renderBlock(block)}
-                </div>
-            ))}
-            {!isReadOnly && (
-                <NotebookCommandPaletteInput
-                    ref={commandPaletteInputReference}
-                    index={blocks.length}
-                    onAddBlock={onAddBlock}
-                    onFocusPreviousBlock={onFocusLastBlock}
-                />
-            )}
-            {hoverState.hoverOverlayProps && (
-                <WebHoverOverlay
-                    {...props}
-                    {...hoverState.hoverOverlayProps}
-                    hoveredTokenElement={hoverState.hoveredTokenElement}
-                    hoverRef={nextOverlayElement}
-                    extensionsController={extensionsController}
-                    location={location}
-                    telemetryService={props.telemetryService}
-                    isLightTheme={props.isLightTheme}
-                />
-            )}
-        </div>
-    )
-}
+        )
+    }
+)

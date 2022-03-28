@@ -51,10 +51,15 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	}})
 	defer endObservation(1, observation.Args{})
 
+	pathSpecs := []gitserver.Pathspec{}
+	for _, path := range paths {
+		pathSpecs = append(pathSpecs, gitserver.PathspecLiteral(path))
+	}
+
 	opts := gitserver.ArchiveOptions{
-		Treeish: string(commit),
-		Format:  "tar",
-		Paths:   paths,
+		Treeish:   string(commit),
+		Format:    "tar",
+		Pathspecs: pathSpecs,
 	}
 
 	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level

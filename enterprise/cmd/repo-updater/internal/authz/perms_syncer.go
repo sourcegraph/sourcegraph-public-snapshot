@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -869,8 +870,11 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	var err error
 	switch request.Type {
 	case requestTypeUser:
+		// Ensure the job field is recorded when monitoring external API calls
+		ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
 		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
 	case requestTypeRepo:
+		ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
 		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
 	default:
 		err = errors.Errorf("unexpected request type: %v", request.Type)
