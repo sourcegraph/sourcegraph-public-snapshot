@@ -1,22 +1,45 @@
 package main
 
 import (
-	"errors"
+	"bytes"
+	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strings"
 
 	"github.com/graphql-go/graphql/gqlerrors"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
 	// Parse flags.
+	args, replacement, err := parseFlags()
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Craft GQL request.
+	codeRanges, err := loadSymbolLocations(args)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Traverse response, write to files.
-	println("hi rename is done")
+	err = writeReplacement(codeRanges, replacement)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+
+	os.Exit(0)
 }
 
 type programArgs struct {
@@ -30,15 +53,45 @@ var errInvalidInput = errors.New("invalid input")
 // needs to pass all these values so we can uniquely identify the symbol.
 // Errors if not all values are given.
 func parseFlags() (args programArgs, replacement string, err error) {
-	repoName := flag.String("repoName", "", "The repo name to change")
+	repoName := flag.String("repoName", "", "")
+	revision := flag.String("rev", "", "")
+	filePath := flag.String("filePath", "", "")
+	line := flag.Int("line", -1, "")
+	character := flag.Int("character", -1, "")
+	rep := flag.String("replacement", "", "")
+	flag.Parse()
+
 	if *repoName == "" {
-		return programArgs{}, "", errInvalidInput
+		return programArgs{}, "", errors.Wrap(errInvalidInput, "repoName")
 	}
 	args.repoName = *repoName
 
-	// todo: parse more args.
+	if *revision == "" {
+		return programArgs{}, "", errors.Wrap(errInvalidInput, "revision")
+	}
+	args.revision = *revision
 
-	return args, "", nil
+	if *filePath == "" {
+		return programArgs{}, "", errors.Wrap(errInvalidInput, "filePath")
+	}
+	args.filePath = *filePath
+
+	if *line == -1 {
+		return programArgs{}, "", errors.Wrap(errInvalidInput, "line")
+	}
+	args.line = *line
+
+	if *character == -1 {
+		return programArgs{}, "", errors.Wrap(errInvalidInput, "character")
+	}
+	args.character = *character
+
+	if *rep == "" {
+		return programArgs{}, "", errors.Wrap(errInvalidInput, "rep")
+	}
+	replacement = *rep
+
+	return args, replacement, nil
 }
 
 type codeLocation struct {
@@ -53,72 +106,105 @@ type codeRange struct {
 }
 
 // loadSymbolLocations uses the GQL query from the scratchpad to query all locations for the given symbol.
-func loadSymbolLocations(args programArgs) map[string][]codeRange {
-	//reqBody, err := json.Marshal(map[string]interface{}{"query": gqlSettingsQuery})
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "marshal request body")
-	//}
-	//
-	//url, err := gqlURL("CodeMonitorSettings")
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "construct frontend URL")
-	//}
-	//
-	//req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "construct request")
-	//}
-	//req.Header.Set("Content-Type", "application/json")
-	//if span != nil {
-	//	carrier := opentracing.HTTPHeadersCarrier(req.Header)
-	//	span.Tracer().Inject(
-	//		span.Context(),
-	//		opentracing.HTTPHeaders,
-	//		carrier,
-	//	)
-	//}
-	//
-	//resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "do request")
-	//}
-	//defer resp.Body.Close()
-	//
-	//var res gqlSettingsResponse
-	//if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-	//	return nil, errors.Wrap(err, "decode response")
-	//}
-	//
-	//if len(res.Errors) > 0 {
-	//	var combined error
-	//	for _, err := range res.Errors {
-	//		combined = errors.Append(combined, err)
-	//	}
-	//	return nil, combined
-	//}
-	//return nil
-	return nil
+func loadSymbolLocations(args programArgs) (map[string][]codeRange, error) {
+	reqBody, err := json.Marshal(map[string]interface{}{"query": fmt.Sprintf(gqlQuery, args.repoName, args.revision, args.filePath, args.line, args.character)})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshal request body")
+	}
+
+	url, err := gqlURL("LSIFReferencesForRename")
+	if err != nil {
+		return nil, errors.Wrap(err, "construct frontend URL")
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, errors.Wrap(err, "construct request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "src/renamer")
+	req.Header.Set("Authorization", "token "+os.Getenv("SRC_ACCESS_TOKEN"))
+
+	resp, err := http.DefaultClient.Do(req.WithContext(context.Background()))
+	if err != nil {
+		return nil, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	var res gqlLSIFResponse
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, errors.Wrap(err, "decode response")
+	}
+
+	if len(res.Errors) > 0 {
+		var combined error
+		for _, err := range res.Errors {
+			combined = errors.Append(combined, err)
+		}
+		return nil, combined
+	}
+
+	if res.Data.Repository == nil {
+		return nil, errors.New("repo not found")
+	}
+	if res.Data.Repository.Commit == nil {
+		return nil, errors.New("commit not found")
+	}
+	if res.Data.Repository.Commit.Blob == nil {
+		return nil, errors.New("blob not found")
+	}
+	if res.Data.Repository.Commit.Blob.LSIF == nil {
+		return nil, errors.New("lsif data not found")
+	}
+	if res.Data.Repository.Commit.Blob.LSIF.References == nil {
+		return nil, errors.New("lsif references not found")
+	}
+
+	crs := make(map[string][]codeRange)
+	for _, ref := range res.Data.Repository.Commit.Blob.LSIF.References.Nodes {
+		cr := codeRange{
+			start: codeLocation{
+				line:      ref.Range.Start.Line,
+				character: ref.Range.Start.Character,
+			},
+			end: codeLocation{
+				line:      ref.Range.End.Line,
+				character: ref.Range.End.Character,
+			},
+		}
+		if _, ok := crs[ref.Resource.Path]; !ok {
+			crs[ref.Resource.Path] = make([]codeRange, 0)
+		}
+		crs[ref.Resource.Path] = append(crs[ref.Resource.Path], cr)
+	}
+
+	return crs, nil
 }
 
+// writeReplacement in-place replaces all the codeRanges in the given files by the replacement string.
 func writeReplacement(ranges map[string][]codeRange, replacement string) (err error) {
 	for filePath, crs := range ranges {
 		var buf []byte
 		buf, err = os.ReadFile(filePath)
 		content := string(buf)
-		newCode, _ := applyReplacement(content, crs, replacement) //TODO handle err
-		println(newCode)
-		// write that to file
+		_, err := applyReplacement(content, crs, replacement) //TODO handle err
+		if err != nil {
+			return err
+		}
+		fmt.Printf("I would write a replacement for %s\n", filePath)
+		// if err := os.WriteFile(filePath, []byte(newCode), 0); err != nil {
+		// 	return err
+		// }
 	}
 	return nil
 }
 
-// writeReplacement in-place replaces all the codeRanges in the given files by the replacement string.
 func applyReplacement(content string, ranges []codeRange, replacement string) (newCode string, err error) {
 
 	// We need to make sure to order the codeRanges in ascending order and carry-forward
 	// the offset of the replacement - original length to the next code ranges.
 	// example line: func abc(a TYPE, b TYPE) error
-	//TODO we think that end.line is always the same as start.line, we could ditch it
+	// TODO: we think that end.line is always the same as start.line, we could ditch it
 
 	sort.Slice(ranges, func(i, j int) bool {
 		if ranges[i].start.line == ranges[j].start.line {
@@ -147,17 +233,72 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 	return strings.Join(lines, "\n"), nil
 }
 
-const gqlSettingsQuery = `query CodeMonitorSettings{
-	viewerSettings {
-		final
+const gqlQuery = `query LSIFReferencesForRename {
+	repository(name: %q) {
+	  commit(rev: %q) {
+		blob(path: %q) {
+		  lsif {
+			references(line: %d, character: %d) {
+			  nodes {
+				resource {
+				  path
+				}
+				range {
+				  start {
+					line
+					character
+				  }
+				  end {
+					line
+					character
+				  }
+				}
+			  }
+			}
+		  }
+		}
+	  }
 	}
-}`
+  }
+  `
 
-type gqlSettingsResponse struct {
+type gqlLSIFResponse struct {
 	Data struct {
-		ViewerSettings struct {
-			Final string `json:"final"`
-		} `json:"viewerSettings"`
+		Repository *struct {
+			Commit *struct {
+				Blob *struct {
+					LSIF *struct {
+						References *struct {
+							Nodes []*struct {
+								Resource struct {
+									Path string `json:"path"`
+								} `json:"resource"`
+								Range struct {
+									Start struct {
+										Line      int `json:"line"`
+										Character int `json:"character"`
+									} `json:"start"`
+									End struct {
+										Line      int `json:"line"`
+										Character int `json:"character"`
+									} `json:"end"`
+								} `json:"range"`
+							} `json:"nodes"`
+						} `json:"references"`
+					} `json:"lsif"`
+				} `json:"blob"`
+			} `json:"commit"`
+		} `json:"repository"`
 	} `json:"data"`
 	Errors []gqlerrors.FormattedError
+}
+
+func gqlURL(queryName string) (string, error) {
+	u, err := url.Parse("https://sourcegraph.test:3443")
+	if err != nil {
+		return "", err
+	}
+	u.Path = "/.api/graphql"
+	u.RawQuery = queryName
+	return u.String(), nil
 }
