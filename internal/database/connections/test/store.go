@@ -3,11 +3,13 @@ package connections
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 )
 
@@ -32,6 +34,10 @@ func (s *memoryStore) Transact(ctx context.Context) (runner.Store, error) {
 
 func (s *memoryStore) Done(err error) error {
 	return err
+}
+
+func (s *memoryStore) Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error) {
+	return nil, errors.New("unimplemented")
 }
 
 func (s *memoryStore) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error) {
