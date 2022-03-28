@@ -1,19 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"errors"
 	"flag"
-	"io"
-	"net/http"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/opentracing/opentracing-go"
-
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 func main() {
@@ -48,7 +42,7 @@ func parseFlags() (args programArgs, replacement string, err error) {
 }
 
 type codeLocation struct {
-	// Check if GQL API is 0-indexed.
+	// TODO Check if GQL API is 0-indexed (this code assumes YES).
 	line      int
 	character int
 }
@@ -60,68 +54,87 @@ type codeRange struct {
 
 // loadSymbolLocations uses the GQL query from the scratchpad to query all locations for the given symbol.
 func loadSymbolLocations(args programArgs) map[string][]codeRange {
-	reqBody, err := json.Marshal(map[string]interface{}{"query": gqlSettingsQuery})
-	if err != nil {
-		return nil, errors.Wrap(err, "marshal request body")
-	}
+	//reqBody, err := json.Marshal(map[string]interface{}{"query": gqlSettingsQuery})
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "marshal request body")
+	//}
+	//
+	//url, err := gqlURL("CodeMonitorSettings")
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "construct frontend URL")
+	//}
+	//
+	//req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "construct request")
+	//}
+	//req.Header.Set("Content-Type", "application/json")
+	//if span != nil {
+	//	carrier := opentracing.HTTPHeadersCarrier(req.Header)
+	//	span.Tracer().Inject(
+	//		span.Context(),
+	//		opentracing.HTTPHeaders,
+	//		carrier,
+	//	)
+	//}
+	//
+	//resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "do request")
+	//}
+	//defer resp.Body.Close()
+	//
+	//var res gqlSettingsResponse
+	//if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	//	return nil, errors.Wrap(err, "decode response")
+	//}
+	//
+	//if len(res.Errors) > 0 {
+	//	var combined error
+	//	for _, err := range res.Errors {
+	//		combined = errors.Append(combined, err)
+	//	}
+	//	return nil, combined
+	//}
+	//return nil
+	return nil
+}
 
-	url, err := gqlURL("CodeMonitorSettings")
-	if err != nil {
-		return nil, errors.Wrap(err, "construct frontend URL")
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, errors.Wrap(err, "construct request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if span != nil {
-		carrier := opentracing.HTTPHeadersCarrier(req.Header)
-		span.Tracer().Inject(
-			span.Context(),
-			opentracing.HTTPHeaders,
-			carrier,
-		)
-	}
-
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, errors.Wrap(err, "do request")
-	}
-	defer resp.Body.Close()
-
-	var res gqlSettingsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return nil, errors.Wrap(err, "decode response")
-	}
-
-	if len(res.Errors) > 0 {
-		var combined error
-		for _, err := range res.Errors {
-			combined = errors.Append(combined, err)
-		}
-		return nil, combined
+func writeReplacement(ranges map[string][]codeRange, replacement string) (err error) {
+	for filePath, crs := range ranges {
+		var buf []byte
+		buf, err = os.ReadFile(filePath)
+		content := string(buf)
+		newCode, _ := replaceCode(content, crs, replacement) //TODO handle err
+		println(newCode)
+		// write that to file
 	}
 	return nil
 }
 
 // writeReplacement in-place replaces all the codeRanges in the given files by the replacement string.
-func writeReplacement(ranges map[string][]codeRange, replacement string) error {
+func replaceCode(content string, ranges []codeRange, replacement string) (newCode string, err error) {
 
 	// We need to make sure to order the codeRanges in ascending order and carry-forward
 	// the offset of the replacement - original length to the next code ranges.
 	// example line: func abc(a TYPE, b TYPE) error
-	for filePath, crs := range ranges {
-		f, err := os.OpenFile(filePath, os.O_RDWR, 0)
-		if err != nil {
-			return nil
-		}
-		io.ReadAll(context.Background(), f)
-		for _, cr := range crs {
+	//TODO we think that end.line is always the same as start.line, we could ditch it
 
+	sort.Slice(ranges, func(i, j int) bool {
+		if ranges[i].start.line == ranges[j].start.line {
+			return ranges[i].start.character < ranges[j].start.character
 		}
+		return ranges[i].start.line < ranges[j].start.line
+	})
+
+	lines := strings.Split(content, "\n")
+	for _, cr := range ranges {
+		line := lines[cr.start.line]
+		line = line[:cr.start.character] + replacement + line[cr.end.character:]
+		lines[cr.start.line] = line
 	}
-	return nil
+
+	return strings.Join(lines, "\n"), nil
 }
 
 const gqlSettingsQuery = `query CodeMonitorSettings{
