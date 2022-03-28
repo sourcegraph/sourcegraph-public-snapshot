@@ -13,6 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Block, BlockInit } from '..'
 import { NotebookFields } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
+import { NotebookInsightsBlockProps } from '../blocks/insights/NotebooksInightsBlock'
 import { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
 
@@ -30,6 +31,8 @@ export interface NotebookContentProps
     isEmbedded?: boolean
     onUpdateBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
+
+    NotebookInsightsBlock: React.ComponentType<NotebookInsightsBlockProps>
 }
 
 export const NotebookContent: React.FunctionComponent<NotebookContentProps> = React.memo(
@@ -51,6 +54,7 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = Re
         settingsCascade,
         platformContext,
         extensionsController,
+        NotebookInsightsBlock,
     }) => {
         const initializerBlocks: BlockInit[] = useMemo(
             () =>
@@ -102,6 +106,7 @@ export const NotebookContent: React.FunctionComponent<NotebookContentProps> = Re
                 onSerializeBlocks={viewerCanManage ? onUpdateBlocks : noop}
                 exportedFileName={exportedFileName}
                 onCopyNotebook={onCopyNotebook}
+                NotebookInsightsBlock={NotebookInsightsBlock}
             />
         )
     }

@@ -13,6 +13,7 @@ import {
 
 import { BlockInit } from '..'
 import { WebStory } from '../../components/WebStory'
+import { NotebookInsightsBlock } from '../blocks/insights/NotebooksInightsBlock'
 
 import { NotebookComponent } from './NotebookComponent'
 
@@ -56,6 +57,7 @@ add('default', () => (
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
+                NotebookInsightsBlock={NotebookInsightsBlock}
             />
         )}
     </WebStory>
@@ -82,6 +84,7 @@ add('default read-only', () => (
                 platformContext={NOOP_PLATFORM_CONTEXT}
                 exportedFileName="notebook.snb.md"
                 onCopyNotebook={() => NEVER}
+                NotebookInsightsBlock={NotebookInsightsBlock}
             />
         )}
     </WebStory>

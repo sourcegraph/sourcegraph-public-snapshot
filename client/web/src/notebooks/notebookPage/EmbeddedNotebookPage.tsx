@@ -14,6 +14,7 @@ import { createPlatformContext } from '../../platform/context'
 import { fetchHighlightedFileLineRanges } from '../../repo/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
+import { NotebookInsightsBlock } from '../blocks/insights/NotebooksInightsBlock'
 import { convertNotebookTitleToFileName } from '../serialize'
 
 import { NotebookContent, NotebookContentProps } from './NotebookContent'
@@ -80,6 +81,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<EmbeddedNotebookPageP
                     // Copying is not supported in embedded notebooks
                     onCopyNotebook={() => NEVER}
                     isEmbedded={true}
+                    NotebookInsightsBlock={NotebookInsightsBlock}
                 />
             )}
         </div>

@@ -36,6 +36,7 @@ import {
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
+import { NotebookInsightsBlockProps } from '../blocks/insights/NotebooksInightsBlock'
 import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
@@ -61,6 +62,8 @@ interface NotebookPageProps
     createNotebookStar?: typeof _createNotebookStar
     deleteNotebookStar?: typeof _deleteNotebookStar
     copyNotebook?: typeof _copyNotebook
+
+    NotebookInsightsBlock: React.ComponentType<NotebookInsightsBlockProps>
 }
 
 const LOADING = 'loading' as const
@@ -90,6 +93,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
     platformContext,
     extensionsController,
     match,
+    NotebookInsightsBlock,
 }) => {
     useEffect(() => telemetryService.logViewEvent('SearchNotebookPage'), [telemetryService])
 
@@ -290,6 +294,7 @@ export const NotebookPage: React.FunctionComponent<NotebookPageProps> = ({
                             settingsCascade={settingsCascade}
                             platformContext={platformContext}
                             extensionsController={extensionsController}
+                            NotebookInsightsBlock={NotebookInsightsBlock}
                         />
                         <div className={styles.spacer} />
                     </>

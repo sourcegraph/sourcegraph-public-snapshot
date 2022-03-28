@@ -37,7 +37,7 @@ import { PageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
-import { NotebookInsightsBlock } from '../blocks/insights/NotebooksInightsBlock'
+import { NotebookInsightsBlockProps } from '../blocks/insights/NotebooksInightsBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
@@ -68,6 +68,8 @@ export interface NotebookComponentProps
     isEmbedded?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
     onCopyNotebook: (props: Omit<CopyNotebookProps, 'title'>) => Observable<NotebookFields>
+
+    NotebookInsightsBlock: React.ComponentType<NotebookInsightsBlockProps>
 }
 
 const LOADING = 'LOADING' as const
@@ -115,6 +117,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
         globbing,
         searchContextsEnabled,
         settingsCascade,
+        NotebookInsightsBlock,
     }) => {
         const notebook = useMemo(
             () =>
@@ -547,7 +550,7 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 <div>
                     <NotebookBlockSeparator isReadOnly={isReadOnly} index={blocks.length} onAddBlock={onAddBlock} />
                     <NotebookInsightsBlock
-                        id="aW5zaWdodF92aWV3OiIyNzI0THE4YVFoSWJxdnBBcHBRTWhQTzNuRm4i"
+                        id="aW5zaWdodF92aWV3OiIyNzJFbWU4TmVVZjRocGlLVVhSUkJlN3NDVUIi"
                         telemetryService={telemetryService}
                     />
                 </div>

@@ -10,6 +10,7 @@ import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
+import { NotebookInsightsBlock } from './notebooks/blocks/insights/NotebooksInightsBlock'
 import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
@@ -114,7 +115,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
 
             return showSearchNotebook ? (
-                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
+                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} NotebookInsightsBlock={NotebookInsightsBlock} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
             )

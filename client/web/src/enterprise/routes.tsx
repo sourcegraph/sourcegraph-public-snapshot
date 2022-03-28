@@ -7,8 +7,12 @@ import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/setting
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
+import { NotebookPage } from '../notebooks/notebookPage/NotebookPage'
 import { LayoutRouteProps, routes } from '../routes'
-import { EnterprisePageRoutes } from '../routes.constants'
+import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
+import { useExperimentalFeatures } from '../stores'
+
+import { NotebookInsightsBlock } from './notebooks/blocks/insights/NotebookInsightsBlock'
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) &&
@@ -77,6 +81,24 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         path: EnterprisePageRoutes.Context,
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+    },
+    {
+        // Override this route in the enterprise version so Code Insights can be inserted.
+        path: PageRoutes.Notebook,
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <NotebookPage
+                    {...props}
+                    showSearchContext={showSearchContext ?? false}
+                    NotebookInsightsBlock={NotebookInsightsBlock}
+                />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            )
+        },
+        exact: true,
     },
     ...routes,
 ]
