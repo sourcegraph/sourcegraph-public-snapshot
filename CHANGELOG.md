@@ -2,6 +2,8 @@
 ###################################### READ ME ###########################################
 ### This changelog should always be read on `main` branch. Its contents on version     ###
 ### branches do not necessarily reflect the changes that have gone into that branch.   ###
+### To update the changelog add your changes to the appropriate section under the      ###
+### "Unreleased" heading. ###
 ##########################################################################################
 -->
 
