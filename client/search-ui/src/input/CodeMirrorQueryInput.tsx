@@ -10,16 +10,7 @@ import {
     startCompletion,
 } from '@codemirror/autocomplete'
 import { RangeSetBuilder } from '@codemirror/rangeset'
-import {
-    EditorSelection,
-    EditorState,
-    EditorStateConfig,
-    Extension,
-    Facet,
-    StateEffect,
-    StateField,
-    Prec,
-} from '@codemirror/state'
+import { EditorSelection, EditorState, Extension, Facet, StateEffect, StateField, Prec } from '@codemirror/state'
 import { hoverTooltip, TooltipView } from '@codemirror/tooltip'
 import { EditorView, ViewUpdate, keymap, Decoration, placeholder as placeholderExtension } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
@@ -30,6 +21,7 @@ import { delay, map, switchMap } from 'rxjs/operators'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { QueryChangeSource, SearchPatternType, SearchPatternTypeProps } from '@sourcegraph/search'
+import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getCompletionItems } from '@sourcegraph/shared/src/search/query/completion'
 import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
@@ -303,58 +295,6 @@ const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputProps> =
         return <div ref={setContainer} className={classNames(styles.root, className)} id="monaco-query-input" />
     }
 )
-
-/**
- * Hook for rendering and updating a CodeMirror instance.
- */
-function useCodeMirror(
-    container: HTMLDivElement | null,
-    value: string,
-    extensions: EditorStateConfig['extensions'] = []
-): EditorView | undefined {
-    const [view, setView] = useState<EditorView>()
-
-    useEffect(() => {
-        if (container) {
-            const view = new EditorView({
-                state: EditorState.create({ doc: value ?? '', extensions }),
-                parent: container,
-            })
-            setView(view)
-            return () => {
-                setView(undefined)
-                view.destroy()
-            }
-        }
-        return
-        // Extensions and value are updated via transactions below
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [container])
-
-    // Update editor value if necessary
-    useEffect(() => {
-        const currentValue = view?.state.doc.toString() ?? ''
-        if (view && currentValue !== value) {
-            view.dispatch({
-                changes: { from: 0, to: currentValue.length, insert: value ?? '' },
-            })
-        }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value])
-
-    useEffect(() => {
-        if (view) {
-            view.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
-        }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [extensions])
-
-    return view
-}
 
 // The remainder of the file defines all the extensions that provide the query
 // editor behavior. Here is also a brief overview over CodeMirror's architecture
