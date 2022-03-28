@@ -11,10 +11,10 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
 )
 
 type Flags struct {
@@ -53,11 +53,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	manifestRevision, err := getRevision()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	dd := NewManifestDeploymentDiffer(changedFiles)
 	dn := NewDeploymentNotifier(
 		ghc,
 		dd,
 		flags.Environment,
+		manifestRevision,
 	)
 
 	report, err := dn.Report(ctx)
@@ -109,28 +115,11 @@ func getChangedFiles() ([]string, error) {
 	}
 }
 
-func GitCmd(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
-	cmd.Env = append(os.Environ(),
-		// Don't use the system wide git config.
-		"GIT_CONFIG_NOSYSTEM=1",
-		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
-		"GIT_CONFIG=/dev/null")
-
-	return InRoot(cmd)
-}
-
-func InRoot(cmd *exec.Cmd) (string, error) {
-	repoRoot, err := root.RepositoryRoot()
+func getRevision() (string, error) {
+	diffCommand := []string{"rev-list", "-1", "HEAD", "."}
+	output, err := exec.Command("git", diffCommand...).Output()
 	if err != nil {
 		return "", err
 	}
-
-	cmd.Dir = repoRoot
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(out), errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
-	}
-
-	return string(out), nil
+	return strings.TrimSpace(string(output)), nil
 }
