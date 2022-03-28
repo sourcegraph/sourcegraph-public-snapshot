@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from 'react'
 
+import classNames from 'classnames'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -30,8 +31,8 @@ import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
+import { HomeTab } from './HomeTab'
 import { TreeNavigation } from './TreeNavigation'
-import { TreePageContent } from './TreePageContent'
 
 import styles from './TreePage.module.scss'
 
@@ -168,6 +169,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
         return `${repoString}`
     }
 
+    const homeTabProps = {
+        repo,
+        commitID,
+        revision,
+        filePath,
+        settingsCascade,
+        codeIntelligenceEnabled,
+        batchChangesEnabled,
+        location,
+    }
+
     return (
         <div className={styles.treePage}>
             <Container className={styles.container}>
@@ -210,18 +222,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
 
-                        <TreePageContent
-                            commitID={commitID}
-                            filePath={filePath}
-                            tree={treeOrError}
-                            repo={repo}
-                            revision={revision}
-                            location={props.location}
-                            extensionsController={props.extensionsController}
-                            isLightTheme={props.isLightTheme}
-                            telemetryService={props.telemetryService}
-                            platformContext={props.platformContext}
-                        />
+                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
+                            <HomeTab {...homeTabProps} {...props} repo={repo} />
+                        </section>
                     </>
                 )}
             </Container>

@@ -94,24 +94,29 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
             data-testid="git-commit-node-message"
         >
-            <Link
-                to={node.canonicalURL}
-                className={classNames(messageSubjectClassName, styles.messageSubject)}
-                title={node.message}
-                data-testid="git-commit-node-message-subject"
-            >
-                {node.subject}
-            </Link>
-            {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
-                <Button
-                    className={styles.messageToggle}
-                    onClick={toggleShowCommitMessageBody}
-                    variant="secondary"
-                    size="sm"
+            {messageSubjectClassName !== undefined && (
+                <Link
+                    to={node.canonicalURL}
+                    className={classNames(messageSubjectClassName, styles.messageSubject)}
+                    title={node.message}
+                    data-testid="git-commit-node-message-subject"
                 >
-                    <Icon as={DotsHorizontalIcon} />
-                </Button>
+                    {node.subject}
+                </Link>
             )}
+            {node.body &&
+                !hideExpandCommitMessageBody &&
+                !expandCommitMessageBody &&
+                messageSubjectClassName !== undefined && (
+                    <Button
+                        className={styles.messageToggle}
+                        onClick={toggleShowCommitMessageBody}
+                        variant="secondary"
+                        size="sm"
+                    >
+                        <Icon as={DotsHorizontalIcon} />
+                    </Button>
+                )}
             {compact && (
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
                     <Timestamp
