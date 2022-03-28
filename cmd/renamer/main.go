@@ -234,8 +234,10 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 	// peeking at the first element, as every other row should have an equal symbol length
 	lengthDiff := len(replacement) - (ranges[0].end.character - ranges[0].start.character)
 
+	offset := 0
+	lastLine := -1
 	lines := strings.Split(content, "\n")
-	for idx, cr := range ranges {
+	for _, cr := range ranges {
 		if cr.start.line != cr.end.line {
 			return "", errors.New("unsupported multi-line rename")
 		}
@@ -244,10 +246,11 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 		}
 		line := lines[cr.start.line]
 
-		// the first replacement can't be offset yet
-		offset := 0
-		if idx > 0 {
-			offset = idx * lengthDiff
+		if lastLine == -1 || lastLine != cr.start.line {
+			lastLine = cr.start.line
+			offset = 0
+		} else {
+			offset += lengthDiff
 		}
 
 		line = line[:cr.start.character+offset] + replacement + line[cr.end.character+offset:]
