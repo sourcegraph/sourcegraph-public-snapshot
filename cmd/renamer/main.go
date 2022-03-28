@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"sort"
 	"strings"
 
@@ -19,7 +20,7 @@ import (
 
 func main() {
 	// Parse flags.
-	args, replacement, err := parseFlags()
+	args, repoPath, replacement, err := parseFlags()
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
@@ -33,7 +34,7 @@ func main() {
 	}
 
 	// Traverse response, write to files.
-	err = writeReplacement(codeRanges, replacement)
+	err = writeReplacement(codeRanges, repoPath, replacement)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
@@ -52,7 +53,12 @@ var errInvalidInput = errors.New("invalid input")
 // parseFlags takes the input parameters of the program. The batch spec
 // needs to pass all these values so we can uniquely identify the symbol.
 // Errors if not all values are given.
-func parseFlags() (args programArgs, replacement string, err error) {
+func parseFlags() (args programArgs, repoPath string, replacement string, err error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return programArgs{}, "", "", err
+	}
+	rp := flag.String("repoPath", "", cwd)
 	repoName := flag.String("repoName", "", "")
 	revision := flag.String("rev", "", "")
 	filePath := flag.String("filePath", "", "")
@@ -61,37 +67,42 @@ func parseFlags() (args programArgs, replacement string, err error) {
 	rep := flag.String("replacement", "", "")
 	flag.Parse()
 
+	if *rp == "" {
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "repoPath")
+	}
+	repoPath = *rp
+
 	if *repoName == "" {
-		return programArgs{}, "", errors.Wrap(errInvalidInput, "repoName")
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "repoName")
 	}
 	args.repoName = *repoName
 
 	if *revision == "" {
-		return programArgs{}, "", errors.Wrap(errInvalidInput, "revision")
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "revision")
 	}
 	args.revision = *revision
 
 	if *filePath == "" {
-		return programArgs{}, "", errors.Wrap(errInvalidInput, "filePath")
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "filePath")
 	}
 	args.filePath = *filePath
 
 	if *line == -1 {
-		return programArgs{}, "", errors.Wrap(errInvalidInput, "line")
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "line")
 	}
 	args.line = *line
 
 	if *character == -1 {
-		return programArgs{}, "", errors.Wrap(errInvalidInput, "character")
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "character")
 	}
 	args.character = *character
 
 	if *rep == "" {
-		return programArgs{}, "", errors.Wrap(errInvalidInput, "rep")
+		return programArgs{}, "", "", errors.Wrap(errInvalidInput, "rep")
 	}
 	replacement = *rep
 
-	return args, replacement, nil
+	return args, repoPath, replacement, nil
 }
 
 type codeLocation struct {
@@ -182,16 +193,23 @@ func loadSymbolLocations(args programArgs) (map[string][]codeRange, error) {
 }
 
 // writeReplacement in-place replaces all the codeRanges in the given files by the replacement string.
-func writeReplacement(ranges map[string][]codeRange, replacement string) (err error) {
+func writeReplacement(ranges map[string][]codeRange, repoPath, replacement string) (err error) {
 	for filePath, crs := range ranges {
+		p := path.Join(repoPath, filePath)
+		if !strings.HasPrefix(p, repoPath) {
+			return errors.New("cannot change file outside of cwd")
+		}
 		var buf []byte
-		buf, err = os.ReadFile(filePath)
-		content := string(buf)
-		_, err := applyReplacement(content, crs, replacement) //TODO handle err
+		buf, err = os.ReadFile(p)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("I would write a replacement for %s\n", filePath)
+		content := string(buf)
+		_, err := applyReplacement(content, crs, replacement)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("I would write a replacement for %s\n", p)
 		// if err := os.WriteFile(filePath, []byte(newCode), 0); err != nil {
 		// 	return err
 		// }
@@ -218,6 +236,12 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 
 	lines := strings.Split(content, "\n")
 	for idx, cr := range ranges {
+		if cr.start.line != cr.end.line {
+			return "", errors.New("unsupported multi-line rename")
+		}
+		if len(lines) < cr.start.line {
+			return "", errors.Newf("tried to access line %d but only got %d", cr.start.line, len(lines))
+		}
 		line := lines[cr.start.line]
 
 		// the first replacement can't be offset yet
@@ -225,6 +249,9 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 		if idx > 0 {
 			offset = lengthDiff
 		}
+		// TODO: We need to do something like this I think, otherwise we don't get the right
+		// results for cases where there's more than 2 occurences on one line
+		// offset := lengthDiff * idx
 
 		line = line[:cr.start.character+offset] + replacement + line[cr.end.character+offset:]
 		lines[cr.start.line] = line
