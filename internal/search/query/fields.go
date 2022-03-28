@@ -19,6 +19,7 @@ const (
 	FieldVisibility         = "visibility"
 	FieldRev                = "rev"
 	FieldContext            = "context"
+	FieldNotebook           = "notebook"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"

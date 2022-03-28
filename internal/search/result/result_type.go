@@ -18,6 +18,7 @@ const (
 	TypeDiff
 	TypeCommit
 	TypeStructural
+	TypeNotebook
 )
 
 var TypeFromString = map[string]Types{
@@ -28,6 +29,7 @@ var TypeFromString = map[string]Types{
 	"diff":       TypeDiff,
 	"commit":     TypeCommit,
 	"structural": TypeStructural,
+	"notebook":   TypeNotebook,
 }
 
 func (r Types) Has(t Types) bool {

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/notebook"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -366,6 +367,11 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				}
 			}
 		}
+	}
+
+	if resultTypes.Has(result.TypeNotebook) {
+		log15.Info("Notebook search yay")
+		addJob(true, &notebook.SearchJob{})
 	}
 
 	addJob(true, &searchrepos.ComputeExcludedRepos{
