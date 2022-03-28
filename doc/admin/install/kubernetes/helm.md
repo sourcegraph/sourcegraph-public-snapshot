@@ -47,7 +47,7 @@ __TODO__
 
 To use external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage). Then you may come back to add the following values to your override file.
 
-Prior installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
+Prior to installing the chart, you should store these sensitive environment variables in [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/).
 
 > The example override assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/admin/external_services/object_storage).
 
@@ -62,6 +62,7 @@ data:
   PRECISE_CODE_INTEL_UPLOAD_AWS_SECRET_ACCESS_KEY: ""
 ```
 
+[override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage/override.yaml)
 ```yaml
 # we use YAML anchors and alias to keep override file clean
 objectStorageEnv: &objectStorageEnv
