@@ -127,10 +127,20 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 		return ranges[i].start.line < ranges[j].start.line
 	})
 
+	// peeking at the first element, as every other row should have an equal symbol length
+	lengthDiff := len(replacement) - (ranges[0].end.character - ranges[0].start.character)
+
 	lines := strings.Split(content, "\n")
-	for _, cr := range ranges {
+	for idx, cr := range ranges {
 		line := lines[cr.start.line]
-		line = line[:cr.start.character] + replacement + line[cr.end.character:]
+
+		// the first replacement can't be offset yet
+		offset := 0
+		if idx > 0 {
+			offset = lengthDiff
+		}
+
+		line = line[:cr.start.character+offset] + replacement + line[cr.end.character+offset:]
 		lines[cr.start.line] = line
 	}
 

@@ -48,6 +48,40 @@ func Test_applyReplacement(t *testing.T) {
 			wantNewCode: twoTypesOneLineReplaced,
 			wantErr:     false,
 		},
+		{
+			name: "replace longer size symbol",
+			args: args{
+				replacement: "NewTypeLonger",
+				// ranges are unsorted on purpose, the tested code should handle the sorting
+				ranges: []codeRange{
+					// replacement of 'b' parameter
+					{
+						start: codeLocation{
+							line:      2,
+							character: 23,
+						},
+						end: codeLocation{
+							line:      2,
+							character: 30,
+						},
+					},
+					// replacement of 'a' parameter
+					{
+						start: codeLocation{
+							line:      2,
+							character: 12,
+						},
+						end: codeLocation{
+							line:      2,
+							character: 19,
+						},
+					},
+				},
+				fileContent: twoTypesOneLine,
+			},
+			wantNewCode: twoTypesOneLineReplacedDiffReplacement,
+			wantErr:     false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -75,6 +109,14 @@ const twoTypesOneLine = `
 const twoTypesOneLineReplaced = `
 {
 	func foo(a NewType, b NewType) {
+		...
+	}
+}
+`
+
+const twoTypesOneLineReplacedDiffReplacement = `
+{
+	func foo(a NewTypeLonger, b NewTypeLonger) {
 		...
 	}
 }
