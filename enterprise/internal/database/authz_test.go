@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"testing"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -9,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"testing"
 )
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
