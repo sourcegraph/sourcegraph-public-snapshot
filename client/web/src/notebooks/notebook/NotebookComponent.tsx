@@ -546,7 +546,10 @@ export const NotebookComponent: React.FunctionComponent<NotebookComponentProps> 
                 ))}
                 <div>
                     <NotebookBlockSeparator isReadOnly={isReadOnly} index={blocks.length} onAddBlock={onAddBlock} />
-                    <NotebookInsightsBlock />
+                    <NotebookInsightsBlock
+                        id="aW5zaWdodF92aWV3OiIyNzI0THE4YVFoSWJxdnBBcHBRTWhQTzNuRm4i"
+                        telemetryService={telemetryService}
+                    />
                 </div>
                 {!isReadOnly && (
                     <NotebookCommandPaletteInput
