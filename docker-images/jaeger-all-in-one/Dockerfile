@@ -8,7 +8,7 @@ FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
 USER root
 RUN apk update
-RUN apk --no-cache add bash curl apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0
+RUN apk --no-cache add bash curl apk-tools>=2.10.8-r0 krb5-libs>=1.18.4-r0
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=base /go/bin/all-in-one-linux /go/bin/all-in-one-linux
