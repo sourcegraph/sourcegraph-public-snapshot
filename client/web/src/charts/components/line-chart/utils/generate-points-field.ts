@@ -7,6 +7,8 @@ import { Point } from '../types'
 import { isValidNumber } from './data-guards'
 import { LineChartSeriesWithData } from './data-series-processing'
 
+const NULL_LINK = (): undefined => undefined
+
 interface PointsFieldInput<Datum> {
     dataSeries: LineChartSeriesWithData<Datum>[]
     xScale: ScaleTime<number, number>
@@ -17,23 +19,25 @@ interface PointsFieldInput<Datum> {
 export function generatePointsField<Datum>(input: PointsFieldInput<Datum>): Point<Datum>[] {
     const { dataSeries, xScale, yScale, xAxisKey } = input
 
-    return dataSeries.flatMap(series =>
-        series.data
-            .map((datum, index) =>
-                isValidNumber(datum[series.dataKey])
+    return dataSeries
+        .flatMap(series => {
+            const { dataKey, originalData, getLinkURL = NULL_LINK } = series
+
+            return series.data.map((datum, index) =>
+                isValidNumber(datum[dataKey])
                     ? {
-                          id: `${series.dataKey as string}-${index}`,
-                          seriesKey: series.dataKey as string,
-                          value: +datum[series.dataKey],
+                          id: `${dataKey as string}-${index}`,
+                          seriesKey: dataKey as string,
+                          value: +datum[dataKey],
                           x: xScale(+datum[xAxisKey]),
                           y: yScale(+datum[series.dataKey]),
                           color: series.color ?? 'green',
-                          linkUrl: series.linkURLs?.[index],
-                          originalDatum: series.originalData[index],
+                          linkUrl: getLinkURL(datum),
+                          originalDatum: originalData[index],
                           datum,
                       }
                     : null
             )
-            .filter(isDefined)
-    )
+        })
+        .filter(isDefined)
 }

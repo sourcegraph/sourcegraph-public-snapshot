@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { MaybeLink } from '../../../views/components/view/content/chart-view-content/charts/MaybeLink'
+import { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'
 import { distributePieArcs } from './distribute-pie-data'
@@ -20,23 +21,17 @@ const DEFAULT_PADDING = { top: 20, right: 20, bottom: 20, left: 20 }
  * for the first one is 30 / (30 + 90) = 0.25%
  * and for the second one 90 / (30 + 90) = 0.75%
  */
-const getSubtitle = <Datum extends object>(arc: PieArcDatum<Datum>, total: number): string =>
-    `${((100 * arc.value) / total).toFixed(2)}%`
-
-export interface PieChartProps<Datum extends object> {
-    width: number
-    height: number
-    data: Datum[]
-    padding?: typeof DEFAULT_PADDING
-
-    getDatumValue: (datum: Datum) => number
-    getDatumName: (datum: Datum) => string
-    getDatumColor: (datum: Datum) => string | undefined
-    getDatumLink: (datum: Datum) => string | undefined
-    onDatumLinkClick?: (event: React.MouseEvent) => void
+function getSubtitle<Datum>(arc: PieArcDatum<Datum>, total: number): string {
+    return `${((100 * arc.value) / total).toFixed(2)}%`
 }
 
-export function PieChart<Datum extends object = {}>(props: PieChartProps<Datum>): ReactElement | null {
+export interface PieChartProps<Datum> extends CategoricalLikeChart<Datum> {
+    width: number
+    height: number
+    padding?: typeof DEFAULT_PADDING
+}
+
+export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | null {
     const {
         width,
         height,

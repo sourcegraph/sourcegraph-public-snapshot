@@ -2,12 +2,13 @@ import React from 'react'
 
 import { Meta, Story } from '@storybook/react'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory } from '../../../../../components/WebStory'
+import { CategoricalBasedChartTypes } from '../types'
 
-import { PieChart } from './PieChart'
+import { CategoricalChart } from './CategoricalChart'
 
 export const StoryConfig: Meta = {
-    title: 'web/charts/pie',
+    title: 'web/insights/views/CategoricalChart',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
 
@@ -52,8 +53,9 @@ const getColor = (datum: LanguageUsageDatum) => datum.fill
 const getLink = (datum: LanguageUsageDatum) => datum.linkURL
 const getName = (datum: LanguageUsageDatum) => datum.name
 
-export const PieChartVitrina: Story = () => (
-    <PieChart<LanguageUsageDatum>
+export const CategoricalPieChart: Story = () => (
+    <CategoricalChart
+        type={CategoricalBasedChartTypes.Pie}
         width={400}
         height={400}
         data={LANGUAGE_USAGE_DATA}

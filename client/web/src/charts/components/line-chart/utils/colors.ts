@@ -1,6 +1,6 @@
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
-import { LineChartSeries } from '../types'
+import { Series } from '../../../types'
 
-export function getLineColor(series: LineChartSeries<any>): string {
+export function getLineColor(series: Series<any>): string {
     return series.color ?? DEFAULT_FALLBACK_COLOR
 }

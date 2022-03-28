@@ -3,21 +3,22 @@ import React, { ReactElement, useMemo } from 'react'
 import { isDefined } from '@sourcegraph/common'
 
 import { DEFAULT_FALLBACK_COLOR } from '../../../../constants'
-import { LineChartSeries, Point as DataPoint } from '../../types'
+import { Series } from '../../../../types'
+import { Point as DataPoint } from '../../types'
 import { isValidNumber, formatYTick } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 
 import styles from './TooltipContent.module.scss'
 
-export function getLineStroke<Datum>(line: LineChartSeries<Datum>): string {
+export function getLineStroke<Datum>(line: Series<Datum>): string {
     return line?.color ?? DEFAULT_FALLBACK_COLOR
 }
 
 const MAX_ITEMS_IN_TOOLTIP = 10
 
 export interface TooltipContentProps<Datum> {
-    series: LineChartSeries<Datum>[]
+    series: Series<Datum>[]
     activePoint: DataPoint<Datum>
     xAxisKey: keyof Datum
 }

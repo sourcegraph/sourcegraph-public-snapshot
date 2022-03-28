@@ -1,11 +1,11 @@
 import { stack } from '@visx/shape'
 import { Series } from 'd3-shape'
 
-import { LineChartSeries } from '../types'
+import { Series as ChartSeries } from '../../../types'
 
 import { isValidNumber } from './data-guards'
 
-export interface LineChartSeriesWithData<Datum> extends LineChartSeries<Datum> {
+export interface LineChartSeriesWithData<Datum> extends ChartSeries<Datum> {
     data: Datum[]
     originalData: Datum[]
     stackedSeries: Series<Datum, keyof Datum> | null
@@ -13,7 +13,7 @@ export interface LineChartSeriesWithData<Datum> extends LineChartSeries<Datum> {
 
 interface SeriesWithDataInput<Datum> {
     data: Datum[]
-    series: LineChartSeries<Datum>[]
+    series: ChartSeries<Datum>[]
     stacked: boolean
     xAxisKey: keyof Datum
 }
