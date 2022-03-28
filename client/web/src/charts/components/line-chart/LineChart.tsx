@@ -8,9 +8,11 @@ import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
+import { Series } from '../../types'
+
 import { AxisBottom, AxisLeft, Tooltip, TooltipContent, NonActiveBackground, PointGlyph } from './components'
 import { useChartEventHandlers } from './hooks/event-listeners'
-import { LineChartSeries, Point } from './types'
+import { Point } from './types'
 import {
     isValidNumber,
     getSeriesWithData,
@@ -26,21 +28,9 @@ export interface LineChartContentProps<D> {
     width: number
     height: number
 
-    /** An array of data objects, with one element for each step on the X axis. */
     data: D[]
-
-    /** The series (lines) of the chart. */
-    series: LineChartSeries<D>[]
-
-    /**
-     * The key in each data object for the X value this line should be
-     * calculated from.
-     */
+    series: Series<D>[]
     xAxisKey: keyof D
-
-    /**
-     * Whether a chart component should stack data based on x value for each series
-     */
     stacked?: boolean
 
     /**
