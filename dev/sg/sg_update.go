@@ -176,10 +176,9 @@ func updateToPrebuiltSG(ctx context.Context) error {
 		return err
 	}
 
-	// Reliable way to find where to put sg, even if the user is using
-	// asdf.
-	cmd := exec.CommandContext(ctx, "go", "list", "-f", "{{.Target}}")
-	out, err := cmd.CombinedOutput()
+	// Reliable way to find where to put sg, even if the user is using asdf.
+	cmd := exec.CommandContext(ctx, "go", "list", "-f", "{{.Target}}", "./dev/sg")
+	out, err := run.InRoot(cmd)
 	sgPath := strings.TrimSpace(string(out))
 	if err != nil {
 		return err
