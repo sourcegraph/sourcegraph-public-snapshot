@@ -17,10 +17,10 @@ import (
 )
 
 // https://buildkite.com/sourcegraph
-const buildkiteOrg = "sourcegraph"
+const BuildkiteOrg = "sourcegraph"
 
-func BuildkiteOrgURL() string {
-	return fmt.Sprintf("https://buildkite.com/%s", buildkiteOrg)
+func GetBuildkiteURL(org string) string {
+	return fmt.Sprintf("https://buildkite.com/%s", org)
 }
 
 type buildkiteSecrets struct {
