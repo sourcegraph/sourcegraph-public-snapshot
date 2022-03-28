@@ -4,12 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+	"time"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/gogen"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -17,181 +16,91 @@ import (
 )
 
 var (
-	stdOut              = stdout.Out
-	generateFlagSet     = flag.NewFlagSet("sg generate", flag.ExitOnError)
-	generateVerboseFlag = generateFlagSet.Bool("v", false, "Display output from go generate")
-	generateQuietFlag   = generateFlagSet.Bool("q", false, "Suppress all output but errors from go generate")
-	generateGoFlagSet   = flag.NewFlagSet("sg generate go", flag.ExitOnError)
+	stdOut                = stdout.Out
+	generateFlagSet       = flag.NewFlagSet("sg generate", flag.ExitOnError)
+	generateGoFlagSet     = flag.NewFlagSet("sg generate go", flag.ExitOnError)
+	generateGoVerboseFlag = generateGoFlagSet.Bool("v", false, "Display output from go generate")
+	generateGoQuietFlag   = generateGoFlagSet.Bool("q", false, "Suppress all output but errors from go generate")
 
 	generateCommand = &ffcli.Command{
 		Name:       "generate",
 		ShortUsage: "sg generate",
 		FlagSet:    generateFlagSet,
-		Exec:       generateExec,
-		Subcommands: []*ffcli.Command{{
-			Name:       "go",
-			ShortUsage: "sg generate go [|packages...]",
-			ShortHelp:  "Run go generate on all packages, with exceptions",
-			LongHelp:   "Run go generate on all packages, with the exceptions of doc/cli/references",
-			FlagSet:    generateGoFlagSet,
-			Exec:       generateGoExec,
-		}},
-	}
-)
-
-type generateVerbosityType int
-
-const (
-	generateVerbose generateVerbosityType = iota
-	generateNormal
-	generateQuiet
-)
-
-func generateExec(ctx context.Context, args []string) error {
-	return generateGoExec(ctx, args)
-}
-
-func generateGoExec(ctx context.Context, args []string) error {
-	if *generateVerboseFlag && *generateQuietFlag {
-		return errors.Errorf("-q and -v flags are exclusive")
-	}
-	if *generateVerboseFlag {
-		return generateDo(ctx, args, generateVerbose)
-	} else if *generateQuietFlag {
-		return generateDo(ctx, args, generateQuiet)
-	} else {
-		return generateDo(ctx, args, generateNormal)
-	}
-}
-
-func generateDo(ctx context.Context, args []string, verbosity generateVerbosityType) error {
-	// Save working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		os.Chdir(cwd)
-	}()
-	root, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(root)
-	if err != nil {
-		return err
-	}
-
-	// Grab the packages list
-	cmd := exec.CommandContext(ctx, "go", "list", "./...")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return errors.Wrap(err, "could not run go list ./...")
-	}
-
-	// Run go generate on the packages list
-	if len(args) == 0 {
-		// If no packages are given, go for everything but the exception.
-		pkgPaths := strings.Split(string(out), "\n")
-		filtered := make([]string, 0, len(pkgPaths))
-		for _, pkgPath := range pkgPaths {
-			if !strings.Contains(pkgPath, "doc/cli/references") {
-				filtered = append(filtered, pkgPath)
+		Exec: func(ctx context.Context, args []string) error {
+			if len(args) > 0 {
+				writeFailureLinef("unrecognized command %q provided", args[0])
+				return flag.ErrHelp
 			}
-		}
-		if verbosity != generateQuiet {
-			stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
-		}
-		err = generateGoGenerate(filtered, verbosity)
-	} else {
-		// Use the given packages.
-		if verbosity != generateQuiet {
-			stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate %s", strings.Join(args, " ")))
-		}
-		err = generateGoGenerate(args, verbosity)
+			var runner generate.Runner
+			for _, g := range allGenerateTargets {
+				if g.Name == args[0] {
+					runner = g.Runner
+				}
+			}
+			if runner == nil {
+				return flag.ErrHelp
+			}
+			return runGenerateScriptAndReport(ctx, runner, args)
+		},
+		Subcommands: allGenerateTargets.Commands(),
 	}
+)
 
-	if err != nil {
-		return errors.Wrap(err, "could not run go generate ./...")
-	}
+type generateTargets []generate.Target
 
-	// Run goimports -w
-	if verbosity != generateQuiet {
-		stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "goimports -w"))
-	}
-	if _, err := exec.LookPath("goimports"); err != nil {
-		// Install goimports if not present
-		cmd := exec.CommandContext(ctx, "go", "install", "golang.org/x/tools/cmd/goimports")
-		cmd.Env = os.Environ()
-		cmd.Env = append(cmd.Env, fmt.Sprintf("GOBIN=%s", filepath.Join(root, ".bin")))
-		if verbosity == generateVerbose {
-			cmd.Stderr = os.Stderr
-			cmd.Stdout = os.Stdout
-		}
-		err := cmd.Run()
-		if err != nil {
-			return errors.Wrap(err, "go install golang.org/x/tools/cmd/goimports returned an error")
-		}
-
-		cmd = exec.CommandContext(ctx, "./.bin/goimports", "-w")
-		if verbosity == generateVerbose {
-			cmd.Stderr = os.Stderr
-			cmd.Stdout = os.Stdout
-		}
-		err = cmd.Run()
-		if err != nil {
-			return errors.Wrap(err, "goimports -w returned an error")
-		}
-	} else {
-		cmd = exec.CommandContext(ctx, "goimports", "-w")
-		cmd.Env = os.Environ()
-		if verbosity == generateVerbose {
-			cmd.Stderr = os.Stderr
-			cmd.Stdout = os.Stdout
-		}
-		err := cmd.Run()
-		if err != nil {
-			return errors.Wrap(err, "goimports -w returned an error")
-		}
-	}
-
-	// Run go mod tidy
-	if verbosity != generateQuiet {
-		stdOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go mod tidy"))
-	}
-	cmd = exec.CommandContext(ctx, "go", "mod", "tidy")
-	if verbosity == generateVerbose {
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-	}
-	err = cmd.Run()
-	if err != nil {
-		return errors.Wrap(err, "go mod tidy returned an error")
-	}
-
-	return nil
+var allGenerateTargets = generateTargets{
+	{
+		Name:    "go",
+		Help:    "Run go generate [packages...] on the codebase",
+		FlagSet: generateGoFlagSet,
+		Runner:  generateGoRunner,
+	},
 }
 
-func generateGoGenerate(pkgPaths []string, verbosity generateVerbosityType) error {
-	args := []string{"generate"}
-	if verbosity == generateVerbose {
-		args = append(args, "-x")
-	}
-	args = append(args, pkgPaths...)
-	cmd := exec.Command("go", args...)
-	if verbosity == generateVerbose {
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
+func runGenerateScriptAndReport(ctx context.Context, runner generate.Runner, args []string) error {
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		return err
 	}
 
-	err := cmd.Start()
-	if err != nil {
-		return errors.Errorf("go generate %s returned an error: %w\n%s", err)
-	}
+	report := runner(ctx, args)
+	fmt.Printf(report.Output)
+	stdOut.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
+	return report.Err
+}
 
-	err = cmd.Wait()
-	if err != nil {
-		return errors.Errorf("go generate %s returned an error: %w\n%s", err)
+// Commands converts all lint targets to CLI commands
+func (gt generateTargets) Commands() (cmds []*ffcli.Command) {
+	execFactory := func(c generate.Target) func(context.Context, []string) error {
+		return func(ctx context.Context, args []string) error {
+			if len(args) > 0 {
+				writeFailureLinef("unexpected argument %q provided", args[0])
+				return flag.ErrHelp
+			}
+			return runGenerateScriptAndReport(ctx, c.Runner, args)
+		}
 	}
-	return nil
+	for _, c := range gt {
+		cmds = append(cmds, &ffcli.Command{
+			Name:       c.Name,
+			ShortUsage: fmt.Sprintf("sg generate %s", c.Name),
+			ShortHelp:  c.Help,
+			LongHelp:   c.Help,
+			FlagSet:    c.FlagSet,
+			Exec:       execFactory(c)})
+	}
+	return cmds
+}
+
+func generateGoRunner(ctx context.Context, args []string) *generate.Report {
+	if *generateGoVerboseFlag && *generateGoQuietFlag {
+		return &generate.Report{Err: errors.Errorf("-q and -v flags are exclusive")}
+	}
+	if *generateGoVerboseFlag {
+		return gogen.Generate(ctx, args, gogen.VerboseOutput)
+	} else if *generateGoQuietFlag {
+		return gogen.Generate(ctx, args, gogen.QuietOutput)
+	} else {
+		return gogen.Generate(ctx, args, gogen.NormalOutput)
+	}
 }

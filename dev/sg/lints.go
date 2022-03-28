@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/gogen"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/lint"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
@@ -138,12 +140,12 @@ func lintDockerfiles() lint.Runner {
 
 func lintGoGenerate(ctx context.Context) *lint.Report {
 	start := time.Now()
-	err := generateDo(ctx, nil, generateQuiet)
-	if err != nil {
+	report := gogen.Generate(ctx, nil, gogen.QuietOutput)
+	if report.Err != nil {
 		return &lint.Report{
 			Header:   "Go generate check",
-			Duration: time.Since(start),
-			Err:      err,
+			Duration: report.Duration + time.Since(start),
+			Err:      report.Err,
 		}
 	}
 
@@ -151,11 +153,19 @@ func lintGoGenerate(ctx context.Context) *lint.Report {
 	out, err := cmd.CombinedOutput()
 	r := lint.Report{
 		Header:   "Go generate check",
-		Duration: time.Since(start),
+		Duration: report.Duration + time.Since(start),
 	}
 	if err != nil {
+		var sb strings.Builder
+		reportOut := output.NewOutput(&sb, output.OutputOpts{
+			ForceColor: true,
+			ForceTTY:   true,
+		})
+		reportOut.WriteLine(output.Line(output.EmojiFailure, output.StyleWarning, "Uncommitted changes found after running go generate:"))
+		sb.WriteString("\n")
+		sb.WriteString(string(out))
 		r.Err = err
-		r.Output = string(out)
+		r.Output = sb.String()
 		return &r
 	}
 
