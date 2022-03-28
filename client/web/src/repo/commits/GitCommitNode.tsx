@@ -138,7 +138,10 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const bylineElement = (
         <GitCommitNodeByline
-            className={classNames('d-flex text-muted', styles.byline)}
+            className={classNames(
+                'd-flex text-muted',
+                messageSubjectClassName === undefined ? styles.author : styles.byline
+            )}
             avatarClassName={compact ? undefined : styles.signatureUserAvatar}
             author={node.author}
             committer={node.committer}
