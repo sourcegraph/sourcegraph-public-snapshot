@@ -51,31 +51,6 @@ const Interactive: Story = () => {
     return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} />
 }
 
-const UrlValidationError: Story = () => (
-    <OptionsPageWrapper
-        validateSourcegraphUrl={invalidSourcegraphUrl}
-        sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-    />
-)
-
-const AskingForPermission: Story = () => (
-    <OptionsPageWrapper
-        permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
-        requestPermissionsHandler={requestPermissionsHandler}
-    />
-)
-
-const OnPrivateRepository: Story = () => (
-    <OptionsPageWrapper
-        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
-        requestPermissionsHandler={requestPermissionsHandler}
-    />
-)
-
-const OnSourcegraphCloud: Story = () => (
-    <OptionsPageWrapper requestPermissionsHandler={requestPermissionsHandler} showSourcegraphCloudAlert={true} />
-)
-
 const WithAdvancedSettings: Story = () => {
     const [optionFlagValues, setOptionFlagValues] = useState([
         { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
@@ -96,41 +71,78 @@ const WithAdvancedSettings: Story = () => {
 
 export const AllOptionsPages: Story = () => (
     <div>
-        <h1 className="text-center">All Options Pages</h1>
+        <h1 className="text-center mb-3">All Options Pages</h1>
         <div>
             <div className="d-flex justify-content-center">
                 <div className="mx-4">
-                    <h2 className="text-center">Interactive</h2>
+                    <h3 className="text-center">Interactive</h3>
                     <Interactive />
                 </div>
                 <div className="mx-4">
-                    <h2 className="text-center">URL validation error</h2>
-                    <UrlValidationError />
+                    <h3 className="text-center">URL validation error</h3>
+                    <OptionsPageWrapper
+                        validateSourcegraphUrl={invalidSourcegraphUrl}
+                        sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
+                    />
                 </div>
                 <div className="mx-4">
-                    <h2 className="text-center">With advanced settings</h2>
+                    <h3 className="text-center">With advanced settings</h3>
                     <WithAdvancedSettings />
                 </div>
             </div>
+
             <div className="d-flex justify-content-center mt-5">
                 <div className="mx-4">
-                    <h2 className="text-center">On private repository</h2>
-                    <OnPrivateRepository />
+                    <h3 className="text-center">On Sourcegraph Cloud</h3>
+                    <OptionsPageWrapper
+                        requestPermissionsHandler={requestPermissionsHandler}
+                        showSourcegraphCloudAlert={true}
+                    />
                 </div>
                 <div className="mx-4">
-                    <h2 className="text-center">On Sourcegraph Cloud</h2>
-                    <OnSourcegraphCloud />
+                    <h3 className="text-center">Asking for permission</h3>
+                    <OptionsPageWrapper
+                        permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
+                        requestPermissionsHandler={requestPermissionsHandler}
+                    />
+                </div>
+            </div>
+
+            <h2 className="mt-5 text-center">Not synced repository</h2>
+            <div className="d-flex justify-content-center mb-3">
+                <div className="mx-4">
+                    <h3 className="text-center">Sourcegraph Cloud</h3>
+                    <OptionsPageWrapper
+                        sourcegraphUrl="https://sourcegraph.com"
+                        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
+                        hasRepoSyncError={true}
+                        requestPermissionsHandler={requestPermissionsHandler}
+                    />
                 </div>
                 <div className="mx-4">
-                    <h2 className="text-center">Asking for permission</h2>
-                    <AskingForPermission />
+                    <h3 className="text-center">Self-hosted</h3>
+                    <OptionsPageWrapper
+                        sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
+                        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
+                        hasRepoSyncError={true}
+                        requestPermissionsHandler={requestPermissionsHandler}
+                    />
+                </div>
+                <div className="mx-4">
+                    <h3 className="text-center">Self-hosted instance, user is admin</h3>
+                    <OptionsPageWrapper
+                        sourcegraphUrl={text('sourcegraphUrl', 'https://k8s.sgdev.org')}
+                        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}
+                        hasRepoSyncError={true}
+                        requestPermissionsHandler={requestPermissionsHandler}
+                    />
                 </div>
             </div>
         </div>
     </div>
 )
 
-OnSourcegraphCloud.parameters = {
+AllOptionsPages.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,
