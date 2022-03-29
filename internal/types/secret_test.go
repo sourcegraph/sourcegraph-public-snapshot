@@ -13,9 +13,9 @@ import (
 
 var newValue = "a different value"
 
-func copyStrings(fields []jsonStringField) (out []string) {
+func copyStrings(fields []redactableField) (out []string) {
 	for _, field := range fields {
-		out = append(out, *field.ptr)
+		out = append(out, field.String())
 	}
 	return out
 }
@@ -74,13 +74,21 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		Credentials:  "npm credentials!",
 		Dependencies: []string{"placeholder"},
 	}
+	goModulesConfig := schema.GoModulesConnection{
+		Urls: []string{
+			"https://admin:secret-token@athens.mycorp.com",
+			"https://proxy.golang.org",
+		},
+		Dependencies: []string{"placeholder"},
+	}
 	otherConfig := schema.OtherExternalServiceConnection{
 		Url:                   someSecret,
 		RepositoryPathPattern: "foo",
 	}
 	var tc = []struct {
 		kind      string
-		config    interface{}               // the config for the service kind
+		config    interface{} // the config for the service kind
+		redacted  string
 		editField func(interface{}) *string // a pointer to a field on the config we can edit to simulate the user using the API
 	}{
 		{
@@ -146,6 +154,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			editField: func(cfg interface{}) *string { return &cfg.(*schema.NpmPackagesConnection).Dependencies[0] },
 		},
 		{
+			kind:      extsvc.KindGoModules,
+			config:    &goModulesConfig,
+			redacted:  `["https://admin:REDACTED@athens.mycorp.com","https://proxy.golang.org"]`,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.GoModulesConnection).Dependencies[0] },
+		},
+		{
 			kind:   extsvc.KindOther,
 			config: &otherConfig,
 			editField: func(cfg interface{}) *string {
@@ -175,6 +189,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 				Kind:   c.kind,
 				Config: old,
 			}
+
 			redacted, err := svc.RedactConfigSecrets()
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
@@ -192,7 +207,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			for _, got := range copyStrings(infos) {
-				if want := RedactedSecret; want != got {
+				want := c.redacted
+				if want == "" {
+					want = RedactedSecret
+				}
+
+				if want != got {
 					t.Errorf("want: %q, got: %q", want, got)
 				}
 			}
