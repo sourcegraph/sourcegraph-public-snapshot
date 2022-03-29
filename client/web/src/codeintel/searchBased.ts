@@ -9,7 +9,7 @@ export function definitionQuery({
 }: {
     /** The search token text. */
     searchToken: string
-    /** TODO: path to file **/
+    /** The path to file **/
     path: string
     /** File extensions used by the current extension. */
     fileExts: string[]
@@ -36,7 +36,7 @@ export function referencesQuery({
 }: {
     /** The search token text. */
     searchToken: string
-    /** TODO: path to file **/
+    /** The path to file **/
     path: string
     /** File extensions used by the current extension. */
     fileExts: string[]

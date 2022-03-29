@@ -28,7 +28,7 @@ import { Location, buildPreciseLocation, buildSearchBasedLocation } from './loca
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
-    LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY,
+    CODE_INTEL_SEARCH_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from './ReferencesPanelQueries'
 import { definitionQuery, referencesQuery } from './searchBased'
@@ -107,7 +107,7 @@ export const useCodeIntel = ({
     const [fetchSearchBasedReferences, fetchSearchBasedReferencesResult] = useLazyQuery<
         CodeIntelSearchResult,
         CodeIntelSearchVariables
-    >(LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY, {
+    >(CODE_INTEL_SEARCH_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             const newReferences = searchResultsToLocations(result).map(buildSearchBasedLocation)
@@ -138,7 +138,7 @@ export const useCodeIntel = ({
     const [fetchSearchBasedDefinitions, fetchSearchBasedDefinitionsResult] = useLazyQuery<
         CodeIntelSearchResult,
         CodeIntelSearchVariables
-    >(LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY, {
+    >(CODE_INTEL_SEARCH_QUERY, {
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)

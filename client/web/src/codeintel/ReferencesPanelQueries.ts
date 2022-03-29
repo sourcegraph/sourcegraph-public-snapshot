@@ -228,6 +228,7 @@ const searchResultsFragment = gql`
                                 }
                             }
                         }
+                        fileLocal
                     }
                     lineMatches {
                         lineNumber
@@ -239,29 +240,11 @@ const searchResultsFragment = gql`
     }
 `
 
-const fileLocalFragment = gql`
-    fragment FileLocal on Search {
-        __typename
-        results {
-            __typename
-            results {
-                ... on FileMatch {
-                    symbols {
-                        fileLocal
-                    }
-                }
-            }
-        }
-    }
-`
-
-export const LOAD_ADDITIONAL_REFERENCES_SEARCH_BASED_QUERY = gql`
+export const CODE_INTEL_SEARCH_QUERY = gql`
     query CodeIntelSearch($query: String!) {
         search(query: $query) {
             ...SearchResults
-            ...FileLocal
         }
     }
     ${searchResultsFragment}
-    ${fileLocalFragment}
 `
