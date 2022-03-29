@@ -160,7 +160,7 @@ preciseCodeIntel:
     <<: *objectStorageEnv
 ```
 
-### Cloud providers guides
+## Cloud providers guides
 
 This section is aimed at providing high-level guidance on deploying Sourcegraph via Helm on major Cloud providers. In general, you need the following to get started:
 
@@ -169,7 +169,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 - The cluster should have Ingress Controller installed, e.g. platform native ingress controller, [NGINX Ingress Controller].
 - You can have control over your `company.com` domain to create DNS records for Sourcegraph, e.g. `sourcegraph.company.com`
 
-#### Configure Sourcegraph on Google Kubernetes Engine (GKE)
+### Configure Sourcegraph on Google Kubernetes Engine (GKE)
 
 #### Prerequisites
 
@@ -258,7 +258,7 @@ frontend:
       # kubernetes.io/ingress.global-static-ip-name: ADDRESS_NAME
 ```
 
-#### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
+### Configure Sourcegraph on Elastic Kubernetes Service (EKS)
 
 #### Prerequisites
 
@@ -325,7 +325,7 @@ frontend:
 - [Enable TLS with AWS-managed certificate](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations/#ssl)
 - [Supported AWS load balancer annotations](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.2/guide/ingress/annotations)
 
-#### Configure Sourcegraph on Azure Managed Kubernetes Service (AKS)
+### Configure Sourcegraph on Azure Managed Kubernetes Service (AKS)
 
 #### Prerequisites
 
@@ -396,7 +396,7 @@ frontend:
 - [What is Application Gateway Ingress Controller?](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview)
 
 
-#### Configure Sourcegraph on other Cloud providers or on-prem
+### Configure Sourcegraph on other Cloud providers or on-prem
 
 #### Prerequisites
 
@@ -500,9 +500,9 @@ frontend:
     host: sourcegraph.company.com
 ```
 
-### Advanced configuration
+## Advanced configuration
 
-#### Integrate Kustomize with Helm chart
+### Integrate Kustomize with Helm chart
 
 The Helm chart is new and still under active development, and we may not cover all of your use cases. 
 
@@ -512,7 +512,7 @@ For advanced users who are looking for a temporary workaround, we __recommend__ 
 
 You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
 
-#### Sub-chart
+### Sub-chart
 
 __TODO__
 
