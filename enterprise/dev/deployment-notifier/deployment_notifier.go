@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -230,7 +231,7 @@ var commentTemplate = `### Deployment status
 {{- end }}
 `
 
-func renderComment(report *DeploymentReport) (string, error) {
+func renderComment(report *DeploymentReport, traceURL string) (string, error) {
 	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
 	if err != nil {
 		return "", err
@@ -239,6 +240,12 @@ func renderComment(report *DeploymentReport) (string, error) {
 	err = tmpl.Execute(&sb, report)
 	if err != nil {
 		return "", err
+	}
+	if traceURL != "" {
+		_, err = sb.WriteString(fmt.Sprintf("\n[Deployment trace](%s)", traceURL))
+		if err != nil {
+			return "", err
+		}
 	}
 	return sb.String(), nil
 }
