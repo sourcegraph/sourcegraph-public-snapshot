@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
-import AutorenewIcon from 'mdi-react/AutorenewIcon'
+import BlockHelperIcon from 'mdi-react/BlockHelperIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
@@ -14,6 +14,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { IUser } from '@sourcegraph/shared/src/schema'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
@@ -25,7 +26,6 @@ import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 import styles from './OptionsPage.module.scss'
 
 import '@reach/combobox/styles.css'
-import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 export interface OptionsPageProps {
     version: string
@@ -202,46 +202,39 @@ const RepoSyncErrorAlert: React.FunctionComponent<{
     sourcegraphUrl: OptionsPageProps['sourcegraphUrl']
     currentUser: NonNullable<OptionsPageProps['currentUser']>
 }> = ({ sourcegraphUrl, currentUser }) => {
-    if (isDefaultSourcegraphUrl(sourcegraphUrl) && !currentUser.settingsURL) {
-        return null
-    }
+    const isDefaultURL = isDefaultSourcegraphUrl(sourcegraphUrl)
 
-    if (isDefaultSourcegraphUrl(sourcegraphUrl)) {
-        return (
-            <section className={classNames('bg-2', styles.section)}>
-                <h4>
-                    <Icon className="mr-2" as={LockIcon} />
-                    Private repository
-                </h4>
-                <p>
-                    To use the browser extension with your private repositories, you need to enable sync in{' '}
-                    <Link
-                        to={
-                            createURLWithUTM(
-                                new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
-                                { utm_source: getPlatformName(), utm_campaign: 'sync-private-repo-with-cloud' }
-                            ).href
-                        }
-                        {...NEW_TAB_LINK_PROPS}
-                    >
-                        manage repositories settings
-                    </Link>
-                    .
-                </p>
-            </section>
-        )
+    if (isDefaultURL && !currentUser.settingsURL) {
+        return null
     }
 
     return (
         <section className={classNames('bg-2', styles.section)}>
             <h4>
-                <Icon className="mr-2" as={AutorenewIcon} />
-                Not synced repository
+                <Icon className="mr-2" as={isDefaultURL ? LockIcon : BlockHelperIcon} />
+                {isDefaultURL ? 'Private repository' : 'Repository not found'}
             </h4>
-
-            {currentUser.siteAdmin ? (
+            {isDefaultURL ? (
                 <p>
-                    This repository is not added to your Sourcegraph instance. Check out{' '}
+                    <Link
+                        to={
+                            createURLWithUTM(
+                                new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
+                                {
+                                    utm_source: getPlatformName(),
+                                    utm_campaign: 'sync-private-repo-with-cloud',
+                                }
+                            ).href
+                        }
+                        {...NEW_TAB_LINK_PROPS}
+                        className={styles.link}
+                    >
+                        Add your repository to Sourcegraph
+                    </Link>{' '}
+                    to use this extension for private repositories.
+                </p>
+            ) : currentUser.siteAdmin ? (
+                <p>
                     <Link
                         to={
                             createURLWithUTM(new URL('admin/repo/add', 'https://docs.sourcegraph.com/'), {
@@ -250,13 +243,14 @@ const RepoSyncErrorAlert: React.FunctionComponent<{
                             }).href
                         }
                         {...NEW_TAB_LINK_PROPS}
+                        className={styles.link}
                     >
-                        how to add repositorory from a code host
+                        Add your repository to Sourcegraph
                     </Link>{' '}
-                    to Sourcegraph.
+                    to use this extension.
                 </p>
             ) : (
-                <p>Contact your admin to sync this repository with your Sourcegraph instance.</p>
+                <p>Contact your admin to add this repository to Sourcegraph.</p>
             )}
         </section>
     )
