@@ -3,20 +3,13 @@ import { Range } from '@sourcegraph/extension-api-types'
 import { LocationFields } from '../graphql-operations'
 
 export interface Location {
-    resource: {
-        path: string
-        content: string
-        repository: {
-            name: string
-        }
-        commit: {
-            oid: string
-        }
-    }
+    repo: string
+    file: string
+    content: string
+    commitID: string
     range?: Range
     url: string
     lines: string[]
-
     precise: boolean
 }
 
@@ -36,12 +29,10 @@ export const buildSearchBasedLocation = (node: LocationFields): Location => buil
 
 const buildLocation = (node: LocationFields, precise: boolean): Location => {
     const location: Location = {
-        resource: {
-            repository: { name: node.resource.repository.name },
-            content: node.resource.content,
-            path: node.resource.path,
-            commit: node.resource.commit,
-        },
+        content: node.resource.content,
+        commitID: node.resource.commit.oid,
+        repo: node.resource.repository.name,
+        file: node.resource.path,
         url: '',
         lines: [],
         precise,
@@ -50,6 +41,6 @@ const buildLocation = (node: LocationFields, precise: boolean): Location => {
         location.range = node.range
     }
     location.url = node.url
-    location.lines = location.resource.content.split(/\r?\n/)
+    location.lines = location.content.split(/\r?\n/)
     return location
 }

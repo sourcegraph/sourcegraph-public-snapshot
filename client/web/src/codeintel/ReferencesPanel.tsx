@@ -184,6 +184,13 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
     if (blobInfo === undefined) {
         return <LoadingCodeIntel />
     }
+    if (blobInfo === null) {
+        return (
+            <div>
+                <p className="text-danger">Could not load file content</p>
+            </div>
+        )
+    }
 
     if (!tokenResult?.searchToken) {
         return (
@@ -211,6 +218,7 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
                 filter={debouncedFilter}
                 searchToken={tokenResult?.searchToken}
                 spec={spec}
+                fileContent={blobInfo.content}
             />
         </>
     )
@@ -223,6 +231,7 @@ export const ReferencesList: React.FunctionComponent<
         filter?: string
         searchToken: string
         spec: LanguageSpec
+        fileContent: string
     }
 > = props => {
     const {
@@ -250,6 +259,7 @@ export const ReferencesList: React.FunctionComponent<
             firstImplementations: 100,
             afterImplementations: null,
         },
+        fileContent: props.fileContent,
         searchToken: props.searchToken,
         spec: props.spec,
     })
@@ -320,10 +330,9 @@ export const ReferencesList: React.FunctionComponent<
     const onBlobNav = (url: string): void => {
         // If we're going to navigate inside the same file in the same repo we
         // can optimistically jump to that position in the code blob.
-        const resource = activeLocation?.resource
-        if (resource !== undefined) {
+        if (activeLocation !== undefined) {
             const urlToken = tokenFromUrl(url)
-            if (urlToken.filePath === resource.path && urlToken.repoName === resource.repository.name) {
+            if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
                 blobMemoryHistory.push(url)
             }
         }
@@ -399,7 +408,7 @@ export const ReferencesList: React.FunctionComponent<
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
                         <CardHeader className={classNames('pl-1 pr-3 py-1 d-flex justify-content-between')}>
                             <h4 className="mb-0">
-                                {activeLocation.resource.path}{' '}
+                                {activeLocation.file}{' '}
                                 <Link
                                     to={activeLocation.url}
                                     onClick={event => {
@@ -530,9 +539,9 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelHighlightedBlobVariables
     >(FETCH_HIGHLIGHTED_BLOB, {
         variables: {
-            repository: props.activeLocation.resource.repository.name,
-            commit: props.activeLocation.resource.commit.oid,
-            path: props.activeLocation.resource.path,
+            repository: props.activeLocation.repo,
+            commit: props.activeLocation.commitID,
+            path: props.activeLocation.file,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -547,7 +556,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
                     <i>
-                        Loading <code>{props.activeLocation.resource.path}</code>...
+                        Loading <code>{props.activeLocation.file}</code>...
                     </i>
                 </p>
             </>
@@ -559,7 +568,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <p className="text-danger">
-                    Loading <code>{props.activeLocation.resource.path}</code> failed:
+                    Loading <code>{props.activeLocation.file}</code> failed:
                 </p>
                 <pre>{error.message}</pre>
             </div>
@@ -576,7 +585,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <p className="text-warning text-center">
                 <i>
-                    Highlighting <code>{props.activeLocation.resource.path}</code> failed
+                    Highlighting <code>{props.activeLocation.file}</code> failed
                 </i>
             </p>
         )
@@ -592,12 +601,12 @@ const SideBlob: React.FunctionComponent<
             wrapCode={true}
             className={styles.referencesSideBlobCode}
             blobInfo={{
-                content: props.activeLocation.resource.content,
                 html,
-                filePath: props.activeLocation.resource.path,
-                repoName: props.activeLocation.resource.repository.name,
-                commitID: props.activeLocation.resource.commit.oid,
-                revision: props.activeLocation.resource.commit.oid,
+                content: props.activeLocation.content,
+                filePath: props.activeLocation.file,
+                repoName: props.activeLocation.repo,
+                commitID: props.activeLocation.commitID,
+                revision: props.activeLocation.commitID,
                 mode: 'lspmode',
             }}
         />
@@ -628,16 +637,16 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
         const byFile: Record<string, Location[]> = {}
         for (const location of locations) {
-            if (byFile[location.resource.path] === undefined) {
-                byFile[location.resource.path] = []
+            if (byFile[location.file] === undefined) {
+                byFile[location.file] = []
             }
-            byFile[location.resource.path].push(location)
+            byFile[location.file].push(location)
         }
 
         const locationsGroups: LocationGroup[] = []
         Object.keys(byFile).map(path => {
             const references = byFile[path]
-            const repoName = references[0].resource.repository.name
+            const repoName = references[0].repo
             locationsGroups.push({ path, locations: references, repoName })
         })
 

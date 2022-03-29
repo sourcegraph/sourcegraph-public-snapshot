@@ -66,10 +66,27 @@ interface UseCodeIntelParameters {
     variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
     searchToken: string
     spec: LanguageSpec
+    fileContent: string
 }
 
-export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParameters): UseCodeIntelResult => {
+export const useCodeIntel = ({
+    variables,
+    searchToken,
+    spec,
+    fileContent,
+}: UseCodeIntelParameters): UseCodeIntelResult => {
     const [codeIntelData, setCodeIntelData] = useState<CodeIntelData>()
+    const filterDefinitions = useCallback(
+        (results: Location[]) =>
+            spec?.filterDefinitions
+                ? spec.filterDefinitions<Location>(results, {
+                      repo: variables.repository,
+                      fileContent,
+                      filePath: variables.path,
+                  })
+                : results,
+        [spec, fileContent, variables.path, variables.repository]
+    )
 
     const fellBackToSearchBased = useRef(false)
     const shouldFetchPrecise = useRef(true)
@@ -125,6 +142,10 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)
+            console.log('newDefinitions.length', newDefinitions.length)
+            // Definitions are filtered based on the LanguageSpec
+            const filteredDefinitions = filterDefinitions(newDefinitions)
+            console.log('filteredDefinitions.length', filteredDefinitions.length)
 
             const previousData = codeIntelData
             if (!previousData) {
@@ -133,7 +154,7 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
                     references: { endCursor: null, nodes: [] },
                     definitions: {
                         endCursor: null,
-                        nodes: newDefinitions,
+                        nodes: filteredDefinitions,
                     },
                 })
             } else {
@@ -142,7 +163,7 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
                     references: previousData.references,
                     definitions: {
                         endCursor: null,
-                        nodes: newDefinitions,
+                        nodes: filteredDefinitions,
                     },
                 })
             }
