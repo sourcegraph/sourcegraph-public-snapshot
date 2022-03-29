@@ -62,9 +62,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
     ...context
 }) => {
     const { data, loading } = useQuery<ViewerFeatureFlagsResult, ViewerFeatureFlagsVariables>(VIEWER_FEATURE_FLAGS_QUERY);
-    console.log(data, loading)
 
-    // console.log('flags', flags)
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
@@ -158,8 +156,15 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                                 />
                             </>
                         ) : (
+
+                            // we can use the "repo-refresh" feature flag here to conditionally load the current TreePage or the New Tree Page
+                            // example:
+                                // {!loading && getFlags(data).get("repo-refresh") ? (
+                                // <p> current components </p>
+                                // ) :  <p> new components </p>}
                             <TreePage {...context} {...repoRevisionProps} repo={repo} />
-                        )}
+                        )})
+
                     </ErrorBoundary>
                 </BlobStatusBarContainer>
             )}
