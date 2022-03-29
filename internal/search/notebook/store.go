@@ -3,6 +3,7 @@ package notebook
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -32,14 +33,10 @@ func Search(db dbutil.DB) NotebooksSearchStore {
 	return &notebooksSearchStore{store}
 }
 
-var notebookColumns = []*sqlf.Query{
-	sqlf.Sprintf("notebooks.id"),
-	sqlf.Sprintf("notebooks.title"),
-}
-
 const searchNotebooksFmtStr = `
 SELECT
-	%s, -- notebook columns
+	notebooks.id,
+	notebooks.title,
 	NOT public as private, -- consistency with other match types
 	users.username as namespace_user,
 	orgs.name as namespace_org,
@@ -56,7 +53,7 @@ WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
 ORDER BY
-	stars
+	stars DESC
 LIMIT
 	25
 `
@@ -96,13 +93,16 @@ func scanMatches(rows *sql.Rows) ([]*result.NotebookMatch, error) {
 }
 
 func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, query string) ([]*result.NotebookMatch, error) {
+	// emulate other search types by replacing space with wildcards.
+	// TODO account for patternType?
+	ilikeQuery := "%" + strings.ReplaceAll(query, " ", "%") + "%"
+
 	rows, err := s.Query(ctx,
 		sqlf.Sprintf(
 			searchNotebooksFmtStr,
-			sqlf.Join(notebookColumns, ","),
 			notebooksPermissionsCondition(ctx),
-			sqlf.Sprintf("(notebooks.title ILIKE %s OR notebooks.blocks_tsvector @@ to_tsquery('english', %s))",
-				"%"+query+"%", toPostgresTextSearchQuery(query)),
+			sqlf.Sprintf("CONCAT(users.username, orgs.name, notebooks.title) ILIKE %s",
+				ilikeQuery),
 		),
 	)
 	if err != nil {
