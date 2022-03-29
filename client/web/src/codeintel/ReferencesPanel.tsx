@@ -203,7 +203,12 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWith
     return (
         <>
             <CardHeader>
-                <code>{tokenResult.searchToken}</code>
+                <code>{tokenResult.searchToken}</code>{' '}
+                <span className="text-muted ml-2">
+                    <code>
+                        {props.token.repoName}:{props.token.filePath}
+                    </code>
+                </span>
             </CardHeader>
             <Input
                 className={classNames('py-0 my-0', styles.referencesFilter)}

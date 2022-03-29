@@ -142,10 +142,8 @@ export const useCodeIntel = ({
         fetchPolicy: 'no-cache',
         onCompleted: result => {
             const newDefinitions = searchResultsToLocations(result).map(buildSearchBasedLocation)
-            console.log('newDefinitions.length', newDefinitions.length)
             // Definitions are filtered based on the LanguageSpec
             const filteredDefinitions = filterDefinitions(newDefinitions)
-            console.log('filteredDefinitions.length', filteredDefinitions.length)
 
             const previousData = codeIntelData
             if (!previousData) {
