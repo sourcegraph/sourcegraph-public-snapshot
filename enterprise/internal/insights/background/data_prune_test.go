@@ -28,12 +28,12 @@ func TestPerformPurge(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
 	defer cleanup()
 	postgres := dbtest.NewDB(t)
 	permStore := store.NewInsightPermissionStore(postgres)
-	timeseriesStore := store.NewWithClock(timescale, permStore, clock)
-	insightStore := store.NewInsightStore(timescale)
+	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
+	insightStore := store.NewInsightStore(insightsDB)
 	workerBaseStore := basestore.NewWithDB(postgres, sql.TxOptions{})
 
 	getTimeSeriesCountForSeries := func(ctx context.Context, seriesId string) int {
@@ -164,7 +164,7 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = performPurge(ctx, postgres, timescale, time.Now())
+	err = performPurge(ctx, postgres, insightsDB, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

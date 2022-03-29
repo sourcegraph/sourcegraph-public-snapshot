@@ -84,12 +84,12 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 		}
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+		insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
 		defer cleanup()
 		base := baseInsightResolver{
-			insightStore:   store.NewInsightStore(timescale),
-			dashboardStore: store.NewDashboardStore(timescale),
-			insightsDB:     timescale,
+			insightStore:   store.NewInsightStore(insightsDB),
+			dashboardStore: store.NewDashboardStore(insightsDB),
+			insightsDB:     insightsDB,
 		}
 
 		series, err := base.insightStore.CreateSeries(ctx, types.InsightSeries{

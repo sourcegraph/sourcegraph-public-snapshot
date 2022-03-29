@@ -48,22 +48,22 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 		}
 		return nil
 	}
-	timescale, err := InitializeCodeInsightsDB("frontend")
+	db, err := InitializeCodeInsightsDB("frontend")
 	if err != nil {
 		return err
 	}
-	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
+	enterpriseServices.InsightsResolver = resolvers.New(db, postgres)
 
 	return nil
 }
 
-// InitializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running
+// InitializeCodeInsightsDB connects to and initializes the Code Insights Postgres DB, running
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.CodeInsightsTimescaleDSN
+		return serviceConnections.CodeInsightsDSN
 	})
 	db, err := connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
 	if err != nil {
@@ -78,12 +78,12 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		return nil
 	}
 
-	timescale, err := InitializeCodeInsightsDB("worker-oobmigrator")
+	insightsDB, err := InitializeCodeInsightsDB("worker-oobmigrator")
 	if err != nil {
 		return err
 	}
 
-	insightsMigrator := migration.NewMigrator(timescale, db)
+	insightsMigrator := migration.NewMigrator(insightsDB, db)
 
 	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
 	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {

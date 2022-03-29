@@ -21,7 +21,7 @@ type InsightStore struct {
 	Now func() time.Time
 }
 
-// NewInsightStore returns a new InsightStore backed by the given Timescale db.
+// NewInsightStore returns a new InsightStore backed by the given Postgres db.
 func NewInsightStore(db dbutil.DB) *InsightStore {
 	return &InsightStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }

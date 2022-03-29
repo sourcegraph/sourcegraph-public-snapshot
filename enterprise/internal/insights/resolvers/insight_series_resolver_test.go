@@ -25,9 +25,9 @@ func TestResolver_InsightSeries(t *testing.T) {
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
-		timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+		insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
 		postgres := dbtest.NewDB(t)
-		resolver := newWithClock(timescale, postgres, clock)
+		resolver := newWithClock(insightsDB, postgres, clock)
 
 		// Create a mock store, delegating any un-mocked methods to the DB store.
 		dbStore := resolver.timeSeriesStore
