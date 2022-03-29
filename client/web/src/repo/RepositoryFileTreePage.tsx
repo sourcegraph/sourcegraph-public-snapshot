@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { gql as apolloGql, useQuery } from '@apollo/client'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { appendLineRangeQueryParameter, isErrorLike } from '@sourcegraph/common'
@@ -10,6 +11,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { GettingStartedTourInfo } from '../gettingStartedTour/GettingStartedTourInfo'
+import { ViewerFeatureFlagsResult, ViewerFeatureFlagsVariables } from '../graphql-operations'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
@@ -30,6 +32,24 @@ export interface RepositoryFileTreePageProps
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
+const VIEWER_FEATURE_FLAGS_QUERY = apolloGql`
+query ViewerFeatureFlags {
+    viewerFeatureFlags {
+        name
+        value
+    }
+}
+`
+const getFlags = (flags: ViewerFeatureFlagsResult | undefined): Map<string, boolean> => {
+    const featureFlags = new Map<string, boolean>()
+    if (flags) {
+        for (const flag of flags.viewerFeatureFlags) {
+            featureFlags.set(flag.name, flag.value)
+        }
+    }
+    return featureFlags
+}
+
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
 export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreePageProps> = ({
@@ -41,6 +61,10 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
     onExtensionAlertDismissed,
     ...context
 }) => {
+    const { data, loading } = useQuery<ViewerFeatureFlagsResult, ViewerFeatureFlagsVariables>(VIEWER_FEATURE_FLAGS_QUERY);
+    console.log(data, loading)
+
+    // console.log('flags', flags)
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
