@@ -91,16 +91,16 @@ export const SearchSidebarSection: React.FunctionComponent<{
 
         const [collapsed, setCollapsed] = useState(startCollapsed)
         const handleOpenChange = useCallback(
-            collapsed => {
-                setCollapsed(collapsed => {
-                    if (onToggle) {
-                        onToggle(sectionId, !collapsed)
-                    }
-                    return !collapsed
-                })
+            isOpened => {
+                if (onToggle) {
+                    onToggle(sectionId, isOpened)
+                }
+
+                setCollapsed(!isOpened)
             },
             [onToggle, sectionId]
         )
+
         return visible ? (
             <div className={classNames(styles.sidebarSection, className)}>
                 <Collapse isOpen={!collapsed} onOpenChange={handleOpenChange}>
