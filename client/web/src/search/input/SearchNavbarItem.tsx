@@ -1,6 +1,7 @@
+import React, { useCallback, useState, useEffect } from 'react'
+
 import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
-import React, { useCallback, useState, useEffect } from 'react'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -64,6 +65,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -107,6 +109,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
+                editorComponent={editorComponent}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}

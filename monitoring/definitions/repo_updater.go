@@ -112,7 +112,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "syncer_synced_repos",
 							Description: "repositories synced",
-							Query:       `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
+							Query:       `max(max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m])))`,
 							Warning: monitoring.Alert().LessOrEqual(0).
 								AggregateBy(monitoring.AggregatorMax).
 								For(syncDurationThreshold),
@@ -205,6 +205,18 @@ func RepoUpdater() *monitoring.Container {
 						},
 					},
 					{
+						{
+							Name:        "src_repoupdater_stale_repos",
+							Description: "repos that haven't been fetched in more than 8 hours",
+							Query:       `max(src_repoupdater_stale_repos)`,
+							Warning:     monitoring.Alert().GreaterOrEqual(1).For(25 * time.Minute),
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: `
+								Check repo-updater logs for errors.
+								Check for rows in gitserver_repos where LastError is not an empty string.
+`,
+						},
 						{
 							Name:              "sched_error",
 							Description:       "repositories schedule error rate",
@@ -462,7 +474,7 @@ func RepoUpdater() *monitoring.Container {
 			shared.Batches.NewServiceGroup(containerName),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNPMGroup(containerName),
+			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),

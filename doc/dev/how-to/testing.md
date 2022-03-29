@@ -4,7 +4,7 @@
 
 <span class="virtual-br"></span>
 
-> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/continuous_integration.md#buildkite-pipelines)".
+> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/ci/index.md#buildkite-pipelines)".
 
 ## Backend tests
 
@@ -166,6 +166,7 @@ Some common failure modes:
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled.
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
+- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 yarn build-web` or `ENTERPRISE=1 yarn watch-web`
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
@@ -353,6 +354,15 @@ If the changes are intended, click **Approve** 👍
 
 Once you approve all of the changes, the Percy check will turn green ✅
 
+#### Running the tests locally
+
+It is possible to run our Percy visual regression tests locally.
+
+1. Go to https://percy.io/Sourcegraph/Sourcegraph/settings#token
+2. Copy the token named as `PERCY_TOKEN`
+3. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
+4. Once the tests finish, Percy should output a URL to the created build.
+
 #### Adding a new visual snapshot test
 
 Open an existing appropiate browser-based test file (end-to-end or integration) or create a new one.
@@ -373,7 +383,32 @@ When you submit the PR, Percy will fail until you approve the new snapshot.
 
 Flakiness in snapshot tests can be caused by the search response time, order of results, animations, premature snapshots while the page is still loading, etc.
 
-This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` CSS class to the problematic element and it will be hidden from Percy.
+This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` (to apply `visibility: hidden`) or `percy-display-none` (to apply `display: none`) CSS classes to the problematic element and it will be hidden from Percy.
+
+### Accessibility tests
+
+We use [axe-core](https://github.com/dequelabs/axe-core) to run accessibility audits through our integration tests. It ensures we can quickly assess entire pages and raise any errors before they become problems in production.
+
+You can run an audit in any test by calling `accessibilityAudit()`:
+
+```TypeScript
+test('Repositories list', async function () {
+    await page.goto(baseURL + '/site-admin/repositories?query=gorilla%2Fmux')
+    await page.waitForSelector('[test-repository-name="/github.com/gorilla/mux"]', { visible: true })
+    await accessibilityAudit(page)
+})
+```
+
+If, for whatever reason, we have to ignore some elements from an accessibility audit, we can use the `a11y-ignore` CSS class:
+
+```JSX
+  import { ACCESSIBILITY_AUDIT_IGNORE_CLASS } from '@sourcegraph/shared/src/testing/accessibility'
+
+  {/* Some explanation as to why we need to ignore this element */}
+  <h3 className={ACCESSIBILITY_AUDIT_IGNORE_CLASS}>Heading</h3>
+```
+
+**Tip:** Don't forget you'll need to rebuild the code if you want to see the tests pass locally after making this change.
 
 ### Lighthouse tests
 
@@ -397,6 +432,6 @@ We measure our generated production build through [Bundlesize](https://github.co
 If `Bundlesize` fails, it is likely because one of the generated bundles has gone over the maximum size we have set. This can be due to numerous reasons, to fix this you should check:
 
 1. That you are lazy-loading code where possible.
-2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an NPM dependency.
+2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!

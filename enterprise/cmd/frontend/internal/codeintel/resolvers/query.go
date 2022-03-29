@@ -6,6 +6,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -51,6 +52,7 @@ func (a *AdjustedCodeIntelligenceRange) ToDocumentation() *Documentation {
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
 // in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
+	LSIFUploads(ctx context.Context) ([]store.Upload, error)
 	Stencil(ctx context.Context) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
@@ -70,6 +72,7 @@ type Documentation struct {
 }
 
 type queryResolver struct {
+	db                  database.DB
 	dbStore             DBStore
 	lsifStore           LSIFStore
 	cachedCommitChecker *cachedCommitChecker
@@ -87,6 +90,7 @@ type queryResolver struct {
 // struct return queries for the given repository, commit, and path, and will query only the
 // bundles associated with the given dump objects.
 func NewQueryResolver(
+	db database.DB,
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	cachedCommitChecker *cachedCommitChecker,
@@ -98,11 +102,12 @@ func NewQueryResolver(
 	operations *operations,
 	checker authz.SubRepoPermissionChecker,
 ) QueryResolver {
-	return newQueryResolver(dbStore, lsifStore, cachedCommitChecker, positionAdjuster,
+	return newQueryResolver(db, dbStore, lsifStore, cachedCommitChecker, positionAdjuster,
 		repositoryID, commit, path, uploads, operations, checker)
 }
 
 func newQueryResolver(
+	db database.DB,
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	cachedCommitChecker *cachedCommitChecker,
@@ -124,6 +129,7 @@ func newQueryResolver(
 	}
 
 	return &queryResolver{
+		db:                  db,
 		dbStore:             dbStore,
 		lsifStore:           lsifStore,
 		cachedCommitChecker: cachedCommitChecker,

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -43,7 +44,6 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	options.UserSettings = o.UserSettings
 	repositoryResolver := &searchrepos.Resolver{DB: o.Db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
@@ -52,6 +52,7 @@ func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) b
 func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *search.Alert {
 	repoFilters, minusRepoFilters := q.Repositories()
 	contextFilters, _ := q.StringValues(query.FieldContext)
+	dependencies := q.Dependencies()
 	onlyForks, noForks, forksNotSet := false, false, true
 	if fork := q.Fork(); fork != nil {
 		onlyForks = *fork == query.Only
@@ -61,13 +62,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 	archived := q.Archived()
 	archivedNotSet := archived == nil
 
-	if len(repoFilters) == 0 && len(minusRepoFilters) == 0 {
-		return &search.Alert{
-			PrometheusType: "no_resolved_repos__no_repositories",
-			Title:          "Add repositories or connect repository hosts",
-			Description:    "There are no repositories to search. Add an external service connection to your code host.",
-		}
-	}
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
 		proposedQueries := []*search.ProposedQuery{
@@ -87,10 +81,26 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
+		if len(dependencies) > 0 {
+			needsNpmConfig, err := needsNpmPackageHostConfiguration(ctx, o.Db)
+			if err == nil && needsNpmConfig {
+				if isSiteAdmin {
+					return &search.Alert{
+						Title:       "No package hosts configured",
+						Description: "To start searching your dependencies, first go to site admin to configure package hosts.",
+					}
+				} else {
+					return &search.Alert{
+						Title:       "No package hosts configured",
+						Description: "To start searching your dependencies, ask the site admin to configure package hosts.",
+					}
+				}
+			}
+		}
+
 		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
 				return &search.Alert{
-
 					Title:       "No repositories or code hosts configured",
 					Description: "To start searching code, first go to site admin to configure repositories and code hosts.",
 				}
@@ -103,7 +113,14 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 	}
 
-	proposedQueries := []*search.ProposedQuery{}
+	if len(dependencies) > 0 {
+		return &search.Alert{
+			Title:       "No dependency repositories found",
+			Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nOnly npm dependencies from `package-lock.json` and `yarn.lock` files are currently supported.",
+		}
+	}
+
+	var proposedQueries []*search.ProposedQuery
 	if forksNotSet {
 		tryIncludeForks := search.RepoOptions{
 			RepoFilters:      repoFilters,
@@ -144,7 +161,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		return &search.Alert{
 			PrometheusType:  "no_resolved_repos__repos_exist_when_altered",
 			Title:           "No repositories found",
-			Description:     "Try alter the query or use a different `repo:<regexp>` filter to see results",
+			Description:     "Try altering the query or use a different `repo:<regexp>` filter to see results",
 			ProposedQueries: proposedQueries,
 		}
 	}
@@ -241,7 +258,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}
 	}
 
-	if err == searchrepos.ErrNoResolvedRepos {
+	if !o.HasResults && errors.Is(err, searchrepos.ErrNoResolvedRepos) {
 		return o.alertForNoResolvedRepos(ctx, o.Query), nil
 	}
 
@@ -255,7 +272,13 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &mErr) {
-		a := search.AlertForMissingRepoRevs(mErr.Missing)
+		var a *search.Alert
+		dependencies := o.Query.Dependencies()
+		if len(dependencies) == 0 {
+			a = search.AlertForMissingRepoRevs(mErr.Missing)
+		} else {
+			a = search.AlertForMissingDependencyRepoRevs(mErr.Missing)
+		}
 		a.Priority = 6
 		return a, nil
 	}
@@ -324,6 +347,16 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 
 	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
+	})
+	if err != nil {
+		return false, err
+	}
+	return count == 0, nil
+}
+
+func needsNpmPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
+	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindNpmPackages},
 	})
 	if err != nil {
 		return false, err

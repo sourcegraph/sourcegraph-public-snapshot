@@ -323,6 +323,13 @@ export const extensionsController: Controller = {
     unsubscribe: noop,
 }
 
-export const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'requestGraphQL'> = {
+export const NOOP_PLATFORM_CONTEXT: Pick<
+    PlatformContext,
+    'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
+> = {
     requestGraphQL: () => EMPTY,
+    urlToFile: () => '',
+    settings: of(NOOP_SETTINGS_CASCADE),
+    forceUpdateTooltip: () => {},
+    sourcegraphURL: '',
 }

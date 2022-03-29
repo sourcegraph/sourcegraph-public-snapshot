@@ -42,13 +42,6 @@ func main() {
 
 	config := ci.NewConfig(time.Now())
 
-	// For the time being, we are running main builds in // of the normal builds in
-	// the stateless agents queue, in order to observe its stability.
-	if buildkite.FeatureFlags.StatelessBuild {
-		// We do not want to trigger any deployment.
-		config.RunType = runtype.MainDryRun
-	}
-
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
 		panic(err)
@@ -111,7 +104,7 @@ func renderPipelineDocs(w io.Writer) {
 	fmt.Fprintln(w, "# Pipeline types reference")
 	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
 	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
-	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/continuous_integration).")
+	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/ci).")
 
 	fmt.Fprintln(w, "\n## Run types")
 
@@ -185,13 +178,19 @@ func renderPipelineDocs(w io.Writer) {
 
 				pipeline, err := ci.GeneratePipeline(ci.Config{
 					RunType: rt,
-					Diff:    changed.All,
 					Branch:  m.Branch,
+					// Let generated reference docs be a subset of steps that are
+					// guaranteed to be in the pipeline, rather than a superset, which
+					// can be surprising.
+					//
+					// In the future we might want to be more clever about this to
+					// generate more accurate docs for runtypes that run conditional steps.
+					Diff: changed.None,
 				})
 				if err != nil {
 					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
 				}
-				fmt.Fprint(w, "\nDefault pipeline:\n\n")
+				fmt.Fprint(w, "\nBase pipeline (more steps might be included based on branch changes):\n\n")
 				for _, raw := range pipeline.Steps {
 					printStepSummary(w, "", raw)
 				}

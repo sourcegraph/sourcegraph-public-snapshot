@@ -42,3 +42,51 @@ func TestInferJavaIndexJobs(t *testing.T) {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
+
+func TestInferJavaIndexJobHints(t *testing.T) {
+	paths := []string{
+		"build.gradle",
+		"kt/build.gradle.kts",
+		"maven/pom.xml",
+		"subdir/src/java/App.java",
+		"subdir/src/kotlin/App.kt",
+		"subdir/src/scala/App.scala",
+	}
+
+	expectedHints := []config.IndexJobHint{
+		{
+			Root:           ".",
+			Indexer:        "sourcegraph/lsif-java",
+			HintConfidence: config.HintConfidenceProjectStructureSupported,
+		},
+		{
+			Root:           "kt",
+			Indexer:        "sourcegraph/lsif-java",
+			HintConfidence: config.HintConfidenceProjectStructureSupported,
+		},
+		{
+			Root:           "maven",
+			Indexer:        "sourcegraph/lsif-java",
+			HintConfidence: config.HintConfidenceProjectStructureSupported,
+		},
+		{
+			Root:           "subdir/src/java",
+			Indexer:        "sourcegraph/lsif-java",
+			HintConfidence: config.HintConfidenceLanguageSupport,
+		},
+		{
+			Root:           "subdir/src/kotlin",
+			Indexer:        "sourcegraph/lsif-java",
+			HintConfidence: config.HintConfidenceLanguageSupport,
+		},
+		{
+			Root:           "subdir/src/scala",
+			Indexer:        "sourcegraph/lsif-java",
+			HintConfidence: config.HintConfidenceLanguageSupport,
+		},
+	}
+
+	if diff := cmp.Diff(expectedHints, InferJavaIndexJobHints(NewMockGitClient(), paths)); diff != "" {
+		t.Errorf("unexpected index job hints (-want +got)\n%s", diff)
+	}
+}

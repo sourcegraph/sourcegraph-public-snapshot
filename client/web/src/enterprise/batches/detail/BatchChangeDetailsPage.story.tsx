@@ -1,8 +1,9 @@
+import React from 'react'
+
 import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import React from 'react'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -144,6 +145,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                     ...MOCK_BATCH_CHANGE.currentSpec,
                     supersedingBatchSpec: supersedingBatchSpec
                         ? {
+                              __typename: 'BatchSpec',
                               createdAt: subDays(new Date(), 1).toISOString(),
                               applyURL: '/users/alice/batch-changes/apply/newspecid',
                           }

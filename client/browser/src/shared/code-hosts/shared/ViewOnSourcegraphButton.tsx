@@ -1,6 +1,7 @@
+import React, { useEffect } from 'react'
+
 import classNames from 'classnames'
 import { snakeCase } from 'lodash'
-import React, { useEffect } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
@@ -11,6 +12,7 @@ import { getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 
 import { CodeHostContext } from './codeHost'
 import { SignInButton } from './SignInButton'
+
 import styles from './ViewOnSourcegraphButton.module.scss'
 
 export interface ViewOnSourcegraphButtonClassProps {
@@ -165,7 +167,7 @@ export const ConfigureSourcegraphButton: React.FunctionComponent<ConfigureSource
 }) => (
     <SourcegraphIconButton
         {...commonProps}
-        href={new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
+        href={commonProps.href || new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
         onClick={onConfigureSourcegraphClick}
         label="Configure Sourcegraph"
         title="Set up Sourcegraph for search and code intelligence on private repositories"

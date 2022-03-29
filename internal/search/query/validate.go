@@ -12,16 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IsBasic returns whether a query is a basic query. A basic query is one which
-// does not have a DNF-expansion. I.e., there is only one disjunct. A basic
-// query implies that it has no subexpressions that we need to evaluate. IsBasic
-// is used in our codebase where legacy code has not been updated to handle
-// queries with multiple expressions (like alerts), and assume only one
-// evaluatable query.
-func IsBasic(nodes []Node) bool {
-	return len(Dnf(nodes)) == 1
-}
-
 // IsPatternAtom returns whether a node is a non-negated pattern atom.
 func IsPatternAtom(b Basic) bool {
 	if b.Pattern == nil {
@@ -31,13 +21,6 @@ func IsPatternAtom(b Basic) bool {
 		return true
 	}
 	return false
-}
-
-// IsStreamingCompatible returns whether a backend search process may
-// immediately send results over a streaming interface. A query is streaming
-// compatible if: ask Camden because this is super in flux right now.
-func IsStreamingCompatible(p Plan) bool {
-	return len(p) == 1
 }
 
 // Exists traverses every node in nodes and returns early as soon as fn is satisfied.
@@ -70,16 +53,6 @@ func ForAll(nodes []Node, fn func(node Node) bool) bool {
 	return sat
 }
 
-// returns true if the query contains a predicate value.
-func ContainsPredicate(nodes []Node) bool {
-	return Exists(nodes, func(node Node) bool {
-		if v, ok := node.(Parameter); ok && v.Annotation.Labels.IsSet(IsPredicate) {
-			return true
-		}
-		return false
-	})
-}
-
 // isPatternExpression returns true if every leaf node in nodes is a search
 // pattern expression.
 func isPatternExpression(nodes []Node) bool {
@@ -96,19 +69,6 @@ func containsPattern(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
 	})
-}
-
-// ContainsRegexpMetasyntax returns true if a string is a valid regular
-// expression and contains regex metasyntax (i.e., it is not a literal).
-func ContainsRegexpMetasyntax(input string) bool {
-	_, err := regexp.Compile(input)
-	if err == nil {
-		// It is a regexp. But does it contain metasyntax, or is it literal?
-		if len(regexp.QuoteMeta(input)) != len(input) {
-			return true
-		}
-	}
-	return false
 }
 
 // processTopLevel processes the top level of a query. It validates that we can
@@ -584,14 +544,4 @@ func ContainsRefGlobs(q Q) bool {
 		}
 	}
 	return containsRefGlobs
-}
-
-func HasTypeRepo(q Q) bool {
-	found := false
-	VisitField(q, "type", func(value string, _ bool, _ Annotation) {
-		if value == "repo" {
-			found = true
-		}
-	})
-	return found
 }

@@ -91,7 +91,7 @@ echo ""
 PROTECTED_FILES=(
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
-  ./.buildkite/hooks
+  ./dev/ci/asdf-install.sh
 )
 
 # Rewrite the current migrations into a temporary folder that we can force
@@ -105,7 +105,6 @@ git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 
 # Remove the languages submodules, because they mess these tests up
 rm -rf ./docker-images/syntax-highlighter/crates/sg-syntax/languages/
-
 
 for schema in frontend codeintel codeinsights; do
   # Force apply newer schema definitions
@@ -133,19 +132,26 @@ fi
 
 # Re-run asdf to ensure we have the correct set of utilities to
 # run the currently checked out version of the Go unit tests.
-./.buildkite/hooks/pre-command
+./dev/ci/asdf-install.sh
 
 if ! ./dev/ci/go-test.sh "$@"; then
-  echo ""
-  echo "!!! This commit contains database schema definitions that caused an"
-  echo "unexpected failure of one or more unit tests at tagged commit ${latest_minor_release_tag}."
-  echo ""
-  echo "If this backwards incompatibility is intentional or of the test is flaky,"
-  echo "an exception for this text can be added to the following flakefile:"
-  echo ""
-  echo "'${flakefile}'"
-  echo ""
-  echo "Rewrite these schema changes to be backwards compatible. For help,"
-  echo "see docs.sourcegraph.com/dev/background-information/sql/migrations."
+  annotation=$(
+    cat <<EOF
+This commit contains database schema definitions that caused an unexpected
+failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
+Rewrite these schema changes to be backwards compatible. For help,
+see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
+
+If this backwards incompatibility is intentional or if the test is flaky,
+an exception for this test can be added to the following flakefile:
+
+\`\`\`
+${flakefile}
+\`\`\`
+
+EOF
+  )
+  mkdir -p ./annotations/
+  echo "$annotation" | tee './annotations/go-backcompat.md'
   exit 1
 fi

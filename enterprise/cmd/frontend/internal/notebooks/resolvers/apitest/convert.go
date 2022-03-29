@@ -20,6 +20,18 @@ func BlockToAPIResponse(block notebooks.NotebookBlock) NotebookBlock {
 			Revision:       block.FileInput.Revision,
 			LineRange:      &LineRange{StartLine: block.FileInput.LineRange.StartLine, EndLine: block.FileInput.LineRange.EndLine},
 		}}
+	case notebooks.NotebookSymbolBlockType:
+		return NotebookBlock{Typename: "SymbolBlock", ID: block.ID, SymbolInput: SymbolInput{
+			RepositoryName:      block.SymbolInput.RepositoryName,
+			FilePath:            block.SymbolInput.FilePath,
+			Revision:            block.SymbolInput.Revision,
+			LineContext:         block.SymbolInput.LineContext,
+			SymbolName:          block.SymbolInput.SymbolName,
+			SymbolContainerName: block.SymbolInput.SymbolContainerName,
+			SymbolKind:          block.SymbolInput.SymbolKind,
+		}}
+	case notebooks.NotebookComputeBlockType:
+		return NotebookBlock{Typename: "ComputeBlock", ID: block.ID, ComputeInput: block.ComputeInput.Value}
 	}
 	panic("unknown block type")
 }
@@ -55,6 +67,18 @@ func BlockToAPIInput(block notebooks.NotebookBlock) graphqlbackend.CreateNoteboo
 			Revision:       block.FileInput.Revision,
 			LineRange:      &graphqlbackend.CreateFileBlockLineRangeInput{StartLine: block.FileInput.LineRange.StartLine, EndLine: block.FileInput.LineRange.EndLine},
 		}}
+	case notebooks.NotebookSymbolBlockType:
+		return graphqlbackend.CreateNotebookBlockInputArgs{ID: block.ID, Type: graphqlbackend.NotebookSymbolBlockType, SymbolInput: &graphqlbackend.CreateSymbolBlockInput{
+			RepositoryName:      block.SymbolInput.RepositoryName,
+			FilePath:            block.SymbolInput.FilePath,
+			Revision:            block.SymbolInput.Revision,
+			LineContext:         block.SymbolInput.LineContext,
+			SymbolName:          block.SymbolInput.SymbolName,
+			SymbolContainerName: block.SymbolInput.SymbolContainerName,
+			SymbolKind:          block.SymbolInput.SymbolKind,
+		}}
+	case notebooks.NotebookComputeBlockType:
+		return graphqlbackend.CreateNotebookBlockInputArgs{ID: block.ID, Type: graphqlbackend.NotebookComputeBlockType, ComputeInput: &block.ComputeInput.Value}
 	}
 	panic("unknown block type")
 }

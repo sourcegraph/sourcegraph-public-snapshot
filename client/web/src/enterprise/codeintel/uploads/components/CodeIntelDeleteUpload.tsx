@@ -1,9 +1,10 @@
-import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent } from 'react'
+
+import DeleteIcon from 'mdi-react/DeleteIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 export interface CodeIntelDeleteUploadProps {
     state: LSIFUploadState
@@ -31,6 +32,6 @@ export const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps
                     : 'Delete this upload immediately'
             }
         >
-            <DeleteIcon className="icon-inline" /> Delete upload
+            <Icon as={DeleteIcon} /> Delete upload
         </Button>
     )

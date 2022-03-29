@@ -43,6 +43,10 @@ export const configurationGroup: SiteAdminSideBarGroup = {
             label: 'Global settings',
             to: '/site-admin/global-settings',
         },
+        {
+            label: 'Feature flags',
+            to: '/site-admin/feature-flags',
+        },
     ],
 }
 
@@ -114,7 +118,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             label: 'Instrumentation',
             to: '/-/debug/',
             source: 'server',
-            condition: () => window.context.deployType === 'kubernetes' || window.context.deployType === 'dev',
+            condition: () =>
+                window.context.deployType === 'kubernetes' ||
+                window.context.deployType === 'dev' ||
+                window.context.deployType === 'helm',
         },
         {
             label: 'Monitoring',

@@ -1,26 +1,31 @@
+import React, { ReactElement, useContext } from 'react'
+
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
-import React, { ReactElement, useContext } from 'react'
+
+import { LockedChart } from '../locked/LockedChart'
 
 import { getLineStroke, LineChart as LineChartContent, LineChartContentProps } from './components/LineChartContent'
 import { ScrollBox } from './components/scroll-box/ScrollBox'
 import { MINIMAL_HORIZONTAL_LAYOUT_WIDTH, MINIMAL_SERIES_FOR_ASIDE_LEGEND } from './constants'
 import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-chart-settings-provider'
+
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {
     /**
      * Whenever it is necessary to set size limits of line chart container block.
-     * By default LineChart doesn't require
+     * By default, LineChart doesn't require
      */
     hasChartParentFixedSize?: boolean
+    locked?: boolean
 }
 
 /**
  * Display responsive line chart with legend below the chart.
  */
 export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
-    const { width, height, hasChartParentFixedSize, ...otherProps } = props
+    const { width, height, hasChartParentFixedSize, locked = false, ...otherProps } = props
     const { layout } = useContext(LineChartSettingsContext)
 
     const hasViewManySeries = otherProps.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
@@ -29,7 +34,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
     const isHorizontal = layout
         ? // If layout is defined explicitly in line chart setting context use its value
           layout === LineChartLayoutOrientation.Horizontal
-        : // Otherwise apply internal logic (based on how many x space and series we have)
+        : // Otherwise, apply internal logic (based on how many x space and series we have)
           hasViewManySeries && hasEnoughXSpace
 
     return (
@@ -44,7 +49,9 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 just to calculate right sizes for chart content = rootContainerSizes - legendSizes
             */}
             <ParentSize className={styles.contentParentSize} data-line-chart-size-root="">
-                {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
+                {({ width, height }) =>
+                    locked ? <LockedChart /> : <LineChartContent {...otherProps} width={width} height={height} />
+                }
             </ParentSize>
 
             <ScrollBox
@@ -54,7 +61,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 <LegendBlock className={classNames({ [styles.legendListHorizontal]: isHorizontal })}>
                     {props.series.map(line => (
                         <LegendItem key={line.dataKey.toString()} color={getLineStroke(line)}>
-                            {line.name}
+                            <span className={styles.legendItemText}>{line.name}</span>
                         </LegendItem>
                     ))}
                 </LegendBlock>

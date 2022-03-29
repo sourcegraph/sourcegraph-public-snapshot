@@ -1,26 +1,26 @@
-import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
+
+import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Button, Link, Card } from '@sourcegraph/wildcard'
 
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../core/constants'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
-import { getTooltipMessage, getDashboardPermissions } from '../../../../utils/get-dashboard-permissions'
+import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
 
 interface EmptyInsightDashboardProps {
     dashboard: InsightDashboard
-    subjects?: SupportedInsightSubject[]
     onAddInsight: () => void
 }
 
 export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
-    const { onAddInsight, dashboard, subjects } = props
+    const { onAddInsight, dashboard } = props
 
     return isDashboardConfigurable(dashboard) ? (
-        <EmptySettingsBasedDashboard dashboard={dashboard} subjects={subjects} onAddInsight={onAddInsight} />
+        <EmptySettingsBasedDashboard dashboard={dashboard} onAddInsight={onAddInsight} />
     ) : (
         <EmptyBuiltInDashboard dashboard={dashboard} />
     )
@@ -35,13 +35,15 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
     <section className={styles.emptySection}>
         <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
             <PlusIcon size="2rem" />
-            <span>Create new insight</span>
+            <span>Create an insight</span>
         </Card>
-        <span className="d-flex justify-content-center mt-3">
-            <span>
-                or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
+        {props.dashboard.id !== ALL_INSIGHTS_DASHBOARD.id && (
+            <span className="d-flex justify-content-center mt-3">
+                <span>
+                    or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
+                </span>
             </span>
-        </span>
+        )}
     </section>
 )
 
@@ -50,20 +52,23 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: Insight
  * Since it is possible with settings based dashboard to add existing insights to it.
  */
 export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDashboardProps> = props => {
-    const { onAddInsight, dashboard, subjects } = props
-    const permissions = getDashboardPermissions(dashboard, subjects)
+    const { onAddInsight, dashboard } = props
+    const {
+        dashboard: { getAddRemoveInsightsPermission },
+    } = useUiFeatures()
+    const addRemoveInsightPermissions = getAddRemoveInsightsPermission(dashboard)
 
     return (
         <section className={styles.emptySection}>
             <Button
                 type="button"
-                disabled={!permissions.isConfigurable}
+                disabled={addRemoveInsightPermissions.disabled}
                 onClick={onAddInsight}
                 variant="secondary"
                 className="p-0 w-100 border-0"
             >
                 <Card
-                    data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
+                    data-tooltip={addRemoveInsightPermissions.tooltip}
                     data-placement="right"
                     className={styles.itemCard}
                 >

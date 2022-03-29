@@ -32,6 +32,7 @@ type ListBatchChangesArgs struct {
 	First               int32
 	After               *string
 	State               *string
+	States              *[]string
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
@@ -557,6 +558,8 @@ type ListChangesetsArgs struct {
 	ExternalState *string
 	// State is a value of type *btypes.ChangesetState.
 	State *string
+	// onlyClosable indicates the user only wants open and draft changesets to be returned
+	OnlyClosable *bool
 	// ReviewState is a value of type *btypes.ChangesetReviewState.
 	ReviewState *string
 	// CheckState is a value of type *btypes.ChangesetCheckState.

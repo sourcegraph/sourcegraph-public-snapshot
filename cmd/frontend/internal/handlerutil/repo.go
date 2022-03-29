@@ -19,7 +19,7 @@ import (
 func GetRepo(ctx context.Context, db database.DB, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	repo, err := backend.NewRepos(db.Repos()).GetByName(ctx, origRepo)
+	repo, err := backend.NewRepos(db).GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -34,11 +34,11 @@ func GetRepo(ctx context.Context, db database.DB, vars map[string]string) (*type
 // getRepoRev resolves the repository and commit specified in the route vars.
 func getRepoRev(ctx context.Context, db database.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	repo, err := backend.NewRepos(db.Repos()).Get(ctx, repoID)
+	repo, err := backend.NewRepos(db).Get(ctx, repoID)
 	if err != nil {
 		return repoID, "", err
 	}
-	commitID, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, repoRev.Rev)
+	commitID, err := backend.NewRepos(db).ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
 		return repoID, "", err
 	}

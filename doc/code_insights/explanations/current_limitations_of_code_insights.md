@@ -1,6 +1,6 @@
-# Current limitations of Code Insights (Beta limitations)
+# Current limitations of Code Insights
 
-Because code insights is currently a private [beta feature](../../admin/beta_and_experimental_features.md#beta-features), there are some limitations that we have not finished building solutions for yet. 
+There are a few existing limitations.  
 
 If you have strong feedback, please do [let us know](mailto:feedback@sourcegraph.com). 
 
@@ -24,6 +24,15 @@ The number of insights you have does not affect the overall speed at which they 
 
 > NOTE: we have many performance improvements planned. We'll likely release considerable performance gains in the upcoming releases of 2021. 
 
+## Best practices for creating insights over very large repositories 
+
+In some cases, depending on the size of the Sourcegraph instance and the size of the repo, you may see odd behavior or timeout errors if you try to create a code insight running over a single large repository. In this case, it's best to try: 
+
+1. Create the insight, but check the box to "run over all repositories." (This sends the Insight backfilling jobs to the backend Sourcegraph instance worker which will handle them datapoint-by-datapoint. Running over an individual repository otherwise currently runs the jobs in bulk to generate its live preview.)
+2. After the insight has finished running, [filter the insight](code_insights_filters.md#filter-options) to the specific repo you originally wanted to use. The filter resolves instantly. 
+
+If this does not solve your problem, please reach out directly to your Sourcegraph contact or in your shared slack channel, as there are experimental solutions we are currently working on to further improve our handling of large repositories. 
+
 ## Feature parity limitations 
 
 ### Features currently available only on insights over all your repositories
@@ -39,7 +48,7 @@ Because these insights need to run dramatically fewer queries than insights over
 * **[Released] Dynamic x-axis ranges**: available in 3.35+ ~~set a custom amount of historical data you care about~~
 * **[Released] Editing data series queries after creation**: available in 3.35+ ~~for insights over all repositories, you must make a new insight if you wish to run a different query~~
 * **Live previews**: showing the preview of your insight in real time
-* **"Diff click"**: click a datapoint on your insight and be taken to a diff search showing any changes contributing to the difference between a datapoint and the prior one
+* **[Released] "Diff click"**: available in 3.36+ ~~click a datapoint on your insight and be taken to a diff search showing any changes contributing to the difference between a datapoint and the prior one~~
 
 > NOTE: many of the above-listed features will become available for insights over all repositories as well. The above list is ordererd top-down, where items on the top of the list will arrive roughly sooner than items on the bottom. 
 

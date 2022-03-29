@@ -1,3 +1,5 @@
+import React, { ReactElement, useCallback, useMemo } from 'react'
+
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event'
 import { GridRows } from '@visx/grid'
@@ -7,9 +9,9 @@ import { Bar } from '@visx/shape'
 import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
 import classNames from 'classnames'
 import { range } from 'lodash'
-import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
 
+import { LockedChart } from '../locked/LockedChart'
 import { MaybeLink } from '../MaybeLink'
 
 import styles from './BarChart.module.scss'
@@ -35,6 +37,7 @@ interface BarChartProps<Datum extends object> extends Omit<BarChartContent<Datum
     height: number
     /** Callback calls every time when a bar-link on the chart was clicked */
     onDatumLinkClick: (event: React.MouseEvent) => void
+    locked?: boolean
 }
 
 /**
@@ -48,6 +51,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
         series,
         onDatumLinkClick,
         xAxis: { dataKey: xDataKey },
+        locked = false,
     } = props
 
     // Respect only first element of data series
@@ -97,6 +101,10 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
         tooltipTimeout = window.setTimeout(() => {
             hideTooltip()
         }, 300)
+    }
+
+    if (locked) {
+        return <LockedChart />
     }
 
     return (

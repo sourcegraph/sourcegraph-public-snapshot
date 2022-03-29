@@ -54,7 +54,9 @@ sg start monitoring
 
 Grafana dashboards will be available at `localhost:3370`.
 
-Note that instead of `kubectl`, you can replace the command in the sg.config.overwrite.yaml above to use whichever port-forwarding mechanism you wish to use to connect to a remote Prometheus instance (as long as Prometheus is available on port `9090` locally).
+:information_source: If you are on Linux and are also running [ufw](https://wiki.archlinux.org/title/Uncomplicated_Firewall) for your firewall, the Grafana dashboard might show a `Bad gateway` error. Although not recommended, disabling the firewall is a quick hack to make this work but it should be possible to get `ufw` to play along with `docker` nicely with some research (not covered in this document).
+
+Note that instead of `kubectl`, you can replace the command in the `sg.config.overwrite.yaml` above to use whichever port-forwarding mechanism you wish to use to connect to a remote Prometheus instance (as long as Prometheus is available on port `9090` locally).
 The dev targets for Grafana are defined in the following files:
 
 * Non-Linux: [`dev/grafana/all/datasources.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/grafana/all/datasources.yaml)

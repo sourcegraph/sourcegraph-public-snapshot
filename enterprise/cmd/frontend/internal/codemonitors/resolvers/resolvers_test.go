@@ -15,11 +15,11 @@ import (
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -62,6 +62,20 @@ func TestCreateCodeMonitor(t *testing.T) {
 	require.NoError(t, err)
 	_, err = r.db.CodeMonitors().GetMonitor(ctx, got.(*monitor).Monitor.ID)
 	require.Error(t, err, "monitor should have been deleted")
+
+	t.Run("invalid slack webhook", func(t *testing.T) {
+		namespace := relay.MarshalID("User", user.ID)
+		_, err := r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
+			Monitor: &graphqlbackend.CreateMonitorArgs{Namespace: namespace},
+			Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:."},
+			Actions: []*graphqlbackend.CreateActionArgs{{
+				SlackWebhook: &graphqlbackend.CreateActionSlackWebhookArgs{
+					URL: "https://internal:3443",
+				},
+			}},
+		})
+		require.Error(t, err)
+	})
 }
 
 func TestListCodeMonitors(t *testing.T) {
@@ -325,7 +339,7 @@ func TestQueryMonitor(t *testing.T) {
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
 		func() error {
-			return r.db.CodeMonitors().UpdateTriggerJobWithResults(ctx, 1, "", make([]cmtypes.CommitSearchResult, 1))
+			return r.db.CodeMonitors().UpdateTriggerJobWithResults(ctx, 1, "", make([]*result.CommitMatch, 1))
 		},
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
@@ -1251,5 +1265,26 @@ func TestMonitorKindEqualsResolvers(t *testing.T) {
 
 	if got != want {
 		t.Fatal("email.MonitorKind should match resolvers.MonitorKind")
+	}
+}
+
+func TestValidateSlackURL(t *testing.T) {
+	valid := []string{
+		"https://hooks.slack.com/services/8d8d8/8dd88d/838383",
+		"https://hooks.slack.com",
+	}
+
+	for _, url := range valid {
+		require.NoError(t, validateSlackURL(url))
+	}
+
+	invalid := []string{
+		"http://hooks.slack.com/services",
+		"https://hooks.slack.com:3443/services",
+		"https://internal:8989",
+	}
+
+	for _, url := range invalid {
+		require.Error(t, validateSlackURL(url))
 	}
 }

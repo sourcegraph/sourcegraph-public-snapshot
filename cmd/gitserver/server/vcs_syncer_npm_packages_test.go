@@ -12,14 +12,16 @@ import (
 	"os/exec"
 	"path"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	dependenciesStore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/store"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,42 +33,39 @@ const (
 	exampleJSFilepath           = "Example.js"
 	exampleTSFileContents       = "export X; interface X { x: number }"
 	exampleJSFileContents       = "var x = 1; var y = 'hello'; x = y;"
-	exampleNPMVersion           = "1.0.0"
-	exampleNPMVersion2          = "2.0.0-abc"
-	exampleNPMVersionedPackage  = "example@1.0.0"
-	exampleNPMVersionedPackage2 = "example@2.0.0-abc"
+	exampleNpmVersion           = "1.0.0"
+	exampleNpmVersion2          = "2.0.0-abc"
+	exampleNpmVersionedPackage  = "example@1.0.0"
+	exampleNpmVersionedPackage2 = "example@2.0.0-abc"
 	exampleTgz                  = "example-1.0.0.tgz"
 	exampleTgz2                 = "example-2.0.0-abc.tgz"
-	exampleNPMPackageURL        = "npm/example"
+	exampleNpmPackageURL        = "npm/example"
 )
 
-func TestNoMaliciousFilesNPM(t *testing.T) {
+func TestNoMaliciousFilesNpm(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
 	defer os.RemoveAll(dir)
 
-	tgzPath := path.Join(dir, "malicious.tgz")
 	extractPath := path.Join(dir, "extracted")
 	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
 
-	createMaliciousTgz(t, tgzPath)
+	tgz := bytes.NewReader(createMaliciousTgz(t))
 
-	s := NewNPMPackagesSyncer(
-		schema.NPMPackagesConnection{Dependencies: []string{}},
-		NewMockDBStore(),
+	s := NewNpmPackagesSyncer(
+		schema.NpmPackagesConnection{Dependencies: []string{}},
+		NewMockDependenciesStore(),
 		nil,
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	tgzFile, err := os.Open(tgzPath)
-	require.Nil(t, err)
-	defer func() { require.Nil(t, tgzFile.Close()) }()
-	dep := &reposource.NPMDependency{NPMPackage: &reposource.NPMPackage{}}
-	err = s.commitTgz(ctx, dep, extractPath, tgzFile)
+
+	dep := &reposource.NpmDependency{NpmPackage: &reposource.NpmPackage{}}
+	err = s.commitTgz(ctx, dep, extractPath, tgz)
 	require.NotNil(t, err, "malicious tarball should not be committed successfully")
 
 	dirEntries, err := os.ReadDir(extractPath)
-	baseline := []string{"src"}
+	baseline := []string{"harmless.java"}
 	assert.Nil(t, err)
 	paths := []string{}
 	for _, dirEntry := range dirEntries {
@@ -77,133 +76,148 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	}
 }
 
-func createMaliciousTgz(t *testing.T, tgzPath string) {
+func createMaliciousTgz(t *testing.T) []byte {
 	fileInfos := []fileInfo{
-		{harmlessPath, []byte{}},
+		{harmlessPath, []byte("harmless")},
 	}
 	for _, filepath := range maliciousPaths {
-		fileInfos = append(fileInfos, fileInfo{filepath, []byte{}})
+		fileInfos = append(fileInfos, fileInfo{filepath, []byte("malicious")})
 	}
-	createTgz(t, tgzPath, fileInfos)
+	return createTgz(t, fileInfos)
 }
 
-func TestNPMCloneCommand(t *testing.T) {
+func TestNpmCloneCommand(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
-	assert.Nil(t, err)
-	defer func() { assert.Nil(t, os.RemoveAll(dir)) }()
+	require.NoError(t, err)
 
-	tgzPath := path.Join(dir, exampleTgz)
-	createTgz(t, tgzPath, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
-	defer func() { assert.Nil(t, os.Remove(tgzPath)) }()
-	tgzPath2 := path.Join(dir, exampleTgz2)
-	createTgz(t, tgzPath2, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
-	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
+	t.Cleanup(func() {
+		require.NoError(t, os.RemoveAll(dir))
+	})
+
+	tgz1 := createTgz(t, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
+	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
 
 	client := npmtest.MockClient{
-		TarballMap: map[string]string{exampleNPMVersionedPackage: tgzPath, exampleNPMVersionedPackage2: tgzPath2},
+		Packages: map[string]*npm.PackageInfo{
+			"example": {
+				Versions: map[string]*npm.DependencyInfo{
+					exampleNpmVersion: {
+						Dist: npm.DependencyInfoDist{TarballURL: exampleNpmVersion},
+					},
+					exampleNpmVersion2: {
+						Dist: npm.DependencyInfoDist{TarballURL: exampleNpmVersion2},
+					},
+				},
+			},
+		},
+		Tarballs: map[string][]byte{
+			exampleNpmVersion:  tgz1,
+			exampleNpmVersion2: tgz2,
+		},
 	}
-	s := NewNPMPackagesSyncer(
-		schema.NPMPackagesConnection{Dependencies: []string{}},
-		NewMockDBStore(),
+	s := NewNpmPackagesSyncer(
+		schema.NpmPackagesConnection{Dependencies: []string{}},
+		NewMockDependenciesStore(),
 		&client,
 	)
 	bareGitDirectory := path.Join(dir, "git")
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage})
 	checkSingleTag := func() {
 		assertCommandOutput(t,
 			exec.Command("git", "tag", "--list"),
 			bareGitDirectory,
-			fmt.Sprintf("v%s\n", exampleNPMVersion))
+			fmt.Sprintf("v%s\n", exampleNpmVersion))
 		assertCommandOutput(t,
-			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
 			bareGitDirectory,
 			exampleJSFileContents,
 		)
 	}
 	checkSingleTag()
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage, exampleNPMVersionedPackage2})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage, exampleNpmVersionedPackage2})
 	checkTagAdded := func() {
 		assertCommandOutput(t,
 			exec.Command("git", "tag", "--list"),
 			bareGitDirectory,
-			fmt.Sprintf("v%s\nv%s\n", exampleNPMVersion, exampleNPMVersion2), // verify that a new tag was added
+			fmt.Sprintf("v%s\nv%s\n", exampleNpmVersion, exampleNpmVersion2), // verify that a new tag was added
 		)
 		assertCommandOutput(t,
-			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
 			bareGitDirectory,
 			exampleJSFileContents,
 		)
 		assertCommandOutput(t,
-			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion2, exampleTSFilepath)),
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion2, exampleTSFilepath)),
 			bareGitDirectory,
 			exampleTSFileContents,
 		)
 	}
 	checkTagAdded()
 
-	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleNpmVersionedPackage})
 	checkTagRemoved := func() {
 		assertCommandOutput(t,
-			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNpmVersion, exampleJSFilepath)),
 			bareGitDirectory,
 			exampleJSFileContents,
 		)
 		assertCommandOutput(t,
 			exec.Command("git", "tag", "--list"),
 			bareGitDirectory,
-			fmt.Sprintf("v%s\n", exampleNPMVersion), // verify that second tag has been removed.
+			fmt.Sprintf("v%s\n", exampleNpmVersion), // verify that second tag has been removed.
 		)
 	}
 	checkTagRemoved()
 
 	// Now run the same tests with the database output instead.
-	mockStore := NewStrictMockDBStore()
-	s.dbStore = mockStore
+	mockStore := NewStrictMockDependenciesStore()
+	s.depsStore = mockStore
 
-	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
-		{"example", exampleNPMVersion, 0},
+	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+		{ID: 0, Name: "example", Version: exampleNpmVersion},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkSingleTag()
 
-	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
-		{"example", exampleNPMVersion, 0},
-		{"example", exampleNPMVersion2, 1},
+	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+		{ID: 0, Name: "example", Version: exampleNpmVersion},
+		{ID: 1, Name: "example", Version: exampleNpmVersion2},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagAdded()
 
-	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
-		{"example", "1.0.0", 0},
+	mockStore.ListDependencyReposFunc.PushReturn([]dependenciesStore.DependencyRepo{
+		{ID: 0, Name: "example", Version: "1.0.0"},
 	}, nil)
 	s.runCloneCommand(t, bareGitDirectory, []string{})
 	checkTagRemoved()
 }
 
-func (s NPMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
+func (s NpmPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
 	t.Helper()
-	packageURL := vcs.URL{URL: url.URL{Path: exampleNPMPackageURL}}
+	packageURL := vcs.URL{URL: url.URL{Path: exampleNpmPackageURL}}
 	s.connection.Dependencies = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &packageURL, bareGitDirectory)
-	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
+	require.NoError(t, err)
+	require.NoError(t, cmd.Run())
 }
 
-func createTgz(t *testing.T, tgzPath string, fileInfos []fileInfo) {
+func createTgz(t *testing.T, fileInfos []fileInfo) []byte {
 	t.Helper()
-	ioWriter, err := os.Create(tgzPath)
-	assert.Nil(t, err)
-	gzipWriter := gzip.NewWriter(ioWriter)
+
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzipWriter)
-	defer func() {
-		assert.Nil(t, tarWriter.Close())
-		assert.Nil(t, gzipWriter.Close())
-		assert.Nil(t, ioWriter.Close())
-	}()
+
 	for _, fileinfo := range fileInfos {
-		assert.Nil(t, addFileToTarball(t, tarWriter, fileinfo))
+		require.NoError(t, addFileToTarball(t, tarWriter, fileinfo))
 	}
+
+	require.NoError(t, tarWriter.Close())
+	require.NoError(t, gzipWriter.Close())
+
+	return buf.Bytes()
 }
 
 func addFileToTarball(t *testing.T, tarWriter *tar.Writer, info fileInfo) error {
@@ -244,35 +258,29 @@ func TestDecompressTgz(t *testing.T) {
 		{[]string{"d/f1", "d/f2"}, []string{"f1", "f2"}},
 		{[]string{"d1/d2/f1", "d1/d2/f2"}, []string{"d2"}},
 		{[]string{"d1/f1", "d2/f2", "d3/f3"}, []string{"d1", "d2", "d3"}},
+		{[]string{"f1", "d1/f2", "d1/f3"}, []string{"d1", "f1"}},
 	}
 
-	for _, testData := range table {
-		dir, err := os.MkdirTemp("", "")
-		assert.Nil(t, err)
-		defer func() { assert.Nil(t, os.RemoveAll(dir)) }()
+	for i, testData := range table {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			dir, err := os.MkdirTemp("", "")
+			require.NoError(t, err)
+			t.Cleanup(func() { require.NoError(t, os.RemoveAll(dir)) })
 
-		tarballName := "test.tgz"
-		tgzPath := path.Join(dir, tarballName)
-		// Creating a tarball with empty files fails???
-		fileInfos := []fileInfo{}
-		for _, path := range testData.paths {
-			fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
-		}
-		createTgz(t, tgzPath, fileInfos)
-		tgzFile, err := os.Open(tgzPath)
-		require.Nil(t, err)
-		defer tgzFile.Close()
-		assert.Nil(t, decompressTgz(namedReadSeeker{tgzPath, tgzFile}, dir))
-		dirEntries, err := os.ReadDir(dir)
-		assert.Nil(t, err)
-		dirEntryNames := []string{}
-		for _, entry := range dirEntries {
-			if entry.Name() == tarballName {
-				continue
+			var fileInfos []fileInfo
+			for _, path := range testData.paths {
+				fileInfos = append(fileInfos, fileInfo{path: path, contents: []byte("x")})
 			}
-			dirEntryNames = append(dirEntryNames, entry.Name())
-		}
-		assert.True(t, reflect.DeepEqual(dirEntryNames, testData.expect))
+
+			tgz := bytes.NewReader(createTgz(t, fileInfos))
+
+			require.NoError(t, decompressTgz(tgz, dir))
+
+			have, err := fs.Glob(os.DirFS(dir), "*")
+			require.NoError(t, err)
+
+			require.Equal(t, testData.expect, have)
+		})
 	}
 }
 
@@ -313,13 +321,13 @@ func testDecompressTgzNoOOBImpl(t *testing.T, entries []tar.Header) {
 	tarWriter.Close()
 	gzipWriter.Close()
 
-	readSeeker := bytes.NewReader(buffer.Bytes())
+	reader := bytes.NewReader(buffer.Bytes())
 
 	outDir, err := os.MkdirTemp("", "decompress-oobfix-")
 	require.Nil(t, err)
 	defer os.RemoveAll(outDir)
 
 	require.NotPanics(t, func() {
-		decompressTgz(namedReadSeeker{"buffer", readSeeker}, outDir)
+		decompressTgz(reader, outDir)
 	})
 }

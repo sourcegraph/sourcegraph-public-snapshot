@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
@@ -9,7 +10,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, ButtonLink, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, Icon } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -193,7 +194,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                             View extensions
                         </Button>
                         <Button to="/extensions/registry/new" variant="primary" as={Link}>
-                            <AddIcon className="icon-inline" /> Publish new extension
+                            <Icon as={AddIcon} /> Publish new extension
                         </Button>
                     </div>
                 </div>

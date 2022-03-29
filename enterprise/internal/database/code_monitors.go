@@ -11,11 +11,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	cmtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -47,7 +47,7 @@ type CodeMonitorStore interface {
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results cmtypes.CommitSearchResults) error
+	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
@@ -80,6 +80,9 @@ type CodeMonitorStore interface {
 	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
+
+	UpsertLastSearched(ctx context.Context, monitorID int64, argsHash int64, lastSearched []string) error
+	GetLastSearched(ctx context.Context, monitorID int64, argsHash int64) ([]string, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models
@@ -247,14 +250,14 @@ func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) 
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }
 
-func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, userContext context.Context) {
 	t.Helper()
 
 	name = "cm-user1"
 	id = insertTestUser(ctx, t, db, name, true)
-	namespace = relay.MarshalID("User", id)
+	_ = relay.MarshalID("User", id)
 	ctx = actor.WithActor(ctx, actor.FromUser(id))
-	return name, id, namespace, ctx
+	return name, id, ctx
 }
 
 func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -19,13 +18,14 @@ import (
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Plan          query.Plan // the comprehensive query plan
-	Query         query.Q    // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery string     // the raw string of the original search query
-	PatternType   query.SearchType
-	UserSettings  *schema.Settings
-	Features      featureflag.FlagSet
-	Protocol      search.Protocol
+	Plan                query.Plan // the comprehensive query plan
+	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery       string     // the raw string of the original search query
+	PatternType         query.SearchType
+	UserSettings        *schema.Settings
+	OnSourcegraphDotCom bool
+	Features            featureflag.FlagSet
+	Protocol            search.Protocol
 }
 
 // MaxResults computes the limit for the query.
@@ -47,8 +47,9 @@ func NewSearchInputs(
 	version string,
 	patternType *string,
 	searchQuery string,
-	stream streaming.Sender,
+	protocol search.Protocol,
 	settings *schema.Settings,
+	sourcegraphDotComMode bool,
 ) (_ *SearchInputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
 	defer func() {
@@ -87,19 +88,15 @@ func NewSearchInputs(
 	}
 	tr.LazyPrintf("parsing done")
 
-	protocol := search.Batch
-	if stream != nil {
-		protocol = search.Streaming
-	}
-
 	inputs := &SearchInputs{
-		Plan:          plan,
-		Query:         plan.ToParseTree(),
-		OriginalQuery: searchQuery,
-		UserSettings:  settings,
-		Features:      featureflag.FromContext(ctx),
-		PatternType:   searchType,
-		Protocol:      protocol,
+		Plan:                plan,
+		Query:               plan.ToParseTree(),
+		OriginalQuery:       searchQuery,
+		UserSettings:        settings,
+		OnSourcegraphDotCom: sourcegraphDotComMode,
+		Features:            featureflag.FromContext(ctx),
+		PatternType:         searchType,
+		Protocol:            protocol,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)

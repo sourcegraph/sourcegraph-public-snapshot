@@ -1,14 +1,15 @@
+import React, { useState, useCallback } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import prettyBytes from 'pretty-bytes'
-import React, { useState, useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Badge, Link } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -17,6 +18,7 @@ import { dirname } from '../../util/path'
 import { DiffStat, DiffStatSquares } from './DiffStat'
 import { ExtensionInfo } from './FileDiffConnection'
 import { FileDiffHunks } from './FileDiffHunks'
+
 import styles from './FileDiffNode.module.scss'
 
 export interface FileDiffNodeProps extends ThemeProps {
@@ -99,11 +101,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
                     <Button variant="icon" className="mr-2" onClick={toggleExpand} size="sm">
-                        {expanded ? (
-                            <ChevronDownIcon className="icon-inline" />
-                        ) : (
-                            <ChevronRightIcon className="icon-inline" />
-                        )}
+                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (

@@ -1,22 +1,21 @@
-import React, { FormEventHandler, RefObject, useContext } from 'react'
+import React, { FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import {
     CodeInsightDashboardsVisibility,
     CodeInsightTimeStepPicker,
-    VisibilityPicker,
 } from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
+import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { Insight } from '../../../../../../core/types'
+import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -37,12 +36,10 @@ interface CreationSearchInsightFormProps {
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
 
-    visibility: useFieldAPI<CreateInsightFormFields['visibility']>
-    subjects: SupportedInsightSubject[]
-
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
+    insight?: Insight
 
     onCancel: () => void
 
@@ -79,14 +76,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         title,
         repositories,
         allReposMode,
-        visibility,
-        subjects,
         series,
         stepValue,
         step,
         className,
         isFormClearActive,
         dashboardReferenceCount,
+        insight,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -97,16 +93,20 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     } = props
 
     const isEditMode = mode === 'edit'
+    const { licensed, insight: insightFeatures } = useUiFeatures()
 
-    const api = useContext(CodeInsightsBackendContext)
-
-    // We have to know about what exactly api we use to be able switch our UI properly.
-    // In the creation UI case we should hide visibility section since we don't use that
-    // concept anymore with new GQL backend.
-    // TODO [VK]: Remove this condition rendering when we deprecate setting-based api
-    const isGqlBackend = api instanceof CodeInsightsGqlBackend
+    const creationPermission = useObservable(
+        useMemo(
+            () =>
+                isEditMode && insight
+                    ? insightFeatures.getEditPermissions(insight)
+                    : insightFeatures.getCreationPermissions(),
+            [insightFeatures, isEditMode, insight]
+        )
+    )
 
     return (
+        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
             <FormGroup
                 name="insight repositories"
@@ -157,14 +157,15 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             <FormGroup
                 name="data series group"
                 title="Data series"
-                subtitle="Add any number of data series to your chart"
+                subtitle={
+                    licensed ? 'Add any number of data series to your chart' : 'Add up to 10 data series to your chart'
+                }
                 error={series.meta.touched && series.meta.error}
                 innerRef={series.input.ref}
             >
                 <FormSeries
                     series={series.input.value}
                     repositories={repositories.input.value}
-                    isBackendInsightEdit={isGqlBackend ? false : isEditMode && allReposMode.input.value}
                     showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
@@ -188,14 +189,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="d-flex flex-column"
                 />
 
-                {!isGqlBackend && (
-                    <VisibilityPicker
-                        subjects={subjects}
-                        value={visibility.input.value}
-                        onChange={visibility.input.onChange}
-                    />
-                )}
-
                 <CodeInsightTimeStepPicker
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
@@ -213,6 +206,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className="my-4 w-100" />
 
+            {!licensed && (
+                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="mb-3" />
+            )}
+
             <div className="d-flex flex-wrap align-items-center">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
 
@@ -221,7 +218,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     loading={submitting}
                     label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"
                     className="mr-2 mb-2"
                     variant="primary"

@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { styles } from '../../../../../../components/creation-ui-kit'
@@ -7,7 +8,7 @@ import { useAsyncInsightTitleValidator } from '../../../../../../components/form
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
+import { Insight } from '../../../../../../core/types'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
@@ -18,7 +19,6 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',
     title: '',
     threshold: 3,
-    visibility: 'personal',
     dashboardReferenceCount: 0,
 }
 const titleRequiredValidator = createRequiredValidator('Title is a required field.')
@@ -31,9 +31,9 @@ export interface LangStatsInsightCreationContentProps {
      */
     mode?: 'creation' | 'edit'
 
-    subjects?: SupportedInsightSubject[]
     initialValues?: Partial<LangStatsCreationFormFields>
     className?: string
+    insight?: Insight
 
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel?: () => void
@@ -45,19 +45,17 @@ export interface LangStatsInsightCreationContentProps {
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
-        subjects = [],
         initialValues = {},
         className,
         onSubmit,
         onCancel = noop,
         onChange = noop,
+        insight,
     } = props
 
     const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues: {
             ...INITIAL_VALUES,
-            // Calculate initial value for the visibility settings
-            visibility: subjects.find(isUserSubject)?.id ?? '',
             ...initialValues,
         },
         onSubmit,
@@ -89,13 +87,9 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         formApi: formAPI,
         validators: { sync: thresholdFieldValidator },
     })
-    const visibility = useField({
-        name: 'visibility',
-        formApi: formAPI,
-    })
 
     // If some fields that needed to run live preview  are invalid
-    // we should disabled live chart preview
+    // we should disable live chart preview
     const allFieldsForPreviewAreValid = repository.meta.validState === 'VALID' && threshold.meta.validState === 'VALID'
 
     const handleFormReset = (): void => {
@@ -104,7 +98,6 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         repository.input.onChange('')
         // Focus first element of the form
         repository.input.ref.current?.focus()
-        visibility.input.onChange('personal')
         threshold.input.onChange(3)
     }
 
@@ -121,11 +114,10 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
                 title={title}
                 repository={repository}
                 threshold={threshold}
-                visibility={visibility}
-                subjects={subjects}
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
                 className={styles.contentForm}
+                insight={insight}
                 onCancel={onCancel}
                 onFormReset={handleFormReset}
             />

@@ -10,3 +10,36 @@
         visibility: visible;
     }
 }
+
+.nav-dropdown {
+    &-wrapper {
+        padding: 0 1rem 0 0;
+    }
+
+    &-container {
+        margin-left: -0.625rem;
+    }
+
+    &-link {
+        --link-hover-color: inherit;
+        --link-hover-decoration: none;
+
+        height: 100%;
+        display: flex;
+        align-items: center;
+        z-index: 1;
+    }
+    &-icon-button {
+        // - we show this button under the actual link
+        // - we make it `absolute` at top-left so we have good origin point
+        //   to adjust dropdown menu position
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 0;
+        border: none;
+        text-align: right;
+    }
+}

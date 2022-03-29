@@ -1,3 +1,5 @@
+import React from 'react'
+
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import AwsIcon from 'mdi-react/AwsIcon'
@@ -7,7 +9,6 @@ import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
-import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Link } from '@sourcegraph/wildcard'
@@ -1210,6 +1211,8 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                     <code>"org.hamcrest:hamcrest-core:1.3:default"</code>.
                 </li>
             </ol>
+            <p>⚠️ JVM dependency repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one JVM dependency code host per Sourcegraph instance.</p>
         </div>
     ),
     editorActions: [],
@@ -1238,10 +1241,10 @@ const PAGURE: AddExternalServiceOptions = {
 
 const NPM_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.NPMPACKAGES,
-    title: 'NPM Dependencies',
+    title: 'npm Dependencies',
     icon: NpmIcon,
     jsonSchema: npmPackagesSchemaJSON,
-    defaultDisplayName: 'NPM Dependencies',
+    defaultDisplayName: 'npm Dependencies',
     defaultConfig: `{
   "registry": "https://registry.npmjs.org",
   "dependencies": []
@@ -1250,7 +1253,7 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <Field>registry</Field> to the applicable NPM registry. For example,
+                    In the configuration below, set <Field>registry</Field> to the applicable npm registry. For example,
                     <code>"https://registry.npmjs.mycompany.com"</code> or <code>"https://registry.npmjs.org"</code>.
                     Note that this URL may not be the same as where packages can be searched (such as{' '}
                     <code>https://www.npmjs.org</code>). If you're unsure about the exact URL URL for a custom registry,
@@ -1264,6 +1267,8 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
                     supported.
                 </li>
             </ol>
+            <p>⚠️ npm package repositories are visible by all users of the Sourcegraph instance.</p>
+            <p>⚠️ It is only possible to register one npm package code host per Sourcegraph instance.</p>
         </div>
     ),
     editorActions: [],
@@ -1281,9 +1286,9 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     gitolite: GITOLITE,
     git: GENERIC_GIT,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
-    ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.jvmPackages === 'disabled' ? {} : { jvmPackages: JVM_PACKAGES }),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.npmPackages === 'disabled' ? {} : { npmPackages: NPM_PACKAGES }),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {

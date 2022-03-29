@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -29,8 +28,8 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -253,7 +252,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches[0]
-	hunks, err := git.BlameFile(ctx, fm.Repo.Name, fm.Path, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, sr.db, fm.Repo.Name, fm.Path, &git.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber),
 		EndLine:      int(lm.LineNumber),
@@ -441,10 +440,9 @@ func LogSearchLatency(ctx context.Context, db database.DB, wg *sync.WaitGroup, s
 // JobArgs converts the parts of search resolver state to values needed to create search jobs.
 func (r *searchResolver) JobArgs() *job.Args {
 	return &job.Args{
-		SearchInputs:        r.SearchInputs,
-		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
-		Zoekt:               r.zoekt,
-		SearcherURLs:        r.searcherURLs,
+		SearchInputs: r.SearchInputs,
+		Zoekt:        r.zoekt,
+		SearcherURLs: r.searcherURLs,
 	}
 }
 
@@ -464,9 +462,9 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, err error) {
+func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInputs, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
-	LogSearchLatency(ctx, r.db, &wg, r.SearchInputs, srr.ElapsedMilliseconds())
+	LogSearchLatency(ctx, db, &wg, searchInputs, srr.ElapsedMilliseconds())
 	defer wg.Wait()
 
 	var status, alertType string
@@ -485,7 +483,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			n = len(srr.Matches)
 		}
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: r.SearchInputs.OriginalQuery,
+			OriginalQuery: searchInputs.OriginalQuery,
 			Typ:           requestName,
 			Source:        requestSource,
 			Status:        status,
@@ -503,19 +501,13 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	}
 }
 
-func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.results(ctx, agg, r.SearchInputs.Plan)
+	alert, err := execute.Execute(ctx, r.db, agg, r.JobArgs())
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
-	r.logBatch(ctx, srr, err)
-	return srr, err
-}
-
-func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
-	alert, err := r.results(ctx, r.stream, r.SearchInputs.Plan)
-	srr := r.resultsToResolver(nil, alert, streaming.Stats{})
+	logBatch(ctx, r.db, r.SearchInputs, srr, err)
 	return srr, err
 }
 
@@ -526,13 +518,6 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 		Stats:       stats,
 		db:          r.db,
 	}
-}
-
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
-	if r.stream == nil {
-		return r.resultsBatch(ctx)
-	}
-	return r.resultsStreaming(ctx)
 }
 
 // DetermineStatusForLogs determines the final status of a search for logging
@@ -552,26 +537,6 @@ func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err erro
 	default:
 		return "success"
 	}
-}
-
-func (r *searchResolver) results(ctx context.Context, stream streaming.Sender, plan query.Plan) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Results", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	plan, err = predicate.Expand(ctx, r.db, r.JobArgs(), plan)
-	if err != nil {
-		return nil, err
-	}
-
-	planJob, err := job.FromExpandedPlan(r.JobArgs(), plan)
-	if err != nil {
-		return nil, err
-	}
-
-	return planJob.Run(ctx, r.db, stream)
 }
 
 type searchResultsStats struct {
@@ -630,7 +595,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		j, err := job.ToSearchJob(args, r.SearchInputs.Query)
+		j, err := job.ToSearchJob(args, r.SearchInputs.Query, r.db)
 		if err != nil {
 			return nil, err
 		}

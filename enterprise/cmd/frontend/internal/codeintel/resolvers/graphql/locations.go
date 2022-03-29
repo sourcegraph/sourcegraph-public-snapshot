@@ -191,10 +191,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 	}
 
 	// Resolve new value and store in cache
-	resolver, err := r.resolvePath(ctx, parentResolver.resolver, path)
-	if err != nil {
-		return nil, err
-	}
+	resolver := r.resolvePath(parentResolver.resolver, path)
 	parentResolver.children[path] = resolver
 	return resolver, nil
 }
@@ -204,7 +201,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, id)
+	repo, err := backend.NewRepos(r.db).Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -224,7 +221,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	commitID, err := git.ResolveRevision(ctx, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := git.ResolveRevision(ctx, r.db, repo.Name, commit, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -237,8 +234,8 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
-func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver *gql.GitCommitResolver, path string) (*gql.GitTreeEntryResolver, error) {
-	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, true)), nil
+func (r *CachedLocationResolver) resolvePath(commitResolver *gql.GitCommitResolver, path string) *gql.GitTreeEntryResolver {
+	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, false))
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The

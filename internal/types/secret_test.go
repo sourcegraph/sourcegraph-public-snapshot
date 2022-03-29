@@ -70,7 +70,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 	pagureConfig := schema.PagureConnection{
 		Url: "https://src.fedoraproject.org",
 	}
-	npmPackagesConfig := schema.NPMPackagesConnection{
+	npmPackagesConfig := schema.NpmPackagesConnection{
 		Credentials:  "npm credentials!",
 		Dependencies: []string{"placeholder"},
 	}
@@ -141,9 +141,9 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			editField: func(cfg interface{}) *string { return &cfg.(*schema.PagureConnection).Pattern },
 		},
 		{
-			kind:      extsvc.KindNPMPackages,
+			kind:      extsvc.KindNpmPackages,
 			config:    &npmPackagesConfig,
-			editField: func(cfg interface{}) *string { return &cfg.(*schema.NPMPackagesConnection).Dependencies[0] },
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.NpmPackagesConnection).Dependencies[0] },
 		},
 		{
 			kind:   extsvc.KindOther,

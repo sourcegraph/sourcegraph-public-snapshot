@@ -1,8 +1,9 @@
-import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { Button, Card, Link } from '@sourcegraph/wildcard'
+import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
+
+import { Button, Card, Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './CtaAlert.module.scss'
 
@@ -10,6 +11,11 @@ export interface CtaAlertProps {
     title: string
     description: string | React.ReactNode
     cta: {
+        label: string
+        href: string
+        onClick?: () => void
+    }
+    secondary?: {
         label: string
         href: string
         onClick?: () => void
@@ -41,11 +47,24 @@ export const CtaAlert: React.FunctionComponent<CtaAlertProps> = props => (
             <Button to={props.cta.href} onClick={props.cta.onClick} variant="primary" as={Link} target="_blank">
                 {props.cta.label}
             </Button>
+            {props.secondary ? (
+                <Button
+                    to={props.secondary.href}
+                    onClick={props.secondary.onClick}
+                    variant="link"
+                    as={Link}
+                    target="_blank"
+                    className="ml-2"
+                >
+                    {props.secondary.label}
+                </Button>
+            ) : null}
         </div>
-        <CloseIcon
-            className="icon-inline position-absolute cursor-pointer"
+        <Icon
+            className="position-absolute cursor-pointer"
             style={{ top: '1rem', right: '1rem' }}
             onClick={props.onClose}
+            as={CloseIcon}
         />
     </Card>
 )

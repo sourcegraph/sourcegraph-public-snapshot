@@ -1,5 +1,6 @@
-import * as H from 'history'
 import React from 'react'
+
+import * as H from 'history'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -9,9 +10,10 @@ import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
-import styles from './AddExternalServicesPage.module.scss'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
+
+import styles from './AddExternalServicesPage.module.scss'
 
 export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
     history: H.History

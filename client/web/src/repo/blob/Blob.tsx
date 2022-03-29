@@ -1,9 +1,10 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -20,6 +21,7 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
+import { HoverMerged } from '@sourcegraph/client-api'
 import {
     getCodeElementsInRange,
     HoveredToken,
@@ -42,7 +44,6 @@ import {
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
@@ -71,11 +72,11 @@ import { useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { GlobalCoolCodeIntelProps } from '../../global/CoolCodeIntel'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import styles from './Blob.module.scss'
 import { LineDecorator } from './LineDecorator'
+
+import styles from './Blob.module.scss'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -88,8 +89,7 @@ export interface BlobProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
-        GlobalCoolCodeIntelProps {
+        ThemeProps {
     location: H.Location
     history: H.History
     className: string
@@ -99,6 +99,9 @@ export interface BlobProps
 
     // Experimental reference panel
     disableStatusBar: boolean
+    // If set, nav is called when a user clicks on a token highlighted by
+    // WebHoverOverlay
+    nav?: (url: string) => void
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -615,7 +618,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
-                        nav={url => props.history.push(url)}
+                        nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         extensionsController={extensionsController}
@@ -654,7 +657,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 }
 
-function getLSPTextDocumentPositionParameters(
+export function getLSPTextDocumentPositionParameters(
     position: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
     mode: string
 ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {

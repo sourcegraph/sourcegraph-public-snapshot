@@ -88,9 +88,11 @@ func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
 
 // CriticalOption creates an ObservableOption that overrides this Observable's
 // critical-level alert with the given alert.
-func CriticalOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+func CriticalOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
-		return observable.WithCritical(a)
+		observable = observable.WithCritical(a)
+		observable.PossibleSolutions = possibleSolution
+		return observable
 	}
 }
 

@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
+
+import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
@@ -7,8 +8,8 @@ import {
     SearchContextProps,
     ListSearchContextsResult,
     ListSearchContextsVariables,
-    SearchContextFields,
     SearchContextsOrderBy,
+    SearchContextMinimalFields,
 } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -21,6 +22,7 @@ import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
+
 import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps
@@ -66,7 +68,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
     )
 
     const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts(platformContext).pipe(catchError(() => [])), [
+        useMemo(() => fetchAutoDefinedSearchContexts({ platformContext }).pipe(catchError(() => [])), [
             fetchAutoDefinedSearchContexts,
             platformContext,
         ])
@@ -191,7 +193,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
             )}
 
             <FilteredConnection<
-                SearchContextFields,
+                SearchContextMinimalFields,
                 Omit<SearchContextNodeProps, 'node'>,
                 ListSearchContextsResult['searchContexts']
             >

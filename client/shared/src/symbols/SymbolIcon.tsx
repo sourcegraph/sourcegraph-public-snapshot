@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
@@ -25,7 +27,8 @@ import TextBoxIcon from 'mdi-react/TextBoxIcon'
 import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
-import * as React from 'react'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import { SymbolKind } from '../graphql-operations'
 
@@ -104,7 +107,10 @@ function getSymbolIconClassName(kind: SymbolKind): string | undefined {
 /**
  * Renders an Icon for a given symbol kind
  */
-export const SymbolIcon: React.FunctionComponent<SymbolIconProps> = ({ kind, className = '' }) => {
-    const Icon = getSymbolIconComponent(kind)
-    return <Icon className={classNames(getSymbolIconClassName(kind), className)} data-tooltip={kind.toLowerCase()} />
-}
+export const SymbolIcon: React.FunctionComponent<SymbolIconProps> = ({ kind, className = '' }) => (
+    <Icon
+        className={classNames(getSymbolIconClassName(kind), className)}
+        data-tooltip={kind.toLowerCase()}
+        as={getSymbolIconComponent(kind)}
+    />
+)

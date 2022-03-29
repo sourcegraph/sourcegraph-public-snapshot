@@ -1,8 +1,7 @@
 import { mapValues } from 'lodash'
 
+import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '@sourcegraph/client-api'
 import { Context, Expression, parse, parseTemplate } from '@sourcegraph/template-parser'
-
-import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 
 /**
  * Merges the contributions.

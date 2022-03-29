@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect } from 'react'
+
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import React, { useCallback, useEffect } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
@@ -9,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -94,7 +95,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
                                 variant="secondary"
                                 size="sm"
                             >
-                                <AddIcon className="icon-inline" /> Create new subscription
+                                <Icon as={AddIcon} /> Create new subscription
                             </Button>
                         </Form>
                     </div>

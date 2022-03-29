@@ -1,10 +1,13 @@
+import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { HoverMerged } from '@sourcegraph/client-api'
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
     appendLineRangeQueryParameter,
     appendSubtreeQueryParameter,
@@ -13,16 +16,21 @@ import {
 } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
 
+import { ActionItemAction } from '../actions/ActionItem'
+import { Controller as ExtensionsController } from '../extensions/controller'
+import { HoverContext } from '../hover/HoverOverlay.types'
 import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
+import { useCodeIntelViewerUpdates } from '../util/useCodeIntelViewerUpdates'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './ranking/PerFileResultRanking'
+
+import styles from './FileMatchChildren.module.scss'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -33,6 +41,9 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
+    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 /**
@@ -146,7 +157,15 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
+    const {
+        result,
+        grouped,
+        fetchHighlightedFileLineRanges,
+        telemetryService,
+        onFirstResultLoad,
+        extensionsController,
+    } = props
+
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine) => {
             const startTime = Date.now()
@@ -192,6 +211,20 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             positionOrRangeQueryParameter
         )
     }
+
+    const codeIntelViewerUpdatesProps = useMemo(
+        () =>
+            grouped && result.type === 'content' && extensionsController
+                ? {
+                      extensionsController,
+                      repositoryName: result.repository,
+                      filePath: result.path,
+                      revision: result.commit,
+                  }
+                : undefined,
+        [extensionsController, result, grouped]
+    )
+    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
     const history = useHistory()
     /**
@@ -255,7 +288,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     data-testid="file-match-children-item"
                     {...openInNewTabProps}
                 >
-                    <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
+                    <SymbolIcon kind={symbol.kind} className="mr-1" />
                     <code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
@@ -297,6 +330,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}
+                                    viewerUpdates={viewerUpdates}
+                                    hoverifier={props.hoverifier}
                                 />
                             </div>
                         </div>

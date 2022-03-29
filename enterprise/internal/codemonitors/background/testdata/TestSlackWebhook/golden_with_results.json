@@ -4,14 +4,14 @@
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "Camden Cheek's Sourcegraph Code monitor, *My test monitor*, detected *2* new matches."
+     "text": "Camden Cheek's Sourcegraph Code monitor, *My test monitor*, detected *3* new matches."
     }
    },
    {
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "Diff match: \u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@78151875\u003e"
+     "text": "Diff match: \u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@7815187\u003e"
     }
    },
    {
@@ -25,7 +25,7 @@
     "type": "section",
     "text": {
      "type": "mrkdwn",
-     "text": "Message match: \u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@78151875\u003e"
+     "text": "Message match: \u003chttps://sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=|github.com/test/test@7815187\u003e"
     }
    },
    {

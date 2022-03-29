@@ -1,8 +1,9 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import { trimEnd, uniq } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+
+import { trimEnd, uniq } from 'lodash'
 import { render } from 'react-dom'
 import { from, noop, Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
@@ -110,10 +111,6 @@ const observingSourcegraphUrl = observeSourcegraphURL(true).pipe(distinctUntilCh
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues(IS_EXTENSION)
 const observingSendTelemetry = observeSendTelemetry(IS_EXTENSION)
 
-function handleToggleActivated(isActivated: boolean): void {
-    storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
-}
-
 function handleChangeOptionFlag(key: string, value: boolean): void {
     if (isOptionFlagKey(key)) {
         featureFlags.set(key, value).catch(noop)
@@ -212,6 +209,14 @@ const Options: React.FunctionComponent = () => {
             telemetryService.log('Bext_NumberURLs')
         }
     }, [sourcegraphUrl, telemetryService, previouslyUsedUrls, previousSourcegraphUrl])
+
+    const handleToggleActivated = useCallback(
+        (isActivated: boolean): void => {
+            telemetryService.log(isActivated ? 'BrowserExtensionEnabled' : 'BrowserExtensionDisabled')
+            storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
+        },
+        [telemetryService]
+    )
 
     return (
         <ThemeWrapper>

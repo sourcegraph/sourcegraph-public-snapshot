@@ -1,3 +1,5 @@
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
@@ -11,12 +13,12 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { ContributableMenu } from '@sourcegraph/client-api'
 import {
     asError,
     ErrorLike,
@@ -30,7 +32,6 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -41,7 +42,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, useObservable, ButtonGroup, Link } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Button,
+    useObservable,
+    ButtonGroup,
+    Link,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -52,7 +62,6 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { CodeInsightsProps } from '../../insights/types'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -61,6 +70,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+
 import styles from './TreePage.module.scss'
 
 const fetchTreeCommits = memoizeObservable(
@@ -120,7 +130,6 @@ interface Props
         ActivationProps,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
@@ -152,7 +161,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-    extensionViews: ExtensionViewsSection,
     ...props
 }) => {
     useEffect(() => {
@@ -359,7 +367,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 outline={true}
                                                 as={Link}
                                             >
-                                                <BookOpenBlankVariantIcon className="icon-inline" /> API docs
+                                                <Icon as={BookOpenBlankVariantIcon} /> API docs
                                             </Button>
                                         )}
                                         <Button
@@ -368,7 +376,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <SourceCommitIcon className="icon-inline" /> Commits
+                                            <Icon as={SourceCommitIcon} /> Commits
                                         </Button>
                                         <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
@@ -376,7 +384,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <SourceBranchIcon className="icon-inline" /> Branches
+                                            <Icon as={SourceBranchIcon} /> Branches
                                         </Button>
                                         <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
@@ -384,7 +392,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <TagIcon className="icon-inline" /> Tags
+                                            <Icon as={TagIcon} /> Tags
                                         </Button>
                                         <Button
                                             to={
@@ -398,7 +406,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <HistoryIcon className="icon-inline" /> Compare
+                                            <Icon as={HistoryIcon} /> Compare
                                         </Button>
                                         <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
@@ -406,7 +414,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             outline={true}
                                             as={Link}
                                         >
-                                            <AccountIcon className="icon-inline" /> Contributors
+                                            <Icon as={AccountIcon} /> Contributors
                                         </Button>
                                         {codeIntelligenceEnabled && (
                                             <Button
@@ -415,7 +423,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 outline={true}
                                                 as={Link}
                                             >
-                                                <BrainIcon className="icon-inline" /> Code Intelligence
+                                                <Icon as={BrainIcon} /> Code Intelligence
                                             </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
@@ -426,7 +434,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 outline={true}
                                                 as={Link}
                                             >
-                                                <SettingsIcon className="icon-inline" /> Settings
+                                                <Icon as={SettingsIcon} /> Settings
                                             </Button>
                                         )}
                                     </ButtonGroup>
@@ -438,16 +446,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </header>
-
-                        <ExtensionViewsSection
-                            className={classNames('mb-3', styles.section)}
-                            telemetryService={props.telemetryService}
-                            settingsCascade={settingsCascade}
-                            platformContext={props.platformContext}
-                            extensionsController={props.extensionsController}
-                            where="directory"
-                            uri={uri}
-                        />
 
                         <section className={classNames('test-tree-entries mb-3', styles.section)}>
                             <h2>Files and directories</h2>

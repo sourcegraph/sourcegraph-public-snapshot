@@ -2,7 +2,7 @@ import { area } from '@visx/shape'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { SeriesPoint } from 'd3-shape'
 
-import { LineChartSeries } from '../types'
+import { Series } from '../../../types'
 
 import { isValidNumber } from './data-guards'
 import { LineChartSeriesWithData } from './data-series-processing'
@@ -15,7 +15,7 @@ interface Props<Datum> {
     xScale: ScaleTime<number, number>
 }
 
-interface SeriesPath<Datum> extends LineChartSeries<Datum> {
+interface SeriesPath<Datum> extends Series<Datum> {
     path: string
 }
 

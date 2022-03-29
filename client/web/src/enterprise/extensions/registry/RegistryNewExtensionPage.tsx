@@ -1,8 +1,9 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -12,7 +13,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, PageHeader, Container } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, PageHeader, Container, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -24,6 +25,7 @@ import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../e
 
 import { createExtension, queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
+
 import styles from './RegistryNewExtensionPage.module.scss'
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}>, BreadcrumbSetters {
@@ -134,7 +136,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                 </Link>{' '}
                                 about authoring Sourcegraph extensions{' '}
                                 <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
-                                    <HelpCircleOutline className="icon-inline" />
+                                    <Icon as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }

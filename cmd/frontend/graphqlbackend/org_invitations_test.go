@@ -659,7 +659,7 @@ func TestRespondToOrganizationInvitation(t *testing.T) {
 		invitationID := int64(3)
 		orgID := int32(3)
 		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
+		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: strings.ToUpper(email)}, nil)
 
 		userEmails := database.NewMockUserEmailsStore()
 		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
@@ -873,6 +873,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 		email := "foo@bar.baz"
 		yesterday := timeNow().Add(-24 * time.Hour)
 		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &yesterday}, nil)
+		wantErr := database.NewOrgInvitationExpiredErr(invitationID)
 
 		RunTests(t, []*Test{
 			{
@@ -891,7 +892,7 @@ func TestResendOrganizationInvitationNotification(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "invitation is expired",
+						Message: wantErr.Error(),
 						Path:    []interface{}{"resendOrganizationInvitationNotification"},
 					},
 				},

@@ -1,12 +1,13 @@
+import React, { useState, useCallback, useEffect } from 'react'
+
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import React, { useState, useCallback, useEffect } from 'react'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, TooltipController, Link } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, TooltipController, Link, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -14,8 +15,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
 
-import styles from './GitCommitNode.module.scss'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
+
+import styles from './GitCommitNode.module.scss'
 
 export interface GitCommitNodeProps {
     node: GitCommitFields
@@ -34,6 +36,9 @@ export interface GitCommitNodeProps {
 
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
+
+    /** Show the absolute timestamp and move relative time to tooltip. */
+    preferAbsoluteTimestamps?: boolean
 
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
@@ -58,6 +63,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     hideExpandCommitMessageBody,
     messageSubjectClassName,
     showSHAAndParentsRow,
+    preferAbsoluteTimestamps,
     diffMode,
     onHandleDiffMode,
 }) => {
@@ -103,12 +109,16 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     variant="secondary"
                     size="sm"
                 >
-                    <DotsHorizontalIcon className="icon-inline" />
+                    <Icon as={DotsHorizontalIcon} />
                 </Button>
             )}
             {compact && (
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
-                    <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
+                    <Timestamp
+                        noAbout={true}
+                        preferAbsolute={preferAbsoluteTimestamps}
+                        date={node.committer ? node.committer.date : node.author.date}
+                    />
                 </small>
             )}
         </div>
@@ -131,6 +141,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             compact={Boolean(compact)}
             messageElement={messageElement}
             commitMessageBody={commitMessageBody}
+            preferAbsoluteTimestamps={preferAbsoluteTimestamps}
         />
     )
 
@@ -146,7 +157,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         onClick={() => copyToClipboard(node.oid)}
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                     >
-                        <ContentCopyIcon className="icon-inline" />
+                        <Icon as={ContentCopyIcon} />
                     </Button>
                 </code>
             </div>
@@ -170,7 +181,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                 >
-                                    <ContentCopyIcon className="icon-inline" />
+                                    <Icon as={ContentCopyIcon} />
                                 </Button>
                             </div>
                         ))}
@@ -201,7 +212,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 size="sm"
                 as={Link}
             >
-                <FileDocumentIcon className="icon-inline mr-1" />
+                <Icon className="mr-1" as={FileDocumentIcon} />
                 Browse files at @{node.abbreviatedOID}
             </Button>
             {diffModeSelector()}
@@ -244,7 +255,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                                 variant="secondary"
                                                 size="sm"
                                             >
-                                                <ContentCopyIcon className="icon-inline small" />
+                                                <Icon className="small" as={ContentCopyIcon} />
                                             </Button>
                                         </ButtonGroup>
                                         {node.tree && (
@@ -255,7 +266,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                                 size="sm"
                                                 as={Link}
                                             >
-                                                <FileDocumentIcon className="icon-inline mr-1" />
+                                                <Icon className="mr-1" as={FileDocumentIcon} />
                                             </Button>
                                         )}
                                     </div>

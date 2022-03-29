@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"net/url"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -30,56 +32,68 @@ func SendEmailForNewSearchResult(ctx context.Context, userID int32, data *Templa
 	return sendEmail(ctx, userID, newSearchResultsEmailTemplates, data)
 }
 
+var (
+	//go:embed email_template.html.tmpl
+	htmlTemplate string
+
+	//go:embed email_template.txt.tmpl
+	textTemplate string
+)
+
+var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.NumberOfResults}} new {{.ResultPluralized}}`,
+	Text:    textTemplate,
+	HTML:    htmlTemplate,
+})
+
 type TemplateDataNewSearchResults struct {
-	Priority                  string
-	CodeMonitorURL            string
-	SearchURL                 string
-	Description               string
-	NumberOfResultsWithDetail string
-	IsTest                    bool
+	Priority         string
+	CodeMonitorURL   string
+	SearchURL        string
+	Description      string
+	NumberOfResults  int
+	ResultPluralized string
+	IsTest           bool
 }
 
-func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *edb.EmailAction, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction) (d *TemplateDataNewSearchResults, err error) {
 	var (
-		priority                  string
-		numberOfResultsWithDetail string
+		priority         string
+		resultPluralized string
 	)
 
-	externalURL, err := getExternalURL(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	searchURL := getSearchURL(externalURL, queryString, utmSourceEmail)
-	codeMonitorURL := getCodeMonitorURL(externalURL, email.Monitor, utmSourceEmail)
+	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
+	codeMonitorURL := getCodeMonitorURL(args.ExternalURL, email.Monitor, utmSourceEmail)
 
 	if email.Priority == priorityCritical {
-		priority = "Critical"
+		priority = "[Critical] "
 	} else {
-		priority = "New"
+		priority = ""
 	}
 
-	if numResults == 1 {
-		numberOfResultsWithDetail = fmt.Sprintf("There was %d new search result for your query", numResults)
+	if len(args.Results) == 1 {
+		resultPluralized = "result"
 	} else {
-		numberOfResultsWithDetail = fmt.Sprintf("There were %d new search results for your query", numResults)
+		resultPluralized = "results"
 	}
 
 	return &TemplateDataNewSearchResults{
-		Priority:                  priority,
-		CodeMonitorURL:            codeMonitorURL,
-		SearchURL:                 searchURL,
-		Description:               monitorDescription,
-		NumberOfResultsWithDetail: numberOfResultsWithDetail,
+		Priority:         priority,
+		CodeMonitorURL:   codeMonitorURL,
+		SearchURL:        searchURL,
+		Description:      args.MonitorDescription,
+		NumberOfResults:  len(args.Results),
+		ResultPluralized: resultPluralized,
 	}, nil
 }
 
 func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescription string) *TemplateDataNewSearchResults {
 	return &TemplateDataNewSearchResults{
-		Priority:                  "New",
-		Description:               monitorDescription,
-		NumberOfResultsWithDetail: "There was 1 new search result for your query",
-		IsTest:                    true,
+		Priority:         "",
+		Description:      monitorDescription,
+		NumberOfResults:  1,
+		IsTest:           true,
+		ResultPluralized: "result",
 	}
 }
 

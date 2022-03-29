@@ -1,6 +1,9 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
+
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import {
     TreeLayerCell,
@@ -56,7 +59,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                             <TreeLayerRowContentsText>
                                 {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
                                 <TreeRowIcon style={treePadding(props.depth, true)} onClick={props.noopRowClick}>
-                                    <SourceRepositoryIcon className="icon-inline" />
+                                    <Icon as={SourceRepositoryIcon} />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
@@ -68,7 +71,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                         <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
                             <TreeLayerRowContentsText>
                                 <TreeRowIcon style={treePadding(props.depth, true)}>
-                                    <SourceRepositoryIcon className="icon-inline" />
+                                    <Icon as={SourceRepositoryIcon} />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
