@@ -1274,7 +1274,7 @@ func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface
 // permsLoadValues contains return values of (*PermsStore).load method.
 type permsLoadValues struct {
 	id        int64     // An integer ID
-	ids       []int64   // Bitmap of unmarshalled IDs
+	ids       []int64   // A slice of unmarshalled IDs
 	updatedAt time.Time // Last updated time of the row
 	syncedAt  time.Time // Last synced time of the row
 }
