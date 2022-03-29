@@ -108,21 +108,21 @@ func isSetupActionValid(setupAction string) bool {
 	return false
 }
 
-func encryptWithPrivateKey(msg string, privateKey []byte) (string, error) {
+func encryptWithPrivateKey(msg string, privateKey []byte) ([]byte, error) {
 	block, _ := pem.Decode(privateKey)
 
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		return "", errors.Wrap(err, "parse private key")
+		return nil, errors.Wrap(err, "parse private key")
 	}
 
 	hash := sha256.New()
 	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, &key.PublicKey, []byte(msg), nil)
 	if err != nil {
-		return "", errors.Wrap(err, "encrypt message")
+		return nil, errors.Wrap(err, "encrypt message")
 	}
 
-	return url.QueryEscape(string(ciphertext)), nil
+	return ciphertext, nil
 }
 
 func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
@@ -160,8 +160,8 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
 					return
 				}
-				base64InstallationID := base64.StdEncoding.EncodeToString([]byte(encryptedInstallationID))
-				http.Redirect(w, r, "/install-github-app-success?installation_id="+base64InstallationID, http.StatusFound)
+				base64InstallationID := base64.StdEncoding.EncodeToString(encryptedInstallationID)
+				http.Redirect(w, r, "/install-github-app-success?installation_id="+url.QueryEscape(base64InstallationID), http.StatusFound)
 				return
 			}
 

@@ -178,7 +178,9 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		installationIDParam, err := base64.StdEncoding.DecodeString(req.URL.Query().Get("installation_id"))
+		installationIDQueryUnecoded := req.URL.Query().Get("installation_id")
+
+		installationIDParam, err := base64.StdEncoding.DecodeString(installationIDQueryUnecoded)
 		if err != nil {
 			log15.Error("Unexpected error while decoding base64 encoded installation ID.", "error", err)
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
@@ -223,7 +225,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 	return mux
 }
 
-func decryptWithPrivateKey(urlEncodedMsg string, privateKey []byte) (string, error) {
+func decryptWithPrivateKey(encodedMsg string, privateKey []byte) (string, error) {
 	block, _ := pem.Decode(privateKey)
 
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -231,13 +233,8 @@ func decryptWithPrivateKey(urlEncodedMsg string, privateKey []byte) (string, err
 		return "", errors.Wrap(err, "parse private key")
 	}
 
-	msg, err := url.QueryUnescape(urlEncodedMsg)
-	if err != nil {
-		return "", errors.Wrap(err, "decode URL message")
-	}
-
 	hash := sha256.New()
-	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(msg), nil)
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(encodedMsg), nil)
 	if err != nil {
 		return "", errors.Wrap(err, "decrypt message")
 	}
