@@ -888,16 +888,15 @@ export async function handleCodeHost({
     const setRepoSyncError = repoSyncErrors.next.bind(repoSyncErrors)
 
     /**
-     * Checks whether the error occured because the repository
-     * is a private repository that hasn't been added to Sourcegraph Cloud
+     * Checks whether the error was caused by one of the following conditions:
+     * - repository is private and not synced with Sourcegraph Cloud
+     * - repository is not added to other than Cloud Sourcegraph instance.
+     *
      * (no side effects, doesn't notify `repoSyncErrors`)
      * */
-    const checkPrivateCloudError = async (error: any): Promise<boolean> =>
-        !!(
-            isRepoNotFoundErrorLike(error) &&
-            isDefaultSourcegraphUrl(sourcegraphURL) &&
-            (await codeHost.getContext?.())?.privateRepository
-        )
+    const checkRepoSyncError = async (error: any): Promise<boolean> =>
+        isRepoNotFoundErrorLike(error) &&
+        (isDefaultSourcegraphUrl(sourcegraphURL) ? !!(await codeHost.getContext?.())?.privateRepository : true)
 
     if (isGithubCodeHost(codeHost)) {
         // TODO: add tests in codeHost.test.tsx
@@ -1077,14 +1076,14 @@ export async function handleCodeHost({
                 mergeMap(diffOrBlobInfo =>
                     resolveRepoNamesForDiffOrFileInfo(
                         diffOrBlobInfo,
-                        checkPrivateCloudError,
+                        checkRepoSyncError,
                         platformContext.requestGraphQL
                     )
                 ),
                 mergeMap(diffOrBlobInfo =>
                     fetchFileContentForDiffOrFileInfo(
                         diffOrBlobInfo,
-                        checkPrivateCloudError,
+                        checkRepoSyncError,
                         platformContext.requestGraphQL
                     ).pipe(
                         map(diffOrBlobInfo => ({
@@ -1095,8 +1094,8 @@ export async function handleCodeHost({
                 ),
                 catchError(error =>
                     // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
-                    from(checkPrivateCloudError(error)).pipe(hasPrivateCloudError => {
-                        if (hasPrivateCloudError) {
+                    from(checkRepoSyncError(error)).pipe(hasRepoSyncError => {
+                        if (hasRepoSyncError) {
                             return EMPTY
                         }
                         throw error

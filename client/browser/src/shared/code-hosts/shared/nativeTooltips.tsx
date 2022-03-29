@@ -70,10 +70,10 @@ export function handleNativeTooltips(
                     .pipe(withLatestFrom(repoSyncErrors))
                     // This subscription is correctly handled through the view's `subscriptions`
                     // eslint-disable-next-line rxjs/no-nested-subscribe
-                    .subscribe(([enabled, hasPrivateCloudError]) => {
+                    .subscribe(([enabled, hasRepoSyncError]) => {
                         // If we can't provide the user hovers because it's private code, don't hide native tooltips.
                         // Otherwise we would have to show the user two alerts at the same time.
-                        const isTooltipHidden = !enabled && !hasPrivateCloudError
+                        const isTooltipHidden = !enabled && !hasRepoSyncError
                         element.dataset.nativeTooltipHidden = String(isTooltipHidden)
                         element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, isTooltipHidden)
                     })
