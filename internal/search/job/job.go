@@ -370,8 +370,11 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	}
 
 	if resultTypes.Has(result.TypeNotebook) {
+		// TODO
 		log15.Info("Notebook search yay")
-		addJob(true, &notebook.SearchJob{})
+		addJob(true, &notebook.SearchJob{
+			// Query: b.PatternString(),
+		})
 	}
 
 	addJob(true, &searchrepos.ComputeExcludedRepos{

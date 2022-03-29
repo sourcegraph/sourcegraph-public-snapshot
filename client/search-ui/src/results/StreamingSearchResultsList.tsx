@@ -5,6 +5,7 @@ import * as H from 'history'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
+import NotebookIcon from 'mdi-react/NotebookIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Observable } from 'rxjs'
@@ -139,6 +140,16 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             platformContext={platformContext}
                             onSelect={() => logSearchResultClicked(index, 'repo')}
+                        />
+                    )
+                case 'notebook':
+                    return (
+                        <SearchResult
+                            icon={NotebookIcon}
+                            result={result}
+                            repoName={`${result.namespace} / ${result.title}`}
+                            platformContext={platformContext}
+                            onSelect={() => logSearchResultClicked(index, 'notebook')}
                         />
                     )
             }

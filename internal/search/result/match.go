@@ -33,6 +33,7 @@ var (
 	_ Match = (*FileMatch)(nil)
 	_ Match = (*RepoMatch)(nil)
 	_ Match = (*CommitMatch)(nil)
+	_ Match = (*NotebookMatch)(nil)
 )
 
 // Match ranks are used for sorting the different match types.
@@ -56,6 +57,10 @@ type Key struct {
 
 	// Rev is the revision associated with the repo if it exists
 	Rev string
+
+	// ID is an arbitrary identifier that can be used to distinguish this result,
+	// e.g. if the result type is not associated with a repository.
+	ID string
 
 	// AuthorDate is the date a commit was authored if this key is for
 	// a commit match.

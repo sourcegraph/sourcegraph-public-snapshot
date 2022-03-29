@@ -17,6 +17,7 @@ import {
     getRepoMatchLabel,
     getRepoMatchUrl,
     getRepositoryUrl,
+    NotebookMatch,
     RepositoryMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
@@ -28,7 +29,7 @@ import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import styles from './SearchResult.module.scss'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
-    result: CommitMatch | RepositoryMatch
+    result: CommitMatch | RepositoryMatch | NotebookMatch
     repoName: string
     icon: React.ComponentType<{ className?: string }>
     onSelect: () => void
@@ -44,7 +45,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     openInNewTab,
 }) => {
     const renderTitle = (): JSX.Element => {
-        const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
+        const formattedRepositoryStarCount = formatRepositoryStarCount(result.type === 'notebook' ? result.stars : result.repoStars)
         return (
             <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="text-muted flex-shrink-0" />
@@ -60,6 +61,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                     )}
                     {result.type === 'repo' && (
                         <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
+                    )}
+                    {result.type === 'notebook' && (
+                        <Link to={result.url}>{repoName}</Link>
                     )}
                 </span>
                 <span className={styles.spacer} />
@@ -143,6 +147,33 @@ export const SearchResult: React.FunctionComponent<Props> = ({
                                 </div>
                             </>
                         )}
+                    </div>
+                </div>
+            )
+        }
+        if (result.type === 'notebook') {
+            return (
+                <div data-testid="search-repo-result">
+                    <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
+                        <div className="d-flex align-items-center flex-row">
+                            <div className={styles.matchType}>
+                                <small>Notebook match</small>
+                            </div>
+                            {result.private && (
+                                <>
+                                    <div className={styles.divider} />
+                                    <div>
+                                        <Icon
+                                            className={classNames('flex-shrink-0 text-muted', styles.icon)}
+                                            as={LockIcon}
+                                        />
+                                    </div>
+                                    <div>
+                                        <small>Private</small>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             )
