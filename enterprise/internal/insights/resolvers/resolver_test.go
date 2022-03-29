@@ -18,10 +18,10 @@ func TestResolver_Insights(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
 	defer cleanup()
 	postgres := dbtest.NewDB(t)
-	resolver := newWithClock(timescale, postgres, clock)
+	resolver := newWithClock(insightsDB, postgres, clock)
 
 	insightsConnection, err := resolver.Insights(ctx, nil)
 	if err != nil {
