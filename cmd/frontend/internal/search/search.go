@@ -186,7 +186,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			//
 			// This check doesn't apply if the result is not associated with a repository,
 			// i.e. RepoName is a 0-value.
-			if string(repo.ID) != "" && string(repo.Name) != "" {
+			if repo.ID != 0 && repo.Name != "" {
 				if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 					continue
 				}
