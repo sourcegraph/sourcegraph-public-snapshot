@@ -107,7 +107,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                     <CollapseHeader
                         as={Button}
                         className={styles.sidebarSectionCollapseButton}
-                        aria-label={isOpened ? 'Expand' : 'Collapse'}
+                        aria-label={isOpened ? 'Collapse' : 'Expand'}
                         outline={true}
                         variant="secondary"
                     >
