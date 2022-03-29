@@ -16,7 +16,7 @@ import (
 
 var slackTemplate = `:arrow_left: *{{.Environment}}* deployment (<{{.BuildURL}}|build>)
 
-- Applications:
+- Services:
 {{- range .Services }}
     - ` + "`" + `{{ . }}` + "`" + `
 {{- end }}
@@ -47,18 +47,26 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 	}
 
 	for _, pr := range report.PullRequests {
-		user := pr.GetUser()
-		if user == nil {
-			return "", errors.Newf("pull request %d has no user", pr.GetNumber())
+		var authorSlackID string
+		for _, label := range pr.Labels {
+			if *label.Name == "notify-on-deploy" {
+				user := pr.GetUser()
+				if user == nil {
+					return "", errors.Newf("pull request %d has no user", pr.GetNumber())
+				}
+				teammate, err := teammates.ResolveByGitHubHandle(ctx, user.GetLogin())
+				if err != nil {
+					return "", err
+				}
+				authorSlackID = fmt.Sprintf("<@%s>", teammate.SlackID)
+				break
+			}
 		}
-		teammate, err := teammates.ResolveByGitHubHandle(ctx, user.GetLogin())
-		if err != nil {
-			return "", err
-		}
+
 		presenter.PullRequests = append(presenter.PullRequests, pullRequestPresenter{
 			Name:          pr.GetTitle(),
 			WebURL:        pr.GetHTMLURL(),
-			AuthorSlackID: fmt.Sprintf("<@%s>", teammate.SlackID),
+			AuthorSlackID: authorSlackID,
 		})
 	}
 
