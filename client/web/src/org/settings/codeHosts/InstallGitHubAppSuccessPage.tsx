@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -9,6 +9,7 @@ import { SourcegraphIcon, Card, CardBody, Link } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
+import { useQueryStringParameters } from '../../members/utils'
 
 import { GitHubAppInstallation } from './ConnectGitHubAppPage'
 
@@ -17,24 +18,24 @@ import styles from './AppLogo.module.scss'
 export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
     const [data, setData] = useState<GitHubAppInstallation | null>()
 
-    const queryString = window.location.search
-    const urlParameters = new URLSearchParams(queryString)
-    const installationID = urlParameters.get('installation_id')
+    const installationID = useQueryStringParameters().get('installation_id')
 
-    if (installationID !== null) {
-        fetch(`/.auth/github/get-github-app-installation?installation_id=${installationID}`, {
-            method: 'GET',
-        })
-            .then(response => response.json())
-            .then(response => {
-                const githubAppInstallation = response as GitHubAppInstallation
-
-                setData(githubAppInstallation)
+    useEffect(() => {
+        if (installationID !== null) {
+            fetch(`/.auth/github/get-github-app-installation?installation_id=${encodeURIComponent(installationID)}`, {
+                method: 'GET',
             })
-            .catch(() => setData(null))
-    } else {
-        setData(null)
-    }
+                .then(response => response.json())
+                .then(response => {
+                    const githubAppInstallation = response as GitHubAppInstallation
+
+                    setData(githubAppInstallation)
+                })
+                .catch(() => setData(null))
+        } else {
+            setData(null)
+        }
+    }, [installationID])
 
     return (
         <Page>

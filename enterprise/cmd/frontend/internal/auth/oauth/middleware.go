@@ -3,8 +3,13 @@ package oauth
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"io"
 	"log"
 	"net/http"
@@ -164,20 +169,32 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		http.Redirect(w, req, "/install-github-app-select-org?state="+state, http.StatusFound)
 	}))
 	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		installationIDParam := req.URL.Query().Get("installation_id")
-
-		installationID, err := strconv.ParseInt(installationIDParam, 10, 64)
-		if err != nil {
-			log15.Error("Unexpected error while creating parsing installation ID.", "error", err)
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
 		dotcomConfig := conf.SiteConfig().Dotcom
 
 		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 		if err != nil {
 			log15.Error("Unexpected error while decoding GitHub App private key.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		installationIDParam, err := base64.StdEncoding.DecodeString(req.URL.Query().Get("installation_id"))
+		if err != nil {
+			log15.Error("Unexpected error while decoding base64 encoded installation ID.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		installationIDDecoded, err := decryptWithPrivateKey(string(installationIDParam), privateKey)
+		if err != nil {
+			log15.Error("Unexpected error while decoding installation ID.", "error", err)
+			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
+			return
+		}
+
+		installationID, err := strconv.ParseInt(installationIDDecoded, 10, 64)
+		if err != nil {
+			log15.Error("Unexpected error while creating parsing installation ID.", "error", err)
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
@@ -204,6 +221,28 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 	}))
 	return mux
+}
+
+func decryptWithPrivateKey(urlEncodedMsg string, privateKey []byte) (string, error) {
+	block, _ := pem.Decode(privateKey)
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return "", errors.Wrap(err, "parse private key")
+	}
+
+	msg, err := url.QueryUnescape(urlEncodedMsg)
+	if err != nil {
+		return "", errors.Wrap(err, "decode URL message")
+	}
+
+	hash := sha256.New()
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(msg), nil)
+	if err != nil {
+		return "", errors.Wrap(err, "decrypt message")
+	}
+
+	return string(plaintext), nil
 }
 
 // serviceType -> scopes

@@ -2,7 +2,12 @@ package app
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -18,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -102,6 +108,23 @@ func isSetupActionValid(setupAction string) bool {
 	return false
 }
 
+func encryptWithPrivateKey(msg string, privateKey []byte) (string, error) {
+	block, _ := pem.Decode(privateKey)
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return "", errors.Wrap(err, "parse private key")
+	}
+
+	hash := sha256.New()
+	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, &key.PublicKey, []byte(msg), nil)
+	if err != nil {
+		return "", errors.Wrap(err, "encrypt message")
+	}
+
+	return url.QueryEscape(string(ciphertext)), nil
+}
+
 func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githubClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !envvar.SourcegraphDotComMode() {
@@ -121,7 +144,24 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		a := actor.FromContext(r.Context())
 		if !a.IsAuthenticated() {
 			if setupAction == "install" {
-				http.Redirect(w, r, "/install-github-app-success?installation_id="+r.URL.Query().Get("installation_id"), http.StatusFound)
+				dotcomConfig := conf.SiteConfig().Dotcom
+
+				privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
+					return
+				}
+
+				installationID := r.URL.Query().Get("installation_id")
+				encryptedInstallationID, err := encryptWithPrivateKey(installationID, privateKey)
+				if err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
+					return
+				}
+				base64InstallationID := base64.StdEncoding.EncodeToString([]byte(encryptedInstallationID))
+				http.Redirect(w, r, "/install-github-app-success?installation_id="+base64InstallationID, http.StatusFound)
 				return
 			}
 
