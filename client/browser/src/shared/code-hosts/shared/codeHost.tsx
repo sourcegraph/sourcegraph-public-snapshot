@@ -989,7 +989,7 @@ export async function handleCodeHost({
     const codeViewCount = new BehaviorSubject<number>(0)
 
     // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
+    if (codeHost.getContext) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
@@ -1006,52 +1006,58 @@ export async function handleCodeHost({
                     return [false]
                 }
                 return [asError(error)]
+            }),
+            tap(repoExistsOrErrors => {
+                if (typeof repoExistsOrErrors === 'boolean') {
+                    const hasRepoSyncError = repoExistsOrErrors === false
+                    setRepoSyncError(hasRepoSyncError)
+                    if (isExtension) {
+                        background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }).catch(error => {
+                            console.error('Error notifying background page of private cloud error:', error)
+                        })
+                    }
+                }
             })
         )
-        const onRepoSyncError = (sourcegraphURL: string, hasRepoSyncError: boolean): void => {
-            setRepoSyncError(hasRepoSyncError)
-            if (isExtension) {
-                background.notifyRepoSyncError({ sourcegraphURL, hasRepoSyncError }).catch(error => {
-                    console.error('Error notifying background page of private cloud error:', error)
-                })
-            }
-        }
 
-        subscriptions.add(
-            combineLatest([
-                repoExistsOrErrors,
-                addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)),
-                // Only show sign in button when there is no other code view on the page that is displaying it
-                codeViewCount.pipe(
-                    map(count => count === 0),
-                    distinctUntilChanged()
-                ),
-                from(getContext()),
-                observeUserSettingsURL(requestGraphQL),
-            ]).subscribe(([repoExistsOrError, mount, showSignInButton, context, userSettingsURL]) => {
-                render(
-                    <ViewOnSourcegraphButton
-                        {...viewOnSourcegraphButtonClassProps}
-                        codeHostType={codeHost.type}
-                        context={context}
-                        minimalUI={minimalUI}
-                        sourcegraphURL={sourcegraphURL}
-                        userSettingsURL={buildManageRepositoriesURL(
-                            sourcegraphURL,
-                            userSettingsURL,
-                            context.rawRepoName
-                        )}
-                        repoExistsOrError={repoExistsOrError}
-                        showSignInButton={showSignInButton}
-                        // The bound function is constant
-                        onSignInClose={nextSignInClose}
-                        onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                        onRepoSyncError={onRepoSyncError}
-                    />,
-                    mount
-                )
-            })
-        )
+        if (codeHost.getViewContextOnSourcegraphMount) {
+            subscriptions.add(
+                combineLatest([
+                    repoExistsOrErrors,
+                    addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)),
+                    // Only show sign in button when there is no other code view on the page that is displaying it
+                    codeViewCount.pipe(
+                        map(count => count === 0),
+                        distinctUntilChanged()
+                    ),
+                    from(getContext()),
+                    observeUserSettingsURL(requestGraphQL),
+                ]).subscribe(([repoExistsOrError, mount, showSignInButton, context, userSettingsURL]) => {
+                    render(
+                        <ViewOnSourcegraphButton
+                            {...viewOnSourcegraphButtonClassProps}
+                            codeHostType={codeHost.type}
+                            context={context}
+                            minimalUI={minimalUI}
+                            sourcegraphURL={sourcegraphURL}
+                            userSettingsURL={buildManageRepositoriesURL(
+                                sourcegraphURL,
+                                userSettingsURL,
+                                context.rawRepoName
+                            )}
+                            repoExistsOrError={repoExistsOrError}
+                            showSignInButton={showSignInButton}
+                            // The bound function is constant
+                            onSignInClose={nextSignInClose}
+                            onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
+                        />,
+                        mount
+                    )
+                })
+            )
+        } else {
+            subscriptions.add(repoExistsOrErrors.subscribe())
+        }
     }
 
     /** A stream of added or removed code views with the resolved file info */

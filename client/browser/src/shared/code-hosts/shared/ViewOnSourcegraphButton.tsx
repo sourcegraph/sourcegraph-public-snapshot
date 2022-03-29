@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import { snakeCase } from 'lodash'
@@ -35,13 +35,6 @@ interface ViewOnSourcegraphButtonProps
      * This does not guarantee the sign in was successful.
      */
     onSignInClose?: () => void
-
-    /**
-     * A callback for reporting repo sync error in on of these cases:
-     * - it is a private repo not synced with Sourcegraph cloud when the latter is the active Sourcegraph URL
-     * - it is a repo not added to other than Cloud Sourcegraph instance.
-     */
-    onRepoSyncError: (sourcegraphURL: string, hasError: boolean) => void
 }
 
 export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
@@ -56,7 +49,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     onSignInClose,
     className,
     iconClassName,
-    onRepoSyncError,
 }) => {
     className = classNames('open-on-sourcegraph', className)
     const mutedIconClassName = classNames(styles.iconMuted, iconClassName)
@@ -66,14 +58,6 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     }
 
     const { rawRepoName, revision, privateRepository } = context
-
-    useEffect(() => {
-        onRepoSyncError(sourcegraphURL, repoExistsOrError === false)
-
-        return () => {
-            onRepoSyncError(sourcegraphURL, false)
-        }
-    }, [sourcegraphURL, repoExistsOrError, onRepoSyncError])
 
     // Show nothing while loading
     if (repoExistsOrError === undefined) {
