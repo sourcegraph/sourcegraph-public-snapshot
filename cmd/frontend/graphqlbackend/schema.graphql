@@ -2283,6 +2283,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    GOMODULES
     JVMPACKAGES
     NPMPACKAGES
     OTHER

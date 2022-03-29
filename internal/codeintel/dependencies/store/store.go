@@ -18,10 +18,10 @@ type Store struct {
 	operations *operations
 }
 
-func newStore(db dbutil.DB, observationContext *observation.Context) *Store {
+func newStore(db dbutil.DB, op *operations) *Store {
 	return &Store{
 		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: newOperations(observationContext),
+		operations: op,
 	}
 }
 

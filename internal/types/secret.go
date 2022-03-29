@@ -101,6 +101,8 @@ func redactionInfo(cfg interface{}) ([]jsonStringField, error) {
 		return []jsonStringField{{[]string{"p4.passwd"}, &cfg.P4Passwd}}, nil
 	case *schema.GitoliteConnection:
 		return []jsonStringField{}, nil
+	case *schema.GoModulesConnection:
+		return []jsonStringField{}, nil
 	case *schema.JVMPackagesConnection:
 		return []jsonStringField{{[]string{"maven", "credentials"}, &cfg.Maven.Credentials}}, nil
 	case *schema.PagureConnection:

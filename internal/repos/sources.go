@@ -59,6 +59,8 @@ func NewSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) 
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
 		return NewPerforceSource(svc)
+	case extsvc.KindGoModules:
+		return NewGoModulesSource(svc, cf)
 	case extsvc.KindJVMPackages:
 		return NewJVMPackagesSource(svc)
 	case extsvc.KindPagure:

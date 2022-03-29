@@ -92,7 +92,7 @@ func TestSearch(t *testing.T) {
 	// which expands the set of repositories in the instance. All previous tests
 	// assume only the repos from gqltest-github-search exist.
 	//
-	// Adding and deleting the npm external service in between all other tests is
+	// Adding and deleting the dependency repos external services in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
 	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
@@ -1374,7 +1374,21 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		err = client.WaitForReposToBeCloned("npm/urql")
+		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGoModules,
+			DisplayName: "gqltest-go-search",
+			Config: mustMarshalJSONString(&schema.GoModulesConnection{
+				Urls: []string{"https://proxy.golang.org"},
+				Dependencies: []string{
+					"github.com/oklog/ulid/v2@v2.0.2",
+				},
+			}),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid/v2")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1390,9 +1404,10 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Run(tc.name+"/"+"repos", func(t *testing.T) {
 				began := time.Now()
 
-				const query = `r:deps(^npm/urql$@v2.2.0) r:core|wonka`
+				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid)`
 
 				want := []string{
+					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
 				}

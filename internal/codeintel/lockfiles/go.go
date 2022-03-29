@@ -33,7 +33,7 @@ func parseGoSumFile(r io.Reader) ([]reposource.PackageDependency, error) {
 		name := fields[0]
 		version := strings.TrimSuffix(fields[1], "/go.mod")
 
-		dep, err := reposource.ParseGoModDependency(name + "@" + version)
+		dep, err := reposource.ParseGoDependency(name + "@" + version)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		} else if _, ok := added[dep.PackageManagerSyntax()]; !ok {

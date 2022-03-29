@@ -82,6 +82,7 @@ const (
 	KindGitolite        = "GITOLITE"
 	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
+	KindGoModules       = "GOMODULES"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPagure          = "PAGURE"
 	KindNpmPackages     = "NPMPACKAGES"
@@ -130,6 +131,9 @@ const (
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
 	TypeNpmPackages = "npmPackages"
 
+	// TypeGoModules is the (api.ExternalRepoSpec).ServiceType value Go modules.
+	TypeGoModules = "goModules"
+
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
 
@@ -158,6 +162,8 @@ func KindToType(kind string) string {
 		return TypePerforce
 	case KindJVMPackages:
 		return TypeJVMPackages
+	case KindGoModules:
+		return TypeGoModules
 	case KindPagure:
 		return TypePagure
 	case KindOther:
@@ -191,6 +197,8 @@ func TypeToKind(t string) string {
 		return KindNpmPackages
 	case TypeJVMPackages:
 		return KindJVMPackages
+	case TypeGoModules:
+		return KindGoModules
 	case TypePagure:
 		return KindPagure
 	case TypeOther:
@@ -206,6 +214,7 @@ var (
 	bbcLower = strings.ToLower(TypeBitbucketCloud)
 	jvmLower = strings.ToLower(TypeJVMPackages)
 	npmLower = strings.ToLower(TypeNpmPackages)
+	goLower  = strings.ToLower(TypeGoModules)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -228,6 +237,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePerforce, true
 	case TypePhabricator:
 		return TypePhabricator, true
+	case goLower:
+		return TypeGoModules, true
 	case jvmLower:
 		return TypeJVMPackages, true
 	case npmLower:
@@ -261,6 +272,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPerforce, true
 	case KindPhabricator:
 		return KindPhabricator, true
+	case KindGoModules:
+		return KindGoModules, true
 	case KindJVMPackages:
 		return KindJVMPackages, true
 	case KindPagure:
@@ -304,6 +317,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.PerforceConnection{}
 	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
+	case KindGoModules:
+		cfg = &schema.GoModulesConnection{}
 	case KindJVMPackages:
 		cfg = &schema.JVMPackagesConnection{}
 	case KindPagure:
@@ -547,6 +562,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 	case *schema.PerforceConnection:
 		// Perforce uses the P4PORT to specify the instance, so we use that
 		return c.P4Port, nil
+	case *schema.GoModulesConnection:
+		return KindGoModules, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
 	case *schema.NpmPackagesConnection:
