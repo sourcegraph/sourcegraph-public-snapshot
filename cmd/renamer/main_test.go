@@ -82,25 +82,15 @@ func testRangesTwoArgs() []codeRange {
 	return []codeRange{
 		// replacement of 'b' parameter
 		{
-			start: codeLocation{
-				line:      3,
-				character: 22,
-			},
-			end: codeLocation{
-				line:      3,
-				character: 29,
-			},
+			line:  3,
+			start: 22,
+			end:   29,
 		},
 		// replacement of 'a' parameter
 		{
-			start: codeLocation{
-				line:      3,
-				character: 11,
-			},
-			end: codeLocation{
-				line:      3,
-				character: 18,
-			},
+			line:  3,
+			start: 11,
+			end:   18,
 		},
 	}
 }
@@ -108,14 +98,9 @@ func testRangesTwoArgs() []codeRange {
 func testRangesThreeArgs() []codeRange {
 	ranges := testRangesTwoArgs()
 	ranges = append(ranges, codeRange{
-		start: codeLocation{
-			line:      3,
-			character: 33,
-		},
-		end: codeLocation{
-			line:      3,
-			character: 40,
-		},
+		line:  3,
+		start: 33,
+		end:   40,
 	})
 	return ranges
 }

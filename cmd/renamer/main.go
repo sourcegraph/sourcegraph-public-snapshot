@@ -106,15 +106,10 @@ func parseFlags() (args programArgs, repoPath string, replacement string, err er
 	return args, repoPath, replacement, nil
 }
 
-type codeLocation struct {
-	// TODO Check if GQL API is 0-indexed (this code assumes YES).
-	line      int
-	character int
-}
-
 type codeRange struct {
-	start codeLocation
-	end   codeLocation
+	line  int
+	start int
+	end   int
 }
 
 // loadSymbolLocations uses the GQL query from the scratchpad to query all locations for the given symbol.
@@ -175,14 +170,9 @@ func loadSymbolLocations(args programArgs) (map[string][]codeRange, error) {
 	crs := make(map[string][]codeRange)
 	for _, ref := range res.Data.Repository.Commit.Blob.LSIF.References.Nodes {
 		cr := codeRange{
-			start: codeLocation{
-				line:      ref.Range.Start.Line,
-				character: ref.Range.Start.Character,
-			},
-			end: codeLocation{
-				line:      ref.Range.End.Line,
-				character: ref.Range.End.Character,
-			},
+			line:  ref.Range.Start.Line,
+			start: ref.Range.Start.Character,
+			end:   ref.Range.End.Character,
 		}
 		if _, ok := crs[ref.Resource.Path]; !ok {
 			crs[ref.Resource.Path] = make([]codeRange, 0)
@@ -228,36 +218,33 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 	// TODO: we think that end.line is always the same as start.line, we could ditch it
 
 	sort.Slice(ranges, func(i, j int) bool {
-		if ranges[i].start.line == ranges[j].start.line {
-			return ranges[i].start.character < ranges[j].start.character
+		if ranges[i].line == ranges[j].line {
+			return ranges[i].start < ranges[j].start
 		}
-		return ranges[i].start.line < ranges[j].start.line
+		return ranges[i].line < ranges[j].line
 	})
 
 	// peeking at the first element, as every other row should have an equal symbol length
-	lengthDiff := len(replacement) - (ranges[0].end.character - ranges[0].start.character)
+	lengthDiff := len(replacement) - (ranges[0].end - ranges[0].start)
 
 	offset := 0
 	lastLine := -1
 	lines := strings.Split(content, "\n")
 	for _, cr := range ranges {
-		if cr.start.line != cr.end.line {
-			return "", errors.New("unsupported multi-line rename")
+		if len(lines) < cr.line {
+			return "", errors.Newf("tried to access line %d but only got %d", cr.line, len(lines))
 		}
-		if len(lines) < cr.start.line {
-			return "", errors.Newf("tried to access line %d but only got %d", cr.start.line, len(lines))
-		}
-		line := lines[cr.start.line]
+		line := lines[cr.line]
 
-		if lastLine == -1 || lastLine != cr.start.line {
-			lastLine = cr.start.line
+		if lastLine == -1 || lastLine != cr.line {
+			lastLine = cr.line
 			offset = 0
 		} else {
 			offset += lengthDiff
 		}
 
-		line = line[:cr.start.character+offset] + replacement + line[cr.end.character+offset:]
-		lines[cr.start.line] = line
+		line = line[:cr.start+offset] + replacement + line[cr.end+offset:]
+		lines[cr.line] = line
 	}
 
 	return strings.Join(lines, "\n"), nil
