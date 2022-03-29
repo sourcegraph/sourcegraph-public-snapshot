@@ -211,8 +211,20 @@ func Test_writeReplacement(t *testing.T) {
 				"sample_file.go": twoTypesOneLineReplaced,
 			},
 		},
-		//TODO more files
-		//TODO err case
+		{
+			name: "replaces stuff in a multiple files",
+			args: args{
+				ranges: map[string][]codeRange{
+					"sample_file.go":  testRangesTwoArgs(),
+					"sample_file2.go": testRangesTwoArgs(),
+				},
+				replacement: "NewType",
+			},
+			expectedContent: map[string]string{
+				"sample_file.go":  twoTypesOneLineReplaced,
+				"sample_file2.go": twoTypesOneLineReplaced,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -228,6 +240,10 @@ func Test_writeReplacement(t *testing.T) {
 			}
 
 			err = ioutil.WriteFile(dir+"/sample_file.go", []byte(twoTypesOneLine), 0777)
+			if err != nil {
+				t.Fatalf("couldn't create the sample file in tmp dir: %s", err)
+			}
+			err = ioutil.WriteFile(dir+"/sample_file2.go", []byte(twoTypesOneLine), 0777)
 			if err != nil {
 				t.Fatalf("couldn't create the sample file in tmp dir: %s", err)
 			}
