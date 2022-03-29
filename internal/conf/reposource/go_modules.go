@@ -22,7 +22,7 @@ func NewGoDependency(mod module.Version) *GoDependency {
 	return &GoDependency{Module: mod}
 }
 
-// ParseGoDependency parses a string in a '<name>@<version>' format into an
+// ParseGoDependency parses a string in a '<name>(@<version>)?' format into an
 // GoDependency.
 func ParseGoDependency(dependency string) (*GoDependency, error) {
 	var mod module.Version
