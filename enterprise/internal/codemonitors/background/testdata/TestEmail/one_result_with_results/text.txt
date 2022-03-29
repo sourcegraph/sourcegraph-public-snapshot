@@ -1,4 +1,18 @@
-Your Sourcegraph code monitor, My test monitor, detected 2 new results.
+Your Sourcegraph code monitor, My test monitor, detected 1 new result.
+
+- Message match: https://www.sourcegraph.com/github.com/test/test/-/commit/7815187511872asbasdfgasd?utm_source=code-monitoring-email from github.com/test/test@7815187
+summary line
+
+very
+long
+message
+body
+with
+more
+than
+ten
+...
+
 
 View search on Sourcegraph: https://sourcegraph.com/search
 
