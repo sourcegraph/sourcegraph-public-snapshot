@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,20 +27,40 @@ var (
 )
 
 type DeploymentNotifier struct {
-	dd          DeploymentDiffer
-	ghc         *github.Client
-	environment string
+	dd               DeploymentDiffer
+	ghc              *github.Client
+	environment      string
+	manifestRevision string
 }
 
-func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment string) *DeploymentNotifier {
+func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment, manifestRevision string) *DeploymentNotifier {
 	return &DeploymentNotifier{
-		dd:          dd,
-		ghc:         ghc,
-		environment: environment,
+		dd:               dd,
+		ghc:              ghc,
+		environment:      environment,
+		manifestRevision: manifestRevision,
 	}
 }
 
-func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
+type DeploymentReport struct {
+	Environment       string
+	DeployedAt        string
+	BuildkiteBuildURL string
+	ManifestRevision  string
+
+	// Services, PullRequests are a summary of all services and pull requests included in
+	// this deployment. For more accurate association of PRs to which services got deployed,
+	// use ServicesPerPullRequest instead.
+	Services     []string
+	PullRequests []*github.PullRequest
+
+	// ServicesPerPullRequest is an accurate representation of exactly which pull requests
+	// are associated with each service, because each service might be deployed with a
+	// different source diff. This is important for notifications, tracing, etc.
+	ServicesPerPullRequest map[int][]string
+}
+
+func (dn *DeploymentNotifier) Report(ctx context.Context) (*DeploymentReport, error) {
 	services, err := dn.dd.Services()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to infer changes")
@@ -47,9 +68,10 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 
 	// Use a map so we avoid duplicate PRs.
 	prSet := map[int64]*github.PullRequest{}
+	prServicesMap := map[int]map[string]struct{}{}
 
 	groups := groupByDiff(services)
-	for diff := range groups {
+	for diff, services := range groups {
 		if diff.Old == diff.New {
 			// If nothing changed, just skip.
 			continue
@@ -60,6 +82,14 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 		}
 		for _, pr := range groupPrs {
 			prSet[pr.GetID()] = pr
+
+			// Track exactly which services are associated with which PRs
+			for _, service := range services {
+				if _, ok := prServicesMap[pr.GetNumber()]; !ok {
+					prServicesMap[pr.GetNumber()] = map[string]struct{}{}
+				}
+				prServicesMap[pr.GetNumber()][service] = struct{}{}
+			}
 		}
 	}
 
@@ -85,15 +115,29 @@ func (dn *DeploymentNotifier) Report(ctx context.Context) (*report, error) {
 		return nil, ErrNoRelevantChanges
 	}
 
-	report := report{
+	return &DeploymentReport{
 		Environment:       dn.environment,
 		PullRequests:      prs,
 		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
 		Services:          deployedServices,
 		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
-	}
+		ManifestRevision:  dn.manifestRevision,
 
-	return &report, nil
+		ServicesPerPullRequest: makeServicesPerPullRequest(prServicesMap),
+	}, nil
+}
+
+func makeServicesPerPullRequest(prServicesSet map[int]map[string]struct{}) map[int][]string {
+	servicesPerPullRequest := map[int][]string{}
+	for pr, servicesMap := range prServicesSet {
+		services := []string{}
+		for service := range servicesMap {
+			services = append(services, service)
+		}
+		sort.Strings(services)
+		servicesPerPullRequest[pr] = services
+	}
+	return servicesPerPullRequest
 }
 
 // getNewCommits returns a slice of commits starting from the target commit up to the currently deployed commit.
@@ -177,7 +221,16 @@ func groupByDiff(diffs map[string]*ServiceVersionDiff) deploymentGroups {
 	return groups
 }
 
-func renderComment(report *report) (string, error) {
+var commentTemplate = `### Deployment status
+
+[Deployed at {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
+
+{{- range .Services }}
+- ` + "`" + `{{ . }}` + "`" + `
+{{- end }}
+`
+
+func renderComment(report *DeploymentReport) (string, error) {
 	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
 	if err != nil {
 		return "", err
@@ -189,20 +242,3 @@ func renderComment(report *report) (string, error) {
 	}
 	return sb.String(), nil
 }
-
-type report struct {
-	Environment       string
-	PullRequests      []*github.PullRequest
-	DeployedAt        string
-	Services          []string
-	BuildkiteBuildURL string
-}
-
-var commentTemplate = `### Deployment status
-
-[Deployed at {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
-
-{{- range .Services }}
-- ` + "`" + `{{ . }}` + "`" + `
-{{- end }}
-`

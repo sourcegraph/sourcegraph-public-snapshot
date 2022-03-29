@@ -16,6 +16,17 @@
         align-items: center;
     }
 
+    &--compact .author {
+        width: 50%;
+        flex: none;
+        padding-right: 1.5rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+    }
+
     &--compact .message {
         flex: 1;
         min-width: 0;

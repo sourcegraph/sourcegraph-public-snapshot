@@ -1,125 +1,40 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import TagIcon from 'mdi-react/TagIcon'
 import { Redirect } from 'react-router-dom'
-import { Observable, EMPTY } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { ContributableMenu } from '@sourcegraph/client-api'
-import {
-    asError,
-    ErrorLike,
-    isErrorLike,
-    pluralize,
-    encodeURIPathComponent,
-    memoizeObservable,
-} from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    Button,
-    useObservable,
-    ButtonGroup,
-    Link,
-    Icon,
-} from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
-import { getFileDecorations } from '../../backend/features'
-import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
-import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
+import { TreePageRepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
-import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
-import { TreeEntriesSection } from './TreeEntriesSection'
+import { HomeTab } from './HomeTab'
+import { TreeNavigation } from './TreeNavigation'
 
 import styles from './TreePage.module.scss'
-
-const fetchTreeCommits = memoizeObservable(
-    (args: {
-        repo: Scalars['ID']
-        revspec: string
-        first?: number
-        filePath?: string
-        after?: string
-    }): Observable<GQL.IGitCommitConnection> =>
-        queryGraphQL(
-            gql`
-                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
-                    node(id: $repo) {
-                        __typename
-                        ... on Repository {
-                            commit(rev: $revspec) {
-                                ancestors(first: $first, path: $filePath, after: $after) {
-                                    nodes {
-                                        ...GitCommitFields
-                                    }
-                                    pageInfo {
-                                        hasNextPage
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                ${gitCommitFragment}
-            `,
-            args
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.node) {
-                    throw new Error('Repository not found')
-                }
-                if (data.node.__typename !== 'Repository') {
-                    throw new Error('Node is not a Repository')
-                }
-                if (!data.node.commit) {
-                    throw new Error('Commit not found')
-                }
-                return data.node.commit.ancestors
-            })
-        ),
-    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
-)
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -194,16 +109,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }, [repo.name, repo.url, revision, filePath, props.telemetryService])
     )
 
-    const [showOlderCommits, setShowOlderCommits] = useState(false)
-
-    const onShowOlderCommitsClicked = useCallback(
-        (event: React.MouseEvent): void => {
-            event.preventDefault()
-            setShowOlderCommits(true)
-        },
-        [setShowOlderCommits]
-    )
-
     const treeOrError = useObservable(
         useMemo(
             () =>
@@ -217,23 +122,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [repo.name, commitID, revision, filePath]
         )
     )
-
-    const fileDecorationsByPath =
-        useObservable<FileDecorationsByPath>(
-            useMemo(
-                () =>
-                    treeOrError && !isErrorLike(treeOrError)
-                        ? getFileDecorations({
-                              files: treeOrError.entries,
-                              extensionsController: props.extensionsController,
-                              repoName: repo.name,
-                              commitID,
-                              parentNodeUri: treeOrError.url,
-                          })
-                        : EMPTY,
-                [treeOrError, repo.name, commitID, props.extensionsController]
-            )
-        ) ?? {}
 
     const showCodeInsights =
         !isErrorLike(settingsCascade.final) &&
@@ -273,9 +161,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [uri, showCodeInsights, props.extensionsController])
 
-    // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
-
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
         if (filePath) {
@@ -284,54 +169,16 @@ export const TreePage: React.FunctionComponent<Props> = ({
         return `${repoString}`
     }
 
-    const queryCommits = useCallback(
-        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
-            const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
-            return fetchTreeCommits({
-                ...args,
-                repo: repo.id,
-                revspec: revision || '',
-                filePath,
-                after,
-            })
-        },
-        [filePath, repo.id, revision, showOlderCommits]
-    )
-
-    const emptyElement = showOlderCommits ? (
-        <>No commits in this tree.</>
-    ) : (
-        <div className="test-tree-page-no-recent-commits">
-            <p className="mb-2">No commits in this tree in the past year.</p>
-            <Button
-                className="test-tree-page-show-all-commits"
-                onClick={onShowOlderCommitsClicked}
-                variant="secondary"
-                size="sm"
-            >
-                Show all commits
-            </Button>
-        </div>
-    )
-
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-        <div className="mt-2">
-            {showOlderCommits ? (
-                <>
-                    {totalCount} total {pluralize('commit', totalCount)} in this tree.
-                </>
-            ) : (
-                <>
-                    <p className="mb-2">
-                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
-                    <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
-                        Show all commits
-                    </Button>
-                </>
-            )}
-        </div>
-    )
+    const homeTabProps = {
+        repo,
+        commitID,
+        revision,
+        filePath,
+        settingsCascade,
+        codeIntelligenceEnabled,
+        batchChangesEnabled,
+        location,
+    }
 
     return (
         <div className={styles.treePage}>
@@ -359,85 +206,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="mb-3 test-tree-page-title"
                                     />
                                     {repo.description && <p>{repo.description}</p>}
-                                    <ButtonGroup>
-                                        {enableAPIDocs && (
-                                            <Button
-                                                to={`${treeOrError.url}/-/docs`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <Icon as={BookOpenBlankVariantIcon} /> API docs
-                                            </Button>
-                                        )}
-                                        <Button
-                                            to={`${treeOrError.url}/-/commits`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={SourceCommitIcon} /> Commits
-                                        </Button>
-                                        <Button
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={SourceBranchIcon} /> Branches
-                                        </Button>
-                                        <Button
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={TagIcon} /> Tags
-                                        </Button>
-                                        <Button
-                                            to={
-                                                revision
-                                                    ? `/${encodeURIPathComponent(
-                                                          repo.name
-                                                      )}/-/compare/...${encodeURIComponent(revision)}`
-                                                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                                            }
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={HistoryIcon} /> Compare
-                                        </Button>
-                                        <Button
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                                            variant="secondary"
-                                            outline={true}
-                                            as={Link}
-                                        >
-                                            <Icon as={AccountIcon} /> Contributors
-                                        </Button>
-                                        {codeIntelligenceEnabled && (
-                                            <Button
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <Icon as={BrainIcon} /> Code Intelligence
-                                            </Button>
-                                        )}
-                                        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
-                                        {repo.viewerCanAdminister && (
-                                            <Button
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                                                variant="secondary"
-                                                outline={true}
-                                                as={Link}
-                                            >
-                                                <Icon as={SettingsIcon} /> Settings
-                                            </Button>
-                                        )}
-                                    </ButtonGroup>
+                                    <TreeNavigation
+                                        batchChangesEnabled={batchChangesEnabled}
+                                        codeIntelligenceEnabled={codeIntelligenceEnabled}
+                                        repo={repo}
+                                        revision={revision}
+                                        tree={treeOrError}
+                                    />
                                 </>
                             ) : (
                                 <PageHeader
@@ -448,58 +223,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
 
                         <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                            <h2>Files and directories</h2>
-                            <TreeEntriesSection
-                                parentPath={filePath}
-                                entries={treeOrError.entries}
-                                fileDecorationsByPath={fileDecorationsByPath}
-                                isLightTheme={props.isLightTheme}
-                            />
+                            <HomeTab {...homeTabProps} {...props} repo={repo} />
                         </section>
-                        <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                            {items => (
-                                <section className={styles.section}>
-                                    <h2>Actions</h2>
-                                    {items.map(item => (
-                                        <Button
-                                            {...props}
-                                            key={item.action.id}
-                                            {...item}
-                                            className="mr-1 mb-1"
-                                            variant="secondary"
-                                            as={ActionItem}
-                                        />
-                                    ))}
-                                </section>
-                            )}
-                        </ActionsContainer>
-
-                        <div className={styles.section}>
-                            <h2>Changes</h2>
-                            <FilteredConnection<
-                                GitCommitFields,
-                                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
-                            >
-                                location={props.location}
-                                className="mt-2"
-                                listClassName="list-group list-group-flush"
-                                noun="commit in this tree"
-                                pluralNoun="commits in this tree"
-                                queryConnection={queryCommits}
-                                nodeComponent={GitCommitNode}
-                                nodeComponentProps={{
-                                    className: classNames('list-group-item', styles.gitCommitNode),
-                                    messageSubjectClassName: styles.gitCommitNodeMessageSubject,
-                                    compact: true,
-                                }}
-                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                                defaultFirst={7}
-                                useURLQuery={false}
-                                hideSearch={true}
-                                emptyElement={emptyElement}
-                                totalCountSummaryComponent={TotalCountSummary}
-                            />
-                        </div>
                     </>
                 )}
             </Container>
