@@ -32,15 +32,16 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
-export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreePageProps> = ({
-    repo,
-    resolvedRev: { commitID, defaultBranch },
-    match,
-    globbing,
-    featureFlags,
-    onExtensionAlertDismissed,
-    ...context
-}) => {
+export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreePageProps> = props => {
+    const {
+        repo,
+        resolvedRev: { commitID, defaultBranch },
+        match,
+        globbing,
+        featureFlags,
+        onExtensionAlertDismissed,
+        ...context
+    } = props
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
@@ -134,7 +135,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                                 />
                             </>
                         ) : (
-                            <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                            <TreePage {...props} {...repoRevisionProps} repo={repo} />
                         )}
                     </ErrorBoundary>
                 </BlobStatusBarContainer>

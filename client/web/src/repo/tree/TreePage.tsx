@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import { Redirect } from 'react-router-dom'
+import { Redirect, Route, Switch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -30,9 +30,11 @@ import { TreePageRepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { RepoCommits, RepoDocs } from '../routes'
 
 import { HomeTab } from './HomeTab'
 import { TreeNavigation } from './TreeNavigation'
+import { TreeTabList } from './TreeTabList'
 
 import styles from './TreePage.module.scss'
 
@@ -169,6 +171,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
         return `${repoString}`
     }
 
+    const newRepoPage = true
+
     const homeTabProps = {
         repo,
         commitID,
@@ -206,13 +210,15 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="mb-3 test-tree-page-title"
                                     />
                                     {repo.description && <p>{repo.description}</p>}
-                                    <TreeNavigation
-                                        batchChangesEnabled={batchChangesEnabled}
-                                        codeIntelligenceEnabled={codeIntelligenceEnabled}
-                                        repo={repo}
-                                        revision={revision}
-                                        tree={treeOrError}
-                                    />
+                                    {!newRepoPage && (
+                                        <TreeNavigation
+                                            batchChangesEnabled={batchChangesEnabled}
+                                            codeIntelligenceEnabled={codeIntelligenceEnabled}
+                                            repo={repo}
+                                            revision={revision}
+                                            tree={treeOrError}
+                                        />
+                                    )}
                                 </>
                             ) : (
                                 <PageHeader
@@ -222,9 +228,26 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
 
-                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
+                        {newRepoPage ? (
+                            <div>
+                                <TreeTabList tree={treeOrError} />
+                                <Switch>
+                                    <Route path={`${treeOrError.url}/-/docs/tab`}>
+                                        <RepoDocs repo={repo} useBreadcrumb={useBreadcrumb} {...props} />
+                                    </Route>
+                                    <Route path={`${treeOrError.url}/-/commits/tab`}>
+                                        <RepoCommits repo={repo} useBreadcrumb={useBreadcrumb} {...props} />
+                                    </Route>
+                                    <Route>
+                                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
+                                            <HomeTab {...homeTabProps} {...props} repo={repo} />
+                                        </section>
+                                    </Route>
+                                </Switch>
+                            </div>
+                        ) : (
                             <HomeTab {...homeTabProps} {...props} repo={repo} />
-                        </section>
+                        )}
                     </>
                 )}
             </Container>
