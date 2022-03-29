@@ -11,7 +11,7 @@ import (
 )
 
 // Breadcrumb is an arbitrary annotation on a token in a file. It's used as a way to log where Squirrel
-// has been traversing through trees and files for debugging..
+// has been traversing through trees and files for debugging.
 type Breadcrumb struct {
 	types.RepoCommitPathRange
 	length  int
