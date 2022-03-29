@@ -18,6 +18,6 @@
     }
   },
   "disablePublicRepoRedirects": true,
-  "repoListUpdateInterval": 5,
+  "repoListUpdateInterval": 1,
   "externalService.userMode": "all"
 }
