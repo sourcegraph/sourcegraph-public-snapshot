@@ -22,7 +22,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
 	defer cleanup()
 
 	defer func() {
@@ -40,13 +40,13 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}
 
 	getNumFrozenInsights := func() (int, error) {
-		return basestore.ScanInt(timescale.QueryRow(`SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
+		return basestore.ScanInt(insightsDB.QueryRow(`SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
 	}
 	getLAMDashboardCount := func() (int, error) {
-		return basestore.ScanInt(timescale.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM dashboard WHERE type = '%s'", store.LimitedAccessMode)))
+		return basestore.ScanInt(insightsDB.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM dashboard WHERE type = '%s'", store.LimitedAccessMode)))
 	}
 
-	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+	_, err := insightsDB.Exec(`INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
 										VALUES (1, 'unattached insight', 'test description', 'unique-1', true),
 											   (2, 'private insight 2', 'test description', 'unique-2', true),
 											   (3, 'org insight 1', 'test description', 'unique-3', true),
@@ -56,7 +56,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = timescale.Exec(`INSERT INTO dashboard (title)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard (title)
 										VALUES ('private dashboard 1'),
 											   ('org dashboard 1'),
 										 	   ('global dashboard 1'),
@@ -64,7 +64,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 										VALUES  (1, 2),
 												(2, 3),
 												(3, 4),
@@ -73,7 +73,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = timescale.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
+	_, err = insightsDB.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
 										VALUES  (1, 1, NULL, NULL),
 												(2, NULL, 1, NULL),
 												(3, NULL, NULL, TRUE),
@@ -90,7 +90,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(true)
-		checkAndEnforceLicense(ctx, timescale)
+		checkAndEnforceLicense(ctx, insightsDB)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)
@@ -106,7 +106,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 0)
 
 		setMockLicenseCheck(false)
-		checkAndEnforceLicense(ctx, timescale)
+		checkAndEnforceLicense(ctx, insightsDB)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)
@@ -128,7 +128,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(false)
-		checkAndEnforceLicense(ctx, timescale)
+		checkAndEnforceLicense(ctx, insightsDB)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)

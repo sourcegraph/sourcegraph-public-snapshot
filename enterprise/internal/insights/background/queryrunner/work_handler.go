@@ -26,7 +26,7 @@ import (
 var _ workerutil.Handler = &workHandler{}
 
 // workHandler implements the dbworker.Handler interface by executing search queries and
-// inserting insights about them to the insights Timescale database.
+// inserting insights about them to the insights database.
 type workHandler struct {
 	baseWorkerStore *basestore.Store
 	insightsStore   *store.Store

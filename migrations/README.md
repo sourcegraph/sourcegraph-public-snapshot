@@ -4,7 +4,7 @@ The children of this directory contain migrations for each Postgres database ins
 
 - `frontend` is the main database (things should go here unless there is a good reason)
 - `codeintel` is a database containing only processed LSIF data (which can become extremely large)
-- `codeinsights` is a TimescaleDB database, containing only Code Insights time series data
+- `codeinsights` is a database containing only Code Insights time series data
 
 The migration path for each database instance is the same and is described below. Each of the database instances described here are deployed separately, but are designed to be _overlayable_ to reduce friction during development. That is, we assume that the names in each database do not overlap so that the same connection parameters can be used for both database instances.
 

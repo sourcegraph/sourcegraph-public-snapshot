@@ -13,16 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
-// TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
+// CodeInsightsDB returns a handle to the Code Insights Postgres instance.
 //
 // The returned DB handle is initialized with a unique database just for the specified test, with
 // all migrations applied.
-func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
+func CodeInsightsDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	// Setup TimescaleDB for testing.
+	// Setup postgres DB for testing.
 	if os.Getenv("CODEINSIGHTS_PGDATASOURCE") == "" {
 		os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")
 	}
@@ -31,11 +31,11 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		username = user.Username
 	}
 
-	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, err := connections.NewTestDB(timescaleDSN)
+	insightsDSN := postgresdsn.New("codeinsights", username, os.Getenv)
+	initConn, err := connections.NewTestDB(insightsDSN)
 	if err != nil {
 		t.Log("")
-		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
+		t.Log("README: To run these tests you need to have the codeinsights db running:")
 		t.Log("")
 		t.Log("$ ./dev/codeinsights-db.sh &")
 		t.Log("")
@@ -61,13 +61,13 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	// Connect to the new DB.
-	u, err := url.Parse(timescaleDSN)
+	u, err := url.Parse(insightsDSN)
 	if err != nil {
-		t.Fatal("parsing Timescale DSN", err)
+		t.Fatal("parsing insights DSN", err)
 	}
 	u.Path = dbname
-	timescaleDSN = u.String()
-	db, err = connections.NewTestDB(timescaleDSN, schemas.CodeInsights)
+	insightsDSN = u.String()
+	db, err = connections.NewTestDB(insightsDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
