@@ -445,7 +445,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 <div key={svc}>
                     <h4 className="align-middle mb-1">We're having trouble connecting to {svc} </h4>
                     <p className="align-middle mb-0">
-                        <span className="align-middle">Before continuing, verify that</span> {svc}
+                        <span className="align-middle">Verify that</span> {svc}
                         <span className="align-middle">
                             {' '}
                             is available by visiting{' '}
