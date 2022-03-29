@@ -373,7 +373,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		// TODO
 		log15.Info("Notebook search yay")
 		addJob(true, &notebook.SearchJob{
-			// Query: b.PatternString(),
+			Query: b.PatternString(),
 		})
 	}
 
