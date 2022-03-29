@@ -41,7 +41,8 @@ var extToLang = func() map[string]string {
 type LangSpec struct {
 	language     *sitter.Language
 	commentStyle CommentStyle
-	query        string
+	// localsQuery is a tree-sitter localsQuery that finds scopes and defs.
+	localsQuery string
 }
 
 // Info about comments in a language.
@@ -65,7 +66,7 @@ var langToLangSpec = map[string]LangSpec{
 			codeFenceName: "java",
 			skipNodeTypes: []string{"modifiers"},
 		},
-		query: `
+		localsQuery: `
 (block)                   @scope ; { ... }
 (lambda_expression)       @scope ; (x, y) -> ...
 (catch_clause)            @scope ; try { ... } catch (Exception e) { ... }

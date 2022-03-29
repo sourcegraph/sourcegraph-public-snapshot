@@ -44,7 +44,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	scopes := map[Id]Scope{
 		rootScopeId: {},
 	}
-	err = forEachCapture(root.LangSpec.query, *root, func(captureName string, node Node) {
+	err = forEachCapture(root.LangSpec.localsQuery, *root, func(captureName string, node Node) {
 		if captureName == "scope" {
 			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}
 			return
@@ -55,7 +55,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	}
 
 	// Collect defs
-	err = forEachCapture(root.LangSpec.query, *root, func(captureName string, node Node) {
+	err = forEachCapture(root.LangSpec.localsQuery, *root, func(captureName string, node Node) {
 		// Only collect "definition*" captures.
 		if strings.HasPrefix(captureName, "definition") {
 			// Find the nearest scope (if it exists).
