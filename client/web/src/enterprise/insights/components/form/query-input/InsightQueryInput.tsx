@@ -3,6 +3,7 @@ import React, { forwardRef } from 'react'
 import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import type { MonacoFieldProps } from '../monaco-field'
 import * as Monaco from '../monaco-field'
@@ -16,7 +17,7 @@ export interface InsightQueryInputProps extends MonacoFieldProps {
     repositories?: string
 }
 
-export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputProps>((props, reference) => {
+export const InsightQueryInput = forwardRef((props, reference) => {
     const { children, patternType, repositories = '', ...otherProps } = props
     const previewQuery = `${generateRepoFiltersQuery(repositories)} ${props.value}`.trim()
 
@@ -40,4 +41,4 @@ export const InsightQueryInput = forwardRef<HTMLInputElement, InsightQueryInputP
             <Monaco.PreviewLink query={previewQuery} patternType={patternType} className={styles.previewButton} />
         </div>
     )
-})
+}) as ForwardReferenceComponent<'input', InsightQueryInputProps>
