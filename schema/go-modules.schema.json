@@ -18,7 +18,7 @@
       "examples": [["https://athens.mycorp.org", "https://proxy.golang.org"]]
     },
     "rateLimit": {
-      "description": "Rate limit applied when making background API requests to the go registry.",
+      "description": "Rate limit applied when making background API requests to the configured Go module proxies.",
       "title": "GoRateLimit",
       "type": "object",
       "required": ["enabled", "requestsPerHour"],
