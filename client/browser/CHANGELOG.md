@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Update banners for not synced private repos banners when on Sourcegraph Cloud instance and not added repositories when on other instances: [pull/31922](https://github.com/sourcegraph/sourcegraph/pull/31922), [issues/31920](https://github.com/sourcegraph/sourcegraph/issues/31920)
+
 ## Chrome & Firefox v22.3.11.1145, Safari v1.12
 
 - Fix client-side routing support on GitHub repository browse file tree pages: [#pull/32199](https://github.com/sourcegraph/sourcegraph/pull/32199), [#issues/31716](https://github.com/sourcegraph/sourcegraph/issues/31716)
