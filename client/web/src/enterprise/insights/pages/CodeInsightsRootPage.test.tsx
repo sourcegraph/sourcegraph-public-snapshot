@@ -41,6 +41,7 @@ jest.mock('react-router', () => ({
 const mockTelemetryService = {
     log: sinon.spy(),
     logViewEvent: sinon.spy(),
+    logPageView: sinon.spy(),
 }
 
 const fakeApi = new FakeDefaultCodeInsightsBackend()

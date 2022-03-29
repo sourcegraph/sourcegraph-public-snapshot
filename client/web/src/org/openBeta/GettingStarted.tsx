@@ -247,7 +247,7 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
         (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled, isSourcegraphDotCom))
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationGetStarted', { organizationId: org.id })
+        eventLogger.logPageView('OrganizationGetStarted', { organizationId: org.id })
     }, [org.id])
 
     useEffect(() => {
