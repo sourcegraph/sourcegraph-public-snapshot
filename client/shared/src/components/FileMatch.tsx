@@ -106,7 +106,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                className="ml-1 flex-shrink-past-contents text-truncate"
             />
         </>
     )

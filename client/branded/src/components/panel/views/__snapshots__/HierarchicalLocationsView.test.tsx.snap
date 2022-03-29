@@ -56,7 +56,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </svg>
                 </span>
                 <div
-                  class="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -278,7 +278,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </svg>
                 </span>
                 <div
-                  class="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
@@ -456,7 +456,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </svg>
                 </span>
                 <div
-                  class="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                  class="ml-1 flex-shrink-past-contents text-truncate"
                 >
                   <a
                     class="anchorLink"
