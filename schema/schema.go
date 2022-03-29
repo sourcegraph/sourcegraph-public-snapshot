@@ -906,13 +906,13 @@ type GitoliteConnection struct {
 type GoModulesConnection struct {
 	// Dependencies description: An array of strings specifying Go modules to mirror in Sourcegraph.
 	Dependencies []string `json:"dependencies,omitempty"`
-	// RateLimit description: Rate limit applied when making background API requests to the go registry.
+	// RateLimit description: Rate limit applied when making background API requests to the configured Go module proxies.
 	RateLimit *GoRateLimit `json:"rateLimit,omitempty"`
 	// Urls description: The list of Go module proxy URLs to fetch modules from. 404 Not found or 410 Gone responses will result in the next URL to be attempted.
 	Urls []string `json:"urls"`
 }
 
-// GoRateLimit description: Rate limit applied when making background API requests to the go registry.
+// GoRateLimit description: Rate limit applied when making background API requests to the configured Go module proxies.
 type GoRateLimit struct {
 	// Enabled description: true if rate limiting is enabled.
 	Enabled bool `json:"enabled"`
