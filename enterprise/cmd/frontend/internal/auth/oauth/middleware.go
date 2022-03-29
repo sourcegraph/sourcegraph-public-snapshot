@@ -138,7 +138,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 
 		conn := esConfg.(*schema.GitHubConnection)
 		auther := &eauth.OAuthBearerToken{Token: conn.Token}
-		client := github.NewV3Client(extsvc.URNGitHubOAuth, &url.URL{Host: "github.com"}, auther, nil)
+		client := github.NewV3Client(extsvc.URNGitHubAppCloud, &url.URL{Host: "github.com"}, auther, nil)
 
 		installs, err := client.GetUserInstallations(req.Context())
 		if err != nil {

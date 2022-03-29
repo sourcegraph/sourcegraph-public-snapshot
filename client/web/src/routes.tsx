@@ -177,8 +177,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: () => <InstallGitHubAppSuccessPage />,
     },
     {
-        path: '/install-github-app-select-org',
-        render: props => <ConnectGitHubAppPage />,
+        path: PageRoutes.InstallGitHubAppSelectOrg,
+        render: props => <ConnectGitHubAppPage {...props} />,
     },
     {
         path: PageRoutes.Settings,

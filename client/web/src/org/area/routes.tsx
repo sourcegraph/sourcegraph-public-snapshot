@@ -11,10 +11,6 @@ import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 const OrgMembersArea = lazyComponent(() => import('../members/OrgMembersArea'), 'OrgMembersArea')
-const OrgConnectGitHubApp = lazyComponent(
-    () => import('../settings/codeHosts/ConnectGitHubAppPage'),
-    'ConnectGitHubAppPage'
-)
 
 const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
     <Redirect to={`${props.match.url}/settings/profile`} />
@@ -33,10 +29,6 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/settings',
         render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
-    },
-    {
-        path: '/install-github-app-select-org',
-        render: props => <OrgConnectGitHubApp />,
     },
     ...namespaceAreaRoutes,
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -17,26 +17,24 @@ import styles from './AppLogo.module.scss'
 export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
     const [data, setData] = useState<GitHubAppInstallation | null>()
 
-    useEffect(() => {
-        const queryString = window.location.search
-        const urlParameters = new URLSearchParams(queryString)
-        const installationID = urlParameters.get('installation_id')
+    const queryString = window.location.search
+    const urlParameters = new URLSearchParams(queryString)
+    const installationID = urlParameters.get('installation_id')
 
-        if (installationID !== null) {
-            fetch(`/.auth/github/get-github-app-installation?installation_id=${installationID}`, {
-                method: 'GET',
+    if (installationID !== null) {
+        fetch(`/.auth/github/get-github-app-installation?installation_id=${installationID}`, {
+            method: 'GET',
+        })
+            .then(response => response.json())
+            .then(response => {
+                const githubAppInstallation = response as GitHubAppInstallation
+
+                setData(githubAppInstallation)
             })
-                .then(response => response.json())
-                .then(response => {
-                    const githubAppInstallation = response as GitHubAppInstallation
-
-                    setData(githubAppInstallation)
-                })
-                .catch(() => setData(null))
-        } else {
-            setData(null)
-        }
-    }, [])
+            .catch(() => setData(null))
+    } else {
+        setData(null)
+    }
 
     return (
         <Page>

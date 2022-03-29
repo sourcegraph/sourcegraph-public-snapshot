@@ -4,25 +4,14 @@ import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, Link, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
+import { useQueryStringParameters } from '../../members/utils'
 
 import styles from './GitHubOrgListItem.module.scss'
-
-const connectOrg = (installation_id: string) => () => {
-    const queryString = window.location.search
-    const urlParameters = new URLSearchParams(queryString)
-    const state = urlParameters.get('state')
-    if (state !== null) {
-        window.location.assign(
-            `/setup/github/app/cloud?setup_action=install&installation_id=${installation_id}&state=${state}`
-        )
-    } else {
-        window.location.assign('/install-github-app-success')
-    }
-}
 
 export interface GitHubAppInstallation {
     id: number
@@ -32,22 +21,30 @@ export interface GitHubAppInstallation {
     }
 }
 
-type GHOrgListItemProps = HTMLAttributes<HTMLLIElement>
+type GitHubOrgListItemProps = HTMLAttributes<HTMLLIElement>
 
-export const GHOrgListItem: React.FunctionComponent<GHOrgListItemProps> = ({ children, ...rest }) => (
+export const GitHubOrgListItem: React.FunctionComponent<GitHubOrgListItemProps> = ({ children, ...rest }) => (
     <li className={classNames('list-group-item', styles.ghOrgItem)} {...rest}>
         {children}
     </li>
 )
 
-export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
+export const ConnectGitHubAppPage: React.FunctionComponent<TelemetryProps> = () => {
     const [data, setData] = useState<GitHubAppInstallation[]>([])
     const [error, setError] = useState<boolean>(false)
     const [loading, setLoading] = useState<boolean>(true)
 
-    const queryString = window.location.search
-    const urlParameters = new URLSearchParams(queryString)
-    const state = urlParameters.get('state') || ''
+    const state = useQueryStringParameters().get('state') || ''
+
+    const connectOrg = (installation_id: string) => () => {
+        if (state !== '') {
+            window.location.assign(
+                `/setup/github/app/cloud?setup_action=install&installation_id=${installation_id}&state=${state}`
+            )
+        } else {
+            window.location.assign('/install-github-app-success')
+        }
+    }
 
     useEffect(() => {
         fetch('/.auth/github/get-user-orgs', {
@@ -90,7 +87,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
                     ) : !error ? (
                         <ul className="list-group">
                             {data.map(install => (
-                                <GHOrgListItem onClick={connectOrg(install.id.toString())} key={install.id}>
+                                <GitHubOrgListItem onClick={connectOrg(install.id.toString())} key={install.id}>
                                     <div className="d-flex align-items-start">
                                         <div className="align-self-center">
                                             <img
@@ -106,9 +103,9 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
                                             <ChevronRightIcon />
                                         </div>
                                     </div>
-                                </GHOrgListItem>
+                                </GitHubOrgListItem>
                             ))}
-                            <GHOrgListItem key={-1}>
+                            <GitHubOrgListItem key={-1}>
                                 <div className="d-flex align-items-start">
                                     <Link
                                         className="flex-1 align-self-center"
@@ -120,7 +117,7 @@ export const ConnectGitHubAppPage: React.FunctionComponent<{}> = () => {
                                         <ChevronRightIcon />
                                     </div>
                                 </div>
-                            </GHOrgListItem>
+                            </GitHubOrgListItem>
                         </ul>
                     ) : (
                         <p>Something went wrong.</p>
