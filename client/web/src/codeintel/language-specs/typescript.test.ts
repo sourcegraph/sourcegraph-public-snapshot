@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 
-import { nilFilterContext, nilResult } from './spec.test'
+import { nilFilterContext, nilResult } from './testutils'
 import { typescriptSpec } from './typescript'
 
 const fileContent = `

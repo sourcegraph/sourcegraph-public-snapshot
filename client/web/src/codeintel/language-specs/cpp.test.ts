@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 
 import { cppSpec } from './cpp'
-import { nilFilterContext, nilResult } from './spec.test'
+import { nilFilterContext, nilResult } from './testutils'
 
 const fileContent = `
 @import a.b.c;

@@ -1,4 +1,4 @@
-import { BlockCommentStyle, CommentStyle } from './spec'
+import { BlockCommentStyle, CommentStyle } from './languagespec'
 
 /** Matches two or more slashes followed by one optional space. */
 export const slashPattern = /\/\/+\s?/

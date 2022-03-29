@@ -1,4 +1,4 @@
-import { FilterContext, Result } from './spec'
+import { FilterContext, Result } from './languagespec'
 
 /**
  * A zero-value filter context used for testing.

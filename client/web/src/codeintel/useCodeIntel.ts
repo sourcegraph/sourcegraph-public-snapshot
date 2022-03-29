@@ -23,7 +23,7 @@ import {
     LocationFields,
 } from '../graphql-operations'
 
-import { LanguageSpec } from './language-specs/spec'
+import { LanguageSpec } from './language-specs/languagespec'
 import { Location, buildPreciseLocation, buildSearchBasedLocation } from './location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
@@ -185,7 +185,9 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
                     console.info('No LSIF data. Falling back to search-based code intelligence.')
                     fellBackToSearchBased.current = true
 
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     fetchSearchBasedDefinitionsForToken(searchToken)
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     fetchSearchBasedReferencesForToken(searchToken)
                 }
             }
@@ -248,16 +250,7 @@ export const useCodeIntel = ({ variables, searchToken, spec }: UseCodeIntelParam
     const fetchMoreReferences = (): void => {
         const cursor = codeIntelData?.references.endCursor || null
 
-        if (cursor === null && attemptedSearchReferences === false) {
-            setAttemptedSearchReferences(true)
-            fetchSearchBasedReferences({
-                variables: {
-                    // TODO: fix all of this
-                    query:
-                        'GetRoute repo:github\\.com\\/gorilla\\/mux$ type:file patternType:regexp count:500 case:yes',
-                },
-            })
-        } else if (cursor !== null) {
+        if (cursor !== null) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             fetchAdditionalReferences({
                 variables: {

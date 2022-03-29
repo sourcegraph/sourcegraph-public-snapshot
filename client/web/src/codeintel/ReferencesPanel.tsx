@@ -53,7 +53,7 @@ import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { findLanguageSpec } from './language-specs/languages'
-import { LanguageSpec } from './language-specs/spec'
+import { LanguageSpec } from './language-specs/languagespec'
 import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { findSearchToken } from './token'
