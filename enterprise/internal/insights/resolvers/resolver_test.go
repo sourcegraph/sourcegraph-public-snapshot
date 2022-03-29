@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -18,8 +17,7 @@ func TestResolver_Insights(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	resolver := newWithClock(insightsDB, postgres, clock)
 
