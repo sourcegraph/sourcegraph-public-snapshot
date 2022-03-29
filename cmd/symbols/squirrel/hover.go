@@ -6,7 +6,7 @@ import (
 )
 
 // Returns the markdown hover message for the given node if it exists.
-func findHover(node Node) *string {
+func findHover(node Node) string {
 	style := node.LangSpec.commentStyle
 
 	hover := ""
@@ -78,5 +78,5 @@ func findHover(node Node) *string {
 		hover = hover + "\n\n---\n\n" + strings.Join(comments, "\n") + "\n"
 	}
 
-	return &hover
+	return hover
 }

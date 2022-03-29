@@ -49,11 +49,7 @@ class C {
 
 		ok := false
 		for _, symbol := range payload.Symbols {
-			if symbol.Hover == nil {
-				continue
-			}
-
-			got := *symbol.Hover
+			got := symbol.Hover
 
 			if !strings.Contains(got, test.want) {
 				continue
@@ -66,10 +62,7 @@ class C {
 		if !ok {
 			comments := []string{}
 			for _, symbol := range payload.Symbols {
-				if symbol.Hover == nil {
-					continue
-				}
-				comments = append(comments, *symbol.Hover)
+				comments = append(comments, symbol.Hover)
 			}
 			fmt.Printf("did not find comment %q. All comments:\n", test.want)
 			for _, comment := range comments {

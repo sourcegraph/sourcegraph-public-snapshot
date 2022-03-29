@@ -22,7 +22,7 @@ type Scope = map[SymbolName]*PartialSymbol // pointer for mutability
 // PartialSymbol is the same as types.Symbol, but with the refs stored in a map to deduplicate.
 type PartialSymbol struct {
 	Name  string
-	Hover *string
+	Hover string
 	Def   types.Range
 	// Store refs as a set to avoid duplicates from some tree-sitter queries.
 	Refs map[types.Range]struct{}
@@ -67,13 +67,10 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 						break
 					}
 
-					// Get the hover.
-					hover := findHover(node)
-
 					// Put the symbol in the scope.
 					scope[symbolName] = &PartialSymbol{
 						Name:  string(symbolName),
-						Hover: hover,
+						Hover: findHover(node),
 						Def:   nodeToRange(node.Node),
 						Refs:  map[types.Range]struct{}{},
 					}
@@ -149,14 +146,9 @@ func prettyPrintLocalCodeIntelPayload(w io.Writer, payload types.LocalCodeIntelP
 
 	// Print all symbols.
 	for _, symbol := range payload.Symbols {
-		// Print the hover.
-		hover := "<no hover>"
-		if symbol.Hover != nil {
-			hover = *symbol.Hover
-		}
 		defColor := color.New(color.FgMagenta)
 		refColor := color.New(color.FgCyan)
-		fmt.Fprintf(w, "Hover %q, %s, %s\n", hover, defColor.Sprint("def"), refColor.Sprint("refs"))
+		fmt.Fprintf(w, "Hover %q, %s, %s\n", symbol.Hover, defColor.Sprint("def"), refColor.Sprint("refs"))
 
 		// Convert each def and ref into a rangeColor.
 		type rangeColor struct {
