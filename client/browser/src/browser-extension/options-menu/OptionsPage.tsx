@@ -17,7 +17,7 @@ import { IUser } from '@sourcegraph/shared/src/schema'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { isDefaultSourcegraphUrl } from '../../shared/util/context'
+import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
@@ -25,6 +25,7 @@ import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 import styles from './OptionsPage.module.scss'
 
 import '@reach/combobox/styles.css'
+import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
 export interface OptionsPageProps {
     version: string
@@ -215,7 +216,12 @@ const RepoSyncErrorAlert: React.FunctionComponent<{
                 <p>
                     To use the browser extension with your private repositories, you need to enable sync in{' '}
                     <Link
-                        to={new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl).href}
+                        to={
+                            createURLWithUTM(
+                                new URL(`${currentUser.settingsURL!}/repositories/manage`, sourcegraphUrl),
+                                { utm_source: getPlatformName(), utm_campaign: 'sync-private-repo-with-cloud' }
+                            ).href
+                        }
                         {...NEW_TAB_LINK_PROPS}
                     >
                         manage repositories settings
@@ -236,7 +242,15 @@ const RepoSyncErrorAlert: React.FunctionComponent<{
             {currentUser.siteAdmin ? (
                 <p>
                     This repository is not added to your Sourcegraph instance. Check out{' '}
-                    <Link to="https://docs.sourcegraph.com/admin/repo/add" {...NEW_TAB_LINK_PROPS}>
+                    <Link
+                        to={
+                            createURLWithUTM(new URL('admin/repo/add', 'https://docs.sourcegraph.com/'), {
+                                utm_source: getPlatformName(),
+                                utm_campaign: 'add-repo-to-instance',
+                            }).href
+                        }
+                        {...NEW_TAB_LINK_PROPS}
+                    >
                         how to add repositorory from a code host
                     </Link>{' '}
                     to Sourcegraph.
