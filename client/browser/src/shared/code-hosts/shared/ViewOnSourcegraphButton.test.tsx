@@ -20,7 +20,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
-                        onRepoSyncError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -37,7 +36,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={true}
-                        onRepoSyncError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -58,7 +56,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
-                        onRepoSyncError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -82,7 +79,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
-                        onRepoSyncError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -104,7 +100,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
                         minimalUI={false}
-                        onRepoSyncError={noop}
                     />
                 ).asFragment()
             ).toMatchSnapshot()
@@ -131,7 +126,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                                     className="test"
                                     repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
                                     minimalUI={minimalUI}
-                                    onRepoSyncError={noop}
                                 />
                             ).asFragment()
                         ).toMatchSnapshot()
@@ -157,7 +151,6 @@ describe('<ViewOnSourcegraphButton />', () => {
                             className="test"
                             repoExistsOrError={new Error('Something unknown happened!')}
                             minimalUI={false}
-                            onRepoSyncError={noop}
                         />
                     ).asFragment()
                 ).toMatchSnapshot()
