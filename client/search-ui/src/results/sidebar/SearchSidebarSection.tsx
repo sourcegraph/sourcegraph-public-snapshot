@@ -89,30 +89,30 @@ export const SearchSidebarSection: React.FunctionComponent<{
             body = children
         }
 
-        const [collapsed, setCollapsed] = useState(startCollapsed)
+        const [isOpened, setOpened] = useState(!startCollapsed)
         const handleOpenChange = useCallback(
-            isOpened => {
+            isOpen => {
                 if (onToggle) {
-                    onToggle(sectionId, isOpened)
+                    onToggle(sectionId, isOpen)
                 }
 
-                setCollapsed(!isOpened)
+                setOpened(isOpen)
             },
             [onToggle, sectionId]
         )
 
         return visible ? (
             <div className={classNames(styles.sidebarSection, className)}>
-                <Collapse isOpen={!collapsed} onOpenChange={handleOpenChange}>
+                <Collapse isOpen={isOpened} onOpenChange={handleOpenChange}>
                     <CollapseHeader
                         as={Button}
                         className={styles.sidebarSectionCollapseButton}
-                        aria-label={collapsed ? 'Expand' : 'Collapse'}
+                        aria-label={isOpened ? 'Expand' : 'Collapse'}
                         outline={true}
                         variant="secondary"
                     >
                         <h5 className="flex-grow-1">{header}</h5>
-                        <Icon className="mr-1" as={collapsed ? ChevronLeftIcon : ChevronDownIcon} />
+                        <Icon className="mr-1" as={isOpened ? ChevronLeftIcon : ChevronDownIcon} />
                     </CollapseHeader>
 
                     <CollapsePanel>
