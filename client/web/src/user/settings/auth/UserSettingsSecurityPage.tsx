@@ -184,35 +184,26 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         let requirements = ''
         let passwordPolicyRef = window.context.experimentalFeatures.passwordPolicy
 
-            if (passwordPolicyRef && passwordPolicyRef.enabled === true)
-            {
-                if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0)
-                {
-                    requirements += 'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
-                }
-                if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0)
-                {
-                    requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
-                }
-                if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true)
-                {
-                    requirements += ', at least one number'
-                }
-                if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true)
-                {
-                    requirements += ', at least one uppercase letter'
-                }
+        if (passwordPolicyRef && passwordPolicyRef.enabled === true) {
+            if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0) {
+                requirements +=
+                    'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
             }
-            else
-            {
-                requirements += 'At least 12 characters.'
+            if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0) {
+                requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
             }
+            if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true) {
+                requirements += ', at least one number'
+            }
+            if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true) {
+                requirements += ', at least one uppercase letter'
+            }
+        } else {
+            requirements += 'At least 12 characters.'
+        }
 
-            return (
-                <small className="form-help text-muted">{requirements}</small>
-            )
+        return <small className="form-help text-muted">{requirements}</small>
     }
-
 
     public render(): JSX.Element | null {
         return (
@@ -315,8 +306,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
-                                     {this.getPasswordRequirements()}
-
+                                    {this.getPasswordRequirements()}
                                 </div>
                                 <div className="form-group">
                                     <label htmlFor="newPasswordConfirmation">Confirm new password</label>
