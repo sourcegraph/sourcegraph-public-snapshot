@@ -815,3 +815,12 @@ func uploadBuildeventTrace() operations.Operation {
 		)
 	}
 }
+
+// Request render.com to create client preview app for current PR
+// Preview is deleted from render.com in GitHub Action when PR is closed
+func prPreview() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":globe_with_meridians: Client PR preview",
+			bk.Cmd("dev/ci/render-pr-preview.sh"))
+	}
+}
