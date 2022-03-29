@@ -48,7 +48,7 @@ func ParseGoDependency(dependency string) (*GoDependency, error) {
 }
 
 // ParseGoDependencyFromRepoName is a convenience function to parse a repo name in a
-// 'go/mod(@version)?' format into a GoDependency.
+// 'go/<name>(@<version>)?' format into a GoDependency.
 func ParseGoDependencyFromRepoName(name string) (*GoDependency, error) {
 	dependency := strings.TrimPrefix(name, "go/")
 	if len(dependency) == len(name) {
