@@ -170,30 +170,11 @@ func extractTarFile(tr *tar.Reader, h *tar.Header, dir string) error {
 // path, and don't contain file paths or links that could escape the tar file
 // like ../../etc/password.
 func sanitizeTarPath(h *tar.Header, dir string) error {
-	// Sanitize all tar paths resolve to within the destination directory.
-	cleanDir := filepath.Clean(dir) + string(os.PathSeparator)
-	destPath := filepath.Join(dir, h.Name) // Join calls filepath.Clean on each element.
-
-	if !strings.HasPrefix(destPath, cleanDir) {
-		return errors.Errorf("%s: illegal file path", h.Name)
+	cleanDir, err := sanitizePath(h.Name, dir)
+	if err != nil || h.Linkname == "" {
+		return err
 	}
-
-	// Ensure link destinations resolve to within the destination directory.
-	if h.Linkname != "" {
-		if filepath.IsAbs(h.Linkname) {
-			if !strings.HasPrefix(filepath.Clean(h.Linkname), cleanDir) {
-				return errors.Errorf("%s: illegal link path", h.Linkname)
-			}
-		} else {
-			// Relative paths are relative to filename after extraction to directory.
-			linkPath := filepath.Join(dir, filepath.Dir(h.Name), h.Linkname)
-			if !strings.HasPrefix(linkPath, cleanDir) {
-				return errors.Errorf("%s: illegal link path", h.Linkname)
-			}
-		}
-	}
-
-	return nil
+	return sanitizeSymlink(h.Linkname, h.Name, cleanDir)
 }
 
 // extractZipFile extracts a single file or directory from a zip archive into dir.
@@ -225,37 +206,46 @@ func extractZipFile(f *zip.File, dir string) error {
 // sanitizeZipPath checks that the zip file path resolves to a subdirectory
 // path and that it doesn't escape the archive to something like ../../etc/password.
 func sanitizeZipPath(f *zip.File, dir string) error {
-	// Sanitize all tar paths resolve to within the destination directory.
-	cleanDir := filepath.Clean(dir) + string(os.PathSeparator)
-	destPath := filepath.Join(dir, f.Name) // Join calls filepath.Clean on each element.
-
-	if !strings.HasPrefix(destPath, cleanDir) {
-		return errors.Errorf("%s: illegal file path", f.Name)
+	cleanDir, err := sanitizePath(f.Name, dir)
+	if err != nil || f.Mode()&os.ModeSymlink == 0 {
+		return err
 	}
 
-	// Ensure link destinations resolve to within the destination directory.
-	if f.Mode()&os.ModeSymlink == 0 {
-		return nil
-	}
-
-	bs, err := readZipFile(f)
+	target, err := readZipFile(f)
 	if err != nil {
 		return errors.Wrapf(err, "failed reading link %s", f.Name)
 	}
 
-	target := string(bs)
+	return sanitizeSymlink(string(target), f.Name, cleanDir)
+}
+
+// sanitizePath checks all paths resolve to within the destination directory,
+// returning the cleaned directory and an error in case of failure.
+func sanitizePath(name, dir string) (cleanDir string, err error) {
+	cleanDir = filepath.Clean(dir) + string(os.PathSeparator)
+	destPath := filepath.Join(dir, name) // Join calls filepath.Clean on each element.
+
+	if !strings.HasPrefix(destPath, cleanDir) {
+		return "", errors.Errorf("%s: illegal file path", name)
+	}
+
+	return cleanDir, nil
+}
+
+// sanitizeSymlink ensures link destinations resolve to within the
+// destination directory.
+func sanitizeSymlink(target, source, cleanDir string) error {
 	if filepath.IsAbs(target) {
 		if !strings.HasPrefix(filepath.Clean(target), cleanDir) {
 			return errors.Errorf("%s: illegal link path", target)
 		}
 	} else {
 		// Relative paths are relative to filename after extraction to directory.
-		linkPath := filepath.Join(dir, filepath.Dir(f.Name), target)
+		linkPath := filepath.Join(cleanDir, filepath.Dir(source), target)
 		if !strings.HasPrefix(linkPath, cleanDir) {
 			return errors.Errorf("%s: illegal link path", target)
 		}
 	}
-
 	return nil
 }
 
