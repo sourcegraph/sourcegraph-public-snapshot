@@ -122,15 +122,15 @@ async function main(): Promise<void> {
         }
 
         if (IsProductionVersion) {
-            subscriptions.add(
-                observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-                    const eventLogger = new EventLogger(requestGraphQL, sourcegraphURL)
-                    eventLogger
+            observeSourcegraphURL(IS_EXTENSION)
+                .pipe(take(1))
+                .toPromise()
+                .then(sourcegraphURL =>
+                    new EventLogger(requestGraphQL, sourcegraphURL)
                         .log('BrowserExtensionInstalled')
                         .then(() => console.log(`Triggered "BrowserExtensionInstalled" using ${sourcegraphURL}`))
-                        .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
-                })
-            )
+                )
+                .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
         }
 
         browser.tabs.create({ url: browser.extension.getURL('after_install.html') }).catch(error => {
