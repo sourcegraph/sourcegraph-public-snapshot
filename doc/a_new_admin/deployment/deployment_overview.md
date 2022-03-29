@@ -6,24 +6,32 @@ For a list of all deployment topics, visit our [Deployment Table of Contents](in
 
 ## Resource planning
 
-Sourcegraph has provided the [Resource Estimator](a_new_admin/deploy/resource_estimator) as a starting point to determine necessary resources based on the size of your deployment. 
+Sourcegraph has provided the [Resource Estimator](resource_estimator.md) as a starting point to determine necessary resources based on the size of your deployment. 
 
-As a recommendation, if you are planning deployment scenario will include very large codebases and a large number of users, our [Kubernetes](a_new_admin/deploy/kubernetes/scale) Deployment option will be your best option.
+As a recommendation, if you are planning deployment scenario will include very large codebases and a large number of users, our [Kubernetes](../../admin/install/kubernetes/scale) Deployment option will be your best option.
 
 ## Options and scenarios
 
-Using the table below click on the deployment type that best meets your needs.
-
-Of course, if you're just starting out, you can [**try Sourcegraph Cloud**](https://sourcegraph.com) or [run Sourcegraph locally](docker/index.md).
-
 | Deployment Type                                          | Suggested for                                           | Setup time      | Resource isolation | Auto-healing | Multi-machine |
 | -------------------------------------------------------- | ------------------------------------------------------- | --------------- | :----------------: | :----------: | :-----------: |
-| [**Docker Compose**](../install/docker-compose/index.md) | **Small & medium** production deployments               | 🟢 5 minutes     |         ✅          |      ✅       |       ❌       |
+| [**Docker Compose**](../../../admin/install/docker-compose/index.md) | **Small & medium** production deployments               | 🟢 5 minutes     |         ✅          |      ✅       |       ❌       |
 | [**Kubernetes**](../install/kubernetes/index.md)         | **Medium & large** highly-available cluster deployments | 🟠 30-90 minutes |         ✅          |      ✅       |       ✅       |
 | [**Single-container**](../install/docker/index.md)       | Local testing                                           | 🟢 1 minute      |         ❌          |      ❌       |       ❌       |
 
+Each of the paths listed in the table above provide a different level of capability and should be approached based on the needs of your business as well as the technical expertise you have access to.
 
-> NOTE: The Single container option is provided for local proof-of-concepts and not intended for testing or deploye at a pre-production/production leve. If you're just starting out, and want to absolute quickest setup time, [**try Sourcegraph Cloud**](https://sourcegraph.com).
+Given this, we have a few recommendations.
+
+- **Docker Compose** - We recommend this path for initial production deployments. If your requirements change, you can always [migrate to a different deployment method](../updates/index.md#migrating-to-a-new-deployment-type) later on if needed.
+
+- **Kubernetes** - We recommend Kubernetes for large entreprises that depend or have an expecation for highly scalable deployments. It is important to note that if you're looking to deploy via the Kubernetes path, you are **expected to have a team that is familiar with operating Kubernetes clusters**, including but not limited to the use of persistent storage. If there is any doubt about your team's ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
+
+- **Managed** - We understand, managing the installation, deployment, and configuraiton of enterprise software can be complex. If this describes your situation, consider a [managed instance](./managed.md).
+
+- **Sourecegraph Cloud** - Finally, if you're just starting out, you can [**try Sourcegraph Cloud**](https://sourcegraph.com) or [run Sourcegraph locally](docker/index.md).
+
+> NOTE: The Single container option is provided for local proof-of-concepts and not intended for testing or deploye at a pre-production/production leve. If you're just starting out, and want the absolute quickest setup time, [**try Sourcegraph Cloud**](https://sourcegraph.com).
+
 
 
 ## External services
@@ -88,12 +96,4 @@ For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 
 ## Reference Repository
 
-For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. Depending on your deployment type, the reference repository contains everything you need to spin up and configure your instance. This will also assist in your upgrade process going forward. For more information, follow the install and configuration docs for your deployment type (linked below).
-
-- Docker Compose
-- Kubernets
-
-
-
-
-
+For Docker Compose and Kubernetes deployments, Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. Depending on your deployment type, the reference repository contains everything you need to spin up and configure your instance. This will also assist in your upgrade process going forward. For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](), [Docker Single Container](), or [Kubernetes]() .
