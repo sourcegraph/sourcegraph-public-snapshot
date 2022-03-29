@@ -225,14 +225,14 @@ func (f psqlFormatter) formatTable(schemaDescription SchemaDescription, table Ta
 	return docs
 }
 
-func (f psqlFormatter) formatView(schemaDescription SchemaDescription, view ViewDescription) []string {
+func (f psqlFormatter) formatView(_ SchemaDescription, view ViewDescription) []string {
 	docs := []string{}
 	docs = append(docs, fmt.Sprintf("# View \"public.%s\"\n", view.Name))
 	docs = append(docs, fmt.Sprintf("## View query:\n\n```sql\n%s\n```\n", view.Definition))
 	return docs
 }
 
-func (f psqlFormatter) formatTypes(schemaDescription SchemaDescription, types map[string][]string) []string {
+func (f psqlFormatter) formatTypes(_ SchemaDescription, types map[string][]string) []string {
 	typeNames := make([]string, 0, len(types))
 	for typeName := range types {
 		typeNames = append(typeNames, typeName)
