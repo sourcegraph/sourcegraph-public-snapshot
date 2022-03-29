@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,7 +44,6 @@ func (m *manifestDeploymentDiffer) Services() (map[string]*ServiceVersionDiff, e
 func (m *manifestDeploymentDiffer) parseManifests() error {
 	services := map[string]*ServiceVersionDiff{}
 	for _, path := range m.changedFiles {
-		fmt.Println(path)
 		info, err := os.Stat(path)
 		if err != nil {
 			return err

@@ -61,6 +61,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if len(changedFiles) == 0 {
+		fmt.Println(":warning: No relevant changes, skipping notifications and exiting normally.")
+		return
+	}
 
 	manifestRevision, err := getRevision()
 	if err != nil {
@@ -129,6 +133,11 @@ func getChangedFiles() ([]string, error) {
 	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		return nil, err
 	} else {
+		strOutput := string(output)
+		strOutput = strings.TrimSpace(strOutput)
+		if strOutput == "" {
+			return nil, nil
+		}
 		return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
 	}
 }
