@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fixes telemetry for initial "browser extension installed" event [#pull/33175](https://github.com/sourcegraph/sourcegraph/pull/33175), [#issues/33143](https://github.com/sourcegraph/sourcegraph/issues/33143)
+
 ## Chrome & Firefox v22.3.11.1145, Safari v1.12
 
 - Fix client-side routing support on GitHub repository browse file tree pages: [#pull/32199](https://github.com/sourcegraph/sourcegraph/pull/32199), [#issues/31716](https://github.com/sourcegraph/sourcegraph/issues/31716)
