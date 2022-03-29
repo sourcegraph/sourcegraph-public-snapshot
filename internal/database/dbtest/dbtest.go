@@ -112,7 +112,7 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 
 	// Some tests that exercise concurrency need lots of connections or they block forever.
 	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
-	testDB.SetMaxOpenConns(10)
+	testDB.SetMaxOpenConns(20)
 
 	t.Cleanup(func() {
 		defer db.Close()

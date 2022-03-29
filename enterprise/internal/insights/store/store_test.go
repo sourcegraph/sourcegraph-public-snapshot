@@ -17,7 +17,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -29,8 +28,7 @@ func TestSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
@@ -139,8 +137,7 @@ func TestCountData(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -237,8 +234,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -341,8 +337,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -407,8 +402,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -473,8 +467,7 @@ func TestDeleteSnapshots(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
@@ -555,8 +548,7 @@ func TestDelete(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsdb, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsdb := dbtest.NewInsightsDB(t)
 
 	repoName := "reallygreatrepo"
 	repoId := api.RepoID(5)

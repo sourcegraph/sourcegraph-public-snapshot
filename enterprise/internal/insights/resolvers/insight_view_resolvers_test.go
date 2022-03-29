@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -84,8 +83,7 @@ func TestFrozenInsightDataSeriesResolver(t *testing.T) {
 		}
 	})
 	t.Run("insight_is_not_frozen_returns_real_resolvers", func(t *testing.T) {
-		insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-		defer cleanup()
+		insightsDB := dbtest.NewInsightsDB(t)
 		base := baseInsightResolver{
 			insightStore:   store.NewInsightStore(insightsDB),
 			dashboardStore: store.NewDashboardStore(insightsDB),

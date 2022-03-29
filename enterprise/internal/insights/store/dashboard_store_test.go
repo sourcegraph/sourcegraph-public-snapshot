@@ -8,13 +8,12 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetDashboard(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
 	_, err := insightsDB.Exec(`
@@ -94,8 +93,7 @@ func TestGetDashboard(t *testing.T) {
 }
 
 func TestCreateDashboard(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 	store := NewDashboardStore(insightsDB)
@@ -143,8 +141,7 @@ func TestCreateDashboard(t *testing.T) {
 }
 
 func TestUpdateDashboard(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 	store := NewDashboardStore(insightsDB)
@@ -215,8 +212,7 @@ func TestUpdateDashboard(t *testing.T) {
 }
 
 func TestDeleteDashboard(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -275,8 +271,7 @@ func TestDeleteDashboard(t *testing.T) {
 }
 
 func TestAddViewsToDashboard(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -338,8 +333,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 }
 
 func TestRemoveViewsFromDashboard(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 
@@ -430,8 +424,7 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 }
 
 func TestHasDashboardPermission(t *testing.T) {
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	ctx := context.Background()
 	store := NewDashboardStore(insightsDB)

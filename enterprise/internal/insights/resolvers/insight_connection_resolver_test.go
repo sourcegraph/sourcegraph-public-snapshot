@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -32,8 +31,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 
 	testSetup := func(t *testing.T) (context.Context, graphqlbackend.InsightConnectionResolver) {
 		// Setup the GraphQL resolver.
@@ -123,8 +121,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	insightsDB, cleanup := insightsdbtesting.CodeInsightsDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	postgres := dbtest.NewDB(t)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
