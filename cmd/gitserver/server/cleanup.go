@@ -18,7 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -839,6 +838,11 @@ func pruneIfNeeded(dir GitDir) (err error) {
 		return nil
 	}
 
+	// "--expire now" will remove all unreachable, loose objects from the store. The
+	// default setting is 2 weeks. We choose a more aggressive setting because
+	// unreachable, loose objects count towards the threshold that triggers a
+	// repack. In the worst case, IE all loose objects are unreachable, we would
+	// continuously trigger repacks until the loose objects expire.
 	cmd := exec.Command("git", "-c", "prune", "--expire", "now")
 	dir.Set(cmd)
 	err = cmd.Run()
@@ -887,7 +891,7 @@ func needsMaintenance(dir GitDir) (bool, string, error) {
 	return false, "skipped", nil
 }
 
-var reHexadecimal = regexp.MustCompile("^[0-9a-f]+$")
+var reHexadecimal = lazyregexp.New("^[0-9a-f]+$")
 
 // tooManyLooseObjects follows Git's approach of estimating the number of
 // loose objects by counting the objects in a sentinel folder and extrapolating
