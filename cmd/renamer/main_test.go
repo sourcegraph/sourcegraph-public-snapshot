@@ -217,16 +217,17 @@ func Test_writeReplacement(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			getwd, err := os.Getwd()
+			wd, err := os.Getwd()
 			if err != nil {
-				t.Error("couldn't create tmp dir here boo")
-			}
-			dir, err := ioutil.TempDir(getwd, "testing*")
-			if err != nil {
-				t.Error("couldn't create tmp dir here boo")
+				t.Fatal("couldn't get working dir")
 			}
 
-			err = os.WriteFile(dir+"/sample_file.go", []byte(twoTypesOneLine), 0x777f)
+			dir, err := ioutil.TempDir(wd, "testing*")
+			if err != nil {
+				t.Fatal("couldn't create tmp dir here boo")
+			}
+
+			err = ioutil.WriteFile(dir+"/sample_file.go", []byte(twoTypesOneLine), 0777)
 			if err != nil {
 				t.Fatalf("couldn't create the sample file in tmp dir: %s", err)
 			}
@@ -235,11 +236,18 @@ func Test_writeReplacement(t *testing.T) {
 				t.Errorf("writeReplacement() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			//for _, _ := range tt.expectedContent {
-			var read []byte
-			read, err = ioutil.ReadFile(dir + "/sample_file.go")
-			println(string(read))
-			//}
+			for fileName, expected := range tt.expectedContent {
+				var read []byte
+				read, err = ioutil.ReadFile(dir + "/" + fileName)
+				if err != nil {
+					t.Fatalf("couldn't read the output file: %s", err)
+				}
+
+				created := string(read)
+				if created != expected {
+					t.Errorf("created output file %s does not match the expected one %s", created, expected)
+				}
+			}
 		})
 	}
 }

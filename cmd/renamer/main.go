@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -199,18 +200,20 @@ func writeReplacement(ranges map[string][]codeRange, repoPath, replacement strin
 		if !strings.HasPrefix(p, repoPath) {
 			return errors.New("cannot change file outside of cwd")
 		}
+
 		var buf []byte
 		buf, err = os.ReadFile(p)
 		if err != nil {
 			return err
 		}
+
 		content := string(buf)
 		newCode, err := applyReplacement(content, crs, replacement)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("I would write a replacement for %s\n", p)
-		if err := os.WriteFile(p, []byte(newCode), 0); err != nil {
+
+		if err := ioutil.WriteFile(p, []byte(newCode), 0777); err != nil {
 			return err
 		}
 	}
