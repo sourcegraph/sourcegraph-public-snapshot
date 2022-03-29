@@ -144,12 +144,12 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 
 // RepoPermissions declares which users have access to a given repository
 type RepoPermissions struct {
-	RepoID         int32           // The internal database ID of a repository
-	Perm           Perms           // The permission set
-	UserIDs        *roaring.Bitmap // The user IDs
-	PendingUserIDs map[int64]bool  // The pending user IDs
-	UpdatedAt      time.Time       // The last updated time
-	SyncedAt       time.Time       // The last repo-centric synced time
+	RepoID         int32              // The internal database ID of a repository
+	Perm           Perms              // The permission set
+	UserIDs        *roaring.Bitmap    // The user IDs
+	PendingUserIDs map[int64]struct{} // The pending user IDs
+	UpdatedAt      time.Time          // The last updated time
+	SyncedAt       time.Time          // The last repo-centric synced time
 }
 
 // Expired returns true if these RepoPermissions have elapsed the given ttl.

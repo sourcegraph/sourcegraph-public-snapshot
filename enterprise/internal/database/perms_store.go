@@ -651,7 +651,6 @@ AND bind_id = %s
 }
 
 func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) (err error) {
-
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), accounts.TracingFields()...)...) }()
 
@@ -668,8 +667,8 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	var q *sqlf.Query
 
+	p.PendingUserIDs = map[int64]struct{}{}
 	p.UserIDs = roaring.NewBitmap()
-	p.PendingUserIDs = map[int64]bool{}
 
 	// Insert rows for AccountIDs without one in the "user_pending_permissions"
 	// table. The insert does not store any permission data but uses auto-increment
@@ -701,7 +700,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		for _, bindID := range accounts.AccountIDs {
 			id, ok := bindIDsToIDs[bindID]
 			if ok {
-				p.PendingUserIDs[id] = true
+				p.PendingUserIDs[id] = struct{}{}
 			} else {
 				missingAccounts.AccountIDs = append(missingAccounts.AccountIDs, bindID)
 			}
@@ -725,8 +724,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 			// Make up p.PendingUserIDs from the result set.
 			for _, id := range ids {
-				p.PendingUserIDs[id] = true
-
+				p.PendingUserIDs[id] = struct{}{}
 			}
 		}
 
@@ -738,24 +736,24 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "load repo pending permissions")
 	}
 
-	oldIDs := make(map[int64]bool)
+	oldIDs := make(map[int64]struct{})
 	if vals != nil && vals.ids != nil {
 		for _, id := range vals.ids {
-			oldIDs[id] = true
+			oldIDs[id] = struct{}{}
 		}
 	}
 
 	// Compute differences between the old and new sets.
 	var added []int64
 	for key := range p.PendingUserIDs {
-		if !oldIDs[key] {
+		if _, ok := oldIDs[key]; !ok {
 			added = append(added, key)
 		}
 	}
 
 	var removed []int64
 	for key := range oldIDs {
-		if !p.PendingUserIDs[key] {
+		if _, ok := p.PendingUserIDs[key]; !ok {
 			removed = append(removed, key)
 		}
 	}
