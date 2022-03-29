@@ -237,7 +237,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	}
 
 	if info.EnforcePasswordLength {
-		if err := CheckPassword(info.Password); err != nil {
+		if err := security.ValidatePassword(info.Password); err != nil {
 			return nil, err
 		}
 	}
