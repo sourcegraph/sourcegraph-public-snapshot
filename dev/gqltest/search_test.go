@@ -1407,9 +1407,9 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				const query = `(r:deps(^npm/urql$@v2.2.0) r:core|wonka) OR r:deps(oklog/ulid)`
 
 				want := []string{
+					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 					"/npm/urql/core@v1.9.2",
 					"/npm/wonka@v4.0.7",
-					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 				}
 
 				for {
