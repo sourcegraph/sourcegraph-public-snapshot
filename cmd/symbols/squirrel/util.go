@@ -228,7 +228,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		return nil, err
 	}
 
-	tree, err := s.parser.ParseCtx(context.Background(), nil, contents)
+	tree, err := s.parser.ParseCtx(ctx, nil, contents)
 	if err != nil {
 		return nil, errors.Newf("failed to parse file contents: %s", err)
 	}
