@@ -397,6 +397,7 @@ function validatePassword(password: string): string | undefined {
             window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0
         ) {
             const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
+            // This must be kept in sync with the security.go checks
             const count = (password.match(specialCharacters) || []).length
             if (
                 window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters &&
