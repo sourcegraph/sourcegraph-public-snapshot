@@ -13,6 +13,9 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fix style errors in browser console: [pull/32604](https://github.com/sourcegraph/sourcegraph/pull/32604), [issues/32443](https://github.com/sourcegraph/sourcegraph/issues/32443)
+- Add first Sourcegraph URL to logs: [pull/32719](https://github.com/sourcegraph/sourcegraph/pull/32719), [issues/32249](https://github.com/sourcegraph/sourcegraph/issues/32249)
+- Fix styles conflict on GitLab: [pull/32548](https://github.com/sourcegraph/sourcegraph/pull/32548), [issues/32462](https://github.com/sourcegraph/sourcegraph/issues/32462)
 - Fixes telemetry for initial "browser extension installed" event [#pull/33175](https://github.com/sourcegraph/sourcegraph/pull/33175), [#issues/33143](https://github.com/sourcegraph/sourcegraph/issues/33143)
 
 ## Chrome & Firefox v22.3.11.1145, Safari v1.12
