@@ -1388,7 +1388,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 			t.Fatal(err)
 		}
 
-		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid")
+		err = client.WaitForReposToBeCloned("npm/urql", "go/github.com/oklog/ulid/v2")
 		if err != nil {
 			t.Fatal(err)
 		}
