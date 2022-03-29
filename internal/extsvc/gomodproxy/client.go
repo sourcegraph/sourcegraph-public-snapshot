@@ -49,15 +49,16 @@ func NewClient(config *schema.GoModulesConnection, cli httpcli.Doer) *Client {
 func (c *Client) GetVersion(ctx context.Context, mod, version string) (*module.Version, error) {
 	var paths []string
 	if version != "" {
-		if escapedVersion, err := module.EscapeVersion(version); err != nil {
+		escapedVersion, err := module.EscapeVersion(version)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to escape version")
 		}
-		paths = []string{"@v", escapedVersion+".info"}
+		paths = []string{"@v", escapedVersion + ".info"}
 	} else {
-	    paths = []string{"@latest"}
+		paths = []string{"@latest"}
 	}
-	respBody, err := c.get(ctx, mod, paths...)
 
+	respBody, err := c.get(ctx, mod, paths...)
 	if err != nil {
 		return nil, err
 	}
