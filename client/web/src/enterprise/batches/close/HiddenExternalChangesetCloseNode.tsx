@@ -6,6 +6,7 @@ import {
 } from '../detail/changesets/HiddenExternalChangesetInfoCell'
 
 import { ChangesetCloseActionKept } from './ChangesetCloseAction'
+
 import styles from './HiddenExternalChangesetCloseNode.module.scss'
 
 export interface HiddenExternalChangesetCloseNodeProps {

@@ -1,45 +1,39 @@
+import React, { useContext } from 'react'
+
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import React from 'react'
 
-import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
-
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
+    CustomInsightDashboard,
     InsightDashboard,
-    InsightDashboardOwner,
+    isCustomDashboard,
     isGlobalDashboard,
     isOrganizationDashboard,
     isPersonalDashboard,
-    isRealDashboard,
     isVirtualDashboard,
-    RealInsightDashboard,
 } from '../../../../../core/types'
 
-import { MenuButton } from './components/menu-button/MenuButton'
-import { SelectDashboardOption, SelectOption } from './components/select-option/SelectOption'
-import styles from './DashboardSelect.module.scss'
+import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
-const LABEL_ID = 'insights-dashboards--select'
+import styles from './DashboardSelect.module.scss'
 
 export interface DashboardSelectProps {
     value: string | undefined
     dashboards: InsightDashboard[]
-
-    onSelect: (dashboard: InsightDashboard) => void
     className?: string
-    user?: AuthenticatedUser | null
+    onSelect: (dashboard: InsightDashboard) => void
 }
 
 /**
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
-    const { value, dashboards, onSelect, className, user } = props
-
-    if (!user) {
-        return null
-    }
+    const { value, dashboards, onSelect, className } = props
+    const {
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
@@ -49,14 +43,18 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         }
     }
 
-    const realDashboards = dashboards.filter(isRealDashboard)
-    const organizationGroups = getDashboardOrganizationsGroups(realDashboards, user.organizations.nodes)
+    const customDashboards = dashboards.filter(isCustomDashboard)
+    const organizationGroups = getDashboardOrganizationsGroups(customDashboards)
 
     return (
         <div className={className}>
-            <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
+            <VisuallyHidden id="insights-dashboards--select">Choose a dashboard</VisuallyHidden>
 
-            <ListboxInput aria-labelledby={LABEL_ID} value={value ?? 'unknown'} onChange={handleChange}>
+            <ListboxInput
+                aria-labelledby="insights-dashboards--select"
+                value={value ?? 'unknown'}
+                onChange={handleChange}
+            >
                 <MenuButton dashboards={dashboards} />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
@@ -70,13 +68,13 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             />
                         ))}
 
-                        {realDashboards.some(isPersonalDashboard) && (
+                        {customDashboards.some(isPersonalDashboard) && (
                             <ListboxGroup>
                                 <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     Private
                                 </ListboxGroupLabel>
 
-                                {realDashboards.filter(isPersonalDashboard).map(dashboard => (
+                                {customDashboards.filter(isPersonalDashboard).map(dashboard => (
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
@@ -86,13 +84,13 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             </ListboxGroup>
                         )}
 
-                        {realDashboards.some(isGlobalDashboard) && (
+                        {customDashboards.some(isGlobalDashboard) && (
                             <ListboxGroup>
                                 <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     Global
                                 </ListboxGroupLabel>
 
-                                {realDashboards.filter(isGlobalDashboard).map(dashboard => (
+                                {customDashboards.filter(isGlobalDashboard).map(dashboard => (
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
@@ -117,6 +115,17 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 ))}
                             </ListboxGroup>
                         ))}
+
+                        {!licensed && (
+                            <ListboxGroup>
+                                <hr />
+
+                                <div className={classNames(styles.limitedAccess)}>
+                                    <h3>Limited access</h3>
+                                    <p>Unlock for unlimited custom dashboards.</p>
+                                </div>
+                            </ListboxGroup>
+                        )}
                     </ListboxList>
                 </ListboxPopover>
             </ListboxInput>
@@ -127,63 +136,27 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 interface DashboardOrganizationGroup {
     id: string
     name: string
-    dashboards: RealInsightDashboard[]
+    dashboards: CustomInsightDashboard[]
 }
 
 /**
  * Returns organization dashboards grouped by dashboard owner id
  */
-const getDashboardOrganizationsGroups = (
-    dashboards: RealInsightDashboard[],
-    organizations: AuthenticatedUser['organizations']['nodes']
-): DashboardOrganizationGroup[] => {
-    // We need a map of the organization names when using the new GraphQL API
-    const organizationsMap = organizations.reduce<Record<string, InsightDashboardOwner>>(
-        (map, organization) => ({
-            ...map,
-            [organization.id]: {
-                id: organization.id,
-                name: organization.displayName ?? organization.name,
-            },
-        }),
-        {}
-    )
-
+const getDashboardOrganizationsGroups = (dashboards: CustomInsightDashboard[]): DashboardOrganizationGroup[] => {
     const groupsDictionary = dashboards
-        .map(dashboard => {
-            const owner =
-                ('owner' in dashboard && dashboard.owner) ||
-                ('grants' in dashboard &&
-                    dashboard.grants?.organizations &&
-                    organizationsMap[dashboard.grants?.organizations[0]])
-            // Grabbing the first organization to minimize changes with existing api
-            // TODO: handle multiple organizations when settings API is deprecated
-
-            if (!owner) {
-                return dashboard
-            }
-
-            return {
-                ...dashboard,
-                owner,
-            }
-        })
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
-            if (!dashboard.owner) {
-                // TODO: remove this check after settings api is deprecated
-                throw new Error('`owner` is missing from the dashboard')
-            }
-
-            if (!store[dashboard.owner.id]) {
-                store[dashboard.owner.id] = {
-                    id: dashboard.owner.id,
-                    name: dashboard.owner.name,
-                    dashboards: [],
+            for (const owner of dashboard.owners) {
+                if (!store[owner.id]) {
+                    store[owner.id] = {
+                        id: owner.id,
+                        name: owner.title,
+                        dashboards: [],
+                    }
                 }
-            }
 
-            store[dashboard.owner.id].dashboards.push(dashboard)
+                store[owner.id].dashboards.push(dashboard)
+            }
 
             return store
         }, {})

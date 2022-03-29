@@ -10,38 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
-
-func TestHumanReadableBranchName(t *testing.T) {
-	for _, tc := range []struct {
-		text string
-		want string
-	}{{
-		// Respect word boundaries when cutting length
-		text: "Change coördination mechanisms of fungible automation processes in place",
-		want: "change-coordination-mechanisms-of-fungible-automation",
-	}, {
-		// Length smaller than maximum
-		text: "Change coördination mechanisms",
-		want: "change-coordination-mechanisms",
-	}, {
-		// Respecting word boundary would result in cutting too much,
-		// so we don't.
-		text: "Change alongwordmadeofmanylettersandnumbersandsymbolsandwhatnotisthisalreadymorethansixtyrunes",
-		want: "change-alongwordmadeofmanylettersandnumbersandsymbolsandwhat",
-	}} {
-		if have := HumanReadableBranchName(tc.text); have != tc.want {
-			t.Fatalf("HumanReadableBranchName(%q):\nhave %q\nwant %q", tc.text, have, tc.want)
-		}
-	}
-}
 
 func testBranches(t *testing.T, gitCommands []string, wantBranches []*Branch, options BranchesOptions) {
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := ListBranches(context.Background(), repo, options)
+	gotBranches, err := ListBranches(context.Background(), database.NewMockDB(), repo, options)
 	require.Nil(t, err)
 
 	sort.Sort(Branches(wantBranches))
@@ -98,7 +75,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	wantBranches := gitBranches
 	for branch, mergedInto := range wantBranches {
-		branches, err := ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
+		branches, err := ListBranches(context.Background(), database.NewMockDB(), repo, BranchesOptions{MergedInto: branch})
 		require.Nil(t, err)
 		if diff := cmp.Diff(mergedInto, branches); diff != "" {
 			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
@@ -126,7 +103,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	commitToWantBranches := gitWantBranches
 	for commit, wantBranches := range commitToWantBranches {
-		branches, err := ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
+		branches, err := ListBranches(context.Background(), database.NewMockDB(), repo, BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
 		sort.Sort(Branches(branches))
@@ -216,7 +193,7 @@ func TestRepository_ListTags(t *testing.T) {
 		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
-	tags, err := ListTags(context.Background(), repo)
+	tags, err := ListTags(context.Background(), database.NewMockDB(), repo)
 	require.Nil(t, err)
 
 	sort.Sort(Tags(tags))

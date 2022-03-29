@@ -1,6 +1,7 @@
+import { MouseEvent, MouseEventHandler, PointerEventHandler } from 'react'
+
 import { localPoint } from '@visx/event'
 import { Point } from '@visx/point'
-import { MouseEvent, MouseEventHandler, PointerEventHandler } from 'react'
 
 interface UseChartEventHandlersProps {
     onPointerMove: (point: Point) => void

@@ -207,7 +207,7 @@
           }
         },
         "treeSitterEnabled": {
-          "description": "Enables tree sitter for enabled filetypes",
+          "description": "DEPRECATED: Enables tree sitter for enabled filetypes.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -267,6 +267,15 @@
           "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "editor": {
+          "description": "Specifies which (code) editor to use for query and text input",
+          "type": "string",
+          "default": "monaco",
+          "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
           }

@@ -134,6 +134,25 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             </a>
           </div>
         </div>
+        <div
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+        >
+          <img
+            alt=""
+            class="mr-4 icon"
+            src="https://raw.githubusercontent.com/sourcegraph-community/julia-context/main/julia.svg"
+          />
+          <div
+            class="d-flex flex-column"
+          >
+            <a
+              class="anchorLink mb-1"
+              href="/julia"
+            >
+              Julia
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </div>

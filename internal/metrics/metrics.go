@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -33,6 +34,29 @@ type RequestMeter struct {
 	subsystem string
 }
 
+const (
+	labelCategory = "category"
+	labelCode     = "code"
+	labelHost     = "host"
+	labelTask     = "task"
+)
+
+var taskKey struct{}
+
+// ContextWithTask adds the "job" value to the context
+func ContextWithTask(ctx context.Context, task string) context.Context {
+	return context.WithValue(ctx, taskKey, task)
+}
+
+// TaskFromContext will return the job, if any, stored in the context. If none is
+// found the default string "unknown" is returned
+func TaskFromContext(ctx context.Context) string {
+	if task, ok := ctx.Value(taskKey).(string); ok {
+		return task
+	}
+	return "unknown"
+}
+
 // NewRequestMeter creates a new request meter.
 func NewRequestMeter(subsystem, help string) *RequestMeter {
 	requestCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -40,7 +64,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Subsystem: subsystem,
 		Name:      "requests_total",
 		Help:      help,
-	}, []string{"category", "code", "host"})
+	}, []string{labelCategory, labelCode, labelHost, labelTask})
 	registerer.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
@@ -74,8 +98,9 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// Doer returns an httpcli.Doer that updates rm for each request. The categoryFunc is called to
-// determine the category label for each request.
+// Doer returns a Doer which implements httpcli.Doer that updates rm for each
+// request. The categoryFunc is called to determine the category label for each
+// request.
 func (rm *RequestMeter) Doer(cli Doer, categoryFunc func(*url.URL) string) Doer {
 	return &requestCounterMiddleware{
 		meter:        rm,
@@ -109,7 +134,13 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 	}
 
 	d := time.Since(start)
-	t.meter.counter.WithLabelValues(category, code, r.URL.Host).Inc()
+	t.meter.counter.With(map[string]string{
+		labelCategory: category,
+		labelCode:     code,
+		labelHost:     r.URL.Host,
+		labelTask:     TaskFromContext(r.Context()),
+	}).Inc()
+
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
 	log15.Debug("TRACE "+t.meter.subsystem, "host", r.URL.Host, "path", r.URL.Path, "code", code, "duration", d)
 	return

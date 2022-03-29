@@ -499,6 +499,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
 				externalServices,
+				database.NewMockDB(),
 			)
 			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
 			if test.expAuthzProviders != nil {

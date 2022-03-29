@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import { escapeRegExp, isEqual } from 'lodash'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -23,6 +24,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+
 import styles from './RepositoryStatsContributorsPage.module.scss'
 
 interface QuerySpec {
@@ -60,7 +62,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     return (
         <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
             <div className={styles.person}>
-                <UserAvatar className="icon-inline mr-2" user={node.person} />
+                <UserAvatar inline={true} className="mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
             <div className={styles.commits}>

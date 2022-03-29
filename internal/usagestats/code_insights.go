@@ -439,6 +439,7 @@ GROUP BY argument;
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
+const InsightsTotalCountCriticalPingName = `INSIGHT_TOTAL_COUNT_CRITICAL`
 const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
 const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`
 const InsightsTotalOrgsWithDashboardPingName = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`

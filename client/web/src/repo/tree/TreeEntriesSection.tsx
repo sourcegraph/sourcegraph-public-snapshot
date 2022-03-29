@@ -1,13 +1,14 @@
+import React from 'react'
+
 import classNames from 'classnames'
 import { identity } from 'lodash'
 import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
 import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
-import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { FileDecorator } from '../../tree/FileDecorator'
 
@@ -46,8 +47,7 @@ const TreeEntry: React.FunctionComponent<{
             )}
         >
             <span>
-                {isDirectory && <FolderOutlineIcon className="icon-inline mr-1" />}
-                {!isDirectory && <FileDocumentOutlineIcon className="icon-inline mr-1" />}
+                <Icon className="mr-1" as={isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon} />
                 {name}
                 {isDirectory && '/'}
             </span>

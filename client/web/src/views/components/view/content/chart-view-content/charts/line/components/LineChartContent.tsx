@@ -1,3 +1,5 @@
+import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
+
 import { curveLinear } from '@visx/curve'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
@@ -16,7 +18,6 @@ import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
 import classNames from 'classnames'
-import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
 import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType, LineChartSeries } from 'sourcegraph'
 
@@ -30,10 +31,11 @@ import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-sca
 import { onDatumZoneClick, Point } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
-import styles from './LineChartContent.module.scss'
 import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './tooltip-content/TooltipContent'
+
+import styles from './LineChartContent.module.scss'
 
 // Chart configuration
 const WIDTH_PER_TICK = 70

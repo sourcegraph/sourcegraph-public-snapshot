@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
-import * as React from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchPatternTypeProps } from '@sourcegraph/search'

@@ -77,6 +77,7 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 					ctx,
 					conf.Get(),
 					ossDB.ExternalServices(db),
+					db,
 				)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}

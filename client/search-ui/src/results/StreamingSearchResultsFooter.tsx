@@ -1,11 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
+
 import styles from './StreamingSearchResultsList.module.scss'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<{

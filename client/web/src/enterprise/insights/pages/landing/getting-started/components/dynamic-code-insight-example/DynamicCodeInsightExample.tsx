@@ -1,6 +1,7 @@
+import React, { useContext, useMemo, useEffect } from 'react'
+
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useContext, useMemo, useEffect } from 'react'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -50,7 +51,10 @@ interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttri
 export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
     const { telemetryService, ...otherProps } = props
 
-    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
+    const {
+        getFirstExampleRepository,
+        UIFeatures: { licensed },
+    } = useContext(CodeInsightsBackendContext)
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -181,9 +185,30 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                     <li>Track code smells, ownership, and configurations</li>
                 </ul>
 
-                <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                    <Icon as={PlusIcon} /> Create your first insight
-                </Button>
+                <footer className={styles.footer}>
+                    {licensed ? (
+                        <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
+                            <Icon as={PlusIcon} /> Create your first insight
+                        </Button>
+                    ) : (
+                        <Button
+                            as={Link}
+                            variant="primary"
+                            to="http://about.sourcegraph.com/contact/request-code-insights-demo"
+                            target="_blank"
+                            rel="noopener"
+                            onClick={handleGetStartedClick}
+                        >
+                            Schedule a demo
+                        </Button>
+                    )}
+
+                    {!licensed && (
+                        <Button as={Link} variant="secondary" to="/insights/about#code-insights-templates">
+                            Explore use cases
+                        </Button>
+                    )}
+                </footer>
 
                 <CalloutArrow className={styles.calloutBlockHorizontal} />
             </section>

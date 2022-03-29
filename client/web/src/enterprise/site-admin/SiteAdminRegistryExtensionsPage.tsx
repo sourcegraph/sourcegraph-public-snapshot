@@ -1,6 +1,7 @@
+import * as React from 'react'
+
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'

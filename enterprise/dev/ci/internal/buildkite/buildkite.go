@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 
@@ -19,19 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type featureFlags struct {
-	// StatelessBuild triggers a stateless build by overriding the default queue to send the build on the stateles
-	// agents and forces a MainDryRun type build to avoid impacting normal builds.
-	//
-	// It is meant to test the stateless builds without any side effects.
-	StatelessBuild bool
-}
-
-// FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
-var FeatureFlags = featureFlags{
-	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true",
-}
 
 type Pipeline struct {
 	Env    map[string]string `json:"env,omitempty"`

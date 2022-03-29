@@ -1,5 +1,6 @@
-import type { MdiReactIconProps } from 'mdi-react'
 import * as React from 'react'
+
+import type { MdiReactIconProps } from 'mdi-react'
 
 export const PerforceIcon: React.FunctionComponent<MdiReactIconProps> = ({
     color = 'currentColor',

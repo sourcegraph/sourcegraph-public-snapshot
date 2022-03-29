@@ -1,7 +1,8 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import { getYear, parseISO } from 'date-fns'
 import * as H from 'history'
-import React, { useCallback, useMemo, useState } from 'react'
 import {
     Area,
     ComposedChart,
@@ -19,6 +20,7 @@ import { Container, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
+
 import styles from './BatchChangeBurndownChart.module.scss'
 
 interface Props {

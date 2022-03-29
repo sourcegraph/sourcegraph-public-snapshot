@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 )
 
@@ -17,4 +18,5 @@ type Store interface {
 	Down(ctx context.Context, migration definition.Definition) error
 	WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
 	IndexStatus(ctx context.Context, tableName, indexName string) (storetypes.IndexStatus, bool, error)
+	Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error)
 }

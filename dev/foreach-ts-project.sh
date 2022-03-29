@@ -27,6 +27,7 @@ DIRS=(
   client/eslint-plugin-sourcegraph
   client/extension-api-types
   client/storybook
+  client/client-api
   dev/release
   dev/ts-morph
 )

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { act, cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { noop } from 'lodash'
-import React from 'react'
 import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'

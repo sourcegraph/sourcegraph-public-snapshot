@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { ButtonLink, ButtonLinkProps, Button, ForwardReferenceComponent, MenuButton } from '@sourcegraph/wildcard'
 

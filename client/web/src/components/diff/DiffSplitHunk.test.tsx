@@ -1,11 +1,13 @@
+import React from 'react'
+
 import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import React from 'react'
 import { Router } from 'react-router'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
 import { DiffHunkProps, DiffSplitHunk } from './DiffSplitHunk'
+
 import lineStyles from './Lines.module.scss'
 
 describe('DiffSplitHunk', () => {

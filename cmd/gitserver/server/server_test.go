@@ -27,8 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -747,7 +748,108 @@ func TestHandleRepoUpdate(t *testing.T) {
 	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
+}
 
+func TestHandleRepoUpdateFromShard(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	reposDirSource := t.TempDir()
+	remote := filepath.Join(reposDirSource, "example.com/foo/bar")
+	os.MkdirAll(remote, 0755)
+	repoName := api.RepoName("example.com/foo/bar")
+	db := database.NewDB(dbtest.NewDB(t))
+
+	dbRepo := &types.Repo{
+		Name:        repoName,
+		Description: "Test",
+	}
+	// Insert the repo into our database
+	if err := database.Repos(db).Create(ctx, dbRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := remote
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		return runCmd(t, repo, name, arg...)
+	}
+	_ = makeSingleCommitRepo(cmd)
+	// Add a bad tag
+	cmd("git", "tag", "HEAD")
+
+	// source server
+	srv := httptest.NewServer(makeTestServer(ctx, reposDirSource, remote, db).Handler())
+	defer srv.Close()
+
+	// dest server
+	reposDirDest := t.TempDir()
+	s := makeTestServer(ctx, reposDirDest, "", db)
+	// We need some of the side effects here
+	_ = s.Handler()
+
+	// we send a request to the dest server, asking it to clone the repo from the source server
+	updateReq := protocol.RepoUpdateRequest{
+		Repo:           repoName,
+		CloneFromShard: srv.URL,
+	}
+	body, err := json.Marshal(updateReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	runAndCheck := func(t *testing.T, req *http.Request) *protocol.RepoUpdateResponse {
+		t.Helper()
+		rr := httptest.NewRecorder()
+		s.handleRepoUpdate(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("unexpected status code: %d", rr.Code)
+		}
+
+		var resp protocol.RepoUpdateResponse
+		if err = json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+			t.Fatal(err)
+		}
+
+		return &resp
+	}
+
+	// This will perform an initial clone
+	resp := runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	if resp.Error != "" {
+		t.Fatalf("unexpected error: %s", resp.Error)
+	}
+
+	size := dirSize(s.dir(repoName).Path("."))
+	want := &types.GitserverRepo{
+		RepoID:        dbRepo.ID,
+		ShardID:       "",
+		CloneStatus:   types.CloneStatusCloned,
+		RepoSizeBytes: size,
+	}
+	fromDB, err := database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt")
+
+	// We don't expect an error
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// let's run the same request again.
+	// If the repo is already cloned, handleRepoUpdate will trigger an update instead of a clone.
+	// Because this test doesn't mock that code path, the method will return an error.
+	resp = runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	// we ignore the error, since this should trigger a fetch and fail because the URI is fake
+
+	// the repo should still be cloned though
+	if !resp.Cloned {
+		t.Fatal("expected cloned to be true")
+	}
 }
 
 func TestRemoveBadRefs(t *testing.T) {
@@ -1018,7 +1120,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = s.syncRepoState([]string{hostname}, 10, 10, true)
+	err = s.syncRepoState(gitserver.GitServerAddresses{Addresses: []string{hostname}}, 10, 10, true)
 	if err != nil {
 		t.Fatal(err)
 	}

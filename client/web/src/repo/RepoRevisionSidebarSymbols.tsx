@@ -1,8 +1,9 @@
+import * as React from 'react'
+import { useState } from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
-import * as React from 'react'
-import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -43,7 +44,7 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleCl
                 activeClassName={styles.linkActive}
                 onClick={onHandleClick}
             >
-                <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
+                <SymbolIcon kind={node.kind} className="mr-1 test-symbol-icon" />
                 <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
                 {node.containerName && (
                     <span className={styles.containerName}>

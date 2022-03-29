@@ -134,6 +134,7 @@ Clarification and discussion about key concepts, architecture, and development s
 
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
+- [GoLand](background-information/goland.md)
 
 ### Other
 

@@ -13,16 +13,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
-
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -30,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -256,7 +255,7 @@ func TestServer_RepoLookup(t *testing.T) {
 	}
 
 	npmSource := types.ExternalService{
-		Kind:   extsvc.KindNPMPackages,
+		Kind:   extsvc.KindNpmPackages,
 		Config: `{}`,
 	}
 
@@ -355,8 +354,8 @@ func TestServer_RepoLookup(t *testing.T) {
 		URI:  "npm/package",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "npm/package",
-			ServiceType: extsvc.TypeNPMPackages,
-			ServiceID:   extsvc.TypeNPMPackages,
+			ServiceType: extsvc.TypeNpmPackages,
+			ServiceID:   extsvc.TypeNpmPackages,
 		},
 		Sources: map[string]*types.SourceInfo{
 			npmSource.URN(): {
@@ -364,8 +363,8 @@ func TestServer_RepoLookup(t *testing.T) {
 				CloneURL: "npm/package",
 			},
 		},
-		Metadata: &npmpackages.Metadata{Package: func() *reposource.NPMPackage {
-			p, _ := reposource.NewNPMPackage("", "package")
+		Metadata: &npmpackages.Metadata{Package: func() *reposource.NpmPackage {
+			p, _ := reposource.NewNpmPackage("", "package")
 			return p
 		}()},
 	}
@@ -622,7 +621,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
 			}
 
-			scheduler := repos.NewUpdateScheduler()
+			scheduler := repos.NewUpdateScheduler(database.NewMockDB())
 
 			s := &Server{
 				Syncer:    syncer,

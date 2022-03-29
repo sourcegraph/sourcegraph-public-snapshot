@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { throwError } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
@@ -16,7 +17,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsightById = errorMockMethod('getInsightById')
     public findInsightByName = errorMockMethod('findInsightByName')
     public hasInsights = errorMockMethod('hasInsight')
-    public getReachableInsights = errorMockMethod('getReachableInsights')
+    public getAccessibleInsightsList = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
     public getInsightSubjects = errorMockMethod('getInsightSubjects')
@@ -30,7 +31,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     // Dashboards
     public getDashboards = errorMockMethod('getDashboards')
     public getDashboardById = errorMockMethod('getDashboardById')
-    public getDashboardSubjects = errorMockMethod('getDashboardSubjects')
+    public getDashboardOwners = errorMockMethod('getDashboardSubjects')
     public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
     public deleteDashboard = errorMockMethod('deleteDashboard')
@@ -54,7 +55,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
 
     // License check
-    public getUiFeatures = errorMockMethod('getUiFeatures')
+    public UIFeatures = { licensed: false, insightsLimit: null }
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())

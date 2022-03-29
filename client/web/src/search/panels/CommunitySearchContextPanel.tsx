@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
+
+import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link } from '@sourcegraph/wildcard'
@@ -7,8 +8,9 @@ import { Link } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 
-import styles from './CommunitySearchContextPanel.module.scss'
 import { PanelContainer } from './PanelContainer'
+
+import styles from './CommunitySearchContextPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string

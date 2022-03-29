@@ -3,7 +3,6 @@ package types
 import (
 	"context"
 	"os"
-
 	"runtime"
 	"strconv"
 	"time"

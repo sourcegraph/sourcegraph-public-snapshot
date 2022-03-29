@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestGetNPMDependencyRepos(t *testing.T) {
+func TestGetNpmDependencyRepos(t *testing.T) {
 	_, store, ctx, _ := setupDependenciesInDB(t)
 
 	type testCase struct {
@@ -39,16 +39,16 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 
 	for _, testCase := range testCases {
 		deps, err := store.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-			Scheme: dependenciesStore.NPMPackagesScheme,
+			Scheme: dependenciesStore.NpmPackagesScheme,
 			Name:   testCase.pkgName,
 		})
 		require.Nil(t, err)
 		depStrs := []string{}
 		for _, dep := range deps {
-			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(dep.Name)
+			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NPMDependency{pkg, dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmDependency{pkg, dep.Version}).PackageManagerSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -61,16 +61,16 @@ func TestGetNPMDependencyRepos(t *testing.T) {
 		lastID := 0
 		for i := 0; i < len(testCase.matches); i++ {
 			deps, err := store.ListDependencyRepos(ctx, dependenciesStore.ListDependencyReposOpts{
-				Scheme: dependenciesStore.NPMPackagesScheme,
+				Scheme: dependenciesStore.NpmPackagesScheme,
 				Name:   testCase.pkgName,
 				After:  lastID,
 				Limit:  1,
 			})
 			require.Nil(t, err)
 			require.Equal(t, len(deps), 1)
-			pkg, err := reposource.ParseNPMPackageFromPackageSyntax(deps[0].Name)
+			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NPMDependency{pkg, deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmDependency{pkg, deps[0].Version}).PackageManagerSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -106,10 +106,10 @@ func TestListRepos(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	svc := types.ExternalService{
-		Kind:   extsvc.KindNPMPackages,
+		Kind:   extsvc.KindNpmPackages,
 		Config: `{"registry": "https://placeholder.lol", "rateLimit": {"enabled": false}}`,
 	}
-	packageSource, err := NewNPMPackagesSource(&svc)
+	packageSource, err := NewNpmPackagesSource(&svc)
 	require.Nil(t, err)
 	packageSource.SetDB(db)
 	packageSource.client = npmtest.NewMockClient(t, dependencies...)
@@ -131,7 +131,7 @@ func TestListRepos(t *testing.T) {
 
 	var want []*types.Repo
 	for _, dep := range dependencies {
-		dep, err := reposource.ParseNPMDependency(dep)
+		dep, err := reposource.ParseNpmDependency(dep)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -141,8 +141,8 @@ func TestListRepos(t *testing.T) {
 			URI:         string(dep.RepoName()),
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          string(dep.RepoName()),
-				ServiceID:   extsvc.TypeNPMPackages,
-				ServiceType: extsvc.TypeNPMPackages,
+				ServiceID:   extsvc.TypeNpmPackages,
+				ServiceType: extsvc.TypeNpmPackages,
 			},
 			Sources: map[string]*types.SourceInfo{
 				packageSource.svc.URN(): {
@@ -151,7 +151,7 @@ func TestListRepos(t *testing.T) {
 				},
 			},
 			Metadata: &npmpackages.Metadata{
-				Package: dep.NPMPackage,
+				Package: dep.NpmPackage,
 			},
 		})
 	}
@@ -164,13 +164,13 @@ func TestListRepos(t *testing.T) {
 
 func insertDependencies(t *testing.T, ctx context.Context, s *dependenciesStore.Store, dependencies []string) {
 	for _, depStr := range dependencies {
-		dep, err := reposource.ParseNPMDependency(depStr)
+		dep, err := reposource.ParseNpmDependency(depStr)
 		require.Nil(t, err)
 		// See also: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertCloneableDependencyRepo
 		rows, err :=
 			s.Store.Query(ctx, sqlf.Sprintf(
 				`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES (%s, %s, %s)`,
-				dependenciesStore.NPMPackagesScheme, dep.PackageSyntax(), dep.Version))
+				dependenciesStore.NpmPackagesScheme, dep.PackageSyntax(), dep.Version))
 		require.Nil(t, err)
 		for rows.Next() {
 		}

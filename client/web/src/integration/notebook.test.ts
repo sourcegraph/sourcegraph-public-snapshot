@@ -116,6 +116,12 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookBlock
                     symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
                 },
             }
+        case NotebookBlockType.COMPUTE:
+            return {
+                __typename: 'ComputeBlock',
+                id: block.id,
+                computeInput: block.computeInput ?? '',
+            }
     }
 }
 
@@ -137,6 +143,21 @@ const mockSymbolStreamEvents: SearchEvent[] = [
                         kind: SymbolKind.FUNCTION,
                     },
                 ],
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
+
+const mockFilePathStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [
+            {
+                type: 'path',
+                repository: 'github.com/sourcegraph/sourcegraph',
+                path: 'client/web/index.ts',
+                commit: 'branch',
             },
         ],
     },
@@ -201,7 +222,7 @@ describe('Search Notebook', () => {
         driver.page.click(`${blockSelector(id)} [data-testid="${actionLabel}"]`)
 
     const addNewBlock = (type: BlockType) =>
-        driver.page.click(`[data-testid="always-visible-add-block-buttons"] [data-testid="add-${type}-button"]`)
+        driver.page.click(`[data-testid="notebook-command-palette"] [data-testid="add-${type}-block"]`)
 
     const getFileBlockHeaderText = async (fileBlockSelector: string) => {
         const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
@@ -211,6 +232,15 @@ describe('Search Notebook', () => {
             fileBlockHeaderSelector
         )
         return fileBlockHeaderText
+    }
+
+    const getRenderedMarkdownText = async (mdBlockSelector: string) => {
+        const markdownOutputSelector = `${mdBlockSelector} [data-testid="output"]`
+        await driver.page.waitForSelector(markdownOutputSelector, { visible: true })
+        return driver.page.evaluate(
+            markdownOutputSelector => document.querySelector<HTMLElement>(markdownOutputSelector)?.textContent,
+            markdownOutputSelector
+        )
     }
 
     it('Should render a notebook', async () => {
@@ -261,19 +291,14 @@ describe('Search Notebook', () => {
         // Edit and run new markdown block
         await driver.page.click(newMarkdownBlockSelector)
         await driver.replaceText({
-            selector: `${newMarkdownBlockSelector} .monaco-editor`,
+            selector: `${newMarkdownBlockSelector} .cm-content`,
             newText: 'Replaced text',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
         await driver.page.click('[data-testid="Render"]')
 
-        const markdownOutputSelector = `${newMarkdownBlockSelector} [data-testid="output"]`
-        await driver.page.waitForSelector(markdownOutputSelector, { visible: true })
-        const renderedMarkdownText = await driver.page.evaluate(
-            markdownOutputSelector => document.querySelector<HTMLElement>(markdownOutputSelector)?.textContent,
-            markdownOutputSelector
-        )
+        const renderedMarkdownText = await getRenderedMarkdownText(newMarkdownBlockSelector)
         expect(renderedMarkdownText?.trim()).toEqual('Replaced text')
 
         // Edit and run new query block
@@ -297,6 +322,8 @@ describe('Search Notebook', () => {
     })
 
     it('Should add file block and edit it', async () => {
+        testContext.overrideSearchStreamEvents(mockFilePathStreamEvents)
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
 
@@ -308,39 +335,42 @@ describe('Search Notebook', () => {
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Edit new file block
-        await driver.page.click(fileBlockSelector)
-
+        await driver.page.click(`${fileBlockSelector} .monaco-editor`)
         await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-repository-name-input"]`,
-            newText: 'github.com/sourcegraph/sourcegraph',
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
-        // Wait for input to validate
-        await driver.page.waitForSelector(
-            `${fileBlockSelector} [data-testid="file-block-repository-name-input"].is-valid`
-        )
-
-        await driver.replaceText({
-            selector: `${fileBlockSelector} [data-testid="file-block-file-path-input"]`,
+            selector: `${fileBlockSelector} .monaco-editor`,
             newText: 'client/web/file.tsx',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
-        // Wait for input to validate
-        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-block-file-path-input"].is-valid`)
 
-        // Wait for highlighted code to load
-        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+        // Wait for file suggestion button and click it
+        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-suggestion-button"]`, {
+            visible: true,
+        })
+        await driver.page.click(`${fileBlockSelector} [data-testid="file-suggestion-button"]`)
 
-        // Refocus the entire block (prevents jumping content for below actions)
-        await driver.page.click(fileBlockSelector)
+        await driver.replaceText({
+            selector: `[id="${blockIds[2]}-line-range-input"]`,
+            newText: '1-20',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for header to update to load
+        await driver.page.waitForFunction(
+            (fileBlockSelector: string) => {
+                const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
+                return document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent?.includes('#')
+            },
+            {},
+            fileBlockSelector
+        )
 
         // Save the inputs
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
+        expect(fileBlockHeaderText).toEqual('client/web/index.ts#1-20github.com/sourcegraph/sourcegraph@branch')
     })
 
     it('Should add file block and auto-fill the inputs when pasting a file URL', async () => {
@@ -383,9 +413,7 @@ describe('Search Notebook', () => {
         await driver.page.click('[data-testid="Save"]')
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
-        expect(fileBlockHeaderText).toEqual(
-            'github.com/sourcegraph/sourcegraph/client/search/src/index.ts@main, lines 30-32'
-        )
+        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
     })
 
     it('Should update the notebook title', async () => {
@@ -585,5 +613,85 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
             symbolBlockSelectedSymbolNameSelector
         )
         expect(selectedSymbolName).toEqual('func class')
+    })
+
+    it('Should add an empty markdown block through the command palette', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Focus the input and use the slash command to filter available options
+        await driver.page.click('[data-testid="command-palette-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="command-palette-input"]',
+            newText: '/markdown',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for the command palette option to show up and select it
+        await driver.page.waitForSelector('[data-option-id="add-md-block"]', { visible: true })
+        await driver.page.click('[data-option-id="add-md-block"]')
+
+        // A new block should appear
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+    })
+
+    it('Should add a markdown block with initial input through the command palette', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Focus the input and enter the markdown text
+        await driver.page.click('[data-testid="command-palette-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="command-palette-input"]',
+            newText: 'Markdown Text',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for the command palette option to show up and select it
+        await driver.page.waitForSelector('[data-option-id="add-md-block-with-input"]', { visible: true })
+        await driver.page.click('[data-option-id="add-md-block-with-input"]')
+
+        // A new block should appear
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+        const mdBlockSelector = blockSelector(blockIds[2])
+
+        // Render the markdown and check the output
+        await driver.page.click('[data-testid="Render"]')
+        const renderedMarkdownText = await getRenderedMarkdownText(mdBlockSelector)
+        expect(renderedMarkdownText?.trim()).toEqual('Markdown Text')
+    })
+
+    it('Should add a pre-populated file block when pasting a file URL in command palette', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        // Focus the input and paste the file URL
+        await driver.page.click('[data-testid="command-palette-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="command-palette-input"]',
+            newText:
+                'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/client/search/src/index.ts?L30-32',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Wait for the command palette option to show up and select it
+        await driver.page.waitForSelector('[data-option-id="add-file-from-url"]', { visible: true })
+        await driver.page.click('[data-option-id="add-file-from-url"]')
+
+        // A new block should appear
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+        const fileBlockSelector = blockSelector(blockIds[2])
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+
+        const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
+        expect(fileBlockHeaderText).toEqual('client/search/src/index.ts#30-32github.com/sourcegraph/sourcegraph@main')
     })
 })
