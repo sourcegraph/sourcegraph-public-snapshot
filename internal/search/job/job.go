@@ -1,6 +1,7 @@
 package job
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/google/zoekt"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -55,17 +57,13 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 	}
 	types, _ := q.StringValues(query.FieldType)
 	resultTypes := search.ComputeResultTypes(types, b.PatternString(), jargs.SearchInputs.PatternType)
-
 	patternInfo := search.ToTextPatternInfo(b, resultTypes, jargs.SearchInputs.Protocol)
-	if patternInfo.Pattern == "" {
-		// Fallback to basic search for searching repos and files if
-		// the structural search pattern is empty.
-		jargs.SearchInputs.PatternType = query.SearchTypeLiteral
-		patternInfo.IsStructuralPat = false
-	}
 
 	// searcher to use full deadline if timeout: set or we are streaming.
 	useFullDeadline := q.Timeout() != nil || q.Count() != nil || jargs.SearchInputs.Protocol == search.Streaming
+
+	fileMatchLimit := int32(computeFileMatchLimit(b, jargs.SearchInputs.Protocol))
+	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 
 	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
@@ -96,7 +94,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
 				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -111,8 +109,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 					// searches at all, and will be removed once jobs are fully migrated.
 					Query:          nil,
 					Typ:            typ,
-					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					FileMatchLimit: fileMatchLimit,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
 
@@ -126,7 +124,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 			if resultTypes.Has(result.TypeSymbol) {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
@@ -135,18 +133,15 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				zoektArgs := &search.ZoektParameters{
 					Query:          nil,
 					Typ:            typ,
-					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					FileMatchLimit: fileMatchLimit,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				}
 
 				addJob(true, &symbol.RepoUniverseSymbolSearch{
 					GlobalZoektQuery: globalZoektQuery,
 					ZoektArgs:        zoektArgs,
-					PatternInfo:      patternInfo,
-					Limit:            maxResults,
-
-					RepoOptions: repoOptions,
+					RepoOptions:      repoOptions,
 				})
 			}
 		}
@@ -155,15 +150,15 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			var textSearchJobs []Job
 			typ := search.TextRequest
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
 				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
 					Query:          zoektQuery,
 					Typ:            typ,
-					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					FileMatchLimit: fileMatchLimit,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
 			}
@@ -178,25 +173,25 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			addJob(true, &repoPagerJob{
 				child:            NewParallelJob(textSearchJobs...),
 				repoOptions:      repoOptions,
-				useIndex:         patternInfo.Index,
+				useIndex:         b.Index(),
 				containsRefGlobs: query.ContainsRefGlobs(q),
 				zoekt:            jargs.Zoekt,
 			})
 		}
 
-		if resultTypes.Has(result.TypeSymbol) && patternInfo.Pattern != "" && !skipRepoSubsetSearch {
+		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
 			var symbolSearchJobs []Job
 			typ := search.SymbolRequest
 
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 				if err != nil {
 					return nil, err
 				}
 				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
 					Query:          zoektQuery,
-					FileMatchLimit: patternInfo.FileMatchLimit,
-					Select:         patternInfo.Select,
+					FileMatchLimit: fileMatchLimit,
+					Select:         selector,
 					Zoekt:          jargs.Zoekt,
 				})
 			}
@@ -210,7 +205,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			addJob(required, &repoPagerJob{
 				child:            NewParallelJob(symbolSearchJobs...),
 				repoOptions:      repoOptions,
-				useIndex:         patternInfo.Index,
+				useIndex:         b.Index(),
 				containsRefGlobs: query.ContainsRefGlobs(q),
 				zoekt:            jargs.Zoekt,
 			})
@@ -231,23 +226,23 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				RepoOpts:             repoOptions,
 				Diff:                 diff,
 				HasTimeFilter:        b.Exists("after") || b.Exists("before"),
-				Limit:                int(patternInfo.FileMatchLimit),
+				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
-				Gitserver:            gitserver.DefaultClient,
+				Gitserver:            gitserver.NewClient(db),
 			})
 		}
 
-		if jargs.SearchInputs.PatternType == query.SearchTypeStructural && patternInfo.Pattern != "" {
+		if resultTypes.Has(result.TypeStructural) {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(patternInfo, &features, typ)
+			zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
 			if err != nil {
 				return nil, err
 			}
 			zoektArgs := &search.ZoektParameters{
 				Query:          zoektQuery,
 				Typ:            typ,
-				FileMatchLimit: patternInfo.FileMatchLimit,
-				Select:         patternInfo.Select,
+				FileMatchLimit: fileMatchLimit,
+				Select:         selector,
 				Zoekt:          jargs.Zoekt,
 			}
 
@@ -262,7 +257,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				SearcherArgs: searcherArgs,
 
 				NotSearcherOnly:  !onlyRunSearcher,
-				UseIndex:         patternInfo.Index,
+				UseIndex:         b.Index(),
 				ContainsRefGlobs: query.ContainsRefGlobs(q),
 				RepoOpts:         repoOptions,
 			})
@@ -343,7 +338,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			if valid() {
-				if repoOptions, ok := addPatternAsRepoFilter(patternInfo.Pattern, repoOptions); ok {
+				if repoOptions, ok := addPatternAsRepoFilter(b.PatternString(), repoOptions); ok {
 					var mode search.GlobalSearchMode
 					if repoUniverseSearch {
 						mode = search.ZoektGlobalSearch
@@ -610,3 +605,22 @@ var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_featureflag_unavailable",
 	Help: "temporary counter to check if we have feature flag available in practice.",
 })
+
+func computeFileMatchLimit(q query.Basic, p search.Protocol) int {
+	if count := q.GetCount(); count != "" {
+		v, _ := strconv.Atoi(count) // Invariant: count is validated.
+		return v
+	}
+
+	if q.IsStructural() {
+		return limits.DefaultMaxSearchResults
+	}
+
+	switch p {
+	case search.Batch:
+		return limits.DefaultMaxSearchResults
+	case search.Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	}
+	panic("unreachable")
+}

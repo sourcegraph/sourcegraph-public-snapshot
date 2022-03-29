@@ -49,7 +49,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
-// New returns a new Store backed by the given Timescale db.
+// New returns a new Store backed by the given Postgres db.
 func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
 	return NewWithClock(db, permStore, timeutil.Now)
 }

@@ -1,8 +1,8 @@
-# Getting started with server-side Batch Changes
+# Getting started with running batch changes server-side
 
 <aside class="experimental">This feature is experimental. Follow the <a href="server_side#setup">setup guide</a> to get started.</aside>
 
-## Creating your first server-side batch change
+## Creating your first batch change
 
 To get started, click on the "Create batch change" button on the Batch Changes page, or go to `/batch-changes/create`.
 You will be prompted to choose a name for your namespace and optionally define a custom namespace to put your batch change in.
@@ -54,10 +54,10 @@ Once finished, you can proceed to the batch spec preview as you know it from bef
 
 On this page, you can review the changes proposed one more time and also review the operations taken by Sourcegraph on each changeset. Once satisfied, click "Apply".
 
-Congratulations, you got your first server-side Batch Change going 🎊
+Congratulations, you ran your first batch change server-side 🎊
 
 <img src="https://sourcegraphstatic.com/docs/images/batch_changes/ssbc_preview_screen.png" class="screenshot">
 
-## Updating your server-side batch change
+## Updating your batch change
 
 This section is a work in progress.

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,8 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -144,11 +147,26 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+		settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
+		if err != nil {
+			return nil, err
+		}
+
+		// Snapshot the state of the searched repos when the monitor is created so that
+		// we can distinguish new repos.
+		err = codemonitors.Snapshot(ctx, tx.db, args.Trigger.Query, m.ID, settings)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Create actions.
 	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
 		return nil, err
 	}
+
 	return &monitor{
 		Resolver: r,
 		Monitor:  m,
@@ -261,6 +279,9 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 				return err
 			}
 		case a.SlackWebhook != nil:
+			if err := validateSlackURL(a.SlackWebhook.URL); err != nil {
+				return err
+			}
 			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.IncludeResults, a.SlackWebhook.URL)
 			if err != nil {
 				return err
@@ -398,7 +419,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	if orgID != 0 {
 		return nil
 	}
-	data := background.NewTestTemplateDataForNewSearchResults(ctx, description)
+	data := background.NewTestTemplateDataForNewSearchResults(description)
 	return background.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
@@ -507,11 +528,35 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
+		if err != nil {
+			return nil, err
+		}
+
+		// When the query is changed, take a new snapshot of the commits that currently
+		// exist so we know where to start.
+		if currentTrigger.QueryString != args.Trigger.Update.Query {
+			settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, r.db)
+			if err != nil {
+				return nil, err
+			}
+
+			// Snapshot the state of the searched repos when the monitor is created so that
+			// we can distinguish new repos.
+			err = codemonitors.Snapshot(ctx, r.db, args.Trigger.Update.Query, monitorID, settings)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	// Update trigger.
 	err = r.db.CodeMonitors().UpdateQueryTrigger(ctx, triggerID, args.Trigger.Update.Query)
 	if err != nil {
 		return nil, err
 	}
+
 	// Update actions.
 	if len(args.Actions) == 0 {
 		return &monitor{
@@ -526,6 +571,9 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		case action.Webhook != nil:
 			err = r.updateWebhookAction(ctx, *action.Webhook)
 		case action.SlackWebhook != nil:
+			if err := validateSlackURL(action.SlackWebhook.Update.URL); err != nil {
+				return nil, err
+			}
 			err = r.updateSlackWebhookAction(ctx, *action.SlackWebhook)
 		default:
 			err = errors.New("action must be one of email, webhook, or slack webhook")
@@ -1311,4 +1359,17 @@ func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
 		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}
 	}
 	return graphqlbackend.DateTime{Time: *m.FinishedAt}
+}
+
+func validateSlackURL(urlString string) error {
+	u, err := url.Parse(urlString)
+	if err != nil {
+		return err
+	}
+
+	// Restrict slack webhooks to only canonical host and HTTPS
+	if u.Host != "hooks.slack.com" || u.Scheme != "https" {
+		return errors.New("slack webhook URL must begin with 'https://hooks.slack.com/")
+	}
+	return nil
 }

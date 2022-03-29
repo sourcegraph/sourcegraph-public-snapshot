@@ -57,15 +57,15 @@ type Resolver struct {
 	baseInsightResolver
 }
 
-// New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
-func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
-	return newWithClock(timescale, postgres, timeutil.Now)
+// New returns a new Resolver whose store uses the given Postgres DBs.
+func New(db, postgres dbutil.DB) graphqlbackend.InsightsResolver {
+	return newWithClock(db, postgres, timeutil.Now)
 }
 
-// newWithClock returns a new Resolver whose store uses the given Timescale and Postgres DBs, and the given
-// clock for timestamps.
-func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolver {
-	base := WithBase(timescale, postgres, clock)
+// newWithClock returns a new Resolver whose store uses the given Postgres DBs and the given clock
+// for timestamps.
+func newWithClock(db, postgres dbutil.DB, clock func() time.Time) *Resolver {
+	base := WithBase(db, postgres, clock)
 	return &Resolver{
 		baseInsightResolver:  *base,
 		timeSeriesStore:      base.timeSeriesStore,

@@ -43,6 +43,7 @@ export const EditCaptureGroupInsight: React.FunctionComponent<EditCaptureGroupIn
             mode="edit"
             initialValues={insightFormValues}
             className="pb-5"
+            insight={insight}
             onSubmit={handleSubmit}
             onCancel={onCancel}
         />

@@ -234,10 +234,7 @@ func limitOrDefault(first *int32) int {
 type RepoUniverseSymbolSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
-	PatternInfo      *search.TextPatternInfo
-	Limit            int
-
-	RepoOptions search.RepoOptions
+	RepoOptions      search.RepoOptions
 }
 
 func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {

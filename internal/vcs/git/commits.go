@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -192,7 +194,7 @@ func CommitsUniqueToBranch(ctx context.Context, db database.DB, repo api.RepoNam
 		args = append(args, branchName, "^HEAD")
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -301,13 +303,13 @@ func commitLog(ctx context.Context, db database.DB, repo api.RepoName, opt Commi
 	return filtered, err
 }
 
-func getWrappedCommits(ctx context.Context, _ database.DB, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
+func getWrappedCommits(ctx context.Context, db database.DB, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	if !opt.NoEnsureRevision {
 		cmd.EnsureRevision = opt.Range
@@ -464,7 +466,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // commitCount returns the number of commits that would be returned by Commits.
-func commitCount(ctx context.Context, _ database.DB, repo api.RepoName, opt CommitsOptions) (uint, error) {
+func commitCount(ctx context.Context, db database.DB, repo api.RepoName, opt CommitsOptions) (uint, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -474,7 +476,7 @@ func commitCount(ctx context.Context, _ database.DB, repo api.RepoName, opt Comm
 		return 0, err
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	if opt.Path != "" {
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
@@ -496,7 +498,7 @@ func FirstEverCommit(ctx context.Context, db database.DB, repo api.RepoName, che
 	defer span.Finish()
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -529,7 +531,7 @@ func CommitExists(ctx context.Context, db database.DB, repo api.RepoName, id api
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
 func Head(ctx context.Context, db database.DB, repo api.RepoName, checker authz.SubRepoPermissionChecker) (_ string, revisionExists bool, err error) {
-	cmd := gitserver.DefaultClient.Command("git", "rev-parse", "HEAD")
+	cmd := gitserver.NewClient(db).Command("git", "rev-parse", "HEAD")
 	cmd.Repo = repo
 
 	out, err := cmd.Output(ctx)
@@ -647,7 +649,7 @@ func BranchesContaining(ctx context.Context, db database.DB, repo api.RepoName, 
 			return nil, err
 		}
 	}
-	cmd := gitserver.DefaultClient.Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
+	cmd := gitserver.NewClient(db).Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -693,7 +695,7 @@ func RefDescriptions(ctx context.Context, db database.DB, repo api.RepoName, che
 			args = append(args, "--points-at="+obj)
 		}
 
-		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd := gitserver.NewClient(db).Command("git", args...)
 		cmd.Repo = repo
 
 		out, err := cmd.CombinedOutput(ctx)
@@ -819,7 +821,7 @@ func CommitDate(ctx context.Context, db database.DB, repo api.RepoName, commit a
 		}
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", "show", "-s", "--format=%H:%cI", string(commit))
+	cmd := gitserver.NewClient(db).Command("git", "show", "-s", "--format=%H:%cI", string(commit))
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -854,6 +856,26 @@ type CommitGraphOptions struct {
 	AllRefs bool
 	Limit   int
 	Since   *time.Time
+} // please update LogFields if you add a field here
+
+func stableTimeRepr(t time.Time) string {
+	s, _ := t.MarshalText()
+	return string(s)
+}
+
+var unixEpoch = stableTimeRepr(time.Unix(0, 0))
+
+func (opts *CommitGraphOptions) LogFields() []log.Field {
+	since := unixEpoch
+	if opts.Since != nil {
+		since = stableTimeRepr(*opts.Since)
+	}
+	return []log.Field{
+		log.String("commit", opts.Commit),
+		log.Int("limit", opts.Limit),
+		log.Bool("allrefs", opts.AllRefs),
+		log.String("since", since),
+	}
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping
@@ -875,7 +897,7 @@ func CommitGraph(ctx context.Context, db database.DB, repo api.RepoName, opts Co
 		args = append(args, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)

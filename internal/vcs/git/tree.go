@@ -3,6 +3,7 @@ package git
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/fs"
 	"os"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -98,7 +100,7 @@ func ReadDir(
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...string) ([]string, error) {
+func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -111,10 +113,12 @@ func LsFiles(ctx context.Context, db database.DB, checker authz.SubRepoPermissio
 
 	if len(pathspecs) > 0 {
 		args = append(args, "--")
-		args = append(args, pathspecs...)
+		for _, pathspec := range pathspecs {
+			args = append(args, string(pathspec))
+		}
 	}
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -145,7 +149,7 @@ func lStat(ctx context.Context, db database.DB, checker authz.SubRepoPermissionC
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := gitserver.DefaultClient.GetObject(ctx, repo, string(commit)+"^{tree}")
+		obj, err := gitserver.NewClient(db).GetObject(ctx, repo, string(commit)+"^{tree}")
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +234,7 @@ func lsTree(
 	return entries, nil
 }
 
-func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func lsTreeUncached(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
@@ -255,7 +259,7 @@ func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commi
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -334,7 +338,7 @@ func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commi
 			}
 		case "commit":
 			mode = mode | ModeSubmodule
-			cmd := gitserver.DefaultClient.Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
+			cmd := gitserver.NewClient(db).Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
 			cmd.Repo = repo
 			var submodule Submodule
 			if out, err := cmd.Output(ctx); err == nil {
@@ -374,7 +378,7 @@ func lsTreeUncached(ctx context.Context, _ database.DB, repo api.RepoName, commi
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func ListFiles(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
-	cmd := gitserver.DefaultClient.Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd := gitserver.NewClient(db).Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -419,7 +423,7 @@ func ListDirectoryChildren(
 ) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd := gitserver.NewClient(db).Command("git", args...)
 	cmd.Repo = repo
 
 	out, err := cmd.CombinedOutput(ctx)
@@ -494,4 +498,19 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	}
 
 	return childrenMap
+}
+
+// DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
+// tree /dev/null`, which is used as the base when computing the `git diff` of
+// the root commit.
+const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+func decodeOID(sha string) (gitdomain.OID, error) {
+	oidBytes, err := hex.DecodeString(sha)
+	if err != nil {
+		return gitdomain.OID{}, err
+	}
+	var oid gitdomain.OID
+	copy(oid[:], oidBytes)
+	return oid, nil
 }

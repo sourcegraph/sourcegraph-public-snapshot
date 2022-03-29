@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { noop } from 'lodash'
 import ElmComponent from 'react-elm-components'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -93,39 +92,42 @@ const setupPorts = (updateBlockInputWithID: (blockInput: BlockInput) => void) =>
     })
 }
 
-export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = ({
-    id,
-    input,
-    output,
-    isSelected,
-    isLightTheme,
-    platformContext,
-    isReadOnly,
-    onBlockInputChange,
-    onRunBlock,
-    ...props
-}) => {
-    const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
-    return (
-        <NotebookBlock
-            className={styles.input}
-            id={id}
-            aria-label="Notebook compute block"
-            onEnterBlock={noop}
-            isSelected={isSelected}
-            actions={isSelected ? commonMenuActions : []}
-            {...props}
-        >
-            <div className="elm">
-                <ElmComponent
-                    src={Elm.Main}
-                    ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
-                    flags={{
-                        sourcegraphURL: platformContext.sourcegraphURL,
-                        computeInput: input === '' ? null : (JSON.parse(input) as ComputeInput),
-                    }}
-                />
-            </div>
-        </NotebookBlock>
-    )
-}
+export const NotebookComputeBlock: React.FunctionComponent<ComputeBlockProps> = React.memo(
+    ({
+        id,
+        input,
+        output,
+        isSelected,
+        isLightTheme,
+        platformContext,
+        isReadOnly,
+        onBlockInputChange,
+        onRunBlock,
+        ...props
+    }) => {
+        const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
+        return (
+            <NotebookBlock
+                className={styles.input}
+                id={id}
+                aria-label="Notebook compute block"
+                isSelected={isSelected}
+                isReadOnly={isReadOnly}
+                actions={isSelected ? commonMenuActions : []}
+                {...props}
+            >
+                <div className="elm">
+                    <ElmComponent
+                        src={Elm.Main}
+                        ports={setupPorts(updateBlockInput(id, onBlockInputChange))}
+                        flags={{
+                            sourcegraphURL: platformContext.sourcegraphURL,
+                            isLightTheme,
+                            computeInput: input === '' ? null : (JSON.parse(input) as ComputeInput),
+                        }}
+                    />
+                </div>
+            </NotebookBlock>
+        )
+    }
+)

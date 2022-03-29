@@ -196,28 +196,46 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	s := SubRepoPerms(db)
 	prepareSubRepoTestData(ctx, t, db)
 
-	exists, err := s.RepoIdSupported(ctx, api.RepoID(3))
+	testSubRepoNotSupportedForRepo(ctx, t, s, 3, "perforce1", "Repo is not private, therefore sub-repo perms are not supported")
+
+	testSubRepoSupportedForRepo(ctx, t, s, 4, "perforce2", "Repo is private, therefore sub-repo perms are supported")
+
+	testSubRepoNotSupportedForRepo(ctx, t, s, 5, "github.com/foo/qux", "Repo is not perforce, therefore sub-repo perms are not supported")
+}
+
+func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+	t.Helper()
+	exists, err := s.RepoIdSupported(ctx, repoID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if exists {
-		t.Fatal("Repo is not private, therefore sub-repo perms are not supported")
+		t.Fatal(errMsg)
 	}
+	exists, err = s.RepoSupported(ctx, repoName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatal(errMsg)
+	}
+}
 
-	exists, err = s.RepoIdSupported(ctx, api.RepoID(4))
+func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+	t.Helper()
+	exists, err := s.RepoIdSupported(ctx, repoID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !exists {
-		t.Fatal("Repo is private, therefore sub-repo perms are supported")
+		t.Fatal(errMsg)
 	}
-
-	exists, err = s.RepoIdSupported(ctx, api.RepoID(5))
+	exists, err = s.RepoSupported(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if exists {
-		t.Fatal("Repo is not perforce, therefore sub-repo perms are not supported")
+	if !exists {
+		t.Fatal(errMsg)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,11 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -67,7 +73,7 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
-	expected := "http://" + gitserver.RendezvousAddrForRepo(repo, addrs)
+	expected := "http://172.16.8.2:8080"
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -76,6 +82,14 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 			// expected is the gitserver instance according to the Rendezvous hashing scheme.
 			// For anything else apart from this we return an error.
 			case expected + "/repo-update":
+				var req protocol.RepoUpdateRequest
+				err := json.NewDecoder(r.Body).Decode(&req)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if req.CloneFromShard != "http://172.16.8.1:8080" {
+					t.Fatalf("expected cloneFromShard to be \"http://172.16.8.1:8080\", got %q", req.CloneFromShard)
+				}
 				return &http.Response{
 					StatusCode: 200,
 					Body:       io.NopCloser(bytes.NewBufferString("{}")),
@@ -88,7 +102,43 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 		addrs,
 	)
 
-	_, err := cli.RequestRepoMigrate(context.Background(), repo)
+	_, err := cli.RequestRepoMigrate(context.Background(), repo, "172.16.8.1:8080", "172.16.8.2:8080")
+	if err != nil {
+		t.Fatalf("expected URL %q, but got err %q", expected, err)
+	}
+}
+
+func TestClient_Remove(t *testing.T) {
+	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
+	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
+
+	expected := "http://172.16.8.1:8080"
+
+	cli := gitserver.NewTestClient(
+		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			switch r.URL.String() {
+			// Ensure that the request was received by the "expected" gitserver instance - where
+			// expected is the gitserver instance according to the Rendezvous hashing scheme.
+			// For anything else apart from this we return an error.
+			case expected + "/delete":
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewBufferString("{}")),
+				}, nil
+			default:
+				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+			}
+		}),
+		database.NewMockDB(),
+		addrs,
+	)
+
+	err := cli.Remove(context.Background(), repo)
+	if err != nil {
+		t.Fatalf("expected URL %q, but got err %q", expected, err)
+	}
+
+	err = cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
 	if err != nil {
 		t.Fatalf("expected URL %q, but got err %q", expected, err)
 	}
@@ -290,6 +340,9 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 
 func TestAddrForRepo(t *testing.T) {
 	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+	pinned := map[string]string{
+		"repo2": "gitserver-1",
+	}
 
 	testCases := []struct {
 		name string
@@ -311,11 +364,22 @@ func TestAddrForRepo(t *testing.T) {
 			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
 			want: "gitserver-2",
 		},
+		{
+			name: "pinned repo", // different server address that the hashing function would normally yield
+			repo: api.RepoName("repo2"),
+			want: "gitserver-1",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.AddrForRepo(tc.repo, addrs)
+			got, err := gitserver.AddrForRepo(context.Background(), database.NewMockDB(), tc.repo, gitserver.GitServerAddresses{
+				Addresses:     addrs,
+				PinnedServers: pinned,
+			})
+			if err != nil {
+				t.Fatal("Error during getting gitserver address")
+			}
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
 			}
@@ -511,4 +575,83 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
+}
+
+func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
+	ctx := context.Background()
+	client := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), []string{"gitserver1", "gitserver2"})
+	setPinnedRepos(map[string]string{
+		"repo1": "gitserver2",
+	})
+
+	addr, err := client.AddrForRepo(ctx, "repo1")
+	if err != nil {
+		t.Fatal("Error during getting gitserver address")
+	}
+	require.Equal(t, "gitserver2", addr)
+
+	// simulate config change - site admin manually changes the pinned repo config
+	setPinnedRepos(map[string]string{
+		"repo1": "gitserver1",
+	})
+
+	addr, err = client.AddrForRepo(ctx, "repo1")
+	if err != nil {
+		t.Fatal("Error during getting gitserver address")
+	}
+	require.Equal(t, "gitserver1", addr)
+}
+
+func setPinnedRepos(pinned map[string]string) {
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			GitServerPinnedRepos: pinned,
+		},
+	}})
+}
+
+func TestClient_AddrForRepo_Rendezvous(t *testing.T) {
+	ctx := context.Background()
+	client := gitserver.NewTestClient(&http.Client{}, database.NewMockDB(), []string{"gitserver1", "gitserver2"})
+
+	tests := []struct {
+		name     string
+		repoName api.RepoName
+		cursor   string
+		wantAddr string
+	}{
+		{
+			name:     "Rendezvous hashing is not used before migration",
+			repoName: api.RepoName("repoA"),
+			cursor:   "",
+			wantAddr: "gitserver1",
+		},
+		{
+			name:     "Rendezvous hashing is not used for not yet migrated repos",
+			repoName: api.RepoName("repoA"),
+			cursor:   "repo",
+			wantAddr: "gitserver1",
+		},
+		{
+			name:     "Rendezvous hashing is used for already migrated repos",
+			repoName: api.RepoName("repoA"),
+			cursor:   "repoZ",
+			wantAddr: "gitserver2",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			migration.MigrationMocks.GetCursor = func(ctx context.Context, db dbutil.DB) (string, error) {
+				return tc.cursor, nil
+			}
+			defer migration.ResetMigrationMocks()
+
+			addr, err := client.AddrForRepo(ctx, tc.repoName)
+			if err != nil {
+				t.Fatal("Error during getting gitserver address")
+			}
+			require.Equal(t, tc.wantAddr, addr)
+		})
+	}
 }
