@@ -47,20 +47,16 @@ func NewClient(config *schema.GoModulesConnection, cli httpcli.Doer) *Client {
 
 // GetVersion gets a single version of the given module if it exists.
 func (c *Client) GetVersion(ctx context.Context, mod, version string) (*module.Version, error) {
-	var (
-		respBody []byte
-		err      error
-	)
-
+	var paths []string
 	if version != "" {
-		var escapedVersion string
-		if escapedVersion, err = module.EscapeVersion(version); err != nil {
+		if escapedVersion, err := module.EscapeVersion(version); err != nil {
 			return nil, errors.Wrap(err, "failed to escape version")
 		}
-		respBody, err = c.get(ctx, mod, "@v", escapedVersion+".info")
+		paths = []string{"@v", escapedVersion+".info"}
 	} else {
-		respBody, err = c.get(ctx, mod, "@latest")
+	    paths = []string{"@latest"}
 	}
+	respBody, err := c.get(ctx, mod, paths...)
 
 	if err != nil {
 		return nil, err
