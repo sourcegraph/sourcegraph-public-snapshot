@@ -45,6 +45,7 @@ func addBreadcrumb(breadcrumbs *[]Breadcrumb, node Node, message string) {
 //
 //           vvv 6. found
 // 90 | type Foo struct {
+//
 //          vvvvv 2. found
 // 91 |     field *int
 func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
