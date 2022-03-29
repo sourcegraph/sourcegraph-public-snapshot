@@ -3,7 +3,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - depguard
     - forbidigo
     - gocritic
     - goimports
