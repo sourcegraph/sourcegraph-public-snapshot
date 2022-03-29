@@ -215,7 +215,6 @@ func applyReplacement(content string, ranges []codeRange, replacement string) (n
 	// We need to make sure to order the codeRanges in ascending order and carry-forward
 	// the offset of the replacement - original length to the next code ranges.
 	// example line: func abc(a TYPE, b TYPE) error
-	// TODO: we think that end.line is always the same as start.line, we could ditch it
 
 	sort.Slice(ranges, func(i, j int) bool {
 		if ranges[i].line == ranges[j].line {
