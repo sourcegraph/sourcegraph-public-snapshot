@@ -36,6 +36,11 @@ interface ViewOnSourcegraphButtonProps
      */
     onSignInClose?: () => void
 
+    /**
+     * A callback for reporting repo sync error in on of these cases:
+     * - it is a private repo not synced with Sourcegraph cloud when the latter is the active Sourcegraph URL
+     * - it is a repo not added to other than Cloud Sourcegraph instance.
+     */
     onRepoSyncError: (sourcegraphURL: string, hasError: boolean) => void
 }
 

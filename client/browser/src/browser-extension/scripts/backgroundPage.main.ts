@@ -53,10 +53,10 @@ initSentry('background')
 const IsProductionVersion = !getExtensionVersion().startsWith('0.0.0')
 
 /**
- * For each tab, we store a flag if we know that we are on a repository
- * that has not been added to the Sourcegraph instance (+ the extension
- * points to this instance). The content script notifies the background page if
- * it has experienced repository does not exist on the instance error
+ * For each tab, we store a flag if we know that we are on:
+ * - a private repo not synced with Sourcegraph Cloud when the latter is the active Sourcegrapg URL
+ * - a repo not added to the other than Cloud Sourcegraph instance (+ the extension * points to this instance).
+ * The content script notifies the background page if it has experienced this kind of an error
  * by sending `notifyRepoSyncError` message.
  */
 const tabRepoSyncErrorCache = (() => {
@@ -93,6 +93,11 @@ const tabRepoSyncErrorCache = (() => {
             // observe the value.
             subject.next(cache)
         },
+
+        /**
+         * Check whether the backgound page's cache contains data about repo sync error for
+         * the given parameters.
+         */
         getTabHasRepoSyncError(tabId: number, sourcegraphURL: string): boolean {
             return !!cache.get(tabId)?.get(sourcegraphURL)
         },
