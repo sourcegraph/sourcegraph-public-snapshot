@@ -929,11 +929,14 @@ commandsets:
       - caddy
     env:
       ENTERPRISE: 1
+      DISABLE_TELEMETRY: true
 
   oss-web-standalone:
     commands:
       - web-standalone-http
       - caddy
+    env:
+      DISABLE_TELEMETRY: true
 
   web-standalone-prod:
     commands:
