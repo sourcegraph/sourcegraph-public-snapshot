@@ -13,7 +13,7 @@ import (
 )
 
 // Nominal type for the ID of a tree-sitter node.
-type Id string
+type NodeId string
 
 // walk walks every node in the tree-sitter tree, calling f(node) on each node.
 func walk(node *sitter.Node, f func(node *sitter.Node)) {
@@ -31,8 +31,8 @@ func walkFilter(node *sitter.Node, f func(node *sitter.Node) bool) {
 }
 
 // nodeId returns the ID of the node.
-func nodeId(node *sitter.Node) Id {
-	return Id(fmt.Sprint(nodeToRange(node)))
+func nodeId(node *sitter.Node) NodeId {
+	return NodeId(fmt.Sprint(nodeToRange(node)))
 }
 
 // getRoot returns the root node of the tree-sitter tree, given any node inside it.

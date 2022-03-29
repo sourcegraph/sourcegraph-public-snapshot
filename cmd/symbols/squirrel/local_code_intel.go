@@ -38,7 +38,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 
 	// Collect scopes
 	rootScopeId := nodeId(root.Node)
-	scopes := map[Id]Scope{
+	scopes := map[NodeId]Scope{
 		rootScopeId: {},
 	}
 	err = forEachCapture(root.LangSpec.localsQuery, *root, func(captureName string, node Node) {
