@@ -264,6 +264,11 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             required={true}
                             disabled={loading}
                             autoComplete="new-password"
+                            minLength={
+                                (window.context.experimentalFeatures.passwordPolicy?.enabled &&
+                                    window.context.experimentalFeatures.passwordPolicy.minimumLength) ??
+                                12
+                            }
                             placeholder=" "
                             onInvalid={preventDefault}
                             inputRef={passwordInputReference}

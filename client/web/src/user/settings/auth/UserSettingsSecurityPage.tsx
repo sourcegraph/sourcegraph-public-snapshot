@@ -303,6 +303,11 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
+                                        minLength={
+                                            (window.context.experimentalFeatures.passwordPolicy?.enabled &&
+                                                window.context.experimentalFeatures.passwordPolicy.minimumLength) ??
+                                            12
+                                        }
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
@@ -318,6 +323,11 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
+                                        minLength={
+                                            (window.context.experimentalFeatures.passwordPolicy?.enabled &&
+                                                window.context.experimentalFeatures.passwordPolicy.minimumLength) ??
+                                            12
+                                        }
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                     />
