@@ -33,11 +33,11 @@ func UpTo(commandName string, factory RunnerFactory, out *output.Output, develop
 			return flag.ErrHelp
 		}
 
-		targets := strings.Split(*targetsFlag, ",")
-		if len(targets) == 0 {
+		if *targetsFlag == "" {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply a migration target via -target"))
 			return flag.ErrHelp
 		}
+		targets := strings.Split(*targetsFlag, ",")
 
 		versions := make([]int, 0, len(targets))
 		for _, target := range targets {
