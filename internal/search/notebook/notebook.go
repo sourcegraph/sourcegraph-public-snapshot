@@ -10,32 +10,22 @@ import (
 )
 
 type SearchJob struct {
+	Query string
 }
 
 func (s *SearchJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
-	// TODO:
-	//  ~1. New result.NotebookMatch~
-	//  2. Search database for input pattern
-	//  3. Return NotebookMatches to frontend.
+	store := Search(db)
+	notebooks, err := store.SearchNotebooks(ctx, s.Query)
+	if err != nil {
+		return nil, err
+	}
+	matches := make([]result.Match, len(notebooks))
+	for i, n := range notebooks {
+		matches[i] = n
+	}
 	stream.Send(streaming.SearchEvent{
-		Results: result.Matches{
-			&result.NotebookMatch{
-				Title:     "FOOBAR",
-				Namespace: "sourcegraph",
-				ID:        1,
-				Stars:     64,
-				Private:   false,
-			},
-			&result.NotebookMatch{
-				Title:     "BAZ",
-				Namespace: "robert",
-				ID:        2,
-				Stars:     0,
-				Private:   true,
-			},
-		},
+		Results: matches,
 	})
-
 	return nil, nil
 }
 
