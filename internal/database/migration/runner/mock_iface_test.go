@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	definition "github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	schemas "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	storetypes "github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
 )
 
@@ -15,6 +16,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/database/migration/runner)
 // used for unit testing.
 type MockStore struct {
+	// DescribeFunc is an instance of a mock function object controlling the
+	// behavior of the method Describe.
+	DescribeFunc *StoreDescribeFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *StoreDoneFunc
@@ -45,6 +49,11 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
+		DescribeFunc: &StoreDescribeFunc{
+			defaultHook: func(context.Context) (map[string]schemas.SchemaDescription, error) {
+				return nil, nil
+			},
+		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: func(error) error {
 				return nil
@@ -92,6 +101,11 @@ func NewMockStore() *MockStore {
 // panic on invocation, unless overwritten.
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
+		DescribeFunc: &StoreDescribeFunc{
+			defaultHook: func(context.Context) (map[string]schemas.SchemaDescription, error) {
+				panic("unexpected invocation of MockStore.Describe")
+			},
+		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockStore.Done")
@@ -139,6 +153,9 @@ func NewStrictMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i Store) *MockStore {
 	return &MockStore{
+		DescribeFunc: &StoreDescribeFunc{
+			defaultHook: i.Describe,
+		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -164,6 +181,110 @@ func NewMockStoreFrom(i Store) *MockStore {
 			defaultHook: i.WithMigrationLog,
 		},
 	}
+}
+
+// StoreDescribeFunc describes the behavior when the Describe method of the
+// parent MockStore instance is invoked.
+type StoreDescribeFunc struct {
+	defaultHook func(context.Context) (map[string]schemas.SchemaDescription, error)
+	hooks       []func(context.Context) (map[string]schemas.SchemaDescription, error)
+	history     []StoreDescribeFuncCall
+	mutex       sync.Mutex
+}
+
+// Describe delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) Describe(v0 context.Context) (map[string]schemas.SchemaDescription, error) {
+	r0, r1 := m.DescribeFunc.nextHook()(v0)
+	m.DescribeFunc.appendCall(StoreDescribeFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Describe method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreDescribeFunc) SetDefaultHook(hook func(context.Context) (map[string]schemas.SchemaDescription, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Describe method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreDescribeFunc) PushHook(hook func(context.Context) (map[string]schemas.SchemaDescription, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreDescribeFunc) SetDefaultReturn(r0 map[string]schemas.SchemaDescription, r1 error) {
+	f.SetDefaultHook(func(context.Context) (map[string]schemas.SchemaDescription, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreDescribeFunc) PushReturn(r0 map[string]schemas.SchemaDescription, r1 error) {
+	f.PushHook(func(context.Context) (map[string]schemas.SchemaDescription, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreDescribeFunc) nextHook() func(context.Context) (map[string]schemas.SchemaDescription, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreDescribeFunc) appendCall(r0 StoreDescribeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreDescribeFuncCall objects describing
+// the invocations of this function.
+func (f *StoreDescribeFunc) History() []StoreDescribeFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreDescribeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreDescribeFuncCall is an object that describes an invocation of method
+// Describe on an instance of MockStore.
+type StoreDescribeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string]schemas.SchemaDescription
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreDescribeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreDescribeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreDoneFunc describes the behavior when the Done method of the parent
