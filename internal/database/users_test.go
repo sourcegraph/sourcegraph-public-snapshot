@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"regex"
+	"unicode"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -97,28 +97,29 @@ func TestUsers_ValidUsernames(t *testing.T) {
 }
 
 // This validates the password using the Paassord Policy configured
-func Test_validatePasswordUsingPolicy(passwd string) error {
+func Test_validatePasswordUsingPolicy(passwd string) bool {
+	const maxPasswordRunes = 256
 	letters := 0
-  numbers := false;
-	upperCase := false;
-	special := 0;
+	numbers := false
+	upperCase := false
+	special := 0
 
 	for _, c := range passwd {
-			switch {
-			case unicode.IsNumber(c):
-					numbers = true
-					letters++
-			case unicode.IsUpper(c):
-					upperCase = true
-					letters++
-			case unicode.IsPunct(c) || unicode.IsSymbol(c):
-					special++
-					letters++
-			case unicode.IsLetter(c) || c == ' ':
-					letters++
-			default:
-					//ignore
-			}
+		switch {
+		case unicode.IsNumber(c):
+			numbers = true
+			letters++
+		case unicode.IsUpper(c):
+			upperCase = true
+			letters++
+		case unicode.IsPunct(c) || unicode.IsSymbol(c):
+			special++
+			letters++
+		case unicode.IsLetter(c) || c == ' ':
+			letters++
+		default:
+			//ignore
+		}
 	}
 	// Check for blank password
 	if passwd == "" {
@@ -140,14 +141,14 @@ func Test_validatePasswordUsingPolicy(passwd string) error {
 	// Numeric Check
 	if policy.RequireAtLeastOneNumber {
 		if !numbers {
-			false
+			return false
 		}
 	}
 
 	// Mixed case check
 	if policy.RequireUpperandLowerCase {
 		if !upperCase {
-			false
+			return false
 		}
 	}
 
@@ -180,19 +181,21 @@ func TestUsers_Password_Policy(t *testing.T) {
 
 	// Special Character Check
 	pwTest3 := "abcdefghijklmQWS1ass"
-	result3 := Test_validatePasswordUsingPolicy(pwTest2)
+	result3 := Test_validatePasswordUsingPolicy(pwTest3)
 	if result3 {
 		t.Fatal("Special character check failed.")
 	}
 
 	// Min Character Check
 	pwTest4 := "abcde1@W"
-	result4 := Test_validatePasswordUsingPolicy(pwTest2)
+	result4 := Test_validatePasswordUsingPolicy(pwTest4)
 	if result4 {
 		t.Fatal("Min character check failed.")
+	}
 }
 
 func TestUsers_Create_CheckPassword(t *testing.T) {
+	const maxPasswordRunes = 256
 	if testing.Short() {
 		t.Skip()
 	}
