@@ -6,70 +6,22 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, pluralize, encodeURIPathComponent, memoizeObservable } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, useObservable, Link, Badge, useEventObservable, Alert } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { queryRepoBatchChangeStats } from '../../enterprise/batches/repo/backend'
-import { GitCommitFields, RepoBatchChangeStats, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, RepoBatchChangeStats, TreePageRepositoryFields } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+
+import { fetchTreeCommits } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
-
-const fetchTreeCommits = memoizeObservable(
-    (args: {
-        repo: Scalars['ID']
-        revspec: string
-        first?: number
-        filePath?: string
-        after?: string
-    }): Observable<GQL.IGitCommitConnection> =>
-        queryGraphQL(
-            gql`
-                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
-                    node(id: $repo) {
-                        __typename
-                        ... on Repository {
-                            commit(rev: $revspec) {
-                                ancestors(first: $first, path: $filePath, after: $after) {
-                                    nodes {
-                                        ...GitCommitFields
-                                    }
-                                    pageInfo {
-                                        hasNextPage
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                ${gitCommitFragment}
-            `,
-            args
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.node) {
-                    throw new Error('Repository not found')
-                }
-                if (data.node.__typename !== 'Repository') {
-                    throw new Error('Node is not a Repository')
-                }
-                if (!data.node.commit) {
-                    throw new Error('Commit not found')
-                }
-                return data.node.commit.ancestors
-            })
-        ),
-    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
-)
 
 interface Props {
     repo: TreePageRepositoryFields
@@ -225,8 +177,8 @@ export const HomeTab: React.FunctionComponent<Props> = ({
 
     return (
         <div className="container m-0 p-0">
-            <div className="row justify-content-md-center">
-                <div className="col">
+            <div className="row justify-content-center">
+                <div className="col-sm">
                     {richHTML && <RenderedFile dangerousInnerHTML={richHTML} location={props.location} />}
                     {blobInfoOrError && !blobInfoOrError?.richHTML && blobInfoOrError?.aborted && (
                         <div>
@@ -239,68 +191,62 @@ export const HomeTab: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 </div>
-                <div className="col col-4 ml-1">
+                <div className="col-md col-lg-4 ml-1">
                     <div className="mb-5">
-                        <div className="row mb-3">
-                            <div className={styles.section}>
-                                <h2>Code Intel</h2>
-                                <div className={styles.item}>
-                                    <Badge
-                                        variant={codeIntelligenceEnabled ? 'primary' : 'danger'}
-                                        className={classNames('text-uppercase')}
-                                    >
-                                        {codeIntelligenceEnabled ? 'AVAILABLE' : 'DISABLED'}
-                                    </Badge>
-                                    {codeIntelligenceEnabled && (
-                                        <div className="d-block">
-                                            <div>Precise code intelligence</div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="row mb-3">
-                            <div className={styles.section}>
-                                <h2>Batch Changes</h2>
-                                {batchChangesEnabled ? (
-                                    <HomePageBatchChangeSection repoName={repo.name} />
-                                ) : (
-                                    <div className={styles.item}>
-                                        <Badge variant="danger" className={classNames('text-uppercase')}>
-                                            DISABLED
-                                        </Badge>
-                                        <div>Not available</div>
+                        <div className={styles.section}>
+                            <h2>Code Intel</h2>
+                            <div className={styles.item}>
+                                <Badge
+                                    variant={codeIntelligenceEnabled ? 'primary' : 'danger'}
+                                    className={classNames('text-uppercase')}
+                                >
+                                    {codeIntelligenceEnabled ? 'AVAILABLE' : 'DISABLED'}
+                                </Badge>
+                                {codeIntelligenceEnabled && (
+                                    <div className="d-block">
+                                        <div>Precise code intelligence</div>
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <div className="row mb-3">
-                            <div className={styles.section}>
-                                <h2>Changes</h2>
-                                <FilteredConnection<
-                                    GitCommitFields,
-                                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
-                                >
-                                    location={props.location}
-                                    className="mt-2"
-                                    listClassName="list-group list-group-flush"
-                                    noun="commit in this tree"
-                                    pluralNoun="commits in this tree"
-                                    queryConnection={queryCommits}
-                                    nodeComponent={GitCommitNode}
-                                    nodeComponentProps={{
-                                        className: classNames('list-group-item', styles.gitCommitNode),
-                                        messageSubjectClassName: undefined,
-                                        compact: true,
-                                    }}
-                                    updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                                    defaultFirst={7}
-                                    useURLQuery={false}
-                                    hideSearch={true}
-                                    emptyElement={emptyElement}
-                                    totalCountSummaryComponent={TotalCountSummary}
-                                />
-                            </div>
+                        <div className={styles.section}>
+                            <h2>Batch Changes</h2>
+                            {batchChangesEnabled ? (
+                                <HomePageBatchChangeSection repoName={repo.name} />
+                            ) : (
+                                <div className={styles.item}>
+                                    <Badge variant="danger" className={classNames('text-uppercase')}>
+                                        DISABLED
+                                    </Badge>
+                                    <div>Not available</div>
+                                </div>
+                            )}
+                        </div>
+                        <div className={styles.section}>
+                            <h2>Changes</h2>
+                            <FilteredConnection<
+                                GitCommitFields,
+                                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                            >
+                                location={props.location}
+                                className="mt-2"
+                                listClassName="list-group list-group-flush"
+                                noun="commit in this tree"
+                                pluralNoun="commits in this tree"
+                                queryConnection={queryCommits}
+                                nodeComponent={GitCommitNode}
+                                nodeComponentProps={{
+                                    className: classNames('list-group-item', styles.gitCommitNode),
+                                    messageSubjectClassName: undefined,
+                                    compact: true,
+                                }}
+                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
+                                defaultFirst={7}
+                                useURLQuery={false}
+                                hideSearch={true}
+                                emptyElement={emptyElement}
+                                totalCountSummaryComponent={TotalCountSummary}
+                            />
                         </div>
                     </div>
                 </div>
@@ -359,7 +305,12 @@ export const HomePageBatchChangeSection: React.FunctionComponent<HomePageBatchCh
                         <div>No changeset avaialble</div>
                     </div>
                     <div className="text-right">
-                        <Link to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>Create batch change</Link>
+                        <Link
+                            className="btn btn-sm btn-link"
+                            to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
+                        >
+                            Create batch change
+                        </Link>
                     </div>
                 </>
             )}

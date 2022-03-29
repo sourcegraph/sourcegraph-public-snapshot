@@ -30,7 +30,7 @@ import { TreeEntriesSection } from './TreeEntriesSection'
 
 import styles from './TreePage.module.scss'
 
-const fetchTreeCommits = memoizeObservable(
+export const fetchTreeCommits = memoizeObservable(
     (args: {
         repo: Scalars['ID']
         revspec: string

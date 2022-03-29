@@ -33,8 +33,10 @@
 }
 
 .section {
+    flex-direction: row;
     width: 100%;
     max-width: var(--media-xl);
+    margin-bottom: 1rem;
 }
 
 .item {
