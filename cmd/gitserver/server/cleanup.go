@@ -829,7 +829,7 @@ func sgMaintenance(dir GitDir) (err error) {
 func pruneIfNeeded(dir GitDir) (err error) {
 	needed, err := tooManyLooseObjects(dir, looseObjectsLimit)
 	defer func() {
-		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed))
+		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
 	}()
 	if err != nil {
 		return err
