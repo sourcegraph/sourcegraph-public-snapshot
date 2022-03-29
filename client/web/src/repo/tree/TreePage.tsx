@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { RouteComponentProps } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
@@ -26,7 +27,10 @@ import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { TreePageRepositoryFields } from '../../graphql-operations'
+import { TreePageRepositoryFields,
+    RepositoryFields,
+    ExternalLinkFields,
+} from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -38,6 +42,7 @@ import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
+        RouteComponentProps<{ revspec: string }>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -48,6 +53,8 @@ interface Props
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
+    repositoryFields: RepositoryFields
+    onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -76,6 +83,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
+    onDidUpdateExternalLinks,
     ...props
 }) => {
     useEffect(() => {
@@ -225,6 +233,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         <section className={classNames('test-tree-entries mb-3', styles.section)}>
                             <HomeTab {...homeTabProps} {...props} repo={repo} />
                         </section>
+                            {/* Not sure from where we are going to load this tab/component, so I assumed it would be from this this.
+                            // If we are going to wrap it in another section, we can
+                            render it with the following required props: */}
+                            {/* <CommitsTab
+                                {...props}
+                                repo={props.repositoryFields}
+                                onDidUpdateExternalLinks={onDidUpdateExternalLinks}
+                                settingsCascade={settingsCascade}  /> */}
                     </>
                 )}
             </Container>
