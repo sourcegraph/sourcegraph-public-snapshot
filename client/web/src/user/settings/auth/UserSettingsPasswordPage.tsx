@@ -30,6 +30,7 @@ interface State {
     newPasswordConfirmation: string
 }
 
+
 export class UserSettingsPasswordPage extends React.Component<Props, State> {
     public state: State = {
         oldPassword: '',
@@ -87,6 +88,40 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
+
+    public getPasswordRequirements() {
+        let requirements = ''
+        let passwordPolicyRef = window.context.experimentalFeatures.passwordPolicy
+
+            if (passwordPolicyRef && passwordPolicyRef.enabled === true)
+            {
+                if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0)
+                {
+                    requirements += 'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
+                }
+                if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0)
+                {
+                    requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
+                }
+                if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true)
+                {
+                    requirements += ', at least one number'
+                }
+                if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true)
+                {
+                    requirements += ', at least one uppercase letter'
+                }
+            }
+            else
+            {
+                requirements += 'At least 12 characters.'
+            }
+
+            return (
+                <small>{requirements}</small>
+            )
+    }
+
 
     public render(): JSX.Element | null {
         return (
@@ -148,7 +183,11 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
                                     />
-                                    <small className="form-help text-muted">At least 12 characters</small>
+                                    {this.getPasswordRequirements()}
+
+
+
+
                                 </div>
                                 <div className="form-group mb-0">
                                     <label htmlFor="newPasswordConfirmation">Confirm new password</label>
@@ -210,39 +249,39 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
 
     private validatePassword(password: string): void {
         if (window.context.experimentalFeatures.passwordPolicy?.enabled) {
-            if (password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength!) {
-                this.newPasswordConfirmationField!.setCustomValidity("Password must be greater than " + window.context.experimentalFeatures.passwordPolicy.minimumLength! + " characters.")
+            if ((window.context.experimentalFeatures.passwordPolicy.minimumLength) && password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength) {
+                this.newPasswordConfirmationField?.setCustomValidity('Password must be greater than ' + window.context.experimentalFeatures.passwordPolicy.minimumLength.toString() + ' characters.')
             }
-            if (window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! > 0) {
-                const specialCharacters = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/
+            if ((window.context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters) && window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0) {
+                const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
                 const count = (password.match(specialCharacters) || []).length
-                if (count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters!) {
-                    this.newPasswordConfirmationField!.setCustomValidity("Password must contain " + window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! + " special character(s).")
+                if ((window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) && count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) {
+                    this.newPasswordConfirmationField?.setCustomValidity('Password must contain ' + window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters.toString() + ' special character(s).')
                 }
             }
 
-            if (window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber!) {
+            if (((window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber) && window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber)) {
                 const validRequireAtLeastOneNumber = /\d+/
-                if (password.match(validRequireAtLeastOneNumber) == null) {
-                    this.newPasswordConfirmationField!.setCustomValidity("Password must contain at least one number.")
+                if (password.match(validRequireAtLeastOneNumber) === null) {
+                    this.newPasswordConfirmationField?.setCustomValidity('Password must contain at least one number.')
                 }
             }
 
-            if (window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase!) {
-                let validUseUpperCase = new RegExp('[A-Z]+')
+            if (((window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase) && window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase)) {
+                const validUseUpperCase = new RegExp('[A-Z]+')
                 if (!validUseUpperCase.test(password)) {
-                    this.newPasswordConfirmationField!.setCustomValidity("Password must contain at least one uppercase letter.")
+                    this.newPasswordConfirmationField?.setCustomValidity('Password must contain at least one uppercase letter.')
                 }
             }
 
-            this.newPasswordConfirmationField!.setCustomValidity('')
+            this.newPasswordConfirmationField?.setCustomValidity('')
         }
 
         if (password.length < 12) {
-            this.newPasswordConfirmationField!.setCustomValidity("Password must be at least 12 characters.")
+            this.newPasswordConfirmationField?.setCustomValidity('Password must be at least 12 characters.')
         }
 
-        this.newPasswordConfirmationField!.setCustomValidity('')
+        this.newPasswordConfirmationField?.setCustomValidity('')
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

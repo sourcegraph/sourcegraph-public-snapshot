@@ -54,6 +54,41 @@ interface SignUpFormProps extends FeatureFlagProps {
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 
+export function getPasswordRequirements() {
+    let requirements = ''
+    let passwordPolicyRef = window.context.experimentalFeatures.passwordPolicy
+
+        if (passwordPolicyRef && passwordPolicyRef.enabled === true)
+        {
+            console.log("Using enhanced password policy.");
+
+            if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0)
+            {
+                requirements += 'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
+            }
+            if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0)
+            {
+                requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
+            }
+            if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true)
+            {
+                requirements += ', at least one number'
+            }
+            if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true)
+            {
+                requirements += ', at least one uppercase letter'
+            }
+        }
+        else
+        {
+            requirements += 'At least 12 characters'
+            console.log("Using standard password policy.")
+        }
+
+        return requirements
+
+}
+
 /**
  * The form for creating an account
  */
@@ -95,6 +130,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const [passwordState, nextPasswordFieldChange, passwordInputReference] = useInputValidation(
         signUpFieldValidators.password
     )
+
 
     const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
@@ -139,6 +175,40 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
         },
         []
     )
+
+    const getPasswordRequirements = () => {
+        let requirements = ''
+        let passwordPolicyRef = window.context.experimentalFeatures.passwordPolicy
+
+            if (passwordPolicyRef && passwordPolicyRef.enabled === true)
+            {
+                if (passwordPolicyRef.minimumLength && passwordPolicyRef.minimumLength > 0)
+                {
+                    requirements += 'Your password must include at least ' + passwordPolicyRef.minimumLength.toString() + ' characters'
+                }
+                if (passwordPolicyRef.numberOfSpecialCharacters && passwordPolicyRef.numberOfSpecialCharacters > 0)
+                {
+                    requirements += ', ' + passwordPolicyRef.numberOfSpecialCharacters.toString() + ' special characters'
+                }
+                if (passwordPolicyRef.requireAtLeastOneNumber && passwordPolicyRef.requireAtLeastOneNumber === true)
+                {
+                    requirements += ', at least one number'
+                }
+                if (passwordPolicyRef.requireUpperandLowerCase && passwordPolicyRef.requireUpperandLowerCase === true)
+                {
+                    requirements += ', at least one uppercase letter'
+                }
+            }
+            else
+            {
+                requirements += 'At least 12 characters.'
+            }
+
+            return (
+                <small className="form-help text-muted">{requirements}</small>
+            )
+    }
+
     return (
         <>
             {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
@@ -218,13 +288,16 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             formNoValidate={true}
                         />
                     </LoaderInput>
-                    {passwordState.kind === 'INVALID' ? (
+                    {passwordState.kind === 'INVALID' && (
+
                         <small className="invalid-feedback" role="alert">
                             {passwordState.reason}
                         </small>
-                    ) : (
-                        <small className="form-text text-muted">At least 12 characters</small>
+
                     )}
+                    {getPasswordRequirements()}
+
+
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
@@ -322,39 +395,41 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
     )
 }
 
-function validatePassword(password: string): Observable<string | undefined> {
+
+function validatePassword(password: string): string | undefined {
     if (window.context.experimentalFeatures.passwordPolicy?.enabled) {
-        if (password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength!) {
-            return of("Password must be greater than " + window.context.experimentalFeatures.passwordPolicy.minimumLength! + " characters.")
+        if ((window.context.experimentalFeatures.passwordPolicy.minimumLength) && password.length < window.context.experimentalFeatures.passwordPolicy.minimumLength) {
+            return ('Password must be greater than ' + window.context.experimentalFeatures.passwordPolicy.minimumLength.toString() + ' characters.')
         }
-        if (window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! > 0) {
-            const specialCharacters = /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~]/
+        if ((window.context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters) && window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0) {
+            const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
             const count = (password.match(specialCharacters) || []).length
-            if (count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters!) {
-                return of("Password must contain " + window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters! + " special character(s).")
+            if ((window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) && count < window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) {
+                return ('Password must contain ' + window.context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters.toString() + ' special character(s).')
             }
         }
 
-        if (window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber!) {
+        if (((window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber) && window.context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber)) {
             const validRequireAtLeastOneNumber = /\d+/
-            if (password.match(validRequireAtLeastOneNumber) == null) {
-                return of("Password must contain at least one number.")
+            if (password.match(validRequireAtLeastOneNumber) === null) {
+                return ('Password must contain at least one number.')
             }
         }
 
-        if (window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase!) {
-            let validUseUpperCase = new RegExp('[A-Z]+')
+        if (((window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase) && window.context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase)) {
+            const validUseUpperCase = new RegExp('[A-Z]+')
             if (!validUseUpperCase.test(password)) {
-                return of("Password must contain at least one uppercase letter.")
+                return ('Password must contain at least one uppercase letter.')
             }
         }
 
-        return of(undefined)
+        return (undefined)
     }
 
     if (password.length < 12) {
-        return of("Password must be at least 12 characters.")
+        return ('Password must be at least 12 characters.')
     }
 
-    return of(undefined)
+    return (undefined)
 }
+

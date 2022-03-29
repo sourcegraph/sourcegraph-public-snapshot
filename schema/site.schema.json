@@ -87,7 +87,8 @@
             "minimumLength": {
               "description": "The minimum length required for a password",
               "type": "integer",
-              "length": 12
+              "length": 12,
+              "default": 12
             },
             "numberOfSpecialCharacters": {
               "description": "The required number of special characters",
