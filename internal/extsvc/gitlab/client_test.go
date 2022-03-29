@@ -37,7 +37,7 @@ func createTestProvider(t *testing.T) *ClientProvider {
 		t.Fatal(err)
 	}
 	baseURL, _ := url.Parse("https://gitlab.com/")
-	provider := NewClientProvider(baseURL, doer)
+	provider := NewClientProvider("Test", baseURL, doer)
 	return provider
 }
 

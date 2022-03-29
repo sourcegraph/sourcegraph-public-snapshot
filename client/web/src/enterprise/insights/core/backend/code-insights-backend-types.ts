@@ -7,14 +7,13 @@ import {
     SearchBasedInsightSeries,
     CaptureGroupInsight,
     LangStatsInsight,
+    InsightsDashboardOwner,
 } from '../types'
-import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/insight/search-insight'
+import { SearchBackendBasedInsight, SearchRuntimeBasedInsight } from '../types/insight/types/search-insight'
 
 export interface DashboardCreateInput {
     name: string
-    visibility: string
-    insightIds?: string[]
-    type?: string
+    owners: InsightsDashboardOwner[]
 }
 
 export interface DashboardCreateResult {
@@ -44,12 +43,18 @@ export interface FindInsightByNameInput {
     name: string
 }
 
-export type MinimalSearchRuntimeBasedInsightData = Omit<SearchRuntimeBasedInsight, 'id' | 'dashboardReferenceCount'>
-export type MinimalSearchBackendBasedInsightData = Omit<SearchBackendBasedInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalSearchRuntimeBasedInsightData = Omit<
+    SearchRuntimeBasedInsight,
+    'id' | 'dashboardReferenceCount' | 'isFrozen'
+>
+export type MinimalSearchBackendBasedInsightData = Omit<
+    SearchBackendBasedInsight,
+    'id' | 'dashboardReferenceCount' | 'isFrozen'
+>
 export type MinimalSearchBasedInsightData = MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData
 
-export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount'>
-export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount'>
+export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type CreationInsightInput =
     | MinimalSearchBasedInsightData

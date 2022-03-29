@@ -5,7 +5,7 @@ import { drop } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { useLocation } from 'react-router'
 
-import { Alert, Button } from '@sourcegraph/wildcard'
+import { Alert, Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './InviteMemberModal.module.scss'
 
@@ -60,7 +60,7 @@ export const OrgMemberNotification: React.FunctionComponent<MembersNotificationP
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>{message}</div>
         <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <CloseIcon className="icon-inline" />
+            <Icon as={CloseIcon} />
         </Button>
     </Alert>
 )

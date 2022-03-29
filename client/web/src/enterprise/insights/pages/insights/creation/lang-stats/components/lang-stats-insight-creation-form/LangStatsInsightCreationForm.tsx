@@ -12,6 +12,7 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoryField } from '../../../../../../components/form/repositories-field/RepositoryField'
 import { LimitedAccessLabel } from '../../../../../../components/limited-access-label/LimitedAccessLabel'
+import { Insight } from '../../../../../../core/types'
 import { useUiFeatures } from '../../../../../../hooks/use-ui-features'
 import { LangStatsCreationFormFields } from '../../types'
 
@@ -30,6 +31,7 @@ export interface LangStatsInsightCreationFormProps {
     title: useFieldAPI<LangStatsCreationFormFields['title']>
     repository: useFieldAPI<LangStatsCreationFormFields['repository']>
     threshold: useFieldAPI<LangStatsCreationFormFields['threshold']>
+    insight?: Insight
 
     onCancel: () => void
     onFormReset: () => void
@@ -50,16 +52,20 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         dashboardReferenceCount,
         onCancel,
         onFormReset,
+        insight,
     } = props
 
     const isEditMode = mode === 'edit'
-    const { licensed, insight } = useUiFeatures()
+    const { licensed, insight: insightFeatures } = useUiFeatures()
 
     const creationPermission = useObservable(
-        useMemo(() => (isEditMode ? insight.getEditPermissions() : insight.getCreationPermissions()), [
-            insight,
-            isEditMode,
-        ])
+        useMemo(
+            () =>
+                isEditMode && insight
+                    ? insightFeatures.getEditPermissions(insight)
+                    : insightFeatures.getCreationPermissions(),
+            [insightFeatures, isEditMode, insight]
+        )
     )
 
     return (

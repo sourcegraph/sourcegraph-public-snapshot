@@ -3,6 +3,7 @@ import React from 'react'
 import { startCase } from 'lodash'
 import 'storybook-addon-designs'
 
+import { Icon } from '../../Icon'
 import { Button, ButtonProps } from '../Button'
 import { BUTTON_VARIANTS } from '../constants'
 
@@ -17,21 +18,21 @@ export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
     variants,
     size,
     outline,
-    icon: Icon,
+    icon: ButtonIcon,
 }) => (
     <div className={styles.grid}>
         {variants.map(variant => (
             <React.Fragment key={variant}>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log}>
-                    {Icon && <Icon className="icon-inline mr-1" />}
+                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
                     {startCase(variant)}
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
-                    {Icon && <Icon className="icon-inline mr-1" />}
+                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
                     Focus
                 </Button>
                 <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
-                    {Icon && <Icon className="icon-inline mr-1" />}
+                    {ButtonIcon && <Icon as={ButtonIcon} className="mr-1" />}
                     Disabled
                 </Button>
             </React.Fragment>

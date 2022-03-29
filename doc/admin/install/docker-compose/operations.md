@@ -143,6 +143,8 @@ sourcegraph-frontend-0:
 
 See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a .env file, etc.).
 
+> _Note: After adding a new environment variable to your `docker-compose.yaml` you'll need to redeploy from the new spec by running `docker-compose up -d`, running `docker-compose restart` will not be sufficiant to add the new environment variable._
+
 ## Upgrade
 
 This requires you to have [set up configuration for Docker Compose](#configure).

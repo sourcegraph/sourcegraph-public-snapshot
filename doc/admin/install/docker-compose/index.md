@@ -82,4 +82,8 @@ Sourcegraph for Docker Compose is configured using our [`sourcegraph/deploy-sour
 
 > WARNING: Running Sourcegraph on Windows is not supported for production deployments.
 
+### ARM / ARM64 support
+
+> WARNING: Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
+
 The Docker Compose installation requires a minimum of 8 CPU cores (logical) on the host machine in order to complete successfully. If using the Docker for Windows app, the default CPU count is limited to 2 which will result in errors during installation. You can go into the Docker app Settings->Resources window to increase the CPU count to > 8 to resolve this issue.

@@ -2,6 +2,7 @@ import React, { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes,
 
 import classNames from 'classnames'
 
+import { Label } from '../../Typography/Label'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
 import { getValidStyle } from '../internal/utils'
 
@@ -52,7 +53,7 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
         } = props
 
         return (
-            <label className={classNames(styles.label, className)}>
+            <Label className={classNames(styles.label, className)}>
                 {label && <div className="mb-2">{size === 'small' ? <small>{label}</small> : label}</div>}
 
                 {/* eslint-disable-next-line react/forbid-elements */}
@@ -70,7 +71,7 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
                     ref={reference}
                 />
                 {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
-            </label>
+            </Label>
         )
     }
 )

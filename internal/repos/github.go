@@ -207,11 +207,12 @@ func newGithubSource(
 		return nil, err
 	}
 	token := &auth.OAuthBearerToken{Token: c.Token}
+	urn := svc.URN()
 
 	var (
-		v3Client     = github.NewV3Client(apiURL, token, cli)
-		v4Client     = github.NewV4Client(apiURL, token, cli)
-		searchClient = github.NewV3SearchClient(apiURL, token, cli)
+		v3Client     = github.NewV3Client(urn, apiURL, token, cli)
+		v4Client     = github.NewV4Client(urn, apiURL, token, cli)
+		searchClient = github.NewV3SearchClient(urn, apiURL, token, cli)
 	)
 
 	useGitHubApp := false
@@ -233,7 +234,7 @@ func newGithubSource(
 		if err != nil {
 			return nil, errors.Wrap(err, "parse api.github.com")
 		}
-		client := github.NewV3Client(apiURL, auther, nil)
+		client := github.NewV3Client(urn, apiURL, auther, nil)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
@@ -246,8 +247,8 @@ func newGithubSource(
 		}
 
 		auther = &auth.OAuthBearerToken{Token: token}
-		v3Client = github.NewV3Client(apiURL, auther, cli)
-		v4Client = github.NewV4Client(apiURL, auther, cli)
+		v3Client = github.NewV3Client(urn, apiURL, auther, cli)
+		v4Client = github.NewV4Client(urn, apiURL, auther, cli)
 
 		useGitHubApp = true
 	}

@@ -57,13 +57,13 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	githubUrl, _ := github.APIRoot(baseURL)
-	client := github.NewV4Client(githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
+	client := github.NewV4Client(r.externalService.URN(), githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
 
 	possibleRepos := githubCfg.Repos
 	if len(possibleRepos) == 0 {
 		// External service is describing "sync all repos" instead of a specific set. Query a few of
 		// those that we'll look for collaborators in.
-		repos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
+		repos, err := backend.NewRepos(r.db).List(ctx, database.ReposListOptions{
 			// SECURITY: This must be the authenticated user's external service ID.
 			ExternalServiceIDs: []int64{r.externalService.ID},
 			OrderBy: database.RepoListOrderBy{{

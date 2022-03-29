@@ -200,7 +200,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
-        eventLogger.logViewEvent('OrganizationMembers', { organizationId: org.id })
+        eventLogger.logPageView('OrganizationMembers', { organizationId: org.id })
     }, [org.id])
 
     const isSelf = (userId: string): boolean => authenticatedUser !== null && userId === authenticatedUser.id

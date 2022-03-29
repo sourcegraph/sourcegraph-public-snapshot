@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { PopoverContent, Position, Point as PopoverPoint, createRectangle } from '@sourcegraph/wildcard'
 
-import { LineChartSeries } from '../../types'
+import { Series } from '../../../../types'
 
 import styles from './Tooltip.module.scss'
 
@@ -13,7 +13,7 @@ const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
  */
 export const DEFAULT_LINE_STROKE = 'var(--gray-07)'
 
-export function getLineStroke<Datum>(line: LineChartSeries<Datum>): string {
+export function getLineStroke<Datum>(line: Series<Datum>): string {
     return line?.color ?? DEFAULT_LINE_STROKE
 }
 

@@ -13,6 +13,7 @@ type operations struct {
 	commitDate            *observation.Operation
 	commitExists          *observation.Operation
 	commitGraph           *observation.Operation
+	commitsExist          *observation.Operation
 	commitsUniqueToBranch *observation.Operation
 	directoryChildren     *observation.Operation
 	fileExists            *observation.Operation
@@ -50,6 +51,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		commitDate:            op("CommitDate"),
 		commitExists:          op("CommitExists"),
 		commitGraph:           op("CommitGraph"),
+		commitsExist:          op("CommitsExist"),
 		commitsUniqueToBranch: op("CommitsUniqueToBranch"),
 		directoryChildren:     op("DirectoryChildren"),
 		fileExists:            op("FileExists"),

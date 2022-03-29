@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -267,7 +268,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 
 	repos := makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")
-	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
+	repos[0].ListRefs = func(context.Context, database.DB, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 
@@ -440,8 +441,23 @@ func RunRepoSubsetTextSearch(
 	g, ctx := errgroup.WithContext(ctx)
 
 	if notSearcherOnly {
+		b, err := query.ToBasicQuery(q)
+		if err != nil {
+			return nil, streaming.Stats{}, err
+		}
+
+		types, _ := q.StringValues(query.FieldType)
+		var resultTypes result.Types
+		if len(types) == 0 {
+			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, t := range types {
+				resultTypes = resultTypes.With(result.TypeFromString[t])
+			}
+		}
+
 		typ := search.TextRequest
-		zoektQuery, err := search.QueryToZoektQuery(patternInfo, nil, typ)
+		zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, nil, typ)
 		if err != nil {
 			return nil, streaming.Stats{}, err
 		}

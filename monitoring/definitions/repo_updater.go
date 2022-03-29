@@ -206,6 +206,18 @@ func RepoUpdater() *monitoring.Container {
 					},
 					{
 						{
+							Name:        "src_repoupdater_stale_repos",
+							Description: "repos that haven't been fetched in more than 8 hours",
+							Query:       `max(src_repoupdater_stale_repos)`,
+							Warning:     monitoring.Alert().GreaterOrEqual(1).For(25 * time.Minute),
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: `
+								Check repo-updater logs for errors.
+								Check for rows in gitserver_repos where LastError is not an empty string.
+`,
+						},
+						{
 							Name:              "sched_error",
 							Description:       "repositories schedule error rate",
 							Query:             `max(rate(src_repoupdater_sched_error[1m]))`,

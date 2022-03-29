@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,11 +48,11 @@ func LogReverseArgs(n int, givenCommit string) []string {
 	}
 }
 
-func LogReverseEach(repo string, commit string, n int, onLogEntry func(entry LogEntry) error) error {
+func LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(entry LogEntry) error) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	command := gitserver.DefaultClient.Command("git", LogReverseArgs(n, commit)...)
+	command := gitserver.NewClient(db).Command("git", LogReverseArgs(n, commit)...)
 	command.Repo = api.RepoName(repo)
 	// We run a single `git log` command and stream the output while the repo is being processed, which
 	// can take much longer than 1 minute (the default timeout).
