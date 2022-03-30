@@ -18,8 +18,8 @@ import (
 var (
 	updateFlags = flag.NewFlagSet("sg update", flag.ExitOnError)
 	// TODO: These are deprecated flags and can be removed May 1st 2022
-	updateToLocal  = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
-	updateDownload = updateFlags.Bool("download", true, "Download a prebuilt binary of 'sg' instead of compiling it locally")
+	_ = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
+	_ = updateFlags.Bool("download", true, "Download a prebuilt binary of 'sg' instead of compiling it locally")
 )
 
 var updateCommand = &ffcli.Command{
