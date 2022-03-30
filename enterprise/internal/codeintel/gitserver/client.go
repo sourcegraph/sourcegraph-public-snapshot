@@ -75,19 +75,17 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 		return nil, err
 	}
 
-	exists := make([]bool, len(commits))
-	for i, rc := range commits {
-		name, ok := repositoryNames[rc.RepositoryID]
-		if !ok {
-			continue
-		}
+	repoCommits := make([]api.RepoCommit, 0, len(commits))
+	for _, rc := range commits {
+		repoCommits = append(repoCommits, api.RepoCommit{
+			Repo:     repositoryNames[rc.RepositoryID],
+			CommitID: api.CommitID(rc.Commit),
+		})
+	}
 
-		e, err := git.CommitExists(ctx, c.db, name, api.CommitID(rc.Commit), authz.DefaultSubRepoPermsChecker)
-		if err != nil {
-			return nil, err
-		}
-
-		exists[i] = e
+	exists, err := git.CommitsExist(ctx, c.db, repoCommits, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return nil, err
 	}
 	if len(exists) != len(commits) {
 		// Add assertion here so that the blast radius of new or newly discovered errors southbound
