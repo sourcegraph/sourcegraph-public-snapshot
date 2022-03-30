@@ -192,7 +192,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         '/-/tag/tab',
         '/-/contributors/tab',
         '/-/compare/tab/:spec*',
-        '/-/home/tab',
     ].map(routePath => ({
         path: routePath,
         exact: routePath === '',

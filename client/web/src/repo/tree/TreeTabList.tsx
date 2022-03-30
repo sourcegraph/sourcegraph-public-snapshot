@@ -57,12 +57,12 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 url: `${tree.url}/-/tag/tab`,
             },
             {
-                tab: 'compares',
+                tab: 'compare',
                 title: 'Compare',
-                isActive: selectedTab === 'compares',
+                isActive: selectedTab === 'compare',
                 logName: 'RepoCompareTab',
                 icon: <Icon as={HistoryIcon} />,
-                url: `${tree.url}/-/compares/tab`,
+                url: `${tree.url}/-/compare/tab`,
             },
             {
                 tab: 'contributors',

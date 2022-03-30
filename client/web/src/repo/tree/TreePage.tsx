@@ -30,9 +30,11 @@ import { ActionItemsBar, ActionItemsBarProps } from '../../extensions/components
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
+import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
 import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
+import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
 import { RepoCommits, RepoDocs } from '../routes'
 import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
@@ -43,8 +45,6 @@ import { TreeNavigation } from './TreeNavigation'
 import { TreeTabList } from './TreeTabList'
 
 import styles from './TreePage.module.scss'
-import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
-import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -283,7 +283,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         }}
                                     />
                                     <Route
-                                        path={`${treeOrError.url}/-/home/tab`}
+                                        path={`${treeOrError.url}`}
+                                        exact={true}
                                         render={routeComponentProps => {
                                             setSelectedTab('home')
                                             return (
@@ -316,26 +317,32 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             )
                                         }}
                                     />
-                                    <Route path={`${treeOrError.url}/-/compare/tab`}>
-                                        <RepoRevisionWrapper>
-                                            <RepositoryGitDataContainer {...props} repoName={repo.name}>
-                                                <RepositoryCompareArea
-                                                    repo={repo}
-                                                    match={match}
-                                                    settingsCascade={settingsCascade}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...props}
-                                                />
-                                            </RepositoryGitDataContainer>
-                                            <ActionItemsBar
-                                                extensionsController={props.extensionsController}
-                                                platformContext={props.platformContext}
-                                                useActionItemsBar={useActionItemsBar}
-                                                location={props.location}
-                                                telemetryService={props.telemetryService}
-                                            />
-                                        </RepoRevisionWrapper>
-                                    </Route>
+                                    <Route
+                                        path={`${treeOrError.url}/-/compare/tab`}
+                                        render={() => {
+                                            setSelectedTab('compare')
+                                            return (
+                                                <RepoRevisionWrapper>
+                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                        <RepositoryCompareArea
+                                                            repo={repo}
+                                                            match={match}
+                                                            settingsCascade={settingsCascade}
+                                                            useBreadcrumb={useBreadcrumb}
+                                                            {...props}
+                                                        />
+                                                    </RepositoryGitDataContainer>
+                                                    <ActionItemsBar
+                                                        extensionsController={props.extensionsController}
+                                                        platformContext={props.platformContext}
+                                                        useActionItemsBar={useActionItemsBar}
+                                                        location={props.location}
+                                                        telemetryService={props.telemetryService}
+                                                    />
+                                                </RepoRevisionWrapper>
+                                            )
+                                        }}
+                                    />
                                 </Switch>
                             </section>
                         </div>
