@@ -61,7 +61,11 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
             {variant === 'horizontal' && <Header onClose={onClose}>Don't show again</Header>}
             <MarketingBlock
                 wrapperClassName={classNames('w-100 d-flex', variant !== 'horizontal' && styles.marketingBlockWrapper)}
-                contentClassName={classNames(styles.marketingBlockContent, 'w-100 py-3 d-flex flex-column')}
+                contentClassName={classNames(
+                    styles.marketingBlockContent,
+                    'w-100 d-flex flex-column',
+                    variant === 'horizontal' ? 'pt-3 pb-1' : 'py-3'
+                )}
             >
                 {variant !== 'horizontal' && <Header onClose={onClose} />}
                 <div
@@ -73,6 +77,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                     style={{ maxHeight: `${height}rem` }}
                 >
                     {variant === 'horizontal' &&
+                        completedTaskChunks.length > 0 &&
                         completedTaskChunks.map((completedTaskChunk, index) => (
                             <div key={index}>
                                 {variant === 'horizontal' && index === 0 && <p className={styles.title}>Completed</p>}
@@ -84,7 +89,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                     {ongoingTasks.map(task => (
                         <TourTask key={task.title} {...task} variant={variant !== 'horizontal' ? 'small' : undefined} />
                     ))}
-                    {variant !== 'horizontal' && (
+                    {variant !== 'horizontal' && completedTasks.length > 0 && (
                         <div>
                             {completedTasks.map(completedTask => (
                                 <CompletedItem key={completedTask.title}>{completedTask.title}</CompletedItem>

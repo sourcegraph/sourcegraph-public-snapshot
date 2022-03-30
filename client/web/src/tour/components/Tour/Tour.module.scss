@@ -76,7 +76,7 @@
     }
 
     // Firefox custom scrollbar
-    @-moz-document url-prefix() {
+    @-moz-document url-prefix('') {
         scrollbar-width: thin;
         scrollbar-color: var(--text-muted);
         &.is-horizontal {
@@ -135,6 +135,7 @@
 }
 
 .progress-bar {
+    flex-shrink: 0;
     width: 1rem;
     height: 1rem;
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
