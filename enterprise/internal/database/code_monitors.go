@@ -70,7 +70,7 @@ type CodeMonitorStore interface {
 	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)
 	ListSlackWebhookActions(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
 
-	UpdateBatchChangeAction(ctx context.Context, id int64, enabled, includeResults bool, url string) (*BatchChangeAction, error)
+	UpdateBatchChangeAction(ctx context.Context, id int64, enabled bool, batchChangeID int64) (*BatchChangeAction, error)
 	CreateBatchChangeAction(ctx context.Context, monitorID int64, enabled bool, batchChangeID int64) (*BatchChangeAction, error)
 	DeleteBatchChangeActions(ctx context.Context, monitorID int64, ids ...int64) error
 	CountBatchChangeActions(ctx context.Context, monitorID int64) (int, error)

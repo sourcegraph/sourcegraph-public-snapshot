@@ -316,7 +316,12 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	}
 
 	ok, err := s.Store.With(tx).MarkComplete(ctx, id, options)
+	if err != nil {
+		return false, tx.Done(err)
+	}
 
+	// IF batch spec has AutoApply flag set, and if the workspace is the last one to finish, we want to call the applyBatchChanger to
+	// automatically apply the spec after it has executed.
 	if err := s.applyBatchChanger(ctx, tx, batchSpec.RandID); err != nil {
 		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to apply batch spec: %s", err))
 	}
