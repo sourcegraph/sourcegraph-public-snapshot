@@ -27,6 +27,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { ActionItemsBar, ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -48,6 +49,7 @@ import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
+        FeatureFlagProps,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -90,6 +92,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
     useActionItemsBar,
     match,
+    featureFlags,
     ...props
 }) => {
     useEffect(() => {
@@ -184,6 +187,20 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }
 
     const newRepoPage = true
+    // To start using the feature flag bellow, you can go to /api/console and
+    // create a new featurFlag named 'new-repo-page' and set its value to true.
+
+    // const newRepoPage = (): boolean => {
+    //     let showPage = false
+    //     const flags = featureFlags.entries()
+    //     for(const [key, value] of flags) {
+    //         if (key.match('new-repo-page') && value) {
+    //             showPage = true
+    //         }
+    //     }
+
+    //     return showPage
+    // }
 
     const homeTabProps = {
         repo,
