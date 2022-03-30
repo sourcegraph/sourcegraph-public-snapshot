@@ -8,6 +8,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	batchesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -15,9 +17,12 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -387,19 +392,26 @@ func (r *actionRunner) handleBatchChange(ctx context.Context, j *edb.ActionJob) 
 		return errors.Wrap(err, "GetBatchChangeAction")
 	}
 
-	bstore := batchesstore.New(s.Handle().DB(), nil, nil)
-	bc, err := bstore.GetBatchChange(ctx, batchesstore.GetBatchChangeOpts{
+	internalCtx := actor.WithInternalActor(ctx)
+
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+	bstore := batchesstore.New(s.Handle().DB(), observationContext, keyring.Default().BatchChangesCredentialKey)
+	bc, err := bstore.GetBatchChange(internalCtx, batchesstore.GetBatchChangeOpts{
 		ID: action.BatchChange,
 	})
 	if err != nil {
 		return err
 	}
-	spec, err := bstore.GetBatchSpec(ctx, batchesstore.GetBatchSpecOpts{ID: bc.BatchSpecID})
+	spec, err := bstore.GetBatchSpec(internalCtx, batchesstore.GetBatchSpecOpts{ID: bc.BatchSpecID})
 	if err != nil {
 		return err
 	}
 	svc := service.New(bstore)
-	if _, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
+	if _, err := svc.CreateBatchSpecFromRaw(internalCtx, service.CreateBatchSpecFromRawOpts{
 		RawSpec:          spec.RawSpec,
 		AllowIgnored:     spec.AllowIgnored,
 		AllowUnsupported: spec.AllowUnsupported,

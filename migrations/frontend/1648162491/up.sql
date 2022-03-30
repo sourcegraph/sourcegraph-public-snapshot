@@ -16,3 +16,22 @@ ALTER TABLE batch_specs ADD COLUMN IF NOT EXISTS auto_apply boolean NOT NULL DEF
 ALTER TABLE batch_specs ADD COLUMN IF NOT EXISTS auto_execute boolean NOT NULL DEFAULT false;
 
 ALTER TABLE cm_action_jobs ADD COLUMN IF NOT EXISTS batch_change integer;
+
+ALTER TABLE cm_action_jobs DROP CONSTRAINT cm_action_jobs_only_one_action_type;
+ALTER TABLE cm_action_jobs ADD CONSTRAINT cm_action_jobs_only_one_action_type CHECK (((((
+CASE
+    WHEN (email IS NULL) THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN (webhook IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (slack_webhook IS NULL) THEN 0
+    ELSE 1
+END) +
+CASE
+    WHEN (batch_change IS NULL) THEN 0
+    ELSE 1
+END) = 1));

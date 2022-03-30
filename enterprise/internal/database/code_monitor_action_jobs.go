@@ -320,6 +320,7 @@ func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 		&aj.Email,
 		&aj.Webhook,
 		&aj.SlackWebhook,
+		&aj.BatchChange,
 		&aj.TriggerEvent,
 		&aj.State,
 		&aj.FailureMessage,
