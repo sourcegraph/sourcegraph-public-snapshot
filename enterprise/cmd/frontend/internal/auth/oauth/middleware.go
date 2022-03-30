@@ -3,13 +3,8 @@ package oauth
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"io"
 	"log"
 	"net/http"
@@ -23,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -187,9 +183,9 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		installationIDDecoded, err := decryptWithPrivateKey(string(installationIDParam), privateKey)
+		installationIDDecoded, err := app.DecryptWithPrivateKey(string(installationIDParam), privateKey)
 		if err != nil {
-			log15.Error("Unexpected error while decoding installation ID.", "error", err)
+			log15.Error("Unexpected error while decrypting installation ID.", "error", err)
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
 			return
 		}
@@ -223,23 +219,6 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 		}
 	}))
 	return mux
-}
-
-func decryptWithPrivateKey(encodedMsg string, privateKey []byte) (string, error) {
-	block, _ := pem.Decode(privateKey)
-
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return "", errors.Wrap(err, "parse private key")
-	}
-
-	hash := sha256.New()
-	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(encodedMsg), nil)
-	if err != nil {
-		return "", errors.Wrap(err, "decrypt message")
-	}
-
-	return string(plaintext), nil
 }
 
 // serviceType -> scopes

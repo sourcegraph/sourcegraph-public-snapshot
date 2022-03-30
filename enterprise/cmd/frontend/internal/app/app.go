@@ -108,7 +108,27 @@ func isSetupActionValid(setupAction string) bool {
 	return false
 }
 
-func encryptWithPrivateKey(msg string, privateKey []byte) ([]byte, error) {
+// DescryptWithPrivatekey decrypts a message using a provided private key byte string in PEM format.
+func DecryptWithPrivateKey(encodedMsg string, privateKey []byte) (string, error) {
+	block, _ := pem.Decode(privateKey)
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return "", errors.Wrap(err, "parse private key")
+	}
+
+	hash := sha256.New()
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(encodedMsg), nil)
+	if err != nil {
+		return "", errors.Wrap(err, "decrypt message")
+	}
+
+	return string(plaintext), nil
+}
+
+// EncryptWithPrivatekey encrypts a message using a provided private key byte string in PEM format.
+// The public key used for encryption is derived from the provided private key.
+func EncryptWithPrivateKey(msg string, privateKey []byte) ([]byte, error) {
 	block, _ := pem.Decode(privateKey)
 
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -149,12 +169,12 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 				if err != nil {
 					w.WriteHeader(http.StatusBadRequest)
-					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
+					_, _ = w.Write([]byte(`Error while decoding encryption key`))
 					return
 				}
 
 				installationID := r.URL.Query().Get("installation_id")
-				encryptedInstallationID, err := encryptWithPrivateKey(installationID, privateKey)
+				encryptedInstallationID, err := EncryptWithPrivateKey(installationID, privateKey)
 				if err != nil {
 					w.WriteHeader(http.StatusBadRequest)
 					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
