@@ -514,9 +514,15 @@ For advanced users who are looking for a temporary workaround, we __recommend__ 
 
 You can learn more about how to integrate Kustomize with Helm from our [example](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/kustomize-chart).
 
-### Sub-chart
+### Helm subcharts
 
-__TODO__
+[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as using a custom database configuration file or adding a new resource unique to your deployment. These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
+
+With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
+
+An example of a subchart is shown in the [examples/subchart](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) folder.
+
+More details on how to create and configure a subchart can be found in the [helm documentation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals).
 
 ## Upgrading Sourcegraph
 
