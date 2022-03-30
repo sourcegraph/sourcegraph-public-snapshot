@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize } from 'lodash'
+import { capitalize, find } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -691,47 +691,60 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<{
     setActiveLocation: (reference: Location | undefined) => void
     getLineContent: (location: Location) => string
     filter: string | undefined
-}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => (
-    <Collapse openByDefault={true}>
-        {({ isOpen }) => (
-            <>
-                <CollapseHeader
-                    as={Button}
-                    aria-expanded={isOpen}
-                    type="button"
-                    className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
-                >
-                    <span className="p-0 mb-0">
-                        {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
-                        ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
-                        )}
+}> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
+    const allSearchBased = useMemo(
+        () =>
+            find(
+                repoLocationGroup.referenceGroups.flatMap(reference => reference.locations),
+                location => !location.precise
+            ) !== undefined,
+        [repoLocationGroup]
+    )
 
-                        <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
+    return (
+        <Collapse openByDefault={true}>
+            {({ isOpen }) => (
+                <>
+                    <CollapseHeader
+                        as={Button}
+                        aria-expanded={isOpen}
+                        type="button"
+                        className="bg-transparent py-1 border-bottom border-top-0 border-left-0 border-right-0 d-flex justify-content-start w-100"
+                    >
+                        <span className="p-0 mb-0">
+                            {isOpen ? (
+                                <Icon aria-label="Close" as={ChevronDownIcon} />
+                            ) : (
+                                <Icon aria-label="Expand" as={ChevronRightIcon} />
+                            )}
 
-                        <Badge pill={true} small={true} variant="secondary" className="ml-2">
-                            {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
-                        </Badge>
-                    </span>
-                </CollapseHeader>
+                            <Link to={`/${repoLocationGroup.repoName}`}>
+                                {displayRepoName(repoLocationGroup.repoName)}
+                            </Link>
 
-                <CollapsePanel id={repoLocationGroup.repoName}>
-                    {repoLocationGroup.referenceGroups.map(group => (
-                        <ReferenceGroup
-                            key={group.path + group.repoName}
-                            group={group}
-                            activeLocation={activeLocation}
-                            setActiveLocation={setActiveLocation}
-                            getLineContent={getLineContent}
-                            filter={filter}
-                        />
-                    ))}
-                </CollapsePanel>
-            </>
-        )}
-    </Collapse>
-)
+                            <Badge pill={true} small={true} variant="secondary" className="ml-2">
+                                {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
+                            </Badge>
+                        </span>
+                    </CollapseHeader>
+
+                    <CollapsePanel id={repoLocationGroup.repoName}>
+                        {repoLocationGroup.referenceGroups.map(group => (
+                            <ReferenceGroup
+                                key={group.path + group.repoName}
+                                group={group}
+                                activeLocation={activeLocation}
+                                setActiveLocation={setActiveLocation}
+                                getLineContent={getLineContent}
+                                filter={filter}
+                            />
+                        ))}
+                    </CollapsePanel>
+                </>
+            )}
+        </Collapse>
+    )
+}
 
 const ReferenceGroup: React.FunctionComponent<{
     group: LocationGroup
