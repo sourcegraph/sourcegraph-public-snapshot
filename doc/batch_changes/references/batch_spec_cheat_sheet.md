@@ -219,7 +219,7 @@ To use the literal sequence `${{ }}` in non-`run:` fields of the batch spec that
 
 ```
 changesetTemplate:
-  title: Replace expensive string comparisons
+  title: A batch change
   body: | 
     This batch change modifies:
       ${{ range $index, $file := steps.modified_files }}
