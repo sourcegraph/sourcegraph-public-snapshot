@@ -32,22 +32,9 @@ func addBreadcrumb(breadcrumbs *[]Breadcrumb, node Node, message string) {
 
 // Prints breadcrumbs like this:
 //
-//             v 4. found
-//             v 5. goTypeDef
-//               vvv 6. goDef
+//             v some breadcrumb
+//               vvv other breadcrumb
 // 78 | func f(f Foo) {
-//
-//                           vvvvv 1. goDef
-//                           vvvvv 2. goField
-//                         v 3. goTypeDef
-//                         v 4. goDef
-// 79 | 	   fmt.Println(f.field)
-//
-//           vvv 6. found
-// 90 | type Foo struct {
-//
-//          vvvvv 2. found
-// 91 |     field *int
 func prettyPrintBreadcrumbs(w *strings.Builder, breadcrumbs []Breadcrumb, readFile ReadFileFunc) {
 	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.
 	pathToLineToBreadcrumbs := map[types.RepoCommitPath]map[int][]Breadcrumb{}
