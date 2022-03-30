@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -2143,6 +2144,42 @@ func TestService(t *testing.T) {
 			}
 			if err != ErrRetryNonFinal {
 				t.Fatalf("wrong error: %s", err)
+			}
+		})
+	})
+
+	t.Run("GetAvailableBulkOperations", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("returns REENQUEUE operation for failed changesets", func(t *testing.T) {
+			changeset1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ReconcilerState:  btypes.ReconcilerStateFailed,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset1.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := bulkOperations, []string{"REENQUEUE"}; !reflect.DeepEqual(have, want) {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", want, have)
 			}
 		})
 	})
