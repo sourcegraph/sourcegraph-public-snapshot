@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -29,12 +31,25 @@ var (
 )
 
 func installExec(ctx context.Context, args []string) error {
+	probeCmdOut, err := exec.CommandContext(ctx, "sg", "-help").CombinedOutput()
+	if err == nil && outputLooksLikeSG(string(probeCmdOut)) {
+		path, err := exec.LookPath("sg")
+		if err != nil {
+			return err
+		}
+		// Looks like sg is already installed. Instead of overwriting anything
+		// we let the user know and exit.
+		writeFingerPointingLinef("Looks like 'sg' is already installed at %s.", path)
+		writeOrangeLinef("Skipping installation.")
+		return nil
+	}
+
+	var location string
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	var location string
 	switch runtime.GOOS {
 	case "linux":
 		location = filepath.Join(homeDir, ".local", "bin", "sg")
@@ -153,4 +168,11 @@ func installExec(ctx context.Context, args []string) error {
 	stdout.Out.Writef("Restart your shell and run 'sg logo' to make sure it worked!")
 
 	return nil
+}
+
+func outputLooksLikeSG(out string) bool {
+	// This is a weak check, but it's better than anything else we have
+	return strings.Contains(out, "logo") &&
+		strings.Contains(out, "setup") &&
+		strings.Contains(out, "doctor")
 }
