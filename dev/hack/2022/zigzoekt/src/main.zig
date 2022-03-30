@@ -14,8 +14,14 @@ fn readSimpleSection(reader: anytype) !SimpleSection {
     };
 }
 
+const CompoundSection = struct{
+    data: SimpleSection,
+    index: SimpleSection,
+};
+
 const TOC = struct{
-    fileContents: SimpleSection,
+    fileContents: CompoundSection,
+    fileNames: CompoundSection,
 };
 
 fn readTOC(file: std.fs.File) !TOC {
@@ -24,51 +30,48 @@ fn readTOC(file: std.fs.File) !TOC {
 
     // Go to TOC
     try file.seekTo(tocSection.off);
-    var sectionReader = std.io.limitedReader(file.reader(), tocSection.sz).reader();
+    var limitReader = std.io.limitedReader(file.reader(), tocSection.sz);
+    var reader = limitReader.reader();
 
-    const sectionCount = try sectionReader.readInt(u32, std.builtin.Endian.Big);
+    const sectionCount = try reader.readInt(u32, std.builtin.Endian.Big);
     if (sectionCount != 0) {
         // We only support 0
         return error.EndOfStream;
     }
 
-    var contentSection: SimpleSection = undefined;
+    var toc: TOC = undefined;
     var buffer: [1024]u8 = undefined;
-    while(true) {
-        var slen = try std.leb.readULEB128(u64, sectionReader);
+    while(limitReader.bytes_left > 0) {
+        var slen = try std.leb.readULEB128(u64, reader);
 
         // Section Tag
         var name = buffer[0..slen];
-        try sectionReader.readNoEof(name);
+        try reader.readNoEof(name);
 
         // Section Kind (0 = simple section, 1 = compound section)
-        const kind = try sectionReader.readByte();
+        const kind = try reader.readByte();
 
-        const section = try readSimpleSection(sectionReader);
+        const data = try readSimpleSection(reader);
+        const index: SimpleSection = try switch(kind) {
+            0 => undefined,
+            1, 2 => readSimpleSection(reader),
+            else => undefined, // TODO return error. Couldn't get zig to work for me here.
+        };
 
         if (std.mem.eql(u8, name, "fileContents")) {
-            contentSection = section;
-            break;
-        }
-
-        switch(kind) {
-            0 => { // simple section
-            },
-            1, 2 => {
-                // compound and lazy section have same shape. Just skip the
-                // index SimpleSection. We have already read the main
-                // SimpleSection.
-                try sectionReader.skipBytes(8, .{});
-            },
-            else => {
-                return error.EndOfStream;
-            }
+            toc.fileContents = .{
+                .data = data,
+                .index = index,
+            };
+        } else if (std.mem.eql(u8, name, "fileNames")) {
+            toc.fileNames = .{
+                .data = data,
+                .index = index,
+            };
         }
     }
 
-    return TOC{
-        .fileContents = contentSection,
-    };
+    return toc;
 }
 
 pub fn main() anyerror!void {
@@ -80,8 +83,8 @@ pub fn main() anyerror!void {
 
     const toc = try readTOC(file);
 
-    try file.seekTo(toc.fileContents.off);
-    var contentReader = std.io.limitedReader(file.reader(), toc.fileContents.sz).reader();
+    try file.seekTo(toc.fileContents.data.off);
+    var contentReader = std.io.limitedReader(file.reader(), toc.fileContents.data.sz).reader();
 
     var needle = "func";
     var buffer: [1024]u8 = undefined;
