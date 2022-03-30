@@ -12,7 +12,7 @@ import { gql } from '@sourcegraph/http-client'
 import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, Link, CardHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -236,15 +236,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             Time period
                                         </label>
                                     </div>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        name="after"
-                                        size={12}
-                                        id={RepositoryStatsContributorsPage.AFTER_INPUT_ID}
-                                        value={this.state.after || ''}
-                                        placeholder="All time"
-                                        onChange={this.onChange}
+                                    <Input name="after" size={12} id={RepositoryStatsContributorsPage.AFTER_INPUT_ID} value={this.state.after || ''} placeholder="All time" onChange={this.onChange}
                                     />
                                     <div className="input-group-append">
                                         <ButtonGroup>
@@ -293,19 +285,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             Revision range
                                         </label>
                                     </div>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        name="revision-range"
-                                        size={18}
-                                        id={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID}
-                                        value={this.state.revisionRange || ''}
-                                        placeholder="Default branch"
-                                        onChange={this.onChange}
-                                        autoCapitalize="off"
-                                        autoCorrect="off"
-                                        autoComplete="off"
-                                        spellCheck={false}
+                                    <Input name="revision-range" size={18} id={RepositoryStatsContributorsPage.REVISION_RANGE_INPUT_ID} value={this.state.revisionRange || ''} placeholder="Default branch" onChange={this.onChange} autoCapitalize="off" autoCorrect="off" autoComplete="off" spellCheck={false}
                                     />
                                 </div>
                                 <div className="input-group mt-2 mr-sm-2">
@@ -317,19 +297,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             Path
                                         </label>
                                     </div>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        name="path"
-                                        size={18}
-                                        id={RepositoryStatsContributorsPage.PATH_INPUT_ID}
-                                        value={this.state.path || ''}
-                                        placeholder="All files"
-                                        onChange={this.onChange}
-                                        autoCapitalize="off"
-                                        autoCorrect="off"
-                                        autoComplete="off"
-                                        spellCheck={false}
+                                    <Input name="path" size={18} id={RepositoryStatsContributorsPage.PATH_INPUT_ID} value={this.state.path || ''} placeholder="All files" onChange={this.onChange} autoCapitalize="off" autoCorrect="off" autoComplete="off" spellCheck={false}
                                     />
                                 </div>
                                 {stateDiffers && (

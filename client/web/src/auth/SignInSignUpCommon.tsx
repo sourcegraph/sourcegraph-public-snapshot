@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import classNames from 'classnames'
 import * as H from 'history'
 
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
+import { Input } from "@sourcegraph/wildcard";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     inputRef?: React.Ref<HTMLInputElement>
@@ -12,11 +12,11 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const PasswordInput: React.FunctionComponent<InputProps> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="password"
             id="password"
             {...other}
-            className={classNames('form-control', props.className)}
+            className={props.className}
             placeholder={props.placeholder || 'Password'}
             type="password"
             required={true}
@@ -28,11 +28,11 @@ export const PasswordInput: React.FunctionComponent<InputProps> = props => {
 export const EmailInput: React.FunctionComponent<InputProps> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
+        <Input
             name="email"
             id="email"
             {...other}
-            className={classNames('form-control', props.className)}
+            className={props.className}
             type="email"
             placeholder={props.placeholder || 'Email'}
             spellCheck={false}
@@ -45,19 +45,7 @@ export const EmailInput: React.FunctionComponent<InputProps> = props => {
 export const UsernameInput: React.FunctionComponent<InputProps> = props => {
     const { inputRef, ...other } = props
     return (
-        <input
-            name="username"
-            id="username"
-            {...other}
-            className={classNames('form-control', props.className)}
-            type="text"
-            placeholder={props.placeholder || 'Username'}
-            spellCheck={false}
-            pattern={VALID_USERNAME_REGEXP}
-            maxLength={USERNAME_MAX_LENGTH}
-            autoCapitalize="off"
-            autoComplete="username"
-            ref={inputRef}
+        <Input name="username" id="username" {...other} className={props.className} placeholder={props.placeholder || 'Username'} spellCheck={false} pattern={VALID_USERNAME_REGEXP} maxLength={USERNAME_MAX_LENGTH} autoCapitalize="off" autoComplete="username" ref={inputRef}
         />
     )
 }

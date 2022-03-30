@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Select } from '@sourcegraph/wildcard'
+import { Input } from '@sourcegraph/wildcard'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -39,9 +39,9 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
     )
 
     return (
-        <Select
+        <Input
             label={<strong className="text-nowrap mb-2">Namespace</strong>}
-            selectClassName="form-control"
+            selectClassName=""
             id={NAMESPACE_SELECTOR_ID}
             value={selectedNamespace}
             onChange={onSelectNamespace}
@@ -52,6 +52,6 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
                     {getNamespaceDisplayName(namespace)}
                 </option>
             ))}
-        </Select>
+        </Input>
     )
 }

@@ -18,7 +18,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button, Link, Alert, Input } from '@sourcegraph/wildcard'
 
 import styles from './SearchContextPage.module.scss'
 
@@ -95,11 +95,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                     </h3>
                 )}
                 {repositories.length > 0 && (
-                    <input
-                        type="text"
-                        className="form-control form-control-md w-50"
-                        placeholder="Search repositories and revisions"
-                        onChange={event => debouncedSetFilterQuery(event.target.value)}
+                    <Input className="form-control-md w-50" placeholder="Search repositories and revisions" onChange={event => debouncedSetFilterQuery(event.target.value)}
                     />
                 )}
             </div>

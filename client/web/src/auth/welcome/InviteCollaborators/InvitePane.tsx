@@ -7,7 +7,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
-import { LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Icon, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -125,19 +125,9 @@ export const InvitePane: React.FunctionComponent<Props> = ({
                             onSubmit={preventSubmit}
                             className="flex-1 d-inline-flex justify-content-between flex-row"
                         >
-                            <input
-                                className="form-control"
-                                type="search"
-                                placeholder="Filter by email or username"
-                                name="query"
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="off"
-                                spellCheck={false}
-                                disabled={!hasInviteableCollaborators}
-                                onChange={event => {
-                                    setQuery(event.target.value)
-                                }}
+                            <Input type="search" placeholder="Filter by email or username" name="query" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} disabled={!hasInviteableCollaborators} onChange={event => {
+                                                                    setQuery(event.target.value)
+                                                                }}
                             />
                         </Form>
                     </div>

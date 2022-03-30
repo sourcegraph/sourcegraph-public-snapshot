@@ -10,7 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, useObservable, Link, Icon, Input } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -130,14 +130,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                 <Container className="mb-3">
                     <div className="form-group">
                         <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
-                        <input
-                            type="text"
-                            className="form-control test-create-access-token-description"
-                            id="user-settings-create-access-token-page__note"
-                            onChange={onNoteChange}
-                            required={true}
-                            autoFocus={true}
-                            placeholder="What's this token for?"
+                        <Input className="test-create-access-token-description" id="user-settings-create-access-token-page__note" onChange={onNoteChange} required={true} autoFocus={true} placeholder="What's this token for?"
                         />
                     </div>
                     <div className="form-group mb-0">

@@ -6,7 +6,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, Button, Modal, Icon } from '@sourcegraph/wildcard'
+import { useLocalStorage, Button, Modal, Icon, Input } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -245,26 +245,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         <Icon className={styles.closeIcon} as={CloseIcon} />
                     </Button>
                 </div>
-                <input
-                    autoComplete="off"
-                    spellCheck="false"
-                    role="combobox"
-                    autoFocus={true}
-                    aria-autocomplete="list"
-                    aria-controls={FUZZY_MODAL_RESULTS}
-                    aria-owns={FUZZY_MODAL_RESULTS}
-                    aria-expanded={props.fsm.key !== 'downloading'}
-                    aria-activedescendant={fuzzyResultId(focusIndex)}
-                    id="fuzzy-modal-input"
-                    className={classNames('form-control py-1', styles.input)}
-                    placeholder="Enter a partial file path or name"
-                    value={query}
-                    onChange={({ target: { value } }) => {
-                        setQuery(value)
-                        setFocusIndex(0)
-                    }}
-                    type="text"
-                    onKeyDown={onInputKeyDown}
+                <Input autoComplete="off" spellCheck="false" role="combobox" autoFocus={true} aria-autocomplete="list" aria-controls={FUZZY_MODAL_RESULTS} aria-owns={FUZZY_MODAL_RESULTS} aria-expanded={props.fsm.key !== 'downloading'} aria-activedescendant={fuzzyResultId(focusIndex)} id="fuzzy-modal-input" className={classNames('py-1', styles.input)} placeholder="Enter a partial file path or name" value={query} onChange={({ target: { value } }) => {
+                                            setQuery(value)
+                                            setFocusIndex(0)
+                                        }} onKeyDown={onInputKeyDown}
                 />
                 <div className={styles.summary}>
                     <FuzzyResultsSummary

@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Button, Modal, Link, Alert } from '@sourcegraph/wildcard'
+import { Button, Modal, Link, Alert, Input } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -98,14 +98,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 {' '}
                                 <label htmlFor="code-host-token">Access token</label>
                                 <div className="position-relative">
-                                    <input
-                                        id="code-host-token"
-                                        name="code-host-token"
-                                        type="text"
-                                        value={token}
-                                        onChange={onChangeToken}
-                                        className="form-control pr-4"
-                                        autoComplete="off"
+                                    <Input id="code-host-token" name="code-host-token" value={token} onChange={onChangeToken} className="pr-4" autoComplete="off"
                                     />
                                     <EncryptedDataIcon />
                                 </div>

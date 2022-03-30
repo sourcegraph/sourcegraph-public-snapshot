@@ -12,7 +12,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Input } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
@@ -200,9 +200,8 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     <span className="mt-4">Search query</span>
                     <div>
                         <div className={classNames(styles.queryInput, 'my-2')}>
-                            <div
+                            <Input
                                 className={classNames(
-                                    'form-control',
                                     styles.queryInputField,
                                     'test-trigger-input',
                                     `test-${derivedInputClassName}`
@@ -222,7 +221,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     preventNewLine={false}
                                     autoFocus={true}
                                 />
-                            </div>
+                            </Input>
                             <div className={styles.queryInputPreviewLink}>
                                 <Link
                                     to={`/search?${buildSearchURLQuery(

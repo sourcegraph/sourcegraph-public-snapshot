@@ -5,7 +5,7 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Input } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Page } from '../../components/Page'
@@ -74,21 +74,7 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                     {isErrorLike(loading) && <ErrorAlert className="mb-3" error={loading} />}
                     <div className="form-group">
                         <label htmlFor="new-org-page__form-name">Organization name</label>
-                        <input
-                            id="new-org-page__form-name"
-                            type="text"
-                            className="form-control test-new-org-name-input"
-                            placeholder="acme-corp"
-                            pattern={VALID_ORG_NAME_REGEXP}
-                            maxLength={ORG_NAME_MAX_LENGTH}
-                            required={true}
-                            autoCorrect="off"
-                            autoComplete="off"
-                            autoFocus={true}
-                            value={name}
-                            onChange={onNameChange}
-                            disabled={loading === true}
-                            aria-describedby="new-org-page__form-name-help"
+                        <Input id="new-org-page__form-name" className="test-new-org-name-input" placeholder="acme-corp" pattern={VALID_ORG_NAME_REGEXP} maxLength={ORG_NAME_MAX_LENGTH} required={true} autoCorrect="off" autoComplete="off" autoFocus={true} value={name} onChange={onNameChange} disabled={loading === true} aria-describedby="new-org-page__form-name-help"
                         />
                         <small id="new-org-page__form-name-help" className="form-text text-muted">
                             An organization name consists of letters, numbers, hyphens (-), dots (.) and may not begin
@@ -98,15 +84,7 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
 
                     <div className="form-group mb-0">
                         <label htmlFor="new-org-page__form-display-name">Display name</label>
-                        <input
-                            id="new-org-page__form-display-name"
-                            type="text"
-                            className="form-control test-new-org-display-name-input"
-                            placeholder="ACME Corporation"
-                            autoCorrect="off"
-                            value={displayName}
-                            onChange={onDisplayNameChange}
-                            disabled={loading === true}
+                        <Input id="new-org-page__form-display-name" className="test-new-org-display-name-input" placeholder="ACME Corporation" autoCorrect="off" value={displayName} onChange={onDisplayNameChange} disabled={loading === true}
                         />
                     </div>
                 </Container>

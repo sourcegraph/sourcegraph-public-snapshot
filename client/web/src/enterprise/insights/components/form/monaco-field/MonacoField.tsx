@@ -5,10 +5,9 @@ import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 
 import { QueryChangeSource } from '@sourcegraph/search'
-import { LazyMonacoQueryInput } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import { DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui/src/input/MonacoQueryInput'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { ForwardReferenceComponent, Input } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
 import { ThemePreference } from '../../../../../stores/themeState'
@@ -24,15 +23,14 @@ const MonacoFieldContext = createContext<Context>({ renderedWithinFocusContainer
 
 const MONACO_CONTAINER_MARK = { renderedWithinFocusContainer: true }
 
-export const MonacoFocusContainer = forwardRef((props, reference) => {
+export const MonacoFocusContainer = forwardRef((props) => {
     const { as: Component = 'div', className, children, ...otherProps } = props
 
     return (
         <MonacoFieldContext.Provider value={MONACO_CONTAINER_MARK}>
-            <Component
+            <Input
                 {...otherProps}
                 className={classNames(
-                    'form-control',
                     'with-invalid-icon',
                     styles.container,
                     styles.focusContainer,
@@ -40,7 +38,7 @@ export const MonacoFocusContainer = forwardRef((props, reference) => {
                 )}
             >
                 {children}
-            </Component>
+            </Input>
         </MonacoFieldContext.Provider>
     )
 }) as ForwardReferenceComponent<'div'>
@@ -89,7 +87,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
     return (
-        <LazyMonacoQueryInput
+        <Input
             editorComponent={editorComponent}
             queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
@@ -101,7 +99,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             globbing={true}
             height="auto"
             placeholder={placeholder}
-            className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
+            className={classNames(className, styles.monacoField, 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,
                 [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,
             })}

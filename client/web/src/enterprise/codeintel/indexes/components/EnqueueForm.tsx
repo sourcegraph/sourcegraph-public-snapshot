@@ -3,7 +3,7 @@ import React, { FunctionComponent, useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Alert } from '@sourcegraph/wildcard'
+import { Button, Alert, Input } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
@@ -55,12 +55,7 @@ export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, query
             <div className="form-inline">
                 <label htmlFor="revlike">Git revlike</label>
 
-                <input
-                    type="text"
-                    id="revlike"
-                    className="form-control ml-2"
-                    value={revlike}
-                    onChange={event => setRevlike(event.target.value)}
+                <Input id="revlike" className="ml-2" value={revlike} onChange={event => setRevlike(event.target.value)}
                 />
 
                 <Button

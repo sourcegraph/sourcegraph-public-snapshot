@@ -4,7 +4,7 @@ import { gql, useMutation } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Input } from '@sourcegraph/wildcard'
 
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
@@ -113,14 +113,7 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
         >
             <div className="form-group mt-4 test-action-form-email" data-testid="action-form-email">
                 <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
-                <input
-                    id="code-monitoring-form-actions-recipients"
-                    type="text"
-                    className="form-control mb-2"
-                    value={`${authenticatedUser.email || ''} (you)`}
-                    disabled={true}
-                    autoFocus={true}
-                    required={true}
+                <Input id="code-monitoring-form-actions-recipients" className="mb-2" value={`${authenticatedUser.email || ''} (you)`} disabled={true} autoFocus={true} required={true}
                 />
                 <small className="text-muted">
                     Code monitors are currently limited to sending emails to your primary email address.

@@ -12,6 +12,7 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { Input } from "@sourcegraph/wildcard";
 
 interface Props {
     user: string
@@ -84,12 +85,12 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     className={classNames(deriveInputClassName(emailState), 'mr-sm-2')}
                     loading={emailState.kind === 'LOADING'}
                 >
-                    <input
+                    <Input
                         id="AddUserEmailForm-email"
                         type="email"
                         name="email"
                         className={classNames(
-                            'form-control test-user-email-add-input',
+                            'test-user-email-add-input',
                             deriveInputClassName(emailState)
                         )}
                         onChange={nextEmailFieldChange}

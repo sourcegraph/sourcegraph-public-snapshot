@@ -9,7 +9,7 @@ import { isMacPlatform as isMacPlatformFn } from '@sourcegraph/common'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Icon, Button } from '@sourcegraph/wildcard'
+import { Icon, Button, Input } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlockInput } from '../..'
 import { parseLineRange, serializeLineRange } from '../../serialize'
@@ -113,13 +113,7 @@ export const NotebookFileBlockInputs: React.FunctionComponent<NotebookFileBlockI
             />
             <div className="mt-2">
                 <label htmlFor={`${id}-line-range-input`}>Line range</label>
-                <input
-                    id={`${id}-line-range-input`}
-                    type="text"
-                    className={classNames('form-control', isLineRangeValid === false && 'is-invalid')}
-                    value={lineRangeInput}
-                    onChange={onLineRangeInputChange}
-                    placeholder="Enter a single line (1), a line range (1-10), or leave empty to show the entire file."
+                <Input id={`${id}-line-range-input`} className={classNames(isLineRangeValid === false && 'is-invalid')} value={lineRangeInput} onChange={onLineRangeInputChange} placeholder="Enter a single line (1), a line range (1-10), or leave empty to show the entire file."
                 />
                 {isLineRangeValid === false && (
                     <div className="text-danger mt-1">

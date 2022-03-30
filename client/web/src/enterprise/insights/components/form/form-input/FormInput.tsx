@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { useAutoFocus, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { useAutoFocus, ForwardReferenceComponent, Input } from '@sourcegraph/wildcard'
 
 import styles from './FormInput.module.scss'
 
@@ -66,9 +66,9 @@ const FormInput = forwardRef((props, reference) => {
             {subtitle}
 
             <LoaderInput className="d-flex" loading={loading}>
-                <Component
+                <Input
                     type={type}
-                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
+                    className={classNames(styles.input, inputClassName, 'with-invalid-icon', {
                         'is-valid': valid,
                         'is-invalid': !!error || errorInputState,
                     })}

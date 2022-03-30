@@ -8,6 +8,7 @@ import { nullPolicy } from '../hooks/types'
 import { GitTypeSelector } from './GitTypeSelector'
 import { ObjectsMatchingGitPattern } from './ObjectsMatchingGitPattern'
 import { ReposMatchingPatternList } from './ReposMatchingPatternList'
+import { Input } from "@sourcegraph/wildcard";
 
 export interface BranchTargetSettingsProps {
     repoId?: string
@@ -36,14 +37,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
         <>
             <div className="form-group">
                 <label htmlFor="name">Name</label>
-                <input
-                    id="name"
-                    type="text"
-                    className="form-control"
-                    value={policy.name}
-                    onChange={({ target: { value: name } }) => updatePolicy({ name })}
-                    disabled={disabled}
-                    required={true}
+                <Input id="name" value={policy.name} onChange={({ target: { value: name } }) => updatePolicy({ name })} disabled={disabled} required={true}
                 />
                 <small className="form-text text-muted">Required.</small>
             </div>

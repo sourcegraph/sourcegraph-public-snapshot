@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { debounce } from 'lodash'
 import TrashIcon from 'mdi-react/TrashIcon'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
 import styles from './ReposMatchingPattern.module.scss'
 
@@ -34,16 +34,10 @@ export const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> 
         <>
             <div className="form-group d-flex flex-column mb-0">
                 <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
-                <input
-                    type="text"
-                    className="form-control text-monospace"
-                    value={localPattern}
-                    onChange={({ target: { value } }) => {
-                        setLocalPattern(value)
-                        debouncedSetPattern(value)
-                    }}
-                    disabled={disabled}
-                    required={true}
+                <Input className="text-monospace" value={localPattern} onChange={({ target: { value } }) => {
+                                            setLocalPattern(value)
+                                            debouncedSetPattern(value)
+                                        }} disabled={disabled} required={true}
                 />
                 <small className="form-text text-muted">Required.</small>
             </div>

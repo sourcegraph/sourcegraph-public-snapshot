@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, LoadingSpinner, useObservable, Alert, Icon, Input } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -64,9 +64,9 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             </header>
             <Form onSubmit={onSubmit} className="form">
                 <div className="form-group d-flex align-items-stretch">
-                    <input
+                    <Input
                         id="stats-page__query"
-                        className="form-control flex-1 test-stats-query"
+                        className="flex-1 test-stats-query"
                         type="search"
                         placeholder="Enter a Sourcegraph search query"
                         value={uncommittedQuery}

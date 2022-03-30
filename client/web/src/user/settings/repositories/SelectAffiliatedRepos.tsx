@@ -6,7 +6,7 @@ import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageSelector, RadioButton, Select, Link } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton, Select, Link, Input } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -22,7 +22,6 @@ import {
 } from '../../../graphql-operations'
 
 import {
-    FilterInput,
     ListItemContainer,
     RepositoryNodeContainer,
     ShimmerContainer,
@@ -370,18 +369,9 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     ))}
                 </Select>
             </div>
-            <FilterInput
-                className="form-control"
-                type="search"
-                placeholder="Filter..."
-                name="query"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                onChange={event => {
-                    setQuery(event.target.value)
-                }}
+            <Input type="search" placeholder="Filter..." name="query" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} onChange={event => {
+                                    setQuery(event.target.value)
+                                }}
             />
         </div>
     )

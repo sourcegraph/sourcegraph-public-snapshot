@@ -17,8 +17,7 @@ import {
     Select,
     Button,
     Alert,
-    Link,
-} from '@sourcegraph/wildcard'
+    Link, Input } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -47,7 +46,6 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { externalServiceUserModeFromTags, Owner } from '../cloud-ga'
 
 import {
-    FilterInput,
     ListItemContainer,
     RepositoryNodeContainer,
     ShimmerContainer,
@@ -644,19 +642,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     ))}
                 </Select>
             </div>
-            <FilterInput
-                className="form-control"
-                type="search"
-                placeholder="Filter repositories..."
-                name="query"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                defaultValue={query}
-                onChange={event => {
-                    setQuery(event.target.value)
-                }}
+            <Input type="search" placeholder="Filter repositories..." name="query" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false} defaultValue={query} onChange={event => {
+                                    setQuery(event.target.value)
+                                }}
             />
         </Form>
     )

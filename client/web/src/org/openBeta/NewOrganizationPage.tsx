@@ -201,19 +201,7 @@ export const NewOrgOpenBetaPage: React.FunctionComponent<Props> = ({
                 {error && <ErrorAlert className="mb-3" error={getError(error)} />}
                 <div className={classNames('form-group', styles.formItem)}>
                     <label htmlFor="new-org-page__form-name">Organization name</label>
-                    <input
-                        id="new-org-page__form-name"
-                        type="text"
-                        className="form-control test-new-org-name-input mb-2"
-                        maxLength={ORG_NAME_MAX_LENGTH}
-                        required={true}
-                        autoCorrect="off"
-                        autoComplete="off"
-                        autoFocus={true}
-                        value={displayName}
-                        onChange={onDisplayNameChange}
-                        disabled={loading}
-                        aria-describedby="new-org-page__form-name-help"
+                    <Input id="new-org-page__form-name" className="test-new-org-name-input mb-2" maxLength={ORG_NAME_MAX_LENGTH} required={true} autoCorrect="off" autoComplete="off" autoFocus={true} value={displayName} onChange={onDisplayNameChange} disabled={loading} aria-describedby="new-org-page__form-name-help"
                     />
                     <small id="new-org-page__form-name-help" className="form-text text-muted">
                         This will be your organization’s name on Sourcegraph. You can change this any time.

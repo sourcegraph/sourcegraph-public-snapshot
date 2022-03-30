@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Button, LoadingSpinner, Modal, Link } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Modal, Link, Input } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
@@ -166,12 +166,12 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                         <Form onSubmit={onSubmit}>
                             <div className="form-group">
                                 <label htmlFor="token">Personal access token</label>
-                                <input
+                                <Input
                                     id="token"
                                     name="token"
                                     type="password"
                                     autoComplete="off"
-                                    className="form-control test-add-credential-modal-input"
+                                    className="test-add-credential-modal-input"
                                     required={true}
                                     spellCheck="false"
                                     minLength={1}

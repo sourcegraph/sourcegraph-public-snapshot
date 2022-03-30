@@ -7,6 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
 import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
+import { Input } from "@sourcegraph/wildcard";
 
 export interface ChangesetFilters {
     state: ChangesetState | null
@@ -90,8 +91,8 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
             <div className="row no-gutters">
                 <div className="m-0 col">
                     <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
-                        <input
-                            className="form-control flex-grow-1"
+                        <Input
+                            className="flex-grow-1"
                             type="search"
                             ref={searchElement}
                             defaultValue={search}

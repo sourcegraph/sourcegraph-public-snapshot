@@ -29,8 +29,7 @@ import {
     useEventObservable,
     Alert,
     ProductStatusBadge,
-    Link,
-} from '@sourcegraph/wildcard'
+    Link, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures } from '../../stores'
@@ -333,17 +332,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     </div>
                     <div className="flex-1">
                         <div className="mb-2">Context name</div>
-                        <input
-                            className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
-                            data-testid="search-context-name-input"
-                            value={name}
-                            type="text"
-                            pattern="^[a-zA-Z0-9_\-\/\.]+$"
-                            required={true}
-                            maxLength={MAX_NAME_LENGTH}
-                            onChange={event => {
-                                setName(event.target.value)
-                            }}
+                        <Input className={classNames('w-100', styles.searchContextFormNameInput)} data-testid="search-context-name-input" value={name} pattern="^[a-zA-Z0-9_\-\/\.]+$" required={true} maxLength={MAX_NAME_LENGTH} onChange={event => {
+                                                            setName(event.target.value)
+                                                        }}
                         />
                     </div>
                 </div>

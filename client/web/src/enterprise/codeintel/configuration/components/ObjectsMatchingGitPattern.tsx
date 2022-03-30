@@ -5,6 +5,7 @@ import { debounce } from 'lodash'
 import { GitObjectType } from '../../../../graphql-operations'
 
 import { GitObjectPreviewWrapper } from './GitObjectPreview'
+import { Input } from "@sourcegraph/wildcard";
 
 const DEBOUNCED_WAIT = 250
 
@@ -33,17 +34,10 @@ export const ObjectsMatchingGitPattern: FunctionComponent<ObjectsMatchingGitPatt
             {type !== GitObjectType.GIT_COMMIT && (
                 <div className="form-group">
                     <label htmlFor="pattern">Pattern</label>
-                    <input
-                        id="pattern"
-                        type="text"
-                        className="form-control text-monospace"
-                        value={localPattern}
-                        onChange={({ target: { value } }) => {
-                            setLocalPattern(value)
-                            debouncedSetPattern(value)
-                        }}
-                        disabled={disabled}
-                        required={true}
+                    <Input id="pattern" className="text-monospace" value={localPattern} onChange={({ target: { value } }) => {
+                                                    setLocalPattern(value)
+                                                    debouncedSetPattern(value)
+                                                }} disabled={disabled} required={true}
                     />
                     <small className="form-text text-muted">Required.</small>
                 </div>

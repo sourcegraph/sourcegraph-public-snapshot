@@ -9,6 +9,7 @@ import { UsernameInput } from '../../../auth/SignInSignUpCommon'
 import { UserAvatar } from '../../UserAvatar'
 
 import styles from './UserProfileFormFields.module.scss'
+import { Input } from "@sourcegraph/wildcard";
 
 export type UserProfileFormFieldsValue = Pick<GQL.IUser, 'username' | 'displayName' | 'avatarURL'>
 
@@ -58,25 +59,16 @@ export const UserProfileFormFields: React.FunctionComponent<Props> = ({
             </div>
             <div className="form-group">
                 <label htmlFor="UserProfileFormFields__displayName">Display name</label>
-                <input
-                    id="UserProfileFormFields__displayName"
-                    type="text"
-                    className="form-control test-UserProfileFormFields__displayName"
-                    value={value.displayName || ''}
-                    onChange={onDisplayNameChange}
-                    disabled={disabled}
-                    spellCheck={false}
-                    placeholder="Display name"
-                    maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
+                <Input id="UserProfileFormFields__displayName" className="test-UserProfileFormFields__displayName" value={value.displayName || ''} onChange={onDisplayNameChange} disabled={disabled} spellCheck={false} placeholder="Display name" maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
                 />
             </div>
             <div className="d-flex align-items-center">
                 <div className="form-group w-100">
                     <label htmlFor="UserProfileFormFields__avatarURL">Avatar URL</label>
-                    <input
+                    <Input
                         id="UserProfileFormFields__avatarURL"
                         type="url"
-                        className="form-control test-UserProfileFormFields__avatarURL"
+                        className="test-UserProfileFormFields__avatarURL"
                         value={value.avatarURL || ''}
                         onChange={onAvatarURLChange}
                         disabled={disabled}

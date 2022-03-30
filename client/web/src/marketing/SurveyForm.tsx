@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import { Button, LoadingSpinner, TextArea } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, TextArea, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
@@ -96,13 +96,7 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
             <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={handleScoreChange} score={score} />
             {!authenticatedUser && (
                 <div className="form-group">
-                    <input
-                        className="form-control"
-                        type="text"
-                        placeholder="Email"
-                        onChange={event => setEmail(event.target.value)}
-                        value={email}
-                        disabled={response.loading}
+                    <Input placeholder="Email" onChange={event => setEmail(event.target.value)} value={email} disabled={response.loading}
                     />
                 </div>
             )}

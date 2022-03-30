@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import classNames from 'classnames'
 import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { RouteComponentProps } from 'react-router'
@@ -8,7 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Input } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -116,9 +115,9 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             telemetryService={this.props.telemetryService}
                         />
                     ) : (
-                        <pre className={classNames('form-control', styles.plainViewer)}>
+                        <Input className={styles.plainViewer}>
                             <code>{this.props.extension.rawManifest}</code>
-                        </pre>
+                        </Input>
                     )}
                 </div>
             </div>

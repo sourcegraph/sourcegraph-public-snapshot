@@ -20,7 +20,7 @@ import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Button, useObservable, Link, Card, Icon } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, Card, Icon, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
@@ -137,9 +137,9 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                 <h3 className="mb-3">{example.title}</h3>
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
-                                    <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
+                                    <Input className={classNames('text-monospace ', styles.exampleBar)}>
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
-                                    </small>
+                                    </Input>
                                     <div className="d-flex">
                                         <Button
                                             className={styles.searchButton}

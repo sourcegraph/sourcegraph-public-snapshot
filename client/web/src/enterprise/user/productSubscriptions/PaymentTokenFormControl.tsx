@@ -1,11 +1,12 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { CardElement, ReactStripeElements } from 'react-stripe-elements'
+import { ReactStripeElements } from 'react-stripe-elements'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import styles from './PaymentTokenFormControl.module.scss'
+import { Input } from "@sourcegraph/wildcard";
 
 interface Props extends ThemeProps {
     disabled?: boolean
@@ -14,7 +15,6 @@ interface Props extends ThemeProps {
 // Workaround for @types/stripe-v3 missing the new disabled attribute. See
 // https://github.com/stripe/react-stripe-elements/issues/136#issuecomment-424984951.
 type PatchedElementProps = ReactStripeElements.ElementProps & { disabled?: boolean }
-const PatchedCardElement: React.FunctionComponent<PatchedElementProps> = props => <CardElement {...props} />
 
 /**
  * Displays a payment form control for the user to enter payment information to purchase a product subscription.
@@ -24,8 +24,8 @@ export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => 
 
     return (
         <div className="payment-token-form-control">
-            <PatchedCardElement
-                className={classNames('form-control', styles.card, props.disabled && styles.cardDisabled)}
+            <Input
+                className={classNames(styles.card, props.disabled && styles.cardDisabled)}
                 disabled={props.disabled}
                 style={{
                     base: {

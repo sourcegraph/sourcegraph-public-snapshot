@@ -615,14 +615,9 @@ const CreateFeatureFlag: React.FunctionComponent<{
             <label htmlFor="name">
                 <h3>Name</h3>
             </label>
-            <input
-                id="name"
-                type="text"
-                className="form-control"
-                value={name}
-                onChange={({ target: { value } }) => {
-                    setFlagName(value)
-                }}
+            <Input id="name" value={name} onChange={({ target: { value } }) => {
+                                                    setFlagName(value)
+                                                }}
             />
             <small className="form-text text-muted">Required.</small>
         </div>
