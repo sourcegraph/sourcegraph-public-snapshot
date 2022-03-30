@@ -1104,3 +1104,17 @@ git commit-graph write --reachable --changed-paths
 		t.Fatal("this repo doesn't need maintenance")
 	}
 }
+
+func TestPruneIfNeeded(t *testing.T) {
+	gitDir := prepareEmptyGitRepo(t, t.TempDir())
+
+	// create sentinel object folder
+	if err := os.MkdirAll(gitDir.Path("objects", "17"), fs.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	limit := -1 // always run prune
+	if err := pruneIfNeeded(gitDir, limit); err != nil {
+		t.Fatal(err)
+	}
+}
