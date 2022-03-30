@@ -8,7 +8,7 @@
 ## Quickstart
 
 To use the Helm chart, add the Sourcegraph helm repository:
- 
+
 ```sh
 helm repo add sourcegraph https://sourcegraph.github.io/deploy-sourcegraph-helm/
 ```
@@ -19,7 +19,7 @@ Install the Sourcegraph chart using default values:
 helm install --version 0.7.0 sourcegraph sourcegraph/sourcegraph
 ```
 
-## Configuration 
+## Configuration
 
 The Sourcegraph chart is highly customizable to support a wide range of environments. Please review the default values from [values.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/values.yaml) and all [supported options](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph#configuration-options). Customizations can be applied using an override file. Using an override file allows customizations to persist through upgrades without needing to manage merge conflicts.
 
@@ -107,7 +107,7 @@ codeIntelDB:
 
 To use external Redis instances, first review our [general recommendations](https://docs.sourcegraph.com/admin/external_services/redis).
 
-<!-- 
+<!--
   If we copy the entire README.md over here the page will be too clutterd.
   When the docsite V2 is ready, this should potentially have its own page
 -->
@@ -447,7 +447,7 @@ kubectl describe ingress sourcegraph-frontend
 
 You should create a DNS record for the `sourcegraph.company.com` domain that resolves to the Ingress public address.
 
-It is recommended to enable TLS and configure certificate properly on your Ingress. You may utilize managed certificate solution provided by Cloud providers. 
+It is recommended to enable TLS and configure certificate properly on your Ingress. You may utilize managed certificate solution provided by Cloud providers.
 
 Alternatively, you may consider configuring [cert-manager with Let's Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster and add the following override to Ingress.
 
@@ -506,7 +506,7 @@ frontend:
 
 ### Integrate Kustomize with Helm chart
 
-The Helm chart is new and still under active development, and we may not cover all of your use cases. 
+The Helm chart is new and still under active development, and we may not cover all of your use cases.
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) or your Customer Engineer directly to discuss your specific need.
 
