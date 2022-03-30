@@ -86,81 +86,31 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		// across all of Sourcegraph.
 
 		if repoUniverseSearch {
-			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
-			if err != nil {
-				return nil, err
-			}
-			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
-
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
-				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				job, err := newZoektGlobalTextSearch(b, repoOptions, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
 				if err != nil {
 					return nil, err
 				}
-
-				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
-
-				zoektArgs := &search.ZoektParameters{
-					// TODO(rvantonder): the Query value is set when the global zoekt query is
-					// enriched with private repository data in the search job's Run method, and
-					// is therefore set to `nil` below.
-					// Ideally, The ZoektParameters type should not expose this field for Universe text
-					// searches at all, and will be removed once jobs are fully migrated.
-					Query:          nil,
-					Typ:            typ,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
-				}
-
-				addJob(true, &zoektutil.GlobalSearch{
-					GlobalZoektQuery: globalZoektQuery,
-					ZoektArgs:        zoektArgs,
-
-					RepoOptions: repoOptions,
-				})
+				addJob(true, job)
 			}
 
 			if resultTypes.Has(result.TypeSymbol) {
-				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				job, err := newZoektGlobalSymbolSearch(b, repoOptions, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
 				if err != nil {
 					return nil, err
 				}
-				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
-
-				zoektArgs := &search.ZoektParameters{
-					Query:          nil,
-					Typ:            typ,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
-				}
-
-				addJob(true, &symbol.RepoUniverseSymbolSearch{
-					GlobalZoektQuery: globalZoektQuery,
-					ZoektArgs:        zoektArgs,
-					RepoOptions:      repoOptions,
-				})
+				addJob(true, job)
 			}
 		}
 
 		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
 			var textSearchJobs []Job
-			typ := search.TextRequest
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				job, err := newZoektTextSearch(b, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
 				if err != nil {
 					return nil, err
 				}
-				textSearchJobs = append(textSearchJobs, &zoektutil.ZoektRepoSubsetSearch{
-					Query:          zoektQuery,
-					Typ:            typ,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
-				})
+				textSearchJobs = append(textSearchJobs, job)
 			}
 
 			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
@@ -181,19 +131,13 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
 			var symbolSearchJobs []Job
-			typ := search.SymbolRequest
 
 			if !onlyRunSearcher {
-				zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, &features, typ)
+				job, err := newZoektSymbolSearch(b, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
 				if err != nil {
 					return nil, err
 				}
-				symbolSearchJobs = append(symbolSearchJobs, &zoektutil.ZoektSymbolSearch{
-					Query:          zoektQuery,
-					FileMatchLimit: fileMatchLimit,
-					Select:         selector,
-					Zoekt:          jargs.Zoekt,
-				})
+				symbolSearchJobs = append(symbolSearchJobs, job)
 			}
 
 			symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
@@ -430,6 +374,131 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 		CommitAfter:       commitAfter,
 		Query:             q,
 	}
+}
+
+func newZoektGlobalTextSearch(
+	b query.Basic,
+	repoOptions search.RepoOptions,
+	resultTypes result.Types,
+	features *search.Features,
+	fileMatchLimit int32,
+	selector filter.SelectPath,
+	zoekt zoekt.Streamer,
+) (*zoektutil.GlobalSearch, error) {
+	typ := search.TextRequest
+	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+	zoektArgs := &search.ZoektParameters{
+		// TODO(rvantonder): the Query value is set when the global zoekt query is
+		// enriched with private repository data in the search job's Run method, and
+		// is therefore set to `nil` below.
+		// Ideally, The ZoektParameters type should not expose this field for Universe text
+		// searches at all, and will be removed once jobs are fully migrated.
+		Query:          nil,
+		Typ:            typ,
+		FileMatchLimit: fileMatchLimit,
+		Select:         selector,
+		Zoekt:          zoekt,
+	}
+
+	return &zoektutil.GlobalSearch{
+		GlobalZoektQuery: globalZoektQuery,
+		ZoektArgs:        zoektArgs,
+
+		RepoOptions: repoOptions,
+	}, nil
+}
+
+func newZoektGlobalSymbolSearch(
+	b query.Basic,
+	repoOptions search.RepoOptions,
+	resultTypes result.Types,
+	features *search.Features,
+	fileMatchLimit int32,
+	selector filter.SelectPath,
+	zoekt zoekt.Streamer,
+) (*symbol.RepoUniverseSymbolSearch, error) {
+	typ := search.SymbolRequest
+	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+	zoektArgs := &search.ZoektParameters{
+		Query:          nil,
+		Typ:            typ,
+		FileMatchLimit: fileMatchLimit,
+		Select:         selector,
+		Zoekt:          zoekt,
+	}
+
+	return &symbol.RepoUniverseSymbolSearch{
+		GlobalZoektQuery: globalZoektQuery,
+		ZoektArgs:        zoektArgs,
+		RepoOptions:      repoOptions,
+	}, nil
+}
+
+func newZoektTextSearch(
+	b query.Basic,
+	resultTypes result.Types,
+	features *search.Features,
+	fileMatchLimit int32,
+	selector filter.SelectPath,
+	zoekt zoekt.Streamer,
+) (*zoektutil.ZoektRepoSubsetSearch, error) {
+	typ := search.TextRequest
+	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	if err != nil {
+		return nil, err
+	}
+	return &zoektutil.ZoektRepoSubsetSearch{
+		Query:          zoektQuery,
+		Typ:            typ,
+		FileMatchLimit: fileMatchLimit,
+		Select:         selector,
+		Zoekt:          zoekt,
+	}, nil
+}
+
+func newZoektSymbolSearch(
+	b query.Basic,
+	resultTypes result.Types,
+	features *search.Features,
+	fileMatchLimit int32,
+	selector filter.SelectPath,
+	zoekt zoekt.Streamer,
+) (*zoektutil.ZoektSymbolSearch, error) {
+	typ := search.SymbolRequest
+	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	if err != nil {
+		return nil, err
+	}
+	return &zoektutil.ZoektSymbolSearch{
+		Query:          zoektQuery,
+		FileMatchLimit: fileMatchLimit,
+		Select:         selector,
+		Zoekt:          zoekt,
+	}, nil
 }
 
 func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
