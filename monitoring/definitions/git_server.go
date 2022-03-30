@@ -32,6 +32,7 @@ func GitServer() *monitoring.Container {
 			},
 		},
 		Groups: []monitoring.Group{
+			shared.GitServer.NewAPIGroup(containerName),
 			{
 				Title: "General",
 				Rows: []monitoring.Row{
