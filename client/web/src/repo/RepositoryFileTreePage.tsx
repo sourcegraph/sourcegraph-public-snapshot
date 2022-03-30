@@ -25,6 +25,7 @@ export interface RepositoryFileTreePageProps
         RouteComponentProps<{
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
+            spec: string
         }> {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
@@ -135,7 +136,13 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                                 />
                             </>
                         ) : (
-                            <TreePage {...props} {...repoRevisionProps} repo={repo} />
+                            <TreePage
+                                {...props}
+                                {...repoRevisionProps}
+                                repo={repo}
+                                match={match}
+                                useActionItemsBar={context.useActionItemsBar}
+                            />
                         )}
                     </ErrorBoundary>
                 </BlobStatusBarContainer>

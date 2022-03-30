@@ -191,7 +191,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         '/-/branch/tab',
         '/-/tag/tab',
         '/-/contributors/tab',
-        '/-/compares/:spec*',
+        '/-/compare/tab/:spec*',
         '/-/home/tab',
     ].map(routePath => ({
         path: routePath,
@@ -232,7 +232,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ), // TODO: figure out how to pass the properties: match and routePrefix
     },
     {
-        path: '/-/compares/:spec*',
+        path: '/-/compare/:spec*',
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>

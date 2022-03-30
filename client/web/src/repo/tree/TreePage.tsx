@@ -26,10 +26,13 @@ import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { TreePageRepositoryFields } from '../../graphql-operations'
+import { ActionItemsBar, ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
+import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
+import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 import { RepoCommits, RepoDocs } from '../routes'
 import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
@@ -40,6 +43,8 @@ import { TreeNavigation } from './TreeNavigation'
 import { TreeTabList } from './TreeTabList'
 
 import styles from './TreePage.module.scss'
+import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
+import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -52,7 +57,7 @@ interface Props
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
-    repo: TreePageRepositoryFields
+    repo: RepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -60,6 +65,8 @@ interface Props
     location: H.Location
     history: H.History
     globbing: boolean
+    useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
+    match: RepositoryFileTreePageProps['match']
 }
 
 export const treePageRepositoryFragment = gql`
@@ -81,6 +88,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
+    useActionItemsBar,
+    match,
     ...props
 }) => {
     useEffect(() => {
@@ -307,8 +316,27 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             )
                                         }}
                                     />
+                                    <Route path={`${treeOrError.url}/-/compare/tab`}>
+                                        <RepoRevisionWrapper>
+                                            <RepositoryGitDataContainer {...props} repoName={repo.name}>
+                                                <RepositoryCompareArea
+                                                    repo={repo}
+                                                    match={match}
+                                                    settingsCascade={settingsCascade}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...props}
+                                                />
+                                            </RepositoryGitDataContainer>
+                                            <ActionItemsBar
+                                                extensionsController={props.extensionsController}
+                                                platformContext={props.platformContext}
+                                                useActionItemsBar={useActionItemsBar}
+                                                location={props.location}
+                                                telemetryService={props.telemetryService}
+                                            />
+                                        </RepoRevisionWrapper>
+                                    </Route>
                                 </Switch>
-                                {selectedTab === 'home' && <HomeTab {...homeTabProps} {...props} repo={repo} />}
                             </section>
                         </div>
                     </>
