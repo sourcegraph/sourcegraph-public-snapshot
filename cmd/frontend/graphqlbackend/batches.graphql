@@ -1335,6 +1335,8 @@ extend type Mutation {
         publicationStates: [ChangesetSpecPublicationStateInput!]
     ): BatchChange!
 
+    rerunBatchChange(batchChange: ID!): EmptyResponse!
+
     """
     Create a batch spec that will be used to create a batch change (with the createBatchChange
     mutation), or to update an existing batch change (with the applyBatchChange mutation).

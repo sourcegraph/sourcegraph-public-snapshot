@@ -420,6 +420,57 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
+func (r *Resolver) RerunBatchChange(ctx context.Context, args *graphqlbackend.RerunBatchChangeArgs) (*graphqlbackend.EmptyResponse, error) {
+	id, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	bc, err := r.store.GetBatchChange(ctx, store.GetBatchChangeOpts{
+		ID: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%#+v\n", bc)
+
+	bs, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: bc.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("%#+v\n", bs)
+
+	svc := service.New(r.store)
+	// TODO: create changesets and jobs?
+	//csIDs, err := r.store.GetChangeset()
+	//
+	//_, err = svc.CreateChangesetJobs(
+	//	ctx,
+	//	bc.ID,
+	//	changesetIDs,
+	//	btypes.ChangesetJobTypePublish,
+	//	&btypes.ChangesetJobPublishPayload{},
+	//	store.ListChangesetsOpts{},
+	//)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	_, err = svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
+		BatchSpecRandID:         bs.RandID,
+		EnsureBatchChangeID:     bc.ID,
+		FailIfBatchChangeExists: false,
+		PublicationStates:       service.UiPublicationStates{},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// todo: publish changesets
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "Resolver.ApplyBatchChange", fmt.Sprintf("BatchSpec %s", args.BatchSpec))

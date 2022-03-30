@@ -17,6 +17,10 @@ type CreateBatchChangeArgs struct {
 	PublicationStates *[]ChangesetSpecPublicationStateInput
 }
 
+type RerunBatchChangeArgs struct {
+	BatchChange graphql.ID
+}
+
 type ApplyBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	EnsureBatchChange *graphql.ID
@@ -243,6 +247,7 @@ type BatchChangesResolver interface {
 	// MUTATIONS
 	//
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
+	RerunBatchChange(ctx context.Context, args *RerunBatchChangeArgs) (*EmptyResponse, error)
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
 	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
