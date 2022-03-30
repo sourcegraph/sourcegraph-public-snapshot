@@ -13,7 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
-	gitserverbg "github.com/sourcegraph/sourcegraph/cmd/gitserver/background"
+	gitserverbg "github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"

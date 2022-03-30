@@ -1,4 +1,4 @@
-package background
+package gitserver
 
 import (
 	"context"
@@ -30,7 +30,6 @@ import (
 
 // localCloneJob implements the job.Job interface. It is used by the worker service
 // to spawn a new background worker.
-
 type localCloneJob struct{}
 
 // NewLocalCloneJob creates a new job for cloning a repository from source to the destination.
@@ -53,12 +52,11 @@ func (j *localCloneJob) Routines(ctx context.Context) ([]goroutine.BackgroundRou
 	}
 	db := database.NewDB(wdb)
 
-	localCloneStore := db.GitserverLocalClone()
 	localCloneMetrics := newMetricsForLocalCloneQueries()
 
 	return []goroutine.BackgroundRoutine{
 		newLocalCloneWorker(db, localCloneMetrics),
-		newLocalCloneResetter(localCloneStore, localCloneMetrics),
+		newLocalCloneResetter(db, localCloneMetrics),
 	}, nil
 }
 
@@ -68,6 +66,7 @@ type localCloneHandler struct {
 }
 
 // Handle takes the given job and clones the repository from source to the destination.
+// This implements the job.Handler interface.
 func (h *localCloneHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
@@ -115,7 +114,8 @@ func newLocalCloneWorker(db database.DB, metrics localCloneMetrics) *workerutil.
 
 // newLocalCloneResetter implements resetter for the gitserver_localclone_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
-func newLocalCloneResetter(s database.GitserverLocalCloneStore, metrics localCloneMetrics) *dbworker.Resetter {
+func newLocalCloneResetter(db database.DB, metrics localCloneMetrics) *dbworker.Resetter {
+	s := db.GitserverLocalClone()
 	workerStore := createLocalCloneStore(s)
 
 	options := dbworker.ResetterOptions{
