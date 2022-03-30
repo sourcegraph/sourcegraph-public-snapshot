@@ -275,7 +275,7 @@ describe('GitHub', () => {
             },
         })
 
-        await percySnapshot(driver.page, 'Browser extension: code intel popup')
+        await percySnapshot(driver.page, 'Browser extension: GitHub - blob view with code intel popup')
 
         // 2. Check that token click does not do anything by default
         await token.click()
