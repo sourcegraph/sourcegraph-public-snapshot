@@ -28,8 +28,7 @@ pub fn main() anyerror!void {
     var contentSz: u32 = undefined;
     var buffer: [1024]u8 = undefined;
     while(true) {
-        // TODO readVarInt is not a go varint
-        var slen = try sectionReader.readVarInt(u64, std.builtin.Endian.Big, 1);
+        var slen = try std.leb.readULEB128(u64, sectionReader);
 
         // Section Tag
         var name = buffer[0..slen];
