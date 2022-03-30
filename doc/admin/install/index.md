@@ -23,6 +23,7 @@ If you're just starting out, you can [**try Sourcegraph Cloud**](https://sourceg
 <span class="virtual-br"></span>
 
 > NOTE: Some features for self-hosted deployments [require a Sourcegraph license](https://about.sourcegraph.com/pricing/).
+> NOTE: Code Insights is not available for the Single-continer deployment. 
 
 ### Tips
 
