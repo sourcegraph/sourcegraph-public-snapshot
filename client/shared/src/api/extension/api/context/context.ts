@@ -94,5 +94,7 @@ export function computeContext<T>(
         data['panel.activeView.hasLocations'] = component.hasLocations
     }
 
+    console.log('data', data)
+
     return data
 }

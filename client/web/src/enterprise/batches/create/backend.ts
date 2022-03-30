@@ -67,6 +67,7 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
         createEmptyBatchChange(namespace: $namespace, name: $name) {
             id
             url
+            name
         }
     }
 `
