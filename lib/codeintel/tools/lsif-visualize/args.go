@@ -1,39 +1,14 @@
 package main
 
 import (
-	"os"
-
-	"github.com/alecthomas/kingpin"
+	"flag"
+	"strings"
 )
-
-var app = kingpin.New(
-	"lsif-visualize",
-	"lsif-visualize is visualizer for LSIF indexer output.",
-).Version(version)
 
 var (
-	indexFile     *os.File
-	fromID        int
-	subgraphDepth int
-	exclude       []string
+	indexFilePath = flag.String("index-file", "dump.lsif", "The LSIF index to visualize.")
+	fromID        = flag.Int("from-id", 2, "The edge/vertex ID to visualize a subgraph from. Must be used in combination with '-depth'.")
+	subgraphDepth = flag.Int("depth", -1, "Depth limit of the subgraph to be output")
+	excludeArg    = flag.String("exclude", "", "Comma-separated list of vertices to exclude from the visualization")
+	exclude       = strings.Split(*excludeArg, ",")
 )
-
-func init() {
-	app.HelpFlag.Short('h')
-	app.VersionFlag.Short('v')
-	app.HelpFlag.Hidden()
-
-	app.Flag("from-id", "The edge/vertex ID to visualize a subgraph from. Must be used in combination with '-depth'.").Default("2").IntVar(&fromID)
-	app.Flag("depth", "Depth limit of the subgraph to be output").Default("-1").IntVar(&subgraphDepth)
-	app.Flag("exclude", "Vertices to exclude from the visualization").StringsVar(&exclude)
-
-	app.Arg("index-file", "The LSIF index to visualize.").Default("dump.lsif").FileVar(&indexFile)
-}
-
-func parseArgs(args []string) (err error) {
-	if _, err := app.Parse(args); err != nil {
-		return err
-	}
-
-	return nil
-}

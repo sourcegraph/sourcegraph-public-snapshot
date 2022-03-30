@@ -4,6 +4,8 @@ import (
 	"context"
 	"math"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -12,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/errgroup"
 )
 
 var MockReposContainingPath func() ([]*result.FileMatch, error)
@@ -56,7 +57,6 @@ func (s *RepoSearch) reposContainingPath(ctx context.Context, repos []*search.Re
 		search.TextRequest,
 		newArgs.PatternInfo.Index,
 		query.ContainsRefGlobs(newArgs.Query),
-		func([]*search.RepositoryRevisions) {},
 	)
 	if err != nil {
 		return nil, err

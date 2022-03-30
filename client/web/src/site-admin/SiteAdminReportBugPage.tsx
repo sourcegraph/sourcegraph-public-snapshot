@@ -14,6 +14,7 @@ import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schem
 import githubSchemaJSON from '../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
+import goModulesSchemaJSON from '../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../schema/jvm-packages.schema.json'
 import npmPackagesSchemaJSON from '../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../schema/other_external_service.schema.json'
@@ -43,6 +44,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     GITHUB: githubSchemaJSON,
     GITLAB: gitlabSchemaJSON,
     GITOLITE: gitoliteSchemaJSON,
+    GOMODULES: goModulesSchemaJSON,
     JVMPACKAGES: jvmPackagesSchemaJSON,
     NPMPACKAGES: npmPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,

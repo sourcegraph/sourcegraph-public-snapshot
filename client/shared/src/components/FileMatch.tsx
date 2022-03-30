@@ -95,7 +95,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     }, [settings])
     const renderTitle = (): JSX.Element => (
         <>
-            <RepoIcon repoName={result.repository} className="text-muted" />
+            <RepoIcon repoName={result.repository} className="text-muted flex-shrink-0" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
@@ -106,7 +106,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className="ml-1"
+                className="ml-1 flex-shrink-past-contents text-truncate"
             />
         </>
     )

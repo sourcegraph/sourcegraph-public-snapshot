@@ -123,13 +123,14 @@ async function main(): Promise<void> {
 
         if (IsProductionVersion) {
             subscriptions.add(
-                observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-                    const eventLogger = new EventLogger(requestGraphQL, sourcegraphURL)
-                    eventLogger
-                        .log('BrowserExtensionInstalled')
-                        .then(() => console.log(`Triggered "BrowserExtensionInstalled" using ${sourcegraphURL}`))
-                        .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
-                })
+                observeSourcegraphURL(IS_EXTENSION)
+                    .pipe(take(1))
+                    .subscribe(sourcegraphURL => {
+                        new EventLogger(requestGraphQL, sourcegraphURL)
+                            .log('BrowserExtensionInstalled')
+                            .then(() => console.log(`Triggered "BrowserExtensionInstalled" using ${sourcegraphURL}`))
+                            .catch(error => console.error('Error triggering "BrowserExtensionInstalled" event:', error))
+                    })
             )
         }
 
