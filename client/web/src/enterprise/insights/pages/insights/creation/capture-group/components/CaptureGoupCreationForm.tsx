@@ -149,7 +149,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                             repositories={repositories.input.value}
                             placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                             className="mb-3"
-                            {...getDefaultInputProps(repositories)}
+                            {...getDefaultInputProps(query)}
                         />
                     </Label>
 
