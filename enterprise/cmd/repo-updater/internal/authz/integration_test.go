@@ -459,7 +459,7 @@ func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
 	spec := extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
 		ServiceID:   "https://ghe.sgdev.org/api/v3/",
-		AccountID:   "2383", // TODO: For now indradhanush.
+		AccountID:   "2384", // AccountID for user integration-test ghe.sgdev.org.
 	}
 
 	svc := types.ExternalService{
@@ -516,7 +516,7 @@ func TestIntegration_GitHubEnterprisePermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(url, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(svc.URN(), url, &auth.OAuthBearerToken{Token: token}, doer)
 
 			testDB := dbtest.NewDB(t)
 			ctx := actor.WithInternalActor(context.Background())

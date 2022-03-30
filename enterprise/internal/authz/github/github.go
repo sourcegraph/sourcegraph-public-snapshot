@@ -444,9 +444,11 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return userIDs, errors.Wrap(err, "get groups affiliated with repo")
 	}
 
+	log15.Debug("getRepoAffiliatedGroups", "groups length", len(groups))
+
 	// Perform a fresh sync with groups that need a sync.
 	repoID := extsvc.RepoID(repo.ID)
-	for _, group := range groups {
+	for i, group := range groups {
 		// If this is a partial cache, add self to group
 		if len(group.Repositories) > 0 {
 			hasRepo := false
@@ -473,8 +475,14 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		for page := 1; hasNextPage; page++ {
 			var members []*github.Collaborator
 			if group.Team == "" {
-				members, hasNextPage, err = client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
+				log15.Debug("ListOrganizationsMembers", "count", i, "page", page, "group", group)
+				// Fetch all org members of the current org. For non-internal repositories, this is
+				// the same as the owner as len(groups) is 1. But for internal repositories, we need
+				// to list org members of each org in the entire instance, thus this must be the org
+				// in each iteration of the outer for-loop iterating through groups.
+				members, hasNextPage, err = client.ListOrganizationMembers(ctx, group.Org, page, group.adminsOnly)
 			} else {
+				// Fetch all members of all the teams in the org to which this repo belongs to.
 				members, hasNextPage, err = client.ListTeamMembers(ctx, owner, group.Team, page)
 			}
 			if err != nil {
