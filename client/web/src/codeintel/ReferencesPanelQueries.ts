@@ -189,3 +189,62 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
         }
     }
 `
+
+const searchResultsFragment = gql`
+    fragment SearchResults on Search {
+        __typename
+        results {
+            __typename
+            results {
+                ... on FileMatch {
+                    __typename
+                    file {
+                        url
+                        path
+                        commit {
+                            oid
+                        }
+                        content
+                    }
+                    repository {
+                        name
+                    }
+                    symbols {
+                        name
+                        kind
+                        location {
+                            url
+                            resource {
+                                path
+                            }
+                            range {
+                                start {
+                                    line
+                                    character
+                                }
+                                end {
+                                    line
+                                    character
+                                }
+                            }
+                        }
+                        fileLocal
+                    }
+                    lineMatches {
+                        lineNumber
+                        offsetAndLengths
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const CODE_INTEL_SEARCH_QUERY = gql`
+    query CodeIntelSearch($query: String!) {
+        search(query: $query) {
+            ...SearchResults
+        }
+    }
+    ${searchResultsFragment}
+`

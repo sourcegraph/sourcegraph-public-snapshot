@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize } from 'lodash'
+import { capitalize, find } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -18,10 +18,10 @@ import {
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/common'
-import { Range } from '@sourcegraph/extension-api-types'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -45,18 +45,20 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import {
-    LocationFields,
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
-} from '../graphql-operations'
+import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { resolveRevision } from '../repo/backend'
+import { fetchBlob } from '../repo/blob/backend'
 import { Blob } from '../repo/blob/Blob'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { findLanguageSpec } from './language-specs/languages'
+import { LanguageSpec } from './language-specs/languagespec'
+import { Location, RepoLocationGroup, LocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
-import { usePreciseCodeIntel } from './usePreciseCodeIntel'
+import { findSearchToken } from './token'
+import { useCodeIntel } from './useCodeIntel'
+import { isDefined } from './util/helpers'
 
 import styles from './ReferencesPanel.module.scss'
 
@@ -69,9 +71,6 @@ interface ReferencesPanelProps
         HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps {
-    /** The token for which to show references. If it's not set, the panel will try to get enough info out of the URL. */
-    token?: Token
-
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean
 
@@ -97,11 +96,14 @@ const ReferencesPanel: React.FunctionComponent<ReferencesPanelProps> = props => 
     const location = useLocation()
 
     const { hash, pathname, search } = location
-    const { line, character, viewState } = parseQueryAndHash(search, hash)
-    const { filePath, repoName, revision, commitID } = parseBrowserRepoURL(pathname)
+    const { line, character } = parseQueryAndHash(search, hash)
+    const { filePath, repoName, ...parsedURL } = parseBrowserRepoURL(pathname)
+
+    const revision = parsedURL.revision
+    const commitID = parsedURL.commitID
 
     // If we don't have enough information in the URL, we can't render the panel
-    if (!(line && character && filePath && viewState)) {
+    if (!(line && character && filePath)) {
         return null
     }
 
@@ -133,7 +135,10 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     }
 
     const token = {
-        ...props,
+        repoName: props.repoName,
+        line: props.line,
+        character: props.character,
+        filePath: props.filePath,
         revision: props.revision || resolvedRevision.defaultBranch,
         commitID: resolvedRevision.commitID,
     }
@@ -141,53 +146,11 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     return <FilterableReferencesList {...props} token={token} />
 }
 
-interface Location {
-    resource: {
-        path: string
-        content: string
-        repository: {
-            name: string
-        }
-        commit: {
-            oid: string
-        }
-    }
-    range?: Range
-    url: string
-    lines: string[]
+interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
+    token: Token
 }
 
-const buildLocation = (node: LocationFields): Location => {
-    const location: Location = {
-        resource: {
-            repository: { name: node.resource.repository.name },
-            content: node.resource.content,
-            path: node.resource.path,
-            commit: node.resource.commit,
-        },
-        url: '',
-        lines: [],
-    }
-    if (node.range !== null) {
-        location.range = node.range
-    }
-    location.url = node.url
-    location.lines = location.resource.content.split(/\r?\n/)
-    return location
-}
-
-interface RepoLocationGroup {
-    repoName: string
-    referenceGroups: LocationGroup[]
-}
-
-interface LocationGroup {
-    repoName: string
-    path: string
-    locations: Location[]
-}
-
-const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = props => {
+const FilterableReferencesList: React.FunctionComponent<ReferencesPanelPropsWithToken> = props => {
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
 
@@ -195,12 +158,58 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = 
         setFilter(undefined)
     }, [props.token])
 
-    if (props.token === undefined) {
-        return null
+    const blobInfo = useObservable(
+        fetchBlob({
+            repoName: props.token.repoName,
+            commitID: props.token.commitID,
+            filePath: props.token.filePath,
+            disableTimeout: false,
+        })
+    )
+
+    const languageId = getModeFromPath(props.token.filePath)
+    const spec = findLanguageSpec(languageId)
+    const tokenResult = findSearchToken({
+        text: blobInfo?.content ?? '',
+        position: {
+            line: props.token.line - 1,
+            character: props.token.character - 1,
+        },
+        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+        identCharPattern: spec.identCharPattern,
+    })
+
+    // If the blobInfo observable hasn't emitted yet, we show the loading message
+    if (blobInfo === undefined) {
+        return <LoadingCodeIntel />
+    }
+    if (blobInfo === null) {
+        return (
+            <div>
+                <p className="text-danger">Could not load file content</p>
+            </div>
+        )
+    }
+
+    if (!tokenResult?.searchToken) {
+        return (
+            <div>
+                <p className="text-danger">Could not find hovered token.</p>
+            </div>
+        )
     }
 
     return (
         <>
+            <CardHeader>
+                <code>{tokenResult.searchToken}</code>{' '}
+                <span className="text-muted ml-2">
+                    <code>
+                        {props.token.repoName}:{props.token.filePath}
+                    </code>
+                </span>
+            </CardHeader>
             <Input
                 className={classNames('py-0 my-0', styles.referencesFilter)}
                 type="text"
@@ -208,7 +217,14 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = 
                 value={filter === undefined ? '' : filter}
                 onChange={event => setFilter(event.target.value)}
             />
-            <ReferencesList {...props} token={props.token} filter={debouncedFilter} />
+            <ReferencesList
+                {...props}
+                token={props.token}
+                filter={debouncedFilter}
+                searchToken={tokenResult?.searchToken}
+                spec={spec}
+                fileContent={blobInfo.content}
+            />
         </>
     )
 }
@@ -216,13 +232,15 @@ const FilterableReferencesList: React.FunctionComponent<ReferencesPanelProps> = 
 const SHOW_SPINNER_DELAY_MS = 100
 
 export const ReferencesList: React.FunctionComponent<
-    ReferencesPanelProps & {
-        token: Token
+    ReferencesPanelPropsWithToken & {
         filter?: string
+        searchToken: string
+        spec: LanguageSpec
+        fileContent: string
     }
 > = props => {
     const {
-        lsifData,
+        data,
         error,
         loading,
         referencesHasNextPage,
@@ -231,7 +249,7 @@ export const ReferencesList: React.FunctionComponent<
         fetchMoreImplementations,
         fetchMoreReferencesLoading,
         fetchMoreImplementationsLoading,
-    } = usePreciseCodeIntel({
+    } = useCodeIntel({
         variables: {
             repository: props.token.repoName,
             commit: props.token.commitID,
@@ -246,6 +264,9 @@ export const ReferencesList: React.FunctionComponent<
             firstImplementations: 100,
             afterImplementations: null,
         },
+        fileContent: props.fileContent,
+        searchToken: props.searchToken,
+        spec: props.spec,
     })
 
     // We only show the inline loading message if loading takes longer than
@@ -258,9 +279,9 @@ export const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = useMemo(() => (lsifData?.references.nodes ?? []).map(buildLocation), [lsifData])
-    const definitions = useMemo(() => (lsifData?.definitions.nodes ?? []).map(buildLocation), [lsifData])
-    const implementations = useMemo(() => (lsifData?.implementations.nodes ?? []).map(buildLocation), [lsifData])
+    const references = useMemo(() => data?.references.nodes ?? [], [data])
+    const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
+    const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
 
     // activeLocation is the location that is selected/clicked in the list of
     // definitions/references/implementations.
@@ -314,10 +335,9 @@ export const ReferencesList: React.FunctionComponent<
     const onBlobNav = (url: string): void => {
         // If we're going to navigate inside the same file in the same repo we
         // can optimistically jump to that position in the code blob.
-        const resource = activeLocation?.resource
-        if (resource !== undefined) {
+        if (activeLocation !== undefined) {
             const urlToken = tokenFromUrl(url)
-            if (urlToken.filePath === resource.path && urlToken.repoName === resource.repository.name) {
+            if (urlToken.filePath === activeLocation.file && urlToken.repoName === activeLocation.repo) {
                 blobMemoryHistory.push(url)
             }
         }
@@ -325,29 +345,22 @@ export const ReferencesList: React.FunctionComponent<
         panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
     }
 
-    if (loading && !lsifData) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <p className="text-muted text-center">
-                    <i>Loading precise code intel ...</i>
-                </p>
-            </>
-        )
+    if (loading && !data) {
+        return <LoadingCodeIntel />
     }
 
     // If we received an error before we had received any data
-    if (error && !lsifData) {
+    if (error && !data) {
         return (
             <div>
-                <p className="text-danger">Loading precise code intel failed:</p>
+                <p className="text-danger">Loading code intel failed:</p>
                 <pre>{error.message}</pre>
             </div>
         )
     }
 
     // If there weren't any errors and we just didn't receive any data
-    if (!lsifData) {
+    if (!data) {
         return <>Nothing found</>
     }
 
@@ -400,7 +413,7 @@ export const ReferencesList: React.FunctionComponent<
                     <div className={classNames('px-0 border-left', styles.referencesSideBlob)}>
                         <CardHeader className={classNames('pl-1 pr-3 py-1 d-flex justify-content-between')}>
                             <h4 className="mb-0">
-                                {activeLocation.resource.path}{' '}
+                                {activeLocation.file}{' '}
                                 <Link
                                     to={activeLocation.url}
                                     onClick={event => {
@@ -485,20 +498,6 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
                             setActiveLocation={props.setActiveLocation}
                             filter={props.filter}
                         />
-                        {props.hasMore &&
-                            props.fetchMore !== undefined &&
-                            (props.loadingMore ? (
-                                <div className="text-center mb-1">
-                                    <em>Loading more {props.name}...</em>
-                                    <LoadingSpinner inline={true} />
-                                </div>
-                            ) : (
-                                <div className="text-center mb-1">
-                                    <Button variant="secondary" onClick={props.fetchMore}>
-                                        Load more {props.name}
-                                    </Button>
-                                </div>
-                            ))}
                     </>
                 ) : (
                     <p className="text-muted pl-2">
@@ -511,6 +510,21 @@ const CollapsibleLocationList: React.FunctionComponent<CollapsibleLocationListPr
                         )}
                     </p>
                 )}
+
+                {props.hasMore &&
+                    props.fetchMore !== undefined &&
+                    (props.loadingMore ? (
+                        <div className="text-center mb-1">
+                            <em>Loading more {props.name}...</em>
+                            <LoadingSpinner inline={true} />
+                        </div>
+                    ) : (
+                        <div className="text-center mb-1">
+                            <Button variant="secondary" onClick={props.fetchMore}>
+                                Load more {props.name}
+                            </Button>
+                        </div>
+                    ))}
             </Collapse>
         </>
     )
@@ -530,9 +544,9 @@ const SideBlob: React.FunctionComponent<
         ReferencesPanelHighlightedBlobVariables
     >(FETCH_HIGHLIGHTED_BLOB, {
         variables: {
-            repository: props.activeLocation.resource.repository.name,
-            commit: props.activeLocation.resource.commit.oid,
-            path: props.activeLocation.resource.path,
+            repository: props.activeLocation.repo,
+            commit: props.activeLocation.commitID,
+            path: props.activeLocation.file,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -547,7 +561,7 @@ const SideBlob: React.FunctionComponent<
                 <LoadingSpinner inline={false} className="mx-auto my-4" />
                 <p className="text-muted text-center">
                     <i>
-                        Loading <code>{props.activeLocation.resource.path}</code>...
+                        Loading <code>{props.activeLocation.file}</code>...
                     </i>
                 </p>
             </>
@@ -559,7 +573,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <div>
                 <p className="text-danger">
-                    Loading <code>{props.activeLocation.resource.path}</code> failed:
+                    Loading <code>{props.activeLocation.file}</code> failed:
                 </p>
                 <pre>{error.message}</pre>
             </div>
@@ -576,7 +590,7 @@ const SideBlob: React.FunctionComponent<
         return (
             <p className="text-warning text-center">
                 <i>
-                    Highlighting <code>{props.activeLocation.resource.path}</code> failed
+                    Highlighting <code>{props.activeLocation.file}</code> failed
                 </i>
             </p>
         )
@@ -592,12 +606,12 @@ const SideBlob: React.FunctionComponent<
             wrapCode={true}
             className={styles.referencesSideBlobCode}
             blobInfo={{
-                content: props.activeLocation.resource.content,
                 html,
-                filePath: props.activeLocation.resource.path,
-                repoName: props.activeLocation.resource.repository.name,
-                commitID: props.activeLocation.resource.commit.oid,
-                revision: props.activeLocation.resource.commit.oid,
+                content: props.activeLocation.content,
+                filePath: props.activeLocation.file,
+                repoName: props.activeLocation.repo,
+                commitID: props.activeLocation.commitID,
+                revision: props.activeLocation.commitID,
                 mode: 'lspmode',
             }}
         />
@@ -628,16 +642,16 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     const repoLocationGroups = useMemo((): RepoLocationGroup[] => {
         const byFile: Record<string, Location[]> = {}
         for (const location of locations) {
-            if (byFile[location.resource.path] === undefined) {
-                byFile[location.resource.path] = []
+            if (byFile[location.file] === undefined) {
+                byFile[location.file] = []
             }
-            byFile[location.resource.path].push(location)
+            byFile[location.file].push(location)
         }
 
         const locationsGroups: LocationGroup[] = []
         Object.keys(byFile).map(path => {
             const references = byFile[path]
-            const repoName = references[0].resource.repository.name
+            const repoName = references[0].repo
             locationsGroups.push({ path, locations: references, repoName })
         })
 
@@ -659,7 +673,7 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     return (
         <>
             {repoLocationGroups.map(repoReferenceGroup => (
-                <RepoLocationGroup
+                <CollapsibleRepoLocationGroup
                     key={repoReferenceGroup.repoName}
                     repoLocationGroup={repoReferenceGroup}
                     activeLocation={activeLocation}
@@ -672,7 +686,7 @@ const LocationsList: React.FunctionComponent<LocationsListProps> = ({
     )
 }
 
-const RepoLocationGroup: React.FunctionComponent<{
+const CollapsibleRepoLocationGroup: React.FunctionComponent<{
     repoLocationGroup: RepoLocationGroup
     activeLocation?: Location
     setActiveLocation: (reference: Location | undefined) => void
@@ -681,6 +695,15 @@ const RepoLocationGroup: React.FunctionComponent<{
 }> = ({ repoLocationGroup, setActiveLocation, getLineContent, activeLocation, filter }) => {
     const [isOpen, setOpen] = useState<boolean>(true)
     const handleOpen = useCallback(() => setOpen(previousState => !previousState), [])
+
+    const allSearchBased = useMemo(
+        () =>
+            find(
+                repoLocationGroup.referenceGroups.flatMap(reference => reference.locations),
+                location => !location.precise
+            ) !== undefined,
+        [repoLocationGroup]
+    )
 
     return (
         <>
@@ -698,6 +721,10 @@ const RepoLocationGroup: React.FunctionComponent<{
                     )}
 
                     <Link to={`/${repoLocationGroup.repoName}`}>{displayRepoName(repoLocationGroup.repoName)}</Link>
+
+                    <Badge pill={true} small={true} variant="secondary" className="ml-2">
+                        {allSearchBased ? 'SEARCH-BASED' : 'PRECISE'}
+                    </Badge>
                 </span>
             </Button>
 
@@ -791,6 +818,15 @@ const ReferenceGroup: React.FunctionComponent<{
         </div>
     )
 }
+
+const LoadingCodeIntel: React.FunctionComponent<{}> = () => (
+    <>
+        <LoadingSpinner inline={false} className="mx-auto my-4" />
+        <p className="text-muted text-center">
+            <i>Loading code intel ...</i>
+        </p>
+    </>
+)
 
 export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
     const parsedQuery = parseQueryAndHash(location.search, location.hash)
