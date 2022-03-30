@@ -75,6 +75,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		features:       &features,
 		fileMatchLimit: fileMatchLimit,
 		selector:       selector,
+		zoekt:          jargs.Zoekt,
 	}
 
 	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
