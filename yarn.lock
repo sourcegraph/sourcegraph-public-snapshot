@@ -2256,7 +2256,7 @@
   optionalDependencies:
     vue-template-compiler "^2.6.12"
 
-"@graphql-tools/import@6.6.9":
+"@graphql-tools/import@6.6.9", "@graphql-tools/import@^6.2.5":
   version "6.6.9"
   resolved "https://registry.npmjs.org/@graphql-tools/import/-/import-6.6.9.tgz#53e1517074c756b5191d23d4f1528246913d44ba"
   integrity sha512-sKaLqvPmNLQlY4te+nnBhRrf5WBISoiyVkbriCLz0kHw805iHdJaU2KxUoHsRTR7WlYq0g9gzB0oVaRh99Q5aA==
@@ -2264,14 +2264,6 @@
     "@graphql-tools/utils" "8.6.5"
     resolve-from "5.0.0"
     tslib "~2.3.0"
-
-"@graphql-tools/import@^6.2.5":
-  version "6.2.5"
-  resolved "https://registry.npmjs.org/@graphql-tools/import/-/import-6.2.5.tgz#5f279815229320128a07cad188c4860be18cb422"
-  integrity sha512-ZGXT5tDod7m+LO38fc+o0JzR1LstL0RF35HKEWoUdxRIVaaeYH9VMuan9Gn+9M9RDME3RnzEa9aGzf9ATj8bTA==
-  dependencies:
-    resolve-from "5.0.0"
-    tslib "~2.0.1"
 
 "@graphql-tools/json-file-loader@^6", "@graphql-tools/json-file-loader@^6.0.0":
   version "6.2.6"
@@ -11447,12 +11439,7 @@ entities@^1.1.1, entities@~1.1.1:
   resolved "https://registry.npmjs.org/entities/-/entities-1.1.2.tgz#bdfa735299664dfafd34529ed4f8522a275fea56"
   integrity sha512-f2LZMYl1Fzu7YSBKg+RoROelpOaNrcGmE9AZubeDfrCEia483oW4MI4VyFd5VNHIgQ/7qm1I0wUHK1eJnn2y2w==
 
-entities@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/entities/-/entities-2.0.0.tgz#68d6084cab1b079767540d80e56a39b423e4abf4"
-  integrity sha512-D9f7V0JSRwIxlRI2mjMqufDrRDnx8p+eEOz7aUM9SuvF8gsBzra0/6tbjl1m8eQHrZlYj6PxqE00hZ1SAIKPLw==
-
-entities@~2.1.0:
+entities@^2.0.0, entities@~2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/entities/-/entities-2.1.0.tgz#992d3129cf7df6870b96c57858c249a120f8b8b5"
   integrity sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==
@@ -18159,14 +18146,14 @@ node-fetch@2.6.1:
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
   integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
-node-fetch@2.6.5, node-fetch@^2.3.0, node-fetch@^2.6.0, node-fetch@^2.6.1:
+node-fetch@2.6.5:
   version "2.6.5"
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.5.tgz#42735537d7f080a7e5f78b6c549b7146be1742fd"
   integrity sha512-mmlIVHJEu5rnIxgEgez6b9GgWXbkZj5YZ7fx+2r94a2E+Uirsp6HsPTPlomfdHtpt/B0cdKviwkoaM6pyvUOpQ==
   dependencies:
     whatwg-url "^5.0.0"
 
-node-fetch@^2.6.7:
+node-fetch@^2.3.0, node-fetch@^2.6.0, node-fetch@^2.6.1, node-fetch@^2.6.7:
   version "2.6.7"
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.7.tgz#24de9fba827e3b4ae44dc8b20256a379160052ad"
   integrity sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ==
@@ -25221,12 +25208,12 @@ ws@7.4.2:
   resolved "https://registry.npmjs.org/ws/-/ws-7.4.2.tgz#782100048e54eb36fe9843363ab1c68672b261dd"
   integrity sha512-T4tewALS3+qsrpGI/8dqNMLIVdq/g/85U98HPMa6F0m6xTbvhXU6RCQLqPH3+SlomNV/LdY6RXEbBpMH6EOJnA==
 
-ws@8.2.3, ws@^8.0.0, ws@^8.1.0:
+ws@8.2.3:
   version "8.2.3"
   resolved "https://registry.npmjs.org/ws/-/ws-8.2.3.tgz#63a56456db1b04367d0b721a0b80cae6d8becbba"
   integrity sha512-wBuoj1BDpC6ZQ1B7DWQBYVLphPWkm8i9Y0/3YdHjHKHiohOJ1ws+3OccDWtH+PoC9DZD5WOTrJvNbWvjS6JWaA==
 
-"ws@^5.2.0 || ^6.0.0 || ^7.0.0":
+"ws@^5.2.0 || ^6.0.0 || ^7.0.0", ws@^7.1.2, ws@^7.3.1, ws@^7.4.6:
   version "7.5.7"
   resolved "https://registry.npmjs.org/ws/-/ws-7.5.7.tgz#9e0ac77ee50af70d58326ecff7e85eb3fa375e67"
   integrity sha512-KMvVuFzpKBuiIXW3E4u3mySRO2/mCHSyZDJQM5NQ9Q9KHWHWh0NHgfbRMLLrceUK5qAL4ytALJbpRMjixFZh8A==
@@ -25238,12 +25225,7 @@ ws@^6.1.0, ws@~6.1.0:
   dependencies:
     async-limiter "~1.0.0"
 
-ws@^7.1.2, ws@^7.3.1, ws@^7.4.6:
-  version "7.5.6"
-  resolved "https://registry.npmjs.org/ws/-/ws-7.5.6.tgz#e59fc509fb15ddfb65487ee9765c5a51dec5fe7b"
-  integrity sha512-6GLgCqo2cy2A2rjCNFlxQS6ZljG/coZfZXclldI8FB/1G3CCI36Zd8xy2HrFVACi8tfk5XrgLQEk+P0Tnz9UcA==
-
-ws@^8.3.0:
+ws@^8.0.0, ws@^8.1.0, ws@^8.3.0:
   version "8.5.0"
   resolved "https://registry.npmjs.org/ws/-/ws-8.5.0.tgz#bfb4be96600757fe5382de12c670dab984a1ed4f"
   integrity sha512-BWX0SWVgLPzYwF8lTzEy1egjhS4S4OEAHfsO8o65WOVsrnSRGaSiUaa9e0ggGlkMTtBlmOpEXiie9RUcBO86qg==
