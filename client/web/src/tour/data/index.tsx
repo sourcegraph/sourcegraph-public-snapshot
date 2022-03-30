@@ -215,7 +215,7 @@ export const visitorsTasks: TourTaskType[] = [
 export const authenticatedTasks: TourTaskType[] = [
     {
         title: 'Reuse existing code',
-        icon: <MagnifyIcon size="2rem" />,
+        icon: <MagnifyIcon size="2.3rem" />,
         steps: [
             {
                 id: 'ReuseExistingCode',
@@ -251,7 +251,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Find and fix vulnerabilities',
-        icon: <ShieldSearchIcon size="2rem" />,
+        icon: <ShieldSearchIcon size="2.3rem" />,
         steps: [
             {
                 id: 'WatchVideo',
@@ -292,7 +292,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Respond to incidents',
-        icon: <NotebookIcon size="2rem" />,
+        icon: <NotebookIcon size="2.3rem" />,
         steps: [
             {
                 id: 'Notebook',
@@ -306,7 +306,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Quickly understand a new codebase',
-        icon: <CursorPointerIcon size="2rem" />,
+        icon: <CursorPointerIcon size="2.3rem" />,
         steps: [
             {
                 id: 'PowerCodeNav',
@@ -342,7 +342,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Install an IDE extension',
-        icon: <PuzzleOutlineIcon size="2rem" />,
+        icon: <PuzzleOutlineIcon size="2.3rem" />,
         steps: [
             {
                 id: 'InstallIDEExtension',
@@ -357,7 +357,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Create a team',
-        icon: <AccountGroupIcon size="2rem" />,
+        icon: <AccountGroupIcon size="2.3rem" />,
         steps: [
             {
                 id: 'CreateTeam',
@@ -377,7 +377,7 @@ export const authenticatedTasks: TourTaskType[] = [
  */
 export const authenticatedExtraTask: TourTaskType = {
     title: 'All done!',
-    icon: <CheckCircleIcon size="2rem" className="text-success" />,
+    icon: <CheckCircleIcon size="2.3rem" className="text-success" />,
     steps: [
         {
             id: 'RestartTour',

@@ -25,15 +25,9 @@
 .task-list {
     &::-webkit-scrollbar {
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-        margin-left: 4px;
-        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         width: 4px;
-        height: 0;
-    }
-
-    &::-webkit-scrollbar-track {
-        border-radius: 3px;
-        box-shadow: inset 0 0 6px var(--color-bg-2);
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        height: 4px;
     }
 
     &::-webkit-scrollbar-thumb {
@@ -41,11 +35,16 @@
         box-shadow: inset 0 0 6px var(--text-muted);
     }
 
+    &:active::-webkit-scrollbar-thumb {
+        visibility: visible;
+    }
+
     &.is-horizontal {
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
+        padding-bottom: 0.5rem;
 
         > * {
             flex: 1 0 19rem;
@@ -53,7 +52,7 @@
 
             &:not(:last-child) {
                 border-right: 1px solid var(--border-color);
-                margin-right: 1rem;
+                margin-right: 0.7rem;
                 padding-right: 1rem;
             }
         }
@@ -69,6 +68,19 @@
             display: block;
             border-bottom: 1px solid var(--border-color);
             margin: 0.5rem 0;
+        }
+    }
+
+    // Firefox custom scrollbar
+    @-moz-document url-prefix() {
+        scrollbar-width: thin;
+        scrollbar-color: var(--text-muted);
+        &.is-horizontal {
+            padding-bottom: 1rem;
+        }
+
+        &:not(.is-horizontal) {
+            padding-right: 0.5rem;
         }
     }
 }
@@ -95,6 +107,10 @@
             margin-left: 1.25rem;
         }
     }
+}
+
+.completed-check-icon {
+    margin-top: 0.125rem;
 }
 
 .step-list {

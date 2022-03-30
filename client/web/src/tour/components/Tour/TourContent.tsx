@@ -31,6 +31,13 @@ const Header: React.FunctionComponent<{ onClose: () => void }> = ({ children, on
     </div>
 )
 
+const CompletedItem: React.FunctionComponent = ({ children }) => (
+    <div className="d-flex align-items-start">
+        <Icon as={CheckCircleIcon} size="sm" className={classNames('text-success mr-1', styles.completedCheckIcon)} />
+        <span className="flex-1">{children}</span>
+    </div>
+)
+
 export const TourContent: React.FunctionComponent<TourContentProps> = ({
     onClose,
     tasks,
@@ -70,10 +77,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                             <div key={index}>
                                 {variant === 'horizontal' && index === 0 && <p className={styles.title}>Completed</p>}
                                 {completedTaskChunk.map(completedTask => (
-                                    <div key={completedTask.title}>
-                                        <Icon as={CheckCircleIcon} size="sm" className="text-success" />
-                                        <span className="ml-1">{completedTask.title}</span>
-                                    </div>
+                                    <CompletedItem key={completedTask.title}>{completedTask.title}</CompletedItem>
                                 ))}
                             </div>
                         ))}
@@ -83,10 +87,7 @@ export const TourContent: React.FunctionComponent<TourContentProps> = ({
                     {variant !== 'horizontal' && (
                         <div>
                             {completedTasks.map(completedTask => (
-                                <div key={completedTask.title}>
-                                    <Icon as={CheckCircleIcon} size="sm" className="text-success" />
-                                    <span className="ml-1">{completedTask.title}</span>
-                                </div>
+                                <CompletedItem key={completedTask.title}>{completedTask.title}</CompletedItem>
                             ))}
                         </div>
                     )}

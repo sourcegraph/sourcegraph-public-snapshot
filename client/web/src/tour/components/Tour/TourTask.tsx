@@ -81,7 +81,7 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
     return (
         <div className={classNames(icon && [styles.task, variant === 'small' && styles.isSmall])}>
             {icon && variant !== 'small' && <span className={styles.taskIcon}>{icon}</span>}
-            <div className="flex-grow-1">
+            <div className={classNames('flex-grow-1', variant !== 'small' && 'h-100 d-flex flex-column')}>
                 <div className="d-flex justify-content-between position-relative">
                     {icon && variant === 'small' && <span className={classNames(styles.taskIcon)}>{icon}</span>}
                     <p className={styles.title}>{title}</p>
@@ -90,7 +90,14 @@ export const TourTask: React.FunctionComponent<TourTaskProps> = ({ title, steps,
                         <CircularProgressbar className={styles.progressBar} strokeWidth={10} value={completed || 0} />
                     )}
                 </div>
-                <ul className={classNames(styles.stepList, 'm-0', isMultiStep && styles.isMultiStep)}>
+                <ul
+                    className={classNames(
+                        styles.stepList,
+                        'm-0',
+                        variant !== 'small' && 'flex-grow-1 d-flex flex-column justify-content-center',
+                        isMultiStep && styles.isMultiStep
+                    )}
+                >
                     {steps.map(step => (
                         <li key={step.id} className={classNames(styles.stepListItem, 'd-flex align-items-start')}>
                             {step.action.type === 'link' && (
