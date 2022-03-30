@@ -27,6 +27,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -349,6 +350,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
 	mux.HandleFunc("/search", s.handleSearch)
+	mux.HandleFunc("/batch-log", s.handleBatchLog)
 	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -1138,6 +1140,96 @@ func matchCount(cm *protocol.CommitMatch) int {
 		return len(cm.Message.MatchedRanges)
 	}
 	return 1
+}
+
+func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
+	operations := s.ensureOperations()
+
+	// Run git log for a single repository.
+	// Invoked multiple times from the handler defined below.
+	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
+		ctx, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
+			LogFields: []log.Field{
+				log.String("repoCommit.Repo", string(repoCommit.Repo)),
+				log.String("repoCommit.CommitID", string(repoCommit.CommitID)),
+				log.String("format", format),
+			},
+		})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.Bool("isRepoCloned", isRepoCloned),
+			}})
+		}()
+
+		dir := s.dir(repoCommit.Repo)
+		if !repoCloned(dir) {
+			return "", false, nil
+		}
+
+		var buf bytes.Buffer
+		cmd := exec.CommandContext(ctx, "git", "log", format, string(repoCommit.CommitID))
+		dir.Set(cmd)
+		cmd.Stdout = &buf
+
+		if _, err := runCommand(ctx, cmd); err != nil {
+			return "", true, err
+		}
+
+		return buf.String(), true, nil
+	}
+
+	// Handles the /batch-log route
+	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
+		ctx, logger, endObservation := operations.batchLog.WithAndLogger(ctx, &err, observation.Args{})
+		defer func() {
+			endObservation(1, observation.Args{LogFields: []log.Field{
+				log.Int("statusCodeOnError", statusCodeOnError),
+			}})
+		}()
+
+		// Read request body
+		var req protocol.BatchLogRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			return http.StatusBadRequest, err
+		}
+		logger.Log(log.Int("req.numRepoCommits", len(req.RepoCommits)))
+		logger.Log(log.String("req.format", req.Format))
+
+		// Perform requests in each repository in the input batch. We do this synchronously
+		// today so that this endpoint remains simple. If it is determined that performing
+		// the git log requests in parallel _on each shard_ is necesesary, we should keep
+		// the following sequence of actions as simple as possible.
+
+		results := make([]protocol.BatchLogResult, 0, len(req.RepoCommits))
+		for _, repoCommit := range req.RepoCommits {
+			output, ok, err := performGitLogCommand(ctx, repoCommit, req.Format)
+			if err == nil && !ok {
+				err = errors.Newf("repo not found")
+			}
+			var errMessage string
+			if err != nil {
+				errMessage = err.Error()
+			}
+
+			results = append(results, protocol.BatchLogResult{
+				RepoCommit:    repoCommit,
+				CommandOutput: output,
+				CommandError:  errMessage,
+			})
+		}
+
+		// Write payload to client
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: results})
+		return 0, nil
+	}
+
+	// Handle unexpected error conditions. We expect the instrumented handler to not
+	// have written the status code or any of the body if this error value is non-nil.
+	if statusCodeOnError, err := instrumentedHandler(r.Context()); err != nil {
+		http.Error(w, err.Error(), statusCodeOnError)
+		return
+	}
 }
 
 // ensureOperations returns the non-nil operations value supplied to this server

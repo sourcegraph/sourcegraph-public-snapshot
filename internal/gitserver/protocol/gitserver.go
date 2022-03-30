@@ -98,6 +98,28 @@ type ExecRequest struct {
 	NoTimeout      bool        `json:"noTimeout"`
 }
 
+// BatchLogRequest is a request to execute a `git log` command inside a set of
+// git repositories present on the target shard.
+type BatchLogRequest struct {
+	RepoCommits []api.RepoCommit `json:"repoCommits"`
+
+	// Format is the entire `--format=<format>` argument to git log. This value
+	// is expected to be non-empty.
+	Format string `json:"format"`
+}
+
+type BatchLogResponse struct {
+	Results []BatchLogResult `json:"results"`
+}
+
+// BatchLogResult associates a repository and commit pair from the input of a BatchLog
+// request with the result of the associated git log command.
+type BatchLogResult struct {
+	RepoCommit    api.RepoCommit `json:"repoCommit"`
+	CommandOutput string         `json:"output"`
+	CommandError  string         `json:"error,omitempty"`
+}
+
 // P4ExecRequest is a request to execute a p4 command with given arguments.
 //
 // Note that this request is deserialized by both gitserver and the frontend's
