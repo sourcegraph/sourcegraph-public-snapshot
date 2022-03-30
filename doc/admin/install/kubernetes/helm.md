@@ -516,7 +516,7 @@ You can learn more about how to integrate Kustomize with Helm from our [example]
 
 ### Helm subcharts
 
-[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as using a custom database configuration file or adding a new resource unique to your deployment. These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
+[Helm subcharts](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/) can be used for permanent customizations to the official Sourcegraph helm chart. This is useful for changes such as adding a new resource unique to your deployment (PodSecurityPolicy, NetworkPolicy, additional services, etc.). These are long-lived customizations that shouldn't be contributed back to the Sourcegraph helm chart.
 
 With a subchart, you create your own helm chart and specify the Sourcegraph chart as a dependency. Any resources you place in the templates folder of your chart will be deployed, as well as the Sourcegraph resources, allowing you to extend the Sourcegraph chart without maintaining a fork.
 
