@@ -74,11 +74,8 @@ fn readTOC(file: std.fs.File) !TOC {
     return toc;
 }
 
-pub fn main() anyerror!void {
-    const file = try std.fs.cwd().openFile(
-        "github.com%2Fkeegancsmith%2Fsqlf_v16.00000.zoekt",
-        .{},
-    );
+fn search(shard_path: []const u8, needle: []const u8, writer: anytype) !void {
+    const file = try std.fs.cwd().openFile(shard_path, .{});
     defer file.close();
 
     const toc = try readTOC(file);
@@ -86,11 +83,19 @@ pub fn main() anyerror!void {
     try file.seekTo(toc.fileContents.data.off);
     var contentReader = std.io.limitedReader(file.reader(), toc.fileContents.data.sz).reader();
 
-    var needle = "func";
     var buffer: [1024]u8 = undefined;
     while (contentReader.readUntilDelimiterOrEof(&buffer, '\n') catch { return; }) |line| {
         if (std.mem.containsAtLeast(u8, line, 1, needle)) {
-            std.log.info("HI: {s}", .{line});
+            try writer.writeAll(line);
+            try writer.writeByte('\n');
         }
     }
+}
+
+pub fn main() anyerror!void {
+    try search(
+        "github.com%2Fkeegancsmith%2Fsqlf_v16.00000.zoekt",
+        "func",
+        std.io.getStdOut().writer(),
+    );
 }
