@@ -100,6 +100,11 @@ Copy an extension from Sourcegraph.com to your private registry.
 		if err != nil {
 			return err
 		}
+		// Remove sourcegraph.com bundle URL.
+		manifest, err = updatePropertyInManifest(manifest, "url", "")
+		if err != nil {
+			return err
+		}
 
 		response, err := http.Get(extensionResult.ExtensionRegistry.Extension.Manifest.BundleURL)
 		if err != nil {

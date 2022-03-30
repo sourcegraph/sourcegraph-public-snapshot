@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- `src extensions copy` now removes the `url` property from extension manifests that points to the sourcegraph.com extension bundle, enabling use for air-gapped instances.
+
 ### Removed
 
 ## 3.38.0

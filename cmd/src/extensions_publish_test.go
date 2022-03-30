@@ -54,6 +54,18 @@ func TestUpdatePropertyInManifest(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("remove property", func(t *testing.T) {
+		manifest := `{"extensionID":"sourcegraph/typescript", "url":"https://sourcegraph.com"}`
+		want := `{"extensionID": "sourcegraph/typescript"}`
+		got, err := updatePropertyInManifest([]byte(manifest), "url", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !jsonDeepEqual(string(got), want) {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
 }
 
 func jsonDeepEqual(a, b string) bool {

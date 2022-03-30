@@ -247,7 +247,11 @@ func updatePropertyInManifest(manifest []byte, property, value string) (updatedM
 	if o == nil {
 		o = map[string]interface{}{}
 	}
-	o[property] = value
+	if value == "" {
+		delete(o, property)
+	} else {
+		o[property] = value
+	}
 	return json.MarshalIndent(o, "", "  ")
 }
 
