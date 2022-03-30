@@ -116,7 +116,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
 			var textSearchJobs []Job
 			if !onlyRunSearcher {
-				job, err := builder.newZoektTextSearch()
+				job, err := builder.newZoektSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
@@ -143,7 +143,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			var symbolSearchJobs []Job
 
 			if !onlyRunSearcher {
-				job, err := builder.newZoektSymbolSearch()
+				job, err := builder.newZoektSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
@@ -476,33 +476,30 @@ func (b *jobBuilder) newZoektGlobalSymbolSearch() (*symbol.RepoUniverseSymbolSea
 	}, nil
 }
 
-func (b *jobBuilder) newZoektTextSearch() (*zoektutil.ZoektRepoSubsetSearch, error) {
-	typ := search.TextRequest
+func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (Job, error) {
 	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
-	return &zoektutil.ZoektRepoSubsetSearch{
-		Query:          zoektQuery,
-		Typ:            typ,
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Zoekt:          b.zoekt,
-	}, nil
-}
 
-func (b *jobBuilder) newZoektSymbolSearch() (*zoektutil.ZoektSymbolSearch, error) {
-	typ := search.SymbolRequest
-	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
-	if err != nil {
-		return nil, err
+	switch typ {
+	case search.SymbolRequest:
+		return &zoektutil.ZoektSymbolSearch{
+			Query:          zoektQuery,
+			FileMatchLimit: b.fileMatchLimit,
+			Select:         b.selector,
+			Zoekt:          b.zoekt,
+		}, nil
+	case search.TextRequest:
+		return &zoektutil.ZoektRepoSubsetSearch{
+			Query:          zoektQuery,
+			Typ:            typ,
+			FileMatchLimit: b.fileMatchLimit,
+			Select:         b.selector,
+			Zoekt:          b.zoekt,
+		}, nil
 	}
-	return &zoektutil.ZoektSymbolSearch{
-		Query:          zoektQuery,
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Zoekt:          b.zoekt,
-	}, nil
+	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
 }
 
 func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher bool) {
