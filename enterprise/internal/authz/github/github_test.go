@@ -774,8 +774,14 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 
 		t.Run("internal repo in org", func(t *testing.T) {
-			mockInternalOrgRepo := github.Repository{
+			mockInternalOrg1Repo := github.Repository{
 				ID:         "github_repo_id",
+				IsPrivate:  true,
+				Visibility: github.VisibilityInternal,
+			}
+
+			mockInternalOrg2Repo := github.Repository{
+				ID:         "github_repo_id_2",
 				IsPrivate:  true,
 				Visibility: github.VisibilityInternal,
 			}
@@ -784,14 +790,16 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
 
+			mockListOrgMembersInvokedCounter := 0
 			p.client = mockClientFunc(&mockClient{
 				MockListRepositoryCollaborators: mockListCollaborators,
 				MockListOrganizations: func(ctx context.Context, since int) (orgs []*github.Org, nextSince int, _ error) {
 					return []*github.Org{
-						{ID: 1, Login: "org"},
+						{ID: 1, Login: "org1"}, {ID: 2, Login: "org2"},
 					}, -1, nil
 				},
 				MockListOrganizationMembers: func(_ context.Context, _ string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					mockListOrgMembersInvokedCounter += 1
 					if adminOnly {
 						return []*github.Collaborator{
 							{DatabaseID: 9999},
@@ -813,14 +821,19 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					return []*github.Collaborator{}, false, nil
 				},
 				MockListRepositoryTeams: func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
-					// No team has exlicit access to mockInternalOrgRepo. It's an internal repo so everyone in the org should have access to it.
+					// No team has exlicit access to mockInternalOrg1Repo. It's an internal repo so everyone in the org should have access to it.
 					return []*github.Team{}, false, nil
 				},
 				MockGetRepository: func(ctx context.Context, owner, repo string) (*github.Repository, error) {
-					return &mockInternalOrgRepo, nil
+					if owner == "org1" {
+						return &mockInternalOrg1Repo, nil
+					} else if owner == "org2" {
+						return &mockInternalOrg2Repo, nil
+					}
+					return &mockInternalOrg1Repo, nil
 				},
 				MockGetOrganization: func(_ context.Context, login string) (org *github.OrgDetails, err error) {
-					if login == "org" {
+					if login == "org1" || login == "org2" {
 						return &github.OrgDetails{
 							DefaultRepositoryPermission: "none",
 						}, nil
@@ -868,8 +881,17 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				memCache := memGroupsCache()
 				p.groupsCache = memCache
 
+				mockOrg1Repo := extsvc.Repository{
+					URI: "github.com/org1/org-repo",
+					ExternalRepoSpec: api.ExternalRepoSpec{
+						ID:          "github_project_id",
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+					},
+				}
+
 				accountIDs, err := p.FetchRepoPerms(
-					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+					context.Background(), &mockOrg1Repo, authz.FetchPermsOptions{},
 				)
 				if err != nil {
 					t.Fatal(err)
@@ -888,6 +910,32 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				}
 				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
 					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+				// ListOrganizationMembers should be invoked twice (since there are two pages) for each of the two orgs.
+				if mockListOrgMembersInvokedCounter != 4 {
+					t.Errorf("expected only one call to ListOrganizationMembers, got %d", mockListOrgMembersInvokedCounter)
+				}
+
+				mockOrg2Repo := extsvc.Repository{
+					URI: "github.com/org2/org-repo",
+					ExternalRepoSpec: api.ExternalRepoSpec{
+						ID:          "github_project_id",
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+					},
+				}
+				accountIDs, err = p.FetchRepoPerms(
+					context.Background(), &mockOrg2Repo, authz.FetchPermsOptions{},
+				)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+				// No more calls should've been  made to ListOrganizationMembers since this should be cached after the previous call.
+				if mockListOrgMembersInvokedCounter != 4 {
+					t.Errorf("expected only one call to ListOrganizationMembers, got %d", mockListOrgMembersInvokedCounter)
 				}
 			})
 		})
