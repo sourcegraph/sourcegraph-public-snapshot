@@ -141,7 +141,7 @@ export interface FormAPI<FormValues> {
  * Field state which present public state from useField hook. On order to aggregate
  * state of all fields within the form we store all fields state on form level as well.
  */
-export interface FieldState<Value> extends FieldMetaState {
+export interface FieldState<Value> extends FieldMetaState<Value> {
     /**
      * Field (input) controlled value. This value might be not only some primitive value
      * like string, number but array, object, tuple and other complex types as consumer set.
@@ -149,7 +149,7 @@ export interface FieldState<Value> extends FieldMetaState {
     value: Value
 }
 
-export interface FieldMetaState {
+export interface FieldMetaState<Value> {
     /**
      * State to understand when users focused and blurred input element.
      */
@@ -177,6 +177,8 @@ export interface FieldMetaState {
      * Null when useField is used for some custom elements instead of native input.
      */
     validity: ValidityState | null
+
+    initialValue: Value
 }
 
 /**
@@ -320,6 +322,7 @@ export function getFormValues<FormValues>(fields: FieldsState<FormValues>): Form
 export function generateInitialFieldsState<FormValues extends {}>(initialValues: FormValues): FieldsState<FormValues> {
     return (Object.keys(initialValues) as (keyof FormValues)[]).reduce((store, key) => {
         store[key] = {
+            initialValue: initialValues[key],
             value: initialValues[key],
             touched: false,
             dirty: false,

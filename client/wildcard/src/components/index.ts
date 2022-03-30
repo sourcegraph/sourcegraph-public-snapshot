@@ -3,7 +3,17 @@ export { Button, ButtonGroup } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
-export { Checkbox, FlexTextArea, Input, RadioButton, Select, MultiSelect, TextArea, InputStatus } from './Form'
+export {
+    Checkbox,
+    FlexTextArea,
+    Input,
+    RadioButton,
+    Select,
+    MultiSelect,
+    TextArea,
+    InputStatus,
+    getInputStatus,
+} from './Form'
 export { Grid } from './Grid'
 export { LoadingSpinner } from './LoadingSpinner'
 export { PageHeader } from './PageHeader'
@@ -39,7 +49,7 @@ export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
  */
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
-export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps } from './Form'
+export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
 export type { ButtonLinkProps } from './ButtonLink'
 export type { LinkProps } from './Link'

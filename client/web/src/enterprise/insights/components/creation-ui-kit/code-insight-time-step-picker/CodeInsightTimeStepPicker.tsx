@@ -2,9 +2,10 @@ import React, { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
+import { getInputStatus, Input } from '@sourcegraph/wildcard'
+
 import { InsightStep } from '../../../pages/insights/creation/search-insight/types'
 import { FormGroup } from '../../form/form-group/FormGroup'
-import { FormInput } from '../../form/form-input/FormInput'
 import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 
 import { getDescriptionText } from './get-interval-descrtiption-text/get-interval-description-text'
@@ -55,21 +56,23 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
                 labelClassName={styles.groupLabel}
                 contentClassName="d-flex flex-wrap mb-n2"
             >
-                <FormInput
+                <Input
                     placeholder="ex. 2"
                     required={true}
                     type="number"
                     min={1}
                     disabled={disabled}
-                    valid={valid}
                     ref={reference}
                     name={name}
                     value={value}
-                    errorInputState={errorInputState}
                     onChange={onChange}
                     onBlur={onBlur}
                     onFocus={onFocus}
                     className={classNames(styles.stepInput)}
+                    status={getInputStatus({
+                        isValid: valid,
+                        isError: errorInputState,
+                    })}
                 />
 
                 <FormRadioInput

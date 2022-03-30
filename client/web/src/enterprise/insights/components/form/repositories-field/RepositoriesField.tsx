@@ -11,7 +11,7 @@ import React, {
 
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 
-import { FlexTextArea } from '@sourcegraph/wildcard'
+import { FlexTextArea, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
@@ -132,7 +132,7 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
             )}
         </Combobox>
     )
-})
+}) as ForwardReferenceComponent<'input', RepositoryFieldProps>
 
 RepositoriesField.displayName = 'RepositoriesField'
 

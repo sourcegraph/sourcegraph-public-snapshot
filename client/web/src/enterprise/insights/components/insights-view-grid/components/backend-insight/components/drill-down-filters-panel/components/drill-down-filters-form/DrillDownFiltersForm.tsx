@@ -5,10 +5,10 @@ import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
-import { FormInput } from '../../../../../../../form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../../form/getDefaultInputProps'
 import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, FormChangeEvent, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
 
@@ -121,37 +121,33 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
             <small className={styles.description}>Use regular expression to change the scope of this insight.</small>
 
             <fieldset>
-                <FormInput
+                <Input
                     as={DrillDownRegExpInput}
                     autoFocus={true}
                     prefix="repo:"
-                    title={
+                    label={
                         <LabelWithReset onReset={() => includeRegex.input.onChange('')}>
                             Include repositories
                         </LabelWithReset>
                     }
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
                     className="mb-3"
-                    valid={includeRegex.meta.dirty && includeRegex.meta.validState === 'VALID'}
-                    error={includeRegex.meta.dirty && includeRegex.meta.error}
                     spellCheck={false}
-                    {...includeRegex.input}
+                    {...getDefaultInputProps(includeRegex)}
                 />
 
-                <FormInput
+                <Input
                     as={DrillDownRegExpInput}
                     prefix="-repo:"
-                    title={
+                    label={
                         <LabelWithReset onReset={() => excludeRegex.input.onChange('')}>
                             Exclude repositories
                         </LabelWithReset>
                     }
                     placeholder="^github\.com/sourcegraph/sourcegraph$"
-                    valid={excludeRegex.meta.dirty && excludeRegex.meta.validState === 'VALID'}
-                    error={excludeRegex.meta.dirty && excludeRegex.meta.error}
                     spellCheck={false}
                     className="mb-2"
-                    {...excludeRegex.input}
+                    {...getDefaultInputProps(excludeRegex)}
                 />
             </fieldset>
 

@@ -3,9 +3,9 @@ import React from 'react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { Button, Card } from '@sourcegraph/wildcard'
+import { Button, Card, Input } from '@sourcegraph/wildcard'
 
-import { FormInput } from '../../../../../../components/form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../../components/form/getDefaultInputProps'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
@@ -67,8 +67,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     } = props
 
     const { name, query, stroke: color } = series
-    const hasNameControlledValue = !!name
-    const hasQueryControlledValue = !!query
 
     const { formAPI, handleSubmit, ref } = useForm({
         touched: showValidationErrorsOnMount,
@@ -118,29 +116,25 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
 
     return (
         <Card data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
-            <FormInput
-                title="Name"
+            <Input
+                label="Name"
                 required={true}
                 autoFocus={autofocus}
                 placeholder="Example: Function component"
-                description="Name shown in the legend and tooltip"
-                valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.validState === 'VALID'}
-                error={nameField.meta.touched && nameField.meta.error}
-                {...nameField.input}
+                message="Name shown in the legend and tooltip"
+                {...getDefaultInputProps(nameField)}
             />
 
-            <FormInput
-                title="Search query"
+            <Input
+                label="Search query"
                 required={true}
                 as={InsightQueryInput}
                 repositories={repositories}
                 patternType={getQueryPatternTypeFilter(queryField.input.value)}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                description={<QueryFieldDescription />}
-                valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
-                error={queryField.meta.touched && queryField.meta.error}
+                message={<QueryFieldDescription />}
                 className="mt-4"
-                {...queryField.input}
+                {...getDefaultInputProps(queryField)}
             />
 
             <FormColorInput
