@@ -1,20 +1,21 @@
-FROM golang:1.17-alpine AS builder
-
-WORKDIR /go/src/renamer
-
-COPY go.* ./
-RUN go mod download
-
-COPY *.go ./
-RUN go build -o /bin/renamer
+# This Dockerfile was generated from github.com/sourcegraph/godockerize. It
+# was not written by a human, and as such looks janky. As you change this
+# file, please don't be scared to make it more pleasant / remove hadolint
+# ignores.
 
 FROM sourcegraph/alpine-3.12:137550_2022-03-17_32d45d6a2a7f@sha256:d67684c174c577e7d61b4d7ef9d173fb73973f5b941bd65401dad90fc5e74353
-# TODO(security): This container should not be running as root!
-# hadolint ignore=DL3002
-USER root
 
-RUN apk add --no-cache ca-certificates
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
 
-COPY --from=builder /bin/renamer /usr/local/bin/
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-ENTRYPOINT ["renamer", "-repoName=github.com/hashicorp/errwrap", "-rev=7b00e5db719c64d14dd0caaacbd13e76254d02c0", "-filePath=errwrap.go", "-line=162", "-character=6", "-replacement=Beer", "-repoPath=/Users/vrto/Projects/errwrap"]
+ENV CACHE_DIR=/mnt/cache/renamer
+RUN mkdir -p ${CACHE_DIR} && chown -R sourcegraph:sourcegraph ${CACHE_DIR}
+USER sourcegraph
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/renamer"]
+COPY renamer /usr/local/bin/
