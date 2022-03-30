@@ -432,7 +432,6 @@ func RunRepoSubsetTextSearch(
 		search.TextRequest,
 		query.Yes,
 		query.ContainsRefGlobs(q),
-		zoektutil.MissingRepoRevStatus(agg),
 	)
 	if err != nil {
 		return nil, streaming.Stats{}, err

@@ -172,27 +172,6 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 	return repoRev.Repo, inputRevs
 }
 
-const maxUnindexedRepoRevSearchesPerQuery = 200
-
-type OnMissingRepoRevs func([]*search.RepositoryRevisions)
-
-func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
-	if stream == nil {
-		return func([]*search.RepositoryRevisions) {}
-	}
-	return func(repoRevs []*search.RepositoryRevisions) {
-		var status search.RepoStatusMap
-		for _, r := range repoRevs {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
-		stream.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				Status: status,
-			},
-		})
-	}
-}
-
 func PartitionRepos(
 	ctx context.Context,
 	repos []*search.RepositoryRevisions,
@@ -200,22 +179,21 @@ func PartitionRepos(
 	typ search.IndexedRequestType,
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
-	onMissing OnMissingRepoRevs,
 ) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
 	if zoektStreamer == nil {
 		if useIndex == query.Only {
 			return nil, nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
 		}
-		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return nil, repos, nil
 
 	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
-		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return nil, repos, nil
 	}
 	// Fallback to Unindexed if index:no
 	if useIndex == query.No {
-		return nil, limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return nil, repos, nil
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
@@ -241,26 +219,24 @@ func PartitionRepos(
 			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
-		unindexedRepos := limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
-		return nil, unindexedRepos, ctx.Err()
+		return nil, repos, ctx.Err()
 	}
 
 	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.RepoRevs)),
-		log.Int("searcher_repos.size", len(searcherRepos)),
+		log.Int("unindexed.size", len(unindexed)),
 	)
 
 	// Disable unindexed search
 	if useIndex == query.Only {
-		searcherRepos = limitUnindexedRepos(searcherRepos, 0, onMissing)
+		unindexed = unindexed[:0]
 	}
 
-	unindexed = limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing)
 	return indexed, unindexed, nil
 }
 
@@ -549,35 +525,6 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	}
 
 	return indexed, unindexed
-}
-
-// limitUnindexedRepos limits the number of repo@revs searched by the
-// unindexed searcher codepath.  Sending many requests to searcher would
-// otherwise cause a flood of system and network requests that result in
-// timeouts or long delays.
-//
-// It returns the new repositories destined for the unindexed searcher code
-// path, and sends an event to stream for any repositories that are limited /
-// excluded.
-//
-// A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) []*search.RepositoryRevisions {
-	var missing []*search.RepositoryRevisions
-
-	for i, repoRevs := range unindexed {
-		limit -= len(repoRevs.Revs)
-		if limit < 0 {
-			missing = unindexed[i:]
-			unindexed = unindexed[:i]
-			break
-		}
-	}
-
-	if len(missing) > 0 {
-		onMissing(missing)
-	}
-
-	return unindexed
 }
 
 type ZoektRepoSubsetSearch struct {

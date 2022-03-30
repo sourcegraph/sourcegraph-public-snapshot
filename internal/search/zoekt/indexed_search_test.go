@@ -289,7 +289,6 @@ func TestIndexedSearch(t *testing.T) {
 				search.TextRequest,
 				query.Yes,
 				query.ContainsRefGlobs(q),
-				MissingRepoRevStatus(agg),
 			)
 			if err != nil {
 				t.Fatal(err)
