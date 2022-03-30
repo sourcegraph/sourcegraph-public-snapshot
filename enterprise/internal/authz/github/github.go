@@ -581,6 +581,19 @@ type repoAffiliatedGroup struct {
 // all organizations in the github instance. This is required to list all members on the github
 // instance in order to allow every user who is part of at least one organization access to the
 // internal repository.
+//
+// This will incur additonal API calls the first time any internal repository's permissions are
+// being synced. So for a GitHub instance with 5000 organizations, a total of 50 extra API calls are
+// required (max 100 orgs are listed in each page). For successvie internal repositories no extra
+// API calls will be required provided there is no change in the list of organizations (not expected
+// to be frequent) since ListOrganization leverages GitHub conditional requests.
+//
+// Note: At the moment only applicable if the feature flag enableGithubInternalRepoVisibility is set to true.
+//
+// If the repo in question is not an internal repository, depending on the default repository
+// visibility settings of the org, getRepoAffiliatedGroups will return either just the org to which
+// this repository belongs to or a list containing the former along with the list of teams which
+// have access to this repository.
 func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
 	client, err := p.client()
 	if err != nil {
