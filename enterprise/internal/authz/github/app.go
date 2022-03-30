@@ -37,7 +37,7 @@ func newAppProvider(
 	}
 
 	apiURL, _ := github.APIRoot(baseURL)
-	appClient := github.NewV3Client(svc.URN(), apiURL, auther, cli)
+	appClient := github.NewV3Client(urn, apiURL, auther, cli)
 	return &Provider{
 		urn:      urn,
 		codeHost: extsvc.NewCodeHost(baseURL, extsvc.TypeGitHub),
@@ -49,7 +49,7 @@ func newAppProvider(
 
 			auther = &auth.OAuthBearerToken{Token: token}
 			return &ClientAdapter{
-				V3Client: github.NewV3Client(svc.URN(), apiURL, auther, cli),
+				V3Client: github.NewV3Client(urn, apiURL, auther, cli),
 			}, nil
 		},
 	}, nil

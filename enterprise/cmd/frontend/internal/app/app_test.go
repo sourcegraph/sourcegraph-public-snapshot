@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,15 +15,21 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	a "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
+
+	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlDWHdJQkFBS0JnUUMvemZJMXRqSlUzbHIxQlFIUHMxYzFvbUNrMFJ0RVVQYXpKTTRYaXEvTmo5ZW13cXhnCmdseVNraEgrU0tKa1hJeXdzTjlBc2hpWm9EOFF1UEtKdy9pQkwrQXNNemU2VmlEa0hoMFMza0hqdGxNVWRlQTMKanMwVFluNnh2TXh1Z3lwTVdKV3BBaS9pdm5Ta3pYNmdtRStjVU4rbDl4aUlWNkx0bGl4M0hla3Nyd0lEQVFBQgpBb0dCQUt3bFp6SVY2RzZMY3c5ZUF4WXJYQ1pqS21KQzJ6b2hnSW1naXVoT0xTTk42cnRkRmVFNG4yVmRmSkRCCkdCOERnYkpEek52Ly9GeEZtdFNqYWV1RDI5QnBBVThvUnQzczBsOXo2K1hkaG5XRzhoNHdDOW83MUJiVTcyUVcKVkIyL0hCTkJMSzBSY1BqV2lvWnp5a3lhQ0dKYnhSemRNV3hMME8xcjJ0MmRtZWRCQWtFQTQ5RmoxVWlWWER5dApKcDVBdkJudk1WUHdjdlI3UnpRNko0RmdydlcwQWRlMzRjSVVPcCtuZm1vaTlZN0dNdGpzS2ZPSWJtZjdnZ3pxCllSWDl1bkQwNXdKQkFOZUlFaDlGSzV3L05lbUpRaXY5bzB6YW9RUXV6WGE3QzdaU3F6RExsaCttWUhVNXBBRFUKalZHS056TnJEaUp6c1NrOWNwb1d0Nk5FdmVHVFNtWkdTUGtDUVFDWFhkQ1BMYUxQbmlFTnY2Z1RVc2Z5Wm1zawpkZnhTMndpb3B2V3VTZUpJTnlRZUErMmM1ZWRMdndsclRtbXg3eDg2NEd5TnJ0a1ZGNi9Dd2ZITHByR1JBa0VBCmxvYnUrUzNxL2szYlRrWlJrNzJwN2tRSERvL05hYTNLeVVSRlVXZnVhaDVkNGFFbkhIbFdWV3R0a0JpbG40UWoKYUFVRlkvNlh0SXlPL050TXE4OU1xUUpCQUpzZ0U4UmlCZXh1aEtLcjZCVjVsSzBMdjU2QlFDaGpkUS84TFFqZAppQWYwYlJ4RE1IS0lzVHFHSW15UzMwVTNvdVkrekxqSVQxb3Fibm0rTFY5VEdtcz0KLS0tLS1FTkQgUlNBIFBSSVZBVEUgS0VZLS0tLS0=`
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Dotcom: &schema.Dotcom{GithubAppCloud: &schema.GithubAppCloud{PrivateKey: bogusKey}}}})
+	defer conf.Mock(nil)
 
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -67,7 +74,23 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 		h.ServeHTTP(resp, req)
 
 		assert.Equal(t, http.StatusFound, resp.Code)
-		assert.Equal(t, "/install-github-app-success", resp.Header().Get("Location"))
+
+		uri, err := url.ParseRequestURI(resp.Header().Get("Location"))
+		require.Nil(t, err)
+		queryVals := uri.Query()
+
+		installationID := queryVals.Get("installation_id")
+
+		decodedKey, err := base64.StdEncoding.DecodeString(bogusKey)
+		require.Nil(t, err)
+
+		installationIDBytes, err := base64.StdEncoding.DecodeString(installationID)
+		require.Nil(t, err)
+
+		decryptedID, err := DecryptWithPrivateKey(string(installationIDBytes), decodedKey)
+		require.Nil(t, err)
+
+		assert.Equal(t, decryptedID, "21994992")
 	})
 
 	t.Run("invalid setup action", func(t *testing.T) {
