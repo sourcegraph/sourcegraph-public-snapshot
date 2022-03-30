@@ -800,6 +800,9 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			})
 
 			mockListOrgMembersInvokedCounter := 0
+			resetMockListOrgMembersInvokedCounter := func() {
+				mockListOrgMembersInvokedCounter = 0
+			}
 			p.client = mockClientFunc(&mockClient{
 				MockListRepositoryCollaborators: mockListCollaborators,
 				MockListOrganizations: func(ctx context.Context, since int) (orgs []*github.Org, nextSince int, _ error) {
@@ -858,6 +861,8 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			// a feature flag, thus we also test against it. Once we're reasonably sure this works
 			// as intended, we will remove the feature flag and enable the behaviour by default.
 			t.Run("feature flag disabled", func(t *testing.T) {
+				defer resetMockListOrgMembersInvokedCounter()
+
 				p.enableGithubInternalRepoVisibility = false
 
 				memCache := memGroupsCache()
@@ -886,6 +891,8 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			})
 
 			t.Run("feature flag enabled", func(t *testing.T) {
+				defer resetMockListOrgMembersInvokedCounter()
+
 				p.enableGithubInternalRepoVisibility = true
 				memCache := memGroupsCache()
 				p.groupsCache = memCache
