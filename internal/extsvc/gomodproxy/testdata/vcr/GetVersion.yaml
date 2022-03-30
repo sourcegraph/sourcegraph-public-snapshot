@@ -1,0 +1,111 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://proxy.golang.org/github.com/gorilla/mux/@latest
+    method: GET
+  response:
+    body: '{"Version":"v1.8.0","Time":"2020-07-11T20:05:21Z"}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Cache-Control:
+      - public, max-age=60
+      Content-Length:
+      - "50"
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 25 Mar 2022 15:31:41 GMT
+      Expires:
+      - Fri, 25 Mar 2022 15:32:41 GMT
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://proxy.golang.org/github.com/tsenart/vegeta/v12/@v/v12.8.4.info
+    method: GET
+  response:
+    body: '{"Version":"v12.8.4","Time":"2020-10-11T10:37:33Z"}'
+    headers:
+      Accept-Ranges:
+      - bytes
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - "2341"
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Cache-Control:
+      - public, max-age=10800
+      Content-Length:
+      - "51"
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 25 Mar 2022 14:52:40 GMT
+      Expires:
+      - Fri, 25 Mar 2022 17:52:40 GMT
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://proxy.golang.org/github.com/%21nike-%21inc/cerberus-go-client/v3/@v/v3.0.1-%21a%21l%21p%21h%21a.info
+    method: GET
+  response:
+    body: 'not found: github.com/Nike-Inc/cerberus-go-client/v3@v3.0.1-ALPHA: invalid
+      version: unknown revision v3.0.1-ALPHA'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Age:
+      - "106"
+      Alt-Svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
+        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
+      Cache-Control:
+      - public, max-age=1798
+      Content-Length:
+      - "113"
+      Content-Type:
+      - text/plain; charset=UTF-8
+      Date:
+      - Fri, 25 Mar 2022 15:29:55 GMT
+      Expires:
+      - Fri, 25 Mar 2022 15:59:54 GMT
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Xss-Protection:
+      - "0"
+    status: 410 Gone
+    code: 410
+    duration: ""

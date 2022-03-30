@@ -101,8 +101,7 @@ env:
   # This setting will be going away soon
   DISABLE_CNCF: notonmybox
 
-  # Code Insights uses a separate database, because it's easier to run TimescaleDB in
-  # Docker than install as a Postgres extension in dev environments.
+  # Code Insights uses a separate database to architecturally isolate the component from the rest of Sourcegraph.
   CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
@@ -930,11 +929,14 @@ commandsets:
       - caddy
     env:
       ENTERPRISE: 1
+      DISABLE_TELEMETRY: true
 
   oss-web-standalone:
     commands:
       - web-standalone-http
       - caddy
+    env:
+      DISABLE_TELEMETRY: true
 
   web-standalone-prod:
     commands:

@@ -1,5 +1,3 @@
-
-
 Your Sourcegraph code monitor, My test monitor, detected 2 new results.
 
 View search on Sourcegraph: https://sourcegraph.com/search

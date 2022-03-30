@@ -5,16 +5,19 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/honeycombio/libhoney-go"
+	"github.com/honeycombio/libhoney-go/transmission"
 	"github.com/slack-go/slack"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
 )
 
 type Flags struct {
@@ -23,6 +26,7 @@ type Flags struct {
 	Environment          string
 	SlackToken           string
 	SlackAnnounceWebhook string
+	HoneycombToken       string
 	BaseDir              string
 }
 
@@ -32,6 +36,7 @@ func (f *Flags) Parse() {
 	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
 	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
+	flag.StringVar(&f.HoneycombToken, "honeycomb.token", "", "mandatory honeycomb api token")
 	flag.Parse()
 }
 
@@ -41,14 +46,27 @@ func main() {
 	flags := &Flags{}
 	flags.Parse()
 	if flags.Environment == "" {
-		log.Fatalf("-enviroment must be specified: preprod or production.")
+		log.Fatalf("-environment must be specified: preprod or production.")
 	}
 
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: flags.GitHubToken},
 	)))
+	if flags.GitHubToken == "" {
+		log.Println("warning: using unauthenticated github client")
+		ghc = github.NewClient(http.DefaultClient)
+	}
 
 	changedFiles, err := getChangedFiles()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(changedFiles) == 0 {
+		fmt.Println(":warning: No relevant changes, skipping notifications and exiting normally.")
+		return
+	}
+
+	manifestRevision, err := getRevision()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,6 +76,7 @@ func main() {
 		ghc,
 		dd,
 		flags.Environment,
+		manifestRevision,
 	)
 
 	report, err := dn.Report(ctx)
@@ -69,27 +88,36 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Tracing
+	var traceURL string
+	if flags.HoneycombToken != "" {
+		traceURL, err = reportDeployTrace(report, flags.HoneycombToken, flags.DryRun)
+		if err != nil {
+			log.Fatal("trace: ", err.Error())
+		}
+	}
+
+	// Notifcations
 	slc := slack.New(flags.SlackToken)
 	teammates := team.NewTeammateResolver(ghc, slc)
-
 	if flags.DryRun {
 		fmt.Println("Github\n---")
 		for _, pr := range report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
 		}
-		out, err := renderComment(report)
+		out, err := renderComment(report, traceURL)
 		if err != nil {
 			log.Fatalf("can't render GitHub comment %q", err)
 		}
 		fmt.Println(out)
 		fmt.Println("Slack\n---")
-		out, err = slackSummary(ctx, teammates, report)
+		out, err = slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			log.Fatalf("can't render Slack post %q", err)
 		}
 		fmt.Println(out)
 	} else {
-		out, err := slackSummary(ctx, teammates, report)
+		out, err := slackSummary(ctx, teammates, report, traceURL)
 		if err != nil {
 			log.Fatalf("can't render Slack post %q", err)
 		}
@@ -105,32 +133,58 @@ func getChangedFiles() ([]string, error) {
 	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		return nil, err
 	} else {
+		strOutput := string(output)
+		strOutput = strings.TrimSpace(strOutput)
+		if strOutput == "" {
+			return nil, nil
+		}
 		return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
 	}
 }
 
-func GitCmd(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
-	cmd.Env = append(os.Environ(),
-		// Don't use the system wide git config.
-		"GIT_CONFIG_NOSYSTEM=1",
-		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
-		"GIT_CONFIG=/dev/null")
-
-	return InRoot(cmd)
-}
-
-func InRoot(cmd *exec.Cmd) (string, error) {
-	repoRoot, err := root.RepositoryRoot()
+func getRevision() (string, error) {
+	diffCommand := []string{"rev-list", "-1", "HEAD", "."}
+	output, err := exec.Command("git", diffCommand...).Output()
 	if err != nil {
 		return "", err
 	}
+	return strings.TrimSpace(string(output)), nil
+}
 
-	cmd.Dir = repoRoot
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return string(out), errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
+func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (string, error) {
+	honeyConfig := libhoney.Config{
+		APIKey:  token,
+		APIHost: "https://api.honeycomb.io/",
+		Dataset: "deploy-sourcegraph",
 	}
-
-	return string(out), nil
+	if dryRun {
+		honeyConfig.Transmission = &transmission.WriterSender{} // prints events to stdout instead
+	}
+	if err := libhoney.Init(honeyConfig); err != nil {
+		return "", errors.Wrap(err, "libhoney.Init")
+	}
+	defer libhoney.Close()
+	trace, err := GenerateDeploymentTrace(report)
+	if err != nil {
+		return "", errors.Wrap(err, "GenerateDeploymentTrace")
+	}
+	var sendErrs error
+	for _, event := range trace.Spans {
+		if err := event.Send(); err != nil {
+			sendErrs = errors.Append(sendErrs, err)
+		}
+	}
+	if sendErrs != nil {
+		return "", errors.Wrap(err, "trace.Spans.Send")
+	}
+	if err := trace.Root.Send(); err != nil {
+		return "", errors.Wrap(err, "trace.Root.Send")
+	}
+	traceURL, err := buildTraceURL(&honeyConfig, trace.ID, trace.Root.Timestamp.Unix())
+	if err != nil {
+		log.Println("warning: buildTraceURL: ", err.Error())
+	} else {
+		log.Println("trace: ", traceURL)
+	}
+	return traceURL, nil
 }
