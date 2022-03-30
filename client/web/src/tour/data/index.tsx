@@ -18,7 +18,7 @@ export const visitorsTasks: TourTaskType[] = [
         title: 'Code search use cases',
         steps: [
             {
-                id: 'TourSymbolsSearch',
+                id: 'SymbolsSearch',
                 label: 'Search multiple repos',
                 action: {
                     type: 'link',
@@ -49,7 +49,7 @@ export const visitorsTasks: TourTaskType[] = [
                 ),
             },
             {
-                id: 'TourCommitsSearch',
+                id: 'CommitsSearch',
                 label: 'Find changes in commits',
                 action: {
                     type: 'link',
@@ -80,7 +80,7 @@ export const visitorsTasks: TourTaskType[] = [
                 ),
             },
             {
-                id: 'TourDiffSearch',
+                id: 'DiffSearch',
                 label: 'Search diffs for removed code',
                 action: {
                     type: 'link',
@@ -115,7 +115,7 @@ export const visitorsTasks: TourTaskType[] = [
         title: 'The power of code intel',
         steps: [
             {
-                id: 'TourFindReferences',
+                id: 'FindReferences',
                 label: 'Find references',
                 action: {
                     type: 'link',
@@ -145,7 +145,7 @@ export const visitorsTasks: TourTaskType[] = [
                 completeAfterEvents: ['findReferences'],
             },
             {
-                id: 'TourGoToDefinition',
+                id: 'GoToDefinition',
                 label: 'Go to a definition',
                 info: (
                     <>
@@ -180,12 +180,12 @@ export const visitorsTasks: TourTaskType[] = [
         title: 'Tools to improve workflow',
         steps: [
             {
-                id: 'TourEditorExtensions',
+                id: 'EditorExtensions',
                 label: 'IDE extensions',
                 action: { type: 'new-tab-link', value: 'https://docs.sourcegraph.com/integration/editor' },
             },
             {
-                id: 'TourBrowserExtensions',
+                id: 'BrowserExtensions',
                 label: 'Browser extensions',
                 action: { type: 'new-tab-link', value: 'https://docs.sourcegraph.com/integration/browser_extension' },
             },
