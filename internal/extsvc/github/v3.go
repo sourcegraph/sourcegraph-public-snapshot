@@ -488,7 +488,12 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 // Repeat this in a for-loop until nextSince is a non-positive integer.
 func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
 	path := fmt.Sprintf("/organizations?since=%d&per_page=100", since)
+
 	_, err = c.get(ctx, path, &orgs)
+	if err != nil {
+		return nil, -1, err
+	}
+
 	getNextSince := func() int {
 		total := len(orgs)
 		if total == 0 {

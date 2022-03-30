@@ -16,8 +16,6 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-github/github"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
 
@@ -1741,26 +1739,8 @@ type Repository struct {
 	Visibility Visibility `json:",omitempty"`
 }
 
-func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
-func nameWithOwnerCacheKey(nameWithOwner string) string { return "0:" + nameWithOwner }
-func nodeIDCacheKey(id string) string                   { return "1:" + id }
-
 // GetRepositoryMock is set by tests to mock (*Client).GetRepository.
 var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
-
-// cachedGetRepository caches the getRepositoryFromAPI call.
-
-var reposGitHubCacheCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repos_github_cache_hit",
-	Help: "Counts cache hits and misses for GitHub repo metadata.",
-}, []string{"type"})
-
-type cachedRepo struct {
-	Repository
-
-	// NotFound indicates that the GitHub API reported that the repository was not found.
-	NotFound bool
-}
 
 type restRepositoryPermissions struct {
 	Admin bool `json:"admin"`

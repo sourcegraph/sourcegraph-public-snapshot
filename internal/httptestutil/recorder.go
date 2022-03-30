@@ -9,6 +9,8 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -77,7 +79,7 @@ func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.
 
 	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
 
-	hc := httpcli.NewFactory(mw, NewRecorderOpt(rec))
+	hc := httpcli.NewFactory(mw, httpcli.NewCachedTransportOpt(rcache.NewWithTTL("http", 604800), true))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
