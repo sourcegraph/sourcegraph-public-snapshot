@@ -2,7 +2,6 @@ package squirrel
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -64,9 +63,9 @@ class C {
 			for _, symbol := range payload.Symbols {
 				comments = append(comments, symbol.Hover)
 			}
-			fmt.Printf("did not find comment %q. All comments:\n", test.want)
+			t.Logf("did not find comment %q. All comments:\n", test.want)
 			for _, comment := range comments {
-				fmt.Printf("%q\n", comment)
+				t.Logf("%q\n", comment)
 			}
 			t.FailNow()
 		}

@@ -76,7 +76,7 @@ class Foo {
 	sortAnnotations(got)
 
 	if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
-		t.Errorf("unexpected annotations (-want +got):\n%s", diff)
+		t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
 	}
 }
 
