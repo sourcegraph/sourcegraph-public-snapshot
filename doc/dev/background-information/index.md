@@ -71,3 +71,4 @@
 
 - [Telemetry](telemetry.md)
 - [Adding, changing and debugging pings](adding_ping_data.md)
+- [Deploy Sourcegraph with Helm chart (BETA)](../../admin/install/kubernetes/helm.md)
