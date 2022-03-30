@@ -106,6 +106,8 @@ func setMaxOpenFiles() error {
 	return nil
 }
 
+const sgOneLineCmd = `curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh`
+
 func checkSgVersion(ctx context.Context) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
@@ -124,7 +126,7 @@ func checkSgVersion(ctx context.Context) error {
 	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "./dev/sg")
 	if err != nil {
 		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
-		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
+		fmt.Printf("try reinstalling sg with `%s`.\n", sgOneLineCmd)
 		os.Exit(1)
 	}
 
@@ -178,8 +180,9 @@ func main() {
 		// If we're not running "sg update ...", we want to check the version first
 		err := checkSgVersion(ctx)
 		if err != nil {
-			fmt.Printf("checking sg version failed: %s\n", err)
-			os.Exit(1)
+			writeWarningLinef("Checking sg version and updating failed: %s\n", err)
+			// Do not exit here, so we don't break user flow when they want to
+			// run `sg` but updating fails
 		}
 	}
 

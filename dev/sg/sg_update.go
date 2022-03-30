@@ -7,20 +7,17 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	updateFlags    = flag.NewFlagSet("sg update", flag.ExitOnError)
+	updateFlags = flag.NewFlagSet("sg update", flag.ExitOnError)
+	// TODO: These are deprecated flags and can be removed May 1st 2022
 	updateToLocal  = updateFlags.Bool("local", false, "Update to local copy of 'dev/sg'")
 	updateDownload = updateFlags.Bool("download", true, "Download a prebuilt binary of 'sg' instead of compiling it locally")
 )
@@ -36,33 +33,14 @@ var updateCommand = &ffcli.Command{
 
 Requires a local copy of the 'sourcegraph/sourcegraph' codebase.`,
 	Exec: func(ctx context.Context, args []string) error {
-		if *updateToLocal {
-			return updateToLocalSG(ctx)
-		}
-		if *updateDownload {
-			_, err := updateToPrebuiltSG(ctx)
-			return err
-		}
-		return nil
-	},
-}
-
-// updateToLocalSG builds the currently checkout sg code and install the resulting sg binary.
-func updateToLocalSG(ctx context.Context) error {
-	stdout.Out.WriteLine(output.Line(output.EmojiHourglass, output.StylePending, "Upgrading to local copy of 'dev/sg'..."))
-
-	// Run installation script
-	cmd := exec.CommandContext(ctx, "./dev/sg/install.sh")
-	if err := run.InteractiveInRoot(cmd); err != nil {
+		_, err := updateToPrebuiltSG(ctx)
 		return err
-	}
-	writeSuccessLinef("Update succeeded!")
-	return nil
+	},
 }
 
 // updateToPrebuiltSG downloads the latest release of sg prebuilt binaries and install it.
 func updateToPrebuiltSG(ctx context.Context) (string, error) {
-	req, err := http.NewRequest("GET", "https://github.com/sourcegraph/sg/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://github.com/sourcegraph/sg/releases/latest", nil)
 	if err != nil {
 		return "", err
 	}
