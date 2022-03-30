@@ -1,5 +1,8 @@
 import puppeteer from 'puppeteer'
 
+import { isDefined } from '@sourcegraph/common'
+import { percySnapshot as percySnapshotCommon } from '@sourcegraph/shared/src/testing/driver'
+
 /**
  * Find a tab that contains the browser extension's after-install page (url
  * ending in `/after_install.html`) and, if found, close it.
@@ -22,4 +25,30 @@ export async function closeInstallPageTab(browser: puppeteer.Browser): Promise<v
         await new Promise(resolve => setTimeout(resolve, 200))
         tries++
     }
+}
+
+const extractExtensionStyles = async (page: puppeteer.Page): Promise<string> =>
+    page.evaluate(async () => {
+        const styleSheets = [...document.styleSheets]
+            .map(styleSheet => styleSheet.href)
+            .filter(isDefined)
+            .filter(href => new URL(href).protocol === 'chrome-extension:')
+
+        let styles = ''
+
+        for (const styleSheet of styleSheets) {
+            const response = await fetch(styleSheet)
+            const css = await response.text()
+            styles += css
+            styles += '\n'
+        }
+
+        return styles
+    })
+
+export const percySnapshot: typeof percySnapshotCommon = async (page, name, options) => {
+    const extensionStyles = await extractExtensionStyles(page)
+    const percyCSS = extensionStyles + (options?.percyCSS || '')
+
+    return percySnapshotCommon(page, name, { ...options, percyCSS })
 }
