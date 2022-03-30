@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -2179,10 +2178,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"REENQUEUE"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
@@ -2192,18 +2188,10 @@ func TestService(t *testing.T) {
 				Repo:             rs[0].ID,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				BatchChange:      batchChange.ID,
-				IsArchived:       true,
+
+				// archived changeset
+				IsArchived: true,
 			})
-
-			// archive the changeset
-			a := changeset.Archive(batchChange.ID)
-			fmt.Println("response from archive ===>", a)
-			err := s.UpdateChangeset(context.Background(), changeset)
-			if err != nil {
-				t.Fatal("error here ", err)
-			}
-
-			fmt.Println(changeset.ArchivedIn(batchChange.ID), "lets if it's archived")
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
 				Changesets: []int64{
@@ -2217,10 +2205,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"COMMENT", "DETACH"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
@@ -2244,10 +2229,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"PUBLISH"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
@@ -2272,10 +2254,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"CLOSE", "COMMENT", "PUBLISH"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
@@ -2300,10 +2279,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"CLOSE", "COMMENT", "MERGE", "PUBLISH"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
@@ -2328,10 +2304,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"COMMENT"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
@@ -2356,10 +2329,7 @@ func TestService(t *testing.T) {
 			}
 
 			expectedBulkOperations := []string{"CLOSE", "COMMENT"}
-			diff := cmp.Diff(bulkOperations, expectedBulkOperations, cmpopts.SortSlices(func(x, y string) bool {
-				return x < y
-			}))
-			if diff != "" {
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
