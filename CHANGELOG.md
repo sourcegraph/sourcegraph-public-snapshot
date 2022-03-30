@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed reading search pattern type from settings [#32989](https://github.com/sourcegraph/sourcegraph/issues/32989)
--
+- Display a tooltip and truncate the title of a search result when content overflows [#32904](https://github.com/sourcegraph/sourcegraph/pull/32904)
 
 ### Removed
 

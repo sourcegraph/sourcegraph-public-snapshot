@@ -56,14 +56,36 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
+var dbTemplateOnce sync.Once
+
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB) *sql.DB {
+	dbTemplateOnce.Do(func() {
+		initTemplateDB(t, "migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
+	})
+
 	return newFromDSN(t, "migrated")
 }
 
+var insightsTemplateOnce sync.Once
+
+// NewInsightsDB returns a connection to a clean, new temporary testing database with
+// the same schema as Sourcegraph's CodeInsights production Postgres database.
+func NewInsightsDB(t testing.TB) *sql.DB {
+	insightsTemplateOnce.Do(func() {
+		initTemplateDB(t, "insights", []*schemas.Schema{schemas.CodeInsights})
+	})
+	return newFromDSN(t, "insights")
+}
+
+var rawTemplateOnce sync.Once
+
 // NewRawDB returns a connection to a clean, new temporary testing database.
 func NewRawDB(t testing.TB) *sql.DB {
+	rawTemplateOnce.Do(func() {
+		initTemplateDB(t, "raw", nil)
+	})
 	return newFromDSN(t, "raw")
 }
 
@@ -76,8 +98,6 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
-
-	initTemplateDB(t, config)
 
 	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
@@ -92,7 +112,7 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 
 	// Some tests that exercise concurrency need lots of connections or they block forever.
 	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
-	testDB.SetMaxOpenConns(10)
+	testDB.SetMaxOpenConns(20)
 
 	t.Cleanup(func() {
 		defer db.Close()
@@ -112,35 +132,35 @@ func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 	return testDB
 }
 
-var templateOnce sync.Once
-
 // initTemplateDB creates a template database with a fully migrated schema for the
 // current package. New databases can then do a cheap copy of the migrated schema
 // rather than running the full migration every time.
-func initTemplateDB(t testing.TB, config *url.URL) {
-	templateOnce.Do(func() {
-		db := dbConn(t, config)
-		defer db.Close()
+func initTemplateDB(t testing.TB, templateNamespace string, dbSchemas []*schemas.Schema) {
+	config, err := getDSN()
+	if err != nil {
+		t.Fatalf("failed to parse dsn: %s", err)
+	}
 
-		init := func(templateNamespace string, schemas []*schemas.Schema) {
-			templateName := templateDBName(templateNamespace)
-			name := pq.QuoteIdentifier(templateName)
+	db := dbConn(t, config)
+	defer db.Close()
 
-			// We must first drop the template database because
-			// migrations would not run on it if they had already ran,
-			// even if the content of the migrations had changed during development.
+	init := func(templateNamespace string, schemas []*schemas.Schema) {
+		templateName := templateDBName(templateNamespace)
+		name := pq.QuoteIdentifier(templateName)
 
-			dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
-			dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+		// We must first drop the template database because
+		// migrations would not run on it if they had already ran,
+		// even if the content of the migrations had changed during development.
 
-			cfgCopy := *config
-			cfgCopy.Path = "/" + templateName
-			dbConn(t, &cfgCopy, schemas...).Close()
-		}
+		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
+		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
 
-		init("raw", nil)
-		init("migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
-	})
+		cfgCopy := *config
+		cfgCopy.Path = "/" + templateName
+		dbConn(t, &cfgCopy, schemas...).Close()
+	}
+
+	init(templateNamespace, dbSchemas)
 }
 
 // templateDBName returns the name of the template database for the currently running package and namespace.
