@@ -20,7 +20,7 @@ var FeatureFlags = featureFlags{
 	StatelessBuild: os.Getenv("CI_FEATURE_FLAG_STATELESS") == "true" ||
 		// Always process retries on stateless agents.
 		// TODO: remove when we switch over entirely to stateless agents
-		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != ""
+		os.Getenv("BUILDKITE_REBUILT_FROM_BUILD_NUMBER") != "",
 }
 
 func (f *featureFlags) ApplyEnv(env map[string]string) {
