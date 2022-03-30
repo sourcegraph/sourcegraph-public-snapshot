@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -438,10 +438,9 @@ func mockComputeSearch(results []computeSearch) func(context.Context, string) ([
 }
 
 func TestGetSeries(t *testing.T) {
-	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
-	defer cleanup()
+	insightsDB := dbtest.NewInsightsDB(t)
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
-	metadataStore := store.NewInsightStore(timescale)
+	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {
 		return now
 	}

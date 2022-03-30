@@ -89,6 +89,11 @@ const notebooksFragment = gql`
                     symbolKind
                 }
             }
+            ... on ComputeBlock {
+                __typename
+                id
+                computeInput
+            }
         }
     }
 `

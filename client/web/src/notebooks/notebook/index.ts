@@ -13,7 +13,7 @@ import { NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { LATEST_VERSION } from '../../search/results/StreamingSearchResults'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
-import { fetchSuggestions } from '../blocks/suggestions'
+import { fetchSuggestions } from '../blocks/suggestions/suggestions'
 import { blockToGQLInput, serializeBlockToMarkdown } from '../serialize'
 
 const DONE = 'DONE' as const
@@ -28,7 +28,7 @@ export function copyNotebook({ title, blocks, namespace }: CopyNotebookProps): O
     return createNotebook({
         notebook: {
             title,
-            blocks: blocks.flatMap(block => (block.type === 'compute' ? [] : [blockToGQLInput(block)])),
+            blocks: blocks.map(blockToGQLInput),
             namespace,
             public: false,
         },
@@ -115,7 +115,7 @@ export class Notebook {
         }
         switch (block.type) {
             case 'md':
-                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input) })
+                this.blocks.set(block.id, { ...block, output: renderMarkdown(block.input.text) })
                 break
             case 'query':
                 this.blocks.set(block.id, {
@@ -123,7 +123,7 @@ export class Notebook {
                     output: aggregateStreamingSearch(
                         transformSearchQuery({
                             // Removes comments
-                            query: block.input.replace(/\/\/.*/g, ''),
+                            query: block.input.query.replace(/\/\/.*/g, ''),
                             extensionHostAPIPromise: this.dependencies.extensionHostAPI,
                         }),
                         {
@@ -209,6 +209,8 @@ export class Notebook {
                 this.blocks.set(block.id, { ...block, output })
                 break
             }
+            case 'compute':
+                this.blocks.set(block.id, { ...block, output: null })
         }
     }
 
@@ -231,6 +233,8 @@ export class Notebook {
                 observables.push(block.output.pipe(mapTo(DONE)))
             } else if (block.type === 'symbol') {
                 observables.push(block.output.pipe(mapTo(DONE)))
+            } else if (block.type === 'compute') {
+                // Noop: Compute block does not currently emit an output observable.
             }
         }
         // We store output observables and join them into a single observable,

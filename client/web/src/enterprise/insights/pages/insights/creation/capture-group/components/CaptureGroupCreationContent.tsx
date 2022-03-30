@@ -1,12 +1,14 @@
+import React, { useCallback } from 'react'
+
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React, { useCallback } from 'react'
 
 import { styles } from '../../../../../components/creation-ui-kit'
 import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
+import { Insight } from '../../../../../core/types'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
@@ -35,6 +37,7 @@ interface CaptureGroupCreationContentProps {
     mode: 'creation' | 'edit'
     initialValues?: Partial<CaptureGroupFormFields>
     className?: string
+    insight?: Insight
 
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
@@ -42,7 +45,7 @@ interface CaptureGroupCreationContentProps {
 }
 
 export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel } = props
+    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel, insight } = props
 
     // Search query validators
     const validateChecks = useCallback((value: string | undefined) => {
@@ -155,11 +158,12 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 stepValue={stepValue}
                 query={query}
                 isFormClearActive={hasFilledValue}
-                onCancel={onCancel}
-                onFormReset={handleFormReset}
                 className={styles.contentForm}
                 allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
+                insight={insight}
+                onCancel={onCancel}
+                onFormReset={handleFormReset}
             />
 
             <CaptureGroupCreationLivePreview

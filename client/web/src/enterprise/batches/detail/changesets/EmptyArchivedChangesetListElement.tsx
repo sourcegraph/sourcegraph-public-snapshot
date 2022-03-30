@@ -1,5 +1,6 @@
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import React from 'react'
+
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
 
 export const EmptyArchivedChangesetListElement: React.FunctionComponent<{}> = () => (
     <div className="text-muted mb-3 text-center w-100">

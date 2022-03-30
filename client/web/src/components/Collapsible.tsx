@@ -1,7 +1,8 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { useCallback, useState } from 'react'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -16,7 +17,7 @@ interface Props {
     /**
      * Sub-content always visible in the title bar.
      */
-    detail?: string
+    detail?: string | React.ReactElement
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,

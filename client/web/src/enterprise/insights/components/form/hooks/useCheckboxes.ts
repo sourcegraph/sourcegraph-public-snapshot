@@ -42,10 +42,11 @@ export function useCheckboxes<FormValues, FieldValueKey extends keyof FormAPI<Fo
         () =>
             setFieldStateReference.current(name, {
                 ...state,
+                initialValue: initialCheckboxesValue,
                 validState: 'VALID',
                 validity: null,
             }),
-        [name, state]
+        [name, state, initialCheckboxesValue]
     )
 
     return {

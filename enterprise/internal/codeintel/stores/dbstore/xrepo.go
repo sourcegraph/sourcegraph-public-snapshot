@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -93,6 +94,7 @@ SELECT
 	u.repository_id,
 	u.repository_name,
 	u.indexer,
+	u.indexer_version,
 	u.associated_index_id
 FROM lsif_dumps_with_repository_name u
 WHERE u.id IN (SELECT id FROM canonical_uploads)
@@ -163,8 +165,14 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	}
 	trace.Log(log.Int("totalCount", totalCount))
 
+	query := referenceIDsAndFiltersQuery
+	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_BLOOM_FILTER_BAIL_OUT") != "" {
+		// Do not select filter payloads, we won't test them later on
+		query = referenceIDsQuery
+	}
+
 	rows, err := s.Query(ctx, sqlf.Sprintf(
-		referenceIDsAndFiltersQuery,
+		query,
 		visibleUploadsQuery,
 		repositoryID,
 		sqlf.Join(qs, ", "),
@@ -201,6 +209,13 @@ WHERE
 
 const referenceIDsAndFiltersQuery = referenceIDsAndFiltersCTEDefinitions + `
 SELECT r.dump_id, r.scheme, r.name, r.version, r.filter
+` + referenceIDsAndFiltersBaseQuery + `
+ORDER BY dump_id
+LIMIT %s OFFSET %s
+`
+
+const referenceIDsQuery = referenceIDsAndFiltersCTEDefinitions + `
+SELECT r.dump_id, r.scheme, r.name, r.version, NULL AS filter
 ` + referenceIDsAndFiltersBaseQuery + `
 ORDER BY dump_id
 LIMIT %s OFFSET %s

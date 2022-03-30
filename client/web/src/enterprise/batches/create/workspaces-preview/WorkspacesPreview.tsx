@@ -1,7 +1,8 @@
+import React, { useEffect, useMemo, useState } from 'react'
+
 import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
-import React, { useEffect, useMemo, useState } from 'react'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -11,6 +12,7 @@ import { Button, useAccordion, useStopwatch, Icon } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import { BatchSpecWorkspaceResolutionState, PreviewBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import { Header as WorkspacesListHeader } from '../../workspaces-list'
 import { ResolutionState } from '../useWorkspacesPreview'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
@@ -18,9 +20,10 @@ import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPromptIcon } from './PreviewPromptIcon'
 import { ImportingChangesetFields } from './useImportingChangesets'
 import { WorkspacePreviewFilters } from './useWorkspaces'
-import styles from './WorkspacesPreview.module.scss'
 import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
+
+import styles from './WorkspacesPreview.module.scss'
 
 /** Example snippet show in preview prompt if user has not yet added an on: statement. */
 const ON_STATEMENT = `on:
@@ -205,16 +208,16 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
 
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
-            <h4 className={styles.header}>
+            <WorkspacesListHeader>
                 Workspaces preview{' '}
                 {(batchSpecStale || !hasPreviewed) && shouldShowConnection && !isWorkspacesPreviewInProgress && (
                     <Icon
-                        className={classNames('icon-inline text-muted ml-1', styles.warningIcon)}
+                        className={classNames('text-muted ml-1', styles.warningIcon)}
                         data-tooltip="The workspaces previewed below may not be up-to-date."
                         as={WarningIcon}
                     />
                 )}
-            </h4>
+            </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             <div className="d-flex flex-column align-items-center w-100 mb-3">
                 {error && <ErrorAlert error={error} className="w-100 mb-0" />}
@@ -231,7 +234,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
             {shouldShowConnection && (
-                <div className="d-flex flex-column align-items-center overflow-auto w-100">
+                <div className="overflow-auto w-100">
                     <WorkspacesPreviewList
                         isStale={batchSpecStale || !hasPreviewed}
                         excludeRepo={excludeRepo}

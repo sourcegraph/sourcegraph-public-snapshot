@@ -1,6 +1,6 @@
-import classNames from 'classnames'
-import { camelCase } from 'lodash'
 import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
+
+import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -9,10 +9,10 @@ import { useDebounce, Alert } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
+import { LockedChart } from '../../../../../../views/components/view/content/chart-view-content/charts/locked/LockedChart'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
-import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
+import { BackendInsight, InsightFilters } from '../../../../core/types'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
@@ -23,10 +23,11 @@ import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import { BackendAlertOverlay } from './BackendAlertOverlay'
-import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
+
+import styles from './BackendInsight.module.scss'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -64,9 +65,9 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
-    const [filters, setFilters] = useState<SearchBasedBackendFilters>(originalInsightFilters)
+    const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
-    const debouncedFilters = useDebounce(useDistinctValue<SearchBasedBackendFilters>(filters), 500)
+    const debouncedFilters = useDebounce(useDistinctValue<InsightFilters>(filters), 500)
 
     // Loading the insight backend data
     const { data, loading, error, isVisible } = useInsightData(
@@ -85,11 +86,11 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
     const { remove: handleRemove, loading: isRemoving } = useRemoveInsightFromDashboard()
 
-    const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
+    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
             const insightWithNewFilters = { ...insight, filters }
 
-            await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
+            await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
 
@@ -114,7 +115,6 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         try {
             const newInsight = {
                 ...insight,
-                id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
                 title: insightName,
                 filters,
             }
@@ -136,7 +136,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
-        insightType: getTrackingTypeByInsightType(insight.viewType),
+        insightType: getTrackingTypeByInsightType(insight.type),
     })
 
     return (
@@ -188,6 +188,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                         </Alert>
                     ) : null}
                 </View.ErrorContent>
+            ) : insight.isFrozen ? (
+                <LockedChart />
             ) : (
                 data && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>

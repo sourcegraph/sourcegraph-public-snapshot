@@ -1,19 +1,22 @@
+import React, { useCallback, useState } from 'react'
+
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import React, { useCallback, useState } from 'react'
-import { Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Collapse, FormGroup, Input, Label } from 'reactstrap'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
+
 import styles from './StreamingProgressSkippedPopover.module.scss'
 
 const severityToNumber = (severity: Skipped['severity']): number => {
@@ -65,19 +68,19 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                 variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
-                    {skipped.severity === 'info' ? (
-                        <InformationOutlineIcon className={classNames('icon-inline', styles.icon, 'flex-shrink-0')} />
-                    ) : (
-                        <AlertCircleIcon className={classNames('icon-inline', styles.icon, 'flex-shrink-0')} />
-                    )}
+                    <Icon
+                        className={classNames(styles.icon, 'flex-shrink-0')}
+                        as={skipped.severity === 'info' ? InformationOutlineIcon : AlertCircleIcon}
+                    />
+
                     <span className="flex-grow-1 text-left">{skipped.title}</span>
 
-                    {skipped.message &&
-                        (isOpen ? (
-                            <ChevronDownIcon className={classNames('icon-inline flex-shrink-0', styles.chevron)} />
-                        ) : (
-                            <ChevronLeftIcon className={classNames('icon-inline flex-shrink-0', styles.chevron)} />
-                        ))}
+                    {skipped.message && (
+                        <Icon
+                            className={classNames('flex-shrink-0', styles.chevron)}
+                            as={isOpen ? ChevronDownIcon : ChevronLeftIcon}
+                        />
+                    )}
                 </h4>
             </Button>
 
@@ -163,7 +166,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
-                        <SearchIcon className="icon-inline mr-1" />
+                        <Icon className="mr-1" as={SearchIcon} />
                         Search again
                     </Button>
                 </Form>

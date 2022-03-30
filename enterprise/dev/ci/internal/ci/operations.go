@@ -462,7 +462,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn --cwd client/browser release:firefox"))
 
 	// Release to npm
-	pipeline.AddStep(":rocket::npm: NPM Release",
+	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn --cwd client/browser -s run build"),
@@ -814,5 +814,14 @@ func uploadBuildeventTrace() operations.Operation {
 		p.AddStep(":arrow_heading_up: Upload build trace",
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
+	}
+}
+
+// Request render.com to create client preview app for current PR
+// Preview is deleted from render.com in GitHub Action when PR is closed
+func prPreview() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":globe_with_meridians: Client PR preview",
+			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

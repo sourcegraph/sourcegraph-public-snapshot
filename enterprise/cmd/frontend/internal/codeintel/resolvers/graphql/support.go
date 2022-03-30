@@ -1,15 +1,10 @@
 package graphql
 
 import (
-	"context"
 	"path"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type searchBasedCodeIntelSupportType string
@@ -27,54 +22,11 @@ const (
 	unknown    preciseCodeIntelSupportType = "UNKNOWN"
 )
 
-type codeIntelSupportResolver struct {
-	gitBlobMeta *gql.GitBlobCodeIntelInfoArgs
-	resolver    resolvers.Resolver
-	errTracer   *observation.ErrCollector
-}
-
-func NewCodeIntelSupportResolver(resolver resolvers.Resolver, args *gql.GitBlobCodeIntelInfoArgs, errTracer *observation.ErrCollector) gql.CodeIntelSupportResolver {
-	return &codeIntelSupportResolver{
-		gitBlobMeta: args,
-		resolver:    resolver,
-		errTracer:   errTracer,
-	}
-}
-
-func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ gql.SearchBasedCodeIntelSupportResolver, err error) {
-	var (
-		ctagsSupported bool
-		language       string
-	)
-
-	defer func() {
-		r.errTracer.Collect(&err,
-			log.String("codeIntelSupportResolver.field", "searchBasedSupport"),
-			log.String("inferredLanguage", language),
-			log.Bool("ctagsSupported", ctagsSupported))
-	}()
-
-	ctagsSupported, language, err = r.resolver.SupportedByCtags(ctx, r.gitBlobMeta.Path, r.gitBlobMeta.Repo)
-	if err != nil {
-		return nil, err
-	}
-
-	if ctagsSupported {
-		return NewSearchBasedCodeIntelResolver(&language), nil
-	}
-
-	return NewSearchBasedCodeIntelResolver(nil), nil
-}
-
-func (r *codeIntelSupportResolver) PreciseSupport(ctx context.Context) (gql.PreciseCodeIntelSupportResolver, error) {
-	return NewPreciseCodeIntelSupportResolver(r.gitBlobMeta.Path), nil
-}
-
 type searchBasedSupportResolver struct {
 	language *string
 }
 
-func NewSearchBasedCodeIntelResolver(language *string) gql.SearchBasedCodeIntelSupportResolver {
+func NewSearchBasedCodeIntelResolver(language *string) gql.SearchBasedSupportResolver {
 	return &searchBasedSupportResolver{language}
 }
 
@@ -93,9 +45,15 @@ type preciseCodeIntelSupportResolver struct {
 	indexers []gql.CodeIntelIndexerResolver
 }
 
-func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseCodeIntelSupportResolver {
+func NewPreciseCodeIntelSupportResolver(filepath string) gql.PreciseSupportResolver {
 	return &preciseCodeIntelSupportResolver{
 		indexers: languageToIndexer[path.Ext(filepath)],
+	}
+}
+
+func NewPreciseCodeIntelSupportResolverFromIndexers(indexers []gql.CodeIntelIndexerResolver) gql.PreciseSupportResolver {
+	return &preciseCodeIntelSupportResolver{
+		indexers: indexers,
 	}
 }
 

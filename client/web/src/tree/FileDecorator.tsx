@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 import { FileDecoration } from 'sourcegraph'
 
 import { fileDecorationColorForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'

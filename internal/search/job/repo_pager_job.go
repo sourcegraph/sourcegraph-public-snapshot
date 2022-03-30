@@ -6,12 +6,12 @@ import (
 	zoektstreamer "github.com/google/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type repoPagerJob struct {
@@ -38,20 +38,31 @@ func setRepos(job Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.Repos
 		return &jobCopy
 	}
 
+	setZoektSymbolRepos := func(job *zoekt.ZoektSymbolSearch) *zoekt.ZoektSymbolSearch {
+		jobCopy := *job
+		jobCopy.Repos = indexed
+		return &jobCopy
+	}
+
+	setSymbolSearcherRepos := func(job *searcher.SymbolSearcher) *searcher.SymbolSearcher {
+		jobCopy := *job
+		jobCopy.Repos = unindexed
+		return &jobCopy
+	}
+
 	setRepos := Mapper{
 		MapZoektRepoSubsetSearchJob: setZoektRepos,
+		MapZoektSymbolSearchJob:     setZoektSymbolRepos,
 		MapSearcherJob:              setSearcherRepos,
+		MapSymbolSearcherJob:        setSymbolSearcherRepos,
 	}
 
 	return setRepos.Map(job)
 }
 
-func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "pageReposJob", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (p *repoPagerJob) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	_, ctx, stream, finish := jobutil.StartSpan(ctx, stream, p)
+	defer func() { finish(alert, err) }()
 
 	var maxAlerter search.MaxAlerter
 

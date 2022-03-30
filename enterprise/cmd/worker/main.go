@@ -35,14 +35,15 @@ func main() {
 	go setAuthzProviders()
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-commitgraph":    codeintel.NewCommitGraphJob(),
-		"codeintel-janitor":        codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
-		"codehost-version-syncing": versions.NewSyncingJob(),
-		"insights-job":             workerinsights.NewInsightsJob(),
-		"batches-janitor":          batchesjanitor.NewJanitorJob(),
-		"executors-janitor":        executors.NewJanitorJob(),
-		"codemonitors-job":         codemonitors.NewCodeMonitorJob(),
+		"codeintel-commitgraph":     codeintel.NewCommitGraphJob(),
+		"codeintel-janitor":         codeintel.NewJanitorJob(),
+		"codeintel-auto-indexing":   codeintel.NewIndexingJob(),
+		"codehost-version-syncing":  versions.NewSyncingJob(),
+		"insights-job":              workerinsights.NewInsightsJob(),
+		"insights-query-runner-job": workerinsights.NewInsightsQueryRunnerJob(),
+		"batches-janitor":           batchesjanitor.NewJanitorJob(),
+		"executors-janitor":         executors.NewJanitorJob(),
+		"codemonitors-job":          codemonitors.NewCodeMonitorJob(),
 	}
 
 	shared.Start(additionalJobs, registerEnterpriseMigrations)
@@ -66,7 +67,7 @@ func setAuthzProviders() {
 	ctx := context.Background()
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db))
+		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db), database.NewDB(db))
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }

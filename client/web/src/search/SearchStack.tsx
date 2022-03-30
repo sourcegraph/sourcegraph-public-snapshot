@@ -1,13 +1,3 @@
-import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
-import TextBoxIcon from 'mdi-react/TextBoxIcon'
-import TrashIcon from 'mdi-react/TrashCanIcon'
 import React, {
     useCallback,
     useState,
@@ -20,6 +10,17 @@ import React, {
     useLayoutEffect,
 } from 'react'
 
+import classNames from 'classnames'
+import { LocationDescriptor } from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
+import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
+import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
+import NotebookPlusIcon from 'mdi-react/NotebookPlusIcon'
+import PencilIcon from 'mdi-react/PencilIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
+import TextBoxIcon from 'mdi-react/TextBoxIcon'
+import TrashIcon from 'mdi-react/TrashCanIcon'
+
 import { isMacPlatform } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -27,7 +28,7 @@ import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import { useExperimentalFeatures } from '../stores'
@@ -148,11 +149,11 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
         const blocks: BlockInput[] = []
         for (const entry of entries) {
             if (entry.annotation) {
-                blocks.push({ type: 'md', input: entry.annotation })
+                blocks.push({ type: 'md', input: { text: entry.annotation } })
             }
             switch (entry.type) {
                 case 'search':
-                    blocks.push({ type: 'query', input: toSearchQuery(entry) })
+                    blocks.push({ type: 'query', input: { query: toSearchQuery(entry) } })
                     break
                 case 'file':
                     blocks.push({
@@ -186,7 +187,13 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
     // Handles key events on the whole list
     const handleKey = useCallback(
         (event: KeyboardEvent): void => {
-            const hasMeta = (isMacPlatform_ && event.metaKey) || (!isMacPlatform_ && event.ctrlKey)
+            const hasMacMeta = isMacPlatform_ && event.metaKey
+            const hasMeta = hasMacMeta || (!isMacPlatform_ && event.ctrlKey)
+
+            if (document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
+                // Ignore any events originating from an annotations input
+                return
+            }
 
             switch (event.key) {
                 // Select all entries
@@ -205,8 +212,13 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                     break
                 // Delete selected entries
                 case 'Delete':
-                case 'Backspace':
                     if (selectedEntries.length > 0) {
+                        deleteSelectedEntries()
+                    }
+                    break
+                // On macOS we also support CMD+Backpace for deletion
+                case 'Backspace':
+                    if (hasMacMeta && selectedEntries.length > 0) {
                         deleteSelectedEntries()
                     }
                     break
@@ -270,7 +282,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                         aria-controls={SEARCH_STACK_ID}
                         aria-expanded="true"
                     >
-                        <PencilIcon className="icon-inline" />
+                        <Icon as={PencilIcon} />
                         <h4 className={classNames(styles.openVisible, 'px-1')}>Notepad</h4>
                         <small>
                             ({reversedEntries.length} item{reversedEntries.length === 1 ? '' : 's'})
@@ -284,7 +296,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                         aria-controls={SEARCH_STACK_ID}
                         aria-expanded="true"
                     >
-                        <CloseIcon className="icon-inline" />
+                        <Icon as={CloseIcon} />
                     </Button>
                 </div>
                 <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
@@ -350,7 +362,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                     )}
                     <div className="d-flex justify-content-between align-items-center">
                         <Button onClick={createNotebook} variant="primary" size="sm" disabled={entries.length === 0}>
-                            <NotebookPlusIcon className="icon-inline" /> Create Notebook
+                            <Icon as={NotebookPlusIcon} /> Create Notebook
                         </Button>
                         <Button
                             aria-label="Remove all entries"
@@ -360,7 +372,7 @@ export const SearchStack: React.FunctionComponent<SearchStackProps> = ({ initial
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
                         >
-                            <TrashIcon className="icon-inline" />
+                            <Icon as={TrashIcon} />
                         </Button>
                     </div>
                 </div>
@@ -420,7 +432,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                         addSearchStackEntry(entry)
                     }}
                 >
-                    + <SearchIcon className="icon-inline" /> Search
+                    + <Icon as={SearchIcon} /> Search
                 </Button>
             )
         case 'file':
@@ -436,7 +448,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                             addSearchStackEntry(entry, 'file')
                         }}
                     >
-                        + <FileDocumentOutlineIcon className="icon-inline" /> File
+                        + <Icon as={FileDocumentOutlineIcon} /> File
                     </Button>
                     {entry.lineRange && (
                         <Button
@@ -449,7 +461,7 @@ const AddEntryButton: React.FunctionComponent<AddEntryButtonProps> = ({ entry })
                                 addSearchStackEntry(entry, 'range')
                             }}
                         >
-                            + <CodeBracketsIcon className="icon-inline" /> Range (
+                            + <Icon as={CodeBracketsIcon} /> Range (
                             {entry.lineRange.endLine - entry.lineRange.startLine + 1})
                         </Button>
                     )}
@@ -509,7 +521,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                             setShowAnnotationInput(show => !show)
                         }}
                     >
-                        <TextBoxIcon className="icon-inline" />
+                        <Icon as={TextBoxIcon} />
                     </Button>
                     <Button
                         aria-label={deletionLabel}
@@ -521,7 +533,7 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                             onDelete(entry)
                         }}
                     >
-                        <CloseIcon className="icon-inline" />
+                        <Icon as={CloseIcon} />
                     </Button>
                 </span>
             </div>
@@ -534,12 +546,10 @@ const SearchStackEntryComponent: React.FunctionComponent<SearchStackEntryCompone
                     onBlur={() => setEntryAnnotation(entry, annotation)}
                     onChange={event => setAnnotation(event.currentTarget.value)}
                     onClick={stopPropagation}
-                    onKeyUp={event => {
-                        // This is used mainly to prevent deletion of the entry
-                        // when Delete or Backspace are pressed (one of the
-                        // ancestors listens to keyup events to handle
-                        // keybindings)
-                        event.stopPropagation()
+                    onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                            event.currentTarget.blur()
+                        }
                     }}
                 />
             )}
@@ -553,7 +563,7 @@ function getUIComponentsForEntry(
     switch (entry.type) {
         case 'search':
             return {
-                icon: <SearchIcon className="icon-inline" />,
+                icon: <Icon as={SearchIcon} />,
                 title: <SyntaxHighlightedSearchQuery query={entry.query} />,
                 location: {
                     pathname: '/search',
@@ -567,11 +577,7 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: entry.lineRange ? (
-                    <CodeBracketsIcon className="icon-inline" />
-                ) : (
-                    <FileDocumentOutlineIcon className="icon-inline" />
-                ),
+                icon: <Icon as={entry.lineRange ? CodeBracketsIcon : FileDocumentOutlineIcon} />,
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -252,7 +253,7 @@ func (d Diff) Len() int {
 // It works for repos from:
 // 1. Public "cloud_default" code hosts since we don't sync them in the background
 //    (which would delete lazy synced repos).
-// 2. Any package hosts (i.e. NPM, Maven, etc) since callers are expected to store
+// 2. Any package hosts (i.e. npm, Maven, etc) since callers are expected to store
 //    repos in the `lsif_dependency_repos` table which is used as the source of truth
 //    for the next full sync, so lazy added repos don't get wiped.
 //
@@ -473,6 +474,9 @@ func (s *Syncer) SyncExternalService(
 	minSyncInterval time.Duration,
 ) (err error) {
 	s.log().Info("Syncing external service", "serviceID", externalServiceID)
+
+	// Ensure the job field is recorded when monitoring external API calls
+	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")

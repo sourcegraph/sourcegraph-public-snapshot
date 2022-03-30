@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
-import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
+import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
+import { InsightExecutionType, SearchBasedInsight, isSearchBackendBasedInsight } from '../../../../core/types'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
@@ -10,7 +10,7 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (insight: MinimalSearchBasedInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
@@ -18,7 +18,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
-        if (insight.type === InsightExecutionType.Backend) {
+        if (insight.executionType === InsightExecutionType.Backend) {
             return {
                 title: insight.title,
                 repositories: '',
@@ -47,7 +47,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
 
         // Preserve backend insight filters since these filters aren't represented
         // in the editing form
-        if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
+        if (sanitizedInsight.executionType === InsightExecutionType.Backend && isSearchBackendBasedInsight(insight)) {
             return onSubmit({
                 ...sanitizedInsight,
                 filters: insight.filters,
@@ -60,11 +60,12 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     return (
         <SearchInsightCreationContent
             mode="edit"
-            className="pb-5"
             initialValue={insightFormValues}
             dataTestId="search-insight-edit-page-content"
+            className="pb-5"
             onSubmit={handleSubmit}
             onCancel={onCancel}
+            insight={insight}
         />
     )
 }

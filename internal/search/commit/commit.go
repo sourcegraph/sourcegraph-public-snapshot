@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -16,6 +17,7 @@ import (
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -33,19 +35,23 @@ type CommitSearch struct {
 	Limit                int
 	CodeMonitorID        *int64
 	IncludeModifiedFiles bool
-	Gitserver            gitserverSearcher `json:"-"`
+	Gitserver            GitserverClient `json:"-"`
+
+	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
+	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
 }
 
-type gitserverSearcher interface {
+type DoSearchFunc func(*gitprotocol.SearchRequest) error
+type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, DoSearchFunc) error
+
+type GitserverClient interface {
 	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
+	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "CommitSearch", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming.Sender) (alert *search.Alert, err error) {
+	tr, ctx, stream, finish := jobutil.StartSpan(ctx, stream, j)
+	defer func() { finish(alert, err) }()
 	tr.TagFields(trace.LazyFields(j.Tags))
 
 	if err := j.ExpandUsernames(ctx, db); err != nil {
@@ -102,15 +108,21 @@ func (j *CommitSearch) Run(ctx context.Context, db database.DB, stream streaming
 			})
 		}
 
-		bounded.Go(func() error {
+		doSearch := func(args *gitprotocol.SearchRequest) error {
 			limitHit, err := j.Gitserver.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
-
 			return err
+		}
+
+		bounded.Go(func() error {
+			if j.CodeMonitorSearchWrapper != nil {
+				return j.CodeMonitorSearchWrapper(ctx, db, j.Gitserver, args, doSearch)
+			}
+			return doSearch(args)
 		})
 	}
 
@@ -209,17 +221,6 @@ func expandUsernamesToEmails(ctx context.Context, db database.DB, values []strin
 		}
 	}
 	return expandedValues, nil
-}
-
-func HasTimeFilter(q query.Q) bool {
-	hasTimeFilter := false
-	if _, afterPresent := q.Fields()["after"]; afterPresent {
-		hasTimeFilter = true
-	}
-	if _, beforePresent := q.Fields()["before"]; beforePresent {
-		hasTimeFilter = true
-	}
-	return hasTimeFilter
 }
 
 func QueryToGitQuery(q query.Q, diff bool) gitprotocol.Node {

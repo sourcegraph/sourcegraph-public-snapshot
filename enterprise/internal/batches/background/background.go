@@ -6,13 +6,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factory, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factory, observationContext *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
 	sourcer := sources.NewSourcer(cf)
 	metrics := newMetrics(observationContext)
 
@@ -23,7 +24,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 	batchSpecResolutionWorkerStore := store.NewBatchSpecResolutionWorkerStore(batchesStore.Handle(), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
-		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.DefaultClient, sourcer, metrics),
+		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.NewClient(db), sourcer, metrics),
 		newReconcilerWorkerResetter(reconcilerWorkerStore, metrics),
 
 		newSpecExpireJob(ctx, batchesStore),

@@ -1,7 +1,8 @@
+import React from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
 import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
-import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'

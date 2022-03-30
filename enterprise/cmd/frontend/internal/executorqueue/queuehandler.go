@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -41,7 +42,7 @@ func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handle
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		return authMiddleware(accessToken, base)
+		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
 	}
 
 	return factory, nil

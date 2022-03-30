@@ -26,7 +26,9 @@ export function serializeBlockToMarkdown(block: SerializableBlock, sourcegraphUR
 export function serializeBlockInput(block: SerializableBlock, sourcegraphURL: string): Observable<string> {
     switch (block.type) {
         case 'md':
+            return of(block.input.text)
         case 'query':
+            return of(block.input.query)
         case 'compute':
             return of(block.input)
         case 'file':
@@ -120,7 +122,9 @@ function parseSymbolBlockInput(input: string): SymbolBlockInput {
 export function deserializeBlockInput(type: Block['type'], input: string): BlockInput {
     switch (type) {
         case 'md':
+            return { type, input: { text: input } }
         case 'query':
+            return { type, input: { query: input } }
         case 'compute':
             return { type, input }
         case 'file':
@@ -160,15 +164,15 @@ export function parseLineRange(value: string): IHighlightLineRange | null {
 export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
     switch (block.type) {
         case 'md':
-            return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.input }
+            return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.input.text }
         case 'query':
-            return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.input }
+            return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.input.query }
         case 'file':
             return { id: block.id, type: NotebookBlockType.FILE, fileInput: block.input }
         case 'symbol':
             return { id: block.id, type: NotebookBlockType.SYMBOL, symbolInput: block.input }
         case 'compute':
-            throw new Error('Unreachable: Compute block deserialization not supported yet.')
+            return { id: block.id, type: NotebookBlockType.COMPUTE, computeInput: block.input }
     }
 }
 
@@ -189,6 +193,12 @@ export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInp
                 id: block.id,
                 type: NotebookBlockType.SYMBOL,
                 symbolInput: block.symbolInput,
+            }
+        case 'ComputeBlock':
+            return {
+                id: block.id,
+                type: NotebookBlockType.COMPUTE,
+                computeInput: block.computeInput,
             }
     }
 }

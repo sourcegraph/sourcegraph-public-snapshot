@@ -2,6 +2,7 @@ package background
 
 import (
 	"bytes"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,15 +14,13 @@ import (
 func TestEmail(t *testing.T) {
 	template := txemail.MustParseTemplate(newSearchResultsEmailTemplates)
 
+	MockExternalURL = func() *url.URL {
+		externalURL, _ := url.Parse("https://www.sourcegraph.com")
+		return externalURL
+	}
+
 	t.Run("test message", func(t *testing.T) {
-		templateData := &TemplateDataNewSearchResults{
-			Priority:                  "New",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
-			Description:               "My test monitor",
-			NumberOfResultsWithDetail: "There was 1 new search result for your query",
-			IsTest:                    true,
-		}
+		templateData := NewTestTemplateDataForNewSearchResults("My test monitor")
 
 		t.Run("html", func(t *testing.T) {
 			var buf bytes.Buffer
@@ -41,17 +40,19 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "Test: [New event] My test monitor", buf.String())
+			require.Equal(t, "Test: Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("one result", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:                  "New",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
-			Description:               "My test monitor",
-			NumberOfResultsWithDetail: "There was 1 new search result for your query",
+			Priority:         "",
+			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
+			SearchURL:        "https://sourcegraph.com/search",
+			Description:      "My test monitor",
+			TotalCount:       1,
+			ResultPluralized: "result",
+			DisplayMoreLink:  false,
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -72,17 +73,19 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "[New event] My test monitor", buf.String())
+			require.Equal(t, "Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("multiple results", func(t *testing.T) {
 		templateData := &TemplateDataNewSearchResults{
-			Priority:                  "New",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
-			Description:               "My test monitor",
-			NumberOfResultsWithDetail: "There was 1 new search result for your query",
+			Priority:         "",
+			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
+			SearchURL:        "https://sourcegraph.com/search",
+			Description:      "My test monitor",
+			TotalCount:       2,
+			ResultPluralized: "results",
+			DisplayMoreLink:  false,
 		}
 
 		t.Run("html", func(t *testing.T) {
@@ -103,7 +106,82 @@ func TestEmail(t *testing.T) {
 			var buf bytes.Buffer
 			err := template.Subj.Execute(&buf, templateData)
 			require.NoError(t, err)
-			require.Equal(t, "[New event] My test monitor", buf.String())
+			require.Equal(t, "Sourcegraph code monitor My test monitor detected 2 new results", buf.String())
 		})
 	})
+
+	t.Run("one result with results", func(t *testing.T) {
+		templateData := &TemplateDataNewSearchResults{
+			Priority:                  "",
+			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
+			SearchURL:                 "https://sourcegraph.com/search",
+			Description:               "My test monitor",
+			TotalCount:                1,
+			ResultPluralized:          "result",
+			IncludeResults:            true,
+			TruncatedCount:            0,
+			TruncatedResults:          []*DisplayResult{commitDisplayResultMock},
+			TruncatedResultPluralized: "results",
+			DisplayMoreLink:           false,
+		}
+
+		t.Run("html", func(t *testing.T) {
+			var buf bytes.Buffer
+			err := template.Html.Execute(&buf, templateData)
+			require.NoError(t, err)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+		})
+
+		t.Run("text", func(t *testing.T) {
+			var buf bytes.Buffer
+			err := template.Text.Execute(&buf, templateData)
+			require.NoError(t, err)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+		})
+
+		t.Run("subject", func(t *testing.T) {
+			var buf bytes.Buffer
+			err := template.Subj.Execute(&buf, templateData)
+			require.NoError(t, err)
+			require.Equal(t, "Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
+		})
+	})
+
+	t.Run("multiple results with results", func(t *testing.T) {
+		templateData := &TemplateDataNewSearchResults{
+			Priority:                  "",
+			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
+			SearchURL:                 "https://sourcegraph.com/search",
+			Description:               "My test monitor",
+			TotalCount:                6,
+			TruncatedCount:            1,
+			ResultPluralized:          "results",
+			IncludeResults:            true,
+			TruncatedResults:          []*DisplayResult{diffDisplayResultMock, commitDisplayResultMock, diffDisplayResultMock},
+			TruncatedResultPluralized: "result",
+			DisplayMoreLink:           true,
+		}
+
+		t.Run("html", func(t *testing.T) {
+			var buf bytes.Buffer
+			err := template.Html.Execute(&buf, templateData)
+			require.NoError(t, err)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".html", *update, buf.String())
+		})
+
+		t.Run("text", func(t *testing.T) {
+			var buf bytes.Buffer
+			err := template.Text.Execute(&buf, templateData)
+			require.NoError(t, err)
+			testutil.AssertGolden(t, "testdata/"+t.Name()+".txt", *update, buf.String())
+		})
+
+		t.Run("subject", func(t *testing.T) {
+			var buf bytes.Buffer
+			err := template.Subj.Execute(&buf, templateData)
+			require.NoError(t, err)
+			require.Equal(t, "Sourcegraph code monitor My test monitor detected 6 new results", buf.String())
+		})
+	})
+
 }

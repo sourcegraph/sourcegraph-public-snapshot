@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React, { useState, FunctionComponent, useCallback } from 'react'
+
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+
 import create from 'zustand'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'

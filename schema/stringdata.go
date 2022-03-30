@@ -34,13 +34,17 @@ var GitLabSchemaJSON string
 //go:embed gitolite.schema.json
 var GitoliteSchemaJSON string
 
+// GoModulesSchemaJSON is the content of the file "go-modules.schema.json".
+//go:embed go-modules.schema.json
+var GoModulesSchemaJSON string
+
 // JVMPackagesSchemaJSON is the content of the file "jvm-packages.schema.json".
 //go:embed jvm-packages.schema.json
 var JVMPackagesSchemaJSON string
 
-// NPMPackagesSchemaJSON is the content of the file "npm-packages.schema.json".
+// NpmPackagesSchemaJSON is the content of the file "npm-packages.schema.json".
 //go:embed npm-packages.schema.json
-var NPMPackagesSchemaJSON string
+var NpmPackagesSchemaJSON string
 
 // OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
 //go:embed other_external_service.schema.json

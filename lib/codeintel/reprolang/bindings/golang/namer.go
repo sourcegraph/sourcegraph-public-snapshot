@@ -33,10 +33,7 @@ func (s *reproSourceFile) enterDefinitions(context *reproContext) {
 			scope = s.localScope
 		}
 		var symbol string
-		_, ok := scope.names[def.name.value]
-		if ok {
-			symbol = "local ERROR_DUPLICATE_DEFINITION"
-		} else if def.name.isLocalSymbol() {
+		if def.name.isLocalSymbol() {
 			symbol = fmt.Sprintf("local %s", def.name.value[len("local"):])
 		} else {
 			symbol = newGlobalSymbol(context.pkg, s, def)

@@ -23,8 +23,9 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { MutationRecordLike } from '../../util/dom'
 
 import { CodeHost } from './codeHost'
-import styles from './nativeTooltips.module.scss'
 import { trackViews } from './views'
+
+import styles from './nativeTooltips.module.scss'
 
 const NATIVE_TOOLTIP_HIDDEN = styles.nativeTooltipHidden
 const NATIVE_TOOLTIP_TYPE = 'nativeTooltips'

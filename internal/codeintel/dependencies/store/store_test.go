@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestUpsertDependencyRepo(t *testing.T) {
@@ -19,7 +17,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 
 	ctx := context.Background()
 	db := database.NewDB(dbtest.NewDB(t))
-	store := testStore(db)
+	store := TestStore(db)
 
 	batches := [][]DependencyRepo{
 		{
@@ -59,7 +57,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 
 	have, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
-		Scheme: NPMPackagesScheme,
+		Scheme: NpmPackagesScheme,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -67,8 +65,4 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatalf("mismatch (-have, +want): %s", diff)
 	}
-}
-
-func testStore(db dbutil.DB) *Store {
-	return newStore(db, &observation.TestContext)
 }

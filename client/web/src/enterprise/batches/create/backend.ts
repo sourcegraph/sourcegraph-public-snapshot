@@ -143,7 +143,6 @@ export const WORKSPACES = gql`
         branch {
             __typename
             id
-            abbrevName
             displayName
             target {
                 __typename

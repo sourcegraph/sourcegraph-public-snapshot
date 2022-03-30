@@ -55,6 +55,11 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
+            name: 'reactstrap',
+            importNames: ['Form'],
+            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
+          },
+          {
             name: '@sourcegraph/wildcard',
             importNames: ['Tooltip'],
             message:
@@ -108,6 +113,10 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           {
             className: 'badge',
             message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            className: 'icon-inline',
+            message: 'Use the <Icon /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },

@@ -1,18 +1,19 @@
+import * as React from 'react'
+
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { HoverMerged } from '@sourcegraph/client-api'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { isDefined, property } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -38,9 +39,10 @@ import { WebHoverOverlay } from '../../components/shared'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
-import styles from './RepositoryCompareArea.module.scss'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
+
+import styles from './RepositoryCompareArea.module.scss'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage

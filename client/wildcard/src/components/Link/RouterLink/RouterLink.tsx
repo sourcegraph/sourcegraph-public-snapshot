@@ -1,5 +1,6 @@
-import isAbsoluteUrl from 'is-absolute-url'
 import * as React from 'react'
+
+import isAbsoluteUrl from 'is-absolute-url'
 // eslint-disable-next-line no-restricted-imports
 import { Link } from 'react-router-dom'
 

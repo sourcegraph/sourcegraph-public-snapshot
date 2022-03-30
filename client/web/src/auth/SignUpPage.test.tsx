@@ -1,5 +1,6 @@
-import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
+
+import { createMemoryHistory, createLocation } from 'history'
 import { MemoryRouter } from 'react-router'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

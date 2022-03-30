@@ -1,6 +1,7 @@
+import React, { useContext, useMemo } from 'react'
+
 import { VisuallyHidden } from '@reach/visually-hidden'
 import CloseIcon from 'mdi-react/CloseIcon'
-import React, { useContext, useMemo } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { Button, LoadingSpinner, useObservable, Modal } from '@sourcegraph/wildcard'
@@ -9,11 +10,12 @@ import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hoo
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { CustomInsightDashboard } from '../../../../../core/types'
 
-import styles from './AddInsightModal.module.scss'
 import {
     AddInsightFormValues,
     AddInsightModalContent,
 } from './components/add-insight-modal-content/AddInsightModalContent'
+
+import styles from './AddInsightModal.module.scss'
 
 export interface AddInsightModalProps {
     dashboard: CustomInsightDashboard
@@ -22,14 +24,9 @@ export interface AddInsightModalProps {
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
     const { dashboard, onClose } = props
-    const { getReachableInsights, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
+    const { getAccessibleInsightsList, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 
-    const insights = useObservable(
-        useMemo(() => getReachableInsights({ subjectId: dashboard.owner?.id || '' }), [
-            dashboard.owner,
-            getReachableInsights,
-        ])
-    )
+    const insights = useObservable(useMemo(() => getAccessibleInsightsList(), [getAccessibleInsightsList]))
 
     const initialValues = useMemo<AddInsightFormValues>(
         () => ({

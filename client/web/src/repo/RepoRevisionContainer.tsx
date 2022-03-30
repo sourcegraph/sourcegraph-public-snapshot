@@ -1,7 +1,8 @@
+import React, { useCallback, useMemo, useState } from 'react'
+
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -20,8 +21,8 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { parseQueryAndHash, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Button, Icon, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -30,7 +31,6 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { CoolCodeIntel, isCoolCodeIntelEnabled } from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -44,11 +44,12 @@ import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/R
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import styles from './RepoRevisionContainer.module.scss'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
+
+import styles from './RepoRevisionContainer.module.scss'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext
@@ -158,7 +159,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <RepoRevisionChevronDownIcon className="icon-inline" />
+                <Icon as={RepoRevisionChevronDownIcon} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
                 <RevisionsPopover
@@ -183,13 +184,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
-    // Experimental reference panel
-    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
-    const viewState = parseQueryAndHash(props.location.search, props.location.hash).viewState
-    // If we don't have // '#tab=...' in the URL, we don't need to show the panel.
-    const showCoolCodeIntelPanel =
-        coolCodeIntelEnabled && viewState && (viewState === 'references' || viewState.startsWith('implementations_'))
-
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -310,9 +304,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     )}
                 </RepoHeaderContributionPortal>
             </RepoRevisionWrapper>
-            {showCoolCodeIntelPanel && (
-                <CoolCodeIntel {...props} externalHistory={props.history} externalLocation={props.location} />
-            )}
         </>
     )
 }

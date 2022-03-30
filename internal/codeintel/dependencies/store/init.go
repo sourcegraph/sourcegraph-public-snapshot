@@ -13,24 +13,24 @@ import (
 )
 
 var (
-	store     *Store
-	storeOnce sync.Once
+	ops     *operations
+	opsOnce sync.Once
 )
 
 func GetStore(db database.DB) *Store {
-	storeOnce.Do(func() {
-		observationContext := &observation.Context{
+	// newOperations registers Prometheus metrics with MustRegister,
+	// which panics if we register the same metrics twice, so we protect
+	// it with this package level sync.Once.
+	opsOnce.Do(func() {
+		ops = newOperations(&observation.Context{
 			Logger:     log15.Root(),
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
-		}
-
-		store = newStore(db, observationContext)
+		})
 	})
-
-	return store
+	return newStore(db, ops)
 }
 
 func TestStore(db database.DB) *Store {
-	return newStore(db, &observation.TestContext)
+	return newStore(db, newOperations(&observation.TestContext))
 }

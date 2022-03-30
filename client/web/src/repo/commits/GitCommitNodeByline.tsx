@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import React from 'react'
+
+import classNames from 'classnames'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { SignatureFields } from '../../graphql-operations'
@@ -47,12 +48,14 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
             <div data-testid="git-commit-node-byline" className={className}>
                 <div className="flex-shrink-0">
                     <UserAvatar
-                        className={classNames('icon-inline', avatarClassName)}
+                        inline={true}
+                        className={avatarClassName}
                         user={author.person}
                         data-tooltip={`${formatPersonName(author.person)} (author)`}
                     />{' '}
                     <UserAvatar
-                        className={classNames('icon-inline mr-2', avatarClassName)}
+                        inline={true}
+                        className={classNames('mr-2', avatarClassName)}
                         user={committer.person}
                         data-tooltip={`${formatPersonName(committer.person)} (committer)`}
                     />
@@ -81,7 +84,8 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         <div data-testid="git-commit-node-byline" className={className}>
             <div>
                 <UserAvatar
-                    className={classNames('icon-inline mr-1 mr-2', avatarClassName)}
+                    inline={true}
+                    className={classNames('mr-1 mr-2', avatarClassName)}
                     user={author.person}
                     data-tooltip={formatPersonName(author.person)}
                 />

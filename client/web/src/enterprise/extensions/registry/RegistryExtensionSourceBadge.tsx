@@ -1,5 +1,6 @@
-import classNames from 'classnames'
 import * as React from 'react'
+
+import classNames from 'classnames'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
