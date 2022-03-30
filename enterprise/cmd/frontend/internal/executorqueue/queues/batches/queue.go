@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -20,7 +21,11 @@ func QueueOptions(db database.DB, accessToken func() string, observationContext 
 		return transformRecord(ctx, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), accessToken())
 	}
 
-	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext, nil)
+	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext, func(ctx context.Context, tx *store.Store, batchSpecRandID string) error {
+		svc := service.New(tx)
+		_, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{BatchSpecRandID: batchSpecRandID})
+		return err
+	})
 	return handler.QueueOptions{
 		Name:                   "batches",
 		Store:                  store,

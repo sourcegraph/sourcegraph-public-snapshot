@@ -392,26 +392,26 @@ func (r *actionRunner) handleBatchChange(ctx context.Context, j *edb.ActionJob) 
 		return errors.Wrap(err, "GetBatchChangeAction")
 	}
 
-	internalCtx := actor.WithInternalActor(ctx)
-
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	bstore := batchesstore.New(s.Handle().DB(), observationContext, keyring.Default().BatchChangesCredentialKey)
-	bc, err := bstore.GetBatchChange(internalCtx, batchesstore.GetBatchChangeOpts{
+	bc, err := bstore.GetBatchChange(ctx, batchesstore.GetBatchChangeOpts{
 		ID: action.BatchChange,
 	})
 	if err != nil {
 		return err
 	}
-	spec, err := bstore.GetBatchSpec(internalCtx, batchesstore.GetBatchSpecOpts{ID: bc.BatchSpecID})
+	spec, err := bstore.GetBatchSpec(ctx, batchesstore.GetBatchSpecOpts{ID: bc.BatchSpecID})
 	if err != nil {
 		return err
 	}
+	// TODO: This should be the monitor user, not the spec user.
+	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
 	svc := service.New(bstore)
-	if _, err := svc.CreateBatchSpecFromRaw(internalCtx, service.CreateBatchSpecFromRawOpts{
+	if _, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
 		RawSpec:          spec.RawSpec,
 		AllowIgnored:     spec.AllowIgnored,
 		AllowUnsupported: spec.AllowUnsupported,
@@ -420,6 +420,7 @@ func (r *actionRunner) handleBatchChange(ctx context.Context, j *edb.ActionJob) 
 		NamespaceOrgID:   spec.NamespaceOrgID,
 
 		AutoExecute: true,
+		AutoApply:   true,
 	}); err != nil {
 		return err
 	}

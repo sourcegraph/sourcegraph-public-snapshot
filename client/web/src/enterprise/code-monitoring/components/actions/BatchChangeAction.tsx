@@ -127,7 +127,8 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
             _testStartOpen={_testStartOpen}
         >
             <Alert variant="info" className="mt-4">
-                We rerun it ok.
+                When this code monitor detects a change, the following batch change will be re-executed and
+                automatically applied.
             </Alert>
             <Select
                 id="code-monitor-batch-change-id"

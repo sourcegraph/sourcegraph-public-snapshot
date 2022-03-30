@@ -320,10 +320,25 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, tx.Done(err)
 	}
 
-	// IF batch spec has AutoApply flag set, and if the workspace is the last one to finish, we want to call the applyBatchChanger to
-	// automatically apply the spec after it has executed.
-	if err := s.applyBatchChanger(ctx, tx, batchSpec.RandID); err != nil {
-		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to apply batch spec: %s", err))
+	stats, err := tx.GetBatchSpecStats(ctx, []int64{batchSpec.ID})
+	if err != nil {
+		return rollbackAndMarkFailed(err, fmt.Sprintf("GetBatchSpecStats: %s", err))
+	}
+	if len(stats) != 1 {
+		return rollbackAndMarkFailed(errors.New("GetBatchSpecStats didn't return anything"), "GetBatchSpecStats didn't return anything")
+	}
+	state := btypes.ComputeBatchSpecState(batchSpec, stats[batchSpec.ID])
+	if state != btypes.BatchSpecStateCompleted {
+		return ok, tx.Done(err)
+	}
+
+	if batchSpec.AutoApply {
+		log15.Info("AutoApplying batch spec", "spec", batchSpec.ID)
+		// IF batch spec has AutoApply flag set, and if the workspace is the last one to finish, we want to call the applyBatchChanger to
+		// automatically apply the spec after it has executed.
+		if err := s.applyBatchChanger(ctx, tx, batchSpec.RandID); err != nil {
+			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to apply batch spec: %s", err))
+		}
 	}
 
 	return ok, tx.Done(err)

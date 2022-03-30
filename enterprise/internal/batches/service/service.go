@@ -323,6 +323,7 @@ type CreateBatchSpecFromRawOpts struct {
 	AllowUnsupported bool
 	NoCache          bool
 	AutoExecute      bool
+	AutoApply        bool
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -331,6 +332,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		log.Bool("allowIgnored", opts.AllowIgnored),
 		log.Bool("allowUnsupported", opts.AllowUnsupported),
 		log.Bool("autoExecute", opts.AutoExecute),
+		log.Bool("autoApply", opts.AutoApply),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -361,6 +363,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
 		autoExecute:      opts.AutoExecute,
+		autoApply:        opts.AutoApply,
 	})
 }
 
@@ -370,6 +373,7 @@ type createBatchSpecForExecutionOpts struct {
 	allowIgnored     bool
 	noCache          bool
 	autoExecute      bool
+	autoApply        bool
 }
 
 // createBatchSpecForExecution persists the given BatchSpec in the given
@@ -381,6 +385,7 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	opts.spec.AllowUnsupported = opts.allowUnsupported
 	opts.spec.NoCache = opts.noCache
 	opts.spec.AutoExecute = opts.autoExecute
+	opts.spec.AutoApply = opts.autoApply
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
@@ -425,7 +430,8 @@ func (e ErrBatchSpecResolutionErrored) Error() string {
 var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, workspaces still being resolved")
 
 type ExecuteBatchSpecOpts struct {
-	BatchSpecRandID string
+	BatchSpecRandID   string
+	NoCheckIsComplete bool
 }
 
 // ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
@@ -471,20 +477,24 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return batchSpec, nil
+		// ok
 
 	default:
-		return nil, ErrBatchSpecResolutionIncomplete
+		if !opts.NoCheckIsComplete {
+			return nil, ErrBatchSpecResolutionIncomplete
+		}
 	}
+
+	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return batchSpec, nil
 }
 
 var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")

@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -324,10 +326,26 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
+	stats, err := tx.GetBatchSpecStats(ctx, []int64{spec.ID})
+	if err != nil {
+		return err
+	}
+	if len(stats) != 1 {
+		return errors.New("GetBatchSpecStats didn't return anything")
+	}
+	state := types.ComputeBatchSpecState(spec, stats[spec.ID])
+	// TODO: Why pending as well?
+	if state != btypes.BatchSpecStateCompleted && state != btypes.BatchSpecStatePending {
+		return nil
+	}
+
 	if spec.AutoExecute {
+		log15.Info("AutoExecuting batch spec", "spec", spec.ID)
 		svc := service.New(tx)
-		if spec, err = svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
+		if _, err = svc.ExecuteBatchSpec(userCtx, service.ExecuteBatchSpecOpts{
 			BatchSpecRandID: spec.RandID,
+			// We know that the job is done, we are at the end of the handler func.
+			NoCheckIsComplete: true,
 		}); err != nil {
 			return err
 		}

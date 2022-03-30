@@ -129,6 +129,7 @@ func (s BatchSpecState) FinishedAndNotCanceled() bool {
 	return s == BatchSpecStateCompleted || s == BatchSpecStateFailed
 }
 
+// TODO: Do we have a regression where all are cached it returns pending?
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.
 func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
 	if !spec.CreatedFromRaw {

@@ -212,14 +212,14 @@ WITH due_emails AS (
 	WHERE state = 'queued'
 		OR state = 'processing'
 )
-INSERT INTO cm_action_jobs (email, webhook, slack_webhook, trigger_event)
-SELECT id, CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), %s::integer from due_emails
+INSERT INTO cm_action_jobs (email, webhook, slack_webhook, batch_change, trigger_event)
+SELECT id, CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), %s::integer from due_emails
 UNION
-SELECT CAST(NULL AS BIGINT), id, CAST(NULL AS BIGINT), %s::integer from due_webhooks
+SELECT CAST(NULL AS BIGINT), id, CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), %s::integer from due_webhooks
 UNION
-SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, %s::integer from due_slack_webhooks
+SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, CAST(NULL AS BIGINT), %s::integer from due_slack_webhooks
 UNION
-SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, %s::integer from due_batch_changes
+SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, %s::integer from due_batch_changes
 ORDER BY 1, 2, 3, 4
 RETURNING %s
 `
