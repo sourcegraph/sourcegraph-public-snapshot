@@ -241,7 +241,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     <Route
                                         path={`${treeOrError.url}/-/tag/tab`}
                                         render={routeComponentProps => {
-                                            setSelectedTab('docs')
+                                            setSelectedTab('tags')
                                             return <RepositoryTagTab repo={repo} {...routeComponentProps} {...props} />
                                         }}
                                     />

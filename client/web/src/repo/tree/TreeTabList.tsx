@@ -49,9 +49,9 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 url: `${tree.url}/-/branch/tab`,
             },
             {
-                tab: 'tag',
+                tab: 'tags',
                 title: 'Tags',
-                isActive: selectedTab === 'tag',
+                isActive: selectedTab === 'tags',
                 logName: 'RepoTagsTab',
                 icon: <Icon as={TagIcon} />,
                 url: `${tree.url}/-/tag/tab`,

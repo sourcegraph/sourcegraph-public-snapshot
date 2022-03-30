@@ -221,8 +221,14 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/tag',
-        render: ({ repo, location, history }) => (
-            <RepositoryTagTab repo={repo} location={location} history={history} match={undefined} routePrefix="" />
+        render: ({ repo, location, history, match, routePrefix }) => (
+            <RepositoryTagTab
+                repo={repo}
+                location={location}
+                history={history}
+                match={match}
+                routePrefix={routePrefix}
+            />
         ), // TODO: figure out how to pass the properties: match and routePrefix
     },
     {
