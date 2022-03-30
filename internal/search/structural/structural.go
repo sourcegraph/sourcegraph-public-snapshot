@@ -175,7 +175,6 @@ func (s *StructuralSearch) Run(ctx context.Context, db database.DB, stream strea
 			search.TextRequest,
 			s.UseIndex,
 			s.ContainsRefGlobs,
-			zoektutil.MissingRepoRevStatus(stream),
 		)
 		if err != nil {
 			return err
