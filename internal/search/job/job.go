@@ -97,7 +97,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 		if repoUniverseSearch {
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
-				job, err := builder.newZoektGlobalTextSearch()
+				job, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
@@ -105,7 +105,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			if resultTypes.Has(result.TypeSymbol) {
-				job, err := builder.newZoektGlobalSymbolSearch()
+				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
@@ -410,8 +410,7 @@ type jobBuilder struct {
 	zoekt zoekt.Streamer
 }
 
-func (b *jobBuilder) newZoektGlobalTextSearch() (*zoektutil.GlobalSearch, error) {
-	typ := search.TextRequest
+func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (Job, error) {
 	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
@@ -438,42 +437,21 @@ func (b *jobBuilder) newZoektGlobalTextSearch() (*zoektutil.GlobalSearch, error)
 		Zoekt:          b.zoekt,
 	}
 
-	return &zoektutil.GlobalSearch{
-		GlobalZoektQuery: globalZoektQuery,
-		ZoektArgs:        zoektArgs,
-
-		RepoOptions: b.repoOptions,
-	}, nil
-}
-
-func (b *jobBuilder) newZoektGlobalSymbolSearch() (*symbol.RepoUniverseSymbolSearch, error) {
-	typ := search.SymbolRequest
-	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
-	if err != nil {
-		return nil, err
+	switch typ {
+	case search.SymbolRequest:
+		return &symbol.RepoUniverseSymbolSearch{
+			GlobalZoektQuery: globalZoektQuery,
+			ZoektArgs:        zoektArgs,
+			RepoOptions:      b.repoOptions,
+		}, nil
+	case search.TextRequest:
+		return &zoektutil.GlobalSearch{
+			GlobalZoektQuery: globalZoektQuery,
+			ZoektArgs:        zoektArgs,
+			RepoOptions:      b.repoOptions,
+		}, nil
 	}
-
-	defaultScope, err := zoektutil.DefaultGlobalQueryScope(b.repoOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
-	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
-
-	zoektArgs := &search.ZoektParameters{
-		Query:          nil,
-		Typ:            typ,
-		FileMatchLimit: b.fileMatchLimit,
-		Select:         b.selector,
-		Zoekt:          b.zoekt,
-	}
-
-	return &symbol.RepoUniverseSymbolSearch{
-		GlobalZoektQuery: globalZoektQuery,
-		ZoektArgs:        zoektArgs,
-		RepoOptions:      b.repoOptions,
-	}, nil
+	return nil, errors.Errorf("attempt to create unrecognized zoekt global search with value %v", typ)
 }
 
 func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (Job, error) {
