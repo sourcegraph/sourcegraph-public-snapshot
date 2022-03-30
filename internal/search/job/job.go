@@ -67,6 +67,16 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 	features := toFeatures(jargs.SearchInputs.Features)
 	repoOptions := toRepoOptions(q, jargs.SearchInputs.UserSettings)
+
+	builder := &jobBuilder{
+		query:          b,
+		resultTypes:    resultTypes,
+		repoOptions:    repoOptions,
+		features:       &features,
+		fileMatchLimit: fileMatchLimit,
+		selector:       selector,
+	}
+
 	repoUniverseSearch, skipRepoSubsetSearch, onlyRunSearcher := jobMode(b, resultTypes, jargs.SearchInputs.PatternType, jargs.SearchInputs.OnSourcegraphDotCom)
 
 	var requiredJobs, optionalJobs []Job
@@ -87,7 +97,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 
 		if repoUniverseSearch {
 			if resultTypes.Has(result.TypeFile | result.TypePath) {
-				job, err := newZoektGlobalTextSearch(b, repoOptions, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
+				job, err := builder.newZoektGlobalTextSearch()
 				if err != nil {
 					return nil, err
 				}
@@ -95,7 +105,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			}
 
 			if resultTypes.Has(result.TypeSymbol) {
-				job, err := newZoektGlobalSymbolSearch(b, repoOptions, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
+				job, err := builder.newZoektGlobalSymbolSearch()
 				if err != nil {
 					return nil, err
 				}
@@ -106,7 +116,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
 			var textSearchJobs []Job
 			if !onlyRunSearcher {
-				job, err := newZoektTextSearch(b, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
+				job, err := builder.newZoektTextSearch()
 				if err != nil {
 					return nil, err
 				}
@@ -133,7 +143,7 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 			var symbolSearchJobs []Job
 
 			if !onlyRunSearcher {
-				job, err := newZoektSymbolSearch(b, resultTypes, &features, fileMatchLimit, selector, jargs.Zoekt)
+				job, err := builder.newZoektSymbolSearch()
 				if err != nil {
 					return nil, err
 				}
@@ -376,27 +386,43 @@ func toRepoOptions(q query.Q, userSettings *schema.Settings) search.RepoOptions 
 	}
 }
 
-func newZoektGlobalTextSearch(
-	b query.Basic,
-	repoOptions search.RepoOptions,
-	resultTypes result.Types,
-	features *search.Features,
-	fileMatchLimit int32,
-	selector filter.SelectPath,
-	zoekt zoekt.Streamer,
-) (*zoektutil.GlobalSearch, error) {
+// jobBuilder represents computed static values that are backend agnostic: we
+// generally need to compute these values before we're able to create (or build)
+// multiple specific jobs. If you want to add new fields or state to run a
+// search, ask yourself: is this value specific to a backend like Zoekt,
+// searcher, or gitserver, or a new backend? If yes, then that new field does
+// not belong in this builder type, and your new field should probably be
+// computed either using values in this builder, or obtained from the outside
+// world where you construct your specific search job.
+//
+// If you _may_ need the value available to start a search across differnt
+// backends, then this builder type _may_ be the right place for it to live.
+// If in doubt, ask the search team.
+type jobBuilder struct {
+	query          query.Basic
+	resultTypes    result.Types
+	repoOptions    search.RepoOptions
+	features       *search.Features
+	fileMatchLimit int32
+	selector       filter.SelectPath
+
+	// Just a handle to a Zoekt client, which we always want around.
+	zoekt zoekt.Streamer
+}
+
+func (b *jobBuilder) newZoektGlobalTextSearch() (*zoektutil.GlobalSearch, error) {
 	typ := search.TextRequest
-	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
 
-	defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+	defaultScope, err := zoektutil.DefaultGlobalQueryScope(b.repoOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
 	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
 	zoektArgs := &search.ZoektParameters{
@@ -407,97 +433,75 @@ func newZoektGlobalTextSearch(
 		// searches at all, and will be removed once jobs are fully migrated.
 		Query:          nil,
 		Typ:            typ,
-		FileMatchLimit: fileMatchLimit,
-		Select:         selector,
-		Zoekt:          zoekt,
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Zoekt:          b.zoekt,
 	}
 
 	return &zoektutil.GlobalSearch{
 		GlobalZoektQuery: globalZoektQuery,
 		ZoektArgs:        zoektArgs,
 
-		RepoOptions: repoOptions,
+		RepoOptions: b.repoOptions,
 	}, nil
 }
 
-func newZoektGlobalSymbolSearch(
-	b query.Basic,
-	repoOptions search.RepoOptions,
-	resultTypes result.Types,
-	features *search.Features,
-	fileMatchLimit int32,
-	selector filter.SelectPath,
-	zoekt zoekt.Streamer,
-) (*symbol.RepoUniverseSymbolSearch, error) {
+func (b *jobBuilder) newZoektGlobalSymbolSearch() (*symbol.RepoUniverseSymbolSearch, error) {
 	typ := search.SymbolRequest
-	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
 
-	defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+	defaultScope, err := zoektutil.DefaultGlobalQueryScope(b.repoOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
 	globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
 	zoektArgs := &search.ZoektParameters{
 		Query:          nil,
 		Typ:            typ,
-		FileMatchLimit: fileMatchLimit,
-		Select:         selector,
-		Zoekt:          zoekt,
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Zoekt:          b.zoekt,
 	}
 
 	return &symbol.RepoUniverseSymbolSearch{
 		GlobalZoektQuery: globalZoektQuery,
 		ZoektArgs:        zoektArgs,
-		RepoOptions:      repoOptions,
+		RepoOptions:      b.repoOptions,
 	}, nil
 }
 
-func newZoektTextSearch(
-	b query.Basic,
-	resultTypes result.Types,
-	features *search.Features,
-	fileMatchLimit int32,
-	selector filter.SelectPath,
-	zoekt zoekt.Streamer,
-) (*zoektutil.ZoektRepoSubsetSearch, error) {
+func (b *jobBuilder) newZoektTextSearch() (*zoektutil.ZoektRepoSubsetSearch, error) {
 	typ := search.TextRequest
-	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
 	return &zoektutil.ZoektRepoSubsetSearch{
 		Query:          zoektQuery,
 		Typ:            typ,
-		FileMatchLimit: fileMatchLimit,
-		Select:         selector,
-		Zoekt:          zoekt,
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Zoekt:          b.zoekt,
 	}, nil
 }
 
-func newZoektSymbolSearch(
-	b query.Basic,
-	resultTypes result.Types,
-	features *search.Features,
-	fileMatchLimit int32,
-	selector filter.SelectPath,
-	zoekt zoekt.Streamer,
-) (*zoektutil.ZoektSymbolSearch, error) {
+func (b *jobBuilder) newZoektSymbolSearch() (*zoektutil.ZoektSymbolSearch, error) {
 	typ := search.SymbolRequest
-	zoektQuery, err := search.QueryToZoektQuery(b, resultTypes, features, typ)
+	zoektQuery, err := search.QueryToZoektQuery(b.query, b.resultTypes, b.features, typ)
 	if err != nil {
 		return nil, err
 	}
 	return &zoektutil.ZoektSymbolSearch{
 		Query:          zoektQuery,
-		FileMatchLimit: fileMatchLimit,
-		Select:         selector,
-		Zoekt:          zoekt,
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Zoekt:          b.zoekt,
 	}, nil
 }
 
