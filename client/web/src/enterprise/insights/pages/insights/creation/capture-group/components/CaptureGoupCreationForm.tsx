@@ -3,12 +3,12 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CodeInsightTimeStepPicker, CodeInsightDashboardsVisibility } from '../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
-import { FormInput } from '../../../../../components/form/form-input/FormInput'
+import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
@@ -86,17 +86,14 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 title="Targeted repositories"
                 subtitle="Create a list of repositories to run your search over"
             >
-                <FormInput
+                <Input
                     as={RepositoriesField}
                     autoFocus={true}
                     required={true}
-                    title="Repositories"
-                    description="Separate repositories with commas"
+                    label="Repositories"
+                    message="Separate repositories with commas"
                     placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    loading={repositories.meta.validState === 'CHECKING'}
-                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
-                    error={repositories.meta.touched && repositories.meta.error}
-                    {...repositories.input}
+                    {...getDefaultInputProps(repositories)}
                     className="mb-0 d-flex flex-column"
                 />
 
@@ -142,18 +139,19 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 }
             >
                 <Card className="p-3">
-                    <FormInput
-                        title="Search query"
-                        required={true}
-                        as={CaptureGroupQueryInput}
-                        repositories={repositories.input.value}
-                        subtitle={<QueryFieldSubtitle className="mb-3" />}
-                        placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
-                        valid={query.meta.touched && query.meta.validState === 'VALID'}
-                        error={query.meta.touched && query.meta.error}
-                        className="mb-3"
-                        {...query.input}
-                    />
+                    <Label className="w-100">
+                        <div className="mb-2">Search query</div>
+                        <QueryFieldSubtitle className="mb-3" />
+
+                        <Input
+                            required={true}
+                            as={CaptureGroupQueryInput}
+                            repositories={repositories.input.value}
+                            placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
+                            className="mb-3"
+                            {...getDefaultInputProps(query)}
+                        />
+                    </Label>
 
                     <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
@@ -191,14 +189,12 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
             <hr className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
-                <FormInput
-                    title="Title"
+                <Input
+                    label="Title"
                     required={true}
-                    description="Shown as the title for your insight"
+                    message="Shown as the title for your insight"
                     placeholder="Example: Migration to React function components"
-                    valid={title.meta.touched && title.meta.validState === 'VALID'}
-                    error={title.meta.touched && title.meta.error}
-                    {...title.input}
+                    {...getDefaultInputProps(title)}
                     className="d-flex flex-column"
                 />
 
