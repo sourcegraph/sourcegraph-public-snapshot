@@ -2274,7 +2274,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 	if err != nil {
 		return errors.Wrap(err, "get remote show command")
 	}
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	output, err := runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
@@ -2291,11 +2291,11 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 
 	// check if branch pointed to by HEAD exists
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", headBranch, "--")
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
 		// branch does not exist, pick first branch
 		cmd := exec.CommandContext(ctx, "git", "branch")
-		cmd.Dir = string(dir)
+		dir.Set(cmd)
 		list, err := cmd.Output()
 		if err != nil {
 			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
@@ -2310,7 +2310,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 
 	// set HEAD
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
-	cmd.Dir = string(dir)
+	dir.Set(cmd)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "Failed to set HEAD")
@@ -2449,7 +2449,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
-	cmd.Dir = string(repoDir)
+	repoDir.Set(cmd)
 	if err := cmd.Run(); err == nil {
 		return false
 	}
