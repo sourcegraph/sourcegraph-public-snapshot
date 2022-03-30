@@ -1810,11 +1810,11 @@ extend type Query {
     """
     availableBulkOperations(
         """
-        the batch change the selected changesets belong to
+        The batch change the selected changesets belong to.
         """
         batchChange: ID!
         """
-        the changesets to query for bulk operations applicable to
+        The changesets to query for bulk operations applicable to.
         """
         changesets: [ID!]!
     ): [BulkOperationType!]!

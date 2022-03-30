@@ -1491,7 +1491,8 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 	}
 
 	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
-		IDs: opts.Changesets,
+		IDs:          opts.Changesets,
+		EnforceAuthz: true,
 	})
 
 	if err != nil {

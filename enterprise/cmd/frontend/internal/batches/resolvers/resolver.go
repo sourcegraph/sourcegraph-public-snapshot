@@ -1834,7 +1834,7 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 	}
 
 	if len(args.Changesets) == 0 {
-		return nil, errors.New("no changeset(s) provided")
+		return nil, errors.New("no changesets provided")
 	}
 
 	unmarshalledBatchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
@@ -1842,14 +1842,14 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	var changesetIDs []int64
-	for _, changesetID := range args.Changesets {
+	changesetIDs := make([]int64, 0, len(args.Changesets))
+	for i, changesetID := range args.Changesets {
 		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
 		if err != nil {
 			return nil, err
 		}
 
-		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
+		changesetIDs[i] = unmarshalledChangesetID
 	}
 
 	svc := service.New(r.store)
