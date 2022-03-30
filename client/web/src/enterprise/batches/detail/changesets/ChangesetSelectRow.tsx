@@ -159,18 +159,21 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         useMemo(() => queryAllChangesetIDs(queryArguments), [queryArguments, queryAllChangesetIDs])
     )
 
+    // Depending on the selection, the set of changeset ids to act on is different.
+    const ids = useMemo(() => selected === 'all' ? allChangesetIDs || [] : [...selected], [selected, allChangesetIDs])
+
     /**
      * Query the backed to figure out what bulk operations can be applied
      * to the selected changesets
      */
     const availableBulkOperations = useObservable(
         useMemo(() => {
-            if (Array.isArray(allChangesetIDs) && allChangesetIDs.length > 0) {
-                return queryAvailableBulkOperations({ batchChange: batchChangeID, changesets: allChangesetIDs })
+            if (ids.length > 0) {
+                return queryAvailableBulkOperations({ batchChange: batchChangeID, changesets: ids })
             }
 
             return of([])
-        }, [queryAvailableBulkOperations, batchChangeID, allChangesetIDs])
+        }, [batchChangeID, ids, queryAvailableBulkOperations])
     )
 
     const actions = useMemo(() => {
@@ -182,25 +185,20 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
             const action = AVAILABLE_ACTIONS[operation]
             const dropdownAction: Action = {
                 ...action,
-                onTrigger: (onDone, onCancel) => {
-                    // Depending on the selection, the set of changeset ids to act on is different.
-                    const ids = selected === 'all' ? allChangesetIDs || [] : [...selected]
-
-                    return action.onTrigger(
-                        batchChangeID,
-                        ids,
-                        () => {
-                            onSubmit()
-                            onDone()
-                        },
-                        onCancel
-                    )
-                },
+                onTrigger: (onDone, onCancel) => action.onTrigger(
+                    batchChangeID,
+                    ids,
+                    () => {
+                        onSubmit()
+                        onDone()
+                    },
+                    onCancel
+                ),
             }
 
             return dropdownAction
         })
-    }, [allChangesetIDs, availableBulkOperations, batchChangeID, onSubmit, selected])
+    }, [availableBulkOperations, batchChangeID, ids, onSubmit])
 
     return (
         <>

@@ -1472,3 +1472,84 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 
 	return nil
 }
+
+type GetAvailableBulkOperationsOpts struct {
+	BatchChange int64
+	Changesets  []int64
+}
+
+// RetryBatchSpecExecution retries all BatchSpecWorkspaceExecutionJobs
+// attached to the given BatchSpec.
+// It only deletes changeset_specs created by workspaces. The imported changeset_specs
+// will not be altered.
+func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvailableBulkOperationsOpts) ([]string, error) {
+	bulkOperationsCounter := map[btypes.ChangesetJobType]int{
+		btypes.ChangesetJobTypePublish:   0,
+		btypes.ChangesetJobTypeComment:   0,
+		btypes.ChangesetJobTypeClose:     0,
+		btypes.ChangesetJobTypeDetach:    0,
+		btypes.ChangesetJobTypeReenqueue: 0,
+		btypes.ChangesetJobTypeMerge:     0,
+	}
+
+	changesets, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs: opts.Changesets,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, changeset := range changesets {
+		if changeset.ArchivedIn(opts.BatchChange) {
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeDetach] += 1
+			continue
+		}
+
+		if changeset.ReconcilerState == btypes.ReconcilerStateFailed {
+			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
+			continue
+		}
+
+		if changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+			continue
+		}
+
+		// check what operations this changeset support, most likely from the state
+		// so get the changeset then derive the operations from it's state
+		switch changeset.ExternalState {
+		case btypes.ChangesetExternalStateDraft:
+			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+		case btypes.ChangesetExternalStateOpen:
+			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
+		case btypes.ChangesetExternalStateClosed:
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+		case btypes.ChangesetExternalStateMerged:
+			bulkOperationsCounter[btypes.ChangesetJobTypeComment] += 1
+			bulkOperationsCounter[btypes.ChangesetJobTypeClose] += 1
+		}
+	}
+
+	noOfChangesets := len(opts.Changesets)
+	var availableBulkOperations []string
+	for jobType, count := range bulkOperationsCounter {
+		// we only want to return bulkoperationType that can be applied
+		// to all given changesets.
+		if count == noOfChangesets {
+			operation := strings.ToUpper(string(jobType))
+			if operation == "COMMENTATORE" {
+				operation = "COMMENT"
+			}
+			availableBulkOperations = append(availableBulkOperations, operation)
+		}
+	}
+
+	return availableBulkOperations, nil
+}

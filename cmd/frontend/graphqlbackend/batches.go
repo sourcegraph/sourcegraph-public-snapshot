@@ -578,8 +578,8 @@ type ListBatchSpecArgs struct {
 }
 
 type AvailableBulkOperationsArgs struct {
-	BatchChangeID graphql.ID
-	ChangesetIDs  []graphql.ID
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
 }
 
 type ListWorkspacesArgs struct {

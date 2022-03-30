@@ -909,7 +909,7 @@ export const queryAvailableBulkOperations = ({
     requestGraphQL<AvailableBulkOperationsResult, AvailableBulkOperationsVariables>(
         gql`
             query AvailableBulkOperations($batchChange: ID!, $changesets: [ID!]!) {
-                availableBulkOperations(batchChangeID: $batchChange, changesetIDs: $changesets)
+                availableBulkOperations(batchChange: $batchChange, changesets: $changesets)
             }
         `,
         { batchChange, changesets }
