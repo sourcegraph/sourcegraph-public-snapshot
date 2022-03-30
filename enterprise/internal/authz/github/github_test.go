@@ -786,6 +786,11 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 			p.client = mockClientFunc(&mockClient{
 				MockListRepositoryCollaborators: mockListCollaborators,
+				MockListOrganizations: func(ctx context.Context, since int) (orgs []*github.Org, nextSince int, _ error) {
+					return []*github.Org{
+						{ID: 1, Login: "org"},
+					}, -1, nil
+				},
 				MockListOrganizationMembers: func(_ context.Context, _ string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
 					if adminOnly {
 						return []*github.Collaborator{
