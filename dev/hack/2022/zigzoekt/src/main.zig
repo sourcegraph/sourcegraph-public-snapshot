@@ -1,26 +1,24 @@
 const std = @import("std");
 
-const simpleSection = struct{
+const SimpleSection = struct{
     off: u32,
     sz: u32,
 };
 
-fn readSimpleSection(reader: anytype) !simpleSection {
+fn readSimpleSection(reader: anytype) !SimpleSection {
     const off = try reader.readInt(u32, std.builtin.Endian.Big);
     const sz = try reader.readInt(u32, std.builtin.Endian.Big);
-    return simpleSection{
+    return SimpleSection{
         .off = off,
         .sz = sz,
     };
 }
 
-pub fn main() anyerror!void {
-    const file = try std.fs.cwd().openFile(
-        "github.com%2Fkeegancsmith%2Fsqlf_v16.00000.zoekt",
-        .{},
-    );
-    defer file.close();
+const TOC = struct{
+    fileContents: SimpleSection,
+};
 
+fn readTOC(file: std.fs.File) !TOC {
     try file.seekFromEnd(-8);
     const tocSection = try readSimpleSection(file.reader());
 
@@ -34,7 +32,7 @@ pub fn main() anyerror!void {
         return error.EndOfStream;
     }
 
-    var contentSection: simpleSection = undefined;
+    var contentSection: SimpleSection = undefined;
     var buffer: [1024]u8 = undefined;
     while(true) {
         var slen = try std.leb.readULEB128(u64, sectionReader);
@@ -58,8 +56,8 @@ pub fn main() anyerror!void {
             },
             1, 2 => {
                 // compound and lazy section have same shape. Just skip the
-                // index simpleSection. We have already read the main
-                // simpleSection.
+                // index SimpleSection. We have already read the main
+                // SimpleSection.
                 try sectionReader.skipBytes(8, .{});
             },
             else => {
@@ -68,10 +66,25 @@ pub fn main() anyerror!void {
         }
     }
 
-    try file.seekTo(contentSection.off);
-    var contentReader = std.io.limitedReader(file.reader(), contentSection.sz).reader();
+    return TOC{
+        .fileContents = contentSection,
+    };
+}
+
+pub fn main() anyerror!void {
+    const file = try std.fs.cwd().openFile(
+        "github.com%2Fkeegancsmith%2Fsqlf_v16.00000.zoekt",
+        .{},
+    );
+    defer file.close();
+
+    const toc = try readTOC(file);
+
+    try file.seekTo(toc.fileContents.off);
+    var contentReader = std.io.limitedReader(file.reader(), toc.fileContents.sz).reader();
 
     var needle = "func";
+    var buffer: [1024]u8 = undefined;
     while (contentReader.readUntilDelimiterOrEof(&buffer, '\n') catch { return; }) |line| {
         if (std.mem.containsAtLeast(u8, line, 1, needle)) {
             std.log.info("HI: {s}", .{line});
