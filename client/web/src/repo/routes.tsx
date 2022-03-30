@@ -146,6 +146,28 @@ export const RepoDocs: React.FunctionComponent<any> = ({
     </>
 )
 
+export const RepoContributors: React.FunctionComponent<any> = ({
+    useBreadcrumb,
+    setBreadcrumb,
+    repo,
+    history,
+    location,
+    match,
+    globbing,
+}) => (
+    <>
+        <RepositoryStatsArea
+            useBreadcrumb={useBreadcrumb}
+            setBreadcrumb={setBreadcrumb}
+            repo={repo}
+            history={history}
+            location={location}
+            match={match}
+            globbing={globbing}
+        />
+    </>
+)
+
 export const RepoCommits: React.FunctionComponent<any> = ({
     resolvedRev: { commitID },
     repoHeaderContributionsLifecycleProps,
@@ -168,8 +190,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         '/-/commits/tab',
         '/-/branch/tab',
         '/-/tag/tab',
-        '/-/repo-contributors/tab',
+        '/-/contributors/tab',
         '/-/compares/:spec*',
+        '/-/home/tab',
     ].map(routePath => ({
         path: routePath,
         exact: routePath === '',
@@ -199,7 +222,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     {
         path: '/-/tag',
         render: ({ repo, location, history }) => (
-            <RepositoryTagTab repo={repo} location={location} history={history}/>
+            <RepositoryTagTab repo={repo} location={location} history={history} match={undefined} routePrefix="" />
         ), // TODO: figure out how to pass the properties: match and routePrefix
     },
     {
@@ -220,11 +243,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ),
     },
     {
-        path: '/-/repo-contributors',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryReleasesArea {...context} />
-            </RepositoryGitDataContainer>
-        ),
+        path: '/-/contributors',
+        render: RepoContributors,
     },
 ]

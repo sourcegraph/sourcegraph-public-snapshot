@@ -26,11 +26,12 @@ import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { TreePageRepositoryFields  } from '../../graphql-operations'
+import { TreePageRepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepoCommits, RepoDocs } from '../routes'
+import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
 import { RepositoryBranchesTab } from './BranchesTab'
 import { HomeTab } from './HomeTab'
@@ -237,21 +238,75 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
                             <section className={classNames('test-tree-entries mb-3', styles.section)}>
                                 <Switch>
-                                    <Route path={`${treeOrError.url}/-/docs/tab`}>
-                                        <RepoDocs repo={repo} useBreadcrumb={useBreadcrumb} {...props} />
-                                    </Route>
-                                    <Route path={`${treeOrError.url}/-/commits/tab`}>
-                                        <RepoCommits repo={repo} useBreadcrumb={useBreadcrumb} {...props} />
-                                    </Route>
-                                    <Route path={`${treeOrError.url}/-/home/tab`}>
-                                        <HomeTab {...homeTabProps} {...props} repo={repo} />
-                                    </Route>
-                                    <Route path={`${treeOrError.url}/-/branch/tab`}>
-                                        <RepositoryBranchesTab repo={repo} location={location} history={history} />
-                                    </Route>
-                                    <Route path={`${treeOrError.url}/-/tag/tab`}>
-                                        <RepositoryTagTab repo={repo} location={location} history={history} {...props}/>
-                                    </Route>
+                                    <Route
+                                        path={`${treeOrError.url}/-/tag/tab`}
+                                        render={routeComponentProps => {
+                                            setSelectedTab('docs')
+                                            return <RepositoryTagTab repo={repo} {...routeComponentProps} {...props} />
+                                        }}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/docs/tab`}
+                                        render={routeComponentProps => {
+                                            setSelectedTab('docs')
+                                            return (
+                                                <RepoDocs
+                                                    repo={repo}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...routeComponentProps}
+                                                    {...props}
+                                                />
+                                            )
+                                        }}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/commits/tab`}
+                                        render={routeComponentProps => {
+                                            setSelectedTab('commits')
+                                            return (
+                                                <RepoCommits
+                                                    repo={repo}
+                                                    useBreadcrumb={useBreadcrumb}
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                />
+                                            )
+                                        }}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/home/tab`}
+                                        render={routeComponentProps => {
+                                            setSelectedTab('home')
+                                            return (
+                                                <HomeTab
+                                                    {...homeTabProps}
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                    repo={repo}
+                                                />
+                                            )
+                                        }}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/branch/tab`}
+                                        render={routeComponentProps => {
+                                            setSelectedTab('branch')
+                                            return <RepositoryBranchesTab repo={repo} {...routeComponentProps} />
+                                        }}
+                                    />
+                                    <Route
+                                        path={`${treeOrError.url}/-/contributors/tab`}
+                                        render={routeComponentProps => {
+                                            setSelectedTab('contributors')
+                                            return (
+                                                <RepositoryStatsContributorsPage
+                                                    {...routeComponentProps}
+                                                    repo={repo}
+                                                    {...props}
+                                                />
+                                            )
+                                        }}
+                                    />
                                 </Switch>
                                 {selectedTab === 'home' && <HomeTab {...homeTabProps} {...props} repo={repo} />}
                             </section>
