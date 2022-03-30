@@ -55,7 +55,7 @@ fn readTOC(file: std.fs.File) !TOC {
         const index: SimpleSection = try switch(kind) {
             0 => undefined,
             1, 2 => readSimpleSection(reader),
-            else => undefined, // TODO return error. Couldn't get zig to work for me here.
+            else => return error.EndOfStream,
         };
 
         if (std.mem.eql(u8, name, "fileContents")) {
