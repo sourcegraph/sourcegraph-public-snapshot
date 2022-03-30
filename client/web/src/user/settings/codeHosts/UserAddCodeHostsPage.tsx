@@ -172,13 +172,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
     }, [])
 
-    useEffect((): void => {
-        const script = document.createElement('script')
-        script.src = 'https://cdn.statuspage.io/se-v2.js'
-        script.async = true
-        document.body.append(script)
-    }, [])
-
     async function checkAndSetOutageAlert(
         services: Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
     ): Promise<void> {
