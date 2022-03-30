@@ -11,9 +11,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Server) RegisterMetrics(db dbutil.DB) {
+func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.Context) {
 	// test the latency of exec, which may increase under certain memory
 	// conditions
 	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -84,4 +85,7 @@ func (s *Server) RegisterMetrics(db dbutil.DB) {
 		return float64(count)
 	})
 	prometheus.MustRegister(c)
+
+	// Register uniform observability via internal/observation
+	s.operations = newOperations(observationContext)
 }

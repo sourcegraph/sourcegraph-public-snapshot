@@ -46,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -243,6 +244,12 @@ type Server struct {
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
+
+	// operations provide uniform observability via internal/observation. This value is
+	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
+	// method ensureOperations should be used in all references to avoid a nil pointer
+	// dereferencs.
+	operations *operations
 }
 
 type locks struct {
@@ -1131,6 +1138,17 @@ func matchCount(cm *protocol.CommitMatch) int {
 		return len(cm.Message.MatchedRanges)
 	}
 	return 1
+}
+
+// ensureOperations returns the non-nil operations value supplied to this server
+// via RegisterMetrics (when constructed as part of the gitserver binary), or
+// constructs and memoizes a no-op operations value (for use in tests).
+func (s *Server) ensureOperations() *operations {
+	if s.operations == nil {
+		s.operations = newOperations(&observation.TestContext)
+	}
+
+	return s.operations
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
