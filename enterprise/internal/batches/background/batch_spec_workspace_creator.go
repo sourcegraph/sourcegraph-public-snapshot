@@ -324,9 +324,14 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	// if batchSpec.autoRun {
-	// svc.ExecuteBatchSpec(ctx, tx)
-	// }
+	if spec.AutoExecute {
+		svc := service.New(tx)
+		if spec, err = svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
+			BatchSpecRandID: spec.RandID,
+		}); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

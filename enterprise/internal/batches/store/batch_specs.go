@@ -29,6 +29,7 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.allow_unsupported"),
 	sqlf.Sprintf("batch_specs.allow_ignored"),
 	sqlf.Sprintf("batch_specs.auto_apply"),
+	sqlf.Sprintf("batch_specs.auto_execute"),
 	sqlf.Sprintf("batch_specs.no_cache"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
@@ -47,12 +48,13 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("allow_unsupported"),
 	sqlf.Sprintf("allow_ignored"),
 	sqlf.Sprintf("auto_apply"),
+	sqlf.Sprintf("auto_execute"),
 	sqlf.Sprintf("no_cache"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -105,6 +107,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.AutoApply,
+		c.AutoExecute,
 		c.NoCache,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -157,6 +160,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.AutoApply,
+		c.AutoExecute,
 		c.NoCache,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -569,7 +573,8 @@ func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 		&c.CreatedFromRaw,
 		&c.AllowUnsupported,
 		&c.AllowIgnored,
-		c.AutoApply,
+		&c.AutoApply,
+		&c.AutoExecute,
 		&c.NoCache,
 		&c.CreatedAt,
 		&c.UpdatedAt,

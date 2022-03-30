@@ -43,6 +43,7 @@ type BatchSpec struct {
 	AllowIgnored     bool
 	NoCache          bool
 	AutoApply        bool
+	AutoExecute      bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

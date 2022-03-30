@@ -322,6 +322,7 @@ type CreateBatchSpecFromRawOpts struct {
 	AllowIgnored     bool
 	AllowUnsupported bool
 	NoCache          bool
+	AutoExecute      bool
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -329,6 +330,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	ctx, endObservation := s.operations.createBatchSpecFromRaw.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Bool("allowIgnored", opts.AllowIgnored),
 		log.Bool("allowUnsupported", opts.AllowUnsupported),
+		log.Bool("autoExecute", opts.AutoExecute),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -358,6 +360,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		allowIgnored:     opts.AllowIgnored,
 		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
+		autoExecute:      opts.AutoExecute,
 	})
 }
 
@@ -366,6 +369,7 @@ type createBatchSpecForExecutionOpts struct {
 	allowUnsupported bool
 	allowIgnored     bool
 	noCache          bool
+	autoExecute      bool
 }
 
 // createBatchSpecForExecution persists the given BatchSpec in the given
@@ -376,6 +380,7 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
 	opts.spec.NoCache = opts.noCache
+	opts.spec.AutoExecute = opts.autoExecute
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err

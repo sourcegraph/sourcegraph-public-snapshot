@@ -9,6 +9,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
+	batchesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -380,31 +382,37 @@ func (r *actionRunner) handleBatchChange(ctx context.Context, j *edb.ActionJob) 
 		return errors.Wrap(err, "GetActionJobMetadata")
 	}
 
-	_, err = s.GetBatchChangeAction(ctx, *j.BatchChange)
+	action, err := s.GetBatchChangeAction(ctx, *j.BatchChange)
 	if err != nil {
 		return errors.Wrap(err, "GetBatchChangeAction")
 	}
 
-	// externalURL, err := getExternalURL(ctx)
-	// if err != nil {
-	// 	return err
-	// }
+	bstore := batchesstore.New(s.Handle().DB(), nil, nil)
+	bc, err := bstore.GetBatchChange(ctx, batchesstore.GetBatchChangeOpts{
+		ID: action.BatchChange,
+	})
+	if err != nil {
+		return err
+	}
+	spec, err := bstore.GetBatchSpec(ctx, batchesstore.GetBatchSpecOpts{ID: bc.BatchSpecID})
+	if err != nil {
+		return err
+	}
+	svc := service.New(bstore)
+	if _, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
+		RawSpec:          spec.RawSpec,
+		AllowIgnored:     spec.AllowIgnored,
+		AllowUnsupported: spec.AllowUnsupported,
+		NoCache:          spec.NoCache,
+		NamespaceUserID:  spec.NamespaceUserID,
+		NamespaceOrgID:   spec.NamespaceOrgID,
+
+		AutoExecute: true,
+	}); err != nil {
+		return err
+	}
 
 	return nil
-
-	// batchesstore.New(s.Handle().DB(), )
-
-	// args := actionArgs{
-	// 	MonitorDescription: m.Description,
-	// 	MonitorID:          w.Monitor,
-	// 	ExternalURL:        externalURL,
-	// 	UTMSource:          "code-monitor-slack-webhook",
-	// 	Query:              m.Query,
-	// 	MonitorOwnerName:   m.OwnerName,
-	// 	Results:            m.Results,
-	// }
-
-	// return sendSlackNotification(ctx, w.URL, args)
 }
 
 type StatusCodeError struct {

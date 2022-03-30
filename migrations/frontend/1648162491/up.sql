@@ -11,5 +11,6 @@ CREATE TABLE IF NOT EXISTS code_monitors_batch_changes (
 );
 
 ALTER TABLE batch_specs ADD COLUMN IF NOT EXISTS auto_apply boolean NOT NULL DEFAULT false;
+ALTER TABLE batch_specs ADD COLUMN IF NOT EXISTS auto_execute boolean NOT NULL DEFAULT false;
 
 ALTER TABLE cm_action_jobs ADD COLUMN IF NOT EXISTS batch_change integer;
