@@ -1,5 +1,19 @@
 const std = @import("std");
 
+const simpleSection = struct{
+    off: u32,
+    sz: u32,
+};
+
+fn readSimpleSection(reader: anytype) !simpleSection {
+    const off = try reader.readInt(u32, std.builtin.Endian.Big);
+    const sz = try reader.readInt(u32, std.builtin.Endian.Big);
+    return simpleSection{
+        .off = off,
+        .sz = sz,
+    };
+}
+
 pub fn main() anyerror!void {
     const file = try std.fs.cwd().openFile(
         "github.com%2Fkeegancsmith%2Fsqlf_v16.00000.zoekt",
@@ -8,16 +22,11 @@ pub fn main() anyerror!void {
     defer file.close();
 
     try file.seekFromEnd(-8);
-
-    var reader = file.reader();
-
-    const off = try reader.readInt(u32, std.builtin.Endian.Big);
-    const sz = try reader.readInt(u32, std.builtin.Endian.Big);
+    const tocSection = try readSimpleSection(file.reader());
 
     // Go to TOC
-    try file.seekTo(off);
-
-    var sectionReader = std.io.limitedReader(file.reader(), sz).reader();
+    try file.seekTo(tocSection.off);
+    var sectionReader = std.io.limitedReader(file.reader(), tocSection.sz).reader();
 
     const sectionCount = try sectionReader.readInt(u32, std.builtin.Endian.Big);
     if (sectionCount != 0) {
@@ -25,7 +34,7 @@ pub fn main() anyerror!void {
         return error.EndOfStream;
     }
 
-    var contentSz: u32 = undefined;
+    var contentSection: simpleSection = undefined;
     var buffer: [1024]u8 = undefined;
     while(true) {
         var slen = try std.leb.readULEB128(u64, sectionReader);
@@ -35,21 +44,23 @@ pub fn main() anyerror!void {
         try sectionReader.readNoEof(name);
 
         // Section Kind (0 = simple section, 1 = compound section)
-        const kind = try reader.readIntBig(u8);
+        const kind = try sectionReader.readByte();
 
-        try sectionReader.skipBytes(4, .{}); // skip offset
-        const sz3 = try reader.readIntBig(u32);
+        const section = try readSimpleSection(sectionReader);
 
         if (std.mem.eql(u8, name, "fileContents")) {
-            contentSz = sz3;
+            contentSection = section;
             break;
         }
 
         switch(kind) {
             0 => { // simple section
             },
-            1, 2 => { // compound and lazy section have same shape
-                try sectionReader.skipBytes(8, .{}); // 2 * 2 * sizeof(u32)
+            1, 2 => {
+                // compound and lazy section have same shape. Just skip the
+                // index simpleSection. We have already read the main
+                // simpleSection.
+                try sectionReader.skipBytes(8, .{});
             },
             else => {
                 return error.EndOfStream;
@@ -57,8 +68,8 @@ pub fn main() anyerror!void {
         }
     }
 
-    try file.seekTo(0);
-    var contentReader = std.io.limitedReader(file.reader(), contentSz).reader();
+    try file.seekTo(contentSection.off);
+    var contentReader = std.io.limitedReader(file.reader(), contentSection.sz).reader();
 
     var needle = "func";
     while (contentReader.readUntilDelimiterOrEof(&buffer, '\n') catch { return; }) |line| {
