@@ -31,8 +31,8 @@ const extractExtensionStyles = async (page: puppeteer.Page): Promise<string> =>
         [...document.styleSheets]
             .filter(styleSheet => styleSheet.href?.startsWith('chrome-extension://'))
             .reduce(
-                (allRules, styleSheet) =>
-                    allRules.concat(
+                (styleSheetRules, styleSheet) =>
+                    styleSheetRules.concat(
                         [...styleSheet.cssRules].reduce((rules, current) => rules.concat(current.cssText), '')
                     ),
                 ''
