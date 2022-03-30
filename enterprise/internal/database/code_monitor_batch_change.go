@@ -51,8 +51,8 @@ func (s *codeMonitorStore) UpdateBatchChangeAction(ctx context.Context, id int64
 
 const createBatchChangeActionQuery = `
 INSERT INTO code_monitors_batch_changes
-(code_monitor_id, batch_change_id, enabled, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+(monitor, batch_change_id, enabled, created_by, created_at, changed_by, changed_at)
+VALUES (%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
@@ -78,7 +78,7 @@ func (s *codeMonitorStore) CreateBatchChangeAction(ctx context.Context, monitorI
 const deleteBatchChangeActionQuery = `
 DELETE FROM code_monitors_batch_changes
 WHERE id in (%s)
-	AND code_monitor_id = %s
+	AND monitor = %s
 `
 
 func (s *codeMonitorStore) DeleteBatchChangeActions(ctx context.Context, monitorID int64, actionIDs ...int64) error {
@@ -102,7 +102,7 @@ func (s *codeMonitorStore) DeleteBatchChangeActions(ctx context.Context, monitor
 const countBatchChangeActionsQuery = `
 SELECT COUNT(*)
 FROM code_monitors_batch_changes
-WHERE code_monitor_id = %s;
+WHERE monitor = %s;
 `
 
 func (s *codeMonitorStore) CountBatchChangeActions(ctx context.Context, monitorID int64) (int, error) {
@@ -150,12 +150,12 @@ func (s *codeMonitorStore) ListBatchChangeActions(ctx context.Context, opts List
 	return scanBatchChangeActions(rows)
 }
 
-// batchChangeActionColumns is the set of columns in the cm_slack_webhooks table
+// batchChangeActionColumns is the set of columns in the code_monitors_batch_changes table
 // This must be kept in sync with scanBatchChangeAction.
 var batchChangeActionColumns = []*sqlf.Query{
 	sqlf.Sprintf("code_monitors_batch_changes.id"),
-	sqlf.Sprintf("code_monitors_batch_changes.code_monitor"),
-	sqlf.Sprintf("code_monitors_batch_changes.batch_change"),
+	sqlf.Sprintf("code_monitors_batch_changes.monitor"),
+	sqlf.Sprintf("code_monitors_batch_changes.batch_change_id"),
 	sqlf.Sprintf("code_monitors_batch_changes.enabled"),
 	sqlf.Sprintf("code_monitors_batch_changes.created_by"),
 	sqlf.Sprintf("code_monitors_batch_changes.created_at"),

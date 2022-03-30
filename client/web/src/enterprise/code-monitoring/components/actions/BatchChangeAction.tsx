@@ -52,6 +52,9 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
     authenticatedUser,
     _testStartOpen,
 }) => {
+    if (action && action.__typename !== 'MonitorBatchChange') {
+        throw new Error('invalid state, got action of non batch change action type')
+    }
     const [isEnabled, setIsEnabled] = useState(action ? action.enabled : true)
 
     const toggleEnabled: (enabled: boolean, saveImmediately: boolean) => void = useCallback(
@@ -64,16 +67,19 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
         [action, setAction]
     )
 
-    const [selectedBatchChange, setSelectedBatchChange] = useState<Scalars['ID']>()
+    const [selectedBatchChange, setSelectedBatchChange] = useState<Scalars['ID'] | undefined>(action?.batchChange.id)
 
     const onSubmit: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
+            console.log('onSubmit selected')
             setAction({
                 __typename: 'MonitorBatchChange',
                 id: action ? action.id : '',
                 enabled: isEnabled,
-                batchChange: selectedBatchChange,
+                batchChange: {
+                    id: selectedBatchChange,
+                },
             })
         },
         [action, setAction, isEnabled, selectedBatchChange]
@@ -121,8 +127,7 @@ export const BatchChangeAction: React.FunctionComponent<ActionProps> = ({
             _testStartOpen={_testStartOpen}
         >
             <Alert variant="info" className="mt-4">
-                The specified webhook URL will be called with a JSON payload. The format of this JSON payload is still
-                being modified. Once it is decided on, documentation will be available.
+                We rerun it ok.
             </Alert>
             <Select
                 id="code-monitor-batch-change-id"

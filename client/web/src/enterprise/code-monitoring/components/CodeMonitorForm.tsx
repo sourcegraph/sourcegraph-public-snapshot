@@ -103,10 +103,9 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
         (enabled: boolean): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, enabled })),
         []
     )
-    const onActionsChange = useCallback(
-        (actions: CodeMonitorFields['actions']): void => setCodeMonitor(codeMonitor => ({ ...codeMonitor, actions })),
-        []
-    )
+    const onActionsChange = useCallback((actions: CodeMonitorFields['actions']): void => {
+        setCodeMonitor(codeMonitor => ({ ...codeMonitor, actions }))
+    }, [])
 
     const [requestOnSubmit, codeMonitorOrError] = useEventObservable(
         useCallback(

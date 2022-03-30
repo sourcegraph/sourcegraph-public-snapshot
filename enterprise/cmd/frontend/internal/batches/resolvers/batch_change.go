@@ -22,6 +22,10 @@ import (
 
 var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 
+func NewBatchChangeResolver(store *store.Store, bc *btypes.BatchChange) graphqlbackend.BatchChangeResolver {
+	return &batchChangeResolver{store: store, batchChange: bc}
+}
+
 type batchChangeResolver struct {
 	store *store.Store
 

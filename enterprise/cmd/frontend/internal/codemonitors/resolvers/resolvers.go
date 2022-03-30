@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	batchesresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
+	batchesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -138,13 +140,13 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		NamespaceOrgID:  orgID,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "CreateMonitor")
 	}
 
 	// Create trigger.
 	_, err = tx.db.CodeMonitors().CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "CreateQueryTrigger")
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
@@ -164,7 +166,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	// Create actions.
 	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "createActions")
 	}
 
 	return &monitor{
@@ -242,14 +244,14 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	defer func() { err = tx.db.Done(err) }()
 
 	if err = tx.deleteActions(ctx, monitorID, toDelete); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "deleteActions")
 	}
 	if err = tx.createActions(ctx, monitorID, toCreate); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "createActions")
 	}
 	m, err := tx.updateCodeMonitor(ctx, args)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "updateCodeMonitor")
 	}
 	// Hydrate monitor with Resolver.
 	m.Resolver = r
@@ -319,7 +321,7 @@ func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []gra
 		case monitorActionSlackWebhookKind:
 			slackWebhook = append(slackWebhook, intID)
 		case monitorActionBatchChangeKind:
-			slackWebhook = append(batchChange, intID)
+			batchChange = append(batchChange, intID)
 		default:
 			return errors.New("action IDs must be exactly one of email, webhook, slack webhook, or batch change")
 		}
@@ -452,7 +454,11 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]graphql.ID, 0, len(emailActions)+len(webhookActions)+len(slackWebhookActions))
+	batchChangeActions, err := r.db.CodeMonitors().ListBatchChangeActions(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]graphql.ID, 0, len(emailActions)+len(webhookActions)+len(slackWebhookActions)+len(batchChangeActions))
 	for _, emailAction := range emailActions {
 		ids = append(ids, (&monitorEmail{EmailAction: emailAction}).ID())
 	}
@@ -461,6 +467,9 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 	}
 	for _, slackWebhookAction := range slackWebhookActions {
 		ids = append(ids, (&monitorSlackWebhook{SlackWebhookAction: slackWebhookAction}).ID())
+	}
+	for _, batchChangeAction := range batchChangeActions {
+		ids = append(ids, (&monitorBatchChange{BatchChangeAction: batchChangeAction}).ID())
 	}
 	return ids, nil
 }
@@ -506,6 +515,16 @@ func splitActionIDs(args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []grap
 			}
 			toUpdateActions = append(toUpdateActions, a)
 			delete(aMap, *a.SlackWebhook.Id)
+		case a.BatchChange != nil:
+			if a.BatchChange.Id == nil {
+				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{BatchChange: a.BatchChange.Update})
+				continue
+			}
+			if _, ok := aMap[*a.BatchChange.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.BatchChange.Id)
+			}
+			toUpdateActions = append(toUpdateActions, a)
+			delete(aMap, *a.BatchChange.Id)
 		}
 	}
 
@@ -535,7 +554,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		NamespaceOrgID:  orgID,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "UpdateMonitor")
 	}
 
 	var triggerID int64
@@ -569,7 +588,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	// Update trigger.
 	err = r.db.CodeMonitors().UpdateQueryTrigger(ctx, triggerID, args.Trigger.Update.Query)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "UpdateQueryTrigger")
 	}
 
 	// Update actions.
@@ -590,11 +609,13 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 				return nil, err
 			}
 			err = r.updateSlackWebhookAction(ctx, *action.SlackWebhook)
+		case action.BatchChange != nil:
+			err = r.updateBatchChangeAction(ctx, *action.BatchChange)
 		default:
-			err = errors.New("action must be one of email, webhook, or slack webhook")
+			err = errors.New("action must be one of email, webhook, slack webhook, or batch change")
 		}
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "updateAction")
 		}
 	}
 	return &monitor{
@@ -644,6 +665,23 @@ func (r *Resolver) updateSlackWebhookAction(ctx context.Context, args graphqlbac
 	}
 
 	_, err = r.db.CodeMonitors().UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
+	return err
+}
+
+func (r *Resolver) updateBatchChangeAction(ctx context.Context, args graphqlbackend.EditActionBatchChangeArgs) error {
+	var id int64
+	err := relay.UnmarshalSpec(*args.Id, &id)
+	if err != nil {
+		return err
+	}
+
+	var batchChangeID int64
+	err = relay.UnmarshalSpec(args.Update.BatchChange, &batchChangeID)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.db.CodeMonitors().UpdateBatchChangeAction(ctx, id, args.Update.Enabled, batchChangeID)
 	return err
 }
 
@@ -831,7 +869,12 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 		return nil, err
 	}
 
-	actions := make([]graphqlbackend.MonitorAction, 0, len(es)+len(ws)+len(sws))
+	bcs, err := r.db.CodeMonitors().ListBatchChangeActions(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	actions := make([]graphqlbackend.MonitorAction, 0, len(es)+len(ws)+len(sws)+len(bcs))
 	for _, e := range es {
 		actions = append(actions, &action{
 			email: &monitorEmail{
@@ -856,6 +899,15 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 				Resolver:           r,
 				SlackWebhookAction: sw,
 				triggerEventID:     triggerEventID,
+			},
+		})
+	}
+	for _, bc := range bcs {
+		actions = append(actions, &action{
+			batchChange: &monitorBatchChange{
+				Resolver:          r,
+				BatchChangeAction: bc,
+				triggerEventID:    triggerEventID,
 			},
 		})
 	}
@@ -1286,6 +1338,63 @@ func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.L
 	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
 		SlackWebhookID: intPtr(int(m.SlackWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	events := make([]graphqlbackend.MonitorActionEventResolver, len(ajs))
+	for i, aj := range ajs {
+		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
+	}
+	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
+}
+
+type monitorBatchChange struct {
+	*Resolver
+	*edb.BatchChangeAction
+
+	// If triggerEventID == nil, all events of this action will be returned.
+	// Otherwise, only those events of this action which are related to the specified
+	// trigger event will be returned.
+	triggerEventID *int32
+}
+
+func (m *monitorBatchChange) ID() graphql.ID {
+	return relay.MarshalID(monitorActionBatchChangeKind, m.BatchChangeAction.ID)
+}
+
+func (m *monitorBatchChange) Enabled() bool {
+	return m.BatchChangeAction.Enabled
+}
+
+func (m *monitorBatchChange) BatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
+	bstore := batchesstore.New(m.db, nil, nil)
+	bc, err := bstore.GetBatchChange(ctx, batchesstore.GetBatchChangeOpts{ID: m.BatchChangeAction.BatchChange})
+	if err != nil {
+		return nil, err
+	}
+	return batchesresolvers.NewBatchChangeResolver(bstore, bc), nil
+}
+
+func (m *monitorBatchChange) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
+		BatchChangeActionID: intPtr(int(m.BatchChangeAction.ID)),
+		TriggerEventID:      m.triggerEventID,
+		First:               intPtr(int(args.First)),
+		After:               after,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
+		BatchChangeActionID: intPtr(int(m.BatchChangeAction.ID)),
+		TriggerEventID:      m.triggerEventID,
 	})
 	if err != nil {
 		return nil, err

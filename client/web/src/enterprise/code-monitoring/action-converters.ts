@@ -1,5 +1,7 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import {
+    IMonitorBatchChange,
+    IMonitorBatchChangeInput,
     IMonitorEmail,
     IMonitorEmailInput,
     IMonitorSlackWebhook,
@@ -17,12 +19,15 @@ import {
 
 import { MonitorAction } from './components/FormActionArea'
 
-function isActionSupported(action: MonitorAction): action is IMonitorEmail | IMonitorSlackWebhook | IMonitorWebhook {
+function isActionSupported(
+    action: MonitorAction
+): action is IMonitorEmail | IMonitorSlackWebhook | IMonitorWebhook | IMonitorBatchChange {
     // We currently support email, Slack webhook, and generic webhook actions
     return (
         action.__typename === 'MonitorEmail' ||
         action.__typename === 'MonitorSlackWebhook' ||
-        action.__typename === 'MonitorWebhook'
+        action.__typename === 'MonitorWebhook' ||
+        action.__typename === 'MonitorBatchChange'
     )
 }
 
@@ -52,6 +57,13 @@ function convertWebhookAction(action: IMonitorWebhook): IMonitorWebhookInput {
     }
 }
 
+function convertBatchChangeAction(action: IMonitorBatchChange): IMonitorBatchChangeInput {
+    return {
+        enabled: action.enabled,
+        batchChange: action.batchChange.id,
+    }
+}
+
 export function convertActionsForCreate(
     actions: CodeMonitorFields['actions']['nodes'],
     authenticatedUserId: AuthenticatedUser['id']
@@ -69,6 +81,10 @@ export function convertActionsForCreate(
             case 'MonitorWebhook':
                 return {
                     webhook: convertWebhookAction(action),
+                }
+            case 'MonitorBatchChange':
+                return {
+                    batchChange: convertBatchChangeAction(action),
                 }
         }
     })
@@ -100,6 +116,13 @@ export function convertActionsForUpdate(
                     webhook: {
                         id: action.id || null,
                         update: convertWebhookAction(action),
+                    },
+                }
+            case 'MonitorBatchChange':
+                return {
+                    batchChange: {
+                        id: action.id || null,
+                        update: convertBatchChangeAction(action),
                     },
                 }
         }

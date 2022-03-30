@@ -81,9 +81,13 @@ type ListActionJobsOpts struct {
 	// the given webhook action. Refers to cm_webhooks(id)
 	WebhookID *int
 
-	// WebhookID, if set, will filter to only actions jobs that are executing
+	// SlackWebhookID, if set, will filter to only actions jobs that are executing
 	// the given slack webhook action. Refers to cm_slack_webhooks(id)
 	SlackWebhookID *int
+
+	// BatchChangeActionID, if set, will filter to only actions jobs that are executing
+	// the given batch change action. Refers to code_monitors_batch_changes (id)
+	BatchChangeActionID *int
 
 	// First, if defined, limits the operation to only the first n results
 	First *int
@@ -107,6 +111,9 @@ func (o ListActionJobsOpts) Conds() *sqlf.Query {
 	}
 	if o.SlackWebhookID != nil {
 		conds = append(conds, sqlf.Sprintf("slack_webhook = %s", *o.SlackWebhookID))
+	}
+	if o.BatchChangeActionID != nil {
+		conds = append(conds, sqlf.Sprintf("batch_change = %s", *o.BatchChangeActionID))
 	}
 	if o.After != nil {
 		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
@@ -198,7 +205,7 @@ WITH due_emails AS (
 ), due_batch_changes AS (
 	SELECT id
 	FROM code_monitors_batch_changes
-	WHERE code_monitor_id = %s
+	WHERE monitor = %s
 		AND enabled = true
 	EXCEPT
 	SELECT DISTINCT batch_change as id FROM cm_action_jobs
