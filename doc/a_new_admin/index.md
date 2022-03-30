@@ -1,54 +1,14 @@
 # Administration Table of Contents
 
-This is some text
+Administration is usually handled by site administrators, or admins, who are responsible for deploying, managing, and configuring Sourcegraph for regular users. In addition, Admins have [special privileges](privileges.md) on a Sourcegraph instance that enable a wide variety of functionality including customization, access management, and repository management as well as management for other activities such as monitoring, alerting, upgrading, and migration.
 
-<div class="cta-group">
-<a class="btn" href="#installation">
-<p>Installation
-<ul>
-    <li>Some thing</li>
-    <li>Some things</li>
-    <li>Some more things</li>
-    <li>Just a lot more things</li>
-    <li>Just a lot more things</li>
-    <li>Just a lot more things</li>
-    <li>Just a lot more things</li>
-    </ul>
-</a>
+We've broken our Admin documentation up into a variety of key categories which can be navigated to using the list below. Not all areas of the documentaiton will be applicable to everyone, and much is dependent on the deployment method you choose.
 
-<a class="btn" href="#installation">
-<p>Installation
-<ul>
-    <li>Some thing</li>
-    <li>Some things</li>
-    <li>Some more things</li>
-    <li>Just a lot more things</li>
-    <li>Just a lot more things</li>
-    <li>Just a lot more things</li>
-    </ul>
-</a>
+If you are just getting started, check out our [Deployment Overview](deployment/deployment_overview.md) which highlights the different deplyment methods available as well as some key concepts that will be useful throughout your interaction with Sourcegraph as an administrator.
 
-<a class="btn" href="#installation">
-<p>Installation
-<ul>
-    <li>Some thing</li>
-    <li>Some things</li>
-    <li>Some more things</li>
-    <p>
-    </ul>
-</a>
-</div>
-
-<div>
-<a class="btn" href="operations">Operations guides</a>
-<a class="btn" href="#about">About Docker Compose</a>
-<a class="btn" href="../../../#get-help">Get help</a>
-</div>
-
-## How to use this documentation
-## Deployment
-### Overview
-### Resource Estimator
+## [Deployment](deployment/index.md)
+### [Overview](deployment/deployment_overview.md)
+### [Resource Estimator](install/resource_estimator.md)
 ### Docker Single Container
 ### Docker Compose
 ### Kubernetes
