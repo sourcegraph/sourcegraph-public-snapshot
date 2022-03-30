@@ -619,6 +619,15 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			},
 		}
 
+		mockOrg1Repo = extsvc.Repository{
+			URI: "github.com/org1/org-repo",
+			ExternalRepoSpec: api.ExternalRepoSpec{
+				ID:          "github_project_id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+		}
+
 		//nolint:unparam // Allow returning nil error on all code paths
 		mockListCollaborators = func(_ context.Context, _, _ string, page int, _ github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
@@ -855,7 +864,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				p.groupsCache = memCache
 
 				accountIDs, err := p.FetchRepoPerms(
-					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+					context.Background(), &mockOrg1Repo, authz.FetchPermsOptions{},
 				)
 				if err != nil {
 					t.Fatal(err)
@@ -880,15 +889,6 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				p.enableGithubInternalRepoVisibility = true
 				memCache := memGroupsCache()
 				p.groupsCache = memCache
-
-				mockOrg1Repo := extsvc.Repository{
-					URI: "github.com/org1/org-repo",
-					ExternalRepoSpec: api.ExternalRepoSpec{
-						ID:          "github_project_id",
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-					},
-				}
 
 				accountIDs, err := p.FetchRepoPerms(
 					context.Background(), &mockOrg1Repo, authz.FetchPermsOptions{},
