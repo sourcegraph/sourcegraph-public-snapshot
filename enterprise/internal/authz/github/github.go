@@ -605,8 +605,6 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 
 	// If this repo is an internal repo, we want to allow everyone in the org to read this repo
 	// (provided the temporary feature flag is set) irrespective of the user being an admin or not.
-	isRepoInternallyVisible := false
-
 	// The visibility field on a repo is only returned if this feature flag is set. As a result
 	// there's no point in making an extra API call if this feature flag is not set explicitly.
 	if p.enableGithubInternalRepoVisibility {
@@ -619,22 +617,18 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		}
 
 		if org != nil && r.Visibility == github.VisibilityInternal {
-			isRepoInternallyVisible = true
-		}
-	}
-
-	allOrgMembersCanRead := isRepoInternallyVisible || canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
-	if allOrgMembersCanRead {
-		if isRepoInternallyVisible {
 			since := 0
 			for {
 				var orgs []*github.Org
 
-				log15.Info("ListOrganization", "since", since)
 				var nextSince int
 				orgs, nextSince, err = client.ListOrganizations(ctx, since)
 				if err != nil {
 					return
+				}
+
+				for _, org := range orgs {
+					syncGroup(org.Login, "", false)
 				}
 
 				if nextSince < 0 {
@@ -642,13 +636,13 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 				}
 
 				since = nextSince
-
-				// TODO err checking
-				for _, org := range orgs {
-					syncGroup(org.Login, "", false)
-				}
 			}
+			return
 		}
+	}
+
+	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
+	if allOrgMembersCanRead {
 
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.
