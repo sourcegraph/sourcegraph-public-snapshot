@@ -28,8 +28,6 @@ import { AuthenticatedUser } from '../../auth'
 import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { GettingStartedTour } from '../../gettingStartedTour/GettingStartedTour'
-import { GettingStartedTourInfo } from '../../gettingStartedTour/GettingStartedTourInfo'
 import { usePersistentCadence } from '../../hooks'
 import { useIsActiveIdeIntegrationUser } from '../../IdeExtensionTracker'
 import { CodeInsightsProps } from '../../insights/types'
@@ -43,6 +41,7 @@ import {
     useSearchStack,
     buildSearchURLQueryFromQueryState,
 } from '../../stores'
+import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
@@ -330,7 +329,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }, [telemetryService])
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const showGettingStartedTour = props.isSourcegraphDotCom && !props.authenticatedUser
     const { ctaToDisplay, onCtaAlertDismissed } = useCtaAlert(!!authenticatedUser, resultsFound)
 
     // Log view event when signup CTA is shown
@@ -359,9 +357,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
-                    showGettingStartedTour ? (
-                        <GettingStartedTour className="mb-1" telemetryService={props.telemetryService} />
-                    ) : undefined
+                    <GettingStartedTour
+                        className="mb-1"
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        telemetryService={props.telemetryService}
+                        isAuthenticated={!!props.authenticatedUser}
+                        featureFlags={props.featureFlags}
+                    />
                 }
                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
             />
@@ -398,7 +400,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <div className={styles.streamingSearchResultsContainer}>
-                {showGettingStartedTour && <GettingStartedTourInfo className="mt-2 mr-3 mb-3" />}{' '}
+                <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}

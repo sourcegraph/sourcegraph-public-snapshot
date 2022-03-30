@@ -9,7 +9,7 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GettingStartedTourInfo } from '../gettingStartedTour/GettingStartedTourInfo'
+import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { InstallIntegrationsAlert } from './actions/InstallIntegrationsAlert'
@@ -53,8 +53,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
     const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
 
     const mode = getModeFromPath(filePath)
-
-    const showGettingStartedTour = context.isSourcegraphDotCom && !context.authenticatedUser
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
     const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
@@ -105,13 +103,13 @@ export const RepositoryFileTreePage: React.FunctionComponent<RepositoryFileTreeP
                 className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
                 defaultBranch={defaultBranch || 'HEAD'}
-                showGettingStartedTour={showGettingStartedTour}
+                featureFlags={featureFlags}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the
                 // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                 <BlobStatusBarContainer>
-                    {showGettingStartedTour && <GettingStartedTourInfo className="mr-3 mb-3" />}
+                    <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
                             <>
