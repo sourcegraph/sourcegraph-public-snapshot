@@ -2,9 +2,7 @@ package buildkite
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"time"
 )
 
 type featureFlags struct {
