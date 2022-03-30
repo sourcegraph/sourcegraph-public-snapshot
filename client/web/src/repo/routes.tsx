@@ -166,7 +166,8 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         '/-/commits/tab',
         '/-/branch/tab',
         '/-/tag/tab',
-        '/-/compares/tab/:spec*',
+        '/-/repo-contributors/tab',
+        '/-/compares/:spec*',
     ].map(routePath => ({
         path: routePath,
         exact: routePath === '',
@@ -194,7 +195,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         ),
     },
     {
-        path: '/-/compares',
+        path: '/-/compares/:spec*',
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
@@ -212,6 +213,14 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/tag',
+        render: context => (
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                <RepositoryReleasesArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/repo-contributors',
         render: context => (
             <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryReleasesArea {...context} />

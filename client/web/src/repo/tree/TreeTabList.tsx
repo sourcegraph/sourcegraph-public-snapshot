@@ -70,7 +70,7 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 isActive: selectedTab === 'contributors',
                 logName: 'RepoContributorsTab',
                 icon: <Icon as={AccountIcon} />,
-                url: `${tree.url}/-/contributors/tab`,
+                url: `${tree.url}/-/repo-contributors/tab`,
             },
             {
                 tab: 'docs',
