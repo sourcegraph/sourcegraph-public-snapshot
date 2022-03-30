@@ -1027,7 +1027,7 @@ func checkRepoPendingPermsTable(
 		}
 		wantSpecs := expects[id]
 
-		//Verify Specs are the same, the ordering might not be the same but the elements/length are
+		// Verify Specs are the same, the ordering might not be the same but the elements/length are.
 		if len(wantSpecs) != len(haveSpecs) {
 			return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
 		}
