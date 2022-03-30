@@ -89,6 +89,14 @@ func (c *Client) CommitsExist(ctx context.Context, commits []RepositoryCommit) (
 
 		exists[i] = e
 	}
+	if len(exists) != len(commits) {
+		// Add assertion here so that the blast radius of new or newly discovered errors southbound
+		// from the internal/vcs/git package does not leak into code intelligence. The existing callers
+		// of this method panic when this assertion is not met. Describing the error in more detail here
+		// will not cause destruction outside of the particular user-request in which this assertion
+		// was not true.
+		return nil, errors.Newf("expected slice returned from git.CommitsExist to have len %d, but has len %d", len(commits), len(exists))
+	}
 
 	return exists, nil
 }
