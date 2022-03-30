@@ -35,16 +35,20 @@
         box-shadow: inset 0 0 6px var(--text-muted);
     }
 
-    &:active::-webkit-scrollbar-thumb {
-        visibility: visible;
-    }
-
     &.is-horizontal {
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
         padding-bottom: 0.5rem;
+
+        &::-webkit-scrollbar-thumb {
+            visibility: hidden;
+        }
+
+        &:hover::-webkit-scrollbar-thumb {
+            visibility: visible;
+        }
 
         > * {
             flex: 1 0 19rem;
