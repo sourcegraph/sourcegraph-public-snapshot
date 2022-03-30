@@ -2,10 +2,13 @@ package notebook
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // TODO copied wholesale from enterprise/internal/notebooks/store.go
@@ -29,4 +32,18 @@ func notebooksPermissionsCondition(ctx context.Context) *sqlf.Query {
 		authenticatedUserID = a.UID
 	}
 	return sqlf.Sprintf(notebooksPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID)
+}
+
+// Special characters used by TSQUERY we need to omit to prevent syntax errors.
+// See: https://www.postgresql.org/docs/12/datatype-textsearch.html#DATATYPE-TSQUERY
+var postgresTextSearchSpecialCharsRegex = lazyregexp.New(`&|!|\||\(|\)|:`)
+
+func toPostgresTextSearchQuery(query string) string {
+	tokens := strings.Fields(postgresTextSearchSpecialCharsRegex.ReplaceAllString(query, " "))
+	prefixTokens := make([]string, len(tokens))
+	for idx, token := range tokens {
+		// :* is used for prefix matching
+		prefixTokens[idx] = fmt.Sprintf("%s:*", token)
+	}
+	return strings.Join(prefixTokens, " & ")
 }

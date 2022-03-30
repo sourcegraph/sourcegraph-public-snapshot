@@ -1,6 +1,9 @@
 package result
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"net/url"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -9,6 +12,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type NotebookBlocks []NotebookBlock
+
+func (blocks NotebookBlocks) Value() (driver.Value, error) {
+	return json.Marshal(blocks)
+}
+
+func (blocks *NotebookBlocks) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &blocks)
+}
+
 type NotebookMatch struct {
 	ID int64
 
@@ -16,6 +33,8 @@ type NotebookMatch struct {
 	Namespace string
 	Private   bool
 	Stars     int
+
+	Blocks NotebookBlocks `json:"-"`
 }
 
 func (n NotebookMatch) RepoName() types.MinimalRepo {
@@ -33,6 +52,25 @@ func (n *NotebookMatch) ResultCount() int {
 }
 
 func (n *NotebookMatch) Select(path filter.SelectPath) Match {
+	if path.Root() != filter.Notebook {
+		return nil
+	}
+
+	switch len(path) {
+	case 1:
+		return n
+	case 2, 3:
+		if path[1] == "block" {
+			if len(n.Blocks) == 0 {
+				return nil
+			}
+
+			return (&NotebookBlocksMatch{
+				Notebook: *n,
+				Blocks:   n.Blocks,
+			}).Select(path)
+		}
+	}
 	return nil
 }
 
@@ -62,5 +100,5 @@ func (n *NotebookMatch) searchResultMarker() {}
 
 // from enterprise/cmd/frontend/internal/notebooks/resolvers/resolvers.go
 func (n *NotebookMatch) marshalNotebookID() string {
-	return string(relay.MarshalID("Notebook", 1))
+	return string(relay.MarshalID("Notebook", n.ID))
 }

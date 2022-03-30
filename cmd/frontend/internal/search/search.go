@@ -426,6 +426,8 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 		return fromCommit(v, repoCache)
 	case *result.NotebookMatch:
 		return fromNotebook(v)
+	case *result.NotebookBlocksMatch:
+		return fromNotebookBlocks(v)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
@@ -593,6 +595,14 @@ func fromNotebook(notebook *result.NotebookMatch) *streamhttp.EventNotebookMatch
 		URL:       notebook.URL().String(),
 		Stars:     notebook.Stars,
 		Private:   notebook.Private,
+	}
+}
+
+func fromNotebookBlocks(blocks *result.NotebookBlocksMatch) *streamhttp.EventNotebookBlockMatch {
+	return &streamhttp.EventNotebookBlockMatch{
+		Type:     streamhttp.NotebookBlockMatchType,
+		Notebook: *fromNotebook(&blocks.Notebook),
+		Blocks:   blocks.Blocks,
 	}
 }
 

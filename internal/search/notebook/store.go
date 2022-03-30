@@ -3,7 +3,6 @@ package notebook
 import (
 	"context"
 	"database/sql"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -21,7 +20,7 @@ import (
 // TODO what is a good home for this?
 
 type NotebooksSearchStore interface {
-	SearchNotebooks(ctx context.Context, query string) ([]*result.NotebookMatch, error)
+	SearchNotebooks(ctx context.Context, query string, searchBlocks bool) ([]*result.NotebookMatch, error)
 }
 
 type notebooksSearchStore struct {
@@ -37,6 +36,7 @@ const searchNotebooksFmtStr = `
 SELECT
 	notebooks.id,
 	notebooks.title,
+	notebooks.blocks,
 	NOT public as private, -- consistency with other match types
 	users.username as namespace_user,
 	orgs.name as namespace_org,
@@ -64,6 +64,7 @@ func scanMatch(scanner dbutil.Scanner) (*result.NotebookMatch, error) {
 	err := scanner.Scan(
 		&n.ID,
 		&n.Title,
+		&n.Blocks,
 		&n.Private,
 		&namespaceUser,
 		&namespaceOrg,
@@ -80,7 +81,7 @@ func scanMatch(scanner dbutil.Scanner) (*result.NotebookMatch, error) {
 	return n, nil
 }
 
-func scanMatches(rows *sql.Rows) ([]*result.NotebookMatch, error) {
+func scanNotebookMatches(rows *sql.Rows) ([]*result.NotebookMatch, error) {
 	var notebooks []*result.NotebookMatch
 	for rows.Next() {
 		n, err := scanMatch(rows)
@@ -92,22 +93,36 @@ func scanMatches(rows *sql.Rows) ([]*result.NotebookMatch, error) {
 	return notebooks, nil
 }
 
-func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, query string) ([]*result.NotebookMatch, error) {
+func makeQueryConds(query string, includeBlocks bool) *sqlf.Query {
 	// emulate other search types by replacing space with wildcards.
-	// TODO account for patternType?
-	ilikeQuery := "%" + strings.ReplaceAll(query, " ", "%") + "%"
+	ilikeQuery := "%" + query + "%"
 
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("CONCAT(users.username, orgs.name, notebooks.title) ILIKE %s",
+			ilikeQuery),
+	}
+	if includeBlocks {
+		// TODO this mirrors the GraphQL API implementation but does not allow us to
+		// filter the blocks. we could potentially hack around this by doing the filtering
+		// of blocks post-query by marshalling notebook blocks.
+		conds = append(conds, sqlf.Sprintf("notebooks.blocks_tsvector @@ to_tsquery('english', %s)",
+			toPostgresTextSearchQuery(query)))
+	}
+
+	return sqlf.Join(conds, "\n OR")
+}
+
+func (s *notebooksSearchStore) SearchNotebooks(ctx context.Context, query string, searchBlocks bool) ([]*result.NotebookMatch, error) {
 	rows, err := s.Query(ctx,
 		sqlf.Sprintf(
 			searchNotebooksFmtStr,
 			notebooksPermissionsCondition(ctx),
-			sqlf.Sprintf("CONCAT(users.username, orgs.name, notebooks.title) ILIKE %s",
-				ilikeQuery),
+			makeQueryConds(query, true),
 		),
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanMatches(rows)
+	return scanNotebookMatches(rows)
 }
