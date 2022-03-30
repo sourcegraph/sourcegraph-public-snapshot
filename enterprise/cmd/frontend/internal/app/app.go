@@ -168,6 +168,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 
 				privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 				if err != nil {
+					log15.Error("Error while decoding privatekey.", "error", err)
 					w.WriteHeader(http.StatusBadRequest)
 					_, _ = w.Write([]byte(`Error while decoding encryption key`))
 					return
@@ -176,6 +177,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				installationID := r.URL.Query().Get("installation_id")
 				encryptedInstallationID, err := EncryptWithPrivateKey(installationID, privateKey)
 				if err != nil {
+					log15.Error("Error while encrypting installation ID.", "error", err)
 					w.WriteHeader(http.StatusBadRequest)
 					_, _ = w.Write([]byte(`Error while encrypting installation ID`))
 					return
