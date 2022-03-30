@@ -576,6 +576,11 @@ type repoAffiliatedGroup struct {
 
 // getRepoAffiliatedGroups retrieves affiliated organizations and teams for the given repository.
 // Returned groups are populated from cache if a valid value is available.
+//
+// If the repo in question is an internal repository, getRepoAffiliatedGroups will return a list of
+// all organizations in the github instance. This is required to list all members on the github
+// instance in order to allow every user who is part of at least one organization access to the
+// internal repository.
 func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
 	client, err := p.client()
 	if err != nil {
@@ -643,7 +648,6 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 
 	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
 	if allOrgMembersCanRead {
-
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.
 		syncGroup(owner, "", false)
