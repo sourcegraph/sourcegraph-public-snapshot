@@ -160,7 +160,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     )
 
     // Depending on the selection, the set of changeset ids to act on is different.
-    const ids = useMemo(() => selected === 'all' ? allChangesetIDs || [] : [...selected], [selected, allChangesetIDs])
+    const ids = useMemo(() => (selected === 'all' ? allChangesetIDs || [] : [...selected]), [selected, allChangesetIDs])
 
     /**
      * Query the backed to figure out what bulk operations can be applied
@@ -185,15 +185,16 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
             const action = AVAILABLE_ACTIONS[operation]
             const dropdownAction: Action = {
                 ...action,
-                onTrigger: (onDone, onCancel) => action.onTrigger(
-                    batchChangeID,
-                    ids,
-                    () => {
-                        onSubmit()
-                        onDone()
-                    },
-                    onCancel
-                ),
+                onTrigger: (onDone, onCancel) =>
+                    action.onTrigger(
+                        batchChangeID,
+                        ids,
+                        () => {
+                            onSubmit()
+                            onDone()
+                        },
+                        onCancel
+                    ),
             }
 
             return dropdownAction
