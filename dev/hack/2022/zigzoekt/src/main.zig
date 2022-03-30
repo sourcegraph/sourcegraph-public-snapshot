@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const SimpleSection = struct{
+const SimpleSection = struct {
     off: u32,
     sz: u32,
 };
@@ -14,12 +14,12 @@ fn readSimpleSection(reader: anytype) !SimpleSection {
     };
 }
 
-const CompoundSection = struct{
+const CompoundSection = struct {
     data: SimpleSection,
     index: SimpleSection,
 };
 
-const TOC = struct{
+const TOC = struct {
     fileContents: CompoundSection,
     fileNames: CompoundSection,
 };
@@ -41,7 +41,7 @@ fn readTOC(file: std.fs.File) !TOC {
 
     var toc: TOC = undefined;
     var buffer: [1024]u8 = undefined;
-    while(limitReader.bytes_left > 0) {
+    while (limitReader.bytes_left > 0) {
         var slen = try std.leb.readULEB128(u64, reader);
 
         // Section Tag
@@ -52,7 +52,7 @@ fn readTOC(file: std.fs.File) !TOC {
         const kind = try reader.readByte();
 
         const data = try readSimpleSection(reader);
-        const index: SimpleSection = try switch(kind) {
+        const index: SimpleSection = try switch (kind) {
             0 => undefined,
             1, 2 => readSimpleSection(reader),
             else => return error.EndOfStream,
@@ -84,7 +84,9 @@ fn search(shard_path: []const u8, needle: []const u8, writer: anytype) !void {
     var contentReader = std.io.limitedReader(file.reader(), toc.fileContents.data.sz).reader();
 
     var buffer: [1024]u8 = undefined;
-    while (contentReader.readUntilDelimiterOrEof(&buffer, '\n') catch { return; }) |line| {
+    while (contentReader.readUntilDelimiterOrEof(&buffer, '\n') catch {
+        return;
+    }) |line| {
         if (std.mem.containsAtLeast(u8, line, 1, needle)) {
             try writer.writeAll(line);
             try writer.writeByte('\n');
