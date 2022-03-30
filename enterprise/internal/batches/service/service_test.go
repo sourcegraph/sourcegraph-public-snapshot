@@ -2333,6 +2333,90 @@ func TestService(t *testing.T) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
 		})
+
+		t.Run("draft, archived and failed changesets with no common bulk operation", func(t *testing.T) {
+			failedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ReconcilerState:  btypes.ReconcilerStateFailed,
+			})
+
+			archivedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+
+				// archived changeset
+				IsArchived: true,
+			})
+
+			draftChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateDraft,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					failedChangeset.ID,
+					archivedChangeset.ID,
+					draftChangeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{}
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
+		t.Run("draft, closed and merged changesets with a common bulk operation", func(t *testing.T) {
+			draftChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateDraft,
+			})
+
+			closedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateClosed,
+			})
+
+			mergedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+				ExternalState:    btypes.ChangesetExternalStateDraft,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					closedChangeset.ID,
+					mergedChangeset.ID,
+					draftChangeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expectedBulkOperations := []string{"COMMENT"}
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
 	})
 }
 
@@ -2513,8 +2597,4 @@ func assertNoAuthError(t *testing.T, err error) {
 	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 		t.Fatalf("got auth error")
 	}
-}
-
-func assertEqualStringSlice(t *testing.T, have []string, want []string) {
-
 }
