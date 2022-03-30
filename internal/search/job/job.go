@@ -96,8 +96,8 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
 
-		if repoUniverseSearch {
-			if resultTypes.Has(result.TypeFile | result.TypePath) {
+		if resultTypes.Has(result.TypeFile | result.TypePath) {
+			if repoUniverseSearch {
 				job, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
@@ -105,65 +105,66 @@ func ToSearchJob(jargs *Args, q query.Q, db database.DB) (Job, error) {
 				addJob(true, job)
 			}
 
-			if resultTypes.Has(result.TypeSymbol) {
+			if !skipRepoSubsetSearch {
+				var textSearchJobs []Job
+				if !onlyRunSearcher {
+					job, err := builder.newZoektSearch(search.TextRequest)
+					if err != nil {
+						return nil, err
+					}
+					textSearchJobs = append(textSearchJobs, job)
+				}
+
+				textSearchJobs = append(textSearchJobs, &searcher.Searcher{
+					PatternInfo:     patternInfo,
+					Indexed:         false,
+					SearcherURLs:    jargs.SearcherURLs,
+					UseFullDeadline: useFullDeadline,
+				})
+
+				addJob(true, &repoPagerJob{
+					child:            NewParallelJob(textSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+					zoekt:            jargs.Zoekt,
+				})
+			}
+		}
+
+		if resultTypes.Has(result.TypeSymbol) {
+			if repoUniverseSearch {
 				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(true, job)
 			}
-		}
 
-		if resultTypes.Has(result.TypeFile|result.TypePath) && !skipRepoSubsetSearch {
-			var textSearchJobs []Job
-			if !onlyRunSearcher {
-				job, err := builder.newZoektSearch(search.TextRequest)
-				if err != nil {
-					return nil, err
+			if b.PatternString() != "" && !skipRepoSubsetSearch {
+				var symbolSearchJobs []Job
+				if !onlyRunSearcher {
+					job, err := builder.newZoektSearch(search.SymbolRequest)
+					if err != nil {
+						return nil, err
+					}
+					symbolSearchJobs = append(symbolSearchJobs, job)
 				}
-				textSearchJobs = append(textSearchJobs, job)
+
+				symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
+					PatternInfo: patternInfo,
+					Limit:       maxResults,
+				})
+
+				required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
+				addJob(required, &repoPagerJob{
+					child:            NewParallelJob(symbolSearchJobs...),
+					repoOptions:      repoOptions,
+					useIndex:         b.Index(),
+					containsRefGlobs: query.ContainsRefGlobs(q),
+					zoekt:            jargs.Zoekt,
+				})
 			}
-
-			textSearchJobs = append(textSearchJobs, &searcher.Searcher{
-				PatternInfo:     patternInfo,
-				Indexed:         false,
-				SearcherURLs:    jargs.SearcherURLs,
-				UseFullDeadline: useFullDeadline,
-			})
-
-			addJob(true, &repoPagerJob{
-				child:            NewParallelJob(textSearchJobs...),
-				repoOptions:      repoOptions,
-				useIndex:         b.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
-			})
-		}
-
-		if resultTypes.Has(result.TypeSymbol) && b.PatternString() != "" && !skipRepoSubsetSearch {
-			var symbolSearchJobs []Job
-
-			if !onlyRunSearcher {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
-				if err != nil {
-					return nil, err
-				}
-				symbolSearchJobs = append(symbolSearchJobs, job)
-			}
-
-			symbolSearchJobs = append(symbolSearchJobs, &searcher.SymbolSearcher{
-				PatternInfo: patternInfo,
-				Limit:       maxResults,
-			})
-
-			required := useFullDeadline || resultTypes.Without(result.TypeSymbol) == 0
-			addJob(required, &repoPagerJob{
-				child:            NewParallelJob(symbolSearchJobs...),
-				repoOptions:      repoOptions,
-				useIndex:         b.Index(),
-				containsRefGlobs: query.ContainsRefGlobs(q),
-				zoekt:            jargs.Zoekt,
-			})
 		}
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
