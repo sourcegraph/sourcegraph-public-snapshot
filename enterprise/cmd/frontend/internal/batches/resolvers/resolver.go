@@ -1858,6 +1858,10 @@ func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbac
 		Changesets:  changesetIDs,
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
 	return availableBulkOperations, nil
 }
 
